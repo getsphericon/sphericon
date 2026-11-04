@@ -50,7 +50,7 @@ func TestExportErasuresAnnouncesAnErasureByContact(t *testing.T) {
 	assert.Equal(t, "300", row["contact_id"])
 	assert.Equal(t, "user-erin-300", row["subject_id"])
 	assert.Equal(t, []any{"vis-erasable-laptop"}, row["visitor_ids"])
-	assert.Equal(t, hexSHA256("+15550100300"), row["phone_hash"])
+	assert.Equal(t, hexSHA256("+14155550300"), row["phone_hash"])
 	assert.NotEmpty(t, row["erased_at"])
 }
 
@@ -65,7 +65,7 @@ func TestExportErasuresNeverCarryTheAddressOrThePhone(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotContains(t, string(stored), "erin@initech.test")
-	assert.NotContains(t, string(stored), "15550100300")
+	assert.NotContains(t, string(stored), "14155550300")
 }
 
 func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
@@ -98,7 +98,7 @@ func TestContactErasedMessageHoldsNoAddressOrPhone(t *testing.T) {
 	require.Len(t, envelopes, 1)
 	body := string(envelopes[0].Data)
 	assert.NotContains(t, body, "erin@initech.test")
-	assert.NotContains(t, body, "15550100300")
+	assert.NotContains(t, body, "14155550300")
 	assert.Contains(t, body, hexSHA256("erin@initech.test"))
 }
 

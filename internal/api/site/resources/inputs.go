@@ -19,10 +19,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -63,6 +65,7 @@ import (
 // goverter:extend buttonsPtrIn
 // goverter:extend buttonsPatch
 // goverter:extend stringIn
+// goverter:extend emailIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
@@ -104,6 +107,10 @@ type Inputs interface {
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
+	ConsentEvidence(source *siteapi.ConsentEvidence) consent.Evidence
+	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	TestAddress(source *siteapi.TestSendBroadcastInput) outbound.TestAddress
+
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
 	// The arms of a Broadcast's content, which broadcastContentIn and broadcastContentPatch pick.
@@ -111,6 +118,8 @@ type Inputs interface {
 	EmailBroadcastContentPatch(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
 	TelegramBroadcastContentIn(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
 	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	SmsBroadcastContentIn(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
+	SmsBroadcastContentPatch(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
 	// The list's filter; the statuses go member by member (BroadcastStatuses).
 	// goverter:map Status Statuses
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
@@ -177,6 +186,7 @@ type Inputs interface {
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
 	// goverter:enum:map SiteSuppressionChannelEmail ChannelEmail
 	// goverter:enum:map SiteSuppressionChannelTelegram ChannelTelegram
+	// goverter:enum:map SiteSuppressionChannelSMS ChannelSms
 	SuppressionChannel(source siteapi.SiteSuppressionChannel) suppression.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
@@ -251,6 +261,7 @@ func maxPerSecondPatch(o siteapi.OptNilMaxPerSecond) patch.Field[int] { return c
 func maxPerDayPatch(o siteapi.OptNilMaxPerDay) patch.Field[int]       { return convert.IntPatch(o) }
 func listPatch(list []string) patch.Field[[]string]                   { return convert.ListPatch(list) }
 func stringIn(o siteapi.OptString) string                             { return o.Or("") }
+func emailIn(o siteapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o siteapi.OptString) *string                         { return convert.Ptr(o) }
 func nilStringPtrIn(o siteapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
@@ -382,6 +393,11 @@ func integrationConfigIn(in siteapi.IntegrationConfigInput) (integrations.Config
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
 	case siteapi.TelegramConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
+	case siteapi.TwilioConfigInputIntegrationConfigInputSum:
+		c := in.OneOf.TwilioConfigInput
+		return integrations.ConfigInput{Twilio: &integrations.TwilioConfig{
+			AccountSID: c.AccountSid, APIKeySID: c.ApiKeySid.Or(""), Secret: c.Secret, From: c.From,
+		}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }
@@ -410,6 +426,8 @@ func broadcastContentIn(c Inputs, in siteapi.BroadcastContentInput) (broadcasts.
 		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
 	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	case siteapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentIn(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}
@@ -426,6 +444,8 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
 	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	case siteapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentPatch(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}

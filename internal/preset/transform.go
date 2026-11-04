@@ -139,7 +139,7 @@ func validateFacts(out any) (Result, error) {
 }
 
 // noticeKinds are the kinds of a Delivery notice.
-var noticeKinds = []Kind{Bounce, Complaint, Delivery, Delay, Drop}
+var noticeKinds = []Kind{Bounce, Complaint, Delivery, Delay, Drop, Undelivered}
 
 // addFact validates one element of the program's output by its kind and appends it to r.
 func addFact(r *Result, item any) error {
@@ -172,7 +172,7 @@ func addFact(r *Result, item any) error {
 		}
 		r.Notices = append(r.Notices, n)
 	default:
-		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay or drop",
+		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay, drop or undelivered",
 			obj["kind"], kindInboundMessage, kindReachabilityChange)
 	}
 	return nil
@@ -188,13 +188,20 @@ func decodeStrict(raw []byte, into any) error {
 // rawNotice is a Delivery notice as the program returns it.
 type rawNotice struct {
 	ID            string  `json:"id"`
+	Channel       *string `json:"channel"`
 	Destination   string  `json:"destination"`
 	Kind          string  `json:"kind"`
 	Hard          *bool   `json:"hard"`
 	SendingDomain *string `json:"sending_domain"`
 	MessageID     *string `json:"message_id"`
 	Reason        *string `json:"reason"`
+	Status        *string `json:"status"`
+	ErrorCode     *string `json:"error_code"`
 }
+
+// emailChannel is the Channel of a Delivery notice that names none: notices were email's alone
+// before the other Channels.
+const emailChannel Channel = "email"
 
 func validateNotice(raw []byte) (DeliveryNotice, error) {
 	var r rawNotice
@@ -204,18 +211,29 @@ func validateNotice(raw []byte) (DeliveryNotice, error) {
 	if err := validID(r.ID); err != nil {
 		return DeliveryNotice{}, err
 	}
-	if len(r.Destination) > maxAddrBytes {
-		return DeliveryNotice{}, errors.New("destination is too long")
+	ch := Channel(lo.FromPtrOr(r.Channel, string(emailChannel)))
+	if !slices.Contains(channels, ch) {
+		return DeliveryNotice{}, fmt.Errorf("channel %q is not a Channel", ch)
 	}
-	addr, err := mail.ParseAddress(r.Destination)
+	if Kind(r.Kind) == Undelivered && ch == emailChannel {
+		return DeliveryNotice{}, errors.New("undelivered is not a kind on email: a message that did not arrive bounced")
+	}
+	dest, err := noticeDestination(ch, r.Destination)
 	if err != nil {
-		return DeliveryNotice{}, fmt.Errorf("destination is not an address: %w", err)
+		return DeliveryNotice{}, err
 	}
 	f := DeliveryNotice{
 		ID:          r.ID,
-		Destination: strings.ToLower(strings.TrimSpace(addr.Address)),
+		Channel:     ch,
+		Destination: dest,
 		Kind:        Kind(r.Kind),
 		Hard:        r.Hard != nil && *r.Hard,
+	}
+	if f.Status, err = optionalID("status", r.Status); err != nil {
+		return DeliveryNotice{}, err
+	}
+	if f.ErrorCode, err = optionalID("error_code", r.ErrorCode); err != nil {
+		return DeliveryNotice{}, err
 	}
 	if r.SendingDomain != nil && *r.SendingDomain != "" {
 		domain := strings.ToLower(strings.TrimSpace(*r.SendingDomain))
@@ -236,12 +254,29 @@ func validateNotice(raw []byte) (DeliveryNotice, error) {
 	return f, nil
 }
 
+// noticeDestination checks where a notice's message went: on email a parsed, lower-cased
+// address; on another Channel a Destination as an Inbound message has one.
+func noticeDestination(ch Channel, d string) (string, error) {
+	if ch != emailChannel {
+		return validDestination(d)
+	}
+	if len(d) > maxAddrBytes {
+		return "", errors.New("destination is too long")
+	}
+	addr, err := mail.ParseAddress(d)
+	if err != nil {
+		return "", fmt.Errorf("destination is not an address: %w", err)
+	}
+	return strings.ToLower(strings.TrimSpace(addr.Address)), nil
+}
+
 // rawInbound is an Inbound message as the program returns it.
 type rawInbound struct {
 	Kind        string  `json:"kind"`
 	ID          string  `json:"id"`
 	Channel     string  `json:"channel"`
 	Destination string  `json:"destination"`
+	Country     *string `json:"country"`
 	ChatID      *string `json:"chat_id"`
 	Text        *string `json:"text"`
 	Payload     *string `json:"payload"`
@@ -265,6 +300,9 @@ func validateInbound(raw []byte) (InboundMessage, error) {
 		return InboundMessage{}, err
 	}
 	m := InboundMessage{ID: r.ID, Channel: Channel(r.Channel), Destination: dest}
+	if m.Country, err = optionalID("country", r.Country); err != nil {
+		return InboundMessage{}, err
+	}
 	if m.ChatID, err = optionalID("chat_id", r.ChatID); err != nil {
 		return InboundMessage{}, err
 	}

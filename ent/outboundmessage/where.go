@@ -130,6 +130,16 @@ func ComplainedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldComplainedAt, v))
 }
 
+// UndeliveredAt applies equality check predicate on the "undelivered_at" field. It's identical to UndeliveredAtEQ.
+func UndeliveredAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldUndeliveredAt, v))
+}
+
+// UndeliveredCode applies equality check predicate on the "undelivered_code" field. It's identical to UndeliveredCodeEQ.
+func UndeliveredCode(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldUndeliveredCode, v))
+}
+
 // OpenedAt applies equality check predicate on the "opened_at" field. It's identical to OpenedAtEQ.
 func OpenedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldOpenedAt, v))
@@ -1058,6 +1068,131 @@ func ComplainedAtIsNil() predicate.OutboundMessage {
 // ComplainedAtNotNil applies the NotNil predicate on the "complained_at" field.
 func ComplainedAtNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldComplainedAt))
+}
+
+// UndeliveredAtEQ applies the EQ predicate on the "undelivered_at" field.
+func UndeliveredAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtNEQ applies the NEQ predicate on the "undelivered_at" field.
+func UndeliveredAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtIn applies the In predicate on the "undelivered_at" field.
+func UndeliveredAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldUndeliveredAt, vs...))
+}
+
+// UndeliveredAtNotIn applies the NotIn predicate on the "undelivered_at" field.
+func UndeliveredAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldUndeliveredAt, vs...))
+}
+
+// UndeliveredAtGT applies the GT predicate on the "undelivered_at" field.
+func UndeliveredAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtGTE applies the GTE predicate on the "undelivered_at" field.
+func UndeliveredAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtLT applies the LT predicate on the "undelivered_at" field.
+func UndeliveredAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtLTE applies the LTE predicate on the "undelivered_at" field.
+func UndeliveredAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldUndeliveredAt, v))
+}
+
+// UndeliveredAtIsNil applies the IsNil predicate on the "undelivered_at" field.
+func UndeliveredAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldUndeliveredAt))
+}
+
+// UndeliveredAtNotNil applies the NotNil predicate on the "undelivered_at" field.
+func UndeliveredAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldUndeliveredAt))
+}
+
+// UndeliveredCodeEQ applies the EQ predicate on the "undelivered_code" field.
+func UndeliveredCodeEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeNEQ applies the NEQ predicate on the "undelivered_code" field.
+func UndeliveredCodeNEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeIn applies the In predicate on the "undelivered_code" field.
+func UndeliveredCodeIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldUndeliveredCode, vs...))
+}
+
+// UndeliveredCodeNotIn applies the NotIn predicate on the "undelivered_code" field.
+func UndeliveredCodeNotIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldUndeliveredCode, vs...))
+}
+
+// UndeliveredCodeGT applies the GT predicate on the "undelivered_code" field.
+func UndeliveredCodeGT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeGTE applies the GTE predicate on the "undelivered_code" field.
+func UndeliveredCodeGTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeLT applies the LT predicate on the "undelivered_code" field.
+func UndeliveredCodeLT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeLTE applies the LTE predicate on the "undelivered_code" field.
+func UndeliveredCodeLTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeContains applies the Contains predicate on the "undelivered_code" field.
+func UndeliveredCodeContains(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContains(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeHasPrefix applies the HasPrefix predicate on the "undelivered_code" field.
+func UndeliveredCodeHasPrefix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeHasSuffix applies the HasSuffix predicate on the "undelivered_code" field.
+func UndeliveredCodeHasSuffix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeIsNil applies the IsNil predicate on the "undelivered_code" field.
+func UndeliveredCodeIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldUndeliveredCode))
+}
+
+// UndeliveredCodeNotNil applies the NotNil predicate on the "undelivered_code" field.
+func UndeliveredCodeNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldUndeliveredCode))
+}
+
+// UndeliveredCodeEqualFold applies the EqualFold predicate on the "undelivered_code" field.
+func UndeliveredCodeEqualFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldUndeliveredCode, v))
+}
+
+// UndeliveredCodeContainsFold applies the ContainsFold predicate on the "undelivered_code" field.
+func UndeliveredCodeContainsFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldUndeliveredCode, v))
 }
 
 // OpenedAtEQ applies the EQ predicate on the "opened_at" field.

@@ -10,7 +10,8 @@ model CreateContactInput {
   /** Email address — optional; any alias key may be absent */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key */
+  /** Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone` */
   phone?: string | null;
 
   /** First name */
@@ -54,7 +55,8 @@ model UpdateContactInput {
   /** Email address — an alias key */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key */
+  /** Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone` */
   phone?: string | null;
 
   /** First name */

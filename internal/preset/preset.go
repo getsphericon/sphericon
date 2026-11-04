@@ -12,7 +12,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -39,7 +41,8 @@ const (
 var (
 	// ErrUnauthentic: the request did not come from the provider for this Integration.
 	ErrUnauthentic = errors.New("preset: request is not authentic")
-	// ErrMalformed: the body is not JSON, or is over the limit.
+	// ErrMalformed: the body is not JSON (not form-encoded, for a form-encoded request), or is
+	// over the limit.
 	ErrMalformed = errors.New("preset: request is malformed")
 	// ErrTransformFailed: the transform failed, timed out or returned something that is
 	// not a list of valid facts.
@@ -59,6 +62,9 @@ const (
 	Delivery  Kind = "delivery"
 	Delay     Kind = "delay"
 	Drop      Kind = "drop"
+	// Undelivered: the message did not reach the person, on a Channel other than email (an SMS the
+	// carrier could not deliver, ADR 0079). Email says bounced instead.
+	Undelivered Kind = "undelivered"
 )
 
 // MaxReasonChars caps a notice's provider reason, in characters.
@@ -72,7 +78,12 @@ const MaxReasonChars = 500
 type DeliveryNotice struct {
 	// ID is the provider's event id; with Destination it dedupes a redelivery.
 	ID string `json:"id"`
-	// Destination is the normalized (trimmed, lower-cased) address.
+	// Channel is the Channel of the message the notice is about: email when the transform names
+	// none.
+	Channel Channel `json:"channel"`
+	// Destination is where the message went: on email the normalized (trimmed, lower-cased)
+	// address, on another Channel the trimmed value the provider sent (a phone number, as the
+	// provider wrote it; the core normalizes it).
 	Destination string `json:"destination"`
 	Kind        Kind   `json:"kind"`
 	// Hard is meaningful for a bounce only: a soft bounce is the temporary kind.
@@ -82,9 +93,14 @@ type DeliveryNotice struct {
 	// MessageID is the provider's id of the message the notice is about, "" when the
 	// provider returns none: it links the notice to its Outbound message.
 	MessageID string `json:"message_id,omitempty"`
-	// Reason is the provider's short explanation of a bounce, delay or drop, capped at
+	// Reason is the provider's short explanation of a bounce, delay, drop or undelivered, capped at
 	// MaxReasonChars characters.
 	Reason string `json:"reason,omitempty"`
+	// Status is the provider's own word for the state it reports (Twilio's MessageStatus), ""
+	// when it sends none: kept as it came, so the core's reading of it loses nothing.
+	Status string `json:"status,omitempty"`
+	// ErrorCode is the provider's error code for a failure (Twilio's ErrorCode), "" when none.
+	ErrorCode string `json:"error_code,omitempty"`
 }
 
 // Channel is the Channel an Inbound message came in on: one of the Channels of ADR 0074.
@@ -123,6 +139,9 @@ type InboundMessage struct {
 	Channel Channel `json:"channel"`
 	// Destination is the address the message came from, trimmed: on Telegram the user id.
 	Destination string `json:"destination"`
+	// Country is the country the provider says the sender is in (ISO 3166-1 alpha-2), where it
+	// says one: a phone number written without its country code is read with it.
+	Country string `json:"country,omitempty"`
 	// ChatID is the chat the message came in, where the Channel has one: a reply goes there.
 	ChatID string `json:"chat_id,omitempty"`
 	// Text is what the person wrote, as written, cut at MaxTextChars characters.
@@ -190,6 +209,9 @@ type Params map[string]any
 
 // Request is what arrived at the hook.
 type Request struct {
+	// URL is the full URL the request was posted to (scheme, host, path and query), as the
+	// provider addressed it: a scheme that signs the URL (twilio) checks it.
+	URL    string
 	Header http.Header
 	// Body is the raw body, exactly as received.
 	Body []byte
@@ -252,7 +274,7 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 	var body any
 	if p.verifier.overBody() {
 		var err error
-		if body, err = parseBody(req.Body); err != nil {
+		if body, err = parseBody(req); err != nil {
 			return Result{}, err
 		}
 		if err := p.verifier.verify(ctx, req, body, params, now); err != nil {
@@ -263,7 +285,7 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, refusal(err)
 		}
 		var err error
-		if body, err = parseBody(req.Body); err != nil {
+		if body, err = parseBody(req); err != nil {
 			return Result{}, err
 		}
 	}
@@ -296,8 +318,48 @@ func (p *Preset) forTest() *Preset {
 	return &q
 }
 
-// parseBody reads the body as JSON whatever its Content-Type. Integers survive exactly.
-func parseBody(raw []byte) (any, error) {
+// formContentType is the media type of a form-encoded body (Twilio's callbacks).
+const formContentType = "application/x-www-form-urlencoded"
+
+// parseBody reads the body a transform sees: a form-encoded request's parameters, and JSON
+// whatever any other Content-Type says.
+func parseBody(req Request) (any, error) {
+	if isForm(req.Header) {
+		return parseForm(req.Body)
+	}
+	return parseJSON(req.Body)
+}
+
+// isForm reports whether the request says its body is form-encoded.
+func isForm(h http.Header) bool {
+	mediaType, _, err := mime.ParseMediaType(h.Get("Content-Type"))
+	return err == nil && mediaType == formContentType
+}
+
+// parseForm reads a form-encoded body as an object of each parameter's value, or the list of
+// its values when the name repeats.
+func parseForm(raw []byte) (any, error) {
+	values, err := url.ParseQuery(string(raw))
+	if err != nil {
+		return nil, fmt.Errorf("%w: body is not form-encoded: %w", ErrMalformed, err)
+	}
+	out := make(map[string]any, len(values))
+	for name, vs := range values {
+		if len(vs) == 1 {
+			out[name] = vs[0]
+			continue
+		}
+		list := make([]any, len(vs))
+		for i, v := range vs {
+			list[i] = v
+		}
+		out[name] = list
+	}
+	return out, nil
+}
+
+// parseJSON reads the body as JSON. Integers survive exactly.
+func parseJSON(raw []byte) (any, error) {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
 	var v any

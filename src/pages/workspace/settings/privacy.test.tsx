@@ -38,6 +38,8 @@ const workspace: SiteWorkspaceResource = {
   permissions: ['contacts:erase'],
   mcpUrl: 'https://mcp.sphericon.test/',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
+  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   holds: [],
   role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',

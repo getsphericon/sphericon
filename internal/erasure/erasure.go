@@ -14,6 +14,7 @@ package erasure
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -121,6 +122,15 @@ type Target struct {
 	Requester Requester
 }
 
+// destinations are the Target's addresses and its phone number: what a delivery record or a queued
+// message names the subject by besides its Contact id.
+func (t *Target) destinations() []string {
+	if t.Phone == "" {
+		return t.Destinations
+	}
+	return append(slices.Clone(t.Destinations), t.Phone)
+}
+
 // step is one part of the erasure, run inside the transaction.
 type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error
 
@@ -171,6 +181,7 @@ func (m *Module) steps() []step {
 		cancelRuleWork,
 		purgeOutbox,
 		purgeWebhookDeliveries,
+		eraseShortLinks,
 		eraseTelegram,
 		eraseEvents,
 		eraseVisitors,

@@ -3,7 +3,7 @@
 
 import { type DefaultBodyType, http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, SiteAnalyticsClicksByLinkResponses, SiteAnalyticsDeliverabilityResponses, SiteAnalyticsEventsResponses, SiteAnalyticsNewPeopleResponses, SiteAnalyticsOpensByHourResponses, SiteAnalyticsOverviewResponses, SiteAnalyticsRevenueResponses, SiteAnalyticsSubscribedPeopleResponses, SiteAttentionGetResponses, SiteAuditExportResponses, SiteAuditFacetsResponses, SiteAuditGetRetentionResponses, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginResponses, SiteAuthLogoutResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorResponses, SiteAuthSigninNotMeData, SiteAuthSigninNotMeResponses, SiteAuthSigninPendingDeclineData, SiteAuthSigninPendingDeclineResponses, SiteAuthSigninPendingResponses, SiteAuthSigninPendingSubmitData, SiteAuthSigninPendingSubmitResponses, SiteAuthSigninProvidersResponses, SiteAuthSignUpData, SiteAuthSignUpResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailResponses, SiteAutomationReportsGetResponses, SiteAutomationsArchiveResponses, SiteAutomationsCreateData, SiteAutomationsCreateResponses, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteResponses, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepResponses, SiteAutomationsGetResponses, SiteAutomationsListResponses, SiteAutomationsPublishResponses, SiteAutomationsRevertResponses, SiteAutomationsUnarchiveResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateResponses, SiteBrandKitGetResponses, SiteBrandKitRecreateStarterTemplatesResponses, SiteBrandKitSaveData, SiteBrandKitSaveResponses, SiteBroadcastLinksListResponses, SiteBroadcastsArchiveResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteResponses, SiteBroadcastsGetResponses, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleResponses, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendResponses, SiteBroadcastsUnarchiveResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateResponses, SiteCapturedMessagesDeleteAllResponses, SiteCapturedMessagesDeleteResponses, SiteCapturedMessagesGetResponses, SiteCapturedMessagesListResponses, SiteConnectionsDeleteResponses, SiteConnectionsListResponses, SiteContactsCreateData, SiteContactsCreateResponses, SiteContactsDeleteResponses, SiteContactsEraseResponses, SiteContactsExportResponses, SiteContactsGetResponses, SiteContactsListResponses, SiteContactsLookupResponses, SiteContactsUpdateData, SiteContactsUpdateResponses, SiteCustomFieldsListResponses, SiteCustomFieldsUpdateData, SiteCustomFieldsUpdateResponses, SiteDomainJoinGetResponses, SiteDomainJoinSetData, SiteDomainJoinSetResponses, SiteEnrollmentsGetResponses, SiteEnrollmentsListResponses, SiteEventsActionsResponses, SiteEventsListResponses, SiteIdentitiesListResponses, SiteIdentitiesUnlinkResponses, SiteInstanceGetReleaseResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteResponses, SiteIntegrationsGetResponses, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateResponses, SiteInvitationsDeleteResponses, SiteInvitationsListResponses, SiteJoinDomainsAddData, SiteJoinDomainsAddResponses, SiteJoinDomainsListResponses, SiteJoinDomainsRemoveResponses, SiteJoinDomainsVerifyResponses, SiteLegalDocumentsGetResponses, SiteLegalDocumentsSignupItemsResponses, SiteMembershipsDeleteResponses, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideResponses, SiteOAuthDescribeResponses, SiteOptionalConsentsListResponses, SiteOptionalConsentsSetData, SiteOptionalConsentsSetResponses, SitePasskeyLoginBeginResponses, SitePasskeyLoginFinishData, SitePasskeyLoginFinishResponses, SitePasskeysBeginCheckResponses, SitePasskeysBeginRegistrationResponses, SitePasskeysFinishCheckData, SitePasskeysFinishCheckResponses, SitePasskeysFinishRegistrationData, SitePasskeysFinishRegistrationResponses, SitePasskeysListResponses, SitePasskeysRemoveData, SitePasskeysRemoveResponses, SitePasskeysRenameData, SitePasskeysRenameResponses, SitePersonalTokensCreateData, SitePersonalTokensCreateResponses, SitePersonalTokensDeleteResponses, SitePersonalTokensGrantableScopesResponses, SitePersonalTokensListResponses, SitePresetsListResponses, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformResponses, SiteRuleFiringsListResponses, SiteRulesCreateData, SiteRulesCreateResponses, SiteRulesDeactivateResponses, SiteRulesDeleteResponses, SiteRulesDryRunData, SiteRulesDryRunResponses, SiteRulesGetResponses, SiteRulesListResponses, SiteRulesPublishResponses, SiteRulesRevertResponses, SiteRulesUpdateData, SiteRulesUpdateResponses, SiteSchemaApplyMigrationsResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentResponses, SiteSegmentContactsListResponses, SiteSegmentsArchiveResponses, SiteSegmentsCreateData, SiteSegmentsCreateResponses, SiteSegmentsGetResponses, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewResponses, SiteSegmentsUnarchiveResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetResponses, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyResponses, SiteSetupChecklistGetResponses, SiteSignupSurveySubmitData, SiteSignupSurveySubmitResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteResponses, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyResponses, SiteTagsDeleteResponses, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveResponses, SiteTelegramIssueStartLinkData, SiteTelegramIssueStartLinkResponses, SiteTelegramListBindingsResponses, SiteTemplatesCreateData, SiteTemplatesCreateResponses, SiteTemplatesDeleteResponses, SiteTemplatesGetResponses, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateResponses, SiteTokensDeleteResponses, SiteTokensListResponses, SiteTokensUpdateData, SiteTokensUpdateResponses, SiteTrackingDomainsListResponses, SiteTrackingDomainsRemoveResponses, SiteTrackingDomainsSetData, SiteTrackingDomainsSetResponses, SiteTrackingDomainsVerifyResponses, SiteTransactionalEmailsListResponses, SiteUserAcceptPendingData, SiteUserAcceptPendingResponses, SiteUserDeleteUserData, SiteUserDeleteUserLinkData, SiteUserDeleteUserLinkResponses, SiteUserDeleteUserResponses, SiteUserEmailChangeData, SiteUserEmailChangeResponses, SiteUserGetMeResponses, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateResponses, SiteWebhooksDeleteResponses, SiteWebhooksGetResponses, SiteWebhooksListResponses, SiteWebhooksRegenerateSecretResponses, SiteWebhooksTestData, SiteWebhooksTestResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkResponses, SiteWorkspacesCreateData, SiteWorkspacesCreateResponses, SiteWorkspacesDeleteData, SiteWorkspacesDeleteResponses, SiteWorkspacesGetRevenueSettingsResponses, SiteWorkspacesLeaveResponses, SiteWorkspacesLiftSecondFactorRequirementResponses, SiteWorkspacesListDeletedResponses, SiteWorkspacesListResponses, SiteWorkspacesRequireSecondFactorResponses, SiteWorkspacesRestoreResponses, SiteWorkspacesSetTimezoneData, SiteWorkspacesSetTimezoneResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateResponses, SiteWorkspacesUpdateRevenueSettingsData, SiteWorkspacesUpdateRevenueSettingsResponses } from './types.gen.ts';
+import type { ClientOptions, SiteAnalyticsClicksByLinkResponses, SiteAnalyticsDeliverabilityResponses, SiteAnalyticsEventsResponses, SiteAnalyticsNewPeopleResponses, SiteAnalyticsOpensByHourResponses, SiteAnalyticsOverviewResponses, SiteAnalyticsRevenueResponses, SiteAnalyticsSubscribedPeopleResponses, SiteAttentionGetResponses, SiteAuditExportResponses, SiteAuditFacetsResponses, SiteAuditGetRetentionResponses, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginResponses, SiteAuthLogoutResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorResponses, SiteAuthSigninNotMeData, SiteAuthSigninNotMeResponses, SiteAuthSigninPendingDeclineData, SiteAuthSigninPendingDeclineResponses, SiteAuthSigninPendingResponses, SiteAuthSigninPendingSubmitData, SiteAuthSigninPendingSubmitResponses, SiteAuthSigninProvidersResponses, SiteAuthSignUpData, SiteAuthSignUpResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailResponses, SiteAutomationReportsGetResponses, SiteAutomationsArchiveResponses, SiteAutomationsCreateData, SiteAutomationsCreateResponses, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteResponses, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepResponses, SiteAutomationsGetResponses, SiteAutomationsListResponses, SiteAutomationsPublishResponses, SiteAutomationsRevertResponses, SiteAutomationsUnarchiveResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateResponses, SiteBrandKitGetResponses, SiteBrandKitRecreateStarterTemplatesResponses, SiteBrandKitSaveData, SiteBrandKitSaveResponses, SiteBroadcastLinksListResponses, SiteBroadcastsArchiveResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteResponses, SiteBroadcastsGetResponses, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleResponses, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendResponses, SiteBroadcastsUnarchiveResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateResponses, SiteCapturedMessagesDeleteAllResponses, SiteCapturedMessagesDeleteResponses, SiteCapturedMessagesGetResponses, SiteCapturedMessagesListResponses, SiteConnectionsDeleteResponses, SiteConnectionsListResponses, SiteContactsCreateData, SiteContactsCreateResponses, SiteContactsDeleteResponses, SiteContactsEraseResponses, SiteContactsExportResponses, SiteContactsGetResponses, SiteContactsListResponses, SiteContactsLookupResponses, SiteContactsUpdateData, SiteContactsUpdateResponses, SiteCustomFieldsListResponses, SiteCustomFieldsUpdateData, SiteCustomFieldsUpdateResponses, SiteDomainJoinGetResponses, SiteDomainJoinSetData, SiteDomainJoinSetResponses, SiteEnrollmentsGetResponses, SiteEnrollmentsListResponses, SiteEventsActionsResponses, SiteEventsListResponses, SiteIdentitiesListResponses, SiteIdentitiesUnlinkResponses, SiteInstanceGetReleaseResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteResponses, SiteIntegrationsGetResponses, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateResponses, SiteInvitationsDeleteResponses, SiteInvitationsListResponses, SiteJoinDomainsAddData, SiteJoinDomainsAddResponses, SiteJoinDomainsListResponses, SiteJoinDomainsRemoveResponses, SiteJoinDomainsVerifyResponses, SiteLegalDocumentsGetResponses, SiteLegalDocumentsSignupItemsResponses, SiteMembershipsDeleteResponses, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideResponses, SiteOAuthDescribeResponses, SiteOptionalConsentsListResponses, SiteOptionalConsentsSetData, SiteOptionalConsentsSetResponses, SitePasskeyLoginBeginResponses, SitePasskeyLoginFinishData, SitePasskeyLoginFinishResponses, SitePasskeysBeginCheckResponses, SitePasskeysBeginRegistrationResponses, SitePasskeysFinishCheckData, SitePasskeysFinishCheckResponses, SitePasskeysFinishRegistrationData, SitePasskeysFinishRegistrationResponses, SitePasskeysListResponses, SitePasskeysRemoveData, SitePasskeysRemoveResponses, SitePasskeysRenameData, SitePasskeysRenameResponses, SitePersonalTokensCreateData, SitePersonalTokensCreateResponses, SitePersonalTokensDeleteResponses, SitePersonalTokensGrantableScopesResponses, SitePersonalTokensListResponses, SitePresetsListResponses, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformResponses, SiteRuleFiringsListResponses, SiteRulesCreateData, SiteRulesCreateResponses, SiteRulesDeactivateResponses, SiteRulesDeleteResponses, SiteRulesDryRunData, SiteRulesDryRunResponses, SiteRulesGetResponses, SiteRulesListResponses, SiteRulesPublishResponses, SiteRulesRevertResponses, SiteRulesUpdateData, SiteRulesUpdateResponses, SiteSchemaApplyMigrationsResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentResponses, SiteSegmentContactsListResponses, SiteSegmentsArchiveResponses, SiteSegmentsCreateData, SiteSegmentsCreateResponses, SiteSegmentsGetResponses, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewResponses, SiteSegmentsUnarchiveResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetResponses, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyResponses, SiteSetupChecklistGetResponses, SiteSignupSurveySubmitData, SiteSignupSurveySubmitResponses, SiteSmsConsentsConfirmData, SiteSmsConsentsConfirmResponses, SiteSmsConsentsGetResponses, SiteSmsConsentsOptOutResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteResponses, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyResponses, SiteTagsDeleteResponses, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveResponses, SiteTelegramIssueStartLinkData, SiteTelegramIssueStartLinkResponses, SiteTelegramListBindingsResponses, SiteTemplatesCreateData, SiteTemplatesCreateResponses, SiteTemplatesDeleteResponses, SiteTemplatesGetResponses, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateResponses, SiteTokensDeleteResponses, SiteTokensListResponses, SiteTokensUpdateData, SiteTokensUpdateResponses, SiteTrackingDomainsListResponses, SiteTrackingDomainsRemoveResponses, SiteTrackingDomainsSetData, SiteTrackingDomainsSetResponses, SiteTrackingDomainsVerifyResponses, SiteTransactionalEmailsListResponses, SiteUserAcceptPendingData, SiteUserAcceptPendingResponses, SiteUserDeleteUserData, SiteUserDeleteUserLinkData, SiteUserDeleteUserLinkResponses, SiteUserDeleteUserResponses, SiteUserEmailChangeData, SiteUserEmailChangeResponses, SiteUserGetMeResponses, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateResponses, SiteWebhooksDeleteResponses, SiteWebhooksGetResponses, SiteWebhooksListResponses, SiteWebhooksRegenerateSecretResponses, SiteWebhooksTestData, SiteWebhooksTestResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkResponses, SiteWorkspacesCreateData, SiteWorkspacesCreateResponses, SiteWorkspacesDeleteData, SiteWorkspacesDeleteResponses, SiteWorkspacesGetRevenueSettingsResponses, SiteWorkspacesLeaveResponses, SiteWorkspacesLiftSecondFactorRequirementResponses, SiteWorkspacesListDeletedResponses, SiteWorkspacesListResponses, SiteWorkspacesRequireSecondFactorResponses, SiteWorkspacesRestoreResponses, SiteWorkspacesSetTimezoneData, SiteWorkspacesSetTimezoneResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateResponses, SiteWorkspacesUpdateRevenueSettingsData, SiteWorkspacesUpdateRevenueSettingsResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -3414,6 +3414,105 @@ export function handleSiteTelegramListBindings(response?: HandleSiteTelegramList
   }, options);
 }
 
+export type HandleSiteSmsConsentsConfirmResponse = {
+  body: SiteSmsConsentsConfirmResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations` operation.
+ */
+export function handleSiteSmsConsentsConfirm(response?: HandleSiteSmsConsentsConfirmResponse | HttpResponseResolver<{
+  workspaceId: string;
+  contactId: string;
+}, SiteSmsConsentsConfirmData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.post<{
+    workspaceId: string;
+    contactId: string;
+  }, SiteSmsConsentsConfirmData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/sms-confirmations`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteSmsConsentsGetResponse = {
+  body: SiteSmsConsentsGetResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent` operation.
+ */
+export function handleSiteSmsConsentsGet(response?: HandleSiteSmsConsentsGetResponse | HttpResponseResolver<{
+  workspaceId: string;
+  contactId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<{
+    workspaceId: string;
+    contactId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/sms-consent`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteSmsConsentsOptOutResponse = {
+  body: SiteSmsConsentsOptOutResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs` operation.
+ */
+export function handleSiteSmsConsentsOptOut(response?: HandleSiteSmsConsentsOptOutResponse | HttpResponseResolver<{
+  workspaceId: string;
+  contactId: string;
+}, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.post<{
+    workspaceId: string;
+    contactId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/sms-opt-outs`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
 export type HandleSiteTagsListForContactResponse = {
   body: SiteTagsListForContactResponses[200];
   status?: 200;
@@ -6793,6 +6892,18 @@ export type MswHandlerFactories = {
    */
   siteTelegramListBindings: typeof handleSiteTelegramListBindings;
   /**
+   * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations` operation.
+   */
+  siteSmsConsentsConfirm: typeof handleSiteSmsConsentsConfirm;
+  /**
+   * Handler for the `GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent` operation.
+   */
+  siteSmsConsentsGet: typeof handleSiteSmsConsentsGet;
+  /**
+   * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs` operation.
+   */
+  siteSmsConsentsOptOut: typeof handleSiteSmsConsentsOptOut;
+  /**
    * Handler for the `GET /workspaces/{workspaceId}/contacts/{contactId}/tags` operation.
    */
   siteTagsListForContact: typeof handleSiteTagsListForContact;
@@ -7287,6 +7398,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     siteContactsExport: wrap(handleSiteContactsExport),
     siteContactsLookup: wrap(handleSiteContactsLookup),
     siteTelegramListBindings: wrap(handleSiteTelegramListBindings),
+    siteSmsConsentsConfirm: wrap(handleSiteSmsConsentsConfirm),
+    siteSmsConsentsGet: wrap(handleSiteSmsConsentsGet),
+    siteSmsConsentsOptOut: wrap(handleSiteSmsConsentsOptOut),
     siteTagsListForContact: wrap(handleSiteTagsListForContact),
     siteTagsApply: wrap(handleSiteTagsApply),
     siteTagsRemove: wrap(handleSiteTagsRemove),
@@ -7405,6 +7519,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.siteBroadcastsTestSend, overrides.siteBroadcastsTestSend),
       invoke(pick.siteBroadcastsUnarchive, overrides.siteBroadcastsUnarchive),
       invoke(pick.siteTelegramListBindings, overrides.siteTelegramListBindings),
+      invoke(pick.siteSmsConsentsConfirm, overrides.siteSmsConsentsConfirm),
+      invoke(pick.siteSmsConsentsGet, overrides.siteSmsConsentsGet),
+      invoke(pick.siteSmsConsentsOptOut, overrides.siteSmsConsentsOptOut),
       invoke(pick.siteTagsListForContact, overrides.siteTagsListForContact),
       invoke(pick.siteTagsApply, overrides.siteTagsApply),
       invoke(pick.siteTelegramIssueStartLink, overrides.siteTelegramIssueStartLink),

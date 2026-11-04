@@ -158,7 +158,24 @@ export function SetupChecklist({
             </Grid>
           )
         })}
+        <SMSOffer workspaceId={workspaceId} />
       </Stack>
     </Card>
+  )
+}
+
+// SMSOffer points at the other way to reach Contacts: a Twilio account connected as the SMS
+// Integration, on the same Integrations page. It is no step: the path is to the first email.
+function SMSOffer({ workspaceId }: { workspaceId: string }) {
+  const { t } = useTranslation()
+  return (
+    <Group justify="space-between" gap="sm">
+      <Text size="sm" c="dimmed">
+        {t(($) => $.setupChecklist.sms.description)}
+      </Text>
+      <ButtonLink to={emailsRoute.to} params={{ workspaceId }} variant="subtle" size="xs">
+        {t(($) => $.setupChecklist.sms.action)}
+      </ButtonLink>
+    </Group>
   )
 }

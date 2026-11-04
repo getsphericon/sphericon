@@ -126,7 +126,9 @@ Custom field values, Tags and Confirmation are removed, as are its customer-trac
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
 metering counts do not change. What survives is the minimum that keeps the refusal honored: the
 Unsubscribe rows and the active Suppression rows for its Destinations (lifted ones refuse
-nothing and go). It leaves a PII-free `contact.erased`
+nothing and go); on SMS they keep only the phone number's hash, which still refuses the number, and
+nothing else of the number stays (sphericon does not delete the texts in Twilio's own log). It
+leaves a PII-free `contact.erased`
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
 subject_id so downstream copies can be erased). A person who later reappears (Identify, import) is a new Contact and
 is not blocked; surviving opt-outs still apply to them. The Workspace is the controller and sphericon
@@ -147,7 +149,7 @@ _Avoid_: Backup, dump, contact export (that is the bulk list export)
 
 **Retention**:
 How long an Event is kept before it is deleted. Events split by purpose: **evidentiary** Events
-(consent proof such as `marketing.confirmed`, hard bounces and complaints, unsubscribes)
+(consent proof such as `marketing.confirmed` and `sms.confirmed`, hard bounces and complaints, unsubscribes)
 are the audit and dispute record and are never deleted by age; **analytical** Events (opens, clicks,
 deliveries, customer-tracked actions) are deleted once older than the instance's retention window,
 so segment conditions cannot look back past it.
@@ -251,7 +253,9 @@ _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
-global facts: hard bounce, spam complaint, and manual bans. Destination-centric (covers
+global facts: hard bounce, spam complaint, and manual bans. On SMS a number the provider reports
+reaches no handset (no mobile number, unknown) is suppressed as a bounce; an ambiguous failure (a
+carrier filter, an unknown code) never is. Destination-centric (covers
 destinations with no contact) and a compliance ratchet (bounce/complaint do not auto-clear).
 Removing one is **lifting** it: the row stays with `lifted_at` and no longer blocks sends.
 The send path's global hard floor, checked on every send.
@@ -272,7 +276,8 @@ _Avoid_: Topic, list, mailing list, subscription group
 **Unsubscribe** (the record):
 A per-(workspace, channel, destination, Sending source) opt-out from marketing — keyed by
 destination, not by Contact, so it survives contact deletion and re-import (the GDPR-erasure
-case: the opt-out is the minimum data retained to honor the refusal). Toggleable: a contact can
+case: the opt-out is the minimum data retained to honor the refusal; on SMS it keeps the number's
+hash instead of the number once its Contact is erased). Toggleable: a contact can
 resubscribe.
 Absence means subscribed — there is no positive subscription row and no "subscribed" flag on
 the Contact. The default in-email link unsubscribes from the _sending source_ only;
@@ -285,12 +290,20 @@ unsubscribe page that the author put into the message. Its reversal (START, a re
 bot) lifts it.
 On Telegram the Destination is the user's id, so one stop covers every bot of the Workspace, and it
 is recorded with the `telegram.unsubscribed` System event: `/stop`, a STOP keyword (the core's list,
-shared with SMS later), a press on the message's unsubscribe button (a callback button with the fixed
+shared with SMS), a press on the message's unsubscribe button (a callback button with the fixed
 payload `unsubscribe`, attributed to the Broadcast or Automation of the message when its provider
 message id resolves to an Outbound message) and blocking the bot, which Telegram reports by an update
 or by refusing a send. A `/start`, bare or with a token, and unblocking the bot lift it. A deactivated
 user is no opt-out: the Binding goes (`telegram.unbound`). A stop from a Destination nobody is Bound to
 is still kept, and records nothing else.
+On SMS the Destination is the phone number in E.164, never the sender's, so changing the sender
+reactivates nobody. Every SMS opt-out is Channel-wide: a text that is exactly a STOP keyword (from any
+number, a Contact's or not; "please don't stop" is a reply), a send Twilio refuses with 21610 (the
+number texted STOP to the sender there; the message is Skipped), the `{{ unsubscribe_url }}` link of a
+text, and one recorded by hand. Each drops the number's SMS Confirmation. A text that is exactly START
+or UNSTOP lifts it and records a Confirmation with provenance `keyword` (`sms.confirmed`). sphericon
+answers neither. The row keeps how the person stopped (`via`: keyword, refused send, link, manual),
+which the Contact card shows.
 On email the opt-out is offered two ways with **identical scope**: the visible footer link and an RFC 8058
 **one-click** `List-Unsubscribe` header (Broadcast + Automation only, never Transactional — see
 ADR 0012), both carrying the same source-scoped token; a mailbox provider's one-click button never
@@ -307,15 +320,17 @@ separate facts, never one field.
 **Confirmation** (confirmed opt-in):
 The **positive** mirror of an Unsubscribe: a per-(workspace, channel, destination) consent fact,
 recorded as a derived destination-keyed row (the fast eligibility gate) written alongside an
-immutable `marketing.confirmed` **Event** (the source of truth — GDPR Art. 7 "demonstrate
-consent" proof, and a bus signal that can trigger a welcome Automation). It exists so double
+immutable **Event** of its Channel (the source of truth — GDPR Art. 7 "demonstrate
+consent" proof, and a bus signal that can trigger a welcome Automation): `marketing.confirmed`
+on email, `sms.confirmed` on SMS, so a trigger on one Channel's consent never starts what was
+written for another's. It exists so double
 opt-in can be modeled **without** reintroducing a subscription status: the truth is an event, not
 a mutable flag. Required on SMS and WhatsApp always, and on email only when the workspace's
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
 confirmation link), `grandfathered` (existing contacts at policy-enablement), `imported`
 (asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
-START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins on dedup. sphericon runs no SMS
+START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins (`double_opt_in` > `keyword` > `imported` > `grandfathered`): a weaker or equal one never replaces the one that stands. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
 is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fabricate consent. An
 `everything` unsubscribe invalidates the gate row (the event log keeps the history), so returning
@@ -334,7 +349,7 @@ default). It is never converted to another Channel, nor copied into one. A new B
 its Channel first, among the Channels the Workspace has an enabled Integration for, and the
 Broadcasts of every Channel share one list with a Channel column and filter. Its audience is a
 Segment (or all Contacts), reached at the Channel's Destination: a Contact without one is never a
-Recipient. Scheduling takes a **copy of the
+Recipient. An SMS Broadcast needs an SMS Integration in the Workspace to be created at all. Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
 Send-eligibility. Sends under the
@@ -354,8 +369,8 @@ shrink when the Events expire. Delivery figures (delivered, bounced, complained)
 the Outbound message's delivery result, never counted from Events. A Broadcast's figures (recipients, sent,
 skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
 their messages and never stored, so they are live while it sends. Each Channel reports its own: a
-Telegram Broadcast has no opened, delivered, bounced or complained count and no open or delivery
-rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
+Telegram or SMS Broadcast has no opened, delivered, bounced or complained count and no open or
+delivery rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
 bot is one Recipient and one Outbound message, sent to each of its chats. Contrast Segment, which is a
 live query and never materialized.
 _Avoid_: Send log, delivery row
@@ -367,8 +382,8 @@ pipeline: the Workspace freeze check, the Send route of that Channel, the claim 
 message, Send-eligibility on the Channel, rendering, the Provider limit and Send cap, the provider
 call, and the record of the result with the Channel's `<channel>.sent` Event. Only a per-Channel
 **renderer** and **provider adapter** differ: email's hold the Sending-domain gate, the unsubscribe
-footer and List-Unsubscribe, the open pixel and DKIM signing, and a Test send and the System sender
-are email's alone. Adding a Channel adds its renderer and adapter to the Outbound send and its
+footer and List-Unsubscribe, the open pixel and DKIM signing, and the System sender is email's
+alone. Adding a Channel adds its renderer and adapter to the Outbound send and its
 providers to the catalogue, and touches no step of the pipeline. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
 on the Integration, each passing Send-eligibility on its own; a Contact with no Destination on the
 Channel is Skipped. Every surface goes through it; none re-implements any part.
@@ -387,10 +402,10 @@ _Avoid_: Provider resolution, sender lookup
 
 **Test send**:
 A Broadcast's author sending it to one address they name, to see the mail before it goes out. On
-SMS and WhatsApp the address is a phone number they type, sent through the Broadcast's Integration;
-Telegram and push have no Test send. It
-skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
-Activity or the rates. It goes through the Integration the Broadcast sends through (its own, else
+SMS and WhatsApp the address is a phone number they type with its country code, sent through the
+Broadcast's Integration with sample merge data, no unsubscribe link and no delivery report asked
+for; Telegram and push have no Test send. It skips Send-eligibility and leaves no Outbound message
+or `<channel>.sent` Event, so it never shows in Activity or the rates. It goes through the Integration the Broadcast sends through (its own, else
 the Workspace's default). While none of the Workspace's Sending domains is verified and that
 Integration delivers outside (or there is none to send through), it goes from the System sender, and
 only to the address of the User who asks. Through a Test inbox, which delivers nowhere outside, it
@@ -409,8 +424,10 @@ The durable record of one Outbound send — which surface and which of its recor
 the Sending source (none for Transactional), the Sending domain, the provider's message id, the
 outcome, and the delivery result: the first Delivery notice of each kind that arrives stamps it once
 (delivered, read and undelivered on any Channel that reports them; bounced and complained on
-email), and a stamp is never removed, so reports of old sends do not shrink
-when Events expire. Claimed before the provider is called, under a per-logical-send idempotency key, so a
+email), and a stamp is never removed, so reports of old sends do not shrink when Events expire.
+Delivered and undelivered are final: the first of them stamps and the other never follows, so a
+late report cannot move a message backwards, and a message with no final report has neither.
+Claimed before the provider is called, under a per-logical-send idempotency key, so a
 retry never sends twice. Holds provenance and outcome, never rendered content. A Broadcast
 recipient points at its Outbound message; it does not replace it.
 _Avoid_: Send log, delivery row, email record
@@ -418,10 +435,11 @@ _Avoid_: Send log, delivery row, email record
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
 Channel, Suppression, Unsubscribe, or missing Confirmation), or a permanent failure of that one message
-(on Telegram, a message the Bot API refuses for its content) — or
+(on Telegram, a message the Bot API refuses for its content; on SMS, a number the provider refuses,
+which fails that message alone and lets an Automation go on) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
 Sending domain, no Integration, a provider that has stopped the customer's account, a provider that
-refuses the Integration's credentials (`provider_refused`), or
+refuses the Integration's credentials or account (`provider_refused`), or
 a WhatsApp template Meta has paused or disabled) or a **Deferral** (the Integration's Provider
 limit or the Workspace's Send cap is spent, or the provider asks to slow down), after which the
 same messages may still be sent.
@@ -462,7 +480,8 @@ pauses with its remaining recipients pending, Automation Enrollments wait, a Tra
 is refused. Distinct from _Skipped_, which is final for one destination. The reasons are
 `workspace_suspended`, `workspace_pending_deletion`, `staff_hold`, `no_integration`,
 `unverified_domain`, `provider_stopped` and `provider_refused`. The last is found at send time: the
-provider refused the Integration's credentials (Telegram's 401, a revoked bot token), the Integration
+provider refused the Integration's credentials or account (Telegram's 401, a revoked bot token, a
+suspended Twilio account or a sender it cannot use), the Integration
 keeps that standing until it is saved again with credentials the provider accepts, and only the work
 that sends through it waits.
 _Avoid_: Block, failure, ban
@@ -607,7 +626,7 @@ What one message on one Channel says, its shape fixed by the Channel and never s
 Channels: on email a subject plus a body of email-ready HTML; on SMS a text; on Telegram a
 formatted text with an optional image and link buttons; on web and mobile push a title, a text, a
 link and an optional image; on WhatsApp a WhatsApp template reference. Every Channel uses the same
-Liquid merge tags, and images are linked by URL. A Telegram text is Telegram's HTML subset (`b strong i em u ins s strike del a code pre tg-spoiler blockquote`, `a` with an http(s) `href` only): merge-tag values are HTML-escaped, then the whole text is sanitized to the subset and balanced, and its length is checked as written (Publish of an Automation and Schedule of a Broadcast refuse it, by the same rule) and as rendered (`content_too_long` fails that one message): 4096 characters, or 1024 when the message has an image, where the text is the image's caption. A Telegram message may also carry an `https` image (sent by `sendPhoto`), up to 8 link buttons (one per row, an inline keyboard) and a link-preview switch (on by default). `{{ unsubscribe_url }}` is a merge tag on Telegram: it renders a source-scoped unsubscribe link whose token names the Channel, so it opts the chat's Telegram user id out of that source on Telegram only and leaves email untouched. A Telegram Broadcast holds the same Message content as a Telegram step (text, image, link buttons, link preview, unsubscribe button): its columns are the step's fields. One shared editor edits it, in the Automation step and the Broadcast. On email, A body written in the editor is built from the editor's document, which is kept with it; a
+Liquid merge tags, and images are linked by URL. A Telegram text is Telegram's HTML subset (`b strong i em u ins s strike del a code pre tg-spoiler blockquote`, `a` with an http(s) `href` only): merge-tag values are HTML-escaped, then the whole text is sanitized to the subset and balanced, and its length is checked as written (Publish of an Automation and Schedule of a Broadcast refuse it, by the same rule) and as rendered (`content_too_long` fails that one message): 4096 characters, or 1024 when the message has an image, where the text is the image's caption. A Telegram message may also carry an `https` image (sent by `sendPhoto`), up to 8 link buttons (one per row, an inline keyboard) and a link-preview switch (on by default). `{{ unsubscribe_url }}` is a merge tag on Telegram: it renders a source-scoped unsubscribe link whose token names the Channel, so it opts the chat's Telegram user id out of that source on Telegram only and leaves email untouched. An SMS text is plain: merge-tag values are written as they are, nothing is appended to it, and `{{ unsubscribe_url }}` renders the same source-scoped link for the phone number on SMS only. An SMS text is counted as written in characters and segments (the parts it is sent in): GSM-7 is 160 characters in one segment or 153 per segment, with an extension character (`€ { } [ ] ~ | \ ^`) counting two; one character outside GSM-7 (any Cyrillic, any emoji) makes the whole text UCS-2, 70 or 67 per segment. The editor shows the count as the text is typed and flags a text longer than the provider sends, and a save refuses it: the provider's length limit is in characters of the text's encoding, counted the same way (Twilio's: 1,600 in GSM-7, 700 in UCS-2; it caps no number of segments). A Telegram Broadcast holds the same Message content as a Telegram step (text, image, link buttons, link preview, unsubscribe button): its columns are the step's fields. One shared editor edits it, in the Automation step and the Broadcast. On email, A body written in the editor is built from the editor's document, which is kept with it; a
 body that arrived as HTML (from the API) has no document and opens as source. On email a Template is the saved,
 named instance of it; a Broadcast and each email Automation send step each hold their own
 copy; a Transactional send renders a _referenced_ Template's content with per-call variables.
@@ -678,6 +697,17 @@ a secret sphericon generates (replacing any webhook the bot had), read with the 
 `telegram` Preset, which no other Integration takes. Its Provider limit is 30 a second, from
 Telegram's side. While it is enabled and not deleted it holds the bot's webhook: regenerating
 its hook key moves the webhook, and disabling or deleting it removes the webhook.
+A **Twilio** Integration is the Workspace's own Twilio account on the `sms` Channel. Its send
+credential (an API key and its secret, or the Account SID and its Auth Token) and its sender (a
+number of the account, an alphanumeric sender ID or a Messaging Service) are its config; the Auth
+Token that signs Twilio's callbacks is the param of the built-in `twilio` Preset, which no other
+Integration takes, so either is rotated alone. Saving it reads the sender with the credentials
+before the save commits (a wrong or revoked key, or a sender the account does not have, refuses
+the save) and points the sender's callbacks at the Ingest hook where Twilio's API allows it (a
+number's inbound webhook, a Messaging Service's inbound and status webhooks), again when its hook
+key is regenerated; otherwise the hook URL is shown to paste into Twilio. Deleting it leaves the
+sender's webhooks as they are. Its Provider limit is the user's alone. Registering the sender with
+carriers (10DLC, toll-free verification, short codes) is the Workspace's.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Test inbox**:
@@ -696,7 +726,7 @@ _Avoid_: Inbox message, email log
 **Tracking domain**:
 A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge,
 on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
-in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages and
+in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages and SMS and
 the first-party tracker, for its own collect key only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
 Workspace that sends no mail can have one. Another host is another Tracking domain: a replacement
 takes over only once it serves, and the one it replaces, or one removed, is **retired**: it serves
@@ -706,14 +736,18 @@ Instance's edge or the Owner forgets it.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Short tracked link**:
-The link `https://<Tracking domain or Instance host>/c/<token>` that stands, in a Telegram message, for
-one URL of one Outbound message: every `<a href>` of the text and every link button's URL is rewritten
-into one when the message is rendered, never through a third-party shortener. The token is a short random
-value stored with the Outbound message and the URL it redirects to, so a retried message reuses its tokens;
-an unknown token answers 404. Following one records `telegram.clicked` (a request from Telegram's
-link-preview fetcher is **Machine engagement**) and redirects. The message's own unsubscribe link is not
-wrapped, and email keeps its signed click links. A click on any Channel is what **Attribution window**
-credits an Order to.
+The link `https://<Tracking domain or Instance host>/c/<token>` that stands, in a Telegram message or an
+SMS, for one URL of one Outbound message: every `<a href>` of a Telegram text and every link button's URL,
+and every http(s) link of an SMS text, is rewritten into one when the message is rendered, never through a
+third-party shortener. An SMS may keep its links as written (link tracking off, per step or Broadcast); a
+tracked SMS's characters and segments are counted with its links at the short link's length, in the editor and at save.
+The token is a short random value stored with the Outbound message and the URL it redirects to, so a
+retried message reuses its tokens; an unknown token answers 404. Following one records `telegram.clicked`
+or `sms.clicked` (a request from a messaging app's or a carrier's link-preview fetcher is **Machine
+engagement**) and redirects. An SMS **Test send** shows the same form through links with no Outbound
+message, one per URL the Workspace tested: they redirect and record nothing. The message's own
+unsubscribe link is not wrapped, and email keeps its signed click links. A click on any Channel is what
+**Attribution window** credits an Order to.
 _Avoid_: Redirect link, shortener, vanity link
 
 **Sending domain**:

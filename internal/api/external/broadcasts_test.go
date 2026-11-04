@@ -158,7 +158,7 @@ func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"},
+	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsTestSendNoContent{}, out)
@@ -220,7 +220,7 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsSetSegmentForbidden{}, aud)
-	ts, err := readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
+	ts, err := readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsTestSendForbidden{}, ts)
 	assert.Empty(t, env.CustomerMail.Messages())
@@ -325,7 +325,7 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	rep, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: foreignID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsReportNotFound{}, rep)
-	ts, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"}, externalapi.BroadcastsTestSendParams{ID: foreignID})
+	ts, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: foreignID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsTestSendNotFound{}, ts)
 	assert.Empty(t, env.CustomerMail.Messages())

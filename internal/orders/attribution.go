@@ -44,7 +44,7 @@ func credit(ctx context.Context, s *ent.Scoped, create *ent.OrderScopedCreate, c
 	return nil
 }
 
-// lastClick is the latest human click Event (`email.clicked`, `telegram.clicked`) of the Contact within [since, until] that
+// lastClick is the latest human click Event (`email.clicked`, `telegram.clicked`, `sms.clicked`) of the Contact within [since, until] that
 // carries a Broadcast or an Automation; nil for none. A click flagged `machine` (ADR 0053) and a
 // click of neither (a Transactional send) are passed over; equal times go to the click Event
 // stored last.

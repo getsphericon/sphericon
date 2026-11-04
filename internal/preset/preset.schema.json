@@ -23,7 +23,7 @@
     },
     "verify": { "$ref": "#/$defs/verify" },
     "transform": {
-      "description": "A gojq program. Input {body, headers}; output an array of at most 100 facts, each named by its kind. A Delivery notice {id, destination (an email address), kind (bounce, complaint, delivery, delay or drop), hard (bounces: true for a hard bounce, false for a soft one), sending_domain, message_id (the provider's id of the message, when it returns one), reason (at most 500 characters)}. An Inbound message {kind: inbound_message, id (the provider's event id), channel (email, sms, whatsapp, telegram, web_push or mobile_push), destination (the address it came from), chat_id, text (cut at 4096 characters), payload (of a pressed button, cut at 1024 characters), message_id, callback_id (the provider's id of a button press, to answer it)}. A Reachability change {kind: reachability_change, id (the provider's event id), destination, reachable (true or false), reason (blocked or deactivated; only when not reachable)}. The Preset only parses: what a message means is read by sphericon.",
+      "description": "A gojq program. Input {body, headers}: body is the parsed JSON, or for a form-encoded request (application/x-www-form-urlencoded) an object of each parameter's value, a list of the values of a repeated name. Output an array of at most 100 facts, each named by its kind. A Delivery notice {id, channel (the Channel of the message, email when omitted), destination (an email address on email; the address the message went to on another Channel), kind (bounce, complaint, delivery, delay or drop; undelivered on a Channel other than email), hard (bounces: true for a hard bounce, false for a soft one), sending_domain, message_id (the provider's id of the message, when it returns one), reason (at most 500 characters), status (the provider's own word for the state it reports), error_code (the provider's error code)}. An Inbound message {kind: inbound_message, id (the provider's event id), channel (email, sms, whatsapp, telegram, web_push or mobile_push), destination (the address it came from), country (the ISO 3166-1 alpha-2 country the provider says the sender is in, which a phone number without its country code is read with), chat_id, text (cut at 4096 characters), payload (of a pressed button, cut at 1024 characters), message_id, callback_id (the provider's id of a button press, to answer it)}. A Reachability change {kind: reachability_change, id (the provider's event id), destination, reachable (true or false), reason (blocked or deactivated; only when not reachable)}. The Preset only parses: what a message means is read by sphericon.",
       "type": "string",
       "minLength": 1,
       "maxLength": 16384
@@ -157,6 +157,20 @@
             "timestamp_field": { "$ref": "#/$defs/fieldPath" },
             "tolerance": { "$ref": "#/$defs/tolerance" }
           }
+        },
+        {
+          "title": "twilio",
+          "description": "Twilio's signature in X-Twilio-Signature: the base64 HMAC-SHA1 of the full URL the request was posted to followed by the form-encoded POST parameters sorted by name, each name followed by its value.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "secret"],
+          "properties": {
+            "kind": { "const": "twilio" },
+            "secret": {
+              "description": "The param holding the account's Auth Token.",
+              "$ref": "#/$defs/paramName"
+            }
+          }
         }
       ]
     },
@@ -169,6 +183,7 @@
         "id": { "type": "string" },
         "channel": { "enum": ["email", "sms", "whatsapp", "telegram", "web_push", "mobile_push"] },
         "destination": { "type": "string" },
+        "country": { "type": "string" },
         "chat_id": { "type": "string" },
         "text": { "type": "string" },
         "payload": { "type": "string" },
@@ -194,12 +209,18 @@
       "required": ["id", "destination", "kind"],
       "properties": {
         "id": { "type": "string" },
+        "channel": {
+          "description": "The Channel of the message; email when omitted.",
+          "enum": ["email", "sms", "whatsapp", "telegram", "web_push", "mobile_push"]
+        },
         "destination": { "type": "string" },
-        "kind": { "enum": ["bounce", "complaint", "delivery", "delay", "drop"] },
+        "kind": { "enum": ["bounce", "complaint", "delivery", "delay", "drop", "undelivered"] },
         "hard": { "type": "boolean" },
         "sending_domain": { "type": "string" },
         "message_id": { "type": "string" },
-        "reason": { "type": "string" }
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "error_code": { "type": "string" }
       }
     },
     "case": {
@@ -222,6 +243,10 @@
           "additionalProperties": false,
           "required": ["body"],
           "properties": {
+            "url": {
+              "description": "The full URL the request was posted to (scheme, host, path and query), which a twilio verification signs.",
+              "type": "string"
+            },
             "headers": { "type": "object", "additionalProperties": { "type": "string" } },
             "body": { "description": "The raw request body.", "type": "string" }
           }

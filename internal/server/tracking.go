@@ -36,8 +36,9 @@ var pixelGIF = []byte{
 //	GET  /e/u/{token}       — unsubscribe confirm: render the SPA page, record nothing
 //	POST /e/u/{token}       — unsubscribe perform: opt the destination out of the scope
 //	GET  /e/confirm/{token} — double opt-in confirm: render the SPA page, record nothing
-//	GET  /c/{token}         — short tracked link of a Telegram message (ADR 0083): record the
-//	                          click, 302 to the URL stored with the token; unknown token: 404
+//	GET  /c/{token}         — short tracked link of a Telegram message or an SMS (ADR 0083): record
+//	                          the click, 302 to the URL stored with the token; unknown token: 404;
+//	                          a Test send's link (no message): 302, nothing recorded
 //
 // GET on the unsubscribe and confirm links is safe (ADR 0012 / RFC 8058, ADR 0013):
 // it only redirects to the confirmation page, so link scanners and security proxies
@@ -102,8 +103,9 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 			http.NotFound(w, r)
 			return
 		}
-		if limiter.RecordsTracking(r) {
-			recordClick(r.Context(), client, bus, link.OutboundMessageID, link.URL, isMachine(r, detector))
+		// A Test send's link has no message: it redirects and records nothing.
+		if link.OutboundMessageID != nil && limiter.RecordsTracking(r) {
+			recordClick(r.Context(), client, bus, *link.OutboundMessageID, link.URL, isMachine(r, detector))
 		}
 		http.Redirect(w, r, link.URL, http.StatusFound)
 	})
@@ -190,11 +192,12 @@ func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 
 // confirmRedirect is the absolute SPA confirmation URL (on the Instance's own host, so
 // a Tracking host's visitor lands where the SPA is) the GET handler redirects to. It
-// carries the token so the page's button can POST it back, and for a per-source
+// carries the token so the page's button can POST it back, the Channel the link came on so the
+// page speaks of emails, texts or Telegram messages, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
 func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target tracking.UnsubTarget) string {
-	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr)
+	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr) + "&channel=" + url.QueryEscape(string(target.Channel))
 	if target.Source == eligibility.SourceEverything {
 		return base
 	}
@@ -289,18 +292,23 @@ func isMachine(r *http.Request, detector *machine.Detector) bool {
 
 // click is the Event of a click on dest in the message: the Channel's own, with the same facts.
 func (e engaged) click(dest string, software bool) events.DomainEvent {
-	if e.msg.Channel != outboundmessage.ChannelTelegram {
-		return e.engagement(events.NameEmailClicked, dest, software)
-	}
 	var contactID int64
 	if e.contact != nil {
 		contactID = e.contact.ID
 	}
-	return &events.TelegramClicked{
+	click := events.LinkClick{
 		WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
 		IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
 		BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
 		OutboundMessageID: e.msg.ID, Machine: software,
+	}
+	switch e.msg.Channel {
+	case outboundmessage.ChannelTelegram:
+		return new(events.TelegramClicked(click))
+	case outboundmessage.ChannelSms:
+		return new(events.SmsClicked(click))
+	default:
+		return e.engagement(events.NameEmailClicked, dest, software)
 	}
 }
 

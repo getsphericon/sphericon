@@ -158,7 +158,30 @@ export const zAuditAction = z.enum([
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const zBroadcastChannel = z.enum(['email', 'telegram']);
+export const zBroadcastChannel = z.enum([
+  'email',
+  'telegram',
+  'sms'
+]);
+
+/**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export const zConfirmationProvenance = z.enum([
+  'double_opt_in',
+  'keyword',
+  'imported',
+  'grandfathered'
+]);
+
+/**
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
+ */
+export const zConsentEvidence = z.object({
+  wording: z.string().min(1).max(2000),
+  source: z.string().min(1).max(500),
+  brand: z.string().min(1).max(255)
+});
 
 /**
  * How the contact first came to exist
@@ -369,6 +392,18 @@ export const zMaxPerDay = z.int().gte(1).lte(100000000);
  * A per-second Provider limit the caller may set
  */
 export const zMaxPerSecond = z.int().gte(1).lte(10000);
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export const zOptOutVia = z.enum([
+  'keyword',
+  'button',
+  'block',
+  'link',
+  'refused_send',
+  'manual'
+]);
 
 /**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
@@ -907,6 +942,7 @@ export const zSiteAutomationStepFigures = z.object({
 export const zSiteAutomationStepType = z.enum([
   'email',
   'telegram',
+  'sms',
   'wait',
   'apply_tag',
   'remove_tag',
@@ -1037,7 +1073,7 @@ export const zSiteConditionNumberLeaf = z.object({
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -1250,7 +1286,8 @@ export const zSiteIntegrationProvider = z.enum([
   'smtp',
   'ses',
   'inbox',
-  'telegram'
+  'telegram',
+  'twilio'
 ]);
 
 /**
@@ -1396,7 +1433,9 @@ export const zSiteAutomationReport = z.object({
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
  */
 export const zSiteBroadcastStats = z.object({
   recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -1408,6 +1447,7 @@ export const zSiteBroadcastStats = z.object({
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
@@ -2162,6 +2202,14 @@ export const zSiteSignupSurveyInput = z.object({
 });
 
 /**
+ * The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2)
+ */
+export const zSiteSmsLengthLimit = z.object({
+  gsm7: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  ucs2: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -2176,7 +2224,11 @@ export const zSiteSmtpConfig = z.object({
 /**
  * The channel a suppression applies to
  */
-export const zSiteSuppressionChannel = z.enum(['email', 'telegram']);
+export const zSiteSuppressionChannel = z.enum([
+  'email',
+  'telegram',
+  'sms'
+]);
 
 /**
  * Site request body for manually suppressing a destination
@@ -2206,20 +2258,10 @@ export const zSiteTelegramConfig = z.object({
 });
 
 /**
- * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
- */
-export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
-  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
-  zSiteTelegramConfig.extend({ kind: z.literal('telegram') })
-]);
-
-/**
- * What a test send did: the address the preview went out from
+ * What a test send did: on email the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
-  from: zEmailAddress,
+  from: z.exactOptional(zEmailAddress),
   captured: z.boolean()
 });
 
@@ -2343,6 +2385,58 @@ export const zSiteWebhookTestResult = z.object({
 });
 
 /**
+ * SMS's content of a Broadcast as stored
+ */
+export const zSmsBroadcastContent = z.object({
+  channel: z.enum(['sms']),
+  text: z.string(),
+  linkTracking: z.boolean()
+});
+
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted field takes its default (an empty text, link tracking on); on update an omitted field
+ * keeps its value.
+ */
+export const zSmsBroadcastContentInput = z.object({
+  channel: z.enum(['sms']),
+  text: z.exactOptional(z.string()),
+  linkTracking: z.exactOptional(z.boolean())
+});
+
+/**
+ * What an SMS integration's messages go out from
+ */
+export const zSmsFromKind = z.enum([
+  'number',
+  'alphanumeric',
+  'messagingService'
+]);
+
+/**
+ * A Twilio account without its secret
+ */
+export const zSiteTwilioConfig = z.object({
+  kind: z.enum(['twilio']),
+  accountSid: z.string(),
+  apiKeySid: z.string().nullable(),
+  from: z.string(),
+  fromKind: zSmsFromKind,
+  callbacksSet: z.boolean()
+});
+
+/**
+ * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
+ */
+export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
+  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
+  zSiteSesConfig.extend({ kind: z.literal('ses') }),
+  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
+  zSiteTelegramConfig.extend({ kind: z.literal('telegram') }),
+  zSiteTwilioConfig.extend({ kind: z.literal('twilio') })
+]);
+
+/**
  * SMTP credentials
  */
 export const zSmtpConfigInput = z.object({
@@ -2392,7 +2486,8 @@ export const zSiteAutomationStep = z.object({
   unsubscribeButton: z.exactOptional(z.string().max(64)),
   imageUrl: z.exactOptional(z.string()),
   buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
-  linkPreview: z.exactOptional(z.boolean())
+  linkPreview: z.exactOptional(z.boolean()),
+  linkTracking: z.exactOptional(z.boolean())
 });
 
 /**
@@ -2447,7 +2542,8 @@ export const zTelegramBroadcastContent = z.object({
  */
 export const zBroadcastContent = z.discriminatedUnion('channel', [
   zEmailBroadcastContent.extend({ channel: z.literal('email') }),
-  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') })
+  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') }),
+  zSmsBroadcastContent.extend({ channel: z.literal('sms') })
 ]);
 
 /**
@@ -2469,7 +2565,8 @@ export const zTelegramBroadcastContentInput = z.object({
  */
 export const zBroadcastContentInput = z.discriminatedUnion('channel', [
   zEmailBroadcastContentInput.extend({ channel: z.literal('email') }),
-  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') })
+  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') }),
+  zSmsBroadcastContentInput.extend({ channel: z.literal('sms') })
 ]);
 
 /**
@@ -2491,34 +2588,12 @@ export const zTelegramConfigInput = z.object({
 });
 
 /**
- * Provider config submitted by the caller, discriminated by `kind`.
- */
-export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
-  zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
-  zSesConfigInput.extend({ kind: z.literal('ses') }),
-  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
-  zTelegramConfigInput.extend({ kind: z.literal('telegram') })
-]);
-
-/**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
- */
-export const zCreateIntegrationInput = z.object({
-  name: z.string(),
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
-  config: zIntegrationConfigInput,
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(zJsonObject)
-});
-
-/**
- * Request body for a test send
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
  */
 export const zTestSendBroadcastInput = z.object({
-  email: zEmailAddress
+  email: z.exactOptional(zEmailAddress),
+  phone: z.exactOptional(z.string())
 });
 
 /**
@@ -2617,6 +2692,9 @@ export const zContactExportConfirmation = z.object({
   channel: z.string(),
   destination: z.string(),
   provenance: z.string(),
+  wording: z.exactOptional(z.string().nullable()),
+  source: z.exactOptional(z.string().nullable()),
+  brand: z.exactOptional(z.string().nullable()),
   createdAt: zTimestamp
 });
 
@@ -2676,6 +2754,8 @@ export const zContactExportOutboundMessage = z.object({
   sentAt: z.exactOptional(zTimestamp.nullable()),
   deliveredAt: z.exactOptional(zTimestamp.nullable()),
   bouncedAt: z.exactOptional(zTimestamp.nullable()),
+  undeliveredAt: z.exactOptional(zTimestamp.nullable()),
+  undeliveredCode: z.exactOptional(z.string().nullable()),
   complainedAt: z.exactOptional(zTimestamp.nullable()),
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
@@ -2716,6 +2796,7 @@ export const zContactExportUnsubscribe = z.object({
   channel: z.string(),
   destination: z.string(),
   sendingSource: z.string(),
+  via: z.exactOptional(zOptOutVia.nullable()),
   createdAt: zTimestamp
 });
 
@@ -3451,6 +3532,34 @@ export const zSiteWorkspaceHold = z.object({
 });
 
 /**
+ * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
+ */
+export const zSmsConfirmation = z.object({
+  provenance: zConfirmationProvenance,
+  wording: z.exactOptional(z.string().nullable()),
+  source: z.exactOptional(z.string().nullable()),
+  brand: z.exactOptional(z.string().nullable()),
+  confirmedAt: zTimestamp
+});
+
+/**
+ * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
+ */
+export const zSmsOptOut = z.object({
+  via: zOptOutVia,
+  optedOutAt: zTimestamp
+});
+
+/**
+ * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
+ */
+export const zSmsConsent = z.object({
+  phone: z.exactOptional(z.string().nullable()),
+  confirmation: z.exactOptional(zSmsConfirmation.nullable()),
+  optOut: z.exactOptional(zSmsOptOut.nullable())
+});
+
+/**
  * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
  */
 export const zTelegramStartLinkResource = z.object({
@@ -3470,6 +3579,42 @@ export const zTokenOnlyScope = z.enum([
   'audit:read',
   'export:read'
 ]);
+
+/**
+ * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
+ */
+export const zTwilioConfigInput = z.object({
+  kind: z.enum(['twilio']),
+  accountSid: z.string(),
+  apiKeySid: z.exactOptional(z.string().nullable()),
+  secret: z.string(),
+  from: z.string()
+});
+
+/**
+ * Provider config submitted by the caller, discriminated by `kind`.
+ */
+export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
+  zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
+  zSesConfigInput.extend({ kind: z.literal('ses') }),
+  zInboxConfigInput.extend({ kind: z.literal('inbox') }),
+  zTelegramConfigInput.extend({ kind: z.literal('telegram') }),
+  zTwilioConfigInput.extend({ kind: z.literal('twilio') })
+]);
+
+/**
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
+ */
+export const zCreateIntegrationInput = z.object({
+  name: z.string(),
+  enabled: z.exactOptional(z.boolean()),
+  isDefault: z.exactOptional(z.boolean()),
+  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
+  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
+  config: zIntegrationConfigInput,
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(zJsonObject)
+});
 
 /**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
@@ -3702,6 +3847,8 @@ export const zSiteWorkspaceResource = z.object({
   mcpUrl: z.string(),
   trackerUrl: z.string(),
   trackingTarget: z.exactOptional(z.string()),
+  shortLinkLength: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  smsMaxLength: zSiteSmsLengthLimit,
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
@@ -5302,6 +5449,38 @@ export const zSiteTelegramListBindingsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
+export const zSiteSmsConsentsConfirmBody = zConsentEvidence;
+
+export const zSiteSmsConsentsConfirmPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsConfirmResponse = zSmsConsent;
+
+export const zSiteSmsConsentsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsGetResponse = zSmsConsent;
+
+export const zSiteSmsConsentsOptOutPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSmsConsentsOptOutResponse = zSmsConsent;
 
 export const zSiteTagsListForContactPath = z.object({
   workspaceId: zWorkspaceId,

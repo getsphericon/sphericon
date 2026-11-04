@@ -46,6 +46,7 @@ type testCase struct {
 	Now     string         `json:"now"`
 	Params  map[string]any `json:"params"`
 	Request struct {
+		URL     string            `json:"url"`
 		Headers map[string]string `json:"headers"`
 		Body    string            `json:"body"`
 	} `json:"request"`
@@ -110,11 +111,12 @@ func Parse(name string, data []byte, opts ...Option) (*Preset, error) {
 	if err != nil {
 		return nil, parseError(name, at("transform"), err.Error())
 	}
-	for i, c := range f.Tests {
-		if c.Now == "" {
+	for i := range f.Tests {
+		now := f.Tests[i].Now
+		if now == "" {
 			continue
 		}
-		if _, err := time.Parse(time.RFC3339, c.Now); err != nil {
+		if _, err := time.Parse(time.RFC3339, now); err != nil {
 			return nil, parseError(name, at("tests", strconv.Itoa(i), "now"), "now is not an RFC 3339 time")
 		}
 	}
@@ -307,7 +309,8 @@ type CaseResult struct {
 // params and clock and expects the facts, or the refusal, it names.
 func (p *Preset) RunTests(ctx context.Context) []CaseResult {
 	results := make([]CaseResult, 0, len(p.tests))
-	for _, c := range p.tests {
+	for i := range p.tests {
+		c := &p.tests[i]
 		results = append(results, CaseResult{Name: c.Name, Err: p.forTest().runCase(ctx, c)})
 	}
 	return results
@@ -324,7 +327,7 @@ func (p *Preset) Test(ctx context.Context) error {
 	return errors.Join(failed...)
 }
 
-func (p *Preset) runCase(ctx context.Context, c testCase) error {
+func (p *Preset) runCase(ctx context.Context, c *testCase) error {
 	now := time.Unix(0, 0)
 	if c.Now != "" {
 		parsed, err := time.Parse(time.RFC3339, c.Now)
@@ -337,7 +340,7 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	for k, v := range c.Request.Headers {
 		header.Set(k, v)
 	}
-	res, err := p.Handle(ctx, Request{Header: header, Body: []byte(c.Request.Body)}, Params(c.Params), now)
+	res, err := p.Handle(ctx, Request{URL: c.Request.URL, Header: header, Body: []byte(c.Request.Body)}, Params(c.Params), now)
 
 	if c.Expect.Refused != "" {
 		want := map[string]error{
@@ -353,7 +356,7 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	if err != nil {
 		return fmt.Errorf("expected facts, got an error: %w", err)
 	}
-	if err := sameFacts("notices", c.Expect.Notices, res.Notices); err != nil {
+	if err := sameFacts("notices", onEmailUnlessNamed(c.Expect.Notices), res.Notices); err != nil {
 		return err
 	}
 	if err := sameFacts("inbound messages", c.Expect.InboundMessages, res.InboundMessages); err != nil {
@@ -369,6 +372,21 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 		return fmt.Errorf("expected action %s %s, got %v", want.Kind, want.URL, res.Action)
 	}
 	return nil
+}
+
+// onEmailUnlessNamed is the notices a case expects, each on email unless the case names its
+// Channel, as the engine reads a transform's notice.
+func onEmailUnlessNamed(want *[]DeliveryNotice) *[]DeliveryNotice {
+	if want == nil {
+		return nil
+	}
+	out := slices.Clone(*want)
+	for i := range out {
+		if out[i].Channel == "" {
+			out[i].Channel = emailChannel
+		}
+	}
+	return &out
 }
 
 // sameFacts compares the facts of one kind a case expects with those it got; a kind the case

@@ -16,14 +16,15 @@ import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspa
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
 // Send now, schedule and test send for a loaded Broadcast. Sending and scheduling are only
-// possible for drafts; test send works for any status of an email Broadcast: Telegram has none, so
-// its action is not offered (ADR 0080).
+// possible for drafts; test send works for any status of an email Broadcast, to an address, and of
+// an SMS one, to a phone number: Telegram has none, so its action is not offered (ADR 0080).
 export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { workspaceId } = workspaceRoute.useParams()
   const [scheduledAt, setScheduledAt] = useState('')
-  const [testEmail, setTestEmail] = useState('')
+  // Where the Test send goes: an address on email, a phone number on SMS.
+  const [testTo, setTestTo] = useState('')
 
   const path = { workspaceId, id: broadcast.id }
   const isDraft = broadcast.status === 'draft'
@@ -52,7 +53,10 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
 
   const testSendMutation = useResourceMutation({
     mutation: siteBroadcastsTestSendMutation(),
-    successMessage: t(($) => $.notifications.testSent),
+    successMessage:
+      broadcast.channel === 'sms'
+        ? t(($) => $.notifications.testTextSent)
+        : t(($) => $.notifications.testSent),
     errorTitle: t(($) => $.alerts.broadcastSendErrorTitle),
   })
 
@@ -98,14 +102,14 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
             <TextInput
               type="email"
               label={t(($) => $.broadcasts.testSendEmailLabel)}
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.currentTarget.value)}
+              value={testTo}
+              onChange={(e) => setTestTo(e.currentTarget.value)}
             />
             <Button
               variant="default"
-              disabled={testEmail === ''}
+              disabled={testTo === ''}
               loading={testSendMutation.isPending}
-              onClick={() => testSendMutation.mutate({ path, body: { email: testEmail } })}
+              onClick={() => testSendMutation.mutate({ path, body: { email: testTo } })}
             >
               {t(($) => $.broadcasts.testSendButton)}
             </Button>
@@ -114,10 +118,29 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
             <Text size="sm" c="dimmed">
               {testSendMutation.data.captured
                 ? t(($) => $.broadcasts.testSendCaptured)
-                : t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
+                : t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from ?? '' })}
             </Text>
           )}
         </>
+      )}
+      {broadcast.channel === 'sms' && (
+        <Group align="flex-end">
+          <TextInput
+            type="tel"
+            label={t(($) => $.broadcasts.testSendPhoneLabel)}
+            description={t(($) => $.broadcasts.testSendPhoneHint)}
+            value={testTo}
+            onChange={(e) => setTestTo(e.currentTarget.value)}
+          />
+          <Button
+            variant="default"
+            disabled={testTo === ''}
+            loading={testSendMutation.isPending}
+            onClick={() => testSendMutation.mutate({ path, body: { phone: testTo } })}
+          >
+            {t(($) => $.broadcasts.testSendButton)}
+          </Button>
+        </Group>
       )}
     </>
   )

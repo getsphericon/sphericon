@@ -75,14 +75,31 @@ const (
 	// NameTelegramUnsubscribed is a Contact stopping all of the Workspace's Telegram marketing in
 	// Telegram: a STOP keyword, the unsubscribe button, or blocking the bot (ADR 0077).
 	NameTelegramUnsubscribed = "telegram.unsubscribed"
+
+	// NameSmsReceived is a text a Contact sent from its phone to an SMS Integration's sender
+	// (ADR 0076).
+	NameSmsReceived = "sms.received"
+	// NameSmsSent is a text the SMS provider accepted for a Contact (ADR 0079): handed to the
+	// provider, not delivered; a delivery report says that.
+	NameSmsSent = "sms.sent"
+	// NameSmsDelivered and the one below are the SMS provider's final report of a text it accepted
+	// (ADR 0079): it reached the handset, or it did not, with the provider's error code.
+	NameSmsDelivered   = "sms.delivered"
+	NameSmsUndelivered = "sms.undelivered"
+	// NameSmsConfirmed is a phone number's SMS Confirmation (ADR 0077), the proof of its consent;
+	// marketing.confirmed is email's alone.
+	NameSmsConfirmed = "sms.confirmed"
+	// NameSmsClicked is a click on a short tracked link of an SMS (ADR 0083).
+	NameSmsClicked = "sms.clicked"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
 // (`email.*`), consent (`marketing.*`), the Contact's lifecycle, Tags and Custom fields
-// (`contact.*`), its Enrollments (`automation.*`) and its Telegram Bindings (`telegram.*`). Some are evidence (ADR 0013, ADR 0019), and
+// (`contact.*`), its Enrollments (`automation.*`), its Telegram Bindings (`telegram.*`) and its SMS
+// (`sms.*`). Some are evidence (ADR 0013, ADR 0019), and
 // an Automation, a Rule or a Segment that names one must be sure the system recorded it, so a
 // customer's own Event never carries one.
-var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation.", "telegram."}
+var reservedPrefixes = []string{"email.", "marketing.", "contact.", "automation.", "telegram.", "sms."}
 
 // ReservedAction reports whether action belongs to the system and is refused from a
 // customer's Event.
@@ -245,6 +262,7 @@ var registry = map[string]func() DomainEvent{
 	NameEmailBounced:          func() DomainEvent { return &EmailDelivery{} },
 	NameEmailComplained:       func() DomainEvent { return &EmailDelivery{} },
 	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
+	NameSmsConfirmed:          func() DomainEvent { return &SmsConfirmed{} },
 	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
 	NameContactTagged:         func() DomainEvent { return &ContactTagChange{} },
 	NameContactUntagged:       func() DomainEvent { return &ContactTagChange{} },
@@ -259,6 +277,11 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramSent:          func() DomainEvent { return &TelegramSent{} },
 	NameTelegramClicked:       func() DomainEvent { return &TelegramClicked{} },
 	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
+	NameSmsReceived:           func() DomainEvent { return &SmsReceived{} },
+	NameSmsSent:               func() DomainEvent { return &SmsSent{} },
+	NameSmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
+	NameSmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
+	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }
@@ -385,7 +408,7 @@ func (e *EmailEngagement) Project() Projection {
 		props["automationId"] = e.AutomationID
 	}
 	if e.OutboundMessageID != 0 {
-		props["outboundMessageId"] = e.OutboundMessageID
+		props[outboundMessageIDProperty] = e.OutboundMessageID
 	}
 	if e.Captured {
 		props[CapturedProperty] = true
@@ -454,9 +477,9 @@ func (e *EmailDelivery) Project() Projection {
 		}
 	}
 	for k, v := range map[string]int64{
-		"outboundMessageId": e.OutboundMessageID,
-		"broadcastId":       e.BroadcastID,
-		"automationId":      e.AutomationID,
+		outboundMessageIDProperty: e.OutboundMessageID,
+		"broadcastId":             e.BroadcastID,
+		"automationId":            e.AutomationID,
 	} {
 		if v != 0 {
 			props[k] = v
@@ -473,16 +496,18 @@ func (e *EmailDelivery) Project() Projection {
 	}
 }
 
-// MarketingConfirmed is emitted when a destination confirms its subscription
+// MarketingConfirmed is emitted when an email address confirms its subscription
 // (double opt-in, ADR 0013). It is the immutable source of truth for the
 // confirmation — the derived Confirmation row is the read-model — and carries the
 // GDPR Art. 7 proof: when, how (provenance), and the confirming IP. Publishing it
-// also lets a welcome automation trigger on "marketing.confirmed".
+// also lets a welcome automation trigger on "marketing.confirmed". It is email's
+// alone: an SMS Confirmation publishes SmsConfirmed, since a trigger is an action with
+// no property filter and a welcome email's Automation must not enroll a phone's consent.
 type MarketingConfirmed struct {
 	WorkspaceID int64  `json:"workspaceId"`
 	ContactID   int64  `json:"contactId,omitempty"`
 	Email       string `json:"email"`
-	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered|imported
+	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered
 	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
 }
 
@@ -498,6 +523,37 @@ func (e *MarketingConfirmed) Project() Projection {
 		props["ip"] = e.IP
 	}
 	return Projection{Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
+}
+
+// SmsConfirmed is emitted when a phone number's SMS Confirmation is recorded (ADR 0077): consent
+// the Workspace collected outside sphericon, relayed with its evidence (imported), or a START the
+// person texted (keyword). As marketing.confirmed is on email, it is the immutable proof the
+// Confirmation row is derived from, never deleted by age (ADR 0019): when, how (provenance), and
+// for an imported one the wording the person was shown, its source and the brand.
+type SmsConfirmed struct {
+	WorkspaceID int64 `json:"workspaceId"`
+	// ContactID is the Contact whose phone the number is, 0 when no Contact has it.
+	ContactID int64 `json:"contactId,omitempty"`
+	// Phone is the confirmed number in E.164.
+	Phone      string `json:"phone"`
+	Provenance string `json:"provenance"` // keyword|imported
+	// The evidence of an imported Confirmation; empty on a keyword one.
+	Wording string `json:"wording,omitempty"`
+	Source  string `json:"source,omitempty"`
+	Brand   string `json:"brand,omitempty"`
+}
+
+func (*SmsConfirmed) EventName() string  { return NameSmsConfirmed }
+func (*SmsConfirmed) EventVersion() int  { return 1 }
+func (e *SmsConfirmed) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsConfirmed) Project() Projection {
+	props := map[string]any{}
+	for k, v := range map[string]string{"provenance": e.Provenance, "wording": e.Wording, "source": e.Source, "brand": e.Brand} {
+		if v != "" {
+			props[k] = v
+		}
+	}
+	return Projection{Action: NameSmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
 }
 
 // CollectedEvent wraps a customer's own event ingested via the collect or external

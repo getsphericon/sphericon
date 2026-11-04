@@ -20,7 +20,7 @@ model SiteContactResource {
   /** Email address — an alias key. May be absent for anonymous contacts. */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key. May be absent. */
+  /** Phone number in E.164 (`+14155550100`) — an alias key. May be absent. */
   phone?: string | null;
 
   /** First name */

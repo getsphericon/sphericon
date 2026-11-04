@@ -2150,14 +2150,20 @@ type AutomationStep struct {
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
 	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
-	// omitted is that Channel's default. Each send step names its own, so one automation may send through
-	// several (ADR 0081).
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
 	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
 	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
 	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
 	Text OptString `json:"text"`
 	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
 	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
@@ -2170,6 +2176,9 @@ type AutomationStep struct {
 	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
 	// image.
 	LinkPreview OptBool `json:"linkPreview"`
+	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
+	// `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
 }
 
 // GetType returns the value of Type.
@@ -2267,6 +2276,11 @@ func (s *AutomationStep) GetLinkPreview() OptBool {
 	return s.LinkPreview
 }
 
+// GetLinkTracking returns the value of LinkTracking.
+func (s *AutomationStep) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -2362,6 +2376,11 @@ func (s *AutomationStep) SetLinkPreview(val OptBool) {
 	s.LinkPreview = val
 }
 
+// SetLinkTracking sets the value of LinkTracking.
+func (s *AutomationStep) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
+}
+
 // The messages of the send step at one position.
 // Ref: #/components/schemas/AutomationStepFigures
 type AutomationStepFigures struct {
@@ -2411,6 +2430,7 @@ type AutomationStepType string
 const (
 	AutomationStepTypeEmail     AutomationStepType = "email"
 	AutomationStepTypeTelegram  AutomationStepType = "telegram"
+	AutomationStepTypeSMS       AutomationStepType = "sms"
 	AutomationStepTypeWait      AutomationStepType = "wait"
 	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
 	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
@@ -2422,6 +2442,7 @@ func (AutomationStepType) AllValues() []AutomationStepType {
 	return []AutomationStepType{
 		AutomationStepTypeEmail,
 		AutomationStepTypeTelegram,
+		AutomationStepTypeSMS,
 		AutomationStepTypeWait,
 		AutomationStepTypeApplyTag,
 		AutomationStepTypeRemoveTag,
@@ -2435,6 +2456,8 @@ func (s AutomationStepType) MarshalText() ([]byte, error) {
 	case AutomationStepTypeEmail:
 		return []byte(s), nil
 	case AutomationStepTypeTelegram:
+		return []byte(s), nil
+	case AutomationStepTypeSMS:
 		return []byte(s), nil
 	case AutomationStepTypeWait:
 		return []byte(s), nil
@@ -2457,6 +2480,9 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case AutomationStepTypeTelegram:
 		*s = AutomationStepTypeTelegram
+		return nil
+	case AutomationStepTypeSMS:
+		*s = AutomationStepTypeSMS
 		return nil
 	case AutomationStepTypeWait:
 		*s = AutomationStepTypeWait
@@ -3065,6 +3091,7 @@ type BroadcastChannel string
 const (
 	BroadcastChannelEmail    BroadcastChannel = "email"
 	BroadcastChannelTelegram BroadcastChannel = "telegram"
+	BroadcastChannelSMS      BroadcastChannel = "sms"
 )
 
 // AllValues returns all BroadcastChannel values.
@@ -3072,6 +3099,7 @@ func (BroadcastChannel) AllValues() []BroadcastChannel {
 	return []BroadcastChannel{
 		BroadcastChannelEmail,
 		BroadcastChannelTelegram,
+		BroadcastChannelSMS,
 	}
 }
 
@@ -3081,6 +3109,8 @@ func (s BroadcastChannel) MarshalText() ([]byte, error) {
 	case BroadcastChannelEmail:
 		return []byte(s), nil
 	case BroadcastChannelTelegram:
+		return []byte(s), nil
+	case BroadcastChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -3095,6 +3125,9 @@ func (s *BroadcastChannel) UnmarshalText(data []byte) error {
 		return nil
 	case BroadcastChannelTelegram:
 		*s = BroadcastChannelTelegram
+		return nil
+	case BroadcastChannelSMS:
+		*s = BroadcastChannelSMS
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -3139,6 +3172,7 @@ type BroadcastContentInputSum struct {
 	Type                          BroadcastContentInputSumType
 	EmailBroadcastContentInput    EmailBroadcastContentInput
 	TelegramBroadcastContentInput TelegramBroadcastContentInput
+	SmsBroadcastContentInput      SmsBroadcastContentInput
 }
 
 // BroadcastContentInputSumType is oneOf type of BroadcastContentInputSum.
@@ -3148,6 +3182,7 @@ type BroadcastContentInputSumType string
 const (
 	EmailBroadcastContentInputBroadcastContentInputSum    BroadcastContentInputSumType = "email"
 	TelegramBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "telegram"
+	SmsBroadcastContentInputBroadcastContentInputSum      BroadcastContentInputSumType = "sms"
 )
 
 // IsEmailBroadcastContentInput reports whether BroadcastContentInputSum is EmailBroadcastContentInput.
@@ -3158,6 +3193,11 @@ func (s BroadcastContentInputSum) IsEmailBroadcastContentInput() bool {
 // IsTelegramBroadcastContentInput reports whether BroadcastContentInputSum is TelegramBroadcastContentInput.
 func (s BroadcastContentInputSum) IsTelegramBroadcastContentInput() bool {
 	return s.Type == TelegramBroadcastContentInputBroadcastContentInputSum
+}
+
+// IsSmsBroadcastContentInput reports whether BroadcastContentInputSum is SmsBroadcastContentInput.
+func (s BroadcastContentInputSum) IsSmsBroadcastContentInput() bool {
+	return s.Type == SmsBroadcastContentInputBroadcastContentInputSum
 }
 
 // SetEmailBroadcastContentInput sets BroadcastContentInputSum to EmailBroadcastContentInput.
@@ -3202,12 +3242,34 @@ func NewTelegramBroadcastContentInputBroadcastContentInputSum(v TelegramBroadcas
 	return s
 }
 
+// SetSmsBroadcastContentInput sets BroadcastContentInputSum to SmsBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetSmsBroadcastContentInput(v SmsBroadcastContentInput) {
+	s.Type = SmsBroadcastContentInputBroadcastContentInputSum
+	s.SmsBroadcastContentInput = v
+}
+
+// GetSmsBroadcastContentInput returns SmsBroadcastContentInput and true boolean if BroadcastContentInputSum is SmsBroadcastContentInput.
+func (s BroadcastContentInputSum) GetSmsBroadcastContentInput() (v SmsBroadcastContentInput, ok bool) {
+	if !s.IsSmsBroadcastContentInput() {
+		return v, false
+	}
+	return s.SmsBroadcastContentInput, true
+}
+
+// NewSmsBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from SmsBroadcastContentInput.
+func NewSmsBroadcastContentInputBroadcastContentInputSum(v SmsBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetSmsBroadcastContentInput(v)
+	return s
+}
+
 // BroadcastContentSum represents sum type.
 type BroadcastContentSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type                     BroadcastContentSumType
 	EmailBroadcastContent    EmailBroadcastContent
 	TelegramBroadcastContent TelegramBroadcastContent
+	SmsBroadcastContent      SmsBroadcastContent
 }
 
 // BroadcastContentSumType is oneOf type of BroadcastContentSum.
@@ -3217,6 +3279,7 @@ type BroadcastContentSumType string
 const (
 	EmailBroadcastContentBroadcastContentSum    BroadcastContentSumType = "email"
 	TelegramBroadcastContentBroadcastContentSum BroadcastContentSumType = "telegram"
+	SmsBroadcastContentBroadcastContentSum      BroadcastContentSumType = "sms"
 )
 
 // IsEmailBroadcastContent reports whether BroadcastContentSum is EmailBroadcastContent.
@@ -3227,6 +3290,11 @@ func (s BroadcastContentSum) IsEmailBroadcastContent() bool {
 // IsTelegramBroadcastContent reports whether BroadcastContentSum is TelegramBroadcastContent.
 func (s BroadcastContentSum) IsTelegramBroadcastContent() bool {
 	return s.Type == TelegramBroadcastContentBroadcastContentSum
+}
+
+// IsSmsBroadcastContent reports whether BroadcastContentSum is SmsBroadcastContent.
+func (s BroadcastContentSum) IsSmsBroadcastContent() bool {
+	return s.Type == SmsBroadcastContentBroadcastContentSum
 }
 
 // SetEmailBroadcastContent sets BroadcastContentSum to EmailBroadcastContent.
@@ -3271,9 +3339,31 @@ func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) 
 	return s
 }
 
+// SetSmsBroadcastContent sets BroadcastContentSum to SmsBroadcastContent.
+func (s *BroadcastContentSum) SetSmsBroadcastContent(v SmsBroadcastContent) {
+	s.Type = SmsBroadcastContentBroadcastContentSum
+	s.SmsBroadcastContent = v
+}
+
+// GetSmsBroadcastContent returns SmsBroadcastContent and true boolean if BroadcastContentSum is SmsBroadcastContent.
+func (s BroadcastContentSum) GetSmsBroadcastContent() (v SmsBroadcastContent, ok bool) {
+	if !s.IsSmsBroadcastContent() {
+		return v, false
+	}
+	return s.SmsBroadcastContent, true
+}
+
+// NewSmsBroadcastContentBroadcastContentSum returns new BroadcastContentSum from SmsBroadcastContent.
+func NewSmsBroadcastContentBroadcastContentSum(v SmsBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetSmsBroadcastContent(v)
+	return s
+}
+
 // Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does not
 // report is null, never zero: Telegram reports no delivered, opened, bounced or complained count and
-// so no open rate.
+// so no open rate; SMS reports delivered and undelivered, and no opened, bounced or complained count
+// or open rate; only SMS reports undelivered.
 // Ref: #/components/schemas/BroadcastReport
 type BroadcastReport struct {
 	// Lifecycle status.
@@ -3299,6 +3389,9 @@ type BroadcastReport struct {
 	// Messages the provider reported delivered, read from the delivery result stamped on each message;
 	// null on a Channel whose provider reports none.
 	DeliveredCount NilInt32 `json:"deliveredCount"`
+	// Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the
+	// delivery result stamped on each message; null on a Channel whose provider reports none.
+	UndeliveredCount NilInt32 `json:"undeliveredCount"`
 	// Messages the provider reported bounced, read from the delivery result stamped on each message; null
 	// on a Channel whose provider reports none.
 	BouncedCount NilInt32 `json:"bouncedCount"`
@@ -3367,6 +3460,11 @@ func (s *BroadcastReport) GetUnsubscribedCount() int32 {
 // GetDeliveredCount returns the value of DeliveredCount.
 func (s *BroadcastReport) GetDeliveredCount() NilInt32 {
 	return s.DeliveredCount
+}
+
+// GetUndeliveredCount returns the value of UndeliveredCount.
+func (s *BroadcastReport) GetUndeliveredCount() NilInt32 {
+	return s.UndeliveredCount
 }
 
 // GetBouncedCount returns the value of BouncedCount.
@@ -3447,6 +3545,11 @@ func (s *BroadcastReport) SetUnsubscribedCount(val int32) {
 // SetDeliveredCount sets the value of DeliveredCount.
 func (s *BroadcastReport) SetDeliveredCount(val NilInt32) {
 	s.DeliveredCount = val
+}
+
+// SetUndeliveredCount sets the value of UndeliveredCount.
+func (s *BroadcastReport) SetUndeliveredCount(val NilInt32) {
+	s.UndeliveredCount = val
 }
 
 // SetBouncedCount sets the value of BouncedCount.
@@ -5106,10 +5209,11 @@ type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
 	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
-	// Visitor; the value is ignored), "custom:" for a custom field of the workspace, or "trigger:" (a
-	// property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the text
-	// operators, and is false when the Event lacks the key or holds a value that is not text; a number
-	// property is compared by a number leaf).
+	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
+	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
+	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
+	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+	// that is not text; a number property is compared by a number leaf).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator ConditionOperator `json:"operator"`
@@ -5532,7 +5636,7 @@ func (s *ConditionNumberOperator) UnmarshalText(data []byte) error {
 }
 
 // What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its
+// the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its
 // type, which the custom field lists as `ruleOperators` (a number custom field is also compared by a
 // number leaf, a datetime one tested by the date leaves).
 // Ref: #/components/schemas/ConditionOperator
@@ -5619,13 +5723,194 @@ func (s *ConditionOperator) UnmarshalText(data []byte) error {
 	}
 }
 
-// A Channel a destination can be suppressed or opt out on.
+// How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a
+// keyword (the person texted START), imported (consent an API client or an import collected itself,
+// with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A
+// Confirmation is replaced only by a stronger one.
+// Ref: #/components/schemas/ConfirmationProvenance
+type ConfirmationProvenance string
+
+const (
+	ConfirmationProvenanceDoubleOptIn   ConfirmationProvenance = "double_opt_in"
+	ConfirmationProvenanceKeyword       ConfirmationProvenance = "keyword"
+	ConfirmationProvenanceImported      ConfirmationProvenance = "imported"
+	ConfirmationProvenanceGrandfathered ConfirmationProvenance = "grandfathered"
+)
+
+// AllValues returns all ConfirmationProvenance values.
+func (ConfirmationProvenance) AllValues() []ConfirmationProvenance {
+	return []ConfirmationProvenance{
+		ConfirmationProvenanceDoubleOptIn,
+		ConfirmationProvenanceKeyword,
+		ConfirmationProvenanceImported,
+		ConfirmationProvenanceGrandfathered,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConfirmationProvenance) MarshalText() ([]byte, error) {
+	switch s {
+	case ConfirmationProvenanceDoubleOptIn:
+		return []byte(s), nil
+	case ConfirmationProvenanceKeyword:
+		return []byte(s), nil
+	case ConfirmationProvenanceImported:
+		return []byte(s), nil
+	case ConfirmationProvenanceGrandfathered:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConfirmationProvenance) UnmarshalText(data []byte) error {
+	switch ConfirmationProvenance(data) {
+	case ConfirmationProvenanceDoubleOptIn:
+		*s = ConfirmationProvenanceDoubleOptIn
+		return nil
+	case ConfirmationProvenanceKeyword:
+		*s = ConfirmationProvenanceKeyword
+		return nil
+	case ConfirmationProvenanceImported:
+		*s = ConfirmationProvenanceImported
+		return nil
+	case ConfirmationProvenanceGrandfathered:
+		*s = ConfirmationProvenanceGrandfathered
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number
+// that has one.
+// Ref: #/components/schemas/ConfirmationResource
+type ConfirmationResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Channel the confirmation is on.
+	Channel ConsentChannel `json:"channel"`
+	// Normalized destination: the phone number in E.164 on `sms`.
+	Destination string `json:"destination"`
+	// How the consent was obtained.
+	Provenance ConfirmationProvenance `json:"provenance"`
+	// The consent wording the person was shown; absent when the confirmation carries no evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected; absent when the confirmation carries no evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from; absent when the confirmation carries no evidence.
+	Brand OptNilString `json:"brand"`
+	// When the consent was recorded.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *ConfirmationResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetChannel returns the value of Channel.
+func (s *ConfirmationResource) GetChannel() ConsentChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *ConfirmationResource) GetDestination() string {
+	return s.Destination
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *ConfirmationResource) GetProvenance() ConfirmationProvenance {
+	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *ConfirmationResource) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ConfirmationResource) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ConfirmationResource) GetBrand() OptNilString {
+	return s.Brand
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *ConfirmationResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *ConfirmationResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *ConfirmationResource) SetChannel(val ConsentChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *ConfirmationResource) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *ConfirmationResource) SetProvenance(val ConfirmationProvenance) {
+	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *ConfirmationResource) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ConfirmationResource) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ConfirmationResource) SetBrand(val OptNilString) {
+	s.Brand = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *ConfirmationResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+func (*ConfirmationResource) confirmationsCreateRes() {}
+
+type ConfirmationsCreateBadRequest ProblemDetails
+
+func (*ConfirmationsCreateBadRequest) confirmationsCreateRes() {}
+
+type ConfirmationsCreateForbidden ProblemDetails
+
+func (*ConfirmationsCreateForbidden) confirmationsCreateRes() {}
+
+type ConfirmationsCreateUnauthorized ProblemDetails
+
+func (*ConfirmationsCreateUnauthorized) confirmationsCreateRes() {}
+
+type ConfirmationsCreateUnprocessableEntity ProblemDetails
+
+func (*ConfirmationsCreateUnprocessableEntity) confirmationsCreateRes() {}
+
+// A Channel a destination can opt out on or confirm on.
 // Ref: #/components/schemas/ConsentChannel
 type ConsentChannel string
 
 const (
 	ConsentChannelEmail    ConsentChannel = "email"
 	ConsentChannelTelegram ConsentChannel = "telegram"
+	ConsentChannelSMS      ConsentChannel = "sms"
 )
 
 // AllValues returns all ConsentChannel values.
@@ -5633,6 +5918,7 @@ func (ConsentChannel) AllValues() []ConsentChannel {
 	return []ConsentChannel{
 		ConsentChannelEmail,
 		ConsentChannelTelegram,
+		ConsentChannelSMS,
 	}
 }
 
@@ -5642,6 +5928,8 @@ func (s ConsentChannel) MarshalText() ([]byte, error) {
 	case ConsentChannelEmail:
 		return []byte(s), nil
 	case ConsentChannelTelegram:
+		return []byte(s), nil
+	case ConsentChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5657,9 +5945,54 @@ func (s *ConsentChannel) UnmarshalText(data []byte) error {
 	case ConsentChannelTelegram:
 		*s = ConsentChannelTelegram
 		return nil
+	case ConsentChannelSMS:
+		*s = ConsentChannelSMS
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable
+// `sms.confirmed` Event to answer a proof request.
+// Ref: #/components/schemas/ConsentEvidence
+type ConsentEvidence struct {
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+}
+
+// GetWording returns the value of Wording.
+func (s *ConsentEvidence) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ConsentEvidence) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ConsentEvidence) GetBrand() string {
+	return s.Brand
+}
+
+// SetWording sets the value of Wording.
+func (s *ConsentEvidence) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ConsentEvidence) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ConsentEvidence) SetBrand(val string) {
+	s.Brand = val
 }
 
 // Per-item result of a contacts batch, in request order.
@@ -5830,6 +6163,12 @@ type ContactExportConfirmation struct {
 	Destination string `json:"destination"`
 	// How the confirmation was obtained.
 	Provenance string `json:"provenance"`
+	// The consent wording the person was shown, on a confirmation recorded with its evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected, on a confirmation recorded with its evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from, on a confirmation recorded with its evidence.
+	Brand OptNilString `json:"brand"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -5852,6 +6191,21 @@ func (s *ContactExportConfirmation) GetDestination() string {
 // GetProvenance returns the value of Provenance.
 func (s *ContactExportConfirmation) GetProvenance() string {
 	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *ContactExportConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *ContactExportConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *ContactExportConfirmation) GetBrand() OptNilString {
+	return s.Brand
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -5877,6 +6231,21 @@ func (s *ContactExportConfirmation) SetDestination(val string) {
 // SetProvenance sets the value of Provenance.
 func (s *ContactExportConfirmation) SetProvenance(val string) {
 	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *ContactExportConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *ContactExportConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *ContactExportConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -6389,6 +6758,11 @@ type ContactExportOutboundMessage struct {
 	DeliveredAt OptNilTimestamp `json:"deliveredAt"`
 	// When the provider first reported the message bounced.
 	BouncedAt OptNilTimestamp `json:"bouncedAt"`
+	// When the provider reported the message undelivered (SMS); a message delivered first is never
+	// undelivered after.
+	UndeliveredAt OptNilTimestamp `json:"undeliveredAt"`
+	// The provider's error code of the undelivered report (Twilio's ErrorCode).
+	UndeliveredCode OptNilString `json:"undeliveredCode"`
 	// When the provider first reported a spam complaint about the message.
 	ComplainedAt OptNilTimestamp `json:"complainedAt"`
 	// When the contact first opened the message (a person, not a mail client).
@@ -6472,6 +6846,16 @@ func (s *ContactExportOutboundMessage) GetDeliveredAt() OptNilTimestamp {
 // GetBouncedAt returns the value of BouncedAt.
 func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
 	return s.BouncedAt
+}
+
+// GetUndeliveredAt returns the value of UndeliveredAt.
+func (s *ContactExportOutboundMessage) GetUndeliveredAt() OptNilTimestamp {
+	return s.UndeliveredAt
+}
+
+// GetUndeliveredCode returns the value of UndeliveredCode.
+func (s *ContactExportOutboundMessage) GetUndeliveredCode() OptNilString {
+	return s.UndeliveredCode
 }
 
 // GetComplainedAt returns the value of ComplainedAt.
@@ -6582,6 +6966,16 @@ func (s *ContactExportOutboundMessage) SetDeliveredAt(val OptNilTimestamp) {
 // SetBouncedAt sets the value of BouncedAt.
 func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
 	s.BouncedAt = val
+}
+
+// SetUndeliveredAt sets the value of UndeliveredAt.
+func (s *ContactExportOutboundMessage) SetUndeliveredAt(val OptNilTimestamp) {
+	s.UndeliveredAt = val
+}
+
+// SetUndeliveredCode sets the value of UndeliveredCode.
+func (s *ContactExportOutboundMessage) SetUndeliveredCode(val OptNilString) {
+	s.UndeliveredCode = val
 }
 
 // SetComplainedAt sets the value of ComplainedAt.
@@ -6808,6 +7202,8 @@ type ContactExportUnsubscribe struct {
 	Destination string `json:"destination"`
 	// The sending source (kind of mail) opted out of.
 	SendingSource string `json:"sendingSource"`
+	// How the person stopped; absent on email.
+	Via OptNilOptOutVia `json:"via"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -6830,6 +7226,11 @@ func (s *ContactExportUnsubscribe) GetDestination() string {
 // GetSendingSource returns the value of SendingSource.
 func (s *ContactExportUnsubscribe) GetSendingSource() string {
 	return s.SendingSource
+}
+
+// GetVia returns the value of Via.
+func (s *ContactExportUnsubscribe) GetVia() OptNilOptOutVia {
+	return s.Via
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -6855,6 +7256,11 @@ func (s *ContactExportUnsubscribe) SetDestination(val string) {
 // SetSendingSource sets the value of SendingSource.
 func (s *ContactExportUnsubscribe) SetSendingSource(val string) {
 	s.SendingSource = val
+}
+
+// SetVia sets the value of Via.
+func (s *ContactExportUnsubscribe) SetVia(val OptNilOptOutVia) {
+	s.Via = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -6924,7 +7330,7 @@ type ContactResource struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key. May be absent for anonymous contacts.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key. May be absent.
+	// Phone number in E.164 (`+14155550100`) — an alias key. May be absent.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -7512,7 +7918,8 @@ type CreateBroadcastInput struct {
 	// Internal broadcast name.
 	Name string `json:"name"`
 	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
-	// broadcast is never converted to another Channel.
+	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
+	// integration is refused with 422.
 	Content BroadcastContentInput `json:"content"`
 	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
@@ -7561,6 +7968,72 @@ func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
+// Request body for recording consent collected outside sphericon.
+// Ref: #/components/schemas/CreateConfirmationInput
+type CreateConfirmationInput struct {
+	// The Channel the consent is for. Only `sms` takes a recorded consent: email is confirmed by its own
+	// double opt-in link, and a Telegram chat is its own opt-in.
+	Channel ConsentChannel `json:"channel"`
+	// The phone number that consented, with its country code; stored in E.164.
+	Destination string `json:"destination"`
+	// The consent wording the person was shown and agreed to.
+	Wording string `json:"wording"`
+	// Where the consent was collected: a form, a page, a checkout, a verification service.
+	Source string `json:"source"`
+	// The brand the person agreed to hear from.
+	Brand string `json:"brand"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *CreateConfirmationInput) GetChannel() ConsentChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *CreateConfirmationInput) GetDestination() string {
+	return s.Destination
+}
+
+// GetWording returns the value of Wording.
+func (s *CreateConfirmationInput) GetWording() string {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *CreateConfirmationInput) GetSource() string {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *CreateConfirmationInput) GetBrand() string {
+	return s.Brand
+}
+
+// SetChannel sets the value of Channel.
+func (s *CreateConfirmationInput) SetChannel(val ConsentChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *CreateConfirmationInput) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetWording sets the value of Wording.
+func (s *CreateConfirmationInput) SetWording(val string) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *CreateConfirmationInput) SetSource(val string) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *CreateConfirmationInput) SetBrand(val string) {
+	s.Brand = val
+}
+
 // Request body for creating a contact.
 // Ref: #/components/schemas/CreateContactInput
 type CreateContactInput struct {
@@ -7568,7 +8041,8 @@ type CreateContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — optional; any alias key may be absent.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -7717,7 +8191,8 @@ func (s *CreateContactInput) SetCustomFields(val OptNilJsonObject) {
 // Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
 // (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
 // with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save;
-// a refusal is a 422.
+// a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks
+// set before the save; a refusal is a 422.
 // Ref: #/components/schemas/CreateIntegrationInput
 type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
@@ -7732,10 +8207,11 @@ type CreateIntegrationInput struct {
 	Config    IntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A
 	// Telegram integration takes none: it always reads its bot's updates with the built-in `telegram`
-	// Preset.
+	// Preset. A Twilio integration always reads its callbacks with the built-in `twilio` Preset, which no
+	// other integration takes.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram
-	// integration takes none.
+	// integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required.
 	Params OptJsonObject `json:"params"`
 }
 
@@ -7932,13 +8408,14 @@ func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
 // Ref: #/components/schemas/CreateSuppressionInput
 type CreateSuppressionInput struct {
 	// The Channel to stop sending on; `email` when omitted.
-	Channel OptConsentChannel `json:"channel"`
-	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`.
+	Channel OptSuppressionChannel `json:"channel"`
+	// What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a
+	// phone number with its country code on `sms` (stored in E.164).
 	Destination string `json:"destination"`
 }
 
 // GetChannel returns the value of Channel.
-func (s *CreateSuppressionInput) GetChannel() OptConsentChannel {
+func (s *CreateSuppressionInput) GetChannel() OptSuppressionChannel {
 	return s.Channel
 }
 
@@ -7948,7 +8425,7 @@ func (s *CreateSuppressionInput) GetDestination() string {
 }
 
 // SetChannel sets the value of Channel.
-func (s *CreateSuppressionInput) SetChannel(val OptConsentChannel) {
+func (s *CreateSuppressionInput) SetChannel(val OptSuppressionChannel) {
 	s.Channel = val
 }
 
@@ -8017,12 +8494,13 @@ func (s *CreateTemplateInput) SetDoc(val OptEditorDocument) {
 type CreateUnsubscribeInput struct {
 	// The Channel the destination opted out on; `email` when omitted.
 	Channel OptConsentChannel `json:"channel"`
-	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`. A Telegram
-	// opt-out covers every bot of the Workspace.
+	// What opted out: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone
+	// number with its country code on `sms` (stored in E.164). A Telegram opt-out covers every bot of the
+	// Workspace; an SMS opt-out covers every sender of the Workspace.
 	Destination string `json:"destination"`
 	// The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave
-	// entirely). On `telegram` only `everything` (the default) is accepted: a person stops all of the
-	// Workspace's Telegram messages.
+	// entirely). On `telegram` and `sms` only `everything` (the default) is accepted: a person stops all
+	// of the Workspace's messages on the Channel.
 	SendingSource OptString `json:"sendingSource"`
 }
 
@@ -10451,6 +10929,7 @@ type IntegrationConfigInputSum struct {
 	SesConfigInput      SesConfigInput
 	InboxConfigInput    InboxConfigInput
 	TelegramConfigInput TelegramConfigInput
+	TwilioConfigInput   TwilioConfigInput
 }
 
 // IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
@@ -10462,6 +10941,7 @@ const (
 	SesConfigInputIntegrationConfigInputSum      IntegrationConfigInputSumType = "ses"
 	InboxConfigInputIntegrationConfigInputSum    IntegrationConfigInputSumType = "inbox"
 	TelegramConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "telegram"
+	TwilioConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "twilio"
 )
 
 // IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
@@ -10482,6 +10962,11 @@ func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
 // IsTelegramConfigInput reports whether IntegrationConfigInputSum is TelegramConfigInput.
 func (s IntegrationConfigInputSum) IsTelegramConfigInput() bool {
 	return s.Type == TelegramConfigInputIntegrationConfigInputSum
+}
+
+// IsTwilioConfigInput reports whether IntegrationConfigInputSum is TwilioConfigInput.
+func (s IntegrationConfigInputSum) IsTwilioConfigInput() bool {
+	return s.Type == TwilioConfigInputIntegrationConfigInputSum
 }
 
 // SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
@@ -10568,6 +11053,27 @@ func NewTelegramConfigInputIntegrationConfigInputSum(v TelegramConfigInput) Inte
 	return s
 }
 
+// SetTwilioConfigInput sets IntegrationConfigInputSum to TwilioConfigInput.
+func (s *IntegrationConfigInputSum) SetTwilioConfigInput(v TwilioConfigInput) {
+	s.Type = TwilioConfigInputIntegrationConfigInputSum
+	s.TwilioConfigInput = v
+}
+
+// GetTwilioConfigInput returns TwilioConfigInput and true boolean if IntegrationConfigInputSum is TwilioConfigInput.
+func (s IntegrationConfigInputSum) GetTwilioConfigInput() (v TwilioConfigInput, ok bool) {
+	if !s.IsTwilioConfigInput() {
+		return v, false
+	}
+	return s.TwilioConfigInput, true
+}
+
+// NewTwilioConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from TwilioConfigInput.
+func NewTwilioConfigInputIntegrationConfigInputSum(v TwilioConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetTwilioConfigInput(v)
+	return s
+}
+
 // IntegrationConfigSum represents sum type.
 type IntegrationConfigSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -10576,6 +11082,7 @@ type IntegrationConfigSum struct {
 	SesConfig      SesConfig
 	InboxConfig    InboxConfig
 	TelegramConfig TelegramConfig
+	TwilioConfig   TwilioConfig
 }
 
 // IntegrationConfigSumType is oneOf type of IntegrationConfigSum.
@@ -10587,6 +11094,7 @@ const (
 	SesConfigIntegrationConfigSum      IntegrationConfigSumType = "ses"
 	InboxConfigIntegrationConfigSum    IntegrationConfigSumType = "inbox"
 	TelegramConfigIntegrationConfigSum IntegrationConfigSumType = "telegram"
+	TwilioConfigIntegrationConfigSum   IntegrationConfigSumType = "twilio"
 )
 
 // IsSmtpConfig reports whether IntegrationConfigSum is SmtpConfig.
@@ -10601,6 +11109,11 @@ func (s IntegrationConfigSum) IsInboxConfig() bool { return s.Type == InboxConfi
 // IsTelegramConfig reports whether IntegrationConfigSum is TelegramConfig.
 func (s IntegrationConfigSum) IsTelegramConfig() bool {
 	return s.Type == TelegramConfigIntegrationConfigSum
+}
+
+// IsTwilioConfig reports whether IntegrationConfigSum is TwilioConfig.
+func (s IntegrationConfigSum) IsTwilioConfig() bool {
+	return s.Type == TwilioConfigIntegrationConfigSum
 }
 
 // SetSmtpConfig sets IntegrationConfigSum to SmtpConfig.
@@ -10687,6 +11200,27 @@ func NewTelegramConfigIntegrationConfigSum(v TelegramConfig) IntegrationConfigSu
 	return s
 }
 
+// SetTwilioConfig sets IntegrationConfigSum to TwilioConfig.
+func (s *IntegrationConfigSum) SetTwilioConfig(v TwilioConfig) {
+	s.Type = TwilioConfigIntegrationConfigSum
+	s.TwilioConfig = v
+}
+
+// GetTwilioConfig returns TwilioConfig and true boolean if IntegrationConfigSum is TwilioConfig.
+func (s IntegrationConfigSum) GetTwilioConfig() (v TwilioConfig, ok bool) {
+	if !s.IsTwilioConfig() {
+		return v, false
+	}
+	return s.TwilioConfig, true
+}
+
+// NewTwilioConfigIntegrationConfigSum returns new IntegrationConfigSum from TwilioConfig.
+func NewTwilioConfigIntegrationConfigSum(v TwilioConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetTwilioConfig(v)
+	return s
+}
+
 // Concrete sending provider.
 // Ref: #/components/schemas/IntegrationProvider
 type IntegrationProvider string
@@ -10696,6 +11230,7 @@ const (
 	IntegrationProviderSes      IntegrationProvider = "ses"
 	IntegrationProviderInbox    IntegrationProvider = "inbox"
 	IntegrationProviderTelegram IntegrationProvider = "telegram"
+	IntegrationProviderTwilio   IntegrationProvider = "twilio"
 )
 
 // AllValues returns all IntegrationProvider values.
@@ -10705,6 +11240,7 @@ func (IntegrationProvider) AllValues() []IntegrationProvider {
 		IntegrationProviderSes,
 		IntegrationProviderInbox,
 		IntegrationProviderTelegram,
+		IntegrationProviderTwilio,
 	}
 }
 
@@ -10718,6 +11254,8 @@ func (s IntegrationProvider) MarshalText() ([]byte, error) {
 	case IntegrationProviderInbox:
 		return []byte(s), nil
 	case IntegrationProviderTelegram:
+		return []byte(s), nil
+	case IntegrationProviderTwilio:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -10738,6 +11276,9 @@ func (s *IntegrationProvider) UnmarshalText(data []byte) error {
 		return nil
 	case IntegrationProviderTelegram:
 		*s = IntegrationProviderTelegram
+		return nil
+	case IntegrationProviderTwilio:
+		*s = IntegrationProviderTwilio
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -12320,6 +12861,52 @@ func (o OptConsentChannel) Or(d ConsentChannel) ConsentChannel {
 	return d
 }
 
+// NewOptConsentEvidence returns new OptConsentEvidence with value set to v.
+func NewOptConsentEvidence(v ConsentEvidence) OptConsentEvidence {
+	return OptConsentEvidence{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConsentEvidence is optional ConsentEvidence.
+type OptConsentEvidence struct {
+	Value ConsentEvidence
+	Set   bool
+}
+
+// IsSet returns true if OptConsentEvidence was set.
+func (o OptConsentEvidence) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConsentEvidence) Reset() {
+	var v ConsentEvidence
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConsentEvidence) SetTo(v ConsentEvidence) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConsentEvidence) Get() (v ConsentEvidence, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConsentEvidence) Or(d ConsentEvidence) ConsentEvidence {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
 func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
 	return OptCustomFieldType{
@@ -13710,6 +14297,74 @@ func (o OptNilMaxPerSecond) Or(d MaxPerSecond) MaxPerSecond {
 	return d
 }
 
+// NewOptNilOptOutVia returns new OptNilOptOutVia with value set to v.
+func NewOptNilOptOutVia(v OptOutVia) OptNilOptOutVia {
+	return OptNilOptOutVia{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilOptOutVia is optional nullable OptOutVia.
+type OptNilOptOutVia struct {
+	Value OptOutVia
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilOptOutVia was set.
+func (o OptNilOptOutVia) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilOptOutVia) Reset() {
+	var v OptOutVia
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilOptOutVia) SetTo(v OptOutVia) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilOptOutVia) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilOptOutVia) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v OptOutVia
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilOptOutVia) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilOptOutVia) Get() (v OptOutVia, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilOptOutVia) Or(d OptOutVia) OptOutVia {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSendCap returns new OptNilSendCap with value set to v.
 func NewOptNilSendCap(v SendCap) OptNilSendCap {
 	return OptNilSendCap{
@@ -13772,6 +14427,142 @@ func (o OptNilSendCap) Get() (v SendCap, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSendCap) Or(d SendCap) SendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSmsConfirmation returns new OptNilSmsConfirmation with value set to v.
+func NewOptNilSmsConfirmation(v SmsConfirmation) OptNilSmsConfirmation {
+	return OptNilSmsConfirmation{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSmsConfirmation is optional nullable SmsConfirmation.
+type OptNilSmsConfirmation struct {
+	Value SmsConfirmation
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSmsConfirmation was set.
+func (o OptNilSmsConfirmation) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSmsConfirmation) Reset() {
+	var v SmsConfirmation
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSmsConfirmation) SetTo(v SmsConfirmation) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSmsConfirmation) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSmsConfirmation) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SmsConfirmation
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSmsConfirmation) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSmsConfirmation) Get() (v SmsConfirmation, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSmsConfirmation) Or(d SmsConfirmation) SmsConfirmation {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSmsOptOut returns new OptNilSmsOptOut with value set to v.
+func NewOptNilSmsOptOut(v SmsOptOut) OptNilSmsOptOut {
+	return OptNilSmsOptOut{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSmsOptOut is optional nullable SmsOptOut.
+type OptNilSmsOptOut struct {
+	Value SmsOptOut
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSmsOptOut was set.
+func (o OptNilSmsOptOut) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSmsOptOut) Reset() {
+	var v SmsOptOut
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSmsOptOut) SetTo(v SmsOptOut) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSmsOptOut) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSmsOptOut) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SmsOptOut
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSmsOptOut) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSmsOptOut) Get() (v SmsOptOut, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSmsOptOut) Or(d SmsOptOut) SmsOptOut {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -13980,6 +14771,80 @@ func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
 		return v
 	}
 	return d
+}
+
+// How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword),
+// a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider
+// refused because the person had stopped at the provider (refused_send), or an opt-out recorded by
+// hand in the app or through the API, which reached the Workspace by another route (manual).
+// Ref: #/components/schemas/OptOutVia
+type OptOutVia string
+
+const (
+	OptOutViaKeyword     OptOutVia = "keyword"
+	OptOutViaButton      OptOutVia = "button"
+	OptOutViaBlock       OptOutVia = "block"
+	OptOutViaLink        OptOutVia = "link"
+	OptOutViaRefusedSend OptOutVia = "refused_send"
+	OptOutViaManual      OptOutVia = "manual"
+)
+
+// AllValues returns all OptOutVia values.
+func (OptOutVia) AllValues() []OptOutVia {
+	return []OptOutVia{
+		OptOutViaKeyword,
+		OptOutViaButton,
+		OptOutViaBlock,
+		OptOutViaLink,
+		OptOutViaRefusedSend,
+		OptOutViaManual,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OptOutVia) MarshalText() ([]byte, error) {
+	switch s {
+	case OptOutViaKeyword:
+		return []byte(s), nil
+	case OptOutViaButton:
+		return []byte(s), nil
+	case OptOutViaBlock:
+		return []byte(s), nil
+	case OptOutViaLink:
+		return []byte(s), nil
+	case OptOutViaRefusedSend:
+		return []byte(s), nil
+	case OptOutViaManual:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OptOutVia) UnmarshalText(data []byte) error {
+	switch OptOutVia(data) {
+	case OptOutViaKeyword:
+		*s = OptOutViaKeyword
+		return nil
+	case OptOutViaButton:
+		*s = OptOutViaButton
+		return nil
+	case OptOutViaBlock:
+		*s = OptOutViaBlock
+		return nil
+	case OptOutViaLink:
+		*s = OptOutViaLink
+		return nil
+	case OptOutViaRefusedSend:
+		*s = OptOutViaRefusedSend
+		return nil
+	case OptOutViaManual:
+		*s = OptOutViaManual
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // NewOptProblemCode returns new OptProblemCode with value set to v.
@@ -14206,6 +15071,52 @@ func (o OptString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSuppressionChannel returns new OptSuppressionChannel with value set to v.
+func NewOptSuppressionChannel(v SuppressionChannel) OptSuppressionChannel {
+	return OptSuppressionChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSuppressionChannel is optional SuppressionChannel.
+type OptSuppressionChannel struct {
+	Value SuppressionChannel
+	Set   bool
+}
+
+// IsSet returns true if OptSuppressionChannel was set.
+func (o OptSuppressionChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSuppressionChannel) Reset() {
+	var v SuppressionChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSuppressionChannel) SetTo(v SuppressionChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSuppressionChannel) Get() (v SuppressionChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSuppressionChannel) Or(d SuppressionChannel) SuppressionChannel {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -14981,6 +15892,7 @@ func (*ProblemDetailsHeaders) capturedMessagesDeleteAllRes() {}
 func (*ProblemDetailsHeaders) capturedMessagesDeleteRes()    {}
 func (*ProblemDetailsHeaders) capturedMessagesGetRes()       {}
 func (*ProblemDetailsHeaders) capturedMessagesListRes()      {}
+func (*ProblemDetailsHeaders) confirmationsCreateRes()       {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
 func (*ProblemDetailsHeaders) contactsCreateRes()            {}
 func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
@@ -15030,6 +15942,7 @@ func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
 func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
 func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
+func (*ProblemDetailsHeaders) smsConsentsGetRes()            {}
 func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
 func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
 func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
@@ -17594,6 +18507,369 @@ func (s *SetTrackingDomainInput) SetHost(val string) {
 	s.Host = val
 }
 
+// SMS's content of a Broadcast as stored.
+// Ref: #/components/schemas/SmsBroadcastContent
+type SmsBroadcastContent struct {
+	// The Channel the content is for.
+	Channel SmsBroadcastContentChannel `json:"channel"`
+	// The text, plain, with Liquid merge tags.
+	Text string `json:"text"`
+	// Whether each link of the text goes out as a short tracked link.
+	LinkTracking bool `json:"linkTracking"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *SmsBroadcastContent) GetChannel() SmsBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *SmsBroadcastContent) GetText() string {
+	return s.Text
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsBroadcastContent) GetLinkTracking() bool {
+	return s.LinkTracking
+}
+
+// SetChannel sets the value of Channel.
+func (s *SmsBroadcastContent) SetChannel(val SmsBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsBroadcastContent) SetText(val string) {
+	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsBroadcastContent) SetLinkTracking(val bool) {
+	s.LinkTracking = val
+}
+
+// The Channel the content is for.
+type SmsBroadcastContentChannel string
+
+const (
+	SmsBroadcastContentChannelSMS SmsBroadcastContentChannel = "sms"
+)
+
+// AllValues returns all SmsBroadcastContentChannel values.
+func (SmsBroadcastContentChannel) AllValues() []SmsBroadcastContentChannel {
+	return []SmsBroadcastContentChannel{
+		SmsBroadcastContentChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsBroadcastContentChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch SmsBroadcastContentChannel(data) {
+	case SmsBroadcastContentChannelSMS:
+		*s = SmsBroadcastContentChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+// omitted field takes its default (an empty text, link tracking on); on update an omitted field keeps
+// its value.
+// Ref: #/components/schemas/SmsBroadcastContentInput
+type SmsBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel SmsBroadcastContentInputChannel `json:"channel"`
+	// The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one,
+	// and a save one over the part limit, its links counted as short links while `linkTracking` is on.
+	Text OptString `json:"text"`
+	// Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose
+	// clicks record `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *SmsBroadcastContentInput) GetChannel() SmsBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *SmsBroadcastContentInput) GetText() OptString {
+	return s.Text
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsBroadcastContentInput) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
+// SetChannel sets the value of Channel.
+func (s *SmsBroadcastContentInput) SetChannel(val SmsBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsBroadcastContentInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsBroadcastContentInput) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type SmsBroadcastContentInputChannel string
+
+const (
+	SmsBroadcastContentInputChannelSMS SmsBroadcastContentInputChannel = "sms"
+)
+
+// AllValues returns all SmsBroadcastContentInputChannel values.
+func (SmsBroadcastContentInputChannel) AllValues() []SmsBroadcastContentInputChannel {
+	return []SmsBroadcastContentInputChannel{
+		SmsBroadcastContentInputChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsBroadcastContentInputChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch SmsBroadcastContentInputChannel(data) {
+	case SmsBroadcastContentInputChannelSMS:
+		*s = SmsBroadcastContentInputChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it
+// carries.
+// Ref: #/components/schemas/SmsConfirmation
+type SmsConfirmation struct {
+	// How the consent was obtained.
+	Provenance ConfirmationProvenance `json:"provenance"`
+	// The consent wording the person was shown; absent when the confirmation carries no evidence.
+	Wording OptNilString `json:"wording"`
+	// Where the consent was collected; absent when the confirmation carries no evidence.
+	Source OptNilString `json:"source"`
+	// The brand the person agreed to hear from; absent when the confirmation carries no evidence.
+	Brand OptNilString `json:"brand"`
+	// When the consent was recorded.
+	ConfirmedAt Timestamp `json:"confirmedAt"`
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *SmsConfirmation) GetProvenance() ConfirmationProvenance {
+	return s.Provenance
+}
+
+// GetWording returns the value of Wording.
+func (s *SmsConfirmation) GetWording() OptNilString {
+	return s.Wording
+}
+
+// GetSource returns the value of Source.
+func (s *SmsConfirmation) GetSource() OptNilString {
+	return s.Source
+}
+
+// GetBrand returns the value of Brand.
+func (s *SmsConfirmation) GetBrand() OptNilString {
+	return s.Brand
+}
+
+// GetConfirmedAt returns the value of ConfirmedAt.
+func (s *SmsConfirmation) GetConfirmedAt() Timestamp {
+	return s.ConfirmedAt
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *SmsConfirmation) SetProvenance(val ConfirmationProvenance) {
+	s.Provenance = val
+}
+
+// SetWording sets the value of Wording.
+func (s *SmsConfirmation) SetWording(val OptNilString) {
+	s.Wording = val
+}
+
+// SetSource sets the value of Source.
+func (s *SmsConfirmation) SetSource(val OptNilString) {
+	s.Source = val
+}
+
+// SetBrand sets the value of Brand.
+func (s *SmsConfirmation) SetBrand(val OptNilString) {
+	s.Brand = val
+}
+
+// SetConfirmedAt sets the value of ConfirmedAt.
+func (s *SmsConfirmation) SetConfirmedAt(val Timestamp) {
+	s.ConfirmedAt = val
+}
+
+// Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both
+// keyed by the number.
+// Ref: #/components/schemas/SmsConsent
+type SmsConsent struct {
+	// The contact's phone in E.164; absent when it has none, and then nothing else is.
+	Phone OptNilString `json:"phone"`
+	// The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it.
+	Confirmation OptNilSmsConfirmation `json:"confirmation"`
+	// The phone's opt-out of every SMS of the Workspace; absent while it has none.
+	OptOut OptNilSmsOptOut `json:"optOut"`
+}
+
+// GetPhone returns the value of Phone.
+func (s *SmsConsent) GetPhone() OptNilString {
+	return s.Phone
+}
+
+// GetConfirmation returns the value of Confirmation.
+func (s *SmsConsent) GetConfirmation() OptNilSmsConfirmation {
+	return s.Confirmation
+}
+
+// GetOptOut returns the value of OptOut.
+func (s *SmsConsent) GetOptOut() OptNilSmsOptOut {
+	return s.OptOut
+}
+
+// SetPhone sets the value of Phone.
+func (s *SmsConsent) SetPhone(val OptNilString) {
+	s.Phone = val
+}
+
+// SetConfirmation sets the value of Confirmation.
+func (s *SmsConsent) SetConfirmation(val OptNilSmsConfirmation) {
+	s.Confirmation = val
+}
+
+// SetOptOut sets the value of OptOut.
+func (s *SmsConsent) SetOptOut(val OptNilSmsOptOut) {
+	s.OptOut = val
+}
+
+func (*SmsConsent) smsConsentsGetRes() {}
+
+type SmsConsentsGetBadRequest ProblemDetails
+
+func (*SmsConsentsGetBadRequest) smsConsentsGetRes() {}
+
+type SmsConsentsGetForbidden ProblemDetails
+
+func (*SmsConsentsGetForbidden) smsConsentsGetRes() {}
+
+type SmsConsentsGetNotFound ProblemDetails
+
+func (*SmsConsentsGetNotFound) smsConsentsGetRes() {}
+
+type SmsConsentsGetUnauthorized ProblemDetails
+
+func (*SmsConsentsGetUnauthorized) smsConsentsGetRes() {}
+
+// What an SMS integration's messages go out from.
+// Ref: #/components/schemas/SmsFromKind
+type SmsFromKind string
+
+const (
+	SmsFromKindNumber           SmsFromKind = "number"
+	SmsFromKindAlphanumeric     SmsFromKind = "alphanumeric"
+	SmsFromKindMessagingService SmsFromKind = "messagingService"
+)
+
+// AllValues returns all SmsFromKind values.
+func (SmsFromKind) AllValues() []SmsFromKind {
+	return []SmsFromKind{
+		SmsFromKindNumber,
+		SmsFromKindAlphanumeric,
+		SmsFromKindMessagingService,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsFromKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsFromKindNumber:
+		return []byte(s), nil
+	case SmsFromKindAlphanumeric:
+		return []byte(s), nil
+	case SmsFromKindMessagingService:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsFromKind) UnmarshalText(data []byte) error {
+	switch SmsFromKind(data) {
+	case SmsFromKindNumber:
+		*s = SmsFromKindNumber
+		return nil
+	case SmsFromKindAlphanumeric:
+		*s = SmsFromKindAlphanumeric
+		return nil
+	case SmsFromKindMessagingService:
+		*s = SmsFromKindMessagingService
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped.
+// Ref: #/components/schemas/SmsOptOut
+type SmsOptOut struct {
+	// How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link),
+	// a send Twilio refused because the number had texted STOP to the sender there (refused_send), or
+	// recorded by hand (manual).
+	Via OptOutVia `json:"via"`
+	// When the phone opted out.
+	OptedOutAt Timestamp `json:"optedOutAt"`
+}
+
+// GetVia returns the value of Via.
+func (s *SmsOptOut) GetVia() OptOutVia {
+	return s.Via
+}
+
+// GetOptedOutAt returns the value of OptedOutAt.
+func (s *SmsOptOut) GetOptedOutAt() Timestamp {
+	return s.OptedOutAt
+}
+
+// SetVia sets the value of Via.
+func (s *SmsOptOut) SetVia(val OptOutVia) {
+	s.Via = val
+}
+
+// SetOptedOutAt sets the value of OptedOutAt.
+func (s *SmsOptOut) SetOptedOutAt(val Timestamp) {
+	s.OptedOutAt = val
+}
+
 // SMTP config without the password.
 // Ref: #/components/schemas/SmtpConfig
 type SmtpConfig struct {
@@ -17815,6 +19091,56 @@ func (s *SmtpConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Channel a destination can be suppressed on.
+// Ref: #/components/schemas/SuppressionChannel
+type SuppressionChannel string
+
+const (
+	SuppressionChannelEmail    SuppressionChannel = "email"
+	SuppressionChannelTelegram SuppressionChannel = "telegram"
+	SuppressionChannelSMS      SuppressionChannel = "sms"
+)
+
+// AllValues returns all SuppressionChannel values.
+func (SuppressionChannel) AllValues() []SuppressionChannel {
+	return []SuppressionChannel{
+		SuppressionChannelEmail,
+		SuppressionChannelTelegram,
+		SuppressionChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SuppressionChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SuppressionChannelEmail:
+		return []byte(s), nil
+	case SuppressionChannelTelegram:
+		return []byte(s), nil
+	case SuppressionChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SuppressionChannel) UnmarshalText(data []byte) error {
+	switch SuppressionChannel(data) {
+	case SuppressionChannelEmail:
+		*s = SuppressionChannelEmail
+		return nil
+	case SuppressionChannelTelegram:
+		*s = SuppressionChannelTelegram
+		return nil
+	case SuppressionChannelSMS:
+		*s = SuppressionChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Why a destination is on the suppression (do-not-send) list.
 // Ref: #/components/schemas/SuppressionReason
 type SuppressionReason string
@@ -17871,8 +19197,9 @@ type SuppressionResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
 	// The Channel the suppression is on.
-	Channel ConsentChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address, or the Telegram user id.
+	Channel SuppressionChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in
+	// E.164.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
 	Reason SuppressionReason `json:"reason"`
@@ -17886,7 +19213,7 @@ func (s *SuppressionResource) GetID() EntityId {
 }
 
 // GetChannel returns the value of Channel.
-func (s *SuppressionResource) GetChannel() ConsentChannel {
+func (s *SuppressionResource) GetChannel() SuppressionChannel {
 	return s.Channel
 }
 
@@ -17911,7 +19238,7 @@ func (s *SuppressionResource) SetID(val EntityId) {
 }
 
 // SetChannel sets the value of Channel.
-func (s *SuppressionResource) SetChannel(val ConsentChannel) {
+func (s *SuppressionResource) SetChannel(val SuppressionChannel) {
 	s.Channel = val
 }
 
@@ -18936,21 +20263,35 @@ type TemplatesUpdateUnprocessableEntity ProblemDetails
 
 func (*TemplatesUpdateUnprocessableEntity) templatesUpdateRes() {}
 
-// Request body for a test send.
+// Request body for a test send: where the preview goes, in the field of the broadcast's Channel. The
+// field of the other Channel is not read.
 // Ref: #/components/schemas/TestSendBroadcastInput
 type TestSendBroadcastInput struct {
-	// Address to send the rendered preview to.
-	Email EmailAddress `json:"email"`
+	// Address to send the rendered preview of an email broadcast to; required on email.
+	Email OptEmailAddress `json:"email"`
+	// Phone number to send the rendered text of an SMS broadcast to, in international format with its
+	// country code (+14155550100); required on SMS, and a value that is no such number is a 422.
+	Phone OptString `json:"phone"`
 }
 
 // GetEmail returns the value of Email.
-func (s *TestSendBroadcastInput) GetEmail() EmailAddress {
+func (s *TestSendBroadcastInput) GetEmail() OptEmailAddress {
 	return s.Email
 }
 
+// GetPhone returns the value of Phone.
+func (s *TestSendBroadcastInput) GetPhone() OptString {
+	return s.Phone
+}
+
 // SetEmail sets the value of Email.
-func (s *TestSendBroadcastInput) SetEmail(val EmailAddress) {
+func (s *TestSendBroadcastInput) SetEmail(val OptEmailAddress) {
 	s.Email = val
+}
+
+// SetPhone sets the value of Phone.
+func (s *TestSendBroadcastInput) SetPhone(val OptString) {
+	s.Phone = val
 }
 
 // Request body for sending a sample event to a webhook endpoint.
@@ -19367,6 +20708,222 @@ func (s *TransactionalSendStatus) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Twilio account without its secret.
+// Ref: #/components/schemas/TwilioConfig
+type TwilioConfig struct {
+	Kind TwilioConfigKind `json:"kind"`
+	// The Account SID.
+	AccountSid string `json:"accountSid"`
+	// The API key messages are sent with; null when they are sent with the Auth Token.
+	ApiKeySid NilString `json:"apiKeySid"`
+	// What messages go out from.
+	From string `json:"from"`
+	// What kind of sender `from` is.
+	FromKind SmsFromKind `json:"fromKind"`
+	// Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID,
+	// which receives nothing, and when the credentials may not change the sender: then paste `hookUrl`
+	// into Twilio as the sender's inbound and status callback.
+	CallbacksSet bool `json:"callbacksSet"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TwilioConfig) GetKind() TwilioConfigKind {
+	return s.Kind
+}
+
+// GetAccountSid returns the value of AccountSid.
+func (s *TwilioConfig) GetAccountSid() string {
+	return s.AccountSid
+}
+
+// GetApiKeySid returns the value of ApiKeySid.
+func (s *TwilioConfig) GetApiKeySid() NilString {
+	return s.ApiKeySid
+}
+
+// GetFrom returns the value of From.
+func (s *TwilioConfig) GetFrom() string {
+	return s.From
+}
+
+// GetFromKind returns the value of FromKind.
+func (s *TwilioConfig) GetFromKind() SmsFromKind {
+	return s.FromKind
+}
+
+// GetCallbacksSet returns the value of CallbacksSet.
+func (s *TwilioConfig) GetCallbacksSet() bool {
+	return s.CallbacksSet
+}
+
+// SetKind sets the value of Kind.
+func (s *TwilioConfig) SetKind(val TwilioConfigKind) {
+	s.Kind = val
+}
+
+// SetAccountSid sets the value of AccountSid.
+func (s *TwilioConfig) SetAccountSid(val string) {
+	s.AccountSid = val
+}
+
+// SetApiKeySid sets the value of ApiKeySid.
+func (s *TwilioConfig) SetApiKeySid(val NilString) {
+	s.ApiKeySid = val
+}
+
+// SetFrom sets the value of From.
+func (s *TwilioConfig) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromKind sets the value of FromKind.
+func (s *TwilioConfig) SetFromKind(val SmsFromKind) {
+	s.FromKind = val
+}
+
+// SetCallbacksSet sets the value of CallbacksSet.
+func (s *TwilioConfig) SetCallbacksSet(val bool) {
+	s.CallbacksSet = val
+}
+
+// A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the
+// credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a
+// Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's
+// callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials.
+// Ref: #/components/schemas/TwilioConfigInput
+type TwilioConfigInput struct {
+	Kind TwilioConfigInputKind `json:"kind"`
+	// The Account SID (`AC…`).
+	AccountSid string `json:"accountSid"`
+	// An API key's SID (`SK…`) to send with; omit or null to send with the Account SID and its Auth
+	// Token.
+	ApiKeySid OptNilString `json:"apiKeySid"`
+	// The API key's secret, or the Auth Token when no API key is given. Write-only: blank on an update
+	// keeps the stored one while the Account SID and the API key stay the same.
+	Secret string `json:"secret"`
+	// What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric
+	// sender ID of up to 11 characters, or a Messaging Service SID (`MG…`).
+	From string `json:"from"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TwilioConfigInput) GetKind() TwilioConfigInputKind {
+	return s.Kind
+}
+
+// GetAccountSid returns the value of AccountSid.
+func (s *TwilioConfigInput) GetAccountSid() string {
+	return s.AccountSid
+}
+
+// GetApiKeySid returns the value of ApiKeySid.
+func (s *TwilioConfigInput) GetApiKeySid() OptNilString {
+	return s.ApiKeySid
+}
+
+// GetSecret returns the value of Secret.
+func (s *TwilioConfigInput) GetSecret() string {
+	return s.Secret
+}
+
+// GetFrom returns the value of From.
+func (s *TwilioConfigInput) GetFrom() string {
+	return s.From
+}
+
+// SetKind sets the value of Kind.
+func (s *TwilioConfigInput) SetKind(val TwilioConfigInputKind) {
+	s.Kind = val
+}
+
+// SetAccountSid sets the value of AccountSid.
+func (s *TwilioConfigInput) SetAccountSid(val string) {
+	s.AccountSid = val
+}
+
+// SetApiKeySid sets the value of ApiKeySid.
+func (s *TwilioConfigInput) SetApiKeySid(val OptNilString) {
+	s.ApiKeySid = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *TwilioConfigInput) SetSecret(val string) {
+	s.Secret = val
+}
+
+// SetFrom sets the value of From.
+func (s *TwilioConfigInput) SetFrom(val string) {
+	s.From = val
+}
+
+type TwilioConfigInputKind string
+
+const (
+	TwilioConfigInputKindTwilio TwilioConfigInputKind = "twilio"
+)
+
+// AllValues returns all TwilioConfigInputKind values.
+func (TwilioConfigInputKind) AllValues() []TwilioConfigInputKind {
+	return []TwilioConfigInputKind{
+		TwilioConfigInputKindTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TwilioConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TwilioConfigInputKindTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TwilioConfigInputKind) UnmarshalText(data []byte) error {
+	switch TwilioConfigInputKind(data) {
+	case TwilioConfigInputKindTwilio:
+		*s = TwilioConfigInputKindTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TwilioConfigKind string
+
+const (
+	TwilioConfigKindTwilio TwilioConfigKind = "twilio"
+)
+
+// AllValues returns all TwilioConfigKind values.
+func (TwilioConfigKind) AllValues() []TwilioConfigKind {
+	return []TwilioConfigKind{
+		TwilioConfigKindTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TwilioConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TwilioConfigKindTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TwilioConfigKind) UnmarshalText(data []byte) error {
+	switch TwilioConfigKind(data) {
+	case TwilioConfigKindTwilio:
+		*s = TwilioConfigKindTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A per-sending-source opt-out of marketing.
 // Ref: #/components/schemas/UnsubscribeResource
 type UnsubscribeResource struct {
@@ -19374,7 +20931,8 @@ type UnsubscribeResource struct {
 	ID EntityId `json:"id"`
 	// The Channel the opt-out is on.
 	Channel ConsentChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address, or the Telegram user id.
+	// Normalized destination: the lower-cased email address, the Telegram user id, or the phone number in
+	// E.164.
 	Destination string `json:"destination"`
 	// The sending source opted out of: `broadcasts`, `automation:<id>` or `everything`.
 	SendingSource string `json:"sendingSource"`
@@ -19576,7 +21134,8 @@ type UpdateContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -19766,10 +21325,11 @@ type UpdateIntegrationInput struct {
 	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
 	Config    OptIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
-	// secret carries over. A Telegram integration's Preset is fixed.
+	// secret carries over. A Telegram or Twilio integration's Preset is fixed.
 	Preset OptNilString `json:"preset"`
 	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-	// rotates it (the old one stays valid until retired). A Telegram integration takes none.
+	// rotates it (the old one stays valid until retired): a Twilio integration's `auth_token` rotates this
+	// way, leaving its send credentials as they are. A Telegram integration takes none.
 	Params OptJsonObject `json:"params"`
 	// Stop accepting the retiring value of every rotating secret.
 	RetireSecrets OptBool `json:"retireSecrets"`
@@ -20069,7 +21629,8 @@ type UpsertContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -20093,6 +21654,10 @@ type UpsertContactInput struct {
 	// time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that
 	// serializes as UTC and lands on the previous day east of UTC.
 	CustomFields OptNilJsonObject `json:"customFields"`
+	// The evidence of the SMS consent the contact's phone gave outside sphericon: records an `imported`
+	// SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone stays unreachable
+	// on SMS. An item with it and no phone fails.
+	SmsConsent OptConsentEvidence `json:"smsConsent"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -20155,6 +21720,11 @@ func (s *UpsertContactInput) GetCustomFields() OptNilJsonObject {
 	return s.CustomFields
 }
 
+// GetSmsConsent returns the value of SmsConsent.
+func (s *UpsertContactInput) GetSmsConsent() OptConsentEvidence {
+	return s.SmsConsent
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *UpsertContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -20213,6 +21783,11 @@ func (s *UpsertContactInput) SetAvatar(val OptNilImageUrl) {
 // SetCustomFields sets the value of CustomFields.
 func (s *UpsertContactInput) SetCustomFields(val OptNilJsonObject) {
 	s.CustomFields = val
+}
+
+// SetSmsConsent sets the value of SmsConsent.
+func (s *UpsertContactInput) SetSmsConsent(val OptConsentEvidence) {
+	s.SmsConsent = val
 }
 
 // Request body for upserting contacts in batch.

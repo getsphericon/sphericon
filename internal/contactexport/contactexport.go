@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -82,12 +83,17 @@ func Stream(ctx context.Context, s *ent.Scoped, m Mapper, w io.Writer, c *ent.Co
 		return err
 	}
 
-	// The Contact's Destinations (ADR 0001): its email address. Rows are matched by
-	// Destination as well as by contact_id, so a transactional send to the address
-	// that never had a Contact is included.
+	// The Contact's Destinations (ADR 0001, 0075): its email address and its phone. Rows are
+	// matched by Destination as well as by contact_id, so a transactional send to the address
+	// that never had a Contact is included, and so is the consent of its number. The phone's hash
+	// is one of its Destinations too: an opt-out or a Suppression an Erasure keyed by it (an
+	// earlier person with the number) refuses this Contact's texts.
 	var destinations []string
 	if c.Email != nil {
 		destinations = append(destinations, strings.ToLower(*c.Email))
+	}
+	if c.Phone != nil {
+		destinations = append(destinations, *c.Phone, phone.Hash(*c.Phone))
 	}
 	visitorIDs := lo.Map(visitors, func(v *ent.Visitor, _ int) string { return v.VisitorID })
 

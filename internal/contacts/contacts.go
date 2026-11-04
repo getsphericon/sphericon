@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -59,6 +60,13 @@ var (
 	ErrEmailTaken     = validation.ConflictField(FieldEmail, "contacts: email already exists", i18n.ErrorsEmailExists)
 	ErrPhoneTaken     = validation.ConflictField(FieldPhone, "contacts: phone already exists", i18n.ErrorsPhoneExists)
 	ErrSubjectIDTaken = validation.ConflictField(FieldSubjectID, "contacts: subject_id already exists", i18n.ErrorsSubjectIdExists)
+)
+
+// A phone that cannot be stored in E.164 (ADR 0075), refused like an invalid email.
+var (
+	ErrPhoneInvalid         = validation.RefuseField(FieldPhone, "contacts: phone is not a phone number", i18n.ErrorsPhoneInvalid)
+	ErrPhoneCountryRequired = validation.RefuseField(FieldPhone, "contacts: phone has no country code and the contact no country", i18n.ErrorsPhoneCountryRequired)
+	ErrPhoneExtension       = validation.RefuseField(FieldPhone, "contacts: phone has an extension", i18n.ErrorsPhoneExtension)
 )
 
 // taken is the conflict of each alias key, in the order a unique violation is matched by its
@@ -117,6 +125,10 @@ type UpsertInput struct {
 	SubjectID, Email, Phone        *string
 	GuessedTimeZone, GuessedLocale *string
 	CustomFields                   map[string]any
+	// SMSConsent is the evidence of SMS consent the Contact's phone gave outside sphericon (an
+	// import's consent columns): the upsert records an imported SMS Confirmation for the phone in
+	// the same transaction (ADR 0077). nil records none.
+	SMSConsent *consent.Evidence
 }
 
 // Result is the outcome of an Upsert.
@@ -139,8 +151,12 @@ func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 // key already taken in the Workspace yields its conflict (ErrEmailTaken and its kin).
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, in CreateInput) (*ent.Contact, error) {
 	attrs := in.normalized()
+	var err error
+	if attrs.Phone, err = e164(attrs.Phone, attrs.Country); err != nil {
+		return nil, err
+	}
 	var c *ent.Contact
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		typed, err := EnsureCustomFields(ctx, ts, attrs.CustomFields)
 		if err != nil {
 			return err
@@ -193,10 +209,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil {
 			return err
 		}
+		phone, err := patchedPhone(in, before.Country)
+		if err != nil {
+			return err
+		}
 		q := ts.Contact().UpdateOneID(id)
 		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
 		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
-		patch.Apply(in.Phone, q.SetPhone, q.ClearPhone)
+		patch.Apply(phone, q.SetPhone, q.ClearPhone)
 		applyCore(q, in.Core)
 		if fields, ok := in.CustomFields.Get(); ok {
 			typed, err := EnsureCustomFields(ctx, ts, fields)
@@ -342,6 +362,11 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
 	}
+	phone, err := upsertedPhone(ctx, s, in)
+	if err != nil {
+		return Result{}, err
+	}
+	in.Phone = phone
 	typed, err := EnsureCustomFields(ctx, s, in.CustomFields)
 	if err != nil {
 		return Result{}, err
@@ -353,7 +378,13 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	}
 	if existing != nil {
 		c, err := enrich(ctx, s, pub, existing.ID, in, typed, ch)
-		return Result{Contact: c}, err
+		if err != nil {
+			return Result{}, err
+		}
+		if err := confirmSMS(ctx, s, pub, c, in); err != nil {
+			return Result{}, err
+		}
+		return Result{Contact: c}, nil
 	}
 
 	q := s.Contact().Create().
@@ -377,7 +408,25 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 			return Result{}, err
 		}
 	}
+	if err := confirmSMS(ctx, s, pub, c, in); err != nil {
+		return Result{}, err
+	}
 	return Result{Contact: c, Created: true}, nil
+}
+
+// confirmSMS records the SMS consent an upsert carries for the phone it names, or the Contact's
+// own when it names none: the evidence was collected for that number. Consent without a phone is
+// refused, so an import row never drops it silently.
+func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, c *ent.Contact, in UpsertInput) error {
+	if in.SMSConsent == nil {
+		return nil
+	}
+	number := lo.CoalesceOrEmpty(lo.FromPtr(in.Phone), lo.FromPtr(c.Phone))
+	if number == "" {
+		return consent.ErrNoPhone
+	}
+	_, err := consent.ConfirmSMSIn(ctx, s, pub, number, *in.SMSConsent)
+	return err
 }
 
 // withGuesses is the Core with the browser's guesses taking a time zone or locale the Core leaves
@@ -444,9 +493,17 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 
 // Resolve finds an existing Contact by any present alias key (subject_id → email →
 // phone), or returns nil. It never creates. Keys are matched as normalized by
-// Attributes, so callers may pass raw values.
+// Attributes, so callers may pass raw values: a phone is read as an international number, and one
+// that is none (a local number, garbage) resolves nothing.
 func Resolve(ctx context.Context, s *ent.Scoped, subjectID, email, phone *string) (*ent.Contact, error) {
 	a := Attributes{SubjectID: subjectID, Email: email, Phone: phone}.normalized()
+	if a.Phone != nil {
+		if p, err := e164(a.Phone, nil); err == nil {
+			a.Phone = p
+		} else {
+			a.Phone = nil
+		}
+	}
 	var keys []predicate.Contact
 	if a.SubjectID != nil {
 		keys = append(keys, contact.SubjectID(*a.SubjectID))

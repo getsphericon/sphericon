@@ -33,7 +33,9 @@ model SiteMessageRevenue {
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
  */
 model SiteBroadcastStats {
   /** Number of recipients the broadcast targets */
@@ -62,6 +64,9 @@ model SiteBroadcastStats {
 
   /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   deliveredCount: int32 | null;
+
+  /** Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  undeliveredCount: int32 | null;
 
   /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   bouncedCount: int32 | null;
@@ -188,17 +193,18 @@ model SiteBroadcastResource {
   updatedAt: Timestamp;
 }
 
-/** What a test send did: the address the preview went out from */
+/** What a test send did: on email the address the preview went out from */
 model SiteTestSendBroadcastResult {
   /**
-   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * The From address of an email preview. A Workspace with a verified Sending domain gets its own
    * domain; one without gets the System sender, which is not the address Contacts will see.
+   * Absent on SMS: the text goes out from the sender of the broadcast's Integration.
    */
-  from: EmailAddress;
+  from?: EmailAddress;
 
   /**
    * true when the Workspace's default Integration keeps what it is sent (a Test inbox): the
-   * preview was captured there, not sent to the address named.
+   * preview was captured there, not sent to the address named. Always false on SMS.
    */
   captured: boolean;
 }
@@ -292,11 +298,13 @@ interface SiteBroadcasts
     | UnprocessableEntityProblem;
 
   /**
-   * Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram
-   * has no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram
-   * broadcast is a 422. While the Workspace has no verified
-   * Sending domain it goes from the System sender and only to the asking User's own address
-   * (ADR 0041): another address is refused with 422, the System sender's caps answer 429.
+   * Send a one-off rendered preview to a single address: an email broadcast to the `email` given,
+   * an SMS broadcast to the `phone` given, through the broadcast's Integration. It skips
+   * Send-eligibility and leaves no message and no figure. Telegram has no Test send, the author
+   * would need a Binding of their own (ADR 0080), so a Telegram broadcast is a 422. While the
+   * Workspace has no verified Sending domain an email preview goes from the System sender and only
+   * to the asking User's own address (ADR 0041): another address is refused with 422, the System
+   * sender's caps answer 429.
    */
   @action("test-send")
   @autoRoute

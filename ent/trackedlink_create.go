@@ -64,6 +64,14 @@ func (_c *TrackedLinkCreate) SetOutboundMessageID(v int64) *TrackedLinkCreate {
 	return _c
 }
 
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (_c *TrackedLinkCreate) SetNillableOutboundMessageID(v *int64) *TrackedLinkCreate {
+	if v != nil {
+		_c.SetOutboundMessageID(*v)
+	}
+	return _c
+}
+
 // SetToken sets the "token" field.
 func (_c *TrackedLinkCreate) SetToken(v string) *TrackedLinkCreate {
 	_c.mutation.SetToken(v)
@@ -148,9 +156,6 @@ func (_c *TrackedLinkCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "TrackedLink.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.OutboundMessageID(); !ok {
-		return &ValidationError{Name: "outbound_message_id", err: errors.New(`ent: missing required field "TrackedLink.outbound_message_id"`)}
-	}
 	if _, ok := _c.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "TrackedLink.token"`)}
 	}
@@ -169,9 +174,6 @@ func (_c *TrackedLinkCreate) check() error {
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "TrackedLink.workspace"`)}
-	}
-	if len(_c.mutation.OutboundMessageIDs()) == 0 {
-		return &ValidationError{Name: "outbound_message", err: errors.New(`ent: missing required edge "TrackedLink.outbound_message"`)}
 	}
 	return nil
 }
@@ -253,7 +255,7 @@ func (_c *TrackedLinkCreate) createSpec() (*TrackedLink, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.OutboundMessageID = nodes[0]
+		_node.OutboundMessageID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -72,6 +72,8 @@ function InboundForm({
   const { t } = useTranslation()
   // A Telegram bot's Preset is fixed and its webhook is set by sphericon: nothing here to choose.
   const telegram = integration.provider === 'telegram'
+  // A Twilio account's Preset is fixed too, but its Auth Token is a param to rotate here.
+  const fixed = telegram || integration.provider === 'twilio'
   const presetsQuery = useQuery({ ...sitePresetsListOptions(), enabled: !telegram })
   const presets = presetsQuery.data ?? []
 
@@ -167,7 +169,7 @@ function InboundForm({
         </Group>
       </Stack>
 
-      {telegram ? null : (
+      {fixed ? null : (
         <Select
           label={t(($) => $.settings.integrations.inbound.preset)}
           placeholder={t(($) => $.settings.integrations.inbound.noPreset)}
@@ -231,7 +233,7 @@ function InboundForm({
         </Alert>
       ) : null}
 
-      {preset === null && !telegram ? (
+      {preset === null && !fixed ? (
         <Group justify="flex-end">
           <Button loading={saveMutation.isPending} onClick={() => save()}>
             {t(($) => $.settings.integrations.inbound.save)}

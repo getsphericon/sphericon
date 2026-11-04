@@ -160,6 +160,8 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlim
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteInboxConfigSiteIntegrationConfigSum(siteapi.SiteInboxConfig{Kind: siteapi.SiteInboxConfigKindInbox})}
 	case cfg.Telegram != nil:
 		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTelegramConfigSiteIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
+	case cfg.Twilio != nil:
+		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTwilioConfigSiteIntegrationConfigSum(mapper.TwilioConfigToResource(*cfg.Twilio))}
 	}
 	return res, nil
 }

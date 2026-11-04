@@ -1,6 +1,9 @@
 package events
 
-import "context"
+import (
+	"context"
+	"unicode/utf8"
+)
 
 // The System events of what happens to a Contact rather than what it does (#897): its Tags, its
 // Custom fields and its Enrollments. Each is published in the transaction of the change it
@@ -98,8 +101,26 @@ func (e *BindingChange) Project() Projection {
 	}
 }
 
-// MaxReceivedText is the most of a message TelegramReceived keeps, in bytes (1 KiB).
+// MaxReceivedText is the most of a message a received Event (TelegramReceived, SmsReceived)
+// keeps, in bytes (1 KiB).
 const MaxReceivedText = 1024
+
+// outboundMessageIDProperty is the key of the Event property naming the Outbound message an Event
+// of a send is about.
+const outboundMessageIDProperty = "outboundMessageId"
+
+// ReceivedText is a message's text as a received Event keeps it: cut at MaxReceivedText bytes,
+// never inside a character.
+func ReceivedText(s string) string {
+	n := MaxReceivedText
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
+}
 
 // TelegramReceived is a message a Contact sent a bot from a chat Bound to it (telegram.received),
 // recorded in the transaction of the Ingest request. Text is the message cut at MaxReceivedText;
@@ -147,7 +168,7 @@ func (*TelegramSent) EventVersion() int  { return 1 }
 func (e *TelegramSent) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramSent) EventID() string  { return e.DedupID }
 func (e *TelegramSent) Project() Projection {
-	props := map[string]any{"destination": e.Destination, "outboundMessageId": e.OutboundMessageID}
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
 	if e.IntegrationID != 0 {
 		props["integrationId"] = e.IntegrationID
 	}
@@ -169,11 +190,101 @@ func (e *TelegramSent) Project() Projection {
 	}
 }
 
-// TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked, ADR
-// 0083), with the URL it led to and the Broadcast or Automation and Outbound message it came from.
-// Machine is set on a hit made by software (Telegram's link-preview fetcher among them): it stays
-// in the log and counts toward no figure, no rollup, no Trigger and no Attribution.
-type TelegramClicked struct {
+// SmsSent is an Outbound send the SMS provider accepted (sms.sent), recorded with the Outbound
+// message in one transaction. Destination is the number in E.164; the Broadcast or Automation it
+// came from is named when there is one.
+type SmsSent struct {
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	Destination       string `json:"destination"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (*SmsSent) EventName() string  { return NameSmsSent }
+func (*SmsSent) EventVersion() int  { return 1 }
+func (e *SmsSent) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsSent) EventID() string  { return e.DedupID }
+func (e *SmsSent) Project() Projection {
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
+	if e.IntegrationID != 0 {
+		props["integrationId"] = e.IntegrationID
+	}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	if e.Surface != "" {
+		props["surface"] = e.Surface
+	}
+	if e.SendingSource != "" {
+		props["sendingSource"] = e.SendingSource
+	}
+	return Projection{
+		Subject: e.Email, Action: NameSmsSent, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
+// SmsDelivery is the SMS provider's final report of a text it accepted (sms.delivered,
+// sms.undelivered, ADR 0079), recorded in the transaction of the Ingest request that stamped the
+// Outbound message: only the report that moved the message records one, so a redelivered or late
+// report records nothing. Destination is the number in E.164; ErrorCode is the provider's code of
+// an undelivered text (Twilio's ErrorCode), "" when it gave none. The Broadcast or Automation the
+// text came from is named when there is one.
+type SmsDelivery struct {
+	Action            string `json:"action"` // sms.delivered|sms.undelivered
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	Destination       string `json:"destination"`
+	ErrorCode         string `json:"errorCode,omitempty"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (e *SmsDelivery) EventName() string { return e.Action }
+func (*SmsDelivery) EventVersion() int   { return 1 }
+func (e *SmsDelivery) Workspace() int64  { return e.WorkspaceID }
+func (e *SmsDelivery) EventID() string   { return e.DedupID }
+func (e *SmsDelivery) Project() Projection {
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
+	for k, v := range map[string]string{"errorCode": e.ErrorCode, "surface": e.Surface, "sendingSource": e.SendingSource} {
+		if v != "" {
+			props[k] = v
+		}
+	}
+	for k, v := range map[string]int64{"integrationId": e.IntegrationID, "broadcastId": e.BroadcastID, "automationId": e.AutomationID} {
+		if v != 0 {
+			props[k] = v
+		}
+	}
+	return Projection{
+		Subject: e.Email, Action: e.Action, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
+// LinkClick is a click on a short tracked link of a message that is not an email (ADR 0083): the
+// URL it led to and the Broadcast or Automation and Outbound message it came from. Machine is set on
+// a hit made by software (a messaging app fetching the link for its preview, a carrier's filter):
+// it stays in the log and counts toward no figure, no rollup, no Trigger and no Attribution. The
+// Destination the message went to is not repeated: the Outbound message holds it. Each Channel's
+// click is its own Event on these facts: SmsClicked, TelegramClicked.
+type LinkClick struct {
 	WorkspaceID       int64  `json:"workspaceId"`
 	ContactID         int64  `json:"contactId"`
 	Email             string `json:"email,omitempty"`
@@ -186,12 +297,9 @@ type TelegramClicked struct {
 	DedupID           string `json:"dedupId,omitempty"`
 }
 
-func (*TelegramClicked) EventName() string  { return NameTelegramClicked }
-func (*TelegramClicked) EventVersion() int  { return 1 }
-func (e *TelegramClicked) Workspace() int64 { return e.WorkspaceID }
-func (e *TelegramClicked) EventID() string  { return e.DedupID }
-func (e *TelegramClicked) Project() Projection {
-	props := map[string]any{"url": e.URL, "outboundMessageId": e.OutboundMessageID}
+// project is the click's Event row, as the action names it.
+func (e *LinkClick) project(action string) Projection {
+	props := map[string]any{"url": e.URL, outboundMessageIDProperty: e.OutboundMessageID}
 	if e.IntegrationID != 0 {
 		props["integrationId"] = e.IntegrationID
 	}
@@ -205,10 +313,29 @@ func (e *TelegramClicked) Project() Projection {
 		props[MachineProperty] = true
 	}
 	return Projection{
-		Subject: e.Email, Action: NameTelegramClicked, Email: e.Email, ContactID: e.ContactID,
+		Subject: e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Properties: props,
 	}
 }
+
+// SmsClicked is a click on a short tracked link of an SMS (sms.clicked).
+type SmsClicked LinkClick
+
+func (*SmsClicked) EventName() string     { return NameSmsClicked }
+func (*SmsClicked) EventVersion() int     { return 1 }
+func (e *SmsClicked) Workspace() int64    { return e.WorkspaceID }
+func (e *SmsClicked) EventID() string     { return e.DedupID }
+func (e *SmsClicked) Project() Projection { return (*LinkClick)(e).project(NameSmsClicked) }
+
+// TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked);
+// Telegram's link-preview fetcher is among the machine hits.
+type TelegramClicked LinkClick
+
+func (*TelegramClicked) EventName() string     { return NameTelegramClicked }
+func (*TelegramClicked) EventVersion() int     { return 1 }
+func (e *TelegramClicked) Workspace() int64    { return e.WorkspaceID }
+func (e *TelegramClicked) EventID() string     { return e.DedupID }
+func (e *TelegramClicked) Project() Projection { return (*LinkClick)(e).project(NameTelegramClicked) }
 
 // Ways a Contact stops Telegram marketing, the `via` property of telegram.unsubscribed.
 const (

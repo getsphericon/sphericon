@@ -60,7 +60,7 @@ func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
 
-	_, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"},
+	_, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.ErrorContains(t, err, "unexpected status code: 500")
 	assert.Empty(t, env.CustomerMail.Messages())

@@ -51,6 +51,7 @@ import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
   ENROLLMENT_ACTIONS,
+  SMS_ACTIONS,
   TELEGRAM_ACTIONS,
 } from '../../utils/systemEvents.ts'
 import { HistoryMenuItem } from './AuditLogSection.tsx'
@@ -66,6 +67,7 @@ const EVENT_OPTIONS = [
   'email.unsubscribed',
   ...ENROLLMENT_ACTIONS,
   ...TELEGRAM_ACTIONS,
+  ...SMS_ACTIONS,
   'audit.entry',
 ]
 

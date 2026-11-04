@@ -67,6 +67,9 @@ func TestDecodeKnowsEveryEventName(t *testing.T) {
 		events.NameEmailBounced,
 		events.NameEmailComplained,
 		events.NameMarketingConfirmed,
+		events.NameSmsConfirmed,
+		events.NameSmsDelivered,
+		events.NameSmsUndelivered,
 		events.NameCollected,
 		events.NameAuditEntry,
 		events.NameTrackingDomainChanged,
@@ -83,6 +86,8 @@ func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
 		&events.EmailEngagement{Action: events.NameEmailOpened, WorkspaceID: 7},
 		&events.EmailDelivery{Action: events.NameEmailBounced, WorkspaceID: 7},
 		&events.MarketingConfirmed{WorkspaceID: 7},
+		&events.SmsConfirmed{WorkspaceID: 7},
+		&events.SmsDelivery{Action: events.NameSmsUndelivered, WorkspaceID: 7},
 		&events.CollectedEvent{WorkspaceID: 7, Action: "page_view"},
 	} {
 		assert.EqualValues(t, 7, ev.Workspace(), "%T", ev)

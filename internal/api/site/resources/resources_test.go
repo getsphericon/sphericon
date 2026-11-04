@@ -75,6 +75,7 @@ func TestBroadcastStatsTelegramReportsNoOpensOrDelivery(t *testing.T) {
 
 	assert.True(t, got.OpenedCount.Null)
 	assert.True(t, got.DeliveredCount.Null)
+	assert.True(t, got.UndeliveredCount.Null)
 	assert.True(t, got.BouncedCount.Null)
 	assert.True(t, got.ComplainedCount.Null)
 	assert.True(t, got.CapturedCount.Null)
@@ -85,4 +86,27 @@ func TestBroadcastStatsTelegramReportsNoOpensOrDelivery(t *testing.T) {
 	assert.EqualValues(t, 3, got.SkippedCount)
 	assert.EqualValues(t, 2, got.ClickedCount)
 	assert.InDelta(t, 2.0/6, got.ClickRate, 1e-6)
+}
+
+// SMS reports delivered and undelivered texts, and no opens, bounces or complaints; email reports no
+// undelivered: it says bounced.
+func TestBroadcastStatsSMSReportsDeliveredAndUndelivered(t *testing.T) {
+	sms := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
+		Channel: broadcast.ChannelSms, Recipients: 10, Sent: 9, Delivered: 6, Undelivered: 2,
+	}.Figures())
+	email := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
+		Channel: broadcast.ChannelEmail, Recipients: 10, Sent: 9, Delivered: 6, Bounced: 1,
+	}.Figures())
+
+	assert.EqualValues(t, 6, sms.DeliveredCount.Value)
+	assert.EqualValues(t, 2, sms.UndeliveredCount.Value)
+	assert.False(t, sms.UndeliveredCount.Null)
+	assert.True(t, sms.BouncedCount.Null)
+	assert.True(t, sms.ComplainedCount.Null)
+	assert.True(t, sms.OpenedCount.Null)
+	assert.True(t, sms.DeliveryRate.Null)
+	assert.True(t, sms.CapturedCount.Null)
+	assert.EqualValues(t, 6, email.DeliveredCount.Value)
+	assert.EqualValues(t, 1, email.BouncedCount.Value)
+	assert.True(t, email.UndeliveredCount.Null)
 }

@@ -56,6 +56,8 @@ const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
   permissions,
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
+  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   holds: [],
   role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
@@ -898,4 +900,150 @@ test("a Telegram bot's inbound settings offer no Preset", async () => {
 
   await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
   await expect.element(screen.getByRole('combobox', { name: 'Preset' })).not.toBeInTheDocument()
+})
+
+const twilioAccount: SiteIntegrationResource = {
+  ...smtp,
+  id: '8',
+  name: 'Twilio (+15017250604)',
+  channel: 'sms',
+  provider: 'twilio',
+  isDefault: true,
+  config: {
+    kind: 'twilio',
+    accountSid: 'AC-test-account',
+    apiKeySid: 'SK-test-key',
+    from: '+15017250604',
+    fromKind: 'number',
+    callbacksSet: true,
+  },
+  preset: 'twilio',
+  params: { auth_token: '********' },
+  hookUrl: 'https://app.test/hooks/omik_sms',
+}
+
+test('connects a Twilio account with an API key, its Auth Token kept apart, and shows its sender', async () => {
+  const bodies: unknown[] = []
+  let saved: SiteIntegrationResource[] = [smtp]
+  worker.use(
+    handleSiteIntegrationsList(() => HttpResponse.json(saved)),
+    handleSiteIntegrationsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      saved = [smtp, twilioAccount]
+      return HttpResponse.json(twilioAccount, { status: 201 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect.element(screen.getByText(/10DLC/)).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Twilio' }).click()
+  await dialog.getByLabelText(/^Account SID/).fill(' AC-test-account ')
+  await dialog.getByLabelText(/^API key SID/).fill('SK-test-key')
+  await dialog.getByLabelText(/^API key secret/).fill('keysecret')
+  await dialog.getByLabelText(/^Auth Token/).fill('authtoken')
+  await dialog.getByLabelText(/^Send from/).fill('+15017250604')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Twilio (+15017250604)',
+        isDefault: true,
+        maxPerSecond: null,
+        maxPerDay: null,
+        config: {
+          kind: 'twilio',
+          accountSid: 'AC-test-account',
+          apiKeySid: 'SK-test-key',
+          secret: 'keysecret',
+          from: '+15017250604',
+        },
+        params: { auth_token: 'authtoken' },
+      },
+    ])
+  await expect.element(screen.getByRole('heading', { name: 'SMS' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: '+15017250604' })).toBeInTheDocument()
+})
+
+test('a Twilio account sending with its Auth Token sends and signs with the one token', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), create(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Twilio' }).click()
+  await dialog.getByText('The Auth Token').click()
+  await expect.element(dialog.getByLabelText(/^API key SID/)).not.toBeInTheDocument()
+  await dialog.getByLabelText(/^Account SID/).fill('AC-test-account')
+  await dialog.getByLabelText(/^Auth Token/).fill('authtoken')
+  await dialog.getByLabelText(/^Send from/).fill('Acme Shop')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect.poll(() => bodies).toHaveLength(1)
+  expect(bodies[0]).toMatchObject({
+    config: {
+      kind: 'twilio',
+      accountSid: 'AC-test-account',
+      apiKeySid: null,
+      secret: 'authtoken',
+      from: 'Acme Shop',
+    },
+    params: { auth_token: 'authtoken' },
+  })
+})
+
+test('a Twilio sender whose callbacks sphericon could not set shows the address to copy', async () => {
+  const alphanumeric: SiteIntegrationResource = {
+    ...twilioAccount,
+    id: '9',
+    name: 'Alphanumeric',
+    isDefault: false,
+    hookUrl: 'https://app.test/hooks/omik_alpha',
+    config: {
+      kind: 'twilio',
+      accountSid: 'AC-test-account',
+      apiKeySid: null,
+      from: 'Acme',
+      fromKind: 'alphanumeric',
+      callbacksSet: false,
+    },
+  }
+  worker.use(list([twilioAccount, alphanumeric]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await expect
+    .element(screen.getByText('Give Twilio the address of Alphanumeric'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('https://app.test/hooks/omik_alpha')).toBeInTheDocument()
+  await expect.element(screen.getByText('https://app.test/hooks/omik_sms')).not.toBeInTheDocument()
+})
+
+test("a Twilio account's inbound settings rotate its Auth Token with no Preset to choose", async () => {
+  worker.use(
+    list([twilioAccount]),
+    handleSitePresetsList({
+      body: [
+        {
+          name: 'twilio',
+          description: "Twilio's callbacks",
+          paramsSchema: {
+            type: 'object',
+            required: ['auth_token'],
+            properties: { auth_token: { type: 'string', title: 'Auth Token', writeOnly: true } },
+          },
+        },
+      ],
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await openInbound(screen)
+
+  await expect.element(screen.getByText('https://app.test/hooks/omik_sms')).toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox', { name: 'Preset' })).not.toBeInTheDocument()
+  await expect.element(screen.getByLabelText(/^Auth Token/)).toBeInTheDocument()
 })

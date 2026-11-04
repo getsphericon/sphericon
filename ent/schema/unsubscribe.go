@@ -41,17 +41,29 @@ func (Unsubscribe) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The channel this opt-out applies to (email or telegram; sms is reserved).
+		// The channel this opt-out applies to.
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Default("email"),
-		// Normalized (lower-cased) channel-specific destination address.
+		// Normalized channel-specific destination: the lower-cased email address, the Telegram
+		// user id, or the phone number in E.164, which becomes its hash (phone.Hash) when the
+		// Contact whose phone it was is erased (ADR 0021).
 		field.String("destination").
 			NotEmpty(),
 		// The sending source the destination opted out of: "broadcasts",
 		// "automation:<id>", or the reserved "everything".
 		field.String("sending_source").
 			NotEmpty(),
+		// How the person stopped, for an opt-out made in a Channel other than email or recorded
+		// by hand there: a STOP keyword (or `/stop`), a message's unsubscribe button or link, a
+		// blocked bot, a send the provider refused because the number had opted out at the
+		// provider, or by hand through the app or the API (an off-channel opt-out). Null on email,
+		// where the email.unsubscribed Event says it. Display only: the opt-out means the same
+		// whatever way it was made.
+		field.Enum("via").
+			Values("keyword", "button", "block", "link", "refused_send", "manual").
+			Optional().
+			Nillable(),
 		// The contact this destination belongs to, when known. Display only;
 		// the opt-out is keyed by destination and outlives the contact (ON DELETE SET NULL;
 		// Erasure clears it and the refusal stays). Nullable.

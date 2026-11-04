@@ -585,6 +585,18 @@ type SiteSignupSurveySubmitRes interface {
 	siteSignupSurveySubmitRes()
 }
 
+type SiteSmsConsentsConfirmRes interface {
+	siteSmsConsentsConfirmRes()
+}
+
+type SiteSmsConsentsGetRes interface {
+	siteSmsConsentsGetRes()
+}
+
+type SiteSmsConsentsOptOutRes interface {
+	siteSmsConsentsOptOutRes()
+}
+
 type SiteSuppressionsCreateRes interface {
 	siteSuppressionsCreateRes()
 }

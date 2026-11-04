@@ -4,6 +4,10 @@ status: accepted
 
 # Phone consent from an On-site form comes from a message the person sends
 
+> **Amended by #1037:** the START's Confirmation on SMS is recorded with an `sms.confirmed` Event,
+> not `marketing.confirmed`, which stays email's (ADR 0077): the welcome Automation after opt-in and
+> the form's disclosure below are on `sms.confirmed`.
+
 An On-site form (ADR 0085) posts through the tracker's public collect key, so a submit proves only
 that some browser typed an address or a number. In the US the
 seller carries the whole burden of proving consent, and consent typed by someone else is none; in
@@ -39,9 +43,9 @@ code sent through the customer's SMS Integration. Decided in the consent ticket
   cannot deliver inbound messages collects no SMS or WhatsApp consent through forms.
 - **The confirmation text after opt-in** that CTIA asks for is the provider's START auto-reply where
   it has one (Twilio's Advanced Opt-Out); otherwise the customer's welcome Automation triggered by
-  `marketing.confirmed` sends it, as a marketing message after consent. sphericon still sends no
+  `sms.confirmed` sends it, as a marketing message after consent. sphericon still sends no
   compliance replies (ADR 0077).
-- **The exact disclosure is kept.** A form's `marketing.confirmed` Event carries the form, its
+- **The exact disclosure is kept.** A form's `sms.confirmed` Event carries the form, its
   version and the disclosure text the person saw (CTIA, 10DLC, GDPR art. 7). The author writes it
   beside the button, from a default naming the brand, the frequency, carrier rates, STOP and HELP
   and a terms link, never bundled with the email consent.

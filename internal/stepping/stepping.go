@@ -252,7 +252,8 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 // asks again later at the same step, so a held Integration stops only the Enrollments standing on
 // the steps that send through it. A Skipped send moves on to the next step, the skip recorded on
 // the step's Outbound message for its report, except an unsubscribe from this Automation, which
-// exits the Enrollment.
+// exits the Enrollment. A Failed send fails the Enrollment, except one the provider refused for
+// that message alone (Result.MessageOnly), which moves on too.
 func (m *Module) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.SendStep) error {
 	content, err := st.Content()
 	if err != nil {
@@ -298,6 +299,11 @@ func (m *Module) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run
 		// sequence goes on with its next step, so one Channel's absence never ends it.
 		return m.advance(ctx, s, run.ID, st.Index, move{})
 	default: // outbound.Failed
+		if res.MessageOnly() {
+			// The provider refused this one message (an invalid number, an answer that concerns no
+			// one else): it is recorded Failed, and the sequence goes on (ADR 0079).
+			return m.advance(ctx, s, run.ID, st.Index, move{})
+		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Type, st.Index, res.Reason))
 	}
 }

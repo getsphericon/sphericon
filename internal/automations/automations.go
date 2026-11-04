@@ -29,10 +29,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -44,7 +46,8 @@ var (
 	// ErrEnrollmentNotFound: no such Enrollment of the Automation in this Workspace.
 	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", i18n.ErrorsEnrollmentNotFound)
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
-	// without a tag name, or an email step whose content cannot render.
+	// without a tag name, an email step whose content cannot render, or an SMS step whose text
+	// takes more segments than the provider sends.
 	ErrInvalidStep = validation.Refuse("automations: invalid step", i18n.ErrorsAutomationStepInvalid)
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
@@ -89,6 +92,12 @@ func Encode(steps []automationsteps.Step) (string, error) {
 				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
 				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
 			})
+		case automationsteps.SMS:
+			sms := automationsteps.Step{Type: automationsteps.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
+			if !s.TracksLinks() {
+				sms.LinkTracking = new(false) // on is the default, stored as nothing
+			}
+			stored = append(stored, sms)
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -101,7 +110,9 @@ func Encode(steps []automationsteps.Step) (string, error) {
 	return string(b), err
 }
 
-func validate(steps []automationsteps.Step) error {
+// validate checks each step on its own. linkLength is the length of the Workspace's short tracked
+// links, what an SMS step's links count as.
+func validate(steps []automationsteps.Step, linkLength int) error {
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
@@ -124,6 +135,18 @@ func validate(steps []automationsteps.Step) error {
 			}
 			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
 				return ErrInvalidStep.With(err.Error())
+			}
+		case automationsteps.SMS:
+			if strings.TrimSpace(s.Text) == "" {
+				return ErrInvalidStep.With("an SMS step needs a text")
+			}
+			if err := smsrender.Check(s.Text); err != nil {
+				return ErrInvalidStep.With(err.Error())
+			}
+			// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
+			// links count as the short links they go out as, unless the step keeps them.
+			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
+				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 			}
 		case automationsteps.HTTP:
 		case automationsteps.Wait:
@@ -166,6 +189,8 @@ func (s SendStep) Content() (outbound.Content, error) {
 			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
 			UnsubscribeButton: s.Step.UnsubscribeButton,
 		}, nil
+	case automationsteps.SMS:
+		return outbound.SMSContent{Text: s.Step.Text, NoLinkTracking: !s.Step.TracksLinks()}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}
@@ -260,6 +285,14 @@ var telegramTriggers = []string{
 	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
 }
 
+// smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
+// the consent they gave, a link they clicked, and whether a text reached their phone (a delivery
+// report, which on SMS says the number works or not, unlike email's infrastructure notices). The
+// acceptance (`sms.sent`) is infrastructure, like `email.sent`.
+var smsTriggers = []string{
+	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsUndelivered,
+}
+
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {
 	if problem := eventProblem(trigger); problem != "" {
@@ -280,6 +313,9 @@ func eventProblem(action string) string {
 	}
 	if strings.HasPrefix(t, "telegram.") && !slices.Contains(telegramTriggers, t) {
 		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(telegramTriggers, ", "))
+	}
+	if strings.HasPrefix(t, "sms.") && !slices.Contains(smsTriggers, t) {
+		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(smsTriggers, ", "))
 	}
 	return ""
 }
@@ -520,7 +556,11 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.steps != nil {
-		if err := validate(*e.steps); err != nil {
+		linkLength, err := v.m.out.ShortLinkLength(ctx, ts)
+		if err != nil {
+			return definition{}, err
+		}
+		if err := validate(*e.steps, linkLength); err != nil {
 			return definition{}, err
 		}
 		for i := range *e.steps {

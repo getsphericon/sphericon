@@ -187,3 +187,16 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	assert.Contains(t, reserved, "reserved")
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[2].Status)
 }
+
+// An API client cannot record one of the system's SMS actions.
+func TestExternalEventsRefuseSMSActions(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
+
+	res, err := env.ExternalScoped(t, "events:write").EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "sms.delivered"}},
+	})
+	require.NoError(t, err)
+	refused, isRefused := res.(*externalapi.EventsCreateUnprocessableEntity)
+	require.Truef(t, isRefused, "got %T", res)
+	assert.Contains(t, refused.Detail.Or(""), "reserved")
+}

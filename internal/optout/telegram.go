@@ -59,7 +59,9 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 	create := s.Unsubscribe().Create().
 		SetChannel(unsubscribe.ChannelTelegram).
 		SetDestination(st.Destination).
-		SetSendingSource(eligibility.SourceEverything)
+		SetSendingSource(eligibility.SourceEverything).
+		// The ways of stopping (events.UnsubscribedBy*) are the row's own values.
+		SetVia(unsubscribe.Via(st.Via))
 	if len(contactIDs) > 0 {
 		create.SetContactID(contactIDs[0])
 	}

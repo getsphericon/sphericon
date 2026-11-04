@@ -328,10 +328,10 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	extClient := env.ExternalVia(t, env.ScopedBearer(t,
 		string(externalapi.ApiTokenScopeBroadcastsRead), string(externalapi.ApiTokenScopeBroadcastsWrite)), capture(&ext))
 
-	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
+	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
-	_, err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
+	_, err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		externalapi.BroadcastsTestSendParams{ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 

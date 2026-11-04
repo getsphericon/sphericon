@@ -28,3 +28,18 @@ func TestCollectRefusesReservedActions(t *testing.T) {
 	assert.Contains(t, detail, "reserved")
 	assert.Empty(t, env.OutboxEnvelopes(t), "nothing of the batch is published")
 }
+
+// The sms. namespace is the system's: a tracked event cannot claim a text was received, delivered
+// or clicked.
+func TestCollectRefusesSMSActions(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: "sms.received"}},
+	})
+	require.NoError(t, err)
+	refused, isRefused := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
+	require.Truef(t, isRefused, "got %T", res)
+	assert.Contains(t, refused.Detail.Or(""), "reserved")
+	assert.Empty(t, env.OutboxEnvelopes(t), "nothing is published")
+}

@@ -33,6 +33,7 @@ const draft: SiteBroadcastResource = {
     unsubscribedCount: 0,
     failedCount: 0,
     deliveredCount: 0,
+    undeliveredCount: null,
     bouncedCount: 0,
     complainedCount: 0,
     capturedCount: 0,
@@ -141,4 +142,40 @@ test('a Telegram broadcast offers no test send and can be scheduled', async () =
   expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
   expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
   expect(screen.getByRole('button', { name: 'Send test' }).elements()).toHaveLength(0)
+})
+
+// An SMS Broadcast is tested on a phone number the author types (ADR 0080), then scheduled.
+test('an SMS broadcast is test-sent to the typed number, then scheduled', async () => {
+  const bodies: unknown[] = []
+  const schedules: unknown[] = []
+  worker.use(
+    handleSiteBroadcastsTestSend(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ captured: false })
+    }),
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      schedules.push(await request.json())
+      return HttpResponse.json(draft)
+    }),
+  )
+  const sms: SiteBroadcastResource = {
+    ...draft,
+    channel: 'sms',
+    content: { channel: 'sms', text: 'Hello', linkTracking: true },
+  }
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={sms} />, MOUNT)
+
+  await screen.getByLabelText('Send a test text to').fill('+1 415 555 0100')
+  await screen.getByRole('button', { name: 'Send test' }).click()
+
+  await expect.element(screen.getByText('Test text sent')).toBeInTheDocument()
+  expect(bodies).toEqual([{ phone: '+1 415 555 0100' }])
+  expect(screen.getByLabelText('Send a test to').elements()).toHaveLength(0)
+  await expect.element(screen.getByText(/Sent from/)).not.toBeInTheDocument()
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
+  expect(schedules).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
 })

@@ -37,6 +37,8 @@ type MessageRow struct {
 	SentAt            *time.Time `json:"sent_at"`
 	DeliveredAt       *time.Time `json:"delivered_at"`
 	BouncedAt         *time.Time `json:"bounced_at"`
+	UndeliveredAt     *time.Time `json:"undelivered_at"`
+	UndeliveredCode   *string    `json:"undelivered_code"`
 	ComplainedAt      *time.Time `json:"complained_at"`
 	OpenedAt          *time.Time `json:"opened_at"`
 	ClickedAt         *time.Time `json:"clicked_at"`
@@ -70,6 +72,8 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 		SentAt:            utc(m.SentAt),
 		DeliveredAt:       utc(m.DeliveredAt),
 		BouncedAt:         utc(m.BouncedAt),
+		UndeliveredAt:     utc(m.UndeliveredAt),
+		UndeliveredCode:   m.UndeliveredCode,
 		ComplainedAt:      utc(m.ComplainedAt),
 		OpenedAt:          utc(m.OpenedAt),
 		ClickedAt:         utc(m.ClickedAt),

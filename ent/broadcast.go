@@ -52,6 +52,8 @@ type Broadcast struct {
 	LinkPreview bool `json:"link_preview,omitempty"`
 	// UnsubscribeButton holds the value of the "unsubscribe_button" field.
 	UnsubscribeButton *string `json:"unsubscribe_button,omitempty"`
+	// LinkTracking holds the value of the "link_tracking" field.
+	LinkTracking bool `json:"link_tracking,omitempty"`
 	// Body holds the value of the "body" field.
 	Body *string `json:"body,omitempty"`
 	// Doc holds the value of the "doc" field.
@@ -146,7 +148,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case broadcast.FieldButtons, broadcast.FieldDoc:
 			values[i] = new([]byte)
-		case broadcast.FieldLinkPreview:
+		case broadcast.FieldLinkPreview, broadcast.FieldLinkTracking:
 			values[i] = new(sql.NullBool)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
@@ -267,6 +269,12 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UnsubscribeButton = new(string)
 				*_m.UnsubscribeButton = value.String
+			}
+		case broadcast.FieldLinkTracking:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field link_tracking", values[i])
+			} else if value.Valid {
+				_m.LinkTracking = value.Bool
 			}
 		case broadcast.FieldBody:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -463,6 +471,9 @@ func (_m *Broadcast) String() string {
 		builder.WriteString("unsubscribe_button=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("link_tracking=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LinkTracking))
 	builder.WriteString(", ")
 	if v := _m.Body; v != nil {
 		builder.WriteString("body=")

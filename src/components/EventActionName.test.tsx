@@ -17,6 +17,7 @@ const names: [string, string][] = [
   ['email.clicked', 'Clicked a link in an email'],
   ['email.unsubscribed', 'Unsubscribed'],
   ['marketing.confirmed', 'Confirmed opt-in'],
+  ['sms.confirmed', 'Confirmed SMS opt-in'],
   ['audit.entry', 'Audit log entry'],
 ]
 

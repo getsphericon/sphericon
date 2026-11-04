@@ -19,7 +19,7 @@ model ContactResource {
   /** Email address — an alias key. May be absent for anonymous contacts. */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key. May be absent. */
+  /** Phone number in E.164 (`+14155550100`) — an alias key. May be absent. */
   phone?: string | null;
 
   /** First name */
@@ -156,7 +156,8 @@ model UpsertContactInput {
   /** Email address — an alias key */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key */
+  /** Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone` */
   phone?: string | null;
 
   /** First name */
@@ -190,6 +191,11 @@ model UpsertContactInput {
    * Workspace time zone) or text. Send a date without time as a `YYYY-MM-DD` string, not a
    * JavaScript `Date`: that serializes as UTC and lands on the previous day east of UTC */
   customFields?: JsonObject | null;
+
+  /** The evidence of the SMS consent the contact's phone gave outside sphericon: records an
+   * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
+   * stays unreachable on SMS. An item with it and no phone fails */
+  smsConsent?: ConsentEvidence;
 }
 
 /** Request body for upserting contacts in batch */

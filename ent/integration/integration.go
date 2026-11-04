@@ -206,6 +206,7 @@ const (
 	ProviderSes      Provider = "ses"
 	ProviderInbox    Provider = "inbox"
 	ProviderTelegram Provider = "telegram"
+	ProviderTwilio   Provider = "twilio"
 )
 
 func (pr Provider) String() string {
@@ -215,7 +216,7 @@ func (pr Provider) String() string {
 // ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
 func ProviderValidator(pr Provider) error {
 	switch pr {
-	case ProviderSMTP, ProviderSes, ProviderInbox, ProviderTelegram:
+	case ProviderSMTP, ProviderSes, ProviderInbox, ProviderTelegram, ProviderTwilio:
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)

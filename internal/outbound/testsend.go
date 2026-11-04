@@ -13,8 +13,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// A Test send is email's (GLOSSARY): it goes through email's renderer and adapter, and the System
-// sender stands in for the Integration only here.
+// A Test send (GLOSSARY) goes to an address the author names, through the Channel's renderer and
+// adapter: on email to an address, where the System sender stands in for the Integration only
+// here; on SMS to a phone number, through the Broadcast's Integration (ADR 0080).
 
 // TestRequest is a user-initiated test send of a message to an address the
 // author names explicitly (e.g. a Broadcast preview).
@@ -46,31 +47,70 @@ var (
 	// ErrNoTestSend: the Broadcast's Channel has no Test send. Telegram has none: the author would
 	// need a Binding of their own (ADR 0080).
 	ErrNoTestSend = validation.Refuse("outbound: the channel has no test send", i18n.ErrorsBroadcastNoTestSend)
+	// ErrTestEmailRequired: a Test send of an email Broadcast names no address.
+	ErrTestEmailRequired = validation.RefuseField(fieldTestEmail, "outbound: the test send names no email address", i18n.ErrorsTestSendEmailRequired)
+	// ErrTestPhoneInvalid: a Test send of an SMS Broadcast names no phone number in international
+	// format: one with its country code, which E.164 is written from.
+	ErrTestPhoneInvalid = validation.RefuseField(fieldTestPhone, "outbound: the test number is not a phone number in international format", i18n.ErrorsPhoneInvalid)
 )
 
+// The request fields a Test send names its address in, one per Channel that has a Test send.
+const (
+	fieldTestEmail = "email"
+	fieldTestPhone = "phone"
+)
+
+// TestAddress is where the author asks a Test send of a Broadcast to go: Email on an email
+// Broadcast, Phone on an SMS one. The field of the other Channel is not read.
+type TestAddress struct {
+	Email string
+	Phone string
+}
+
 // SendBroadcastTest sends the Broadcast to one address with sample merge data for an author to
-// preview it. A Broadcast of a Channel with no Test send is ErrNoTestSend. A Held or Refused Test send is ErrHeld or ErrTestRefused made With the reason worded
-// by Detail, content that does not render is emailrender.ErrInvalidContent with its reason, and a
-// failed send is returned as the error it is, so every surface answers a refused preview the same
-// way. The System sender's cap is no error: the Result is a Deferral whose Wait and Limit say when
-// capacity returns.
-func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) (Result, error) {
+// preview it: an email Broadcast to to.Email (ErrTestEmailRequired without one), an SMS Broadcast
+// to to.Phone (ErrTestPhoneInvalid unless it is a number with its country code). A Broadcast of a
+// Channel with no Test send is ErrNoTestSend. A Held or Refused Test send is ErrHeld or
+// ErrTestRefused made With the reason worded by Detail, content that does not render is
+// emailrender.ErrInvalidContent with its reason, and a failed send is returned as the error it is,
+// so every surface answers a refused preview the same way. The System sender's cap is no error:
+// the Result is a Deferral whose Wait and Limit say when capacity returns.
+func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to TestAddress, asker *Asker) (Result, error) {
 	stored, err := BroadcastContent(b)
 	if err != nil {
 		return Result{}, err
 	}
-	content, ok := stored.(EmailContent)
-	if !ok {
+	switch content := stored.(type) {
+	case EmailContent:
+		return m.sendEmailBroadcastTest(ctx, s, b, content, to.Email, asker)
+	case SMSContent:
+		return m.sendSMSTest(ctx, s, content, to.Phone, b.IntegrationID)
+	default:
 		return Result{}, ErrNoTestSend
+	}
+}
+
+// testSampleEmail is the sample email merge value of a Test send that goes to no address.
+const testSampleEmail = "alex@example.com"
+
+// testVariables are the sample merge data a Test send is rendered with.
+func testVariables(email string) map[string]any {
+	return map[string]any{
+		"first_name": "Alex", "last_name": "Sample", "email": email,
+		"city": "Berlin", "country": "Germany", "locale": "de",
+	}
+}
+
+// sendEmailBroadcastTest is the Test send of an email Broadcast to the address to.
+func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, content EmailContent, to string, asker *Asker) (Result, error) {
+	if to == "" {
+		return Result{}, ErrTestEmailRequired
 	}
 	content.Subject = TestSubjectPrefix + content.Subject
 	res, err := m.SendTest(ctx, s, TestRequest{
-		To:      to,
-		Content: content,
-		Variables: map[string]any{
-			"first_name": "Alex", "last_name": "Sample", "email": to,
-			"city": "Berlin", "country": "Germany", "locale": "de",
-		},
+		To:        to,
+		Content:   content,
+		Variables: testVariables(to),
 		// The Integration a real send of the Broadcast would go through.
 		IntegrationID: b.IntegrationID,
 		Asker:         asker,

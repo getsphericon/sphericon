@@ -6,11 +6,13 @@ import { useTranslation } from 'react-i18next'
 import {
   CONTACT_CHANGE_ACTIONS,
   ENROLLMENT_ACTIONS,
+  SMS_ACTIONS,
   TELEGRAM_ACTIONS,
 } from '../../utils/systemEvents.ts'
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
+import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
@@ -18,6 +20,7 @@ import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './t
 // graph ↔ definition converters to tell email steps from wait steps.
 export const EMAIL_NODE_TYPE = 'email'
 export const TELEGRAM_NODE_TYPE = 'telegram'
+export const SMS_NODE_TYPE = 'sms'
 export const WAIT_NODE_TYPE = 'wait'
 export const APPLY_TAG_NODE_TYPE = 'apply_tag'
 export const REMOVE_TAG_NODE_TYPE = 'remove_tag'
@@ -29,6 +32,7 @@ export const TRIGGER_NODE_TYPE = 'trigger'
 // Phosphor icon names (WBIcon) the SDK renders in the palette and node header.
 export const EMAIL_NODE_ICON = 'Envelope'
 export const TELEGRAM_NODE_ICON: WBIcon = 'TelegramLogo'
+export const SMS_NODE_ICON: WBIcon = 'ChatText'
 export const WAIT_NODE_ICON = 'Timer'
 export const TAG_NODE_ICON: WBIcon = 'Tag'
 export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
@@ -42,6 +46,7 @@ export const TRIGGER_EVENTS = [
   'email.unsubscribed',
   ...ENROLLMENT_ACTIONS,
   ...TELEGRAM_ACTIONS,
+  ...SMS_ACTIONS,
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 
@@ -199,6 +204,51 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'Text',
               scope: '#/properties/text',
               label: t(($) => $.automations.telegramTextLabel),
+              placeholder: '',
+            },
+          ],
+        } satisfies UISchema,
+      },
+      {
+        type: SMS_NODE_TYPE,
+        icon: SMS_NODE_ICON,
+        label: t(($) => $.automations.stepSms),
+        description: t(($) => $.automations.smsNodeDescription),
+        // `integrationId` is the SMS Integration the step sends through, '' for the SMS default
+        // (ADR 0081). `linkTracking` is the text control's sibling, 'off' when the step keeps its
+        // links as written (the form holds only strings).
+        defaultPropertiesData: { integrationId: '', text: '', linkTracking: '' },
+        schema: {
+          type: 'object',
+          required: ['text'],
+          properties: {
+            ...sharedProperties,
+            integrationId: {
+              type: 'string',
+              label: t(($) => $.automations.integrationLabel),
+              format: integrationFormat('sms'),
+            },
+            text: {
+              type: 'string',
+              label: t(($) => $.smsEditor.textLabel),
+              format: SMS_TEXT_FORMAT,
+            },
+            linkTracking: { type: 'string' },
+          },
+        },
+        uischema: {
+          type: 'VerticalLayout',
+          elements: [
+            {
+              type: 'Text',
+              scope: '#/properties/integrationId',
+              label: t(($) => $.automations.integrationLabel),
+              placeholder: '',
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/text',
+              label: t(($) => $.smsEditor.textLabel),
               placeholder: '',
             },
           ],

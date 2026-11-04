@@ -9,19 +9,17 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// Confirmation is the derived read-model row for a confirmed (double opt-in)
-// subscription on a (workspace, channel, destination) (ADR 0013). It is the
-// positive mirror of Unsubscribe: presence means "confirmed", and it is keyed by
-// destination — not by contact — so the eligibility gate is a single fast lookup
-// symmetric with the negative layers. The source of truth is the immutable
-// marketing.confirmed Event; this row is the projection, so there is no
-// "confirmed" flag on the Contact (ADR 0001/0011 pattern).
+// Confirmation is the derived read-model row for a confirmed subscription on a (workspace,
+// channel, destination) (ADR 0013, 0077). It is the positive mirror of Unsubscribe: presence means
+// "confirmed", and it is keyed by destination — not by contact — so the eligibility gate is a
+// single fast lookup symmetric with the negative layers. The source of truth is the immutable
+// marketing.confirmed Event; this row is the projection, so there is no "confirmed" flag on the
+// Contact (ADR 0001/0011 pattern).
 //
-// Confirmation is transient and one-time: an address confirmed shortly after
-// acquisition operates under the normal subtractive model thereafter. It is only
-// consulted when the workspace opts into confirmed-opt-in; single-opt-in
-// workspaces never read it. A deliberate "everything" unsubscribe deletes the
-// row (stale consent never silently reactivates); the Event log is preserved.
+// On email it is consulted only when the workspace opts into confirmed opt-in; single-opt-in
+// workspaces never read it. On sms it is always required (ADR 0077). A deliberate "everything"
+// unsubscribe deletes the row (stale consent never silently reactivates); the Event log is
+// preserved. A Confirmation is replaced only by a stronger one (consent.Stronger).
 type Confirmation struct {
 	ent.Schema
 }
@@ -41,19 +39,34 @@ func (Confirmation) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The channel this confirmation applies to (email or telegram; sms is reserved).
+		// The channel this confirmation applies to.
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Default("email"),
-		// Normalized (lower-cased) channel-specific destination address.
+		// Normalized channel-specific destination: the lower-cased email address, or the phone
+		// number in E.164.
 		field.String("destination").
 			NotEmpty(),
 		// How the confirmation was obtained. "double_opt_in" is the gold standard
 		// (the recipient clicked the link); "grandfathered" is written by the
 		// policy-enablement backfill (admin asserts a prior-consent basis);
-		// "imported" is asserted by the CSV importer for an existing relationship.
+		// "imported" is asserted by an API client or an import for consent it collected itself,
+		// with its evidence; "keyword" is a START the person texted (ADR 0077).
 		field.Enum("provenance").
-			Values("double_opt_in", "grandfathered", "imported"),
+			Values("double_opt_in", "grandfathered", "imported", "keyword"),
+		// The evidence of an imported Confirmation, as its marketing.confirmed Event carries it
+		// (ADR 0077): the consent wording the person was shown, where it was collected, and the
+		// brand it was given to. Null on a Confirmation that carries none (a double opt-in, a
+		// keyword).
+		field.String("wording").
+			Optional().
+			Nillable(),
+		field.String("source").
+			Optional().
+			Nillable(),
+		field.String("brand").
+			Optional().
+			Nillable(),
 		// The contact this destination belongs to, when known. Display only; the
 		// confirmation is keyed by destination. It is consent proof for that person, so it
 		// dies with the Contact (ON DELETE CASCADE; Erasure deletes it, ADR 0021). Nullable.

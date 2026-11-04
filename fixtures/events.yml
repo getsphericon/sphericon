@@ -416,6 +416,14 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 300}}'
   created_at: '{{daysAgo 300}}'
+# A phone's SMS consent proof, as old: evidentiary like marketing.confirmed (ADR 0019, 0077).
+- id: 311 # fixture: EventOldSmsConfirmed
+  phone: '+14155550311'
+  action: sms.confirmed
+  properties: '{"provenance":"imported","wording":"Text me offers","source":"checkout form","brand":"Acme"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 500}}'
+  created_at: '{{daysAgo 500}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change. Its action is unique to
 # the workspace so a leak into workspace 1's action list is detectable. ---
@@ -533,7 +541,7 @@
   contact_id: 300
   subject_id: user-erin-300
   email: erin@initech.test
-  phone: '+15550100300'
+  phone: '+14155550300'
   action: contact.created
   properties: '{"email":"erin@initech.test"}'
   workspace_id: 3
@@ -5129,6 +5137,14 @@
   workspace_id: 61
   occurred_at: '2026-03-06 15:00:00+00' # 10:00 EST on 6 March
   created_at: '2026-03-06 15:00:00+00'
+# A phone's SMS consent the same day: the report is about email, so it counts nowhere (#1037).
+- id: 9330 # fixture: EventGothamSmsConfirmedOnThe6th
+  phone: '+12125550930'
+  action: sms.confirmed
+  properties: '{"provenance":"imported","wording":"Text me offers","source":"store signup sheet","brand":"Gotham"}'
+  workspace_id: 61
+  occurred_at: '2026-03-06 16:00:00+00'
+  created_at: '2026-03-06 16:00:00+00'
 # Backfilled: it happened on 9 March but was recorded on 10 March, so it lands on the 9th.
 - id: 9306 # fixture: EventGothamSubscribedBackfilled
   email: g@gotham.test

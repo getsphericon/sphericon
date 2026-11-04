@@ -19,6 +19,7 @@ type Kind string
 const (
 	Email     Kind = "email"
 	Telegram  Kind = "telegram"
+	SMS       Kind = "sms"
 	Wait      Kind = "wait"
 	ApplyTag  Kind = "apply_tag"
 	RemoveTag Kind = "remove_tag"
@@ -34,6 +35,8 @@ func (k Kind) Channel() (messaging.Channel, bool) {
 		return messaging.ChannelEmail, true
 	case Telegram:
 		return messaging.ChannelTelegram, true
+	case SMS:
+		return messaging.ChannelSMS, true
 	default:
 		return "", false
 	}
@@ -57,7 +60,8 @@ type Step struct {
 	Seconds       int             `json:"seconds,omitempty"`
 	Tag           string          `json:"tag,omitempty"`
 	// Text is a Telegram step's message: Telegram's HTML subset with Liquid merge tags. With an
-	// ImageURL it is the image's caption.
+	// ImageURL it is the image's caption. On an SMS step it is the text: plain, with Liquid merge
+	// tags.
 	Text string `json:"text,omitempty"`
 	// UnsubscribeButton is the label of a Telegram step's unsubscribe button, "" for none.
 	UnsubscribeButton string `json:"unsubscribeButton,omitempty"`
@@ -67,6 +71,9 @@ type Step struct {
 	Buttons []telegramrender.Button `json:"buttons,omitempty"`
 	// LinkPreview is whether a link in a Telegram step's text unfolds a preview; nil is on.
 	LinkPreview *bool `json:"linkPreview,omitempty"`
+	// LinkTracking is whether the links of an SMS step's text go out as short tracked links (ADR
+	// 0083); nil is on.
+	LinkTracking *bool `json:"linkTracking,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
@@ -78,6 +85,10 @@ type Step struct {
 	Secret      string            `json:"secret,omitempty"`
 	ClearSecret bool              `json:"-"`
 }
+
+// TracksLinks reports whether the links of an SMS step go out as short tracked links: unless the
+// step turned it off.
+func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTracking }
 
 // Decode parses a stored definition. An empty definition has no steps.
 func Decode(definition string) ([]Step, error) {

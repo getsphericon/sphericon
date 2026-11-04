@@ -13,13 +13,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // ContentInput is what a new Broadcast says, in the shape of its Channel (ADR 0078). Its Channel
 // is the Broadcast's, fixed from then on (ADR 0080). Each Channel a Broadcast is sent on has its
-// own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's.
+// own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's,
+// SMSContentInput SMS's.
 type ContentInput interface {
 	Channel() messaging.Channel
 	// create checks the content and sets it on the new Broadcast q.
@@ -170,6 +173,80 @@ func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped
 	patch.ApplySet(c.Buttons, u.SetButtons)
 	patch.ApplySet(c.LinkPreview, u.SetLinkPreview)
 	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdate { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
+	return nil
+}
+
+// SMSContentInput is the SMS content of a new Broadcast, the same Message content as an SMS step
+// (ADR 0078): one plain text with Liquid merge tags, and whether its links go out as short tracked
+// links (ADR 0083). A field the write leaves out takes its default: an empty text, link tracking on.
+type SMSContentInput struct {
+	Text         *string
+	LinkTracking *bool
+}
+
+// Channel is SMS.
+func (SMSContentInput) Channel() messaging.Channel { return messaging.ChannelSMS }
+
+// create stores the content. A text whose Liquid does not render, or longer than the provider sends, is
+// refused; a blank one is refused at Schedule, not here, so a draft can be saved before it is
+// written.
+func (c SMSContentInput) create(ctx context.Context, m *Module, s *ent.Scoped, q *ent.BroadcastScopedCreate) error {
+	tracked := lo.FromPtrOr(c.LinkTracking, true)
+	if c.Text != nil {
+		if err := m.checkSMS(ctx, s, *c.Text, tracked); err != nil {
+			return err
+		}
+	}
+	q.SetText(lo.FromPtr(c.Text)).SetLinkTracking(tracked)
+	return nil
+}
+
+// SMSContentPatch is an edit of an SMS draft's content: a field that keeps leaves the stored one;
+// the text cannot be cleared.
+type SMSContentPatch struct {
+	Text         patch.Field[string]
+	LinkTracking patch.Field[bool]
+}
+
+// Channel is SMS.
+func (SMSContentPatch) Channel() messaging.Channel { return messaging.ChannelSMS }
+
+// update checks the text the draft will hold, the stored one when only link tracking changes:
+// turning tracking off counts its links as written, which can take it over the provider's length limit.
+func (c SMSContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+	text, textSet := c.Text.Get()
+	tracked, trackingSet := c.LinkTracking.Get()
+	if textSet || trackingSet {
+		if !textSet {
+			text = lo.FromPtr(cur.Text)
+		}
+		if !trackingSet {
+			tracked = cur.LinkTracking
+		}
+		if err := m.checkSMS(ctx, s, text, tracked); err != nil {
+			return err
+		}
+	}
+	patch.ApplySet(c.Text, u.SetText)
+	patch.ApplySet(c.LinkTracking, u.SetLinkTracking)
+	return nil
+}
+
+// checkSMS refuses a text whose Liquid does not render, as email's content is refused, and one
+// longer than the provider sends, as an SMS step's save does: its links
+// counted as the Workspace's short links when tracked, as written when not. Twilio is the one SMS
+// provider, so its limit is the one a text is held to.
+func (m *Module) checkSMS(ctx context.Context, s *ent.Scoped, text string, tracked bool) error {
+	linkLength := 0
+	if tracked {
+		var err error
+		if linkLength, err = m.out.ShortLinkLength(ctx, s); err != nil {
+			return err
+		}
+	}
+	if err := errors.Join(smsrender.Check(text), smsrender.CheckLength(text, twilio.MaxLength, linkLength)); err != nil {
+		return fmt.Errorf("%w: %w", emailrender.ErrInvalidContent, err)
+	}
 	return nil
 }
 

@@ -24,7 +24,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	draft := idStr(fixtures.BroadcastDraftID)
 	missing := idStr(99999)
 	when := siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))}
-	testSend := siteapi.TestSendBroadcastInput{Email: "preview@example.com"}
+	testSend := siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")}
 
 	t.Run("foreign workspace", func(t *testing.T) {
 		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: foreign})
@@ -148,7 +148,7 @@ func TestSiteBroadcastsTestSendDeliversPreview(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: "preview@example.com"},
+	res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)

@@ -602,6 +602,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.UnsubscribeButton != nil {
 					b.SetUnsubscribeButton(*src.UnsubscribeButton)
 				}
+				b.SetLinkTracking(src.LinkTracking)
 				if src.Body != nil {
 					b.SetBody(*src.Body)
 				}
@@ -818,6 +819,15 @@ func ScopedEntities() []ScopedEntity {
 				b.SetChannel(src.Channel)
 				b.SetDestination(src.Destination)
 				b.SetProvenance(src.Provenance)
+				if src.Wording != nil {
+					b.SetWording(*src.Wording)
+				}
+				if src.Source != nil {
+					b.SetSource(*src.Source)
+				}
+				if src.Brand != nil {
+					b.SetBrand(*src.Brand)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}
@@ -1673,6 +1683,12 @@ func ScopedEntities() []ScopedEntity {
 				if src.ComplainedAt != nil {
 					b.SetComplainedAt(*src.ComplainedAt)
 				}
+				if src.UndeliveredAt != nil {
+					b.SetUndeliveredAt(*src.UndeliveredAt)
+				}
+				if src.UndeliveredCode != nil {
+					b.SetUndeliveredCode(*src.UndeliveredCode)
+				}
 				if src.OpenedAt != nil {
 					b.SetOpenedAt(*src.OpenedAt)
 				}
@@ -2375,7 +2391,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.TrackedLink().Create()
-				b.SetOutboundMessageID(remap("OutboundMessage", src.OutboundMessageID))
+				if src.OutboundMessageID != nil {
+					b.SetOutboundMessageID(remap("OutboundMessage", *src.OutboundMessageID))
+				}
 				b.SetToken(src.Token + "-replanted")
 				b.SetURL(src.URL)
 				created, err := b.Save(ctx)
@@ -2470,6 +2488,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetChannel(src.Channel)
 				b.SetDestination(src.Destination)
 				b.SetSendingSource(src.SendingSource)
+				if src.Via != nil {
+					b.SetVia(*src.Via)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}

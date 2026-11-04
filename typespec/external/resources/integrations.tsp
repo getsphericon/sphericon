@@ -47,6 +47,26 @@ model TelegramConfig {
   username: string;
 }
 
+/** A Twilio account without its secret */
+model TwilioConfig {
+  kind: "twilio";
+
+  /** The Account SID */
+  accountSid: string;
+
+  /** The API key messages are sent with; null when they are sent with the Auth Token */
+  apiKeySid: string | null;
+
+  /** What messages go out from */
+  from: string;
+
+  /** What kind of sender `from` is */
+  fromKind: SmsFromKind;
+
+  /** Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback */
+  callbacksSet: boolean;
+}
+
 /** Provider config as returned, discriminated by `kind`. Secrets are omitted. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union IntegrationConfig {
@@ -54,6 +74,7 @@ union IntegrationConfig {
   ses: SesConfig,
   inbox: InboxConfig,
   telegram: TelegramConfig,
+  twilio: TwilioConfig,
 }
 
 // The input config (carries secrets; write-only) is common/integrations.tsp.

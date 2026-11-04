@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -25,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
@@ -37,10 +39,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
 	"github.com/go-faster/jx"
@@ -82,6 +88,7 @@ import (
 // goverter:extend nilFloat64
 // goverter:extend optNilString
 // goverter:extend optNilContactSource
+// goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend optNilEmailAddress
@@ -120,6 +127,7 @@ import (
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
+// goverter:extend optEmail
 // goverter:extend optBool
 // goverter:extend optEditorDocument
 // goverter:extend optMembershipSource
@@ -136,6 +144,9 @@ import (
 // goverter:extend broadcastContent
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
+// goverter:extend smsContentChannel
+// goverter:extend optNilSmsConfirmation
+// goverter:extend optNilSmsOptOut
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -198,6 +209,12 @@ type Converter interface {
 	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
+	// The length of a short tracked link depends on the Workspace's serving Tracking domain
+	// (outbound.Module.ShortLinkLength): the handler attaches it.
+	// goverter:ignore ShortLinkLength
+	// The SMS provider's length limit is the send path's (outbound.Module.SMSLengthLimit): the
+	// handler attaches it through SmsLengthLimitToResource.
+	// goverter:ignore SmsMaxLength
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
@@ -287,6 +304,8 @@ type Converter interface {
 	EmailBroadcastContentToResource(source *ent.Broadcast) siteapi.EmailBroadcastContent
 	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
 	TelegramBroadcastContentToResource(source *ent.Broadcast) siteapi.TelegramBroadcastContent
+	// The SMS content of an SMS Broadcast, the arm of its content that broadcastContent wraps.
+	SmsBroadcastContentToResource(source *ent.Broadcast) siteapi.SmsBroadcastContent
 
 	// A Broadcast's delivery figures as its Channel reports them: a figure it does not report is
 	// null. The rates are ratios in [0,1].
@@ -299,6 +318,7 @@ type Converter interface {
 	// goverter:map Unsubscribed UnsubscribedCount
 	// goverter:map Failed FailedCount
 	// goverter:map Delivered DeliveredCount
+	// goverter:map Undelivered UndeliveredCount
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
@@ -379,6 +399,12 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.SiteTelegramConfig
+	// goverter:enum:transform value
+	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
+	// goverter:map . Kind | twilioConfigKind
+	// goverter:map AccountSID AccountSid
+	// goverter:map . ApiKeySid | twilioAPIKeySID
+	TwilioConfigToResource(source integrations.RedactedTwilio) siteapi.SiteTwilioConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -399,6 +425,16 @@ type Converter interface {
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
+	SmsConsentToResource(source consent.ContactSMS) siteapi.SmsConsent
+	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
+	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
+	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SmsOptOut
+	// goverter:enum:transform value
+	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
+	// goverter:map CreatedAt ConfirmedAt
+	SmsConfirmationToResource(source *ent.Confirmation) siteapi.SmsConfirmation
+	// goverter:enum:transform value
+	ConfirmationProvenanceToResource(source confirmation.Provenance) siteapi.ConfirmationProvenance
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource
@@ -765,6 +801,22 @@ func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSi
 	return convert.NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource)
 }
 
+// optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
+func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSmsConfirmation {
+	if v == nil {
+		return siteapi.OptNilSmsConfirmation{}
+	}
+	return siteapi.NewOptNilSmsConfirmation(c.SmsConfirmationToResource(v))
+}
+
+// optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
+func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSmsOptOut {
+	if v == nil {
+		return siteapi.OptNilSmsOptOut{}
+	}
+	return siteapi.NewOptNilSmsOptOut(c.SmsOptOutToResource(v))
+}
+
 // broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).
 func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcastLimit {
 	if v == "" {
@@ -790,9 +842,16 @@ func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
 	case broadcast.ChannelTelegram:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	case broadcast.ChannelSms:
+		return siteapi.BroadcastContent{OneOf: siteapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return siteapi.BroadcastContent{}
 	}
+}
+
+// smsContentChannel is the discriminator of SMS's content arm.
+func smsContentChannel(broadcast.Channel) siteapi.SmsBroadcastContentChannel {
+	return siteapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.
@@ -834,7 +893,7 @@ func transactionalChannel(outboundmessage.Channel) siteapi.SiteTransactionalEmai
 
 // transactionalStatus maps an Outbound message's status onto the transactional
 // send status enum.
-func transactionalStatus(m ent.OutboundMessage) siteapi.SiteTransactionalEmailStatus {
+func transactionalStatus(m *ent.OutboundMessage) siteapi.SiteTransactionalEmailStatus {
 	switch m.Status {
 	case outboundmessage.StatusSent:
 		return siteapi.SiteTransactionalEmailStatusSent
@@ -848,7 +907,7 @@ func transactionalStatus(m ent.OutboundMessage) siteapi.SiteTransactionalEmailSt
 }
 
 // transactionalError exposes the failure text only for a failed send.
-func transactionalError(m ent.OutboundMessage) siteapi.OptNilString {
+func transactionalError(m *ent.OutboundMessage) siteapi.OptNilString {
 	if m.Status != outboundmessage.StatusFailed || m.Reason == nil {
 		return siteapi.OptNilString{}
 	}
@@ -970,6 +1029,14 @@ func optString(v *string) siteapi.OptString {
 	return convert.Opt[siteapi.OptString](v)
 }
 
+// optEmail is an address, unset when there is none.
+func optEmail(v string) siteapi.OptEmailAddress {
+	if v == "" {
+		return siteapi.OptEmailAddress{}
+	}
+	return siteapi.NewOptEmailAddress(siteapi.EmailAddress(v))
+}
+
 func optMembershipSource(c Converter, v *membership.Source) siteapi.OptSiteMembershipSource {
 	return convert.OptVia[siteapi.OptSiteMembershipSource](v, c.MembershipSourceToResource)
 }
@@ -1085,6 +1152,18 @@ func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
 	return siteapi.SiteSesConfigKindSes
 }
 
+func twilioConfigKind(integrations.RedactedTwilio) siteapi.SiteTwilioConfigKind {
+	return siteapi.SiteTwilioConfigKindTwilio
+}
+
+// twilioAPIKeySID is the API key messages are sent with, null when they are sent with the Auth Token.
+func twilioAPIKeySID(c integrations.RedactedTwilio) siteapi.NilString {
+	if c.APIKeySID == "" {
+		return siteapi.NilString{Null: true}
+	}
+	return siteapi.NewNilString(c.APIKeySID)
+}
+
 func telegramConfigKind(integrations.RedactedTelegram) siteapi.SiteTelegramConfigKind {
 	return siteapi.SiteTelegramConfigKindTelegram
 }
@@ -1157,6 +1236,10 @@ func ruleResults(c Converter, stored string) []siteapi.SiteRuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
 	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {
+	return convert.OptVia[siteapi.OptNilOptOutVia](v, c.OptOutViaToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReason {

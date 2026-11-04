@@ -10,6 +10,7 @@ import (
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
+	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	consentrecord "github.com/getsphericon/sphericon/ent/consentrecord"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
@@ -21,6 +22,7 @@ import (
 	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
+	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
@@ -33,13 +35,16 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
@@ -47,6 +52,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	smsrender "github.com/getsphericon/sphericon/internal/smsrender"
 	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
@@ -453,6 +459,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 		}
 	}
 	siteapiSiteAutomationStep.LinkPreview = optBool(source.LinkPreview)
+	siteapiSiteAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
@@ -466,6 +473,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
+	case automationsteps.SMS:
+		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeSMS
 	case automationsteps.Telegram:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
 	case automationsteps.Wait:
@@ -621,6 +630,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) sit
 	switch source {
 	case broadcast.ChannelEmail:
 		siteapiBroadcastChannel = site.BroadcastChannelEmail
+	case broadcast.ChannelSms:
+		siteapiBroadcastChannel = site.BroadcastChannelSMS
 	case broadcast.ChannelTelegram:
 		siteapiBroadcastChannel = site.BroadcastChannelTelegram
 	default:
@@ -671,6 +682,7 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
 	siteapiSiteBroadcastStats.DeliveredCount = nilInt32(source.Delivered)
+	siteapiSiteBroadcastStats.UndeliveredCount = nilInt32(source.Undelivered)
 	siteapiSiteBroadcastStats.BouncedCount = nilInt32(source.Bounced)
 	siteapiSiteBroadcastStats.ComplainedCount = nilInt32(source.Complained)
 	siteapiSiteBroadcastStats.CapturedCount = nilInt32(source.Captured)
@@ -822,6 +834,22 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) sit
 	siteapiSiteCnameRecord.Target = source.Target
 	return siteapiSiteCnameRecord
 }
+func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) site.ConfirmationProvenance {
+	var siteapiConfirmationProvenance site.ConfirmationProvenance
+	switch source {
+	case confirmation.ProvenanceDoubleOptIn:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceDoubleOptIn
+	case confirmation.ProvenanceGrandfathered:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceGrandfathered
+	case confirmation.ProvenanceImported:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceImported
+	case confirmation.ProvenanceKeyword:
+		siteapiConfirmationProvenance = site.ConfirmationProvenanceKeyword
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiConfirmationProvenance
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
 	if source != nil {
@@ -829,6 +857,9 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.Cont
 		siteapiContactExportConfirmation.Channel = string((*source).Channel)
 		siteapiContactExportConfirmation.Destination = (*source).Destination
 		siteapiContactExportConfirmation.Provenance = string((*source).Provenance)
+		siteapiContactExportConfirmation.Wording = optNilString((*source).Wording)
+		siteapiContactExportConfirmation.Source = optNilString((*source).Source)
+		siteapiContactExportConfirmation.Brand = optNilString((*source).Brand)
 		siteapiContactExportConfirmation.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportConfirmation
@@ -1262,6 +1293,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
 	case integration.ProviderTelegram:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
+	case integration.ProviderTwilio:
+		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1467,6 +1500,26 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.Sit
 	siteapiSiteMessageRevenue.Amount = source.Credited.Amount
 	return siteapiSiteMessageRevenue
 }
+func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutVia {
+	var siteapiOptOutVia site.OptOutVia
+	switch source {
+	case unsubscribe.ViaBlock:
+		siteapiOptOutVia = site.OptOutViaBlock
+	case unsubscribe.ViaButton:
+		siteapiOptOutVia = site.OptOutViaButton
+	case unsubscribe.ViaKeyword:
+		siteapiOptOutVia = site.OptOutViaKeyword
+	case unsubscribe.ViaLink:
+		siteapiOptOutVia = site.OptOutViaLink
+	case unsubscribe.ViaManual:
+		siteapiOptOutVia = site.OptOutViaManual
+	case unsubscribe.ViaRefusedSend:
+		siteapiOptOutVia = site.OptOutViaRefusedSend
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiOptOutVia
+}
 func (c *ConverterImpl) OptionalConsentDecisionToResource(source consentrecord.Decision) site.SiteOptionalConsentDecision {
 	var siteapiSiteOptionalConsentDecision site.SiteOptionalConsentDecision
 	switch source {
@@ -1518,6 +1571,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		siteapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
+		siteapiContactExportOutboundMessage.UndeliveredAt = optNilTimestamp((*source).UndeliveredAt)
+		siteapiContactExportOutboundMessage.UndeliveredCode = optNilString((*source).UndeliveredCode)
 		siteapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
 		siteapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		siteapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
@@ -2042,6 +2097,63 @@ func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.
 	}
 	return siteapiSiteSignupItemList
 }
+func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) site.SmsBroadcastContent {
+	var siteapiSmsBroadcastContent site.SmsBroadcastContent
+	if source != nil {
+		siteapiSmsBroadcastContent.Channel = smsContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			siteapiSmsBroadcastContent.Text = *(*source).Text
+		}
+		siteapiSmsBroadcastContent.LinkTracking = (*source).LinkTracking
+	}
+	return siteapiSmsBroadcastContent
+}
+func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site.SmsConfirmation {
+	var siteapiSmsConfirmation site.SmsConfirmation
+	if source != nil {
+		siteapiSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		siteapiSmsConfirmation.Wording = optNilString((*source).Wording)
+		siteapiSmsConfirmation.Source = optNilString((*source).Source)
+		siteapiSmsConfirmation.Brand = optNilString((*source).Brand)
+		siteapiSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSmsConfirmation
+}
+func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SmsConsent {
+	var siteapiSmsConsent site.SmsConsent
+	siteapiSmsConsent.Phone = optNilString(source.Phone)
+	siteapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
+	siteapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
+	return siteapiSmsConsent
+}
+func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) site.SmsFromKind {
+	var siteapiSmsFromKind site.SmsFromKind
+	switch source {
+	case messaging.SMSFromAlphanumeric:
+		siteapiSmsFromKind = site.SmsFromKindAlphanumeric
+	case messaging.SMSFromMessagingService:
+		siteapiSmsFromKind = site.SmsFromKindMessagingService
+	case messaging.SMSFromNumber:
+		siteapiSmsFromKind = site.SmsFromKindNumber
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSmsFromKind
+}
+func (c *ConverterImpl) SmsLengthLimitToResource(source smsrender.Limit) site.SiteSmsLengthLimit {
+	var siteapiSiteSmsLengthLimit site.SiteSmsLengthLimit
+	siteapiSiteSmsLengthLimit.Gsm7 = count(source.GSM7)
+	siteapiSiteSmsLengthLimit.Ucs2 = count(source.UCS2)
+	return siteapiSiteSmsLengthLimit
+}
+func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SmsOptOut {
+	var siteapiSmsOptOut site.SmsOptOut
+	if source != nil {
+		siteapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
+		siteapiSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
+	}
+	return siteapiSmsOptOut
+}
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
 	var siteapiSiteSmtpConfig site.SiteSmtpConfig
 	siteapiSiteSmtpConfig.Kind = smtpConfigKind(source)
@@ -2063,6 +2175,8 @@ func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel)
 	switch source {
 	case suppression.ChannelEmail:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
+	case suppression.ChannelSms:
+		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelSMS
 	case suppression.ChannelTelegram:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
 	// Skipped DefaultChannel(email) -> SiteSuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteSuppressionChannelEmail(email)
@@ -2213,6 +2327,12 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	siteapiSiteTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteTemplatesListOK
 }
+func (c *ConverterImpl) TestSendResultToResource(source outbound.Result) site.SiteTestSendBroadcastResult {
+	var siteapiSiteTestSendBroadcastResult site.SiteTestSendBroadcastResult
+	siteapiSiteTestSendBroadcastResult.From = optEmail(source.From)
+	siteapiSiteTestSendBroadcastResult.Captured = source.Captured
+	return siteapiSiteTestSendBroadcastResult
+}
 func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenResource {
 	var siteapiSiteApiTokenResource site.SiteApiTokenResource
 	if source != nil {
@@ -2315,8 +2435,8 @@ func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessa
 			siteapiSiteTransactionalEmailResource.TemplateId = site.EntityId(*(*source).TemplateID)
 		}
 		siteapiSiteTransactionalEmailResource.ContactId = optNilEntityID((*source).ContactID)
-		siteapiSiteTransactionalEmailResource.Status = transactionalStatus((*source))
-		siteapiSiteTransactionalEmailResource.Error = transactionalError((*source))
+		siteapiSiteTransactionalEmailResource.Status = transactionalStatus(source)
+		siteapiSiteTransactionalEmailResource.Error = transactionalError(source)
 		siteapiSiteTransactionalEmailResource.Captured = (*source).Captured
 		siteapiSiteTransactionalEmailResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -2330,6 +2450,16 @@ func (c *ConverterImpl) TransactionalMessagesToResources(source []*ent.OutboundM
 	}
 	return siteapiSiteTransactionalEmailResourceList
 }
+func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) site.SiteTwilioConfig {
+	var siteapiSiteTwilioConfig site.SiteTwilioConfig
+	siteapiSiteTwilioConfig.Kind = twilioConfigKind(source)
+	siteapiSiteTwilioConfig.AccountSid = source.AccountSID
+	siteapiSiteTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
+	siteapiSiteTwilioConfig.From = source.From
+	siteapiSiteTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
+	siteapiSiteTwilioConfig.CallbacksSet = source.CallbacksSet
+	return siteapiSiteTwilioConfig
+}
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.ContactExportUnsubscribe {
 	var siteapiContactExportUnsubscribe site.ContactExportUnsubscribe
 	if source != nil {
@@ -2337,6 +2467,7 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.Contac
 		siteapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		siteapiContactExportUnsubscribe.Destination = (*source).Destination
 		siteapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
+		siteapiContactExportUnsubscribe.Via = optNilOptOutVia(c, (*source).Via)
 		siteapiContactExportUnsubscribe.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportUnsubscribe
@@ -2442,6 +2573,8 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.McpUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackerUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackingTarget: ignore
+		// siteapiSiteWorkspaceResource.ShortLinkLength: ignore
+		// siteapiSiteWorkspaceResource.SmsMaxLength: ignore
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore

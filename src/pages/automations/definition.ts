@@ -19,6 +19,8 @@ import {
   HTTP_NODE_ICON,
   HTTP_NODE_TYPE,
   REMOVE_TAG_NODE_TYPE,
+  SMS_NODE_ICON,
+  SMS_NODE_TYPE,
   TAG_NODE_ICON,
   TELEGRAM_NODE_ICON,
   TELEGRAM_NODE_TYPE,
@@ -52,6 +54,7 @@ export interface AutomationGraph {
 const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   email: EMAIL_NODE_ICON,
   telegram: TELEGRAM_NODE_ICON,
+  sms: SMS_NODE_ICON,
   wait: WAIT_NODE_ICON,
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
@@ -92,6 +95,13 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
   }
   if (step.type === 'telegram') {
     return telegramProperties(step)
+  }
+  if (step.type === 'sms') {
+    return {
+      integrationId: step.integrationId ?? '',
+      text: step.text ?? '',
+      linkTracking: step.linkTracking === false ? 'off' : '',
+    }
   }
   return {
     integrationId: step.integrationId ?? '',
@@ -208,6 +218,35 @@ function stepHeaders(text: string): SiteAutomationHttpHeader[] {
     .map(({ name, value }) => (value === '' ? { name } : { name, value }))
 }
 
+// The Telegram step a node holds: what is left blank is left out.
+function telegramStep(props: Record<string, unknown>): AutomationStep {
+  const integrationId = asText(props.integrationId)
+  const unsubscribeButton = asText(props.unsubscribeButton)
+  const imageUrl = asText(props.imageUrl).trim()
+  const buttons = completeButtons(buttonsCodec.read(props.buttons))
+  return {
+    type: 'telegram',
+    text: asText(props.text),
+    ...(integrationId === '' ? {} : { integrationId }),
+    ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
+    ...(imageUrl === '' ? {} : { imageUrl }),
+    ...(buttons.length === 0 ? {} : { buttons }),
+    ...(props.linkPreview === 'off' ? { linkPreview: false } : {}),
+  }
+}
+
+// The SMS step a node holds. A step that names no Integration ('') leaves it out: it sends
+// through the SMS default. Link tracking is on unless the node turned it 'off'.
+function smsStep(props: Record<string, unknown>): AutomationStep {
+  const integrationId = asText(props.integrationId)
+  return {
+    type: 'sms',
+    text: asText(props.text),
+    ...(integrationId === '' ? {} : { integrationId }),
+    ...(props.linkTracking === 'off' ? { linkTracking: false } : {}),
+  }
+}
+
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   const props: Record<string, unknown> = node.data.properties
   if (node.data.type === HTTP_NODE_TYPE) {
@@ -233,19 +272,10 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
     }
   }
   if (node.data.type === TELEGRAM_NODE_TYPE) {
-    const integrationId = asText(props.integrationId)
-    const unsubscribeButton = asText(props.unsubscribeButton)
-    const imageUrl = asText(props.imageUrl).trim()
-    const buttons = completeButtons(buttonsCodec.read(props.buttons))
-    return {
-      type: 'telegram',
-      text: asText(props.text),
-      ...(integrationId === '' ? {} : { integrationId }),
-      ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
-      ...(imageUrl === '' ? {} : { imageUrl }),
-      ...(buttons.length === 0 ? {} : { buttons }),
-      ...(props.linkPreview === 'off' ? { linkPreview: false } : {}),
-    }
+    return telegramStep(props)
+  }
+  if (node.data.type === SMS_NODE_TYPE) {
+    return smsStep(props)
   }
   if (node.data.type === EMAIL_NODE_TYPE) {
     // A message written in the editor is saved as its document alone (the server builds the

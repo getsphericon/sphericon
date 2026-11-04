@@ -52,7 +52,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	ctx := context.Background()
 
 	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
-		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+15559990"),
+		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+14155550110"),
 		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"), Country: new("DE"),
 		CustomFields: map[string]any{"plan": "pro"},
 	})
@@ -143,11 +143,11 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15557770")})
+	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550111")})
 	require.NoError(t, err)
 
 	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
-		Phone: new("+15557770"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
+		Phone: new("+14155550111"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
 		CustomFields: map[string]any{"tier": "gold"},
 	})
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	assert.Equal(t, "sub-9", lo.FromPtr(res.Contact.SubjectID))
 	assert.Equal(t, "gold", res.Contact.CustomFields["tier"])
 
-	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
+	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+14155550111"), CustomFields: map[string]any{"visits": float64(1)}})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"tier": "gold", "visits": float64(1)}, again.Contact.CustomFields, "custom fields merge")
 }
@@ -180,7 +180,7 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 
 	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("resolve-subject")})
 	require.NoError(t, err)
-	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15558880")})
+	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550112")})
 	require.NoError(t, err)
 
 	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
@@ -188,7 +188,7 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	require.NotNil(t, got)
 	assert.Equal(t, bySubject.ID, got.ID, "subject_id wins over email")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new("+15558880"))
+	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new("+14155550112"))
 	require.NoError(t, err)
 	require.NotNil(t, got)
 	assert.Equal(t, byPhone.ID, got.ID, "falls through to the next key")

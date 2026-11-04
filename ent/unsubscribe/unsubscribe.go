@@ -27,6 +27,8 @@ const (
 	FieldDestination = "destination"
 	// FieldSendingSource holds the string denoting the sending_source field in the database.
 	FieldSendingSource = "sending_source"
+	// FieldVia holds the string denoting the via field in the database.
+	FieldVia = "via"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldChannel,
 	FieldDestination,
 	FieldSendingSource,
+	FieldVia,
 	FieldContactID,
 }
 
@@ -96,6 +99,7 @@ const DefaultChannel = ChannelEmail
 const (
 	ChannelEmail    Channel = "email"
 	ChannelTelegram Channel = "telegram"
+	ChannelSms      Channel = "sms"
 )
 
 func (c Channel) String() string {
@@ -105,10 +109,37 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail, ChannelTelegram:
+	case ChannelEmail, ChannelTelegram, ChannelSms:
 		return nil
 	default:
 		return fmt.Errorf("unsubscribe: invalid enum value for channel field: %q", c)
+	}
+}
+
+// Via defines the type for the "via" enum field.
+type Via string
+
+// Via values.
+const (
+	ViaKeyword     Via = "keyword"
+	ViaButton      Via = "button"
+	ViaBlock       Via = "block"
+	ViaLink        Via = "link"
+	ViaRefusedSend Via = "refused_send"
+	ViaManual      Via = "manual"
+)
+
+func (v Via) String() string {
+	return string(v)
+}
+
+// ViaValidator is a validator for the "via" field enum values. It is called by the builders before save.
+func ViaValidator(v Via) error {
+	switch v {
+	case ViaKeyword, ViaButton, ViaBlock, ViaLink, ViaRefusedSend, ViaManual:
+		return nil
+	default:
+		return fmt.Errorf("unsubscribe: invalid enum value for via field: %q", v)
 	}
 }
 
@@ -148,6 +179,11 @@ func ByDestination(opts ...sql.OrderTermOption) OrderOption {
 // BySendingSource orders the results by the sending_source field.
 func BySendingSource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSendingSource, opts...).ToFunc()
+}
+
+// ByVia orders the results by the via field.
+func ByVia(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVia, opts...).ToFunc()
 }
 
 // ByContactID orders the results by the contact_id field.

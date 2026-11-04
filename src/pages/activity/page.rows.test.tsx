@@ -211,10 +211,11 @@ test('a click names its link without the scheme, the whole one on hover, and the
     .toBeVisible()
 })
 
-test('a bounce says whether it was hard or soft', async () => {
+test('a bounce says whether it was hard or soft, and one of no known kind only that it bounced', async () => {
   serveEmails(
     emailEvent('1', 'email.bounced', { broadcastId: 5, bounceKind: 'hard' }),
     emailEvent('2', 'email.bounced', { broadcastId: 5, bounceKind: 'soft' }),
+    emailEvent('3', 'email.bounced', { broadcastId: 5 }),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
@@ -223,6 +224,24 @@ test('a bounce says whether it was hard or soft', async () => {
     .toBeVisible()
   await expect
     .element(screen.getByRole('row', { name: /Bounced \(soft\): "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Bounced: "Welcome to Hexlet"/ }))
+    .toBeVisible()
+})
+
+test('a delayed and a dropped email say so', async () => {
+  serveEmails(
+    emailEvent('1', 'email.delayed', { broadcastId: 5 }),
+    emailEvent('2', 'email.dropped', { broadcastId: 5 }),
+  )
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
+
+  await expect
+    .element(screen.getByRole('row', { name: /Delayed "Welcome to Hexlet"/ }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('row', { name: /Dropped "Welcome to Hexlet"/ }))
     .toBeVisible()
 })
 
@@ -252,4 +271,23 @@ test('an Event without what its row names shows the words of its action', async 
   await expect.element(screen.getByText('Had a custom field changed')).toBeVisible()
   await expect.element(screen.getByText('Entered an automation')).toBeVisible()
   await expect.element(screen.getByText('Visited a page')).toBeVisible()
+})
+
+test("an SMS message's delivery state shows, an undelivered one with the provider's error code", async () => {
+  serve(
+    event('1', 'sms.sent', { destination: '+14155550177' }),
+    event('2', 'sms.delivered', { destination: '+14155550177' }),
+    event('3', 'sms.undelivered', { destination: '+14155550177', errorCode: '30003' }),
+    event('4', 'sms.undelivered', { destination: '+14155550177' }),
+  )
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
+
+  await expect.element(screen.getByText('Was sent a text message')).toBeVisible()
+  await expect.element(screen.getByText('Text message delivered')).toBeVisible()
+  await expect
+    .element(screen.getByText('Text message not delivered (error 30003)', { exact: true }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByText('Text message not delivered', { exact: true }))
+    .toBeVisible()
 })

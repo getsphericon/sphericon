@@ -7525,6 +7525,18 @@ func (x *BroadcastScopedCreate) SetNillableUnsubscribeButton(v *string) *Broadca
 	return x
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedCreate) SetLinkTracking(v bool) *BroadcastScopedCreate {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableLinkTracking(v *bool) *BroadcastScopedCreate {
+	x.b.SetNillableLinkTracking(v)
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedCreate) SetBody(v string) *BroadcastScopedCreate {
 	x.b.SetBody(v)
@@ -7970,6 +7982,18 @@ func (u *BroadcastScopedUpsert) UpdateUnsubscribeButton() *BroadcastScopedUpsert
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (u *BroadcastScopedUpsert) ClearUnsubscribeButton() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (u *BroadcastScopedUpsert) SetLinkTracking(v bool) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldLinkTracking, v)
+	return u
+}
+
+// UpdateLinkTracking sets the "link_tracking" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateLinkTracking() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldLinkTracking)
 	return u
 }
 
@@ -8523,6 +8547,18 @@ func (x *BroadcastScopedUpdateOne) ClearUnsubscribeButton() *BroadcastScopedUpda
 	return x
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedUpdateOne) SetLinkTracking(v bool) *BroadcastScopedUpdateOne {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableLinkTracking(v *bool) *BroadcastScopedUpdateOne {
+	x.b.SetNillableLinkTracking(v)
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBody(v)
@@ -9039,6 +9075,18 @@ func (x *BroadcastScopedUpdate) SetNillableUnsubscribeButton(v *string) *Broadca
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (x *BroadcastScopedUpdate) ClearUnsubscribeButton() *BroadcastScopedUpdate {
 	x.b.ClearUnsubscribeButton()
+	return x
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedUpdate) SetLinkTracking(v bool) *BroadcastScopedUpdate {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableLinkTracking(v *bool) *BroadcastScopedUpdate {
+	x.b.SetNillableLinkTracking(v)
 	return x
 }
 
@@ -10836,6 +10884,42 @@ func (x *ConfirmationScopedCreate) SetProvenance(v confirmation.Provenance) *Con
 	return x
 }
 
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedCreate) SetWording(v string) *ConfirmationScopedCreate {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableWording(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedCreate) SetSource(v string) *ConfirmationScopedCreate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableSource(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedCreate) SetBrand(v string) *ConfirmationScopedCreate {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedCreate) SetNillableBrand(v *string) *ConfirmationScopedCreate {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *ConfirmationScopedCreate) SetContactID(v int64) *ConfirmationScopedCreate {
 	x.b.SetContactID(v)
@@ -10970,6 +11054,60 @@ func (u *ConfirmationScopedUpsert) SetProvenance(v confirmation.Provenance) *Con
 // UpdateProvenance sets the "provenance" field to the value that was provided on create.
 func (u *ConfirmationScopedUpsert) UpdateProvenance() *ConfirmationScopedUpsert {
 	u.u.SetExcluded(confirmation.FieldProvenance)
+	return u
+}
+
+// SetWording sets the "wording" field.
+func (u *ConfirmationScopedUpsert) SetWording(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldWording, v)
+	return u
+}
+
+// UpdateWording sets the "wording" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateWording() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldWording)
+	return u
+}
+
+// ClearWording clears the value of the "wording" field.
+func (u *ConfirmationScopedUpsert) ClearWording() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldWording)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ConfirmationScopedUpsert) SetSource(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateSource() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *ConfirmationScopedUpsert) ClearSource() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldSource)
+	return u
+}
+
+// SetBrand sets the "brand" field.
+func (u *ConfirmationScopedUpsert) SetBrand(v string) *ConfirmationScopedUpsert {
+	u.u.Set(confirmation.FieldBrand, v)
+	return u
+}
+
+// UpdateBrand sets the "brand" field to the value that was provided on create.
+func (u *ConfirmationScopedUpsert) UpdateBrand() *ConfirmationScopedUpsert {
+	u.u.SetExcluded(confirmation.FieldBrand)
+	return u
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (u *ConfirmationScopedUpsert) ClearBrand() *ConfirmationScopedUpsert {
+	u.u.SetNull(confirmation.FieldBrand)
 	return u
 }
 
@@ -11173,6 +11311,60 @@ func (x *ConfirmationScopedUpdateOne) SetNillableProvenance(v *confirmation.Prov
 	return x
 }
 
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedUpdateOne) SetWording(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableWording(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// ClearWording clears the value of the "wording" field.
+func (x *ConfirmationScopedUpdateOne) ClearWording() *ConfirmationScopedUpdateOne {
+	x.b.ClearWording()
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedUpdateOne) SetSource(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableSource(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *ConfirmationScopedUpdateOne) ClearSource() *ConfirmationScopedUpdateOne {
+	x.b.ClearSource()
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedUpdateOne) SetBrand(v string) *ConfirmationScopedUpdateOne {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedUpdateOne) SetNillableBrand(v *string) *ConfirmationScopedUpdateOne {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (x *ConfirmationScopedUpdateOne) ClearBrand() *ConfirmationScopedUpdateOne {
+	x.b.ClearBrand()
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *ConfirmationScopedUpdateOne) SetContactID(v int64) *ConfirmationScopedUpdateOne {
 	x.b.SetContactID(v)
@@ -11301,6 +11493,60 @@ func (x *ConfirmationScopedUpdate) SetProvenance(v confirmation.Provenance) *Con
 // SetNillableProvenance sets the "provenance" field if the given value is not nil.
 func (x *ConfirmationScopedUpdate) SetNillableProvenance(v *confirmation.Provenance) *ConfirmationScopedUpdate {
 	x.b.SetNillableProvenance(v)
+	return x
+}
+
+// SetWording sets the "wording" field.
+func (x *ConfirmationScopedUpdate) SetWording(v string) *ConfirmationScopedUpdate {
+	x.b.SetWording(v)
+	return x
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableWording(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableWording(v)
+	return x
+}
+
+// ClearWording clears the value of the "wording" field.
+func (x *ConfirmationScopedUpdate) ClearWording() *ConfirmationScopedUpdate {
+	x.b.ClearWording()
+	return x
+}
+
+// SetSource sets the "source" field.
+func (x *ConfirmationScopedUpdate) SetSource(v string) *ConfirmationScopedUpdate {
+	x.b.SetSource(v)
+	return x
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableSource(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableSource(v)
+	return x
+}
+
+// ClearSource clears the value of the "source" field.
+func (x *ConfirmationScopedUpdate) ClearSource() *ConfirmationScopedUpdate {
+	x.b.ClearSource()
+	return x
+}
+
+// SetBrand sets the "brand" field.
+func (x *ConfirmationScopedUpdate) SetBrand(v string) *ConfirmationScopedUpdate {
+	x.b.SetBrand(v)
+	return x
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (x *ConfirmationScopedUpdate) SetNillableBrand(v *string) *ConfirmationScopedUpdate {
+	x.b.SetNillableBrand(v)
+	return x
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (x *ConfirmationScopedUpdate) ClearBrand() *ConfirmationScopedUpdate {
+	x.b.ClearBrand()
 	return x
 }
 
@@ -23647,6 +23893,30 @@ func (x *OutboundMessageScopedCreate) SetNillableComplainedAt(v *time.Time) *Out
 	return x
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedCreate) SetUndeliveredAt(v time.Time) *OutboundMessageScopedCreate {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedCreate {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedCreate) SetUndeliveredCode(v string) *OutboundMessageScopedCreate {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedCreate {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (x *OutboundMessageScopedCreate) SetOpenedAt(v time.Time) *OutboundMessageScopedCreate {
 	x.b.SetOpenedAt(v)
@@ -24156,6 +24426,42 @@ func (u *OutboundMessageScopedUpsert) UpdateComplainedAt() *OutboundMessageScope
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageScopedUpsert) ClearComplainedAt() *OutboundMessageScopedUpsert {
 	u.u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (u *OutboundMessageScopedUpsert) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldUndeliveredAt, v)
+	return u
+}
+
+// UpdateUndeliveredAt sets the "undelivered_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateUndeliveredAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (u *OutboundMessageScopedUpsert) ClearUndeliveredAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (u *OutboundMessageScopedUpsert) SetUndeliveredCode(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldUndeliveredCode, v)
+	return u
+}
+
+// UpdateUndeliveredCode sets the "undelivered_code" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateUndeliveredCode() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldUndeliveredCode)
+	return u
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (u *OutboundMessageScopedUpsert) ClearUndeliveredCode() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldUndeliveredCode)
 	return u
 }
 
@@ -24686,6 +24992,42 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableComplainedAt(v *time.Time) *
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdateOne) ClearComplainedAt() *OutboundMessageScopedUpdateOne {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearUndeliveredAt() *OutboundMessageScopedUpdateOne {
+	x.b.ClearUndeliveredAt()
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdateOne) SetUndeliveredCode(v string) *OutboundMessageScopedUpdateOne {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdateOne) ClearUndeliveredCode() *OutboundMessageScopedUpdateOne {
+	x.b.ClearUndeliveredCode()
 	return x
 }
 
@@ -25300,6 +25642,42 @@ func (x *OutboundMessageScopedUpdate) SetNillableComplainedAt(v *time.Time) *Out
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdate) ClearComplainedAt() *OutboundMessageScopedUpdate {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdate) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdate) ClearUndeliveredAt() *OutboundMessageScopedUpdate {
+	x.b.ClearUndeliveredAt()
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdate) SetUndeliveredCode(v string) *OutboundMessageScopedUpdate {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedUpdate {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdate) ClearUndeliveredCode() *OutboundMessageScopedUpdate {
+	x.b.ClearUndeliveredCode()
 	return x
 }
 
@@ -34269,6 +34647,12 @@ func (x *TrackedLinkScopedCreate) SetOutboundMessageID(v int64) *TrackedLinkScop
 	return x
 }
 
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableOutboundMessageID(v *int64) *TrackedLinkScopedCreate {
+	x.b.SetNillableOutboundMessageID(v)
+	return x
+}
+
 // SetToken sets the "token" field.
 func (x *TrackedLinkScopedCreate) SetToken(v string) *TrackedLinkScopedCreate {
 	x.b.SetToken(v)
@@ -35654,6 +36038,18 @@ func (x *UnsubscribeScopedCreate) SetSendingSource(v string) *UnsubscribeScopedC
 	return x
 }
 
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedCreate) SetVia(v unsubscribe.Via) *UnsubscribeScopedCreate {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedCreate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedCreate {
+	x.b.SetNillableVia(v)
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *UnsubscribeScopedCreate) SetContactID(v int64) *UnsubscribeScopedCreate {
 	x.b.SetContactID(v)
@@ -35788,6 +36184,24 @@ func (u *UnsubscribeScopedUpsert) SetSendingSource(v string) *UnsubscribeScopedU
 // UpdateSendingSource sets the "sending_source" field to the value that was provided on create.
 func (u *UnsubscribeScopedUpsert) UpdateSendingSource() *UnsubscribeScopedUpsert {
 	u.u.SetExcluded(unsubscribe.FieldSendingSource)
+	return u
+}
+
+// SetVia sets the "via" field.
+func (u *UnsubscribeScopedUpsert) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpsert {
+	u.u.Set(unsubscribe.FieldVia, v)
+	return u
+}
+
+// UpdateVia sets the "via" field to the value that was provided on create.
+func (u *UnsubscribeScopedUpsert) UpdateVia() *UnsubscribeScopedUpsert {
+	u.u.SetExcluded(unsubscribe.FieldVia)
+	return u
+}
+
+// ClearVia clears the value of the "via" field.
+func (u *UnsubscribeScopedUpsert) ClearVia() *UnsubscribeScopedUpsert {
+	u.u.SetNull(unsubscribe.FieldVia)
 	return u
 }
 
@@ -35991,6 +36405,24 @@ func (x *UnsubscribeScopedUpdateOne) SetNillableSendingSource(v *string) *Unsubs
 	return x
 }
 
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedUpdateOne) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpdateOne {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedUpdateOne) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedUpdateOne {
+	x.b.SetNillableVia(v)
+	return x
+}
+
+// ClearVia clears the value of the "via" field.
+func (x *UnsubscribeScopedUpdateOne) ClearVia() *UnsubscribeScopedUpdateOne {
+	x.b.ClearVia()
+	return x
+}
+
 // SetContactID sets the "contact_id" field.
 func (x *UnsubscribeScopedUpdateOne) SetContactID(v int64) *UnsubscribeScopedUpdateOne {
 	x.b.SetContactID(v)
@@ -36119,6 +36551,24 @@ func (x *UnsubscribeScopedUpdate) SetSendingSource(v string) *UnsubscribeScopedU
 // SetNillableSendingSource sets the "sending_source" field if the given value is not nil.
 func (x *UnsubscribeScopedUpdate) SetNillableSendingSource(v *string) *UnsubscribeScopedUpdate {
 	x.b.SetNillableSendingSource(v)
+	return x
+}
+
+// SetVia sets the "via" field.
+func (x *UnsubscribeScopedUpdate) SetVia(v unsubscribe.Via) *UnsubscribeScopedUpdate {
+	x.b.SetVia(v)
+	return x
+}
+
+// SetNillableVia sets the "via" field if the given value is not nil.
+func (x *UnsubscribeScopedUpdate) SetNillableVia(v *unsubscribe.Via) *UnsubscribeScopedUpdate {
+	x.b.SetNillableVia(v)
+	return x
+}
+
+// ClearVia clears the value of the "via" field.
+func (x *UnsubscribeScopedUpdate) ClearVia() *UnsubscribeScopedUpdate {
+	x.b.ClearVia()
 	return x
 }
 

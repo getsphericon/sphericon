@@ -43,7 +43,7 @@ type StepFigures struct {
 }
 
 // ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` Events and the click Events
-// (`email.clicked`, `telegram.clicked`) that carry the Automation, and the clicks by link, and reads its Results
+// (`email.clicked`, `telegram.clicked`, `sms.clicked`) that carry the Automation, and the clicks by link, and reads its Results
 // over the period p.
 func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p ReportPeriod) (Report, error) {
 	if _, err := m.Get(ctx, s, id); err != nil {

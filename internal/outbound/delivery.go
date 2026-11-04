@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -60,13 +61,62 @@ func FindTelegramMessage(ctx context.Context, s *ent.Scoped, integrationID int64
 	return m, nil
 }
 
+// FindSMSMessage is the Outbound message an SMS delivery report names, nil when none resolves: the
+// text with the provider's id (Twilio's SID) sent through the Integration the report came to. A SID
+// is unique only per provider account, so a report never reaches a text of another Integration.
+func FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, providerMessageID string) (*ent.OutboundMessage, error) {
+	if providerMessageID == "" {
+		return nil, nil
+	}
+	m, err := s.OutboundMessage().Query().
+		Where(
+			outboundmessage.ChannelEQ(outboundmessage.ChannelSms),
+			outboundmessage.IntegrationID(integrationID),
+			outboundmessage.ProviderMessageID(providerMessageID),
+		).
+		Order(outboundmessage.ByID(sql.OrderDesc())).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find sms message: %w", err)
+	}
+	return m, nil
+}
+
+// StampFinal sets a message's final delivery state, delivered or undelivered (ADR 0079), and
+// reports whether it did. A message moves only forward: the first final report stamps it, and a
+// later one of either kind, a redelivery included, changes nothing. An undelivered stamp keeps the
+// provider's error code, nil when it gave none.
+func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, code string, at time.Time) (bool, error) {
+	u := s.OutboundMessage().Update().
+		Where(outboundmessage.ID(id), outboundmessage.DeliveredAtIsNil(), outboundmessage.UndeliveredAtIsNil())
+	switch result {
+	case ResultDelivered:
+		u.SetDeliveredAt(at)
+	case ResultUndelivered:
+		u.SetUndeliveredAt(at).SetNillableUndeliveredCode(lo.EmptyableToPtr(code))
+	case ResultBounced, ResultComplained:
+		return false, fmt.Errorf("%s is no final delivery state", result)
+	default:
+		return false, fmt.Errorf("unknown delivery result %q", result)
+	}
+	n, err := u.Save(ctx)
+	if err != nil {
+		return false, fmt.Errorf("stamp message %d %s: %w", id, result, err)
+	}
+	return n == 1, nil
+}
+
 // DeliveryResult is one of the stamps of a message's delivery result.
 type DeliveryResult string
 
 const (
-	ResultDelivered  DeliveryResult = "delivered"
-	ResultBounced    DeliveryResult = "bounced"
-	ResultComplained DeliveryResult = "complained"
+	ResultDelivered   DeliveryResult = "delivered"
+	ResultUndelivered DeliveryResult = "undelivered"
+	ResultBounced     DeliveryResult = "bounced"
+	ResultComplained  DeliveryResult = "complained"
 )
 
 // StampDelivery sets the message's delivery result of the given kind to at, only while it is
@@ -81,6 +131,8 @@ func StampDelivery(ctx context.Context, s *ent.Scoped, id int64, result Delivery
 		u.Where(outboundmessage.ID(id), outboundmessage.BouncedAtIsNil()).SetBouncedAt(at)
 	case ResultComplained:
 		u.Where(outboundmessage.ID(id), outboundmessage.ComplainedAtIsNil()).SetComplainedAt(at)
+	case ResultUndelivered:
+		return fmt.Errorf("%s is a final state: StampFinal sets it", result)
 	default:
 		return fmt.Errorf("unknown delivery result %q", result)
 	}

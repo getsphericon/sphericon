@@ -65,7 +65,8 @@ model SetBroadcastSegmentInput {
 /**
  * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
  * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
- * count and so no open rate.
+ * count and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or
+ * complained count or open rate; only SMS reports undelivered.
  */
 model BroadcastReport {
   /** Lifecycle status */
@@ -100,6 +101,9 @@ model BroadcastReport {
 
   /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   deliveredCount: int32 | null;
+
+  /** Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  undeliveredCount: int32 | null;
 
   /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   bouncedCount: int32 | null;
@@ -181,7 +185,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Send a rendered preview with sample merge data to a single address. Never sends to the audience. Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422. */
+  /** Send a rendered preview with sample merge data to a single address: an email broadcast to the `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422. */
   @action("test-send")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])

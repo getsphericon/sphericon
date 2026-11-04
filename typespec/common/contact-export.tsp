@@ -135,6 +135,9 @@ model ContactExportUnsubscribe {
   /** The sending source (kind of mail) opted out of */
   sendingSource: string;
 
+  /** How the person stopped; absent on email */
+  via?: OptOutVia | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }
@@ -173,6 +176,15 @@ model ContactExportConfirmation {
 
   /** How the confirmation was obtained */
   provenance: string;
+
+  /** The consent wording the person was shown, on a confirmation recorded with its evidence */
+  wording?: string | null;
+
+  /** Where the consent was collected, on a confirmation recorded with its evidence */
+  source?: string | null;
+
+  /** The brand the person agreed to hear from, on a confirmation recorded with its evidence */
+  brand?: string | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -218,6 +230,12 @@ model ContactExportOutboundMessage {
 
   /** When the provider first reported the message bounced */
   bouncedAt?: Timestamp | null;
+
+  /** When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after */
+  undeliveredAt?: Timestamp | null;
+
+  /** The provider's error code of the undelivered report (Twilio's ErrorCode) */
+  undeliveredCode?: string | null;
 
   /** When the provider first reported a spam complaint about the message */
   complainedAt?: Timestamp | null;

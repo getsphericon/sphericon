@@ -433,11 +433,12 @@ type Invoker interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
-	// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
-	// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
-	// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
-	// caps answer 429.
+	// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
+	// broadcast to the `phone` given, through the broadcast's Integration. It skips Send-eligibility and
+	// leaves no message and no figure. Telegram has no Test send, the author would need a Binding of their
+	// own (ADR 0080), so a Telegram broadcast is a 422. While the Workspace has no verified Sending domain
+	// an email preview goes from the System sender and only to the asking User's own address (ADR 0041):
+	// another address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -1141,6 +1142,27 @@ type Invoker interface {
 	//
 	// POST /me/signup-survey
 	SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
+	// SiteSmsConsentsConfirm invokes SiteSmsConsents_confirm operation.
+	//
+	// Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with
+	// its evidence (the same as `POST /api/confirmations`). A stronger Confirmation already on the number
+	// stays. It does not lift an opt-out. 422 when the contact has no phone.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
+	SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (SiteSmsConsentsConfirmRes, error)
+	// SiteSmsConsentsGet invokes SiteSmsConsents_get operation.
+	//
+	// Read the SMS Confirmation and opt-out of a contact's phone.
+	//
+	// GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
+	SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (SiteSmsConsentsGetRes, error)
+	// SiteSmsConsentsOptOut invokes SiteSmsConsents_optOut operation.
+	//
+	// Record an SMS opt-out that reached you by another route (an email, a call): the contact's number
+	// gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
+	SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (SiteSmsConsentsOptOutRes, error)
 	// SiteSuppressionsCreate invokes SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
@@ -9315,11 +9337,12 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 
 // SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
-// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
-// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
-// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
-// caps answer 429.
+// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
+// broadcast to the `phone` given, through the broadcast's Integration. It skips Send-eligibility and
+// leaves no message and no figure. Telegram has no Test send, the author would need a Binding of their
+// own (ADR 0080), so a Telegram broadcast is a 422. While the Workspace has no verified Sending domain
+// an email preview goes from the System sender and only to the asking User's own address (ADR 0041):
+// another address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {
@@ -23957,6 +23980,483 @@ func (c *Client) sendSiteSignupSurveySubmit(ctx context.Context, request *SiteSi
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteSignupSurveySubmitResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteSmsConsentsConfirm invokes SiteSmsConsents_confirm operation.
+//
+// Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with
+// its evidence (the same as `POST /api/confirmations`). A stronger Confirmation already on the number
+// stays. It does not lift an opt-out. 422 when the contact has no phone.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
+func (c *Client) SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (SiteSmsConsentsConfirmRes, error) {
+	res, err := c.sendSiteSmsConsentsConfirm(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (res SiteSmsConsentsConfirmRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteSmsConsents_confirm"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteSmsConsentsConfirmOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/sms-confirmations"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteSmsConsentsConfirmRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteSmsConsentsConfirmOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteSmsConsentsConfirmResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteSmsConsentsGet invokes SiteSmsConsents_get operation.
+//
+// Read the SMS Confirmation and opt-out of a contact's phone.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
+func (c *Client) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (SiteSmsConsentsGetRes, error) {
+	res, err := c.sendSiteSmsConsentsGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (res SiteSmsConsentsGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteSmsConsents_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/sms-consent"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteSmsConsentsGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/sms-consent"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteSmsConsentsGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteSmsConsentsGetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteSmsConsentsOptOut invokes SiteSmsConsents_optOut operation.
+//
+// Record an SMS opt-out that reached you by another route (an email, a call): the contact's number
+// gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
+func (c *Client) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (SiteSmsConsentsOptOutRes, error) {
+	res, err := c.sendSiteSmsConsentsOptOut(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (res SiteSmsConsentsOptOutRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteSmsConsents_optOut"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteSmsConsentsOptOutOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/sms-opt-outs"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteSmsConsentsOptOutOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteSmsConsentsOptOutResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

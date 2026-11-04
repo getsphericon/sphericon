@@ -84,10 +84,12 @@ const integration = (id: string, name: string, isDefault = false): SiteIntegrati
   updatedAt: '2026-01-01T00:00:00Z',
 })
 
+// The SMS Integration is disabled, so email is the one Channel a new Broadcast is offered; it is
+// still listed, and never an email Broadcast's to send through.
 const INTEGRATIONS = [
   integration('1', 'Primary SMTP', true),
   integration('21', 'Postmark'),
-  { ...integration('30', 'SMS gateway'), channel: 'sms' as const },
+  { ...integration('30', 'SMS gateway'), channel: 'sms' as const, enabled: false },
 ]
 
 const WORKSPACE = {
@@ -100,6 +102,8 @@ const WORKSPACE = {
   permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
+  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
@@ -505,7 +509,7 @@ test("a new broadcast asks for its Channel, then shows that Channel's editor", a
 
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
 
-  // Email is the one Channel with an enabled Integration (the SMS one sends no Broadcast), so it
+  // Email is the one Channel with an enabled Integration (the SMS one is disabled), so it
   // is chosen already, and the editor waits for the person to go on.
   await expect.element(screen.getByRole('radio', { name: 'Email' })).toBeChecked()
   await expect.element(screen.getByLabelText('Subject')).not.toBeInTheDocument()

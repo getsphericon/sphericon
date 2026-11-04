@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/mailjobs"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -72,6 +73,12 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.SendCap = mapper.SendCapStatusToResource(sendCap)
+	linkLength, err := h.outbound.ShortLinkLength(ctx, s)
+	if err != nil {
+		return r, err
+	}
+	r.ShortLinkLength = narrow.Int32(linkLength)
+	r.SmsMaxLength = mapper.SmsLengthLimitToResource(h.outbound.SMSLengthLimit())
 	return r, nil
 }
 

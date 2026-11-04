@@ -14,10 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -55,6 +58,7 @@ import (
 // goverter:extend buttonsPtrIn
 // goverter:extend buttonsPatch
 // goverter:extend stringIn
+// goverter:extend emailIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
@@ -88,6 +92,7 @@ import (
 // goverter:extend broadcastContentIn
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
+// goverter:extend smsConsentIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
@@ -100,6 +105,8 @@ type Inputs interface {
 	EmailBroadcastContentPatch(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
 	TelegramBroadcastContentIn(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
 	TelegramBroadcastContentPatch(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	SmsBroadcastContentIn(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
+	SmsBroadcastContentPatch(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
 	// The list's filter: the API lists every status.
 	// goverter:ignore Statuses
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
@@ -174,9 +181,29 @@ type Inputs interface {
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
+	// goverter:enum:map SuppressionChannelEmail ChannelEmail
+	// goverter:enum:map SuppressionChannelTelegram ChannelTelegram
+	// goverter:enum:map SuppressionChannelSMS ChannelSms
+	SuppressionChannel(source externalapi.SuppressionChannel) suppression.Channel
 	// goverter:enum:map ConsentChannelEmail ChannelEmail
 	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
-	SuppressionChannel(source externalapi.ConsentChannel) suppression.Channel
+	// goverter:enum:map ConsentChannelSMS ChannelSMS
+	ConsentChannel(source externalapi.ConsentChannel) messaging.Channel
+
+	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
+	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
+	ConsentEvidence(source externalapi.ConsentEvidence) consent.Evidence
+	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	TestAddress(source *externalapi.TestSendBroadcastInput) outbound.TestAddress
+}
+
+// smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
+func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *consent.Evidence {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.ConsentEvidence(v))
 }
 
 // goverter:context backfill
@@ -211,6 +238,7 @@ func maxPerSecondPatch(o externalapi.OptNilMaxPerSecond) patch.Field[int] { retu
 func maxPerDayPatch(o externalapi.OptNilMaxPerDay) patch.Field[int]       { return convert.IntPatch(o) }
 func listPatch(list []string) patch.Field[[]string]                       { return convert.ListPatch(list) }
 func stringIn(o externalapi.OptString) string                             { return o.Or("") }
+func emailIn(o externalapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o externalapi.OptString) *string                         { return convert.Ptr(o) }
 func nilStringPtrIn(o externalapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o externalapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
@@ -353,6 +381,8 @@ func broadcastContentIn(c Inputs, in externalapi.BroadcastContentInput) (broadca
 		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
 	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	case externalapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentIn(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}
@@ -369,6 +399,8 @@ func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (br
 		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
 	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	case externalapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentPatch(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}
@@ -407,6 +439,11 @@ func integrationConfigIn(in externalapi.IntegrationConfigInput) (integrations.Co
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
 	case externalapi.TelegramConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Telegram: &integrations.TelegramConfig{Token: in.OneOf.TelegramConfigInput.Token}}, nil
+	case externalapi.TwilioConfigInputIntegrationConfigInputSum:
+		c := in.OneOf.TwilioConfigInput
+		return integrations.ConfigInput{Twilio: &integrations.TwilioConfig{
+			AccountSID: c.AccountSid, APIKeySID: c.ApiKeySid.Or(""), Secret: c.Secret, From: c.From,
+		}}, nil
 	}
 	return integrations.ConfigInput{}, errUnknownProvider
 }

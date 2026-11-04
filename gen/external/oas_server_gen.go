@@ -181,9 +181,10 @@ type Handler interface {
 	BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
 	// BroadcastsTestSend implements Broadcasts_testSend operation.
 	//
-	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
-	// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
-	// 422.
+	// Send a rendered preview with sample merge data to a single address: an email broadcast to the
+	// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
+	// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
+	// a Telegram broadcast is a 422.
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
@@ -231,6 +232,16 @@ type Handler interface {
 	//
 	// GET /captured-messages
 	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error)
+	// ConfirmationsCreate implements Confirmations_create operation.
+	//
+	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
+	// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
+	// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
+	// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
+	// does not lift an opt-out: only the person can, by texting START.
+	//
+	// POST /confirmations
+	ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (ConfirmationsCreateRes, error)
 	// ContactsBatchUpsert implements ContactsBatch_upsert operation.
 	//
 	// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
@@ -595,6 +606,15 @@ type Handler interface {
 	//
 	// POST /sending-domains/{id}/verify
 	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error)
+	// SmsConsentsGet implements SmsConsents_get operation.
+	//
+	// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
+	// consented, with the wording, source and brand it carries) and its opt-out from every SMS of the
+	// Workspace (when, and how the person stopped). Both are keyed by the number, so they follow the phone
+	// the contact has now.
+	//
+	// GET /contacts/{contactId}/sms-consent
+	SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (SmsConsentsGetRes, error)
 	// SuppressionsCreate implements Suppressions_create operation.
 	//
 	// Suppress a destination so no surface sends to it (a manual Suppression). Idempotent: an
@@ -706,8 +726,8 @@ type Handler interface {
 	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
 	// UnsubscribesCreate implements Unsubscribes_create operation.
 	//
-	// Record that a destination unsubscribed from a sending source (default `broadcasts`). Idempotent.
-	// Resubscribing is not available through the API.
+	// Record that a destination unsubscribed from a sending source (default `broadcasts`), for an opt-out
+	// that reached you by any route. Idempotent. Resubscribing is not available through the API.
 	//
 	// POST /unsubscribes
 	UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (UnsubscribesCreateRes, error)

@@ -99,6 +99,10 @@ func TestEachWayToStopIsTheChannelWideOptOutAndTelegramUnsubscribed(t *testing.T
 			w.post(t, env, bot)
 
 			assert.True(t, optedOut(t, env, optOutUser))
+			row := env.DB.Unsubscribe.Query().Where(
+				unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram), unsubscribe.Destination(strconv.FormatInt(optOutUser, 10)),
+			).OnlyX(t.Context())
+			assert.Equal(t, w.via, string(lo.FromPtr(row.Via)), "the opt-out keeps how the person stopped")
 			recorded := env.Outbox(t, events.NameTelegramUnsubscribed)
 			require.Len(t, recorded, 1)
 			assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))
@@ -321,14 +325,14 @@ func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
 	c := env.ExternalScoped(t, "suppressions:write")
 
 	res, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
-		Channel:     externalapi.NewOptConsentChannel(externalapi.ConsentChannelTelegram),
+		Channel:     externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelTelegram),
 		Destination: strconv.Itoa(optOutUser),
 	})
 
 	require.NoError(t, err)
 	created, ok := res.(*externalapi.SuppressionResource)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, externalapi.ConsentChannelTelegram, created.Channel)
+	assert.Equal(t, externalapi.SuppressionChannelTelegram, created.Channel)
 	d, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelTelegram, strconv.Itoa(optOutUser), "")
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
@@ -339,7 +343,7 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 	c := env.ExternalScoped(t, "suppressions:write")
 
 	res, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
-		Channel:     externalapi.NewOptConsentChannel(externalapi.ConsentChannelTelegram),
+		Channel:     externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelTelegram),
 		Destination: "@alice",
 	})
 

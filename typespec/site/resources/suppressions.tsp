@@ -17,6 +17,7 @@ enum SiteSuppressionReason {
 enum SiteSuppressionChannel {
   email,
   telegram,
+  sms,
 }
 
 /** A suppressed destination: the send path skips it on every surface */
@@ -52,7 +53,7 @@ model SiteCreateSuppressionInput {
   /** Channel (defaults to email when omitted) */
   channel?: SiteSuppressionChannel;
 
-  /** The destination address to suppress */
+  /** The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164) */
   destination: string;
 }
 

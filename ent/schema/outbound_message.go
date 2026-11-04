@@ -52,7 +52,7 @@ func (OutboundMessage) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination. Cleared (NULL) when the
 		// Contact it belonged to is erased (ADR 0021): the row stays as an anonymous
@@ -74,7 +74,9 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.String("sending_domain").
 			Optional().
 			Nillable(),
-		// The provider's id for the accepted message (SES MessageId, SMTP Message-ID).
+		// The provider's id for the accepted message (SES MessageId, SMTP Message-ID, Twilio's SID).
+		// Cleared on a text when its Contact is erased: it names the number and the text in the
+		// provider's log (ADR 0021).
 		field.String("provider_message_id").
 			Optional().
 			Nillable(),
@@ -101,6 +103,12 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Time("delivered_at").Optional().Nillable(),
 		field.Time("bounced_at").Optional().Nillable(),
 		field.Time("complained_at").Optional().Nillable(),
+		// A report that the message did not reach the person, on a Channel whose provider reports
+		// it (SMS, ADR 0079), with the provider's error code (Twilio's ErrorCode), nil when it gave
+		// none. delivered_at and undelivered_at are the final states: a message moves only forward,
+		// so the first of them stamps and the other never follows.
+		field.Time("undelivered_at").Optional().Nillable(),
+		field.String("undelivered_code").Optional().Nillable(),
 		// The recipient's first human open and first human click of the message (ADR 0053),
 		// stamped once like the delivery results above, whatever surface sent it. A machine hit
 		// stamps nothing.

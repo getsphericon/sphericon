@@ -54,6 +54,11 @@ type Tx struct {
 	Now    time.Time
 
 	after *[]func(context.Context)
+	// queue queues a job in the transaction: a notice deferred until its message is committed.
+	queue events.Enqueuer
+	// attempt is how many times the facts were read before: 0 at the hook, n for a deferred
+	// notice's nth reading again.
+	attempt int
 }
 
 // After queues work for after the request's transaction commits, before the hook answers: a
@@ -96,27 +101,38 @@ func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
 	case integration.ChannelTelegram:
 		return telegram{bots: m.bots}
 	case integration.ChannelSms:
-		return Ignore{}
+		return sms{}
 	}
 	return Ignore{}
 }
 
 // Interpret writes what the facts of one request mean on the Integration's Channel, in one
-// transaction of s's Workspace. An Inbound message that names another Channel than the
-// Integration's (an Integration serves one Channel, ADR 0074) is the Preset's mistake: it is
-// dropped and logged, so the rest of the request still counts and the provider does not
-// redeliver it forever.
+// transaction of s's Workspace. A Delivery notice or an Inbound message that names another
+// Channel than the Integration's (an Integration serves one Channel, ADR 0074) is the Preset's
+// mistake: it is dropped and logged, so the rest of the request still counts and the provider
+// does not redeliver it forever.
 func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time) error {
+	return m.interpret(ctx, s, row, presetName, res, now, 0)
+}
+
+// interpret is Interpret for the facts read for the attempt-th time before (InterpretLate).
+func (m *Module) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time, attempt int) error {
 	if res.Empty() {
 		return nil
 	}
 	interp := m.interpreterFor(row.Channel)
 	var after []func(context.Context)
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		after = after[:0]
-		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after}
-		for _, n := range res.Notices {
-			if err := interp.DeliveryNotice(ctx, tx, n); err != nil {
+		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after, queue: q, attempt: attempt}
+		for i := range res.Notices {
+			n := &res.Notices[i]
+			if string(n.Channel) != string(row.Channel) {
+				logging.FromContext(ctx).Warn("ingest: a Delivery notice of another Channel than its Integration's is dropped",
+					"integration_id", row.ID, "preset", presetName, "channel", n.Channel, "event_id", n.ID)
+				continue
+			}
+			if err := interp.DeliveryNotice(ctx, tx, *n); err != nil {
 				return err
 			}
 		}

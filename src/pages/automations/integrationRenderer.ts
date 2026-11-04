@@ -9,6 +9,11 @@ export const emailIntegrationRenderer: JsonFormsRendererExtension = appRenderer(
   integrationControl('email'),
 )
 
+export const smsIntegrationRenderer: JsonFormsRendererExtension = appRenderer(
+  integrationFormat('sms'),
+  integrationControl('sms'),
+)
+
 export const telegramIntegrationRenderer: JsonFormsRendererExtension = appRenderer(
   integrationFormat('telegram'),
   integrationControl('telegram'),

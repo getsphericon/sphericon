@@ -26,7 +26,8 @@ func subscribedAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analytics.W
 // its occurred_at: 6 March one confirmed,
 // 7 March one (23:59 EST), 8 March two confirmed and one unsubscribed (the midnight EST one, the
 // 23:59 EDT one and the 01:00 one), 9 March one confirmed (backfilled: recorded on the 10th) and
-// one unsubscribed (midnight EDT). A signup Event and an unsubscribe from February count nowhere.
+// one unsubscribed (midnight EDT). A signup Event, an unsubscribe from February and a phone's SMS
+// consent (sms.confirmed) on 6 March count nowhere.
 //
 // A Contact created with marketing allowed adds nothing of its own: Absence means subscribed
 // (GLOSSARY "Unsubscribe"), a Contact has no marketing flag, and the marketing.confirmed Event is

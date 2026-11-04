@@ -93,6 +93,66 @@ func (_u *ConfirmationUpdate) SetNillableProvenance(v *confirmation.Provenance) 
 	return _u
 }
 
+// SetWording sets the "wording" field.
+func (_u *ConfirmationUpdate) SetWording(v string) *ConfirmationUpdate {
+	_u.mutation.SetWording(v)
+	return _u
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (_u *ConfirmationUpdate) SetNillableWording(v *string) *ConfirmationUpdate {
+	if v != nil {
+		_u.SetWording(*v)
+	}
+	return _u
+}
+
+// ClearWording clears the value of the "wording" field.
+func (_u *ConfirmationUpdate) ClearWording() *ConfirmationUpdate {
+	_u.mutation.ClearWording()
+	return _u
+}
+
+// SetSource sets the "source" field.
+func (_u *ConfirmationUpdate) SetSource(v string) *ConfirmationUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ConfirmationUpdate) SetNillableSource(v *string) *ConfirmationUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// ClearSource clears the value of the "source" field.
+func (_u *ConfirmationUpdate) ClearSource() *ConfirmationUpdate {
+	_u.mutation.ClearSource()
+	return _u
+}
+
+// SetBrand sets the "brand" field.
+func (_u *ConfirmationUpdate) SetBrand(v string) *ConfirmationUpdate {
+	_u.mutation.SetBrand(v)
+	return _u
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (_u *ConfirmationUpdate) SetNillableBrand(v *string) *ConfirmationUpdate {
+	if v != nil {
+		_u.SetBrand(*v)
+	}
+	return _u
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (_u *ConfirmationUpdate) ClearBrand() *ConfirmationUpdate {
+	_u.mutation.ClearBrand()
+	return _u
+}
+
 // SetContactID sets the "contact_id" field.
 func (_u *ConfirmationUpdate) SetContactID(v int64) *ConfirmationUpdate {
 	_u.mutation.SetContactID(v)
@@ -228,6 +288,24 @@ func (_u *ConfirmationUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.Provenance(); ok {
 		_spec.SetField(confirmation.FieldProvenance, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Wording(); ok {
+		_spec.SetField(confirmation.FieldWording, field.TypeString, value)
+	}
+	if _u.mutation.WordingCleared() {
+		_spec.ClearField(confirmation.FieldWording, field.TypeString)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(confirmation.FieldSource, field.TypeString, value)
+	}
+	if _u.mutation.SourceCleared() {
+		_spec.ClearField(confirmation.FieldSource, field.TypeString)
+	}
+	if value, ok := _u.mutation.Brand(); ok {
+		_spec.SetField(confirmation.FieldBrand, field.TypeString, value)
+	}
+	if _u.mutation.BrandCleared() {
+		_spec.ClearField(confirmation.FieldBrand, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -368,6 +446,66 @@ func (_u *ConfirmationUpdateOne) SetNillableProvenance(v *confirmation.Provenanc
 	if v != nil {
 		_u.SetProvenance(*v)
 	}
+	return _u
+}
+
+// SetWording sets the "wording" field.
+func (_u *ConfirmationUpdateOne) SetWording(v string) *ConfirmationUpdateOne {
+	_u.mutation.SetWording(v)
+	return _u
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (_u *ConfirmationUpdateOne) SetNillableWording(v *string) *ConfirmationUpdateOne {
+	if v != nil {
+		_u.SetWording(*v)
+	}
+	return _u
+}
+
+// ClearWording clears the value of the "wording" field.
+func (_u *ConfirmationUpdateOne) ClearWording() *ConfirmationUpdateOne {
+	_u.mutation.ClearWording()
+	return _u
+}
+
+// SetSource sets the "source" field.
+func (_u *ConfirmationUpdateOne) SetSource(v string) *ConfirmationUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *ConfirmationUpdateOne) SetNillableSource(v *string) *ConfirmationUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// ClearSource clears the value of the "source" field.
+func (_u *ConfirmationUpdateOne) ClearSource() *ConfirmationUpdateOne {
+	_u.mutation.ClearSource()
+	return _u
+}
+
+// SetBrand sets the "brand" field.
+func (_u *ConfirmationUpdateOne) SetBrand(v string) *ConfirmationUpdateOne {
+	_u.mutation.SetBrand(v)
+	return _u
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (_u *ConfirmationUpdateOne) SetNillableBrand(v *string) *ConfirmationUpdateOne {
+	if v != nil {
+		_u.SetBrand(*v)
+	}
+	return _u
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (_u *ConfirmationUpdateOne) ClearBrand() *ConfirmationUpdateOne {
+	_u.mutation.ClearBrand()
 	return _u
 }
 
@@ -536,6 +674,24 @@ func (_u *ConfirmationUpdateOne) sqlSave(ctx context.Context) (_node *Confirmati
 	}
 	if value, ok := _u.mutation.Provenance(); ok {
 		_spec.SetField(confirmation.FieldProvenance, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Wording(); ok {
+		_spec.SetField(confirmation.FieldWording, field.TypeString, value)
+	}
+	if _u.mutation.WordingCleared() {
+		_spec.ClearField(confirmation.FieldWording, field.TypeString)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(confirmation.FieldSource, field.TypeString, value)
+	}
+	if _u.mutation.SourceCleared() {
+		_spec.ClearField(confirmation.FieldSource, field.TypeString)
+	}
+	if value, ok := _u.mutation.Brand(); ok {
+		_spec.SetField(confirmation.FieldBrand, field.TypeString, value)
+	}
+	if _u.mutation.BrandCleared() {
+		_spec.ClearField(confirmation.FieldBrand, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

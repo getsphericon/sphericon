@@ -251,3 +251,29 @@ test('the Telegram field offers has and does not have, and round-trips with no v
       rules: [{ kind: 'rule', field: 'telegram', operator: 'doesNotHave', value: '' }],
     })
 })
+
+test('a rule picks the SMS field: has, no value, and does not have round-trips', async () => {
+  serve()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder workspaceId="TestWs01" initialValue={emptyGroup} onChange={onChange} />,
+  )
+
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  await screen.getByTestId('fields').click()
+  await screen.getByRole('option', { name: 'SMS', exact: true }).click()
+
+  await expect.element(screen.getByTestId('fields')).toHaveValue('SMS')
+  await expect.element(screen.getByTestId('operators')).toHaveValue('has')
+  await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
+  await expect
+    .poll(() => onChange.mock.calls.at(-1)?.[0])
+    .toMatchObject({ rules: [{ kind: 'rule', field: 'sms', operator: 'has', value: '' }] })
+
+  await screen.getByTestId('operators').click()
+  await screen.getByRole('option', { name: 'does not have' }).click()
+
+  await expect
+    .poll(() => onChange.mock.calls.at(-1)?.[0])
+    .toMatchObject({ rules: [{ kind: 'rule', field: 'sms', operator: 'doesNotHave', value: '' }] })
+})

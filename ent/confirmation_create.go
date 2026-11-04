@@ -84,6 +84,48 @@ func (_c *ConfirmationCreate) SetProvenance(v confirmation.Provenance) *Confirma
 	return _c
 }
 
+// SetWording sets the "wording" field.
+func (_c *ConfirmationCreate) SetWording(v string) *ConfirmationCreate {
+	_c.mutation.SetWording(v)
+	return _c
+}
+
+// SetNillableWording sets the "wording" field if the given value is not nil.
+func (_c *ConfirmationCreate) SetNillableWording(v *string) *ConfirmationCreate {
+	if v != nil {
+		_c.SetWording(*v)
+	}
+	return _c
+}
+
+// SetSource sets the "source" field.
+func (_c *ConfirmationCreate) SetSource(v string) *ConfirmationCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *ConfirmationCreate) SetNillableSource(v *string) *ConfirmationCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
+// SetBrand sets the "brand" field.
+func (_c *ConfirmationCreate) SetBrand(v string) *ConfirmationCreate {
+	_c.mutation.SetBrand(v)
+	return _c
+}
+
+// SetNillableBrand sets the "brand" field if the given value is not nil.
+func (_c *ConfirmationCreate) SetNillableBrand(v *string) *ConfirmationCreate {
+	if v != nil {
+		_c.SetBrand(*v)
+	}
+	return _c
+}
+
 // SetContactID sets the "contact_id" field.
 func (_c *ConfirmationCreate) SetContactID(v int64) *ConfirmationCreate {
 	_c.mutation.SetContactID(v)
@@ -254,6 +296,18 @@ func (_c *ConfirmationCreate) createSpec() (*Confirmation, *sqlgraph.CreateSpec)
 		_spec.SetField(confirmation.FieldProvenance, field.TypeEnum, value)
 		_node.Provenance = value
 	}
+	if value, ok := _c.mutation.Wording(); ok {
+		_spec.SetField(confirmation.FieldWording, field.TypeString, value)
+		_node.Wording = &value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(confirmation.FieldSource, field.TypeString, value)
+		_node.Source = &value
+	}
+	if value, ok := _c.mutation.Brand(); ok {
+		_spec.SetField(confirmation.FieldBrand, field.TypeString, value)
+		_node.Brand = &value
+	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -400,6 +454,60 @@ func (u *ConfirmationUpsert) UpdateProvenance() *ConfirmationUpsert {
 	return u
 }
 
+// SetWording sets the "wording" field.
+func (u *ConfirmationUpsert) SetWording(v string) *ConfirmationUpsert {
+	u.Set(confirmation.FieldWording, v)
+	return u
+}
+
+// UpdateWording sets the "wording" field to the value that was provided on create.
+func (u *ConfirmationUpsert) UpdateWording() *ConfirmationUpsert {
+	u.SetExcluded(confirmation.FieldWording)
+	return u
+}
+
+// ClearWording clears the value of the "wording" field.
+func (u *ConfirmationUpsert) ClearWording() *ConfirmationUpsert {
+	u.SetNull(confirmation.FieldWording)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *ConfirmationUpsert) SetSource(v string) *ConfirmationUpsert {
+	u.Set(confirmation.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ConfirmationUpsert) UpdateSource() *ConfirmationUpsert {
+	u.SetExcluded(confirmation.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *ConfirmationUpsert) ClearSource() *ConfirmationUpsert {
+	u.SetNull(confirmation.FieldSource)
+	return u
+}
+
+// SetBrand sets the "brand" field.
+func (u *ConfirmationUpsert) SetBrand(v string) *ConfirmationUpsert {
+	u.Set(confirmation.FieldBrand, v)
+	return u
+}
+
+// UpdateBrand sets the "brand" field to the value that was provided on create.
+func (u *ConfirmationUpsert) UpdateBrand() *ConfirmationUpsert {
+	u.SetExcluded(confirmation.FieldBrand)
+	return u
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (u *ConfirmationUpsert) ClearBrand() *ConfirmationUpsert {
+	u.SetNull(confirmation.FieldBrand)
+	return u
+}
+
 // SetContactID sets the "contact_id" field.
 func (u *ConfirmationUpsert) SetContactID(v int64) *ConfirmationUpsert {
 	u.Set(confirmation.FieldContactID, v)
@@ -536,6 +644,69 @@ func (u *ConfirmationUpsertOne) SetProvenance(v confirmation.Provenance) *Confir
 func (u *ConfirmationUpsertOne) UpdateProvenance() *ConfirmationUpsertOne {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.UpdateProvenance()
+	})
+}
+
+// SetWording sets the "wording" field.
+func (u *ConfirmationUpsertOne) SetWording(v string) *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetWording(v)
+	})
+}
+
+// UpdateWording sets the "wording" field to the value that was provided on create.
+func (u *ConfirmationUpsertOne) UpdateWording() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateWording()
+	})
+}
+
+// ClearWording clears the value of the "wording" field.
+func (u *ConfirmationUpsertOne) ClearWording() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearWording()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ConfirmationUpsertOne) SetSource(v string) *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ConfirmationUpsertOne) UpdateSource() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *ConfirmationUpsertOne) ClearSource() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetBrand sets the "brand" field.
+func (u *ConfirmationUpsertOne) SetBrand(v string) *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetBrand(v)
+	})
+}
+
+// UpdateBrand sets the "brand" field to the value that was provided on create.
+func (u *ConfirmationUpsertOne) UpdateBrand() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateBrand()
+	})
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (u *ConfirmationUpsertOne) ClearBrand() *ConfirmationUpsertOne {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearBrand()
 	})
 }
 
@@ -844,6 +1015,69 @@ func (u *ConfirmationUpsertBulk) SetProvenance(v confirmation.Provenance) *Confi
 func (u *ConfirmationUpsertBulk) UpdateProvenance() *ConfirmationUpsertBulk {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.UpdateProvenance()
+	})
+}
+
+// SetWording sets the "wording" field.
+func (u *ConfirmationUpsertBulk) SetWording(v string) *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetWording(v)
+	})
+}
+
+// UpdateWording sets the "wording" field to the value that was provided on create.
+func (u *ConfirmationUpsertBulk) UpdateWording() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateWording()
+	})
+}
+
+// ClearWording clears the value of the "wording" field.
+func (u *ConfirmationUpsertBulk) ClearWording() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearWording()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *ConfirmationUpsertBulk) SetSource(v string) *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *ConfirmationUpsertBulk) UpdateSource() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *ConfirmationUpsertBulk) ClearSource() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetBrand sets the "brand" field.
+func (u *ConfirmationUpsertBulk) SetBrand(v string) *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.SetBrand(v)
+	})
+}
+
+// UpdateBrand sets the "brand" field to the value that was provided on create.
+func (u *ConfirmationUpsertBulk) UpdateBrand() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.UpdateBrand()
+	})
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (u *ConfirmationUpsertBulk) ClearBrand() *ConfirmationUpsertBulk {
+	return u.Update(func(s *ConfirmationUpsert) {
+		s.ClearBrand()
 	})
 }
 

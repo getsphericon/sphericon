@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -109,4 +110,47 @@ func TestPreviewAndCountErrors(t *testing.T) {
 
 	_, err = m.Count(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID)
 	require.ErrorIs(t, err, segments.ErrNotFound)
+}
+
+// A stored Segment "can be texted" counts and lists, live, the Contacts whose phone has an SMS
+// Confirmation and no SMS opt-out (fixtures: Tyrell's eligibility matrix, where only "confirmed"
+// has both), and its negation the rest of the Workspace.
+func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := segments.New(env.Bus)
+	ctx := context.Background()
+	ws := env.DB.Scoped(fixtures.TyrellID)
+	create := func(op string) int64 {
+		t.Helper()
+		def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"` + op + `"}]}`
+		s, err := m.Create(ctx, ws, segments.CreateInput{Name: "SMS " + op, Condition: new(def)})
+		require.NoError(t, err)
+		return s.ID
+	}
+	listed := func(id int64) (int, []int64) {
+		t.Helper()
+		count, err := m.Count(ctx, ws, id)
+		require.NoError(t, err)
+		page, err := m.Contacts(ctx, ws, id, pagination.Params{Page: 1, PageSize: 100})
+		require.NoError(t, err)
+		ids := make([]int64, len(page.Items))
+		for i, c := range page.Items {
+			ids[i] = c.ID
+		}
+		return count, ids
+	}
+	all, err := ws.Contact().Query().Count(ctx)
+	require.NoError(t, err)
+
+	textable, untextable := create("has"), create("doesNotHave")
+
+	count, ids := listed(textable)
+	assert.Equal(t, 1, count)
+	assert.Equal(t, []int64{fixtures.TyrellMatrixConfirmedID}, ids)
+	count, ids = listed(untextable)
+	assert.Equal(t, all-1, count)
+	assert.Contains(t, ids, int64(fixtures.TyrellMatrixCleanID), "a phone without a Confirmation")
+	assert.Contains(t, ids, int64(fixtures.TyrellMatrixUnsubEverythingID), "a confirmed phone that opted out")
+	assert.Contains(t, ids, int64(fixtures.TyrellMatrixSuppressedID), "no phone")
+	assert.NotContains(t, ids, int64(fixtures.TyrellMatrixConfirmedID))
 }

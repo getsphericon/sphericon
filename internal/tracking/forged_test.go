@@ -62,7 +62,7 @@ func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 
 	for name, claims := range map[string]jwt.MapClaims{
 		"missing ch":  with("ch", nil),
-		"unknown ch":  with("ch", "sms"),
+		"unknown ch":  with("ch", "whatsapp"),
 		"missing src": with("src", nil),
 		"empty src":   with("src", ""),
 		"missing ws":  with("ws", nil),

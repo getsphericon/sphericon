@@ -203,7 +203,7 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
 	}
 	switch messaging.Channel(c.Channel) {
-	case messaging.ChannelEmail, messaging.ChannelTelegram:
+	case messaging.ChannelEmail, messaging.ChannelTelegram, messaging.ChannelSMS:
 	default:
 		return UnsubTarget{}, ErrLinkInvalid.With("missing or unknown ch claim")
 	}

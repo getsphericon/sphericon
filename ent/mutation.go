@@ -9300,6 +9300,7 @@ type BroadcastMutation struct {
 	appendbuttons      []telegramrender.Button
 	link_preview       *bool
 	unsubscribe_button *string
+	link_tracking      *bool
 	body               *string
 	doc                *jsontext.Value
 	appenddoc          jsontext.Value
@@ -10052,6 +10053,42 @@ func (m *BroadcastMutation) UnsubscribeButtonCleared() bool {
 func (m *BroadcastMutation) ResetUnsubscribeButton() {
 	m.unsubscribe_button = nil
 	delete(m.clearedFields, broadcast.FieldUnsubscribeButton)
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (m *BroadcastMutation) SetLinkTracking(b bool) {
+	m.link_tracking = &b
+}
+
+// LinkTracking returns the value of the "link_tracking" field in the mutation.
+func (m *BroadcastMutation) LinkTracking() (r bool, exists bool) {
+	v := m.link_tracking
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkTracking returns the old "link_tracking" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldLinkTracking(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkTracking is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkTracking requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkTracking: %w", err)
+	}
+	return oldValue.LinkTracking, nil
+}
+
+// ResetLinkTracking resets all changes to the "link_tracking" field.
+func (m *BroadcastMutation) ResetLinkTracking() {
+	m.link_tracking = nil
 }
 
 // SetBody sets the "body" field.
@@ -10814,7 +10851,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -10856,6 +10893,9 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.unsubscribe_button != nil {
 		fields = append(fields, broadcast.FieldUnsubscribeButton)
+	}
+	if m.link_tracking != nil {
+		fields = append(fields, broadcast.FieldLinkTracking)
 	}
 	if m.body != nil {
 		fields = append(fields, broadcast.FieldBody)
@@ -10929,6 +10969,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.LinkPreview()
 	case broadcast.FieldUnsubscribeButton:
 		return m.UnsubscribeButton()
+	case broadcast.FieldLinkTracking:
+		return m.LinkTracking()
 	case broadcast.FieldBody:
 		return m.Body()
 	case broadcast.FieldDoc:
@@ -10990,6 +11032,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLinkPreview(ctx)
 	case broadcast.FieldUnsubscribeButton:
 		return m.OldUnsubscribeButton(ctx)
+	case broadcast.FieldLinkTracking:
+		return m.OldLinkTracking(ctx)
 	case broadcast.FieldBody:
 		return m.OldBody(ctx)
 	case broadcast.FieldDoc:
@@ -11120,6 +11164,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUnsubscribeButton(v)
+		return nil
+	case broadcast.FieldLinkTracking:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkTracking(v)
 		return nil
 	case broadcast.FieldBody:
 		v, ok := value.(string)
@@ -11415,6 +11466,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldUnsubscribeButton:
 		m.ResetUnsubscribeButton()
+		return nil
+	case broadcast.FieldLinkTracking:
+		m.ResetLinkTracking()
 		return nil
 	case broadcast.FieldBody:
 		m.ResetBody()
@@ -13853,6 +13907,9 @@ type ConfirmationMutation struct {
 	channel          *confirmation.Channel
 	destination      *string
 	provenance       *confirmation.Provenance
+	wording          *string
+	source           *string
+	brand            *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -14183,6 +14240,153 @@ func (m *ConfirmationMutation) ResetProvenance() {
 	m.provenance = nil
 }
 
+// SetWording sets the "wording" field.
+func (m *ConfirmationMutation) SetWording(s string) {
+	m.wording = &s
+}
+
+// Wording returns the value of the "wording" field in the mutation.
+func (m *ConfirmationMutation) Wording() (r string, exists bool) {
+	v := m.wording
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWording returns the old "wording" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldWording(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWording is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWording requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWording: %w", err)
+	}
+	return oldValue.Wording, nil
+}
+
+// ClearWording clears the value of the "wording" field.
+func (m *ConfirmationMutation) ClearWording() {
+	m.wording = nil
+	m.clearedFields[confirmation.FieldWording] = struct{}{}
+}
+
+// WordingCleared returns if the "wording" field was cleared in this mutation.
+func (m *ConfirmationMutation) WordingCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldWording]
+	return ok
+}
+
+// ResetWording resets all changes to the "wording" field.
+func (m *ConfirmationMutation) ResetWording() {
+	m.wording = nil
+	delete(m.clearedFields, confirmation.FieldWording)
+}
+
+// SetSource sets the "source" field.
+func (m *ConfirmationMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *ConfirmationMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldSource(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ClearSource clears the value of the "source" field.
+func (m *ConfirmationMutation) ClearSource() {
+	m.source = nil
+	m.clearedFields[confirmation.FieldSource] = struct{}{}
+}
+
+// SourceCleared returns if the "source" field was cleared in this mutation.
+func (m *ConfirmationMutation) SourceCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldSource]
+	return ok
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *ConfirmationMutation) ResetSource() {
+	m.source = nil
+	delete(m.clearedFields, confirmation.FieldSource)
+}
+
+// SetBrand sets the "brand" field.
+func (m *ConfirmationMutation) SetBrand(s string) {
+	m.brand = &s
+}
+
+// Brand returns the value of the "brand" field in the mutation.
+func (m *ConfirmationMutation) Brand() (r string, exists bool) {
+	v := m.brand
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBrand returns the old "brand" field's value of the Confirmation entity.
+// If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConfirmationMutation) OldBrand(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBrand is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBrand requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBrand: %w", err)
+	}
+	return oldValue.Brand, nil
+}
+
+// ClearBrand clears the value of the "brand" field.
+func (m *ConfirmationMutation) ClearBrand() {
+	m.brand = nil
+	m.clearedFields[confirmation.FieldBrand] = struct{}{}
+}
+
+// BrandCleared returns if the "brand" field was cleared in this mutation.
+func (m *ConfirmationMutation) BrandCleared() bool {
+	_, ok := m.clearedFields[confirmation.FieldBrand]
+	return ok
+}
+
+// ResetBrand resets all changes to the "brand" field.
+func (m *ConfirmationMutation) ResetBrand() {
+	m.brand = nil
+	delete(m.clearedFields, confirmation.FieldBrand)
+}
+
 // SetContactID sets the "contact_id" field.
 func (m *ConfirmationMutation) SetContactID(i int64) {
 	m.contact = &i
@@ -14320,7 +14524,7 @@ func (m *ConfirmationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConfirmationMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, confirmation.FieldCreatedAt)
 	}
@@ -14338,6 +14542,15 @@ func (m *ConfirmationMutation) Fields() []string {
 	}
 	if m.provenance != nil {
 		fields = append(fields, confirmation.FieldProvenance)
+	}
+	if m.wording != nil {
+		fields = append(fields, confirmation.FieldWording)
+	}
+	if m.source != nil {
+		fields = append(fields, confirmation.FieldSource)
+	}
+	if m.brand != nil {
+		fields = append(fields, confirmation.FieldBrand)
 	}
 	if m.contact != nil {
 		fields = append(fields, confirmation.FieldContactID)
@@ -14362,6 +14575,12 @@ func (m *ConfirmationMutation) Field(name string) (ent.Value, bool) {
 		return m.Destination()
 	case confirmation.FieldProvenance:
 		return m.Provenance()
+	case confirmation.FieldWording:
+		return m.Wording()
+	case confirmation.FieldSource:
+		return m.Source()
+	case confirmation.FieldBrand:
+		return m.Brand()
 	case confirmation.FieldContactID:
 		return m.ContactID()
 	}
@@ -14385,6 +14604,12 @@ func (m *ConfirmationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldDestination(ctx)
 	case confirmation.FieldProvenance:
 		return m.OldProvenance(ctx)
+	case confirmation.FieldWording:
+		return m.OldWording(ctx)
+	case confirmation.FieldSource:
+		return m.OldSource(ctx)
+	case confirmation.FieldBrand:
+		return m.OldBrand(ctx)
 	case confirmation.FieldContactID:
 		return m.OldContactID(ctx)
 	}
@@ -14438,6 +14663,27 @@ func (m *ConfirmationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProvenance(v)
 		return nil
+	case confirmation.FieldWording:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWording(v)
+		return nil
+	case confirmation.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	case confirmation.FieldBrand:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBrand(v)
+		return nil
 	case confirmation.FieldContactID:
 		v, ok := value.(int64)
 		if !ok {
@@ -14478,6 +14724,15 @@ func (m *ConfirmationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ConfirmationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(confirmation.FieldWording) {
+		fields = append(fields, confirmation.FieldWording)
+	}
+	if m.FieldCleared(confirmation.FieldSource) {
+		fields = append(fields, confirmation.FieldSource)
+	}
+	if m.FieldCleared(confirmation.FieldBrand) {
+		fields = append(fields, confirmation.FieldBrand)
+	}
 	if m.FieldCleared(confirmation.FieldContactID) {
 		fields = append(fields, confirmation.FieldContactID)
 	}
@@ -14495,6 +14750,15 @@ func (m *ConfirmationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ConfirmationMutation) ClearField(name string) error {
 	switch name {
+	case confirmation.FieldWording:
+		m.ClearWording()
+		return nil
+	case confirmation.FieldSource:
+		m.ClearSource()
+		return nil
+	case confirmation.FieldBrand:
+		m.ClearBrand()
+		return nil
 	case confirmation.FieldContactID:
 		m.ClearContactID()
 		return nil
@@ -14523,6 +14787,15 @@ func (m *ConfirmationMutation) ResetField(name string) error {
 		return nil
 	case confirmation.FieldProvenance:
 		m.ResetProvenance()
+		return nil
+	case confirmation.FieldWording:
+		m.ResetWording()
+		return nil
+	case confirmation.FieldSource:
+		m.ResetSource()
+		return nil
+	case confirmation.FieldBrand:
+		m.ResetBrand()
 		return nil
 	case confirmation.FieldContactID:
 		m.ResetContactID()
@@ -36134,6 +36407,8 @@ type OutboundMessageMutation struct {
 	delivered_at               *time.Time
 	bounced_at                 *time.Time
 	complained_at              *time.Time
+	undelivered_at             *time.Time
+	undelivered_code           *string
 	opened_at                  *time.Time
 	clicked_at                 *time.Time
 	captured                   *bool
@@ -37048,6 +37323,104 @@ func (m *OutboundMessageMutation) ResetComplainedAt() {
 	delete(m.clearedFields, outboundmessage.FieldComplainedAt)
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (m *OutboundMessageMutation) SetUndeliveredAt(t time.Time) {
+	m.undelivered_at = &t
+}
+
+// UndeliveredAt returns the value of the "undelivered_at" field in the mutation.
+func (m *OutboundMessageMutation) UndeliveredAt() (r time.Time, exists bool) {
+	v := m.undelivered_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUndeliveredAt returns the old "undelivered_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldUndeliveredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUndeliveredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUndeliveredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUndeliveredAt: %w", err)
+	}
+	return oldValue.UndeliveredAt, nil
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (m *OutboundMessageMutation) ClearUndeliveredAt() {
+	m.undelivered_at = nil
+	m.clearedFields[outboundmessage.FieldUndeliveredAt] = struct{}{}
+}
+
+// UndeliveredAtCleared returns if the "undelivered_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) UndeliveredAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldUndeliveredAt]
+	return ok
+}
+
+// ResetUndeliveredAt resets all changes to the "undelivered_at" field.
+func (m *OutboundMessageMutation) ResetUndeliveredAt() {
+	m.undelivered_at = nil
+	delete(m.clearedFields, outboundmessage.FieldUndeliveredAt)
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (m *OutboundMessageMutation) SetUndeliveredCode(s string) {
+	m.undelivered_code = &s
+}
+
+// UndeliveredCode returns the value of the "undelivered_code" field in the mutation.
+func (m *OutboundMessageMutation) UndeliveredCode() (r string, exists bool) {
+	v := m.undelivered_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUndeliveredCode returns the old "undelivered_code" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldUndeliveredCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUndeliveredCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUndeliveredCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUndeliveredCode: %w", err)
+	}
+	return oldValue.UndeliveredCode, nil
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (m *OutboundMessageMutation) ClearUndeliveredCode() {
+	m.undelivered_code = nil
+	m.clearedFields[outboundmessage.FieldUndeliveredCode] = struct{}{}
+}
+
+// UndeliveredCodeCleared returns if the "undelivered_code" field was cleared in this mutation.
+func (m *OutboundMessageMutation) UndeliveredCodeCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldUndeliveredCode]
+	return ok
+}
+
+// ResetUndeliveredCode resets all changes to the "undelivered_code" field.
+func (m *OutboundMessageMutation) ResetUndeliveredCode() {
+	m.undelivered_code = nil
+	delete(m.clearedFields, outboundmessage.FieldUndeliveredCode)
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (m *OutboundMessageMutation) SetOpenedAt(t time.Time) {
 	m.opened_at = &t
@@ -37948,7 +38321,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 32)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -38002,6 +38375,12 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.complained_at != nil {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
+	}
+	if m.undelivered_at != nil {
+		fields = append(fields, outboundmessage.FieldUndeliveredAt)
+	}
+	if m.undelivered_code != nil {
+		fields = append(fields, outboundmessage.FieldUndeliveredCode)
 	}
 	if m.opened_at != nil {
 		fields = append(fields, outboundmessage.FieldOpenedAt)
@@ -38083,6 +38462,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.BouncedAt()
 	case outboundmessage.FieldComplainedAt:
 		return m.ComplainedAt()
+	case outboundmessage.FieldUndeliveredAt:
+		return m.UndeliveredAt()
+	case outboundmessage.FieldUndeliveredCode:
+		return m.UndeliveredCode()
 	case outboundmessage.FieldOpenedAt:
 		return m.OpenedAt()
 	case outboundmessage.FieldClickedAt:
@@ -38152,6 +38535,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldBouncedAt(ctx)
 	case outboundmessage.FieldComplainedAt:
 		return m.OldComplainedAt(ctx)
+	case outboundmessage.FieldUndeliveredAt:
+		return m.OldUndeliveredAt(ctx)
+	case outboundmessage.FieldUndeliveredCode:
+		return m.OldUndeliveredCode(ctx)
 	case outboundmessage.FieldOpenedAt:
 		return m.OldOpenedAt(ctx)
 	case outboundmessage.FieldClickedAt:
@@ -38310,6 +38697,20 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetComplainedAt(v)
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUndeliveredAt(v)
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUndeliveredCode(v)
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		v, ok := value.(time.Time)
@@ -38470,6 +38871,12 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldComplainedAt) {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
 	}
+	if m.FieldCleared(outboundmessage.FieldUndeliveredAt) {
+		fields = append(fields, outboundmessage.FieldUndeliveredAt)
+	}
+	if m.FieldCleared(outboundmessage.FieldUndeliveredCode) {
+		fields = append(fields, outboundmessage.FieldUndeliveredCode)
+	}
 	if m.FieldCleared(outboundmessage.FieldOpenedAt) {
 		fields = append(fields, outboundmessage.FieldOpenedAt)
 	}
@@ -38546,6 +38953,12 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ClearComplainedAt()
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		m.ClearUndeliveredAt()
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		m.ClearUndeliveredCode()
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		m.ClearOpenedAt()
@@ -38641,6 +39054,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ResetComplainedAt()
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		m.ResetUndeliveredAt()
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		m.ResetUndeliveredCode()
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		m.ResetOpenedAt()
@@ -58108,7 +58527,7 @@ func (m *TrackedLinkMutation) OutboundMessageID() (r int64, exists bool) {
 // OldOutboundMessageID returns the old "outbound_message_id" field's value of the TrackedLink entity.
 // If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v int64, err error) {
+func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOutboundMessageID is only allowed on UpdateOne operations")
 	}
@@ -58122,9 +58541,22 @@ func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v int64
 	return oldValue.OutboundMessageID, nil
 }
 
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (m *TrackedLinkMutation) ClearOutboundMessageID() {
+	m.outbound_message = nil
+	m.clearedFields[trackedlink.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageIDCleared returns if the "outbound_message_id" field was cleared in this mutation.
+func (m *TrackedLinkMutation) OutboundMessageIDCleared() bool {
+	_, ok := m.clearedFields[trackedlink.FieldOutboundMessageID]
+	return ok
+}
+
 // ResetOutboundMessageID resets all changes to the "outbound_message_id" field.
 func (m *TrackedLinkMutation) ResetOutboundMessageID() {
 	m.outbound_message = nil
+	delete(m.clearedFields, trackedlink.FieldOutboundMessageID)
 }
 
 // SetToken sets the "token" field.
@@ -58234,7 +58666,7 @@ func (m *TrackedLinkMutation) ClearOutboundMessage() {
 
 // OutboundMessageCleared reports if the "outbound_message" edge to the OutboundMessage entity was cleared.
 func (m *TrackedLinkMutation) OutboundMessageCleared() bool {
-	return m.clearedoutbound_message
+	return m.OutboundMessageIDCleared() || m.clearedoutbound_message
 }
 
 // OutboundMessageIDs returns the "outbound_message" edge IDs in the mutation.
@@ -58430,7 +58862,11 @@ func (m *TrackedLinkMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TrackedLinkMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(trackedlink.FieldOutboundMessageID) {
+		fields = append(fields, trackedlink.FieldOutboundMessageID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -58443,6 +58879,11 @@ func (m *TrackedLinkMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TrackedLinkMutation) ClearField(name string) error {
+	switch name {
+	case trackedlink.FieldOutboundMessageID:
+		m.ClearOutboundMessageID()
+		return nil
+	}
 	return fmt.Errorf("unknown TrackedLink nullable field %s", name)
 }
 
@@ -60113,6 +60554,7 @@ type UnsubscribeMutation struct {
 	channel          *unsubscribe.Channel
 	destination      *string
 	sending_source   *string
+	via              *unsubscribe.Via
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -60443,6 +60885,55 @@ func (m *UnsubscribeMutation) ResetSendingSource() {
 	m.sending_source = nil
 }
 
+// SetVia sets the "via" field.
+func (m *UnsubscribeMutation) SetVia(u unsubscribe.Via) {
+	m.via = &u
+}
+
+// Via returns the value of the "via" field in the mutation.
+func (m *UnsubscribeMutation) Via() (r unsubscribe.Via, exists bool) {
+	v := m.via
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVia returns the old "via" field's value of the Unsubscribe entity.
+// If the Unsubscribe object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsubscribeMutation) OldVia(ctx context.Context) (v *unsubscribe.Via, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVia is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVia requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVia: %w", err)
+	}
+	return oldValue.Via, nil
+}
+
+// ClearVia clears the value of the "via" field.
+func (m *UnsubscribeMutation) ClearVia() {
+	m.via = nil
+	m.clearedFields[unsubscribe.FieldVia] = struct{}{}
+}
+
+// ViaCleared returns if the "via" field was cleared in this mutation.
+func (m *UnsubscribeMutation) ViaCleared() bool {
+	_, ok := m.clearedFields[unsubscribe.FieldVia]
+	return ok
+}
+
+// ResetVia resets all changes to the "via" field.
+func (m *UnsubscribeMutation) ResetVia() {
+	m.via = nil
+	delete(m.clearedFields, unsubscribe.FieldVia)
+}
+
 // SetContactID sets the "contact_id" field.
 func (m *UnsubscribeMutation) SetContactID(i int64) {
 	m.contact = &i
@@ -60580,7 +61071,7 @@ func (m *UnsubscribeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsubscribeMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, unsubscribe.FieldCreatedAt)
 	}
@@ -60598,6 +61089,9 @@ func (m *UnsubscribeMutation) Fields() []string {
 	}
 	if m.sending_source != nil {
 		fields = append(fields, unsubscribe.FieldSendingSource)
+	}
+	if m.via != nil {
+		fields = append(fields, unsubscribe.FieldVia)
 	}
 	if m.contact != nil {
 		fields = append(fields, unsubscribe.FieldContactID)
@@ -60622,6 +61116,8 @@ func (m *UnsubscribeMutation) Field(name string) (ent.Value, bool) {
 		return m.Destination()
 	case unsubscribe.FieldSendingSource:
 		return m.SendingSource()
+	case unsubscribe.FieldVia:
+		return m.Via()
 	case unsubscribe.FieldContactID:
 		return m.ContactID()
 	}
@@ -60645,6 +61141,8 @@ func (m *UnsubscribeMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDestination(ctx)
 	case unsubscribe.FieldSendingSource:
 		return m.OldSendingSource(ctx)
+	case unsubscribe.FieldVia:
+		return m.OldVia(ctx)
 	case unsubscribe.FieldContactID:
 		return m.OldContactID(ctx)
 	}
@@ -60698,6 +61196,13 @@ func (m *UnsubscribeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSendingSource(v)
 		return nil
+	case unsubscribe.FieldVia:
+		v, ok := value.(unsubscribe.Via)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVia(v)
+		return nil
 	case unsubscribe.FieldContactID:
 		v, ok := value.(int64)
 		if !ok {
@@ -60738,6 +61243,9 @@ func (m *UnsubscribeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *UnsubscribeMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(unsubscribe.FieldVia) {
+		fields = append(fields, unsubscribe.FieldVia)
+	}
 	if m.FieldCleared(unsubscribe.FieldContactID) {
 		fields = append(fields, unsubscribe.FieldContactID)
 	}
@@ -60755,6 +61263,9 @@ func (m *UnsubscribeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *UnsubscribeMutation) ClearField(name string) error {
 	switch name {
+	case unsubscribe.FieldVia:
+		m.ClearVia()
+		return nil
 	case unsubscribe.FieldContactID:
 		m.ClearContactID()
 		return nil
@@ -60783,6 +61294,9 @@ func (m *UnsubscribeMutation) ResetField(name string) error {
 		return nil
 	case unsubscribe.FieldSendingSource:
 		m.ResetSendingSource()
+		return nil
+	case unsubscribe.FieldVia:
+		m.ResetVia()
 		return nil
 	case unsubscribe.FieldContactID:
 		m.ResetContactID()

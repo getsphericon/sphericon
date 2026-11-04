@@ -52,7 +52,7 @@ func (Broadcast) Fields() []ent.Field {
 		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the
 		// column default only fills the rows that predate it.
 		field.Enum("channel").
-			Values("email", "telegram").
+			Values("email", "telegram", "sms").
 			Immutable().
 			Annotations(entsql.Default("email")),
 		// Email's content: set on an email Broadcast, unset on any other (broadcastContents).
@@ -69,6 +69,7 @@ func (Broadcast) Fields() []ent.Field {
 		// Telegram Broadcast and unset on any other (broadcastContents): the text in Telegram's HTML
 		// subset with Liquid merge tags, an optional image (the text is then its caption), the link
 		// buttons, whether a link unfolds a preview and the label of an optional unsubscribe button.
+		// An SMS Broadcast's content is the text alone: plain, with Liquid merge tags.
 		field.String("text").
 			Optional().
 			Nillable(),
@@ -83,6 +84,10 @@ func (Broadcast) Fields() []ent.Field {
 		field.String("unsubscribe_button").
 			Optional().
 			Nillable(),
+		// Whether the links of an SMS Broadcast's text go out as short tracked links (ADR 0083). Only
+		// an SMS Broadcast reads it; any other keeps the default.
+		field.Bool("link_tracking").
+			Default(true),
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
 			Optional().
@@ -186,7 +191,8 @@ func broadcastTable() entsql.Annotation {
 }
 
 // channelContent names the columns of one Channel's content on the broadcasts table: required
-// ones are set on a Broadcast of that Channel, and none of them is set on another Channel's.
+// ones are set on a Broadcast of that Channel, and none of them is set on another Channel's unless
+// that Channel's content has the column too (the text of Telegram and SMS).
 type channelContent struct {
 	channel            string
 	required, optional []string
@@ -197,10 +203,12 @@ type channelContent struct {
 var broadcastContents = []channelContent{
 	{channel: "email", required: []string{"subject", "body"}, optional: []string{"from_name", "from_email", "doc", "editor_version"}},
 	{channel: "telegram", required: []string{"text", "buttons"}, optional: []string{"image_url", "unsubscribe_button"}},
+	{channel: "sms", required: []string{"text"}},
 }
 
 // contentCheck is the CHECK that a row holds exactly its Channel's content: one arm per Channel,
-// each requiring that Channel's required columns and leaving every other Channel's columns unset.
+// each requiring that Channel's required columns and leaving unset every column of another
+// Channel's content that is not one of its own.
 func contentCheck(contents []channelContent) string {
 	arms := make([]string, len(contents))
 	for i, c := range contents {
@@ -208,13 +216,20 @@ func contentCheck(contents []channelContent) string {
 		for _, col := range c.required {
 			conds = append(conds, col+" IS NOT NULL")
 		}
+		own := slices.Concat(c.required, c.optional)
+		var unset []string
 		for _, other := range contents {
 			if other.channel == c.channel {
 				continue
 			}
 			for _, col := range slices.Concat(other.required, other.optional) {
-				conds = append(conds, col+" IS NULL")
+				if !slices.Contains(own, col) && !slices.Contains(unset, col) {
+					unset = append(unset, col)
+				}
 			}
+		}
+		for _, col := range unset {
+			conds = append(conds, col+" IS NULL")
 		}
 		arms[i] = "(" + strings.Join(conds, " AND ") + ")"
 	}

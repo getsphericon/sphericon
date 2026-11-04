@@ -212,8 +212,11 @@ func (*CollectIdentifyCreateUnprocessableEntity) collectIdentifyCreateRes() {}
 type CollectIdentifyInput struct {
 	VisitorId string             `json:"visitorId"`
 	Email     OptNilEmailAddress `json:"email"`
-	Phone     OptNilString       `json:"phone"`
-	SubjectId OptNilString       `json:"subjectId"`
+	// Phone number — an alias key, stored in E.164. A number without a country code is read with the
+	// `country` trait or the country of the contact the other keys find; one that does not parse is
+	// refused.
+	Phone     OptNilString `json:"phone"`
+	SubjectId OptNilString `json:"subjectId"`
 	// Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`, `country`,
 	// `locale`, `birthday`, `city`, `avatar`) writes it, null clears it, and an invalid value of one is
 	// dropped. Any other trait is a custom field, whose type a new key's first value sets: a boolean, a

@@ -12,10 +12,13 @@ import (
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -92,6 +95,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationst
 		}
 	}
 	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
@@ -115,6 +119,8 @@ func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case external.AutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case external.AutomationStepTypeSMS:
+		automationstepsKind = automationsteps.SMS
 	case external.AutomationStepTypeTelegram:
 		automationstepsKind = automationsteps.Telegram
 	case external.AutomationStepTypeWait:
@@ -150,6 +156,8 @@ func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) broadcas
 	switch source {
 	case external.BroadcastChannelEmail:
 		broadcastChannel = broadcast.ChannelEmail
+	case external.BroadcastChannelSMS:
+		broadcastChannel = broadcast.ChannelSms
 	case external.BroadcastChannelTelegram:
 		broadcastChannel = broadcast.ChannelTelegram
 	default:
@@ -192,6 +200,36 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	// broadcastsListFilter.Statuses: ignore
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
 	return broadcastsListFilter
+}
+func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) consent.Evidence {
+	var consentEvidence consent.Evidence
+	if source != nil {
+		consentEvidence.Wording = (*source).Wording
+		consentEvidence.Source = (*source).Source
+		consentEvidence.Brand = (*source).Brand
+	}
+	return consentEvidence
+}
+func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) messaging.Channel {
+	var messagingChannel messaging.Channel
+	switch source {
+	case external.ConsentChannelEmail:
+		messagingChannel = messaging.ChannelEmail
+	case external.ConsentChannelSMS:
+		messagingChannel = messaging.ChannelSMS
+	case external.ConsentChannelTelegram:
+		messagingChannel = messaging.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return messagingChannel
+}
+func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
+	var consentEvidence consent.Evidence
+	consentEvidence.Wording = source.Wording
+	consentEvidence.Source = source.Source
+	consentEvidence.Brand = source.Brand
+	return consentEvidence
 }
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -238,6 +276,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
+	contactsUpsertInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
 	return contactsUpsertInput
 }
 func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.UpsertInput {
@@ -441,12 +480,26 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 	}
 	return sendingdomainsUpdateInput
 }
-func (c *InputsImpl) SuppressionChannel(source external.ConsentChannel) suppression.Channel {
+func (c *InputsImpl) SmsBroadcastContentIn(source external.SmsBroadcastContentInput) broadcasts.SMSContentInput {
+	var broadcastsSMSContentInput broadcasts.SMSContentInput
+	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	broadcastsSMSContentInput.LinkTracking = boolPtrIn(source.LinkTracking)
+	return broadcastsSMSContentInput
+}
+func (c *InputsImpl) SmsBroadcastContentPatch(source external.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
+	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
+	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
+	return broadcastsSMSContentPatch
+}
+func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) suppression.Channel {
 	var suppressionChannel suppression.Channel
 	switch source {
-	case external.ConsentChannelEmail:
+	case external.SuppressionChannelEmail:
 		suppressionChannel = suppression.ChannelEmail
-	case external.ConsentChannelTelegram:
+	case external.SuppressionChannelSMS:
+		suppressionChannel = suppression.ChannelSms
+	case external.SuppressionChannelTelegram:
 		suppressionChannel = suppression.ChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -497,6 +550,14 @@ func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) templa
 		templatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
 	return templatesUpdateInput
+}
+func (c *InputsImpl) TestAddress(source *external.TestSendBroadcastInput) outbound.TestAddress {
+	var outboundTestAddress outbound.TestAddress
+	if source != nil {
+		outboundTestAddress.Email = emailIn((*source).Email)
+		outboundTestAddress.Phone = stringIn((*source).Phone)
+	}
+	return outboundTestAddress
 }
 func (c *InputsImpl) WebhookCreate(source *external.CreateWebhookInput) webhooks.CreateInput {
 	var webhooksCreateInput webhooks.CreateInput

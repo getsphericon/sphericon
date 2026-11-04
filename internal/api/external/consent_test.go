@@ -44,6 +44,21 @@ func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "suppression blocks transactional sends too")
 }
 
+// A number is suppressed on sms in E.164, and the resource says so.
+func TestExternalSuppressionsCreateSuppressesANumberOnSMS(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "suppressions:write")
+
+	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{
+		Channel: externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelSMS), Destination: "+1 415 555 0132",
+	})
+	require.NoError(t, err)
+	created, ok := res.(*externalapi.SuppressionResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, externalapi.SuppressionChannelSMS, created.Channel)
+	assert.Equal(t, "+14155550132", created.Destination)
+}
+
 // Fixture suppression SuppressionGhostBounce (a bounce) already exists: adding it
 // again is idempotent and never rewrites the reason.
 func TestExternalSuppressionsCreateIsIdempotent(t *testing.T) {

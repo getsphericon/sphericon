@@ -51,6 +51,10 @@ const (
 	FieldBouncedAt = "bounced_at"
 	// FieldComplainedAt holds the string denoting the complained_at field in the database.
 	FieldComplainedAt = "complained_at"
+	// FieldUndeliveredAt holds the string denoting the undelivered_at field in the database.
+	FieldUndeliveredAt = "undelivered_at"
+	// FieldUndeliveredCode holds the string denoting the undelivered_code field in the database.
+	FieldUndeliveredCode = "undelivered_code"
 	// FieldOpenedAt holds the string denoting the opened_at field in the database.
 	FieldOpenedAt = "opened_at"
 	// FieldClickedAt holds the string denoting the clicked_at field in the database.
@@ -181,6 +185,8 @@ var Columns = []string{
 	FieldDeliveredAt,
 	FieldBouncedAt,
 	FieldComplainedAt,
+	FieldUndeliveredAt,
+	FieldUndeliveredCode,
 	FieldOpenedAt,
 	FieldClickedAt,
 	FieldCaptured,
@@ -254,6 +260,7 @@ const DefaultChannel = ChannelEmail
 const (
 	ChannelEmail    Channel = "email"
 	ChannelTelegram Channel = "telegram"
+	ChannelSms      Channel = "sms"
 )
 
 func (c Channel) String() string {
@@ -263,7 +270,7 @@ func (c Channel) String() string {
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
 func ChannelValidator(c Channel) error {
 	switch c {
-	case ChannelEmail, ChannelTelegram:
+	case ChannelEmail, ChannelTelegram, ChannelSms:
 		return nil
 	default:
 		return fmt.Errorf("outboundmessage: invalid enum value for channel field: %q", c)
@@ -394,6 +401,16 @@ func ByBouncedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByComplainedAt orders the results by the complained_at field.
 func ByComplainedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComplainedAt, opts...).ToFunc()
+}
+
+// ByUndeliveredAt orders the results by the undelivered_at field.
+func ByUndeliveredAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUndeliveredAt, opts...).ToFunc()
+}
+
+// ByUndeliveredCode orders the results by the undelivered_code field.
+func ByUndeliveredCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUndeliveredCode, opts...).ToFunc()
 }
 
 // ByOpenedAt orders the results by the opened_at field.

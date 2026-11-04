@@ -87,6 +87,20 @@ func (r *Resolver) TelegramBot(ctx context.Context, s *ent.Scoped, row *ent.Inte
 	return bot, nil
 }
 
+// SMSSender is Sender for an SMS Integration, typed: the sender of an Integration of another
+// Channel sends no text and is an error.
+func (r *Resolver) SMSSender(ctx context.Context, s *ent.Scoped, row *ent.Integration) (SMSSender, error) {
+	built, err := r.Sender(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	sender, ok := built.(SMSSender)
+	if !ok {
+		return nil, fmt.Errorf("integration %d of channel %q sends no SMS", row.ID, row.Channel)
+	}
+	return sender, nil
+}
+
 // DefaultEmailIntegration is the Workspace's default, enabled email Integration. It returns
 // ErrNoProvider when there is none.
 func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integration, error) {
@@ -109,6 +123,12 @@ func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel, id i
 	return s.Integration().Query().
 		Where(integration.ID(id), integration.ChannelEQ(integration.Channel(channel))).
 		Exist(ctx)
+}
+
+// HasIntegrationOn reports whether the Workspace has any kept Integration on channel, enabled or
+// not: whether work on that Channel has anything it could ever send through.
+func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel) (bool, error) {
+	return s.Integration().Query().Where(integration.ChannelEQ(integration.Channel(channel))).Exist(ctx)
 }
 
 // Integration is the enabled Integration of channel that a send on that Channel goes through: the

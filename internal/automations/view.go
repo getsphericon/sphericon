@@ -13,13 +13,17 @@ import (
 type StepView struct {
 	Type          automationsteps.Kind
 	Subject, Body *string
-	// Text is a Telegram step's message; ImageURL, Buttons, LinkPreview and UnsubscribeButton the
-	// rest of its content (LinkPreview is set, true by default, on a Telegram step only).
+	// Text is a Telegram or an SMS step's message; ImageURL, Buttons, LinkPreview and
+	// UnsubscribeButton the rest of a Telegram step's content (LinkPreview is set, true by default,
+	// on a Telegram step only).
 	Text              *string
 	ImageURL          *string
 	Buttons           []telegramrender.Button
 	LinkPreview       *bool
 	UnsubscribeButton *string
+	// LinkTracking is set, true by default, on an SMS step only: whether its links go out as short
+	// tracked links.
+	LinkTracking *bool
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
 	Doc           json.RawMessage
@@ -79,6 +83,10 @@ func viewOf(s *automationsteps.Step) StepView {
 		if s.UnsubscribeButton != "" {
 			v.UnsubscribeButton = &s.UnsubscribeButton
 		}
+	case automationsteps.SMS:
+		v.IntegrationID = s.IntegrationID
+		v.Text = &s.Text
+		v.LinkTracking = new(s.TracksLinks())
 	case automationsteps.Email:
 		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject

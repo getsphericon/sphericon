@@ -70,6 +70,12 @@ model ExportMessageRow {
   /** When the provider first reported the message bounced */
   bounced_at: Timestamp | null;
 
+  /** When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after */
+  undelivered_at: Timestamp | null;
+
+  /** The provider's error code of the undelivered report (Twilio's ErrorCode) */
+  undelivered_code: string | null;
+
   /** When the provider first reported a spam complaint about the message */
   complained_at: Timestamp | null;
 

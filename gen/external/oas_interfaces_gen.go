@@ -141,6 +141,10 @@ type CapturedMessagesListRes interface {
 	capturedMessagesListRes()
 }
 
+type ConfirmationsCreateRes interface {
+	confirmationsCreateRes()
+}
+
 type ContactsBatchUpsertRes interface {
 	contactsBatchUpsertRes()
 }
@@ -355,6 +359,10 @@ type SendingDomainsUpdateRes interface {
 
 type SendingDomainsVerifyRes interface {
 	sendingDomainsVerifyRes()
+}
+
+type SmsConsentsGetRes interface {
+	smsConsentsGetRes()
 }
 
 type SuppressionsCreateRes interface {

@@ -259,14 +259,18 @@
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
 
-# Acme's Integration on the reserved `sms` Channel (no SMS provider is built, so it names `smtp`):
-# the Send route never routes another Channel's send through it, named or not (ADR 0079).
+# Acme's Twilio account on the `sms` Channel, sending from a number with the Auth Token: the Send
+# route never routes another Channel's send through it, named or not (ADR 0079). Its callbacks are
+# signed with the Auth Token in its params. The account is not in the fake Twilio, so only what
+# never calls Twilio uses it.
 - id: 8 # fixture: IntegrationAcmeSms
   ingest_key: omik_test_integrationacmesms
-  name: SMS relay (reserved Channel)
+  name: Acme Twilio
   channel: sms
-  provider: smtp
-  config_encrypted: '{{ encrypt "{\"host\":\"sms-relay.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  provider: twilio
+  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000000001\",\"secret\":\"fixtureacmetwiliosecret\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
+  preset: twilio
+  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixture-acme-twilio-auth-token\"}" }}'
   enabled: true
   is_default: false
   workspace_id: 1

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -53,7 +54,13 @@ func (emailChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route
 }
 
 // unreachable: an email address is no Binding, and no email adapter reports one gone.
-func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, target, int64) error {
+func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, Request, target, int64) (string, error) {
+	return "", nil
+}
+
+// optedOut: no email adapter reports a person's stop at send time; a complaint or an unsubscribe
+// reaches the Workspace by its own path.
+func (emailChannel) optedOut(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, *ent.OutboundMessage, target, time.Time) error {
 	return nil
 }
 

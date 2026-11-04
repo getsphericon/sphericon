@@ -10,6 +10,9 @@
       "name": "Site Consent"
     },
     {
+      "name": "Site SMS consent"
+    },
+    {
       "name": "Site Custom Fields"
     },
     {
@@ -6730,7 +6733,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
       "post": {
         "operationId": "SiteBroadcasts_testSend",
-        "description": "Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram\nhas no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram\nbroadcast is a 422. While the Workspace has no verified\nSending domain it goes from the System sender and only to the asking User's own address\n(ADR 0041): another address is refused with 422, the System sender's caps answer 429.",
+        "description": "Send a one-off rendered preview to a single address: an email broadcast to the `email` given,\nan SMS broadcast to the `phone` given, through the broadcast's Integration. It skips\nSend-eligibility and leaves no message and no figure. Telegram has no Test send, the author\nwould need a Binding of their own (ADR 0080), so a Telegram broadcast is a 422. While the\nWorkspace has no verified Sending domain an email preview goes from the System sender and only\nto the asking User's own address (ADR 0041): another address is refused with 422, the System\nsender's caps answer 429.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -7669,6 +7672,210 @@
           }
         },
         "tags": ["Site Telegram"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations": {
+      "post": {
+        "operationId": "SiteSmsConsents_confirm",
+        "description": "Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation\nwith its evidence (the same as `POST /api/confirmations`). A stronger Confirmation already on\nthe number stays. It does not lift an opt-out. 422 when the contact has no phone.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentEvidence"
+              }
+            }
+          }
+        },
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-consent": {
+      "get": {
+        "operationId": "SiteSmsConsents_get",
+        "description": "Read the SMS Confirmation and opt-out of a contact's phone",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs": {
+      "post": {
+        "operationId": "SiteSmsConsents_optOut",
+        "description": "Record an SMS opt-out that reached you by another route (an email, a call): the contact's\nnumber gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site SMS consent"],
         "x-required-permissions": []
       }
     },
@@ -14665,7 +14872,7 @@
       },
       "BroadcastChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
+        "enum": ["email", "telegram", "sms"],
         "description": "The Channel a Broadcast sends on, fixed when it is created (ADR 0080)"
       },
       "BroadcastContent": {
@@ -14676,13 +14883,17 @@
           },
           {
             "$ref": "#/components/schemas/TelegramBroadcastContent"
+          },
+          {
+            "$ref": "#/components/schemas/SmsBroadcastContent"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
             "email": "#/components/schemas/EmailBroadcastContent",
-            "telegram": "#/components/schemas/TelegramBroadcastContent"
+            "telegram": "#/components/schemas/TelegramBroadcastContent",
+            "sms": "#/components/schemas/SmsBroadcastContent"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
@@ -14695,16 +14906,50 @@
           },
           {
             "$ref": "#/components/schemas/TelegramBroadcastContentInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsBroadcastContentInput"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
             "email": "#/components/schemas/EmailBroadcastContentInput",
-            "telegram": "#/components/schemas/TelegramBroadcastContentInput"
+            "telegram": "#/components/schemas/TelegramBroadcastContentInput",
+            "sms": "#/components/schemas/SmsBroadcastContentInput"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
+      },
+      "ConfirmationProvenance": {
+        "type": "string",
+        "enum": ["double_opt_in", "keyword", "imported", "grandfathered"],
+        "description": "How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one."
+      },
+      "ConsentEvidence": {
+        "type": "object",
+        "required": ["wording", "source", "brand"],
+        "properties": {
+          "wording": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "description": "The consent wording the person was shown and agreed to"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Where the consent was collected: a form, a page, a checkout, a verification service"
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The brand the person agreed to hear from"
+          }
+        },
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
@@ -14770,6 +15015,21 @@
           "provenance": {
             "type": "string",
             "description": "How the confirmation was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown, on a confirmation recorded with its evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected, on a confirmation recorded with its evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from, on a confirmation recorded with its evidence"
           },
           "createdAt": {
             "allOf": [
@@ -15137,6 +15397,21 @@
             "nullable": true,
             "description": "When the provider first reported the message bounced"
           },
+          "undeliveredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after"
+          },
+          "undeliveredCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's error code of the undelivered report (Twilio's ErrorCode)"
+          },
           "complainedAt": {
             "type": "string",
             "allOf": [
@@ -15319,6 +15594,15 @@
             "type": "string",
             "description": "The sending source (kind of mail) opted out of"
           },
+          "via": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OptOutVia"
+              }
+            ],
+            "nullable": true,
+            "description": "How the person stopped; absent on email"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -15384,7 +15668,7 @@
                 "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel."
+            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422."
           },
           "segmentId": {
             "type": "string",
@@ -15430,7 +15714,7 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "Phone number — an alias key"
+            "description": "Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code\nis read with the contact's `country`; one that does not parse is refused on `phone`"
           },
           "firstName": {
             "type": "string",
@@ -15546,7 +15830,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset"
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset. A Twilio integration always reads its callbacks with the built-in `twilio` Preset, which no other integration takes"
           },
           "params": {
             "allOf": [
@@ -15554,10 +15838,10 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none"
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required"
           }
         },
-        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422"
+        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422"
       },
       "CreateSendingDomainInput": {
         "type": "object",
@@ -15969,6 +16253,9 @@
           },
           {
             "$ref": "#/components/schemas/TelegramConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/TwilioConfigInput"
           }
         ],
         "discriminator": {
@@ -15977,7 +16264,8 @@
             "smtp": "#/components/schemas/SmtpConfigInput",
             "ses": "#/components/schemas/SesConfigInput",
             "inbox": "#/components/schemas/InboxConfigInput",
-            "telegram": "#/components/schemas/TelegramConfigInput"
+            "telegram": "#/components/schemas/TelegramConfigInput",
+            "twilio": "#/components/schemas/TwilioConfigInput"
           }
         },
         "description": "Provider config submitted by the caller, discriminated by `kind`."
@@ -16074,6 +16362,11 @@
         "minimum": 1,
         "maximum": 10000,
         "description": "A per-second Provider limit the caller may set"
+      },
+      "OptOutVia": {
+        "type": "string",
+        "enum": ["keyword", "button", "block", "link", "refused_send", "manual"],
+        "description": "How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)"
       },
       "PasskeyName": {
         "type": "string",
@@ -17885,11 +18178,11 @@
               }
             ],
             "nullable": true,
-            "description": "The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
+            "description": "The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
           },
           "text": {
             "type": "string",
-            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused."
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
           },
           "unsubscribeButton": {
             "type": "string",
@@ -17911,6 +18204,10 @@
           "linkPreview": {
             "type": "boolean",
             "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds."
@@ -17939,7 +18236,7 @@
       },
       "SiteAutomationStepType": {
         "type": "string",
-        "enum": ["email", "telegram", "wait", "apply_tag", "remove_tag", "http"],
+        "enum": ["email", "telegram", "sms", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "SiteAutomationVersion": {
@@ -18324,6 +18621,7 @@
           "clickedCount",
           "unsubscribedCount",
           "deliveredCount",
+          "undeliveredCount",
           "bouncedCount",
           "complainedCount",
           "capturedCount",
@@ -18382,6 +18680,12 @@
             "format": "int32",
             "nullable": true,
             "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
+          },
+          "undeliveredCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "bouncedCount": {
             "type": "integer",
@@ -18443,7 +18747,7 @@
             "description": "Orders credited to the Broadcast and their net revenue (ADR 0064)"
           }
         },
-        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate."
+        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS\nreports delivered and undelivered, and no opened, bounced or complained count, delivery or open\nrate; only SMS reports undelivered."
       },
       "SiteBroadcastStatus": {
         "type": "string",
@@ -18913,7 +19217,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"sms\" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or\nSuppression; the value is ignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
           },
           "operator": {
             "allOf": [
@@ -19001,7 +19305,7 @@
       "SiteConditionOperator": {
         "type": "string",
         "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
-        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
       "SiteConfirmEmailChangeInput": {
         "type": "object",
@@ -19140,7 +19444,7 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "Phone number — an alias key. May be absent."
+            "description": "Phone number in E.164 (`+14155550100`) — an alias key. May be absent."
           },
           "firstName": {
             "type": "string",
@@ -19292,7 +19596,7 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "Phone number — an alias key"
+            "description": "Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code\nis read with the contact's `country`; one that does not parse is refused on `phone`"
           },
           "firstName": {
             "type": "string",
@@ -19502,7 +19806,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "The destination address to suppress"
+            "description": "The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)"
           }
         },
         "description": "Site request body for manually suppressing a destination"
@@ -20195,6 +20499,9 @@
           },
           {
             "$ref": "#/components/schemas/SiteTelegramConfig"
+          },
+          {
+            "$ref": "#/components/schemas/SiteTwilioConfig"
           }
         ],
         "discriminator": {
@@ -20203,14 +20510,15 @@
             "smtp": "#/components/schemas/SiteSmtpConfig",
             "ses": "#/components/schemas/SiteSesConfig",
             "inbox": "#/components/schemas/SiteInboxConfig",
-            "telegram": "#/components/schemas/SiteTelegramConfig"
+            "telegram": "#/components/schemas/SiteTelegramConfig",
+            "twilio": "#/components/schemas/SiteTwilioConfig"
           }
         },
         "description": "Provider config returned to the UI, discriminated by `kind`. Secrets are omitted."
       },
       "SiteIntegrationProvider": {
         "type": "string",
-        "enum": ["smtp", "ses", "inbox", "telegram"],
+        "enum": ["smtp", "ses", "inbox", "telegram", "twilio"],
         "description": "Concrete sending provider"
       },
       "SiteIntegrationResource": {
@@ -22796,6 +23104,23 @@
         },
         "description": "The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`\nand `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only\nwith its question's `other` choice."
       },
+      "SiteSmsLengthLimit": {
+        "type": "object",
+        "required": ["gsm7", "ucs2"],
+        "properties": {
+          "gsm7": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The most characters of a text in GSM-7, an extension character counting two"
+          },
+          "ucs2": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The most characters of a text in UCS-2, counted in UTF-16 code units"
+          }
+        },
+        "description": "The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2)"
+      },
       "SiteSmtpConfig": {
         "type": "object",
         "required": ["kind", "host", "port", "from"],
@@ -22846,7 +23171,7 @@
       },
       "SiteSuppressionChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
+        "enum": ["email", "telegram", "sms"],
         "description": "The channel a suppression applies to"
       },
       "SiteSuppressionReason": {
@@ -22964,7 +23289,7 @@
       },
       "SiteTestSendBroadcastResult": {
         "type": "object",
-        "required": ["from", "captured"],
+        "required": ["captured"],
         "properties": {
           "from": {
             "allOf": [
@@ -22972,14 +23297,14 @@
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "The From address of the preview. A Workspace with a verified Sending domain gets its own\ndomain; one without gets the System sender, which is not the address Contacts will see."
+            "description": "The From address of an email preview. A Workspace with a verified Sending domain gets its own\ndomain; one without gets the System sender, which is not the address Contacts will see.\nAbsent on SMS: the text goes out from the sender of the broadcast's Integration."
           },
           "captured": {
             "type": "boolean",
-            "description": "true when the Workspace's default Integration keeps what it is sent (a Test inbox): the\npreview was captured there, not sent to the address named."
+            "description": "true when the Workspace's default Integration keeps what it is sent (a Test inbox): the\npreview was captured there, not sent to the address named. Always false on SMS."
           }
         },
-        "description": "What a test send did: the address the preview went out from"
+        "description": "What a test send did: on email the address the preview went out from"
       },
       "SiteTrackingDomainResource": {
         "type": "object",
@@ -23181,6 +23506,42 @@
         "enum": ["pending", "sent", "suppressed", "failed"],
         "description": "Outcome of a transactional send"
       },
+      "SiteTwilioConfig": {
+        "type": "object",
+        "required": ["kind", "accountSid", "apiKeySid", "from", "fromKind", "callbacksSet"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["twilio"]
+          },
+          "accountSid": {
+            "type": "string",
+            "description": "The Account SID"
+          },
+          "apiKeySid": {
+            "type": "string",
+            "nullable": true,
+            "description": "The API key messages are sent with; null when they are sent with the Auth Token"
+          },
+          "from": {
+            "type": "string",
+            "description": "What messages go out from"
+          },
+          "fromKind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsFromKind"
+              }
+            ],
+            "description": "What kind of sender `from` is"
+          },
+          "callbacksSet": {
+            "type": "boolean",
+            "description": "Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback"
+          }
+        },
+        "description": "A Twilio account without its secret"
+      },
       "SiteUpdateAutomationInput": {
         "type": "object",
         "properties": {
@@ -23232,7 +23593,7 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "Phone number — an alias key"
+            "description": "Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code\nis read with the contact's `country`; one that does not parse is refused on `phone`"
           },
           "firstName": {
             "type": "string",
@@ -23781,6 +24142,8 @@
           "permissions",
           "mcpUrl",
           "trackerUrl",
+          "shortLinkLength",
+          "smsMaxLength",
           "holds",
           "accountLinkAvailable",
           "createdAt"
@@ -23861,6 +24224,19 @@
             "type": "string",
             "description": "The edge host a Tracking domain's CNAME points at (ADR 0071); absent when the Instance offers\nno Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset)."
           },
+          "shortLinkLength": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The length of a short tracked link of the Workspace (`https://<Tracking domain or app host>/c/<token>`,\nADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does."
+          },
+          "smsMaxLength": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSmsLengthLimit"
+              }
+            ],
+            "description": "The longest text an SMS goes out as, in characters of each encoding as the SMS counter counts them: the counter flags a text over it, as the save refuses it"
+          },
           "holds": {
             "type": "array",
             "items": {
@@ -23927,6 +24303,143 @@
           }
         },
         "description": "Set the Workspace time zone"
+      },
+      "SmsBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "text", "linkTracking"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["sms"],
+            "description": "The Channel the content is for"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text, plain, with Liquid merge tags"
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether each link of the text goes out as a short tracked link"
+          }
+        },
+        "description": "SMS's content of a Broadcast as stored"
+      },
+      "SmsBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["sms"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one, and a save one over the part limit, its links counted as short links while `linkTracking` is on."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
+          }
+        },
+        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted field takes its default (an empty text, link tracking on); on update an omitted field\nkeeps its value."
+      },
+      "SmsConfirmation": {
+        "type": "object",
+        "required": ["provenance", "confirmedAt"],
+        "properties": {
+          "provenance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfirmationProvenance"
+              }
+            ],
+            "description": "How the consent was obtained"
+          },
+          "wording": {
+            "type": "string",
+            "nullable": true,
+            "description": "The consent wording the person was shown; absent when the confirmation carries no evidence"
+          },
+          "source": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the consent was collected; absent when the confirmation carries no evidence"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "The brand the person agreed to hear from; absent when the confirmation carries no evidence"
+          },
+          "confirmedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the consent was recorded"
+          }
+        },
+        "description": "The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries"
+      },
+      "SmsConsent": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contact's phone in E.164; absent when it has none, and then nothing else is"
+          },
+          "confirmation": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsConfirmation"
+              }
+            ],
+            "nullable": true,
+            "description": "The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it"
+          },
+          "optOut": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsOptOut"
+              }
+            ],
+            "nullable": true,
+            "description": "The phone's opt-out of every SMS of the Workspace; absent while it has none"
+          }
+        },
+        "description": "Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number"
+      },
+      "SmsFromKind": {
+        "type": "string",
+        "enum": ["number", "alphanumeric", "messagingService"],
+        "description": "What an SMS integration's messages go out from"
+      },
+      "SmsOptOut": {
+        "type": "object",
+        "required": ["via", "optedOutAt"],
+        "properties": {
+          "via": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OptOutVia"
+              }
+            ],
+            "description": "How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)"
+          },
+          "optedOutAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the phone opted out"
+          }
+        },
+        "description": "The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped"
       },
       "SmtpConfigInput": {
         "type": "object",
@@ -24091,7 +24604,6 @@
       },
       "TestSendBroadcastInput": {
         "type": "object",
-        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -24099,10 +24611,14 @@
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "Address to send the rendered preview to"
+            "description": "Address to send the rendered preview of an email broadcast to; required on email"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422"
           }
         },
-        "description": "Request body for a test send"
+        "description": "Request body for a test send: where the preview goes, in the field of the broadcast's Channel.\nThe field of the other Channel is not read."
       },
       "TestWebhookInput": {
         "type": "object",
@@ -24134,6 +24650,34 @@
           "export:read"
         ],
         "description": "Scopes only an API token can hold, never an OAuth grant"
+      },
+      "TwilioConfigInput": {
+        "type": "object",
+        "required": ["kind", "accountSid", "secret", "from"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["twilio"]
+          },
+          "accountSid": {
+            "type": "string",
+            "description": "The Account SID (`AC…`)"
+          },
+          "apiKeySid": {
+            "type": "string",
+            "nullable": true,
+            "description": "An API key's SID (`SK…`) to send with; omit or null to send with the Account SID and its Auth Token"
+          },
+          "secret": {
+            "type": "string",
+            "description": "The API key's secret, or the Auth Token when no API key is given. Write-only: blank on an update keeps the stored one while the Account SID and the API key stay the same"
+          },
+          "from": {
+            "type": "string",
+            "description": "What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (`MG…`)"
+          }
+        },
+        "description": "A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials"
       },
       "UpdateBroadcastInput": {
         "type": "object",
@@ -24194,7 +24738,7 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "description": "Phone number — an alias key"
+            "description": "Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code\nis read with the contact's `country`; one that does not parse is refused on `phone`"
           },
           "firstName": {
             "type": "string",
@@ -24309,7 +24853,7 @@
           "preset": {
             "type": "string",
             "nullable": true,
-            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed"
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram or Twilio integration's Preset is fixed"
           },
           "params": {
             "allOf": [
@@ -24317,7 +24861,7 @@
                 "$ref": "#/components/schemas/JsonObject"
               }
             ],
-            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none"
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired): a Twilio integration's `auth_token` rotates this way, leaving its send credentials as they are. A Telegram integration takes none"
           },
           "retireSecrets": {
             "type": "boolean",

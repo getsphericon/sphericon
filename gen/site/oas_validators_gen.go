@@ -301,6 +301,8 @@ func (s BroadcastChannel) Validate() error {
 		return nil
 	case "telegram":
 		return nil
+	case "sms":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -364,6 +366,11 @@ func (s BroadcastContentInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case SmsBroadcastContentInputBroadcastContentInputSum:
+		if err := s.SmsBroadcastContentInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -381,9 +388,110 @@ func (s BroadcastContentSum) Validate() error {
 			return err
 		}
 		return nil
+	case SmsBroadcastContentBroadcastContentSum:
+		if err := s.SmsBroadcastContent.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
+}
+
+func (s ConfirmationProvenance) Validate() error {
+	switch s {
+	case "double_opt_in":
+		return nil
+	case "keyword":
+		return nil
+	case "imported":
+		return nil
+	case "grandfathered":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *ConsentEvidence) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     2000,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Wording)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "wording",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     500,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Source)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "source",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:     1,
+			MinLengthSet:  true,
+			MaxLength:     255,
+			MaxLengthSet:  true,
+			Email:         false,
+			Hostname:      false,
+			Regex:         nil,
+			MinNumeric:    0,
+			MinNumericSet: false,
+			MaxNumeric:    0,
+			MaxNumericSet: false,
+		}).Validate(string(s.Brand)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "brand",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
 }
 
 func (s *ContactExportContact) Validate() error {
@@ -458,6 +566,23 @@ func (s *ContactExportDocument) Validate() error {
 	if err := func() error {
 		if s.Unsubscribes == nil {
 			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Unsubscribes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -561,6 +686,36 @@ func (s ContactExportSource) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *ContactExportUnsubscribe) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.Via.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "via",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
 }
 
 func (s CountryCode) Validate() error {
@@ -1076,6 +1231,11 @@ func (s IntegrationConfigInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case TwilioConfigInputIntegrationConfigInputSum:
+		if err := s.TwilioConfigInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1217,6 +1377,25 @@ func (s MaxPerSecond) Validate() error {
 		return errors.Wrap(err, "int")
 	}
 	return nil
+}
+
+func (s OptOutVia) Validate() error {
+	switch s {
+	case "keyword":
+		return nil
+	case "button":
+		return nil
+	case "block":
+		return nil
+	case "link":
+		return nil
+	case "refused_send":
+		return nil
+	case "manual":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s PasskeyName) Validate() error {
@@ -3519,6 +3698,8 @@ func (s SiteAutomationStepType) Validate() error {
 	case "email":
 		return nil
 	case "telegram":
+		return nil
+	case "sms":
 		return nil
 	case "wait":
 		return nil
@@ -7145,6 +7326,11 @@ func (s SiteIntegrationConfigSum) Validate() error {
 			return err
 		}
 		return nil
+	case SiteTwilioConfigSiteIntegrationConfigSum:
+		if err := s.SiteTwilioConfig.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -7159,6 +7345,8 @@ func (s SiteIntegrationProvider) Validate() error {
 	case "inbox":
 		return nil
 	case "telegram":
+		return nil
+	case "twilio":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -11943,6 +12131,70 @@ func (s *SiteSignupSurveySubmitUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteSmsConsentsConfirmBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsConfirmNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsConfirmUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsGetNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsOptOutBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsOptOutNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSmsConsentsOptOutUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSmtpConfig) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -12014,6 +12266,8 @@ func (s SiteSuppressionChannel) Validate() error {
 	case "email":
 		return nil
 	case "telegram":
+		return nil
+	case "sms":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -12568,8 +12822,15 @@ func (s *SiteTestSendBroadcastResult) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.From.Validate(); err != nil {
-			return err
+		if value, ok := s.From.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -13052,6 +13313,49 @@ func (s *SiteTransactionalEmailsListUnprocessableEntity) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s *SiteTwilioConfig) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.FromKind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "fromKind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteTwilioConfigKind) Validate() error {
+	switch s {
+	case "twilio":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteUpdateAutomationInput) Validate() error {
@@ -14465,6 +14769,177 @@ func (s *SiteWorkspacesUpdateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SmsBroadcastContent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsBroadcastContentChannel) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SmsBroadcastContentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsBroadcastContentInputChannel) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SmsConfirmation) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Provenance.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "provenance",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SmsConsent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.Confirmation.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "confirmation",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.OptOut.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "optOut",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsFromKind) Validate() error {
+	switch s {
+	case "number":
+		return nil
+	case "alphanumeric":
+		return nil
+	case "messagingService":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SmsOptOut) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Via.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "via",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SmtpConfigInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14682,8 +15157,15 @@ func (s *TestSendBroadcastInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Email.Validate(); err != nil {
-			return err
+		if value, ok := s.Email.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {
@@ -14696,6 +15178,38 @@ func (s *TestSendBroadcastInput) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *TwilioConfigInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TwilioConfigInputKind) Validate() error {
+	switch s {
+	case "twilio":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *UpdateBroadcastInput) Validate() error {

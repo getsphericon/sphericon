@@ -31,9 +31,10 @@ type Stats struct {
 	Pending int
 	// Opened, Clicked and Unsubscribed count the recipients with that engagement.
 	Opened, Clicked, Unsubscribed int
-	// Delivered, Bounced and Complained count the messages whose delivery result is stamped
-	// (ADR 0053). They are read from the stamps, never from Events, so they outlive retention.
-	Delivered, Bounced, Complained int
+	// Delivered, Undelivered, Bounced and Complained count the messages whose delivery result is
+	// stamped (ADR 0053, ADR 0079). They are read from the stamps, never from Events, so they
+	// outlive retention.
+	Delivered, Undelivered, Bounced, Complained int
 	// Captured counts the messages that went through a sender delivering nowhere outside (a
 	// Test inbox): captured, not delivered. They are stamped delivered too, so a reader
 	// can tell them apart from a real delivery.
@@ -44,13 +45,13 @@ type Stats struct {
 }
 
 // Figures is the Stats as the Broadcast's Channel reports them (ADR 0080): every Channel reports
-// recipients, sent, skipped, failed, pending, clicked and unsubscribed; opened, delivered, bounced,
-// complained and captured, and the rates built on them, are nil on a Channel that does not report
-// them, never zero. Telegram has no delivery rate and no open rate.
+// recipients, sent, skipped, failed, pending, clicked and unsubscribed; opened, delivered,
+// undelivered, bounced, complained and captured, and the rates built on them, are nil on a Channel
+// that does not report them, never zero. Telegram and SMS have no delivery rate and no open rate.
 type Figures struct {
 	Recipients, Sent, Skipped, Failed, Pending, Clicked, Unsubscribed int
 
-	Opened, Delivered, Bounced, Complained, Captured *int
+	Opened, Delivered, Undelivered, Bounced, Complained, Captured *int
 
 	DeliveryRate, OpenRate, ClickToOpenRate *float32
 	ClickRate, UnsubscribeRate, FailureRate float32
@@ -69,8 +70,14 @@ func (st Stats) Figures() Figures {
 	if st.ReportsOpens() {
 		f.Opened, f.OpenRate, f.ClickToOpenRate = &st.Opened, new(st.OpenRate()), new(st.ClickToOpenRate())
 	}
-	if st.ReportsDelivery() {
-		f.Delivered, f.Bounced, f.Complained, f.DeliveryRate = &st.Delivered, &st.Bounced, &st.Complained, new(st.DeliveryRate())
+	if st.ReportsDelivered() {
+		f.Delivered = &st.Delivered
+	}
+	if st.ReportsUndelivered() {
+		f.Undelivered = &st.Undelivered
+	}
+	if st.ReportsBounces() {
+		f.Bounced, f.Complained, f.DeliveryRate = &st.Bounced, &st.Complained, new(st.DeliveryRate())
 	}
 	if st.ReportsCaptured() {
 		f.Captured = &st.Captured
@@ -78,17 +85,30 @@ func (st Stats) Figures() Figures {
 	return f
 }
 
-// ReportsOpens says whether the Channel reports opens: email does, Telegram cannot tell. Without
-// them there is no open count, open rate or click-to-open rate.
-func (st Stats) ReportsOpens() bool { return st.Channel != broadcast.ChannelTelegram }
+// ReportsOpens says whether the Channel reports opens: email does, Telegram and SMS cannot tell.
+// Without them there is no open count, open rate or click-to-open rate.
+func (st Stats) ReportsOpens() bool { return st.onEmail() }
 
-// ReportsDelivery says whether the Channel's provider reports delivery results: email's does,
-// Telegram's gives only the acceptance (Sent). Without them there is no delivered, bounced or
-// complained count and no delivery rate.
-func (st Stats) ReportsDelivery() bool { return st.Channel != broadcast.ChannelTelegram }
+// ReportsDelivered says whether the Channel's provider reports a delivery: email's and SMS's do,
+// Telegram's gives only the acceptance (Sent).
+func (st Stats) ReportsDelivered() bool { return st.Channel != broadcast.ChannelTelegram }
+
+// ReportsUndelivered says whether the Channel's provider reports a message it could not deliver
+// (ADR 0079): SMS's does; email's says bounced instead.
+func (st Stats) ReportsUndelivered() bool { return st.Channel == broadcast.ChannelSms }
+
+// ReportsBounces says whether the Channel reports bounces and complaints: email. The delivery rate
+// goes with them: SMS reports delivered and undelivered, but no delivery rate.
+func (st Stats) ReportsBounces() bool { return st.onEmail() }
 
 // ReportsCaptured says whether the Channel has a Test inbox that captures its messages: email.
-func (st Stats) ReportsCaptured() bool { return st.Channel != broadcast.ChannelTelegram }
+func (st Stats) ReportsCaptured() bool { return st.onEmail() }
+
+// onEmail says whether the figures are an email Broadcast's: the Channel StatsFor set, or none
+// (StatsOf, which reads them as email's).
+func (st Stats) onEmail() bool {
+	return st.Channel != broadcast.ChannelTelegram && st.Channel != broadcast.ChannelSms
+}
 
 // Processed counts the recipients whose send has ended.
 func (st Stats) Processed() int { return st.Recipients - st.Pending }
@@ -196,6 +216,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		Status      outboundmessage.Status `json:"status"`
 		Count       int                    `json:"count"`
 		Delivered   int                    `json:"delivered"`
+		Undelivered int                    `json:"undelivered"`
 		Bounced     int                    `json:"bounced"`
 		Complained  int                    `json:"complained"`
 		Opened      int                    `json:"opened"`
@@ -208,6 +229,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		Aggregate(
 			ent.As(ent.Count(), "count"),
 			aggregates.CountSet(outboundmessage.FieldDeliveredAt, "delivered"),
+			aggregates.CountSet(outboundmessage.FieldUndeliveredAt, "undelivered"),
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
 			aggregates.CountSet(outboundmessage.FieldOpenedAt, "opened"),
@@ -220,6 +242,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	for _, m := range messages {
 		st := out[m.BroadcastID]
 		st.Delivered += m.Delivered
+		st.Undelivered += m.Undelivered
 		st.Bounced += m.Bounced
 		st.Complained += m.Complained
 		st.Opened += m.Opened

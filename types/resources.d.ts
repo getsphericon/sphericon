@@ -429,6 +429,7 @@ export default interface Resources {
         "title": "Results"
       },
       "searchPlaceholder": "Search by name",
+      "smsNodeDescription": "Send a text message to the contact's phone.",
       "state": {
         "active": "Active",
         "draft": "Draft",
@@ -448,6 +449,7 @@ export default interface Resources {
       },
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
+      "stepSms": "Send SMS",
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
@@ -511,6 +513,7 @@ export default interface Resources {
       "channelShown": "Channel: {{channel}}",
       "channels": {
         "email": "Email",
+        "sms": "SMS",
         "telegram": "Telegram"
       },
       "createTitle": "New broadcast",
@@ -549,6 +552,7 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "segmentNoteSms": "It goes to the contacts whose phone has an SMS confirmation and has not opted out of texts. Each number is checked again when its text is sent.",
       "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",
       "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} days. You can still send or schedule it.",
       "sendCapWarningError": "Could not read the Send cap",
@@ -570,6 +574,7 @@ export default interface Resources {
         "recipients": "Recipients",
         "sent": "Sent",
         "skipped": "Skipped",
+        "undelivered": "Undelivered",
         "unsubscribeRate": "Unsubscribe rate",
         "unsubscribed": "Unsubscribed"
       },
@@ -586,6 +591,8 @@ export default interface Resources {
       "testSendCaptured": "Captured in your Test inbox, not sent to the address you named.",
       "testSendEmailLabel": "Send a test to",
       "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
+      "testSendPhoneHint": "With its country code, like +1 415 555 0100. The test skips the confirmation check and counts in no figure.",
+      "testSendPhoneLabel": "Send a test text to",
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
@@ -986,6 +993,37 @@ export default interface Resources {
       "noRecords": "No contacts yet",
       "searchPlaceholder": "Search by email",
       "showMachineEvents": "Show machine events",
+      "smsBrand": "Brand",
+      "smsBrandHint": "The brand the person agreed to hear from.",
+      "smsConfirmedAt": "Consented",
+      "smsConsentError": "Could not record the SMS consent",
+      "smsConsentHint": "Record consent this number gave outside sphericon, such as on your own form or by phone. Keep what the person was shown: it is the proof of their consent. It does not lift an opt-out.",
+      "smsConsentRecorded": "SMS consent recorded.",
+      "smsNoConsent": "No SMS consent recorded. Texts do not go to this number.",
+      "smsOptOutConfirmDescription": "The number gets no more texts from this workspace, from any sender. Only the person can opt back in, by texting START.",
+      "smsOptOutConfirmTitle": "Record an SMS opt-out?",
+      "smsOptOutError": "Could not record the SMS opt-out",
+      "smsOptOutRecorded": "SMS opt-out recorded.",
+      "smsOptOutVia": "How they opted out: {{via}}",
+      "smsOptOutViaBlock": "Blocked the bot.",
+      "smsOptOutViaButton": "Pressed the unsubscribe button.",
+      "smsOptOutViaKeyword": "Texted STOP.",
+      "smsOptOutViaLink": "Followed the unsubscribe link in a text.",
+      "smsOptOutViaManual": "Recorded by hand, after the opt-out reached you by another route.",
+      "smsOptOutViaRefusedSend": "Twilio refused a text, because the number had texted STOP to your Twilio sender.",
+      "smsOptedOut": "Opted out of SMS on {{at}}. Texts do not go to this number.",
+      "smsProvenance": "How",
+      "smsProvenanceDoubleOptIn": "Double opt-in",
+      "smsProvenanceGrandfathered": "Grandfathered",
+      "smsProvenanceImported": "Recorded with evidence",
+      "smsProvenanceKeyword": "Texted START",
+      "smsRecordConsent": "Record consent",
+      "smsRecordOptOut": "Record opt-out",
+      "smsSource": "Source",
+      "smsSourceHint": "Where the consent was collected, such as a checkout form or a phone call.",
+      "smsTitle": "SMS",
+      "smsWording": "Consent wording",
+      "smsWordingHint": "The words the person agreed to.",
       "tagFilter": "Tag",
       "tagsTitle": "Tags",
       "telegramBot": "Bot",
@@ -1052,6 +1090,12 @@ export default interface Resources {
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",
       "pageView": "Visited a page",
+      "smsClicked": "Clicked a link in a text message",
+      "smsConfirmed": "Confirmed SMS opt-in",
+      "smsDelivered": "Text message delivered",
+      "smsReceived": "Sent a text message",
+      "smsSent": "Was sent a text message",
+      "smsUndelivered": "Text message not delivered",
       "telegramBound": "Telegram chat bound",
       "telegramClicked": "Clicked a link in a Telegram message",
       "telegramReceived": "Sent a Telegram message",
@@ -1078,6 +1122,7 @@ export default interface Resources {
       "quoted": "\"{{name}}\"",
       "reachedGoalOf": "Reached the goal of",
       "received": "Received",
+      "smsUndelivered": "Text message not delivered (error {{code}})",
       "tagged": "Tagged",
       "unsubscribedFrom": "Unsubscribed from",
       "untagged": "Untagged",
@@ -1099,7 +1144,7 @@ export default interface Resources {
     },
     "holdReasons": {
       "no_integration": "No email integration can send it: the one it uses is disabled or archived, or the workspace has no default. Choose an integration that sends, or set a default, to resume.",
-      "provider_refused": "The provider refused the integration's credentials, for example a revoked bot token. Save the integration again with a working one to resume.",
+      "provider_refused": "The provider refused the integration's credentials or account, for example a revoked bot token or API key, a suspended account or a sender the account cannot use. Save the integration again with working ones to resume.",
       "provider_stopped": "Your email provider has stopped sending from your account. Resolve it with the provider: sending resumes on its own once the provider reinstates the account.",
       "staff_hold": "Outbound email is on hold for this workspace. The notice at the top of the page says how to resolve it.",
       "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
@@ -1289,6 +1334,7 @@ export default interface Resources {
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
+      "testTextSent": "Test text sent",
       "usedByEnrollments": "{{count, number}} enrollment of \"{{name}}\"" | "{{count, number}} enrollments of \"{{name}}\"",
       "usedByMessages": "{{count, number}} message sent by \"{{name}}\"" | "{{count, number}} messages sent by \"{{name}}\""
     },
@@ -1349,7 +1395,7 @@ export default interface Resources {
           "deliverabilityWarning": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
           "enrollmentsFailed": "{{count, number}} run of {{name}} failed this week." | "{{count, number}} runs of {{name}} failed this week.",
           "integrationProviderProbation": "Your provider has put the account behind {{name}} under review. It still sends: keep bounces and complaints low.",
-          "integrationProviderRefused": "{{name}}'s credentials were refused by its provider: nothing sends through it until it is saved again with working ones.",
+          "integrationProviderRefused": "{{name}}'s credentials or account were refused by its provider: nothing sends through it until it is saved again with working ones.",
           "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
           "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
           "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
@@ -1743,6 +1789,7 @@ export default interface Resources {
       "integrations": {
         "advanced": "Advanced settings",
         "back": "Back",
+        "carrierRegistration": "Registering your SMS sender with carriers is yours to do in Twilio: US 10DLC brand and campaign, toll-free verification, short codes, operator contracts in other countries. sphericon does not check it.",
         "channels": {
           "email": "Email",
           "sms": "SMS",
@@ -1756,10 +1803,16 @@ export default interface Resources {
         "deleteConsequence": "The provider stops sending and is deleted for good: it cannot be restored. What it already sent keeps its history and reports.",
         "deleteError": "Failed to delete the provider",
         "deleted": "Provider deleted",
-        "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram. Each channel has its own default.",
+        "description": "Connect the providers this workspace sends through: an email provider for mail, a Telegram bot for Telegram, a Twilio account for SMS. Each channel has its own default.",
         "empty": "No providers connected yet",
         "fields": {
           "accessKeyId": "Access key ID",
+          "accountSid": "Account SID",
+          "apiKeySecret": "API key secret",
+          "apiKeySid": "API key SID",
+          "authToken": "Auth Token",
+          "authTokenHint": "Twilio signs its callbacks with it, even when messages are sent with an API key.",
+          "authTokenSendsHint": "Messages are sent with it, and Twilio signs its callbacks with it.",
           "endpoint": "Custom endpoint",
           "endpointHint": "The provider’s SES API address.",
           "from": "From address",
@@ -1769,8 +1822,13 @@ export default interface Resources {
           "port": "Port",
           "region": "AWS region",
           "secretAccessKey": "Secret access key",
+          "smsFrom": "Send from",
+          "smsFromHint": "A number of the account (+15017250604), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (MG…).",
           "token": "Bot token",
           "tokenHint": "The token @BotFather gave you for the bot.",
+          "twilioApiKey": "An API key",
+          "twilioAuthTokenOnly": "The Auth Token",
+          "twilioCredential": "Send with",
           "username": "Username"
         },
         "inbound": {
@@ -1849,14 +1907,20 @@ export default interface Resources {
           "sesHint": "AWS SES. Needs a region and an access key.",
           "smtpHint": "Any SMTP server.",
           "telegram": "Telegram bot",
-          "telegramHint": "Your own bot from @BotFather, to message the people who start it."
+          "telegramHint": "Your own bot from @BotFather, to message the people who start it.",
+          "twilio": "Twilio",
+          "twilioHint": "Your own Twilio account, to text Contacts who agreed to it. Needs the Account SID, an API key or the Auth Token, and a sender."
         },
         "saved": "Provider saved",
         "telegramWarning": {
           "body": "If the bot already sends its updates to another tool, that tool stops receiving them. Use a bot dedicated to sphericon.",
           "title": "Connecting replaces the bot's webhook"
         },
-        "title": "Providers"
+        "title": "Providers",
+        "twilioCallbacks": {
+          "body": "sphericon could not set where Twilio posts replies and delivery reports for this sender. In the Twilio Console, paste this address as the inbound message webhook and the status callback, method POST. An alphanumeric sender ID receives no replies.",
+          "title": "Give Twilio the address of {{name}}"
+        }
       },
       "loadErrorTitle": "Failed to load workspace",
       "mcp": {
@@ -2145,6 +2209,10 @@ export default interface Resources {
       "description": "Your path to your first email. Each turns done by itself when the thing exists, in any order.",
       "done": "Done",
       "loadError": "Failed to load the setup checklist",
+      "sms": {
+        "action": "Connect Twilio",
+        "description": "Want to text your Contacts too? Connect your Twilio account as the SMS Integration."
+      },
       "steps": {
         "contact": {
           "actions": {
@@ -2280,9 +2348,21 @@ export default interface Resources {
         "title": "What do you do?"
       }
     },
+    "smsEditor": {
+      "characters": "{{count, number}} character" | "{{count, number}} characters",
+      "counter": "{{characters}} · {{encoding}} · {{segments}}",
+      "insertMergeTag": "Insert a merge tag",
+      "linkTracking": "Track links",
+      "linkTrackingHint": "Each link goes out as a short link on your Tracking domain, so you see its clicks. The count includes the short links. Turn it off to keep your links as written.",
+      "segments": "{{count, number}} segment" | "{{count, number}} segments",
+      "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
+      "textLabel": "Message",
+      "tooLong": "Too long: a text may take {{limit, number}} characters in {{encoding}}. Shorten it to save."
+    },
     "suppressions": {
       "channelEmail": "Email",
       "channelLabel": "Channel",
+      "channelSms": "SMS",
       "channelTelegram": "Telegram",
       "create": "Suppress",
       "createError": "Failed to suppress address",
@@ -2290,6 +2370,7 @@ export default interface Resources {
       "emailHint": "Sends to this address will be skipped",
       "emailLabel": "Email address",
       "empty": "No suppressed addresses",
+      "erasedNumber": "Erased number",
       "lift": "Lift",
       "liftConfirmDescription": "The address will receive mail again. The suppression stays in the list of lifted ones.",
       "liftConfirmTitle": "Lift this suppression?",
@@ -2304,6 +2385,8 @@ export default interface Resources {
         "unsubscribed": "Unsubscribed"
       },
       "showLifted": "Show lifted",
+      "smsHint": "A phone number with its country code. Texts to it through any of the workspace's senders will be skipped.",
+      "smsLabel": "Phone number",
       "telegramHint": "The person's Telegram user id. Telegram sends to it through any of the workspace's bots will be skipped.",
       "telegramLabel": "Telegram user id",
       "title": "Suppression list"
@@ -2384,6 +2467,8 @@ export default interface Resources {
     },
     "unsubscribe": {
       "body": "Press the button below to stop receiving these emails.",
+      "bodySms": "Press the button below to stop receiving text messages from us.",
+      "bodyTelegram": "Press the button below to stop receiving these Telegram messages.",
       "confirm": "Unsubscribe",
       "errorBody": "Something went wrong. Please try again.",
       "errorTitle": "Unsubscribe failed",
@@ -2391,8 +2476,12 @@ export default interface Resources {
     },
     "unsubscribed": {
       "body": "You will no longer receive these emails.",
+      "bodySms": "You will no longer receive text messages from us.",
+      "bodyTelegram": "You will no longer receive these Telegram messages.",
       "title": "Unsubscribed",
-      "unsubscribeAll": "Unsubscribe from all emails"
+      "unsubscribeAll": "Unsubscribe from all emails",
+      "unsubscribeAllSms": "Unsubscribe from all text messages",
+      "unsubscribeAllTelegram": "Unsubscribe from all Telegram messages"
     },
     "usedByKind": {
       "automation": "Automation",

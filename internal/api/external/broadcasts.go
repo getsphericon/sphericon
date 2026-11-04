@@ -141,7 +141,7 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 	}
 
 	// No Asker: /api never sends from the System sender, so its cap never defers the Test send.
-	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), nil); err != nil {
+	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), nil); err != nil {
 		return nil, err
 	}
 	return &externalapi.BroadcastsTestSendNoContent{}, nil

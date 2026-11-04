@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
@@ -229,6 +230,8 @@ func renderable(content outbound.Content) error {
 		return emailrender.Lint(c.Subject, c.Body, nil).Error
 	case outbound.TelegramContent:
 		return telegramrender.Check(c.Text)
+	case outbound.SMSContent:
+		return smsrender.Check(c.Text)
 	default:
 		return fmt.Errorf("broadcasts: no render check for %T", content)
 	}
@@ -239,7 +242,7 @@ func renderable(content outbound.Content) error {
 var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
 
 // destinationOf is the Destination the Broadcast b reaches its audience at, by its Channel (ADR
-// 0080): on email the Contact's address, on Telegram its Bindings on the Integration the Broadcast
+// 0080): on email the Contact's address, on SMS its phone, on Telegram its Bindings on the Integration the Broadcast
 // routes through, the one it names or the Channel's default. A route with none reaches nobody.
 func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligibility.Destination, error) {
 	dest, err := destinationFor(ctx, s, b.Channel, b.IntegrationID)
@@ -255,6 +258,8 @@ func destinationFor(ctx context.Context, s *ent.Scoped, channel broadcast.Channe
 	switch channel {
 	case broadcast.ChannelEmail:
 		return eligibility.EmailDestination(), nil
+	case broadcast.ChannelSms:
+		return eligibility.PhoneDestination(), nil
 	case broadcast.ChannelTelegram:
 		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, integrationID)
 		if errors.Is(err, messaging.ErrNoProvider) {

@@ -32,6 +32,8 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   holds: [],
   mcpUrl: 'https://example.com/mcp',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
+  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
 })

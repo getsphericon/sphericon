@@ -107,9 +107,6 @@ func (_u *TrackedLinkUpdate) check() error {
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "TrackedLink.workspace"`)
 	}
-	if _u.mutation.OutboundMessageCleared() && len(_u.mutation.OutboundMessageIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "TrackedLink.outbound_message"`)
-	}
 	return nil
 }
 
@@ -274,9 +271,6 @@ func (_u *TrackedLinkUpdateOne) defaults() {
 func (_u *TrackedLinkUpdateOne) check() error {
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "TrackedLink.workspace"`)
-	}
-	if _u.mutation.OutboundMessageCleared() && len(_u.mutation.OutboundMessageIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "TrackedLink.outbound_message"`)
 	}
 	return nil
 }

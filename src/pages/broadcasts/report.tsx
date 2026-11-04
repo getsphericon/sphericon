@@ -26,7 +26,8 @@ interface Entry<V> {
 }
 
 // Only the figures the Broadcast's Channel reports are shown: one it does not report is null, and
-// has no card (Telegram has no delivered, opened, bounced or complained count).
+// has no card (Telegram has no delivered, opened, bounced or complained count; only SMS has an
+// undelivered one).
 function reported<V>(entries: Entry<V>[]): { label: string; value: V }[] {
   return entries.flatMap(({ label, value }) => (value === null ? [] : [{ label, value }]))
 }
@@ -43,6 +44,7 @@ function statEntries(
       { label: t(($) => $.broadcasts.stats.skipped), value: stats.skippedCount },
       { label: t(($) => $.broadcasts.stats.pending), value: stats.pendingCount },
       { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
+      { label: t(($) => $.broadcasts.stats.undelivered), value: stats.undeliveredCount },
       { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
       { label: t(($) => $.broadcasts.stats.complained), value: stats.complainedCount },
       { label: t(($) => $.broadcasts.stats.captured), value: stats.capturedCount },

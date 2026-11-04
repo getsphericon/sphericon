@@ -18,10 +18,12 @@ import (
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
@@ -129,6 +131,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationst
 		}
 	}
 	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
@@ -152,6 +155,8 @@ func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) auto
 		automationstepsKind = automationsteps.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
 		automationstepsKind = automationsteps.RemoveTag
+	case site.SiteAutomationStepTypeSMS:
+		automationstepsKind = automationsteps.SMS
 	case site.SiteAutomationStepTypeTelegram:
 		automationstepsKind = automationsteps.Telegram
 	case site.SiteAutomationStepTypeWait:
@@ -223,6 +228,8 @@ func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) broadcast.Ch
 	switch source {
 	case site.BroadcastChannelEmail:
 		broadcastChannel = broadcast.ChannelEmail
+	case site.BroadcastChannelSMS:
+		broadcastChannel = broadcast.ChannelSms
 	case site.BroadcastChannelTelegram:
 		broadcastChannel = broadcast.ChannelTelegram
 	default:
@@ -307,6 +314,15 @@ func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return broadcastsOrder
+}
+func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) consent.Evidence {
+	var consentEvidence consent.Evidence
+	if source != nil {
+		consentEvidence.Wording = (*source).Wording
+		consentEvidence.Source = (*source).Source
+		consentEvidence.Brand = (*source).Brand
+	}
+	return consentEvidence
 }
 func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -672,6 +688,18 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 	}
 	return signupsurveyAnswers
 }
+func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
+	var broadcastsSMSContentInput broadcasts.SMSContentInput
+	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	broadcastsSMSContentInput.LinkTracking = boolPtrIn(source.LinkTracking)
+	return broadcastsSMSContentInput
+}
+func (c *InputsImpl) SmsBroadcastContentPatch(source site.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
+	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
+	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
+	return broadcastsSMSContentPatch
+}
 func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Direction {
 	var paginationDirection pagination.Direction
 	switch source {
@@ -689,6 +717,8 @@ func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) supp
 	switch source {
 	case site.SiteSuppressionChannelEmail:
 		suppressionChannel = suppression.ChannelEmail
+	case site.SiteSuppressionChannelSMS:
+		suppressionChannel = suppression.ChannelSms
 	case site.SiteSuppressionChannelTelegram:
 		suppressionChannel = suppression.ChannelTelegram
 	default:
@@ -740,6 +770,14 @@ func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) templates.
 		templatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
 	return templatesUpdateInput
+}
+func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outbound.TestAddress {
+	var outboundTestAddress outbound.TestAddress
+	if source != nil {
+		outboundTestAddress.Email = emailIn((*source).Email)
+		outboundTestAddress.Phone = stringIn((*source).Phone)
+	}
+	return outboundTestAddress
 }
 func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input

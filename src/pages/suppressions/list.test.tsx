@@ -32,6 +32,8 @@ beforeEach(() => {
           permissions: ['suppressions:manage'],
           mcpUrl: 'https://sphericon.test',
           trackerUrl: 'https://t.sphericon.test',
+          shortLinkLength: 35,
+          smsMaxLength: { gsm7: 1600, ucs2: 700 },
           holds: [],
           role: 'member',
           createdAt: '2026-01-01T00:00:00Z',
@@ -72,6 +74,21 @@ test('lists suppressed addresses with their reason', async () => {
   await expect.element(screen.getByText('Bounced', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Complaint', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Manual', { exact: true })).toBeInTheDocument()
+})
+
+test('a number erased with its Contact shows as an erased number, never as its hash', async () => {
+  const hash = 'a'.repeat(64)
+  worker.use(
+    list([
+      suppression({ channel: 'sms', destination: '+14155550132', reason: 'manual' }),
+      suppression({ id: '2', channel: 'sms', destination: hash, reason: 'manual' }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('+14155550132')).toBeInTheDocument()
+  await expect.element(screen.getByText('Erased number')).toBeInTheDocument()
+  expect(screen.getByText(hash).query()).toBeNull()
 })
 
 test('adds a suppression', async () => {
@@ -115,6 +132,28 @@ test('adds a Telegram suppression by the user id', async () => {
   await dialog.getByRole('button', { name: 'Suppress' }).click()
 
   await expect.poll(() => bodies).toEqual([{ channel: 'telegram', destination: '123456789' }])
+})
+
+test('adds an SMS suppression by the phone number', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([]),
+    handleSiteSuppressionsCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(suppression({ channel: 'sms', reason: 'manual' }), {
+        status: 201,
+      })
+    }),
+  )
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
+
+  await screen.getByRole('button', { name: 'Suppress' }).first().click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText('Channel').selectOptions('sms')
+  await dialog.getByLabelText(/^Phone number/).fill('+14155550132')
+  await dialog.getByRole('button', { name: 'Suppress' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ channel: 'sms', destination: '+14155550132' }])
 })
 
 test('lifts a suppression after confirmation', async () => {

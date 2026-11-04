@@ -24,6 +24,7 @@ import {
   inputTypeOfField,
   haveOperators,
   operatorsOf,
+  smsField,
   telegramField,
   textOperators,
   triggerOperatorsOf,
@@ -55,6 +56,9 @@ const contactFields: Field[] = [
   { name: 'birthday', label: 'Birthday', operators: dateOperators },
   // Whether a Telegram chat is bound to the Contact or its Visitors: no value to type.
   { name: telegramField, label: 'Telegram', operators: haveOperators, defaultOperator: 'has' },
+  // Whether the Contact's phone can be texted (it has an SMS Confirmation and no SMS opt-out): no
+  // value to type.
+  { name: smsField, label: 'SMS', operators: haveOperators, defaultOperator: 'has' },
 ]
 
 interface ConditionBuilderProps {

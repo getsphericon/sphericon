@@ -6,8 +6,11 @@
 //  1. (channel, destination) in Suppression            → never (global hard floor)
 //  2. (channel, destination) unsubscribed "everything"  → never
 //  3. (channel, destination) unsubscribed from source   → never
-//  4. workspace requires confirmed opt-in and no Confirmation → never
+//  4. no Confirmation, where the Channel asks for one     → never
 //  5. otherwise                                         → send
+//
+// Which Channel asks for a Confirmation (ADR 0077): sms always; email only when the Workspace
+// requires confirmed opt-in; a Channel of Bindings never, the Binding being the opt-in.
 //
 // The layers are defined exactly once (see layers) and consumed in two shapes that
 // therefore cannot drift: Check decides one (workspace, destination) pair, and
@@ -138,6 +141,24 @@ func (emailDestination) channel() string { return ChannelEmail }
 
 func (emailDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	s.Where(sql.And(sql.NotNull(s.C(contact.FieldEmail)), eligible(contactRef(s))))
+}
+
+// PhoneDestination is the sms Destination: the Contact's phone, which it must have. It is stored in
+// E.164 on every door (ADR 0075), so the stores are matched on it as it is, or on its hash, which
+// an erased Contact's opt-outs and Suppressions keep instead (ADR 0021); every layer on sms is keyed
+// by the number, never by a sender number.
+func PhoneDestination() Destination { return phoneDestination{} }
+
+type phoneDestination struct{}
+
+func (phoneDestination) channel() string { return ChannelSMS }
+
+func (phoneDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
+	r := ref{
+		workspace:   func(b *sql.Builder) { b.WriteString(s.C(contact.FieldWorkspaceID)) },
+		destination: func(b *sql.Builder) { b.WriteString(s.C(contact.FieldPhone)) },
+	}
+	s.Where(sql.And(sql.NotNull(s.C(contact.FieldPhone)), eligible(r)))
 }
 
 // BindingDestination is the Destination of a Channel of Bindings (ADR 0075): the Contact is reached
@@ -280,16 +301,22 @@ func layers(r ref, channel, source string) []layer {
 			reason: ReasonUnsubscribedSource,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
 		})
-	if channel == ChannelTelegram {
+	unconfirmed := sql.NotExists(match(r, confirmations, channel))
+	switch channel {
+	case ChannelTelegram:
 		// A Binding is the opt-in of a Channel of Bindings: there is no Confirmation to ask for.
 		return out
+	case ChannelSMS:
+		// A text asks for a Confirmation always (ADR 0077): the Workspace's confirmed-opt-in
+		// setting is about email only, and turning it off never relaxes sms.
+		return append(out, layer{reason: ReasonUnconfirmed, blocks: unconfirmed})
 	}
 	return append(out, layer{
 		reason: ReasonUnconfirmed,
 		// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
 		// read in SQL so the default single-opt-in path never touches the
 		// confirmation store and no caller can forget to pass it.
-		blocks: sql.And(requireConfirmed(r), sql.NotExists(match(r, confirmations, channel))),
+		blocks: sql.And(requireConfirmed(r), unconfirmed),
 	})
 }
 
@@ -305,6 +332,18 @@ func match(r ref, st store, channel string, extra ...string) *sql.Selector {
 		// raw sql: the same correlation, on the destination.
 		sql.P(func(b *sql.Builder) { b.WriteString(sub.C(st.destination)).WriteString(" = "); r.destination(b) }),
 		sql.EQ(sub.C(st.channel), channel),
+	}
+	if channel == ChannelSMS {
+		// On sms a row is keyed by the number or, once its Contact was erased, by the number's hash
+		// (phone.Hash, here in SQL), so an erased person's refusal holds when the number comes back.
+		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
+		conds[1] = sql.P(func(b *sql.Builder) {
+			b.WriteString(sub.C(st.destination)).WriteString(" IN (")
+			r.destination(b)
+			b.WriteString(", encode(sha256(convert_to(")
+			r.destination(b)
+			b.WriteString(", 'UTF8')), 'hex'))")
+		})
 	}
 	for _, col := range st.liveWhenNull {
 		conds = append(conds, sql.IsNull(sub.C(col)))

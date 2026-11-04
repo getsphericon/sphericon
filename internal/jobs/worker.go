@@ -94,6 +94,7 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
+	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, time.Now))
 	ruleMod := rules.New(cipher, bus)
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})

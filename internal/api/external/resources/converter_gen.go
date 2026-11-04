@@ -11,6 +11,7 @@ import (
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
+	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
 	integration "github.com/getsphericon/sphericon/ent/integration"
@@ -27,11 +28,13 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consent "github.com/getsphericon/sphericon/internal/consent"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
@@ -234,6 +237,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 		}
 	}
 	externalapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
+	externalapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return externalapiAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
@@ -247,6 +251,8 @@ func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
 	case automationsteps.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
+	case automationsteps.SMS:
+		externalapiAutomationStepType = external.AutomationStepTypeSMS
 	case automationsteps.Telegram:
 		externalapiAutomationStepType = external.AutomationStepTypeTelegram
 	case automationsteps.Wait:
@@ -333,6 +339,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) ext
 	switch source {
 	case broadcast.ChannelEmail:
 		externalapiBroadcastChannel = external.BroadcastChannelEmail
+	case broadcast.ChannelSms:
+		externalapiBroadcastChannel = external.BroadcastChannelSMS
 	case broadcast.ChannelTelegram:
 		externalapiBroadcastChannel = external.BroadcastChannelTelegram
 	default:
@@ -363,6 +371,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
 	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
 	externalapiBroadcastReport.DeliveredCount = nilInt32(source.Figures.Delivered)
+	externalapiBroadcastReport.UndeliveredCount = nilInt32(source.Figures.Undelivered)
 	externalapiBroadcastReport.BouncedCount = nilInt32(source.Figures.Bounced)
 	externalapiBroadcastReport.ComplainedCount = nilInt32(source.Figures.Complained)
 	externalapiBroadcastReport.CapturedCount = nilInt32(source.Figures.Captured)
@@ -512,6 +521,37 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) ext
 	externalapiCnameRecord.Target = source.Target
 	return externalapiCnameRecord
 }
+func (c *ConverterImpl) ConfirmationChannelToResource(source confirmation.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case confirmation.ChannelEmail:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case confirmation.ChannelSms:
+		externalapiConsentChannel = external.ConsentChannelSMS
+	case confirmation.ChannelTelegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
+}
+func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) external.ConfirmationProvenance {
+	var externalapiConfirmationProvenance external.ConfirmationProvenance
+	switch source {
+	case confirmation.ProvenanceDoubleOptIn:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceDoubleOptIn
+	case confirmation.ProvenanceGrandfathered:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceGrandfathered
+	case confirmation.ProvenanceImported:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceImported
+	case confirmation.ProvenanceKeyword:
+		externalapiConfirmationProvenance = external.ConfirmationProvenanceKeyword
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConfirmationProvenance
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
 	if source != nil {
@@ -519,9 +559,26 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.
 		externalapiContactExportConfirmation.Channel = string((*source).Channel)
 		externalapiContactExportConfirmation.Destination = (*source).Destination
 		externalapiContactExportConfirmation.Provenance = string((*source).Provenance)
+		externalapiContactExportConfirmation.Wording = optNilString((*source).Wording)
+		externalapiContactExportConfirmation.Source = optNilString((*source).Source)
+		externalapiContactExportConfirmation.Brand = optNilString((*source).Brand)
 		externalapiContactExportConfirmation.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportConfirmation
+}
+func (c *ConverterImpl) ConfirmationToResource(source *ent.Confirmation) external.ConfirmationResource {
+	var externalapiConfirmationResource external.ConfirmationResource
+	if source != nil {
+		externalapiConfirmationResource.ID = external.EntityId((*source).ID)
+		externalapiConfirmationResource.Channel = c.ConfirmationChannelToResource((*source).Channel)
+		externalapiConfirmationResource.Destination = (*source).Destination
+		externalapiConfirmationResource.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		externalapiConfirmationResource.Wording = optNilString((*source).Wording)
+		externalapiConfirmationResource.Source = optNilString((*source).Source)
+		externalapiConfirmationResource.Brand = optNilString((*source).Brand)
+		externalapiConfirmationResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiConfirmationResource
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource
@@ -873,6 +930,8 @@ func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provide
 		externalapiIntegrationProvider = external.IntegrationProviderSes
 	case integration.ProviderTelegram:
 		externalapiIntegrationProvider = external.IntegrationProviderTelegram
+	case integration.ProviderTwilio:
+		externalapiIntegrationProvider = external.IntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -953,6 +1012,26 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external
 	externalapiMessageRevenue.Amount = source.Credited.Amount
 	return externalapiMessageRevenue
 }
+func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) external.OptOutVia {
+	var externalapiOptOutVia external.OptOutVia
+	switch source {
+	case unsubscribe.ViaBlock:
+		externalapiOptOutVia = external.OptOutViaBlock
+	case unsubscribe.ViaButton:
+		externalapiOptOutVia = external.OptOutViaButton
+	case unsubscribe.ViaKeyword:
+		externalapiOptOutVia = external.OptOutViaKeyword
+	case unsubscribe.ViaLink:
+		externalapiOptOutVia = external.OptOutViaLink
+	case unsubscribe.ViaManual:
+		externalapiOptOutVia = external.OptOutViaManual
+	case unsubscribe.ViaRefusedSend:
+		externalapiOptOutVia = external.OptOutViaRefusedSend
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiOptOutVia
+}
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) external.ContactExportOutboundMessage {
 	var externalapiContactExportOutboundMessage external.ContactExportOutboundMessage
 	if source != nil {
@@ -969,6 +1048,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		externalapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
+		externalapiContactExportOutboundMessage.UndeliveredAt = optNilTimestamp((*source).UndeliveredAt)
+		externalapiContactExportOutboundMessage.UndeliveredCode = optNilString((*source).UndeliveredCode)
 		externalapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
 		externalapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
@@ -1269,6 +1350,57 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) ext
 	externalapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
 	return externalapiSesConfig
 }
+func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) external.SmsBroadcastContent {
+	var externalapiSmsBroadcastContent external.SmsBroadcastContent
+	if source != nil {
+		externalapiSmsBroadcastContent.Channel = smsContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			externalapiSmsBroadcastContent.Text = *(*source).Text
+		}
+		externalapiSmsBroadcastContent.LinkTracking = (*source).LinkTracking
+	}
+	return externalapiSmsBroadcastContent
+}
+func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) external.SmsConfirmation {
+	var externalapiSmsConfirmation external.SmsConfirmation
+	if source != nil {
+		externalapiSmsConfirmation.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
+		externalapiSmsConfirmation.Wording = optNilString((*source).Wording)
+		externalapiSmsConfirmation.Source = optNilString((*source).Source)
+		externalapiSmsConfirmation.Brand = optNilString((*source).Brand)
+		externalapiSmsConfirmation.ConfirmedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiSmsConfirmation
+}
+func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) external.SmsConsent {
+	var externalapiSmsConsent external.SmsConsent
+	externalapiSmsConsent.Phone = optNilString(source.Phone)
+	externalapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
+	externalapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
+	return externalapiSmsConsent
+}
+func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) external.SmsFromKind {
+	var externalapiSmsFromKind external.SmsFromKind
+	switch source {
+	case messaging.SMSFromAlphanumeric:
+		externalapiSmsFromKind = external.SmsFromKindAlphanumeric
+	case messaging.SMSFromMessagingService:
+		externalapiSmsFromKind = external.SmsFromKindMessagingService
+	case messaging.SMSFromNumber:
+		externalapiSmsFromKind = external.SmsFromKindNumber
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSmsFromKind
+}
+func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) external.SmsOptOut {
+	var externalapiSmsOptOut external.SmsOptOut
+	if source != nil {
+		externalapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
+		externalapiSmsOptOut.OptedOutAt = timestamp((*source).OptedOutAt)
+	}
+	return externalapiSmsOptOut
+}
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) external.SmtpConfig {
 	var externalapiSmtpConfig external.SmtpConfig
 	externalapiSmtpConfig.Kind = smtpConfigKind(source)
@@ -1285,18 +1417,20 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.
 	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return externalapiTelegramStartLinkResource
 }
-func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.ConsentChannel {
-	var externalapiConsentChannel external.ConsentChannel
+func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.SuppressionChannel {
+	var externalapiSuppressionChannel external.SuppressionChannel
 	switch source {
 	case suppression.ChannelEmail:
-		externalapiConsentChannel = external.ConsentChannelEmail
+		externalapiSuppressionChannel = external.SuppressionChannelEmail
+	case suppression.ChannelSms:
+		externalapiSuppressionChannel = external.SuppressionChannelSMS
 	case suppression.ChannelTelegram:
-		externalapiConsentChannel = external.ConsentChannelTelegram
-	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
+		externalapiSuppressionChannel = external.SuppressionChannelTelegram
+	// Skipped DefaultChannel(email) -> SuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return externalapiConsentChannel
+	return externalapiSuppressionChannel
 }
 func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) external.SuppressionReason {
 	var externalapiSuppressionReason external.SuppressionReason
@@ -1489,11 +1623,23 @@ func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.S
 	}
 	return externalapiTransactionalSendStatus
 }
+func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) external.TwilioConfig {
+	var externalapiTwilioConfig external.TwilioConfig
+	externalapiTwilioConfig.Kind = twilioConfigKind(source)
+	externalapiTwilioConfig.AccountSid = source.AccountSID
+	externalapiTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
+	externalapiTwilioConfig.From = source.From
+	externalapiTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
+	externalapiTwilioConfig.CallbacksSet = source.CallbacksSet
+	return externalapiTwilioConfig
+}
 func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel) external.ConsentChannel {
 	var externalapiConsentChannel external.ConsentChannel
 	switch source {
 	case unsubscribe.ChannelEmail:
 		externalapiConsentChannel = external.ConsentChannelEmail
+	case unsubscribe.ChannelSms:
+		externalapiConsentChannel = external.ConsentChannelSMS
 	case unsubscribe.ChannelTelegram:
 		externalapiConsentChannel = external.ConsentChannelTelegram
 	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
@@ -1509,6 +1655,7 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.Co
 		externalapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		externalapiContactExportUnsubscribe.Destination = (*source).Destination
 		externalapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
+		externalapiContactExportUnsubscribe.Via = optNilOptOutVia(c, (*source).Via)
 		externalapiContactExportUnsubscribe.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportUnsubscribe

@@ -4,12 +4,15 @@ import {
   Alert,
   Button,
   Checkbox,
+  Code,
   Collapse,
+  CopyButton,
   Group,
   Menu,
   Modal,
   NumberInput,
   Paper,
+  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -23,6 +26,7 @@ import {
   IconBrandAws,
   IconBrandTelegram,
   IconMailOpened,
+  IconMessage,
   IconPlugConnected,
   IconServer,
 } from '@tabler/icons-react'
@@ -70,20 +74,33 @@ type ProviderKind = SiteIntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
 // contract-copy: the first step's tiles, a UI choice that adds sesCompatible to the provider enum
-type Tile = 'ses' | 'sesCompatible' | 'smtp' | 'inbox' | 'telegram'
+type Tile = 'ses' | 'sesCompatible' | 'smtp' | 'inbox' | 'telegram' | 'twilio'
 
 // contract-copy: the same tiles in display order
-const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox', 'telegram']
+const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox', 'telegram', 'twilio']
 
 // The provider a tile connects.
 function providerOf(tile: Tile): ProviderKind {
   return tile === 'sesCompatible' ? 'ses' : tile
 }
 
-// The Channel a tile's provider sends on: a Telegram bot on telegram, every other on email.
-function channelOf(tile: Tile | null): SiteIntegrationChannel {
-  return tile === 'telegram' ? 'telegram' : 'email'
+// The Channel each provider sends on (an Integration serves one Channel, ADR 0074). The API reads
+// it back on each Integration as `channel`; a form for a provider not connected yet has none to read.
+const CHANNEL_OF: Record<ProviderKind, SiteIntegrationChannel> = {
+  ses: 'email',
+  smtp: 'email',
+  inbox: 'email',
+  telegram: 'telegram',
+  twilio: 'sms',
 }
+
+// The Channel a tile's provider sends on; email before a tile is picked.
+function channelOf(tile: Tile | null): SiteIntegrationChannel {
+  return tile === null ? 'email' : CHANNEL_OF[providerOf(tile)]
+}
+
+// How a Twilio account sends: with an API key and its secret, or with the Auth Token.
+type TwilioCredential = 'apiKey' | 'authToken'
 
 // contract-copy: the Channels in the order the list groups them
 const CHANNELS: SiteIntegrationChannel[] = ['email', 'telegram', 'sms']
@@ -105,6 +122,11 @@ interface IntegrationFormValues extends ProviderLimitValues {
   from: string
   fromName: string
   token: string
+  twilioCredential: TwilioCredential
+  accountSid: string
+  apiKeySid: string
+  apiKeySecret: string
+  authToken: string
 }
 
 const INITIAL_VALUES: IntegrationFormValues = {
@@ -122,6 +144,11 @@ const INITIAL_VALUES: IntegrationFormValues = {
   from: '',
   fromName: '',
   token: '',
+  twilioCredential: 'apiKey',
+  accountSid: '',
+  apiKeySid: '',
+  apiKeySecret: '',
+  authToken: '',
   ...NO_LIMITS,
 }
 
@@ -129,6 +156,9 @@ const INITIAL_VALUES: IntegrationFormValues = {
 function defaultName(values: IntegrationFormValues): string {
   if (values.provider === 'telegram') {
     return 'Telegram bot'
+  }
+  if (values.provider === 'twilio') {
+    return `Twilio (${values.from.trim()})`
   }
   if (values.provider === 'smtp') {
     return values.host.trim()
@@ -140,6 +170,16 @@ function defaultName(values: IntegrationFormValues): string {
 function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
   if (values.provider === 'telegram') {
     return { kind: 'telegram', token: values.token.trim() }
+  }
+  if (values.provider === 'twilio') {
+    const withKey = values.twilioCredential === 'apiKey'
+    return {
+      kind: 'twilio',
+      accountSid: values.accountSid.trim(),
+      apiKeySid: withKey ? values.apiKeySid.trim() : null,
+      secret: withKey ? values.apiKeySecret.trim() : values.authToken.trim(),
+      from: values.from.trim(),
+    }
   }
   if (values.provider === 'ses') {
     return {
@@ -161,6 +201,150 @@ function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
     from: values.from.trim(),
     fromName: values.fromName.trim() || null,
   }
+}
+
+// EmailFields asks for an email provider's credentials, SES's or an SMTP server's, and its From.
+function EmailFields({
+  form,
+  isSes,
+}: {
+  form: Pick<ReturnType<typeof useForm<IntegrationFormValues>>, 'getInputProps'>
+  isSes: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {isSes ? (
+        <Group grow>
+          <TextInput
+            label={t(($) => $.settings.integrations.fields.region)}
+            required
+            {...form.getInputProps('region')}
+          />
+          <TextInput
+            label={t(($) => $.settings.integrations.fields.accessKeyId)}
+            required
+            {...form.getInputProps('accessKeyId')}
+          />
+          <TextInput
+            label={t(($) => $.settings.integrations.fields.secretAccessKey)}
+            type="password"
+            required
+            {...form.getInputProps('secretAccessKey')}
+          />
+        </Group>
+      ) : null}
+      {isSes ? null : (
+        <>
+          <Group grow>
+            <TextInput
+              label={t(($) => $.settings.integrations.fields.host)}
+              required
+              {...form.getInputProps('host')}
+            />
+            <NumberInput
+              label={t(($) => $.settings.integrations.fields.port)}
+              required
+              {...form.getInputProps('port')}
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              label={t(($) => $.settings.integrations.fields.username)}
+              {...form.getInputProps('username')}
+            />
+            <TextInput
+              label={t(($) => $.settings.integrations.fields.password)}
+              type="password"
+              {...form.getInputProps('password')}
+            />
+          </Group>
+        </>
+      )}
+      <TextInput
+        label={t(($) => $.settings.integrations.fields.from)}
+        required
+        {...form.getInputProps('from')}
+      />
+    </>
+  )
+}
+
+// TwilioFields asks for a Twilio account: the Account SID, the send credential (an API key and its
+// secret, or the Auth Token), the Auth Token its callbacks are signed with, and the sender.
+function TwilioFields({
+  form,
+}: {
+  form: Pick<ReturnType<typeof useForm<IntegrationFormValues>>, 'getInputProps' | 'values'>
+}) {
+  const { t } = useTranslation()
+  const withAPIKey = form.values.twilioCredential === 'apiKey'
+  return (
+    <>
+      <TextInput
+        label={t(($) => $.settings.integrations.fields.accountSid)}
+        placeholder="AC…"
+        required
+        {...form.getInputProps('accountSid')}
+      />
+      <SegmentedControl
+        aria-label={t(($) => $.settings.integrations.fields.twilioCredential)}
+        data={[
+          {
+            value: 'apiKey',
+            label: t(($) => $.settings.integrations.fields.twilioApiKey),
+          },
+          {
+            value: 'authToken',
+            label: t(($) => $.settings.integrations.fields.twilioAuthTokenOnly),
+          },
+        ]}
+        {...form.getInputProps('twilioCredential')}
+      />
+      {withAPIKey ? (
+        <Group grow align="flex-start">
+          <TextInput
+            label={t(($) => $.settings.integrations.fields.apiKeySid)}
+            placeholder="SK…"
+            required
+            {...form.getInputProps('apiKeySid')}
+          />
+          <TextInput
+            label={t(($) => $.settings.integrations.fields.apiKeySecret)}
+            type="password"
+            required
+            {...form.getInputProps('apiKeySecret')}
+          />
+        </Group>
+      ) : null}
+      <TextInput
+        label={t(($) => $.settings.integrations.fields.authToken)}
+        description={
+          withAPIKey
+            ? t(($) => $.settings.integrations.fields.authTokenHint)
+            : t(($) => $.settings.integrations.fields.authTokenSendsHint)
+        }
+        type="password"
+        required
+        {...form.getInputProps('authToken')}
+      />
+      <TextInput
+        label={t(($) => $.settings.integrations.fields.smsFrom)}
+        description={t(($) => $.settings.integrations.fields.smsFromHint)}
+        required
+        {...form.getInputProps('from')}
+      />
+      <Text c="dimmed" size="sm">
+        {t(($) => $.settings.integrations.carrierRegistration)}
+      </Text>
+    </>
+  )
+}
+
+// paramsOf is the params a new Integration is created with: a Twilio account's callbacks are signed
+// with its Auth Token, kept apart from the send credential so either rotates alone.
+function paramsOf(values: IntegrationFormValues): { params?: { auth_token: string } } {
+  return values.provider === 'twilio' ? { params: { auth_token: values.authToken.trim() } } : {}
 }
 
 // The Workspace's providers, read by the list and by the create form. A deleted one is not listed.
@@ -216,6 +400,34 @@ function IntegrationsList({
         </Alert>
       ))}
 
+      {records.map((record) =>
+        record.config.kind === 'twilio' && !record.config.callbacksSet ? (
+          <Alert
+            key={`callbacks-${record.id}`}
+            color="yellow"
+            variant="light"
+            title={t(($) => $.settings.integrations.twilioCallbacks.title, {
+              name: record.name,
+            })}
+            mb="sm"
+          >
+            <Stack gap="xs">
+              <Text size="sm">{t(($) => $.settings.integrations.twilioCallbacks.body)}</Text>
+              <Code block>{record.hookUrl}</Code>
+              <Group>
+                <CopyButton value={record.hookUrl}>
+                  {({ copied, copy }) => (
+                    <Button size="compact-sm" variant="light" onClick={copy}>
+                      {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
+                    </Button>
+                  )}
+                </CopyButton>
+              </Group>
+            </Stack>
+          </Alert>
+        ) : null,
+      )}
+
       {groups.map(({ channel, rows }) => (
         <Stack key={channel} gap="xs" mb="md">
           {groups.length > 1 || channel !== 'email' ? (
@@ -231,10 +443,12 @@ function IntegrationsList({
               {
                 accessor: 'provider',
                 title: t(($) => $.settings.integrations.providerLabel),
-                render: (record) =>
-                  record.config.kind === 'telegram'
-                    ? `@${record.config.username}`
-                    : record.provider,
+                render: (record) => {
+                  if (record.config.kind === 'telegram') {
+                    return `@${record.config.username}`
+                  }
+                  return record.config.kind === 'twilio' ? record.config.from : record.provider
+                },
               },
               {
                 accessor: 'isDefault',
@@ -372,8 +586,14 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
       hint: t(($) => $.settings.integrations.providers.telegramHint),
       icon: <IconBrandTelegram size={22} />,
     },
+    twilio: {
+      title: t(($) => $.settings.integrations.providers.twilio),
+      hint: t(($) => $.settings.integrations.providers.twilioHint),
+      icon: <IconMessage size={22} />,
+    },
   }
   const isTelegram = form.values.provider === 'telegram'
+  const isTwilio = form.values.provider === 'twilio'
   const isSes = form.values.provider === 'ses'
   const compatible = tile === 'sesCompatible'
   // An SES-compatible service needs its Provider limit (ADR 0067), so there the fields are required
@@ -398,8 +618,11 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
           </Button>
         ) : null}
       </Group>
-      <Text c="dimmed" size="sm" mb="md">
+      <Text c="dimmed" size="sm" mb="xs">
         {t(($) => $.settings.integrations.description)}
+      </Text>
+      <Text c="dimmed" size="sm" mb="md">
+        {t(($) => $.settings.integrations.carrierRegistration)}
       </Text>
 
       <QueryBoundary
@@ -460,6 +683,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     maxPerSecond: toLimit(values.maxPerSecond),
                     maxPerDay: toLimit(values.maxPerDay),
                     config: buildConfig(values),
+                    ...paramsOf(values),
                   },
                 }),
               )}
@@ -483,6 +707,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     />
                   </>
                 ) : null}
+                {isTwilio ? <TwilioFields form={form} /> : null}
                 {compatible ? (
                   <TextInput
                     label={t(($) => $.settings.integrations.fields.endpoint)}
@@ -492,61 +717,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                     {...form.getInputProps('endpoint')}
                   />
                 ) : null}
-                {!isTelegram && isSes ? (
-                  <Group grow>
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.region)}
-                      required
-                      {...form.getInputProps('region')}
-                    />
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.accessKeyId)}
-                      required
-                      {...form.getInputProps('accessKeyId')}
-                    />
-                    <TextInput
-                      label={t(($) => $.settings.integrations.fields.secretAccessKey)}
-                      type="password"
-                      required
-                      {...form.getInputProps('secretAccessKey')}
-                    />
-                  </Group>
-                ) : null}
-                {!isTelegram && !isSes ? (
-                  <>
-                    <Group grow>
-                      <TextInput
-                        label={t(($) => $.settings.integrations.fields.host)}
-                        required
-                        {...form.getInputProps('host')}
-                      />
-                      <NumberInput
-                        label={t(($) => $.settings.integrations.fields.port)}
-                        required
-                        {...form.getInputProps('port')}
-                      />
-                    </Group>
-                    <Group grow>
-                      <TextInput
-                        label={t(($) => $.settings.integrations.fields.username)}
-                        {...form.getInputProps('username')}
-                      />
-                      <TextInput
-                        label={t(($) => $.settings.integrations.fields.password)}
-                        type="password"
-                        {...form.getInputProps('password')}
-                      />
-                    </Group>
-                  </>
-                ) : null}
-
-                {isTelegram ? null : (
-                  <TextInput
-                    label={t(($) => $.settings.integrations.fields.from)}
-                    required
-                    {...form.getInputProps('from')}
-                  />
-                )}
+                {isTelegram || isTwilio ? null : <EmailFields form={form} isSes={isSes} />}
 
                 {compatible ? (
                   <>
@@ -570,7 +741,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                         placeholder={defaultName(form.values)}
                         {...form.getInputProps('name')}
                       />
-                      {isTelegram ? null : (
+                      {isTelegram || isTwilio ? null : (
                         <TextInput
                           label={t(($) => $.settings.integrations.fields.fromName)}
                           {...form.getInputProps('fromName')}

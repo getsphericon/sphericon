@@ -267,9 +267,10 @@ func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBr
 
 // BroadcastsTestSend implements Broadcasts_testSend operation.
 //
-// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
-// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
-// 422.
+// Send a rendered preview with sample merge data to a single address: an email broadcast to the
+// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
+// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
+// a Telegram broadcast is a 422.
 //
 // POST /broadcasts/{id}/test-send
 func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (r BroadcastsTestSendRes, _ error) {
@@ -338,6 +339,19 @@ func (UnimplementedHandler) CapturedMessagesGet(ctx context.Context, params Capt
 //
 // GET /captured-messages
 func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (r CapturedMessagesListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ConfirmationsCreate implements Confirmations_create operation.
+//
+// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
+// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
+// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
+// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
+// does not lift an opt-out: only the person can, by texting START.
+//
+// POST /confirmations
+func (UnimplementedHandler) ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (r ConfirmationsCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -867,6 +881,18 @@ func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params Sen
 	return r, ht.ErrNotImplemented
 }
 
+// SmsConsentsGet implements SmsConsents_get operation.
+//
+// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
+// consented, with the wording, source and brand it carries) and its opt-out from every SMS of the
+// Workspace (when, and how the person stopped). Both are keyed by the number, so they follow the phone
+// the contact has now.
+//
+// GET /contacts/{contactId}/sms-consent
+func (UnimplementedHandler) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (r SmsConsentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SuppressionsCreate implements Suppressions_create operation.
 //
 // Suppress a destination so no surface sends to it (a manual Suppression). Idempotent: an
@@ -1026,8 +1052,8 @@ func (UnimplementedHandler) TrackingDomainsVerify(ctx context.Context, params Tr
 
 // UnsubscribesCreate implements Unsubscribes_create operation.
 //
-// Record that a destination unsubscribed from a sending source (default `broadcasts`). Idempotent.
-// Resubscribing is not available through the API.
+// Record that a destination unsubscribed from a sending source (default `broadcasts`), for an opt-out
+// that reached you by any route. Idempotent. Resubscribing is not available through the API.
 //
 // POST /unsubscribes
 func (UnimplementedHandler) UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (r UnsubscribesCreateRes, _ error) {

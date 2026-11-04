@@ -292,6 +292,10 @@ type Config struct {
 	// `telegram-bot-api` server of a Self-hoster, or a test's fake.
 	TelegramBotAPIURL string
 
+	// TwilioAPIURL is the base URL every SMS Integration's Twilio REST calls go to, without a
+	// trailing slash: Twilio's own API by default, a regional edge, or a test's fake.
+	TwilioAPIURL string
+
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
@@ -434,7 +438,7 @@ type environment struct {
 	// the prune job, which runs every 10 minutes, may delete it (ADR 0019).
 	OutboxFloorDays int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
 	// The age, in days, past which analytical Events are deleted by a daily job; `0` disables it
-	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `email.complained`,
+	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `sms.confirmed`, `email.complained`,
 	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age.
 	EventsRetentionDays int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
 	// The age, in days, past which an Unverified User with no Membership is deleted by a daily job,
@@ -523,6 +527,11 @@ type environment struct {
 	// that runs the Bot API on your own infrastructure, such as `http://telegram-bot-api:8081`. Calls
 	// go to `<url>/bot<token>/<method>`.
 	TelegramBotAPIURL string `env:"SPHERICON_TELEGRAM_BOT_API_URL" envDefault:"https://api.telegram.org"`
+	// The base URL of Twilio's REST API every Workspace's SMS Integration is reached at: Twilio's own
+	// API by default, or a regional edge such as `https://api.dublin.ie1.twilio.com`. The Messaging
+	// Services API is reached at the same host with its first label `messaging` instead of `api`; a
+	// base whose host does not start with `api.` (a proxy, a test's fake) takes both APIs' calls.
+	TwilioAPIURL string `env:"SPHERICON_TWILIO_API_URL" envDefault:"https://api.twilio.com"`
 
 	// The edge host a Workspace's Tracking domain (e.g. `t.example.com`) is a CNAME to, such as
 	// `edge.example.com` (ADR 0038, ADR 0071). Empty turns Tracking domains off: the section is
@@ -667,6 +676,11 @@ func Load(envName string) (*Config, error) {
 		return nil, err
 	}
 
+	twilioURL, err := parseBaseURL("SPHERICON_TWILIO_API_URL", e.TwilioAPIURL)
+	if err != nil {
+		return nil, err
+	}
+
 	edgeCIDRs, err := parseCIDRs("SPHERICON_TRACKING_EDGE_CIDRS", e.TrackingEdgeCIDRs)
 	if err != nil {
 		return nil, err
@@ -754,6 +768,7 @@ func Load(envName string) (*Config, error) {
 		PresetsDir:      e.PresetsDir,
 
 		TelegramBotAPIURL: telegramURL,
+		TwilioAPIURL:      twilioURL,
 
 		TrackingCNAMETarget: strings.ToLower(strings.TrimSuffix(strings.TrimSpace(e.TrackingCNAMETarget), ".")),
 		TrackingHostHeader:  strings.TrimSpace(e.TrackingHostHeader),

@@ -6,6 +6,12 @@ status: accepted
 
 > **Amended by #962:** a `/start` from a Destination with a Channel-wide opt-out lifts it (see
 > "An unknown sender creates nothing").
+>
+> **Amended by #1035:** a Delivery notice names its Channel (email when it names none) and keeps
+> the provider's own status and error code; the Ingest hook drops a notice of another Channel
+> than its Integration's, as it drops such an Inbound message. A Preset reads a form-encoded body
+> as well as JSON, and its request carries the full URL it was posted to, which the `twilio`
+> verification signs.
 
 ADR 0037 made a provider's callbacks a Preset whose transform returns Delivery notices only. The new
 Channels (ADR 0074) send more back: a person's message (an SMS reply, a Telegram `/start`, a

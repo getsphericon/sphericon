@@ -34,6 +34,7 @@ transform: |
   elif .body.case == "reachable-with-reason" then [{kind: "reachability_change", id: "1", destination: "42", reachable: true, reason: "blocked"}]
   elif .body.case == "reachability-no-flag" then [{kind: "reachability_change", id: "1", destination: "42"}]
   elif .body.case == "mixed" then [range(51) | {kind: "inbound_message", id: tostring, channel: "telegram", destination: "42"}, {id: tostring, destination: "a@example.com", kind: "bounce"}]
+  elif .body.case == "undelivered-email" then [{id: "1", destination: "a@example.com", kind: "undelivered"}]
   elif .body.case == "env" then [{id: "1", destination: ($ENV.HOME // "env-is-empty@example.com"), kind: "bounce"}]
   else [] end
 tests:
@@ -52,6 +53,10 @@ tests:
   - name: an unknown kind is refused
     params: *params
     request: { headers: *headers, body: '{"case":"kind"}' }
+    expect: { refused: transform_failed }
+  - name: an undelivered notice on email is refused, email says bounced
+    params: *params
+    request: { headers: *headers, body: '{"case":"undelivered-email"}' }
     expect: { refused: transform_failed }
   - name: an over-long string is refused
     params: *params

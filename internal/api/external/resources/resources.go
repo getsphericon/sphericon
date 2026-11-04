@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -33,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
@@ -40,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -88,6 +91,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
+// goverter:extend optNilOptOutVia
+// goverter:extend optNilSmsConfirmation
+// goverter:extend optNilSmsOptOut
 // goverter:extend optNilHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
@@ -125,6 +131,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend nilFloat32
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
+// goverter:extend smsContentChannel
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
@@ -137,6 +144,8 @@ type Converter interface {
 	EmailBroadcastContentToResource(source *ent.Broadcast) externalapi.EmailBroadcastContent
 	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
 	TelegramBroadcastContentToResource(source *ent.Broadcast) externalapi.TelegramBroadcastContent
+	// The SMS content of an SMS Broadcast, the arm of its content that broadcastContent wraps.
+	SmsBroadcastContentToResource(source *ent.Broadcast) externalapi.SmsBroadcastContent
 	// goverter:useEmptyOnNil:slice
 	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
@@ -151,6 +160,7 @@ type Converter interface {
 	// goverter:map Figures.Clicked ClickedCount
 	// goverter:map Figures.Unsubscribed UnsubscribedCount
 	// goverter:map Figures.Delivered DeliveredCount
+	// goverter:map Figures.Undelivered UndeliveredCount
 	// goverter:map Figures.Bounced BouncedCount
 	// goverter:map Figures.Complained ComplainedCount
 	// goverter:map Figures.Captured CapturedCount
@@ -264,6 +274,12 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) externalapi.TelegramConfig
+	// goverter:enum:transform value
+	SmsFromKindToResource(source messaging.SMSFromKind) externalapi.SmsFromKind
+	// goverter:map . Kind | twilioConfigKind
+	// goverter:map AccountSID AccountSid
+	// goverter:map . ApiKeySid | twilioAPIKeySID
+	TwilioConfigToResource(source integrations.RedactedTwilio) externalapi.TwilioConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
@@ -354,6 +370,11 @@ type Converter interface {
 
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
+	ConfirmationToResource(source *ent.Confirmation) externalapi.ConfirmationResource
+	SmsConsentToResource(source consent.ContactSMS) externalapi.SmsConsent
+	SmsOptOutToResource(source *consent.SMSOptOut) externalapi.SmsOptOut
+	// goverter:map CreatedAt ConfirmedAt
+	SmsConfirmationToResource(source *ent.Confirmation) externalapi.SmsConfirmation
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -433,6 +454,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) externalapi.ContactExportSource
 	// goverter:enum:transform value
+	OptOutViaToResource(source unsubscribe.Via) externalapi.OptOutVia
+	// goverter:enum:transform value
 	HoldReasonToResource(source holdreason.Reason) externalapi.HoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
@@ -463,9 +486,13 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
 	// goverter:enum:transform value
-	SuppressionChannelToResource(source suppression.Channel) externalapi.ConsentChannel
+	SuppressionChannelToResource(source suppression.Channel) externalapi.SuppressionChannel
 	// goverter:enum:transform value
 	UnsubscribeChannelToResource(source unsubscribe.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	ConfirmationChannelToResource(source confirmation.Channel) externalapi.ConsentChannel
+	// goverter:enum:transform value
+	ConfirmationProvenanceToResource(source confirmation.Provenance) externalapi.ConfirmationProvenance
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) externalapi.SuppressionReason
 	// goverter:enum:transform value
@@ -577,9 +604,16 @@ func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastConten
 		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
 	case broadcast.ChannelTelegram:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	case broadcast.ChannelSms:
+		return externalapi.BroadcastContent{OneOf: externalapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return externalapi.BroadcastContent{}
 	}
+}
+
+// smsContentChannel is the discriminator of SMS's content arm.
+func smsContentChannel(broadcast.Channel) externalapi.SmsBroadcastContentChannel {
+	return externalapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.
@@ -729,6 +763,18 @@ func sesConfigKind(integrations.RedactedSES) externalapi.SesConfigKind {
 	return externalapi.SesConfigKindSes
 }
 
+func twilioConfigKind(integrations.RedactedTwilio) externalapi.TwilioConfigKind {
+	return externalapi.TwilioConfigKindTwilio
+}
+
+// twilioAPIKeySID is the API key messages are sent with, null when they are sent with the Auth Token.
+func twilioAPIKeySID(c integrations.RedactedTwilio) externalapi.NilString {
+	if c.APIKeySID == "" {
+		return externalapi.NilString{Null: true}
+	}
+	return externalapi.NewNilString(c.APIKeySID)
+}
+
 func telegramConfigKind(integrations.RedactedTelegram) externalapi.TelegramConfigKind {
 	return externalapi.TelegramConfigKindTelegram
 }
@@ -801,6 +847,26 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 
 func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
 	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
+}
+
+// optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
+func optNilSmsConfirmation(c Converter, v *ent.Confirmation) externalapi.OptNilSmsConfirmation {
+	if v == nil {
+		return externalapi.OptNilSmsConfirmation{}
+	}
+	return externalapi.NewOptNilSmsConfirmation(c.SmsConfirmationToResource(v))
+}
+
+// optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
+func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) externalapi.OptNilSmsOptOut {
+	if v == nil {
+		return externalapi.OptNilSmsOptOut{}
+	}
+	return externalapi.NewOptNilSmsOptOut(c.SmsOptOutToResource(v))
+}
+
+func optNilOptOutVia(c Converter, v *unsubscribe.Via) externalapi.OptNilOptOutVia {
+	return convert.OptVia[externalapi.OptNilOptOutVia](v, c.OptOutViaToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) externalapi.OptNilHoldReason {

@@ -19,7 +19,7 @@ import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
-import { contactFullName, contactName } from '../../utils/contactName.ts'
+import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryOptions } from '../../utils/countries.ts'
 import { ContactCreateModal } from './resource.tsx'
 
@@ -195,7 +195,7 @@ export function ContactsListPage() {
             filtering: Boolean(country),
             render: (record) => {
               const fullName = contactFullName(record)
-              const identifier = record.email ?? record.subjectId ?? record.phone
+              const identifier = contactIdentifier(record)
               return (
                 <Group gap="sm" wrap="nowrap">
                   <Avatar

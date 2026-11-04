@@ -45,6 +45,16 @@ func clickedOnTelegram(t *testing.T, env *testhelper.TestEnv, click events.Teleg
 	store(t, env, &click, at)
 }
 
+// clickedOnSMS stores one sms.clicked Event of Alice at the given time.
+func clickedOnSMS(t *testing.T, env *testhelper.TestEnv, click events.SmsClicked, at time.Time) {
+	t.Helper()
+	click.WorkspaceID = fixtures.AcmeID
+	click.ContactID = fixtures.ContactAliceID
+	click.Email = fixtures.ContactAliceEmail
+	click.URL = "https://shop.test/"
+	store(t, env, &click, at)
+}
+
 // store publishes the Event and stores it as the persist subscriber would, at the given time.
 func store(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent, at time.Time) {
 	t.Helper()
@@ -287,6 +297,39 @@ func TestAnOrderIsCreditedToTheSourceOfTheLastClickWhateverTheChannel(t *testing
 		b, a := creditedTo(placeOrder(t, env, "C-1"))
 
 		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "the preview fetcher's click is passed over")
+		assert.Zero(t, a)
+	})
+
+	t.Run("an Order after an SMS click is credited to the SMS", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(3*day))
+		clickedOnSMS(t, env, events.SmsClicked{AutomationID: fixtures.AutomationWelcomeSeriesID}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.Zero(t, b)
+		assert.EqualValues(t, fixtures.AutomationWelcomeSeriesID, a, "the SMS's source")
+	})
+
+	t.Run("a later email click takes the credit from an SMS click", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clickedOnSMS(t, env, events.SmsClicked{AutomationID: fixtures.AutomationWelcomeSeriesID}, ago(3*day))
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "the email's source")
+		assert.Zero(t, a)
+	})
+
+	t.Run("an SMS link preview fetch credits nothing", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, ago(3*day))
+		clickedOnSMS(t, env, events.SmsClicked{AutomationID: fixtures.AutomationWelcomeSeriesID, Machine: true}, ago(day))
+
+		b, a := creditedTo(placeOrder(t, env, "C-1"))
+
+		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, b, "the preview fetch is passed over")
 		assert.Zero(t, a)
 	})
 }

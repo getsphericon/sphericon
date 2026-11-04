@@ -174,7 +174,11 @@ export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const BroadcastChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const BroadcastChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
@@ -188,7 +192,9 @@ export type BroadcastContent = ({
   channel: 'email';
 } & EmailBroadcastContent) | ({
   channel: 'telegram';
-} & TelegramBroadcastContent);
+} & TelegramBroadcastContent) | ({
+  channel: 'sms';
+} & SmsBroadcastContent);
 
 /**
  * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
@@ -197,7 +203,42 @@ export type BroadcastContentInput = ({
   channel: 'email';
 } & EmailBroadcastContentInput) | ({
   channel: 'telegram';
-} & TelegramBroadcastContentInput);
+} & TelegramBroadcastContentInput) | ({
+  channel: 'sms';
+} & SmsBroadcastContentInput);
+
+/**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export const ConfirmationProvenance = {
+  DOUBLE_OPT_IN: 'double_opt_in',
+  KEYWORD: 'keyword',
+  IMPORTED: 'imported',
+  GRANDFATHERED: 'grandfathered'
+} as const;
+
+/**
+ * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
+ */
+export type ConfirmationProvenance = typeof ConfirmationProvenance[keyof typeof ConfirmationProvenance];
+
+/**
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
+ */
+export type ConsentEvidence = {
+  /**
+   * The consent wording the person was shown and agreed to
+   */
+  wording: string;
+  /**
+   * Where the consent was collected: a form, a page, a checkout, a verification service
+   */
+  source: string;
+  /**
+   * The brand the person agreed to hear from
+   */
+  brand: string;
+};
 
 /**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
@@ -241,6 +282,18 @@ export type ContactExportConfirmation = {
    * How the confirmation was obtained
    */
   provenance: string;
+  /**
+   * The consent wording the person was shown, on a confirmation recorded with its evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected, on a confirmation recorded with its evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from, on a confirmation recorded with its evidence
+   */
+  brand?: string | null;
   /**
    * Creation timestamp
    */
@@ -468,6 +521,14 @@ export type ContactExportOutboundMessage = {
    */
   bouncedAt?: Timestamp | null;
   /**
+   * When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after
+   */
+  undeliveredAt?: Timestamp | null;
+  /**
+   * The provider's error code of the undelivered report (Twilio's ErrorCode)
+   */
+  undeliveredCode?: string | null;
+  /**
    * When the provider first reported a spam complaint about the message
    */
   complainedAt?: Timestamp | null;
@@ -588,6 +649,10 @@ export type ContactExportUnsubscribe = {
    */
   sendingSource: string;
   /**
+   * How the person stopped; absent on email
+   */
+  via?: OptOutVia | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -629,7 +694,7 @@ export type CreateBroadcastInput = {
    */
   name: string;
   /**
-   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel.
+   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422.
    */
   content: BroadcastContentInput;
   /**
@@ -655,7 +720,8 @@ export type CreateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -701,7 +767,7 @@ export type CreateContactInput = {
 };
 
 /**
- * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
 export type CreateIntegrationInput = {
   name: string;
@@ -717,11 +783,11 @@ export type CreateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with. A Telegram integration takes none: it always reads its bot's updates with the built-in `telegram` Preset. A Twilio integration always reads its callbacks with the built-in `twilio` Preset, which no other integration takes
    */
   preset?: string | null;
   /**
-   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none
+   * The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required
    */
   params?: JsonObject;
 };
@@ -1012,7 +1078,9 @@ export type IntegrationConfigInput = ({
   kind: 'inbox';
 } & InboxConfigInput) | ({
   kind: 'telegram';
-} & TelegramConfigInput);
+} & TelegramConfigInput) | ({
+  kind: 'twilio';
+} & TwilioConfigInput);
 
 /**
  * Request body for issuing a Telegram start link
@@ -1097,6 +1165,23 @@ export type MaxPerDay = number;
  * A per-second Provider limit the caller may set
  */
 export type MaxPerSecond = number;
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export const OptOutVia = {
+  KEYWORD: 'keyword',
+  BUTTON: 'button',
+  BLOCK: 'block',
+  LINK: 'link',
+  REFUSED_SEND: 'refused_send',
+  MANUAL: 'manual'
+} as const;
+
+/**
+ * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
+ */
+export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
 /**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
@@ -2554,13 +2639,15 @@ export type SiteAutomationStep = {
    */
   hasSecret?: boolean;
   /**
-   * The Integration a send step sends through (email and Telegram steps), of the step's Channel; null or
+   * The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or
    * omitted is that Channel's default. Each send step names its own, so one automation may send
    * through several (ADR 0081).
    */
   integrationId?: EntityId | null;
   /**
    * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
+   *
+   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
    */
   text?: string;
   /**
@@ -2579,6 +2666,10 @@ export type SiteAutomationStep = {
    * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
    */
   linkPreview?: boolean;
+  /**
+   * Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
 };
 
 /**
@@ -2606,6 +2697,7 @@ export type SiteAutomationStepFigures = {
 export const SiteAutomationStepType = {
   EMAIL: 'email',
   TELEGRAM: 'telegram',
+  SMS: 'sms',
   WAIT: 'wait',
   APPLY_TAG: 'apply_tag',
   REMOVE_TAG: 'remove_tag',
@@ -2860,7 +2952,9 @@ export type SiteBroadcastResource = {
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
  */
 export type SiteBroadcastStats = {
   /**
@@ -2899,6 +2993,10 @@ export type SiteBroadcastStats = {
    * Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
   deliveredCount: number | null;
+  /**
+   * Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none
+   */
+  undeliveredCount: number | null;
   /**
    * Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
@@ -3299,7 +3397,8 @@ export type SiteConditionLeaf = {
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
    * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
-   * ignored), "custom:<key>" for a custom field of the workspace,
+   * ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or
+   * Suppression; the value is ignored), "custom:<key>" for a custom field of the workspace,
    * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
    * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
    * that is not text; a number property is compared by a number leaf)
@@ -3374,7 +3473,7 @@ export type SiteConditionNumberOperator = typeof SiteConditionNumberOperator[key
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -3391,7 +3490,7 @@ export const SiteConditionOperator = {
 
 /**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag and telegram fields take has and doesNotHave; a custom field takes the operators of its type,
+ * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
  * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
  * number leaf, a datetime one tested by the date leaves).
  */
@@ -3488,7 +3587,7 @@ export type SiteContactResource = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key. May be absent.
+   * Phone number in E.164 (`+14155550100`) — an alias key. May be absent.
    */
   phone?: string | null;
   /**
@@ -3576,7 +3675,8 @@ export type SiteCreateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -3701,7 +3801,7 @@ export type SiteCreateSuppressionInput = {
    */
   channel?: SiteSuppressionChannel;
   /**
-   * The destination address to suppress
+   * The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)
    */
   destination: string;
 };
@@ -4235,7 +4335,9 @@ export type SiteIntegrationConfig = ({
   kind: 'inbox';
 } & SiteInboxConfig) | ({
   kind: 'telegram';
-} & SiteTelegramConfig);
+} & SiteTelegramConfig) | ({
+  kind: 'twilio';
+} & SiteTwilioConfig);
 
 /**
  * Concrete sending provider
@@ -4244,7 +4346,8 @@ export const SiteIntegrationProvider = {
   SMTP: 'smtp',
   SES: 'ses',
   INBOX: 'inbox',
-  TELEGRAM: 'telegram'
+  TELEGRAM: 'telegram',
+  TWILIO: 'twilio'
 } as const;
 
 /**
@@ -6194,6 +6297,20 @@ export type SiteSignupSurveyInput = {
 };
 
 /**
+ * The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2)
+ */
+export type SiteSmsLengthLimit = {
+  /**
+   * The most characters of a text in GSM-7, an extension character counting two
+   */
+  gsm7: number;
+  /**
+   * The most characters of a text in UCS-2, counted in UTF-16 code units
+   */
+  ucs2: number;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -6222,7 +6339,11 @@ export type SiteSoleOwnedWorkspace = {
 /**
  * The channel a suppression applies to
  */
-export const SiteSuppressionChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const SiteSuppressionChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * The channel a suppression applies to
@@ -6313,17 +6434,18 @@ export type SiteTelegramConfig = {
 };
 
 /**
- * What a test send did: the address the preview went out from
+ * What a test send did: on email the address the preview went out from
  */
 export type SiteTestSendBroadcastResult = {
   /**
-   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * The From address of an email preview. A Workspace with a verified Sending domain gets its own
    * domain; one without gets the System sender, which is not the address Contacts will see.
+   * Absent on SMS: the text goes out from the sender of the broadcast's Integration.
    */
-  from: EmailAddress;
+  from?: EmailAddress;
   /**
    * true when the Workspace's default Integration keeps what it is sent (a Test inbox): the
-   * preview was captured there, not sent to the address named.
+   * preview was captured there, not sent to the address named. Always false on SMS.
    */
   captured: boolean;
 };
@@ -6488,6 +6610,33 @@ export const SiteTransactionalEmailStatus = {
 export type SiteTransactionalEmailStatus = typeof SiteTransactionalEmailStatus[keyof typeof SiteTransactionalEmailStatus];
 
 /**
+ * A Twilio account without its secret
+ */
+export type SiteTwilioConfig = {
+  kind: 'twilio';
+  /**
+   * The Account SID
+   */
+  accountSid: string;
+  /**
+   * The API key messages are sent with; null when they are sent with the Auth Token
+   */
+  apiKeySid: string | null;
+  /**
+   * What messages go out from
+   */
+  from: string;
+  /**
+   * What kind of sender `from` is
+   */
+  fromKind: SmsFromKind;
+  /**
+   * Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback
+   */
+  callbacksSet: boolean;
+};
+
+/**
  * Site request body for updating an automation. The name changes at once; the trigger, exit and
  * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and publishing makes the draft live.
@@ -6521,7 +6670,8 @@ export type SiteUpdateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -6987,6 +7137,15 @@ export type SiteWorkspaceResource = {
    */
   trackingTarget?: string;
   /**
+   * The length of a short tracked link of the Workspace (`https://<Tracking domain or app host>/c/<token>`,
+   * ADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does.
+   */
+  shortLinkLength: number;
+  /**
+   * The longest text an SMS goes out as, in characters of each encoding as the SMS counter counts them: the counter flags a text over it, as the save refuses it
+   */
+  smsMaxLength: SiteSmsLengthLimit;
+  /**
    * The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.
@@ -7029,6 +7188,116 @@ export type SiteWorkspaceTimezoneInput = {
    * An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid
    */
   timezone: TimeZoneName;
+};
+
+/**
+ * SMS's content of a Broadcast as stored
+ */
+export type SmsBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags
+   */
+  text: string;
+  /**
+   * Whether each link of the text goes out as a short tracked link
+   */
+  linkTracking: boolean;
+};
+
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted field takes its default (an empty text, link tracking on); on update an omitted field
+ * keeps its value.
+ */
+export type SmsBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one, and a save one over the part limit, its links counted as short links while `linkTracking` is on.
+   */
+  text?: string;
+  /**
+   * Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
+};
+
+/**
+ * The SMS Confirmation of a contact's phone: when and how the number consented, with the evidence it carries
+ */
+export type SmsConfirmation = {
+  /**
+   * How the consent was obtained
+   */
+  provenance: ConfirmationProvenance;
+  /**
+   * The consent wording the person was shown; absent when the confirmation carries no evidence
+   */
+  wording?: string | null;
+  /**
+   * Where the consent was collected; absent when the confirmation carries no evidence
+   */
+  source?: string | null;
+  /**
+   * The brand the person agreed to hear from; absent when the confirmation carries no evidence
+   */
+  brand?: string | null;
+  /**
+   * When the consent was recorded
+   */
+  confirmedAt: Timestamp;
+};
+
+/**
+ * Whether a contact's phone may be texted (ADR 0077): its SMS Confirmation and its SMS opt-out, both keyed by the number
+ */
+export type SmsConsent = {
+  /**
+   * The contact's phone in E.164; absent when it has none, and then nothing else is
+   */
+  phone?: string | null;
+  /**
+   * The phone's SMS Confirmation; absent when the number never consented, and a text does not go to it
+   */
+  confirmation?: SmsConfirmation | null;
+  /**
+   * The phone's opt-out of every SMS of the Workspace; absent while it has none
+   */
+  optOut?: SmsOptOut | null;
+};
+
+/**
+ * What an SMS integration's messages go out from
+ */
+export const SmsFromKind = {
+  NUMBER: 'number',
+  ALPHANUMERIC: 'alphanumeric',
+  MESSAGING_SERVICE: 'messagingService'
+} as const;
+
+/**
+ * What an SMS integration's messages go out from
+ */
+export type SmsFromKind = typeof SmsFromKind[keyof typeof SmsFromKind];
+
+/**
+ * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
+ */
+export type SmsOptOut = {
+  /**
+   * How the person stopped: a STOP texted to the Workspace (keyword), a text's unsubscribe link (link), a send Twilio refused because the number had texted STOP to the sender there (refused_send), or recorded by hand (manual)
+   */
+  via: OptOutVia;
+  /**
+   * When the phone opted out
+   */
+  optedOutAt: Timestamp;
 };
 
 /**
@@ -7158,13 +7427,18 @@ export type TelegramStartLinkResource = {
 };
 
 /**
- * Request body for a test send
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
  */
 export type TestSendBroadcastInput = {
   /**
-   * Address to send the rendered preview to
+   * Address to send the rendered preview of an email broadcast to; required on email
    */
-  email: EmailAddress;
+  email?: EmailAddress;
+  /**
+   * Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422
+   */
+  phone?: string;
 };
 
 /**
@@ -7198,6 +7472,29 @@ export const TokenOnlyScope = {
  * Scopes only an API token can hold, never an OAuth grant
  */
 export type TokenOnlyScope = typeof TokenOnlyScope[keyof typeof TokenOnlyScope];
+
+/**
+ * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
+ */
+export type TwilioConfigInput = {
+  kind: 'twilio';
+  /**
+   * The Account SID (`AC…`)
+   */
+  accountSid: string;
+  /**
+   * An API key's SID (`SK…`) to send with; omit or null to send with the Account SID and its Auth Token
+   */
+  apiKeySid?: string | null;
+  /**
+   * The API key's secret, or the Auth Token when no API key is given. Write-only: blank on an update keeps the stored one while the Account SID and the API key stay the same
+   */
+  secret: string;
+  /**
+   * What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (`MG…`)
+   */
+  from: string;
+};
 
 /**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
@@ -7234,7 +7531,8 @@ export type UpdateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -7296,11 +7594,11 @@ export type UpdateIntegrationInput = {
   maxPerDay?: MaxPerDay | null;
   config?: IntegrationConfigInput;
   /**
-   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram integration's Preset is fixed
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over. A Telegram or Twilio integration's Preset is fixed
    */
   preset?: string | null;
   /**
-   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired). A Telegram integration takes none
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired): a Twilio integration's `auth_token` rotates this way, leaving its send credentials as they are. A Telegram integration takes none
    */
   params?: JsonObject;
   /**
@@ -12001,6 +12299,110 @@ export type SiteTelegramListBindingsResponses = {
 };
 
 export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
+
+export type SiteSmsConsentsConfirmData = {
+  body: ConsentEvidence;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations';
+};
+
+export type SiteSmsConsentsConfirmErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteSmsConsentsConfirmError = SiteSmsConsentsConfirmErrors[keyof SiteSmsConsentsConfirmErrors];
+
+export type SiteSmsConsentsConfirmResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SmsConsent;
+};
+
+export type SiteSmsConsentsConfirmResponse = SiteSmsConsentsConfirmResponses[keyof SiteSmsConsentsConfirmResponses];
+
+export type SiteSmsConsentsGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-consent';
+};
+
+export type SiteSmsConsentsGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSmsConsentsGetError = SiteSmsConsentsGetErrors[keyof SiteSmsConsentsGetErrors];
+
+export type SiteSmsConsentsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SmsConsent;
+};
+
+export type SiteSmsConsentsGetResponse = SiteSmsConsentsGetResponses[keyof SiteSmsConsentsGetResponses];
+
+export type SiteSmsConsentsOptOutData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs';
+};
+
+export type SiteSmsConsentsOptOutErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteSmsConsentsOptOutError = SiteSmsConsentsOptOutErrors[keyof SiteSmsConsentsOptOutErrors];
+
+export type SiteSmsConsentsOptOutResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SmsConsent;
+};
+
+export type SiteSmsConsentsOptOutResponse = SiteSmsConsentsOptOutResponses[keyof SiteSmsConsentsOptOutResponses];
 
 export type SiteTagsListForContactData = {
   body?: never;

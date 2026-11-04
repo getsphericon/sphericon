@@ -10,8 +10,8 @@ import (
 )
 
 // Integration is a workspace-scoped connection to an external sending provider.
-// It is channel-agnostic on purpose: "email" (smtp/ses/inbox) and "telegram" (a bot), "sms" and others
-// plug in the same way later by adding enum values + a catalog descriptor, with
+// It is channel-agnostic on purpose: "email" (smtp/ses/inbox), "telegram" (a bot) and "sms" (Twilio);
+// another Channel plugs in the same way by adding enum values + a catalog descriptor, with
 // no schema reshape. Provider-specific credentials live encrypted in
 // config_encrypted (the cleartext JSON shape is owned by the messaging catalog).
 type Integration struct {
@@ -36,13 +36,11 @@ func (Integration) Fields() []ent.Field {
 			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
-		// Channel reserves "sms" now so the column/type is ready before any SMS
-		// provider exists.
 		field.Enum("channel").
 			Values("email", "sms", "telegram").
 			Default("email"),
 		field.Enum("provider").
-			Values("smtp", "ses", "inbox", "telegram"),
+			Values("smtp", "ses", "inbox", "telegram", "twilio"),
 		// Encrypted JSON blob produced by internal/secrets.Cipher.
 		field.String("config_encrypted").
 			Sensitive().
