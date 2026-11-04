@@ -35,3 +35,32 @@ test('shows the error state when the token is rejected', async () => {
 
   await expect.element(screen.getByText('Unsubscribe failed')).toBeInTheDocument()
 })
+
+test("a text's link speaks of text messages, a Telegram message's of Telegram messages", async () => {
+  worker.use(handleSitePublicUnsubscribesPerform(() => new HttpResponse(null, { status: 204 })))
+  const { screen } = await renderWithRouter(<Unsubscribe token="tok-1" channel="sms" />)
+
+  await expect
+    .element(screen.getByText('Press the button below to stop receiving text messages from us.'))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Unsubscribe' }).click()
+  await expect
+    .element(screen.getByText('You will no longer receive text messages from us.'))
+    .toBeInTheDocument()
+})
+
+test("a Telegram message's link offers to leave all Telegram messages", async () => {
+  worker.use(handleSitePublicUnsubscribesPerform(() => new HttpResponse(null, { status: 204 })))
+  const { screen } = await renderWithRouter(
+    <Unsubscribe token="tok-1" all="https://app.example/e/u/everything" channel="telegram" />,
+  )
+
+  await screen.getByRole('button', { name: 'Unsubscribe' }).click()
+
+  await expect
+    .element(screen.getByText('You will no longer receive these Telegram messages.'))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Unsubscribe from all Telegram messages' }))
+    .toHaveAttribute('href', 'https://app.example/e/u/everything')
+})

@@ -223,6 +223,29 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
 }
 
+// Opening a text's unsubscribe link lands on the confirmation page told the link is a text's, so
+// the page speaks of text messages and not of emails.
+func TestTheSMSUnsubscribeLinkTellsThePageItIsAText(t *testing.T) {
+	env := testhelper.Setup(t)
+	account := env.ConnectTwilio(t)
+	automationID := smsAutomation(t, env, smsStep(account, "Stop: {{ unsubscribe_url }}"))
+	confirmSMS(t, env, fixtures.ContactTexterPhone)
+	enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	runSteps(t, env)
+	sent := env.Twilio.Messages()
+	require.Len(t, sent, 1)
+	link := regexp.MustCompile(`/e/u/\S+$`).FindString(sent[0].Body)
+	require.NotEmpty(t, link)
+
+	opened := follow(t, env, link, browserUA)
+
+	require.Equal(t, http.StatusSeeOther, opened.Code)
+	landing, err := url.Parse(opened.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "/unsubscribe", landing.Path)
+	assert.Equal(t, "sms", landing.Query().Get("channel"))
+}
+
 // Send-eligibility is read when each text goes (ADR 0077): a STOP that arrives after an
 // Enrollment's first text is honoured for its second.
 func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {

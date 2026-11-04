@@ -2466,6 +2466,8 @@ export default interface Resources {
     },
     "unsubscribe": {
       "body": "Press the button below to stop receiving these emails.",
+      "bodySms": "Press the button below to stop receiving text messages from us.",
+      "bodyTelegram": "Press the button below to stop receiving these Telegram messages.",
       "confirm": "Unsubscribe",
       "errorBody": "Something went wrong. Please try again.",
       "errorTitle": "Unsubscribe failed",
@@ -2473,8 +2475,12 @@ export default interface Resources {
     },
     "unsubscribed": {
       "body": "You will no longer receive these emails.",
+      "bodySms": "You will no longer receive text messages from us.",
+      "bodyTelegram": "You will no longer receive these Telegram messages.",
       "title": "Unsubscribed",
-      "unsubscribeAll": "Unsubscribe from all emails"
+      "unsubscribeAll": "Unsubscribe from all emails",
+      "unsubscribeAllSms": "Unsubscribe from all text messages",
+      "unsubscribeAllTelegram": "Unsubscribe from all Telegram messages"
     },
     "usedByKind": {
       "automation": "Automation",

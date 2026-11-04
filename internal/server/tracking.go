@@ -192,11 +192,12 @@ func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 
 // confirmRedirect is the absolute SPA confirmation URL (on the Instance's own host, so
 // a Tracking host's visitor lands where the SPA is) the GET handler redirects to. It
-// carries the token so the page's button can POST it back, and for a per-source
+// carries the token so the page's button can POST it back, the Channel the link came on so the
+// page speaks of emails, texts or Telegram messages, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
 func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target tracking.UnsubTarget) string {
-	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr)
+	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr) + "&channel=" + url.QueryEscape(string(target.Channel))
 	if target.Source == eligibility.SourceEverything {
 		return base
 	}

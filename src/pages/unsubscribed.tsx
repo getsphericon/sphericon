@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { Route as unsubscribedRoute } from '../routes/unsubscribed.tsx'
+import { useUnsubscribeCopy } from './unsubscribeCopy.ts'
 
 // Public confirmation page the unsubscribe endpoint (/e/u/{token}) redirects to
 // after recording the opt-out. The backend passes the deliberate "unsubscribe
@@ -10,7 +11,8 @@ import { Route as unsubscribedRoute } from '../routes/unsubscribed.tsx'
 // nothing here constructs a tracking path.
 export function UnsubscribedPage() {
   const { t } = useTranslation()
-  const { all } = unsubscribedRoute.useSearch()
+  const { all, channel } = unsubscribedRoute.useSearch()
+  const copy = useUnsubscribeCopy(channel)
 
   return (
     <CenteredLayout maw={460} align="center">
@@ -18,11 +20,11 @@ export function UnsubscribedPage() {
         <Stack align="center" gap="sm">
           <Title order={3}>{t(($) => $.unsubscribed.title)}</Title>
           <Text c="dimmed" ta="center">
-            {t(($) => $.unsubscribed.body)}
+            {copy.done}
           </Text>
           {all ? (
             <Anchor href={all} size="sm" mt="md">
-              {t(($) => $.unsubscribed.unsubscribeAll)}
+              {copy.all}
             </Anchor>
           ) : null}
         </Stack>
