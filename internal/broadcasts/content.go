@@ -13,13 +13,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
 // ContentInput is what a new Broadcast says, in the shape of its Channel (ADR 0078). Its Channel
 // is the Broadcast's, fixed from then on (ADR 0080). Each Channel a Broadcast is sent on has its
-// own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's.
+// own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's,
+// SMSContentInput SMS's.
 type ContentInput interface {
 	Channel() messaging.Channel
 	// create checks the content and sets it on the new Broadcast q.
@@ -170,6 +173,55 @@ func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped
 	patch.ApplySet(c.Buttons, u.SetButtons)
 	patch.ApplySet(c.LinkPreview, u.SetLinkPreview)
 	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdate { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
+	return nil
+}
+
+// SMSContentInput is the SMS content of a new Broadcast, the same Message content as an SMS step
+// (ADR 0078): one plain text with Liquid merge tags. A text the write leaves out is empty.
+type SMSContentInput struct {
+	Text *string
+}
+
+// Channel is SMS.
+func (SMSContentInput) Channel() messaging.Channel { return messaging.ChannelSMS }
+
+// create stores the text. A text whose Liquid does not render, or over the part limit, is refused;
+// a blank one is refused at Schedule, not here, so a draft can be saved before it is written.
+func (c SMSContentInput) create(_ context.Context, _ *Module, _ *ent.Scoped, q *ent.BroadcastScopedCreate) error {
+	if err := checkSMS(c.Text); err != nil {
+		return err
+	}
+	q.SetText(lo.FromPtr(c.Text))
+	return nil
+}
+
+// SMSContentPatch is an edit of an SMS draft's text: a text that keeps leaves the stored one; it
+// cannot be cleared.
+type SMSContentPatch struct {
+	Text patch.Field[string]
+}
+
+// Channel is SMS.
+func (SMSContentPatch) Channel() messaging.Channel { return messaging.ChannelSMS }
+
+func (c SMSContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+	if err := checkSMS(c.Text.Ptr()); err != nil {
+		return err
+	}
+	patch.ApplySet(c.Text, u.SetText)
+	return nil
+}
+
+// checkSMS refuses a given text whose Liquid does not render, as email's content is refused, and
+// one that as written takes more segments than the provider's part limit, as an SMS step's save
+// does. Twilio is the one SMS provider, so its limit is the one a text is held to.
+func checkSMS(text *string) error {
+	if text == nil {
+		return nil
+	}
+	if err := errors.Join(smsrender.Check(*text), smsrender.CheckParts(*text, twilio.MaxParts)); err != nil {
+		return fmt.Errorf("%w: %w", emailrender.ErrInvalidContent, err)
+	}
 	return nil
 }
 

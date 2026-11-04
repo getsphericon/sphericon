@@ -174,7 +174,11 @@ export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const BroadcastChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const BroadcastChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
@@ -188,7 +192,9 @@ export type BroadcastContent = ({
   channel: 'email';
 } & EmailBroadcastContent) | ({
   channel: 'telegram';
-} & TelegramBroadcastContent);
+} & TelegramBroadcastContent) | ({
+  channel: 'sms';
+} & SmsBroadcastContent);
 
 /**
  * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
@@ -197,7 +203,9 @@ export type BroadcastContentInput = ({
   channel: 'email';
 } & EmailBroadcastContentInput) | ({
   channel: 'telegram';
-} & TelegramBroadcastContentInput);
+} & TelegramBroadcastContentInput) | ({
+  channel: 'sms';
+} & SmsBroadcastContentInput);
 
 /**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
@@ -674,7 +682,7 @@ export type CreateBroadcastInput = {
    */
   name: string;
   /**
-   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel.
+   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422.
    */
   content: BroadcastContentInput;
   /**
@@ -2911,7 +2919,7 @@ export type SiteBroadcastResource = {
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * and SMS report no delivered, opened, bounced or complained count and so no delivery or open rate.
  */
 export type SiteBroadcastStats = {
   /**
@@ -6417,17 +6425,18 @@ export type SiteTelegramConfig = {
 };
 
 /**
- * What a test send did: the address the preview went out from
+ * What a test send did: on email the address the preview went out from
  */
 export type SiteTestSendBroadcastResult = {
   /**
-   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * The From address of an email preview. A Workspace with a verified Sending domain gets its own
    * domain; one without gets the System sender, which is not the address Contacts will see.
+   * Absent on SMS: the text goes out from the sender of the broadcast's Integration.
    */
-  from: EmailAddress;
+  from?: EmailAddress;
   /**
    * true when the Workspace's default Integration keeps what it is sent (a Test inbox): the
-   * preview was captured there, not sent to the address named.
+   * preview was captured there, not sent to the address named. Always false on SMS.
    */
   captured: boolean;
 };
@@ -7164,6 +7173,35 @@ export type SiteWorkspaceTimezoneInput = {
 };
 
 /**
+ * SMS's content of a Broadcast as stored
+ */
+export type SmsBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags
+   */
+  text: string;
+};
+
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted text is empty; on update an omitted text keeps its value.
+ */
+export type SmsBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one.
+   */
+  text?: string;
+};
+
+/**
  * What an SMS integration's messages go out from
  */
 export const SmsFromKind = {
@@ -7304,13 +7342,18 @@ export type TelegramStartLinkResource = {
 };
 
 /**
- * Request body for a test send
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
  */
 export type TestSendBroadcastInput = {
   /**
-   * Address to send the rendered preview to
+   * Address to send the rendered preview of an email broadcast to; required on email
    */
-  email: EmailAddress;
+  email?: EmailAddress;
+  /**
+   * Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422
+   */
+  phone?: string;
 };
 
 /**

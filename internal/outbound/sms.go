@@ -8,8 +8,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -174,4 +176,54 @@ func (smsAdapter) publishSent(ctx context.Context, pub events.Publisher, f sentF
 		e.Email = *f.req.Contact.Email
 	}
 	return pub.Publish(ctx, e)
+}
+
+// sendSMSTest is the Test send of an SMS Broadcast's content to the number raw, which the author
+// typed: a number with its country code, else ErrTestPhoneInvalid. It goes through the Send route
+// of the Integration the Broadcast names (nil: the SMS default) after the Workspace freeze, either
+// holding it as ErrHeld, and skips Send-eligibility: the author names the number. It is rendered
+// with sample merge data and no unsubscribe link, takes no Provider limit or Send cap, records no
+// Outbound message and no sms.sent, and asks for no delivery report, which would find no message to
+// land on. The text goes to the account's sender itself, past the adapter's reading of a refusal: a
+// refusal of a Test send holds nothing, defers nothing and suppresses no number (a typed number that
+// reaches no handset stays as it is), it is the author's ErrTestRefused with the provider's words. A
+// text that does not render is emailrender.ErrInvalidContent.
+func (m *Module) sendSMSTest(ctx context.Context, s *ent.Scoped, content SMSContent, raw string, integrationID *int64) (Result, error) {
+	to, err := phone.Normalize(raw, "")
+	if err != nil {
+		return Result{}, ErrTestPhoneInvalid
+	}
+	g, err := m.gate(ctx, s, content, integrationID)
+	if err != nil {
+		return Result{}, err
+	}
+	if g.hold != "" {
+		return Result{}, ErrHeld.With(Detail(g.hold))
+	}
+	adapter, ok := g.route.Sender.(smsAdapter)
+	if !ok {
+		return Result{}, fmt.Errorf("outbound: %T is no SMS adapter", g.route.Sender)
+	}
+	ws, err := m.workspace(ctx, s)
+	if err != nil {
+		return Result{}, err
+	}
+	rendered, err := smsChannel{m}.render(ctx, s, Request{Content: content, Variables: testVariables(testSampleEmail)}, 0, to, ws)
+	if err != nil {
+		if isContentError(err) {
+			return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, err.Error())
+		}
+		return Result{}, err
+	}
+	text, ok := rendered.(smsMessage)
+	if !ok {
+		return Result{}, fmt.Errorf("outbound: %T is no SMS message", rendered)
+	}
+	if _, err := adapter.sender.Send(ctx, messaging.SMSMessage{To: to, Body: text.body}); err != nil {
+		if refused, ok := errors.AsType[*messaging.SMSError](err); ok {
+			return Result{}, ErrTestRefused.With(refused.Reason())
+		}
+		return Result{}, fmt.Errorf("outbound: sms test send: %w", err)
+	}
+	return Result{Outcome: Sent}, nil
 }

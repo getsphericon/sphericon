@@ -1530,6 +1530,8 @@ func (s BroadcastChannel) Validate() error {
 		return nil
 	case "telegram":
 		return nil
+	case "sms":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -1593,6 +1595,11 @@ func (s BroadcastContentInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case SmsBroadcastContentInputBroadcastContentInputSum:
+		if err := s.SmsBroadcastContentInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1607,6 +1614,11 @@ func (s BroadcastContentSum) Validate() error {
 		return nil
 	case TelegramBroadcastContentBroadcastContentSum:
 		if err := s.TelegramBroadcastContent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsBroadcastContentBroadcastContentSum:
+		if err := s.SmsBroadcastContent.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -8480,6 +8492,70 @@ func (s SesConfigKind) Validate() error {
 	}
 }
 
+func (s *SmsBroadcastContent) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsBroadcastContentChannel) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SmsBroadcastContentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsBroadcastContentInputChannel) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s SmsFromKind) Validate() error {
 	switch s {
 	case "number":
@@ -9327,8 +9403,15 @@ func (s *TestSendBroadcastInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Email.Validate(); err != nil {
-			return err
+		if value, ok := s.Email.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
 		}
 		return nil
 	}(); err != nil {

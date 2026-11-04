@@ -93,7 +93,7 @@ func TestExternalTelegramBroadcastHasNoTestSend(t *testing.T) {
 	b, ok := res.(*externalapi.BroadcastResource)
 	require.Truef(t, ok, "got %T", res)
 
-	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"}, externalapi.BroadcastsTestSendParams{ID: b.ID})
+	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: b.ID})
 	require.NoError(t, err)
 
 	refused, ok := out.(*externalapi.BroadcastsTestSendUnprocessableEntity)

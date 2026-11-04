@@ -336,6 +336,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) ext
 	switch source {
 	case broadcast.ChannelEmail:
 		externalapiBroadcastChannel = external.BroadcastChannelEmail
+	case broadcast.ChannelSms:
+		externalapiBroadcastChannel = external.BroadcastChannelSMS
 	case broadcast.ChannelTelegram:
 		externalapiBroadcastChannel = external.BroadcastChannelTelegram
 	default:
@@ -1321,6 +1323,16 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) ext
 	externalapiSesConfig.Endpoint = omitEmpty(source.Endpoint)
 	externalapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
 	return externalapiSesConfig
+}
+func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) external.SmsBroadcastContent {
+	var externalapiSmsBroadcastContent external.SmsBroadcastContent
+	if source != nil {
+		externalapiSmsBroadcastContent.Channel = smsContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			externalapiSmsBroadcastContent.Text = *(*source).Text
+		}
+	}
+	return externalapiSmsBroadcastContent
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) external.SmtpConfig {
 	var externalapiSmtpConfig external.SmtpConfig

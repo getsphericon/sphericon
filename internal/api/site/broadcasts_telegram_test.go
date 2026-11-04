@@ -109,7 +109,7 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 	empty := schedule(create("  ", &botID))
 	okID := create("Hello", &botID)
 	scheduled := schedule(okID)
-	test, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: "john@acme.test"},
+	test, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("john@acme.test")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: okID})
 	require.NoError(t, err)
 

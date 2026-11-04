@@ -138,7 +138,7 @@ func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: "preview@example.com"},
+	res, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastAuthoredID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)

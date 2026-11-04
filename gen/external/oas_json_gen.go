@@ -6810,6 +6810,8 @@ func (s *BroadcastChannel) Decode(d *jx.Decoder) error {
 		*s = BroadcastChannelEmail
 	case BroadcastChannelTelegram:
 		*s = BroadcastChannelTelegram
+	case BroadcastChannelSMS:
+		*s = BroadcastChannelSMS
 	default:
 		*s = BroadcastChannel(v)
 	}
@@ -7015,6 +7017,18 @@ func (s BroadcastContentInputSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SmsBroadcastContentInputBroadcastContentInputSum:
+		e.FieldStart("channel")
+		e.Str("sms")
+		{
+			s := s.SmsBroadcastContentInput
+			{
+				if s.Text.Set {
+					e.FieldStart("text")
+					s.Text.Encode(e)
+				}
+			}
+		}
 	}
 }
 
@@ -7047,6 +7061,9 @@ func (s *BroadcastContentInputSum) Decode(d *jx.Decoder) error {
 				case "telegram":
 					s.Type = TelegramBroadcastContentInputBroadcastContentInputSum
 					found = true
+				case "sms":
+					s.Type = SmsBroadcastContentInputBroadcastContentInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -7067,6 +7084,10 @@ func (s *BroadcastContentInputSum) Decode(d *jx.Decoder) error {
 		}
 	case TelegramBroadcastContentInputBroadcastContentInputSum:
 		if err := s.TelegramBroadcastContentInput.Decode(d); err != nil {
+			return err
+		}
+	case SmsBroadcastContentInputBroadcastContentInputSum:
+		if err := s.SmsBroadcastContentInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -7169,6 +7190,16 @@ func (s BroadcastContentSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SmsBroadcastContentBroadcastContentSum:
+		e.FieldStart("channel")
+		e.Str("sms")
+		{
+			s := s.SmsBroadcastContent
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+		}
 	}
 }
 
@@ -7201,6 +7232,9 @@ func (s *BroadcastContentSum) Decode(d *jx.Decoder) error {
 				case "telegram":
 					s.Type = TelegramBroadcastContentBroadcastContentSum
 					found = true
+				case "sms":
+					s.Type = SmsBroadcastContentBroadcastContentSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -7221,6 +7255,10 @@ func (s *BroadcastContentSum) Decode(d *jx.Decoder) error {
 		}
 	case TelegramBroadcastContentBroadcastContentSum:
 		if err := s.TelegramBroadcastContent.Decode(d); err != nil {
+			return err
+		}
+	case SmsBroadcastContentBroadcastContentSum:
+		if err := s.SmsBroadcastContent.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -42238,6 +42276,304 @@ func (s *SetTrackingDomainInput) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *SmsBroadcastContent) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SmsBroadcastContent) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("channel")
+		s.Channel.Encode(e)
+	}
+	{
+		e.FieldStart("text")
+		e.Str(s.Text)
+	}
+}
+
+var jsonFieldsNameOfSmsBroadcastContent = [2]string{
+	0: "channel",
+	1: "text",
+}
+
+// Decode decodes SmsBroadcastContent from json.
+func (s *SmsBroadcastContent) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsBroadcastContent to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "channel":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Channel.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"channel\"")
+			}
+		case "text":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Text = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SmsBroadcastContent")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSmsBroadcastContent) {
+					name = jsonFieldsNameOfSmsBroadcastContent[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SmsBroadcastContent) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsBroadcastContent) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SmsBroadcastContentChannel as json.
+func (s SmsBroadcastContentChannel) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SmsBroadcastContentChannel from json.
+func (s *SmsBroadcastContentChannel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsBroadcastContentChannel to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SmsBroadcastContentChannel(v) {
+	case SmsBroadcastContentChannelSMS:
+		*s = SmsBroadcastContentChannelSMS
+	default:
+		*s = SmsBroadcastContentChannel(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SmsBroadcastContentChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsBroadcastContentChannel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SmsBroadcastContentInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SmsBroadcastContentInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("channel")
+		s.Channel.Encode(e)
+	}
+	{
+		if s.Text.Set {
+			e.FieldStart("text")
+			s.Text.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSmsBroadcastContentInput = [2]string{
+	0: "channel",
+	1: "text",
+}
+
+// Decode decodes SmsBroadcastContentInput from json.
+func (s *SmsBroadcastContentInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsBroadcastContentInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "channel":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Channel.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"channel\"")
+			}
+		case "text":
+			if err := func() error {
+				s.Text.Reset()
+				if err := s.Text.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SmsBroadcastContentInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSmsBroadcastContentInput) {
+					name = jsonFieldsNameOfSmsBroadcastContentInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SmsBroadcastContentInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsBroadcastContentInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SmsBroadcastContentInputChannel as json.
+func (s SmsBroadcastContentInputChannel) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SmsBroadcastContentInputChannel from json.
+func (s *SmsBroadcastContentInputChannel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsBroadcastContentInputChannel to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SmsBroadcastContentInputChannel(v) {
+	case SmsBroadcastContentInputChannelSMS:
+		*s = SmsBroadcastContentInputChannelSMS
+	default:
+		*s = SmsBroadcastContentInputChannel(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SmsBroadcastContentInputChannel) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsBroadcastContentInputChannel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SmsFromKind as json.
 func (s SmsFromKind) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -46842,13 +47178,22 @@ func (s *TestSendBroadcastInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *TestSendBroadcastInput) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("email")
-		s.Email.Encode(e)
+		if s.Email.Set {
+			e.FieldStart("email")
+			s.Email.Encode(e)
+		}
+	}
+	{
+		if s.Phone.Set {
+			e.FieldStart("phone")
+			s.Phone.Encode(e)
+		}
 	}
 }
 
-var jsonFieldsNameOfTestSendBroadcastInput = [1]string{
+var jsonFieldsNameOfTestSendBroadcastInput = [2]string{
 	0: "email",
+	1: "phone",
 }
 
 // Decode decodes TestSendBroadcastInput from json.
@@ -46856,13 +47201,12 @@ func (s *TestSendBroadcastInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode TestSendBroadcastInput to nil")
 	}
-	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
 		case "email":
-			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
+				s.Email.Reset()
 				if err := s.Email.Decode(d); err != nil {
 					return err
 				}
@@ -46870,44 +47214,22 @@ func (s *TestSendBroadcastInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
+		case "phone":
+			if err := func() error {
+				s.Phone.Reset()
+				if err := s.Phone.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"phone\"")
+			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode TestSendBroadcastInput")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfTestSendBroadcastInput) {
-					name = jsonFieldsNameOfTestSendBroadcastInput[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
 	}
 
 	return nil

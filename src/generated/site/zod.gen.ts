@@ -158,7 +158,11 @@ export const zAuditAction = z.enum([
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const zBroadcastChannel = z.enum(['email', 'telegram']);
+export const zBroadcastChannel = z.enum([
+  'email',
+  'telegram',
+  'sms'
+]);
 
 /**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
@@ -1417,7 +1421,7 @@ export const zSiteAutomationReport = z.object({
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * and SMS report no delivered, opened, bounced or complained count and so no delivery or open rate.
  */
 export const zSiteBroadcastStats = z.object({
   recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -2231,10 +2235,10 @@ export const zSiteTelegramConfig = z.object({
 });
 
 /**
- * What a test send did: the address the preview went out from
+ * What a test send did: on email the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
-  from: zEmailAddress,
+  from: z.exactOptional(zEmailAddress),
   captured: z.boolean()
 });
 
@@ -2355,6 +2359,23 @@ export const zSiteWebhookTestResult = z.object({
   delivered: z.boolean(),
   status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   kind: z.exactOptional(zSiteWebhookErrorKind)
+});
+
+/**
+ * SMS's content of a Broadcast as stored
+ */
+export const zSmsBroadcastContent = z.object({
+  channel: z.enum(['sms']),
+  text: z.string()
+});
+
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted text is empty; on update an omitted text keeps its value.
+ */
+export const zSmsBroadcastContentInput = z.object({
+  channel: z.enum(['sms']),
+  text: z.exactOptional(z.string())
 });
 
 /**
@@ -2494,7 +2515,8 @@ export const zTelegramBroadcastContent = z.object({
  */
 export const zBroadcastContent = z.discriminatedUnion('channel', [
   zEmailBroadcastContent.extend({ channel: z.literal('email') }),
-  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') })
+  zTelegramBroadcastContent.extend({ channel: z.literal('telegram') }),
+  zSmsBroadcastContent.extend({ channel: z.literal('sms') })
 ]);
 
 /**
@@ -2516,7 +2538,8 @@ export const zTelegramBroadcastContentInput = z.object({
  */
 export const zBroadcastContentInput = z.discriminatedUnion('channel', [
   zEmailBroadcastContentInput.extend({ channel: z.literal('email') }),
-  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') })
+  zTelegramBroadcastContentInput.extend({ channel: z.literal('telegram') }),
+  zSmsBroadcastContentInput.extend({ channel: z.literal('sms') })
 ]);
 
 /**
@@ -2538,10 +2561,12 @@ export const zTelegramConfigInput = z.object({
 });
 
 /**
- * Request body for a test send
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
  */
 export const zTestSendBroadcastInput = z.object({
-  email: zEmailAddress
+  email: z.exactOptional(zEmailAddress),
+  phone: z.exactOptional(z.string())
 });
 
 /**

@@ -6733,7 +6733,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
       "post": {
         "operationId": "SiteBroadcasts_testSend",
-        "description": "Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram\nhas no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram\nbroadcast is a 422. While the Workspace has no verified\nSending domain it goes from the System sender and only to the asking User's own address\n(ADR 0041): another address is refused with 422, the System sender's caps answer 429.",
+        "description": "Send a one-off rendered preview to a single address: an email broadcast to the `email` given,\nan SMS broadcast to the `phone` given, through the broadcast's Integration. It skips\nSend-eligibility and leaves no message and no figure. Telegram has no Test send, the author\nwould need a Binding of their own (ADR 0080), so a Telegram broadcast is a 422. While the\nWorkspace has no verified Sending domain an email preview goes from the System sender and only\nto the asking User's own address (ADR 0041): another address is refused with 422, the System\nsender's caps answer 429.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -14872,7 +14872,7 @@
       },
       "BroadcastChannel": {
         "type": "string",
-        "enum": ["email", "telegram"],
+        "enum": ["email", "telegram", "sms"],
         "description": "The Channel a Broadcast sends on, fixed when it is created (ADR 0080)"
       },
       "BroadcastContent": {
@@ -14883,13 +14883,17 @@
           },
           {
             "$ref": "#/components/schemas/TelegramBroadcastContent"
+          },
+          {
+            "$ref": "#/components/schemas/SmsBroadcastContent"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
             "email": "#/components/schemas/EmailBroadcastContent",
-            "telegram": "#/components/schemas/TelegramBroadcastContent"
+            "telegram": "#/components/schemas/TelegramBroadcastContent",
+            "sms": "#/components/schemas/SmsBroadcastContent"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
@@ -14902,13 +14906,17 @@
           },
           {
             "$ref": "#/components/schemas/TelegramBroadcastContentInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsBroadcastContentInput"
           }
         ],
         "discriminator": {
           "propertyName": "channel",
           "mapping": {
             "email": "#/components/schemas/EmailBroadcastContentInput",
-            "telegram": "#/components/schemas/TelegramBroadcastContentInput"
+            "telegram": "#/components/schemas/TelegramBroadcastContentInput",
+            "sms": "#/components/schemas/SmsBroadcastContentInput"
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
@@ -15636,7 +15644,7 @@
                 "$ref": "#/components/schemas/BroadcastContentInput"
               }
             ],
-            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel."
+            "description": "What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422."
           },
           "segmentId": {
             "type": "string",
@@ -18699,7 +18707,7 @@
             "description": "Orders credited to the Broadcast and their net revenue (ADR 0064)"
           }
         },
-        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate."
+        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nand SMS report no delivered, opened, bounced or complained count and so no delivery or open rate."
       },
       "SiteBroadcastStatus": {
         "type": "string",
@@ -23293,7 +23301,7 @@
       },
       "SiteTestSendBroadcastResult": {
         "type": "object",
-        "required": ["from", "captured"],
+        "required": ["captured"],
         "properties": {
           "from": {
             "allOf": [
@@ -23301,14 +23309,14 @@
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "The From address of the preview. A Workspace with a verified Sending domain gets its own\ndomain; one without gets the System sender, which is not the address Contacts will see."
+            "description": "The From address of an email preview. A Workspace with a verified Sending domain gets its own\ndomain; one without gets the System sender, which is not the address Contacts will see.\nAbsent on SMS: the text goes out from the sender of the broadcast's Integration."
           },
           "captured": {
             "type": "boolean",
-            "description": "true when the Workspace's default Integration keeps what it is sent (a Test inbox): the\npreview was captured there, not sent to the address named."
+            "description": "true when the Workspace's default Integration keeps what it is sent (a Test inbox): the\npreview was captured there, not sent to the address named. Always false on SMS."
           }
         },
-        "description": "What a test send did: the address the preview went out from"
+        "description": "What a test send did: on email the address the preview went out from"
       },
       "SiteTrackingDomainResource": {
         "type": "object",
@@ -24293,6 +24301,38 @@
         },
         "description": "Set the Workspace time zone"
       },
+      "SmsBroadcastContent": {
+        "type": "object",
+        "required": ["channel", "text"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["sms"],
+            "description": "The Channel the content is for"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text, plain, with Liquid merge tags"
+          }
+        },
+        "description": "SMS's content of a Broadcast as stored"
+      },
+      "SmsBroadcastContentInput": {
+        "type": "object",
+        "required": ["channel"],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["sms"],
+            "description": "The Channel the content is for: the Broadcast's own, which an update cannot change"
+          },
+          "text": {
+            "type": "string",
+            "description": "The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one."
+          }
+        },
+        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted text is empty; on update an omitted text keeps its value."
+      },
       "SmsFromKind": {
         "type": "string",
         "enum": ["number", "alphanumeric", "messagingService"],
@@ -24461,7 +24501,6 @@
       },
       "TestSendBroadcastInput": {
         "type": "object",
-        "required": ["email"],
         "properties": {
           "email": {
             "allOf": [
@@ -24469,10 +24508,14 @@
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "Address to send the rendered preview to"
+            "description": "Address to send the rendered preview of an email broadcast to; required on email"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422"
           }
         },
-        "description": "Request body for a test send"
+        "description": "Request body for a test send: where the preview goes, in the field of the broadcast's Channel.\nThe field of the other Channel is not read."
       },
       "TestWebhookInput": {
         "type": "object",

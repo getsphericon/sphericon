@@ -153,6 +153,8 @@ func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) broadcas
 	switch source {
 	case external.BroadcastChannelEmail:
 		broadcastChannel = broadcast.ChannelEmail
+	case external.BroadcastChannelSMS:
+		broadcastChannel = broadcast.ChannelSms
 	case external.BroadcastChannelTelegram:
 		broadcastChannel = broadcast.ChannelTelegram
 	default:
@@ -460,6 +462,16 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 		sendingdomainsUpdateInput.Selector = stringPatch((*source).DkimSelector)
 	}
 	return sendingdomainsUpdateInput
+}
+func (c *InputsImpl) SmsBroadcastContentIn(source external.SmsBroadcastContentInput) broadcasts.SMSContentInput {
+	var broadcastsSMSContentInput broadcasts.SMSContentInput
+	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	return broadcastsSMSContentInput
+}
+func (c *InputsImpl) SmsBroadcastContentPatch(source external.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
+	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
+	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	return broadcastsSMSContentPatch
 }
 func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) suppression.Channel {
 	var suppressionChannel suppression.Channel

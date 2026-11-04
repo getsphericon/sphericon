@@ -67,7 +67,7 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	out, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{
-		Email: "qa@test.dev",
+		Email: siteapi.NewOptEmailAddress("qa@test.dev"),
 	}, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, out)

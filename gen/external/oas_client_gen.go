@@ -202,9 +202,10 @@ type Invoker interface {
 	BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
 	// BroadcastsTestSend invokes Broadcasts_testSend operation.
 	//
-	// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
-	// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
-	// 422.
+	// Send a rendered preview with sample merge data to a single address: an email broadcast to the
+	// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
+	// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
+	// a Telegram broadcast is a 422.
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
@@ -4595,9 +4596,10 @@ func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroad
 
 // BroadcastsTestSend invokes Broadcasts_testSend operation.
 //
-// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
-// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
-// 422.
+// Send a rendered preview with sample merge data to a single address: an email broadcast to the
+// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
+// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
+// a Telegram broadcast is a 422.
 //
 // POST /broadcasts/{id}/test-send
 func (c *Client) BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error) {

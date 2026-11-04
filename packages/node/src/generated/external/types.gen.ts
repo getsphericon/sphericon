@@ -758,7 +758,11 @@ export type BrandKitResource = {
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
-export const BroadcastChannel = { EMAIL: 'email', TELEGRAM: 'telegram' } as const;
+export const BroadcastChannel = {
+  EMAIL: 'email',
+  TELEGRAM: 'telegram',
+  SMS: 'sms'
+} as const;
 
 /**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
@@ -772,7 +776,9 @@ export type BroadcastContent = ({
   channel: 'email';
 } & EmailBroadcastContent) | ({
   channel: 'telegram';
-} & TelegramBroadcastContent);
+} & TelegramBroadcastContent) | ({
+  channel: 'sms';
+} & SmsBroadcastContent);
 
 /**
  * What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)
@@ -781,12 +787,14 @@ export type BroadcastContentInput = ({
   channel: 'email';
 } & EmailBroadcastContentInput) | ({
   channel: 'telegram';
-} & TelegramBroadcastContentInput);
+} & TelegramBroadcastContentInput) | ({
+  channel: 'sms';
+} & SmsBroadcastContentInput);
 
 /**
  * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
- * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
- * count and so no open rate.
+ * not report is null, never zero: Telegram and SMS report no delivered, opened, bounced or
+ * complained count and so no open rate.
  */
 export type BroadcastReport = {
   /**
@@ -2012,7 +2020,7 @@ export type CreateBroadcastInput = {
    */
   name: string;
   /**
-   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel.
+   * What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422.
    */
   content: BroadcastContentInput;
   /**
@@ -4316,6 +4324,35 @@ export const SetupScope = {
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 
 /**
+ * SMS's content of a Broadcast as stored
+ */
+export type SmsBroadcastContent = {
+  /**
+   * The Channel the content is for
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags
+   */
+  text: string;
+};
+
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted text is empty; on update an omitted text keeps its value.
+ */
+export type SmsBroadcastContentInput = {
+  /**
+   * The Channel the content is for: the Broadcast's own, which an update cannot change
+   */
+  channel: 'sms';
+  /**
+   * The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one.
+   */
+  text?: string;
+};
+
+/**
  * What an SMS integration's messages go out from
  */
 export const SmsFromKind = {
@@ -4581,13 +4618,18 @@ export type TemplateResource = {
 };
 
 /**
- * Request body for a test send
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
  */
 export type TestSendBroadcastInput = {
   /**
-   * Address to send the rendered preview to
+   * Address to send the rendered preview of an email broadcast to; required on email
    */
-  email: EmailAddress;
+  email?: EmailAddress;
+  /**
+   * Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422
+   */
+  phone?: string;
 };
 
 /**

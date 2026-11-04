@@ -63,12 +63,19 @@ const flatSchema = resourceFormSchema(
 
 type FlatBroadcast = z.output<typeof flatSchema.create>
 
-// The request body nests the content under its Channel (ADR 0078). A message written in the
-// editor is its document and the server builds the body; sending both is a 422.
-function toBody({
-  name,
-  segmentId,
-  integrationId,
+// The request body nests the content under its Channel (ADR 0078).
+function toBody({ name, segmentId, integrationId, ...content }: FlatBroadcast) {
+  return {
+    name,
+    ...(segmentId !== undefined && { segmentId }),
+    ...(integrationId !== undefined && { integrationId }),
+    content: contentOf(content),
+  } satisfies CreateBroadcastInput
+}
+
+// The content fields of the form, in the shape of the Broadcast's Channel. A message written in the
+// email editor is its document and the server builds the body; sending both is a 422.
+function contentOf({
   channel,
   doc,
   body,
@@ -78,23 +85,21 @@ function toBody({
   linkPreview,
   unsubscribeButton,
   ...email
-}: FlatBroadcast) {
-  return {
-    name,
-    ...(segmentId !== undefined && { segmentId }),
-    ...(integrationId !== undefined && { integrationId }),
-    content:
-      channel === 'telegram'
-        ? {
-            channel,
-            ...(text !== undefined && { text }),
-            ...(imageUrl !== undefined && { imageUrl }),
-            ...(buttons !== undefined && { buttons }),
-            ...(linkPreview !== undefined && { linkPreview }),
-            ...(unsubscribeButton !== undefined && { unsubscribeButton }),
-          }
-        : { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) },
-  } satisfies CreateBroadcastInput
+}: Omit<FlatBroadcast, 'name' | 'segmentId' | 'integrationId'>): CreateBroadcastInput['content'] {
+  if (channel === 'telegram') {
+    return {
+      channel,
+      ...(text !== undefined && { text }),
+      ...(imageUrl !== undefined && { imageUrl }),
+      ...(buttons !== undefined && { buttons }),
+      ...(linkPreview !== undefined && { linkPreview }),
+      ...(unsubscribeButton !== undefined && { unsubscribeButton }),
+    }
+  }
+  if (channel === 'sms') {
+    return { channel, ...(text !== undefined && { text }) }
+  }
+  return { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) }
 }
 
 // A loaded Broadcast read back flat: its content's fields beside the rest.

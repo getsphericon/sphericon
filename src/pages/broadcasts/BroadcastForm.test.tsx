@@ -371,3 +371,57 @@ test('a Telegram broadcast is warned about by its recipients, not by every conta
     .toBeInTheDocument()
   expect(previews).toEqual([{ channel: 'telegram' }, { channel: 'telegram', integrationId: '2' }])
 })
+
+const SMS_INTEGRATION = {
+  ...EMAIL_INTEGRATION,
+  id: '3',
+  name: 'Acme Twilio',
+  channel: 'sms' as const,
+  provider: 'twilio' as const,
+  isDefault: false,
+  config: {
+    kind: 'twilio' as const,
+    accountSid: 'AC00000000000000000000000000000001',
+    apiKeySid: null,
+    from: '+15017250604',
+    fromKind: 'number' as const,
+    callbacksSet: true,
+  },
+}
+
+// SMS is offered only once the Workspace has an SMS Integration (ADR 0080).
+test('SMS is not offered without an SMS integration', async () => {
+  serve([])
+  worker.use(handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION, TELEGRAM_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await expect.element(screen.getByRole('radio', { name: 'Telegram' })).toBeInTheDocument()
+  expect(screen.getByRole('radio', { name: 'SMS' }).elements()).toHaveLength(0)
+})
+
+test('an SMS broadcast is written as a plain text and saved under its Channel', async () => {
+  const bodies: unknown[] = []
+  serve([], bodies)
+  worker.use(handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION, SMS_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByRole('radio', { name: 'SMS' }).click()
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Name/).fill('Flash sale')
+  await screen.getByRole('combobox', { name: 'Send through' }).click()
+  await screen.getByRole('option', { name: 'Acme Twilio' }).click()
+  await screen.getByRole('textbox', { name: /^Message/ }).fill('Hi {{ first_name }}, 20% off')
+  // A brace is a GSM-7 extension character, counted twice.
+  await expect.element(screen.getByText('32 characters · GSM-7 · 1 segment')).toBeVisible()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Flash sale',
+        integrationId: '3',
+        content: { channel: 'sms', text: 'Hi {{ first_name }}, 20% off' },
+      },
+    ])
+})

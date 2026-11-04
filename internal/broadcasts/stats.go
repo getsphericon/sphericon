@@ -46,7 +46,7 @@ type Stats struct {
 // Figures is the Stats as the Broadcast's Channel reports them (ADR 0080): every Channel reports
 // recipients, sent, skipped, failed, pending, clicked and unsubscribed; opened, delivered, bounced,
 // complained and captured, and the rates built on them, are nil on a Channel that does not report
-// them, never zero. Telegram has no delivery rate and no open rate.
+// them, never zero. Telegram and SMS have no delivery rate and no open rate.
 type Figures struct {
 	Recipients, Sent, Skipped, Failed, Pending, Clicked, Unsubscribed int
 
@@ -78,17 +78,23 @@ func (st Stats) Figures() Figures {
 	return f
 }
 
-// ReportsOpens says whether the Channel reports opens: email does, Telegram cannot tell. Without
-// them there is no open count, open rate or click-to-open rate.
-func (st Stats) ReportsOpens() bool { return st.Channel != broadcast.ChannelTelegram }
+// ReportsOpens says whether the Channel reports opens: email does, Telegram and SMS cannot tell.
+// Without them there is no open count, open rate or click-to-open rate.
+func (st Stats) ReportsOpens() bool { return st.onEmail() }
 
 // ReportsDelivery says whether the Channel's provider reports delivery results: email's does,
-// Telegram's gives only the acceptance (Sent). Without them there is no delivered, bounced or
-// complained count and no delivery rate.
-func (st Stats) ReportsDelivery() bool { return st.Channel != broadcast.ChannelTelegram }
+// Telegram's gives only the acceptance (Sent), and SMS's delivery reports are not read yet. Without
+// them there is no delivered, bounced or complained count and no delivery rate.
+func (st Stats) ReportsDelivery() bool { return st.onEmail() }
 
 // ReportsCaptured says whether the Channel has a Test inbox that captures its messages: email.
-func (st Stats) ReportsCaptured() bool { return st.Channel != broadcast.ChannelTelegram }
+func (st Stats) ReportsCaptured() bool { return st.onEmail() }
+
+// onEmail says whether the figures are an email Broadcast's: the Channel StatsFor set, or none
+// (StatsOf, which reads them as email's).
+func (st Stats) onEmail() bool {
+	return st.Channel != broadcast.ChannelTelegram && st.Channel != broadcast.ChannelSms
+}
 
 // Processed counts the recipients whose send has ended.
 func (st Stats) Processed() int { return st.Recipients - st.Pending }

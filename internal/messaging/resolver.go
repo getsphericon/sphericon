@@ -125,6 +125,12 @@ func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel, id i
 		Exist(ctx)
 }
 
+// HasIntegrationOn reports whether the Workspace has any kept Integration on channel, enabled or
+// not: whether work on that Channel has anything it could ever send through.
+func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel) (bool, error) {
+	return s.Integration().Query().Where(integration.ChannelEQ(integration.Channel(channel))).Exist(ctx)
+}
+
 // Integration is the enabled Integration of channel that a send on that Channel goes through: the
 // one named by id, or the Channel's default when id is nil. A named Integration that is disabled,
 // discarded or of another Channel is ErrNoProvider, never the default in its place: no send goes

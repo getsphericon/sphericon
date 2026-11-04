@@ -138,6 +138,7 @@ import (
 // goverter:extend broadcastContent
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
+// goverter:extend smsContentChannel
 // goverter:extend optNilSmsConfirmation
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
@@ -290,6 +291,8 @@ type Converter interface {
 	EmailBroadcastContentToResource(source *ent.Broadcast) siteapi.EmailBroadcastContent
 	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
 	TelegramBroadcastContentToResource(source *ent.Broadcast) siteapi.TelegramBroadcastContent
+	// The SMS content of an SMS Broadcast, the arm of its content that broadcastContent wraps.
+	SmsBroadcastContentToResource(source *ent.Broadcast) siteapi.SmsBroadcastContent
 
 	// A Broadcast's delivery figures as its Channel reports them: a figure it does not report is
 	// null. The rates are ratios in [0,1].
@@ -811,9 +814,16 @@ func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
 	case broadcast.ChannelTelegram:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	case broadcast.ChannelSms:
+		return siteapi.BroadcastContent{OneOf: siteapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return siteapi.BroadcastContent{}
 	}
+}
+
+// smsContentChannel is the discriminator of SMS's content arm.
+func smsContentChannel(broadcast.Channel) siteapi.SmsBroadcastContentChannel {
+	return siteapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.

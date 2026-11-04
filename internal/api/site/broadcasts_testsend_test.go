@@ -21,7 +21,7 @@ import (
 // Globex has no verified Sending domain and Jane owns it: the Test send falls back to the
 // System sender (ADR 0041).
 func testSendAsJane(_ *testhelper.TestEnv, c *siteapi.Client, to string) (siteapi.SiteBroadcastsTestSendRes, error) {
-	return c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.EmailAddress(to)},
+	return c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(siteapi.EmailAddress(to))},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID)})
 }
 
@@ -36,7 +36,7 @@ func TestSiteTestSendWithoutVerifiedDomainGoesFromTheSystemSenderToTheAskingUser
 
 	got, ok := res.(*siteapi.SiteTestSendBroadcastResult)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, siteapi.EmailAddress(testhelper.SystemFrom), got.From, "the response names the From it used")
+	assert.Equal(t, siteapi.NewOptEmailAddress(siteapi.EmailAddress(testhelper.SystemFrom)), got.From, "the response names the From it used")
 
 	sent := env.SystemMail.Messages()
 	require.Len(t, sent, 1)
@@ -124,7 +124,7 @@ func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
 	require.NoError(t, err)
 	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
 
-	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.EmailAddress(fixtures.OwnerSallyEmail)},
+	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(siteapi.EmailAddress(fixtures.OwnerSallyEmail))},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.HooliPublicID, ID: idStr(fixtures.BroadcastHooliID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
@@ -181,13 +181,13 @@ func TestSiteTestSendWithAVerifiedDomainKeepsTheOrdinaryPath(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: "anyone@example.com"},
+	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("anyone@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 
 	got, ok := res.(*siteapi.SiteTestSendBroadcastResult)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, siteapi.EmailAddress("hello@codebasics.dev"), got.From, "the Workspace's own domain")
+	assert.Equal(t, siteapi.NewOptEmailAddress(siteapi.EmailAddress("hello@codebasics.dev")), got.From, "the Workspace's own domain")
 	require.Len(t, env.CustomerMail.Messages(), 1, "through the Workspace's Integration")
 	assert.Equal(t, "anyone@example.com", env.CustomerMail.Messages()[0].To, "an address the author names")
 	assert.Empty(t, env.SystemMail.Messages())

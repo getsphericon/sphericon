@@ -3,6 +3,7 @@ package testhelper
 import (
 	"context"
 
+	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -14,6 +15,15 @@ import (
 func (env *TestEnv) SuppressDestination(ctx context.Context, destination string) {
 	err := env.DB.Scoped(fixtures.AcmeID).Suppression().UpdateOneID(fixtures.SuppressionLiftedID).
 		SetDestination(destination).ClearLiftedAt().Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// SuppressNumber is SuppressDestination for a phone number on sms.
+func (env *TestEnv) SuppressNumber(ctx context.Context, number string) {
+	err := env.DB.Scoped(fixtures.AcmeID).Suppression().UpdateOneID(fixtures.SuppressionLiftedID).
+		SetChannel(suppression.ChannelSms).SetDestination(number).ClearLiftedAt().Exec(ctx)
 	if err != nil {
 		panic(err)
 	}

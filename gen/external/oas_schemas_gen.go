@@ -3076,6 +3076,7 @@ type BroadcastChannel string
 const (
 	BroadcastChannelEmail    BroadcastChannel = "email"
 	BroadcastChannelTelegram BroadcastChannel = "telegram"
+	BroadcastChannelSMS      BroadcastChannel = "sms"
 )
 
 // AllValues returns all BroadcastChannel values.
@@ -3083,6 +3084,7 @@ func (BroadcastChannel) AllValues() []BroadcastChannel {
 	return []BroadcastChannel{
 		BroadcastChannelEmail,
 		BroadcastChannelTelegram,
+		BroadcastChannelSMS,
 	}
 }
 
@@ -3092,6 +3094,8 @@ func (s BroadcastChannel) MarshalText() ([]byte, error) {
 	case BroadcastChannelEmail:
 		return []byte(s), nil
 	case BroadcastChannelTelegram:
+		return []byte(s), nil
+	case BroadcastChannelSMS:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -3106,6 +3110,9 @@ func (s *BroadcastChannel) UnmarshalText(data []byte) error {
 		return nil
 	case BroadcastChannelTelegram:
 		*s = BroadcastChannelTelegram
+		return nil
+	case BroadcastChannelSMS:
+		*s = BroadcastChannelSMS
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -3150,6 +3157,7 @@ type BroadcastContentInputSum struct {
 	Type                          BroadcastContentInputSumType
 	EmailBroadcastContentInput    EmailBroadcastContentInput
 	TelegramBroadcastContentInput TelegramBroadcastContentInput
+	SmsBroadcastContentInput      SmsBroadcastContentInput
 }
 
 // BroadcastContentInputSumType is oneOf type of BroadcastContentInputSum.
@@ -3159,6 +3167,7 @@ type BroadcastContentInputSumType string
 const (
 	EmailBroadcastContentInputBroadcastContentInputSum    BroadcastContentInputSumType = "email"
 	TelegramBroadcastContentInputBroadcastContentInputSum BroadcastContentInputSumType = "telegram"
+	SmsBroadcastContentInputBroadcastContentInputSum      BroadcastContentInputSumType = "sms"
 )
 
 // IsEmailBroadcastContentInput reports whether BroadcastContentInputSum is EmailBroadcastContentInput.
@@ -3169,6 +3178,11 @@ func (s BroadcastContentInputSum) IsEmailBroadcastContentInput() bool {
 // IsTelegramBroadcastContentInput reports whether BroadcastContentInputSum is TelegramBroadcastContentInput.
 func (s BroadcastContentInputSum) IsTelegramBroadcastContentInput() bool {
 	return s.Type == TelegramBroadcastContentInputBroadcastContentInputSum
+}
+
+// IsSmsBroadcastContentInput reports whether BroadcastContentInputSum is SmsBroadcastContentInput.
+func (s BroadcastContentInputSum) IsSmsBroadcastContentInput() bool {
+	return s.Type == SmsBroadcastContentInputBroadcastContentInputSum
 }
 
 // SetEmailBroadcastContentInput sets BroadcastContentInputSum to EmailBroadcastContentInput.
@@ -3213,12 +3227,34 @@ func NewTelegramBroadcastContentInputBroadcastContentInputSum(v TelegramBroadcas
 	return s
 }
 
+// SetSmsBroadcastContentInput sets BroadcastContentInputSum to SmsBroadcastContentInput.
+func (s *BroadcastContentInputSum) SetSmsBroadcastContentInput(v SmsBroadcastContentInput) {
+	s.Type = SmsBroadcastContentInputBroadcastContentInputSum
+	s.SmsBroadcastContentInput = v
+}
+
+// GetSmsBroadcastContentInput returns SmsBroadcastContentInput and true boolean if BroadcastContentInputSum is SmsBroadcastContentInput.
+func (s BroadcastContentInputSum) GetSmsBroadcastContentInput() (v SmsBroadcastContentInput, ok bool) {
+	if !s.IsSmsBroadcastContentInput() {
+		return v, false
+	}
+	return s.SmsBroadcastContentInput, true
+}
+
+// NewSmsBroadcastContentInputBroadcastContentInputSum returns new BroadcastContentInputSum from SmsBroadcastContentInput.
+func NewSmsBroadcastContentInputBroadcastContentInputSum(v SmsBroadcastContentInput) BroadcastContentInputSum {
+	var s BroadcastContentInputSum
+	s.SetSmsBroadcastContentInput(v)
+	return s
+}
+
 // BroadcastContentSum represents sum type.
 type BroadcastContentSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type                     BroadcastContentSumType
 	EmailBroadcastContent    EmailBroadcastContent
 	TelegramBroadcastContent TelegramBroadcastContent
+	SmsBroadcastContent      SmsBroadcastContent
 }
 
 // BroadcastContentSumType is oneOf type of BroadcastContentSum.
@@ -3228,6 +3264,7 @@ type BroadcastContentSumType string
 const (
 	EmailBroadcastContentBroadcastContentSum    BroadcastContentSumType = "email"
 	TelegramBroadcastContentBroadcastContentSum BroadcastContentSumType = "telegram"
+	SmsBroadcastContentBroadcastContentSum      BroadcastContentSumType = "sms"
 )
 
 // IsEmailBroadcastContent reports whether BroadcastContentSum is EmailBroadcastContent.
@@ -3238,6 +3275,11 @@ func (s BroadcastContentSum) IsEmailBroadcastContent() bool {
 // IsTelegramBroadcastContent reports whether BroadcastContentSum is TelegramBroadcastContent.
 func (s BroadcastContentSum) IsTelegramBroadcastContent() bool {
 	return s.Type == TelegramBroadcastContentBroadcastContentSum
+}
+
+// IsSmsBroadcastContent reports whether BroadcastContentSum is SmsBroadcastContent.
+func (s BroadcastContentSum) IsSmsBroadcastContent() bool {
+	return s.Type == SmsBroadcastContentBroadcastContentSum
 }
 
 // SetEmailBroadcastContent sets BroadcastContentSum to EmailBroadcastContent.
@@ -3282,9 +3324,30 @@ func NewTelegramBroadcastContentBroadcastContentSum(v TelegramBroadcastContent) 
 	return s
 }
 
+// SetSmsBroadcastContent sets BroadcastContentSum to SmsBroadcastContent.
+func (s *BroadcastContentSum) SetSmsBroadcastContent(v SmsBroadcastContent) {
+	s.Type = SmsBroadcastContentBroadcastContentSum
+	s.SmsBroadcastContent = v
+}
+
+// GetSmsBroadcastContent returns SmsBroadcastContent and true boolean if BroadcastContentSum is SmsBroadcastContent.
+func (s BroadcastContentSum) GetSmsBroadcastContent() (v SmsBroadcastContent, ok bool) {
+	if !s.IsSmsBroadcastContent() {
+		return v, false
+	}
+	return s.SmsBroadcastContent, true
+}
+
+// NewSmsBroadcastContentBroadcastContentSum returns new BroadcastContentSum from SmsBroadcastContent.
+func NewSmsBroadcastContentBroadcastContentSum(v SmsBroadcastContent) BroadcastContentSum {
+	var s BroadcastContentSum
+	s.SetSmsBroadcastContent(v)
+	return s
+}
+
 // Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does not
-// report is null, never zero: Telegram reports no delivered, opened, bounced or complained count and
-// so no open rate.
+// report is null, never zero: Telegram and SMS report no delivered, opened, bounced or complained
+// count and so no open rate.
 // Ref: #/components/schemas/BroadcastReport
 type BroadcastReport struct {
 	// Lifecycle status.
@@ -7789,7 +7852,8 @@ type CreateBroadcastInput struct {
 	// Internal broadcast name.
 	Name string `json:"name"`
 	// What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a
-	// broadcast is never converted to another Channel.
+	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
+	// integration is refused with 422.
 	Content BroadcastContentInput `json:"content"`
 	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
 	SegmentId OptNilEntityId `json:"segmentId"`
@@ -18098,6 +18162,135 @@ func (s *SetTrackingDomainInput) SetHost(val string) {
 	s.Host = val
 }
 
+// SMS's content of a Broadcast as stored.
+// Ref: #/components/schemas/SmsBroadcastContent
+type SmsBroadcastContent struct {
+	// The Channel the content is for.
+	Channel SmsBroadcastContentChannel `json:"channel"`
+	// The text, plain, with Liquid merge tags.
+	Text string `json:"text"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *SmsBroadcastContent) GetChannel() SmsBroadcastContentChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *SmsBroadcastContent) GetText() string {
+	return s.Text
+}
+
+// SetChannel sets the value of Channel.
+func (s *SmsBroadcastContent) SetChannel(val SmsBroadcastContentChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsBroadcastContent) SetText(val string) {
+	s.Text = val
+}
+
+// The Channel the content is for.
+type SmsBroadcastContentChannel string
+
+const (
+	SmsBroadcastContentChannelSMS SmsBroadcastContentChannel = "sms"
+)
+
+// AllValues returns all SmsBroadcastContentChannel values.
+func (SmsBroadcastContentChannel) AllValues() []SmsBroadcastContentChannel {
+	return []SmsBroadcastContentChannel{
+		SmsBroadcastContentChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsBroadcastContentChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsBroadcastContentChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsBroadcastContentChannel) UnmarshalText(data []byte) error {
+	switch SmsBroadcastContentChannel(data) {
+	case SmsBroadcastContentChannelSMS:
+		*s = SmsBroadcastContentChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+// omitted text is empty; on update an omitted text keeps its value.
+// Ref: #/components/schemas/SmsBroadcastContentInput
+type SmsBroadcastContentInput struct {
+	// The Channel the content is for: the Broadcast's own, which an update cannot change.
+	Channel SmsBroadcastContentInputChannel `json:"channel"`
+	// The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one.
+	Text OptString `json:"text"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *SmsBroadcastContentInput) GetChannel() SmsBroadcastContentInputChannel {
+	return s.Channel
+}
+
+// GetText returns the value of Text.
+func (s *SmsBroadcastContentInput) GetText() OptString {
+	return s.Text
+}
+
+// SetChannel sets the value of Channel.
+func (s *SmsBroadcastContentInput) SetChannel(val SmsBroadcastContentInputChannel) {
+	s.Channel = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsBroadcastContentInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// The Channel the content is for: the Broadcast's own, which an update cannot change.
+type SmsBroadcastContentInputChannel string
+
+const (
+	SmsBroadcastContentInputChannelSMS SmsBroadcastContentInputChannel = "sms"
+)
+
+// AllValues returns all SmsBroadcastContentInputChannel values.
+func (SmsBroadcastContentInputChannel) AllValues() []SmsBroadcastContentInputChannel {
+	return []SmsBroadcastContentInputChannel{
+		SmsBroadcastContentInputChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsBroadcastContentInputChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsBroadcastContentInputChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsBroadcastContentInputChannel) UnmarshalText(data []byte) error {
+	switch SmsBroadcastContentInputChannel(data) {
+	case SmsBroadcastContentInputChannelSMS:
+		*s = SmsBroadcastContentInputChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // What an SMS integration's messages go out from.
 // Ref: #/components/schemas/SmsFromKind
 type SmsFromKind string
@@ -19541,21 +19734,35 @@ type TemplatesUpdateUnprocessableEntity ProblemDetails
 
 func (*TemplatesUpdateUnprocessableEntity) templatesUpdateRes() {}
 
-// Request body for a test send.
+// Request body for a test send: where the preview goes, in the field of the broadcast's Channel. The
+// field of the other Channel is not read.
 // Ref: #/components/schemas/TestSendBroadcastInput
 type TestSendBroadcastInput struct {
-	// Address to send the rendered preview to.
-	Email EmailAddress `json:"email"`
+	// Address to send the rendered preview of an email broadcast to; required on email.
+	Email OptEmailAddress `json:"email"`
+	// Phone number to send the rendered text of an SMS broadcast to, in international format with its
+	// country code (+14155550100); required on SMS, and a value that is no such number is a 422.
+	Phone OptString `json:"phone"`
 }
 
 // GetEmail returns the value of Email.
-func (s *TestSendBroadcastInput) GetEmail() EmailAddress {
+func (s *TestSendBroadcastInput) GetEmail() OptEmailAddress {
 	return s.Email
 }
 
+// GetPhone returns the value of Phone.
+func (s *TestSendBroadcastInput) GetPhone() OptString {
+	return s.Phone
+}
+
 // SetEmail sets the value of Email.
-func (s *TestSendBroadcastInput) SetEmail(val EmailAddress) {
+func (s *TestSendBroadcastInput) SetEmail(val OptEmailAddress) {
 	s.Email = val
+}
+
+// SetPhone sets the value of Phone.
+func (s *TestSendBroadcastInput) SetPhone(val OptString) {
+	s.Phone = val
 }
 
 // Request body for sending a sample event to a webhook endpoint.

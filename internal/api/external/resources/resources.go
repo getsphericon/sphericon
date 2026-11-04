@@ -126,6 +126,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend nilFloat32
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
+// goverter:extend smsContentChannel
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
@@ -138,6 +139,8 @@ type Converter interface {
 	EmailBroadcastContentToResource(source *ent.Broadcast) externalapi.EmailBroadcastContent
 	// The Telegram content of a Telegram Broadcast, the arm of its content that broadcastContent wraps.
 	TelegramBroadcastContentToResource(source *ent.Broadcast) externalapi.TelegramBroadcastContent
+	// The SMS content of an SMS Broadcast, the arm of its content that broadcastContent wraps.
+	SmsBroadcastContentToResource(source *ent.Broadcast) externalapi.SmsBroadcastContent
 	// goverter:useEmptyOnNil:slice
 	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
@@ -588,9 +591,16 @@ func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastConten
 		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
 	case broadcast.ChannelTelegram:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
+	case broadcast.ChannelSms:
+		return externalapi.BroadcastContent{OneOf: externalapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return externalapi.BroadcastContent{}
 	}
+}
+
+// smsContentChannel is the discriminator of SMS's content arm.
+func smsContentChannel(broadcast.Channel) externalapi.SmsBroadcastContentChannel {
+	return externalapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.

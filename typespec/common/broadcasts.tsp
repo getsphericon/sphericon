@@ -6,6 +6,7 @@ namespace Sphericon;
 enum BroadcastChannel {
   email,
   telegram,
+  sms,
 }
 
 /**
@@ -60,11 +61,24 @@ model TelegramBroadcastContentInput {
   unsubscribeButton?: string;
 }
 
+/**
+ * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
+ * omitted text is empty; on update an omitted text keeps its value.
+ */
+model SmsBroadcastContentInput {
+  /** The Channel the content is for: the Broadcast's own, which an update cannot change */
+  channel: "sms";
+
+  /** The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one. */
+  text?: string;
+}
+
 /** What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078) */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "channel" })
 union BroadcastContentInput {
   email: EmailBroadcastContentInput,
   telegram: TelegramBroadcastContentInput,
+  sms: SmsBroadcastContentInput,
 }
 
 /** Email's content of a Broadcast as stored */
@@ -112,11 +126,21 @@ model TelegramBroadcastContent {
   unsubscribeButton?: string | null;
 }
 
+/** SMS's content of a Broadcast as stored */
+model SmsBroadcastContent {
+  /** The Channel the content is for */
+  channel: "sms";
+
+  /** The text, plain, with Liquid merge tags */
+  text: string;
+}
+
 /** What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078) */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "channel" })
 union BroadcastContent {
   email: EmailBroadcastContent,
   telegram: TelegramBroadcastContent,
+  sms: SmsBroadcastContent,
 }
 
 /** Request body for creating a broadcast */
@@ -124,7 +148,7 @@ model CreateBroadcastInput {
   /** Internal broadcast name */
   name: string;
 
-  /** What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. */
+  /** What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422. */
   content: BroadcastContentInput;
 
   /** Target segment; null or omitted means all contacts. An archived segment is refused with 422. */
@@ -155,8 +179,14 @@ model ScheduleBroadcastInput {
   scheduledAt: Timestamp;
 }
 
-/** Request body for a test send */
+/**
+ * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
+ * The field of the other Channel is not read.
+ */
 model TestSendBroadcastInput {
-  /** Address to send the rendered preview to */
-  email: EmailAddress;
+  /** Address to send the rendered preview of an email broadcast to; required on email */
+  email?: EmailAddress;
+
+  /** Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422 */
+  phone?: string;
 }

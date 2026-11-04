@@ -5128,9 +5128,10 @@ func (s *Server) handleBroadcastsSetSegmentRequest(args [1]string, argsEscaped b
 
 // handleBroadcastsTestSendRequest handles Broadcasts_testSend operation.
 //
-// Send a rendered preview with sample merge data to a single address. Never sends to the audience.
-// Only an email broadcast has one: Telegram has no Test send (ADR 0080), so a Telegram broadcast is a
-// 422.
+// Send a rendered preview with sample merge data to a single address: an email broadcast to the
+// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
+// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
+// a Telegram broadcast is a 422.
 //
 // POST /broadcasts/{id}/test-send
 func (s *Server) handleBroadcastsTestSendRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

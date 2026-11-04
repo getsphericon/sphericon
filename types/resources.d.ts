@@ -513,6 +513,7 @@ export default interface Resources {
       "channelShown": "Channel: {{channel}}",
       "channels": {
         "email": "Email",
+        "sms": "SMS",
         "telegram": "Telegram"
       },
       "createTitle": "New broadcast",
@@ -551,6 +552,7 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "segmentNoteSms": "It goes to the contacts whose phone has an SMS confirmation and has not opted out of texts. Each number is checked again when its text is sent.",
       "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",
       "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count, number}} days. You can still send or schedule it.",
       "sendCapWarningError": "Could not read the Send cap",
@@ -588,6 +590,8 @@ export default interface Resources {
       "testSendCaptured": "Captured in your Test inbox, not sent to the address you named.",
       "testSendEmailLabel": "Send a test to",
       "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
+      "testSendPhoneHint": "With its country code, like +1 415 555 0100. The test skips the confirmation check and counts in no figure.",
+      "testSendPhoneLabel": "Send a test text to",
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
@@ -1318,6 +1322,7 @@ export default interface Resources {
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
+      "testTextSent": "Test text sent",
       "usedByEnrollments": "{{count, number}} enrollment of \"{{name}}\"" | "{{count, number}} enrollments of \"{{name}}\"",
       "usedByMessages": "{{count, number}} message sent by \"{{name}}\"" | "{{count, number}} messages sent by \"{{name}}\""
     },

@@ -440,7 +440,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "subject", Type: field.TypeString, Nullable: true},
 		{Name: "from_name", Type: field.TypeString, Nullable: true},
 		{Name: "from_email", Type: field.TypeString, Nullable: true},
@@ -3100,8 +3100,8 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
-		"broadcasts_channel_check":      "channel IN ('email', 'telegram')",
-		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL)",
+		"broadcasts_channel_check":      "channel IN ('email', 'telegram', 'sms')",
+		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL) OR (channel = 'sms' AND text IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL)",
 		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
 		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",

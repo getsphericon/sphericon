@@ -90,6 +90,34 @@ func ExternalTelegramOf(b *externalapi.BroadcastResource) externalapi.TelegramBr
 	return b.Content.OneOf.TelegramBroadcastContent
 }
 
+// SiteSMS is the SMS content of a Broadcast write on the site API with the text given.
+func SiteSMS(text string) siteapi.BroadcastContentInput {
+	c := siteapi.SmsBroadcastContentInput{Channel: siteapi.SmsBroadcastContentInputChannelSMS, Text: siteapi.NewOptString(text)}
+	return siteapi.BroadcastContentInput{OneOf: siteapi.NewSmsBroadcastContentInputBroadcastContentInputSum(c)}
+}
+
+// SiteSMSEdit is SiteSMS as the content of a site API update.
+func SiteSMSEdit(text string) siteapi.OptBroadcastContentInput {
+	return siteapi.NewOptBroadcastContentInput(SiteSMS(text))
+}
+
+// SiteSMSOf is the SMS content of a site API Broadcast resource; the zero value when the Broadcast
+// is on another Channel.
+func SiteSMSOf(b *siteapi.SiteBroadcastResource) siteapi.SmsBroadcastContent {
+	return b.Content.OneOf.SmsBroadcastContent
+}
+
+// ExternalSMS is SiteSMS for the external API.
+func ExternalSMS(text string) externalapi.BroadcastContentInput {
+	c := externalapi.SmsBroadcastContentInput{Channel: externalapi.SmsBroadcastContentInputChannelSMS, Text: externalapi.NewOptString(text)}
+	return externalapi.BroadcastContentInput{OneOf: externalapi.NewSmsBroadcastContentInputBroadcastContentInputSum(c)}
+}
+
+// ExternalSMSOf is SiteSMSOf for the external API.
+func ExternalSMSOf(b *externalapi.BroadcastResource) externalapi.SmsBroadcastContent {
+	return b.Content.OneOf.SmsBroadcastContent
+}
+
 // PlaceRecipient moves the parked recipient of a Contact (Alice, Bob or Carol, parked on the archived
 // Broadcast in the fixtures) onto the Broadcast, with its message if it has one, and returns the
 // recipient's id. A test that needs a Broadcast with exactly the recipients it names places them.

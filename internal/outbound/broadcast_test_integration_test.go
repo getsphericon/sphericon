@@ -46,7 +46,7 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 	m := outbound.New(env.Bus, env.Holds, via, tracking.New("test-secret", "http://local"),
 		outbound.WithSystemSender(env.SystemMail))
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: broadcast.ChannelEmail, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
-	return m.SendBroadcastTest(context.Background(), env.DB.Scoped(workspaceID), b, to,
+	return m.SendBroadcastTest(context.Background(), env.DB.Scoped(workspaceID), b, outbound.TestAddress{Email: to},
 		&outbound.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail})
 }
 

@@ -338,7 +338,7 @@ default). It is never converted to another Channel, nor copied into one. A new B
 its Channel first, among the Channels the Workspace has an enabled Integration for, and the
 Broadcasts of every Channel share one list with a Channel column and filter. Its audience is a
 Segment (or all Contacts), reached at the Channel's Destination: a Contact without one is never a
-Recipient. Scheduling takes a **copy of the
+Recipient. An SMS Broadcast needs an SMS Integration in the Workspace to be created at all. Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
 Send-eligibility. Sends under the
@@ -358,8 +358,8 @@ shrink when the Events expire. Delivery figures (delivered, bounced, complained)
 the Outbound message's delivery result, never counted from Events. A Broadcast's figures (recipients, sent,
 skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
 their messages and never stored, so they are live while it sends. Each Channel reports its own: a
-Telegram Broadcast has no opened, delivered, bounced or complained count and no open or delivery
-rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
+Telegram or SMS Broadcast has no opened, delivered, bounced or complained count and no open or
+delivery rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
 bot is one Recipient and one Outbound message, sent to each of its chats. Contrast Segment, which is a
 live query and never materialized.
 _Avoid_: Send log, delivery row
@@ -371,8 +371,8 @@ pipeline: the Workspace freeze check, the Send route of that Channel, the claim 
 message, Send-eligibility on the Channel, rendering, the Provider limit and Send cap, the provider
 call, and the record of the result with the Channel's `<channel>.sent` Event. Only a per-Channel
 **renderer** and **provider adapter** differ: email's hold the Sending-domain gate, the unsubscribe
-footer and List-Unsubscribe, the open pixel and DKIM signing, and a Test send and the System sender
-are email's alone. Adding a Channel adds its renderer and adapter to the Outbound send and its
+footer and List-Unsubscribe, the open pixel and DKIM signing, and the System sender is email's
+alone. Adding a Channel adds its renderer and adapter to the Outbound send and its
 providers to the catalogue, and touches no step of the pipeline. On a Channel of Bindings one Outbound send reaches every Binding the Contact has
 on the Integration, each passing Send-eligibility on its own; a Contact with no Destination on the
 Channel is Skipped. Every surface goes through it; none re-implements any part.
@@ -391,10 +391,10 @@ _Avoid_: Provider resolution, sender lookup
 
 **Test send**:
 A Broadcast's author sending it to one address they name, to see the mail before it goes out. On
-SMS and WhatsApp the address is a phone number they type, sent through the Broadcast's Integration;
-Telegram and push have no Test send. It
-skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
-Activity or the rates. It goes through the Integration the Broadcast sends through (its own, else
+SMS and WhatsApp the address is a phone number they type with its country code, sent through the
+Broadcast's Integration with sample merge data, no unsubscribe link and no delivery report asked
+for; Telegram and push have no Test send. It skips Send-eligibility and leaves no Outbound message
+or `<channel>.sent` Event, so it never shows in Activity or the rates. It goes through the Integration the Broadcast sends through (its own, else
 the Workspace's default). While none of the Workspace's Sending domains is verified and that
 Integration delivers outside (or there is none to send through), it goes from the System sender, and
 only to the address of the User who asks. Through a Test inbox, which delivers nowhere outside, it

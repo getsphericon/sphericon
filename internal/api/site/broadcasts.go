@@ -216,7 +216,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
-// at a nonexistent recipient). Used to preview the rendered email.
+// at a nonexistent recipient). Used to preview the rendered email or text.
 func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
 	ws := workspaceScope(ctx)
 
@@ -232,7 +232,8 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Test
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: a.UserID, Email: a.Email})
+	to := outbound.TestAddress{Email: string(req.Email.Or("")), Phone: req.Phone.Or("")}
+	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, to, &outbound.Asker{UserID: a.UserID, Email: a.Email})
 	if err != nil {
 		return nil, err
 	}
@@ -240,5 +241,9 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Test
 		// The System sender's cap: the client waits as for any rate limit.
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, res.Limit, res.Wait, h.now())
 	}
-	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(res.From), Captured: res.Captured}, nil
+	out := &siteapi.SiteTestSendBroadcastResult{Captured: res.Captured}
+	if res.From != "" {
+		out.From = siteapi.NewOptEmailAddress(siteapi.EmailAddress(res.From))
+	}
+	return out, nil
 }

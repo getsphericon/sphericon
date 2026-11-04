@@ -112,13 +112,21 @@ func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) 
 }
 
 // checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content
-// as written: telegramrender.CheckWritten, the rule an Automation's Publish applies to a Telegram
-// step, so a text is over its limit (1024 with an image, 4096 without) on both or on neither. A
-// message with neither a text nor an image has nothing to send. What a text renders to may still be
-// longer or shorter; a message over the limit once rendered fails its own send.
+// as written. On Telegram it is telegramrender.CheckWritten, the rule an Automation's Publish applies
+// to a Telegram step, so a text is over its limit (1024 with an image, 4096 without) on both or on
+// neither, and a message with neither a text nor an image has nothing to send. What a text renders
+// to may still be longer or shorter; a message over the limit once rendered fails its own send. On
+// SMS a blank text has nothing to send.
 func checkWritten(b *ent.Broadcast) error {
-	if b.Channel != broadcast.ChannelTelegram {
+	switch b.Channel {
+	case broadcast.ChannelSms:
+		if strings.TrimSpace(lo.FromPtr(b.Text)) == "" {
+			return ErrTextBlank
+		}
 		return nil
+	case broadcast.ChannelEmail:
+		return nil
+	case broadcast.ChannelTelegram:
 	}
 	text, hasImage := lo.FromPtr(b.Text), lo.FromPtr(b.ImageURL) != ""
 	if strings.TrimSpace(text) == "" && !hasImage {
@@ -202,6 +210,13 @@ var (
 	// so it is not scheduled (ADR 0078). Not a field refusal: Schedule and Send take no content, so
 	// there is no request field to list it under; the editor counts the limit as the author types.
 	ErrTextTooLong = validation.Refuse("broadcasts: the text is too long for Telegram", i18n.ErrorsBroadcastTextTooLong)
+	// ErrTextBlank: the text of an SMS Broadcast is blank, so it is not scheduled: every recipient's
+	// message would fail with nothing to send.
+	ErrTextBlank = validation.Refuse("broadcasts: the text is blank", i18n.ErrorsBroadcastTextBlank)
+	// ErrChannelNoIntegration: an SMS Broadcast is created in a Workspace with no SMS Integration,
+	// which nothing could send it through (ADR 0080). An email draft needs none (the System sender
+	// takes its Test send, ADR 0041), and a Telegram one is refused only at Schedule.
+	ErrChannelNoIntegration = validation.Refuse("broadcasts: the workspace has no integration of the channel", i18n.ErrorsBroadcastChannelNoIntegration)
 	// ErrIntegrationOtherChannel: the Integration is of another Channel than the Broadcast's, so
 	// it can never send it (ADR 0074).
 	ErrIntegrationOtherChannel = validation.Refuse("broadcasts: the integration is of another channel", i18n.ErrorsBroadcastIntegrationOtherChannel)
@@ -257,7 +272,8 @@ func setsFrom(from, stored *string) bool {
 }
 
 // Create makes a draft Broadcast on the Channel of its content. Nothing here schedules or sends.
-// A blank name is ErrBlankName, no content ErrNoChannel and an Integration of another Channel
+// A blank name is ErrBlankName, no content ErrNoChannel, an SMS Broadcast in a Workspace with no
+// SMS Integration ErrChannelNoIntegration and an Integration of another Channel
 // ErrIntegrationOtherChannel; content that cannot render is emailrender.ErrInvalidContent, and an
 // email body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
@@ -268,6 +284,15 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent
 		return nil, ErrNoChannel
 	}
 	channel := f.Content.Channel()
+	if channel == messaging.ChannelSMS {
+		ok, err := messaging.HasIntegrationOn(ctx, s, channel)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, ErrChannelNoIntegration
+		}
+	}
 	if err := m.checkRefs(ctx, s, channel, f.SegmentID, f.IntegrationID); err != nil {
 		return nil, err
 	}

@@ -114,6 +114,8 @@ type Inputs interface {
 	EmailBroadcastContentPatch(source siteapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
 	TelegramBroadcastContentIn(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
 	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	SmsBroadcastContentIn(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
+	SmsBroadcastContentPatch(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
 	// The list's filter; the statuses go member by member (BroadcastStatuses).
 	// goverter:map Status Statuses
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
@@ -419,6 +421,8 @@ func broadcastContentIn(c Inputs, in siteapi.BroadcastContentInput) (broadcasts.
 		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
 	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	case siteapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentIn(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}
@@ -435,6 +439,8 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
 	case siteapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	case siteapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentPatch(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}

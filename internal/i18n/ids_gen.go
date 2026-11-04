@@ -101,6 +101,7 @@ var (
 	ErrorsBrandkitLogo                          = ID{key: "errors.brandkit_logo"}
 	ErrorsBrandkitNotSaved                      = ID{key: "errors.brandkit_not_saved"}
 	ErrorsBroadcastChannelFixed                 = ID{key: "errors.broadcast_channel_fixed"}
+	ErrorsBroadcastChannelNoIntegration         = ID{key: "errors.broadcast_channel_no_integration"}
 	ErrorsBroadcastFromNotVerified              = ID{key: "errors.broadcast_from_not_verified"}
 	ErrorsBroadcastIntegrationNotFound          = ID{key: "errors.broadcast_integration_not_found"}
 	ErrorsBroadcastIntegrationOtherChannel      = ID{key: "errors.broadcast_integration_other_channel"}
@@ -112,6 +113,7 @@ var (
 	ErrorsBroadcastNotScheduled                 = ID{key: "errors.broadcast_not_scheduled"}
 	ErrorsBroadcastNotSendable                  = ID{key: "errors.broadcast_not_sendable"}
 	ErrorsBroadcastSegmentNotFound              = ID{key: "errors.broadcast_segment_not_found"}
+	ErrorsBroadcastTextBlank                    = ID{key: "errors.broadcast_text_blank"}
 	ErrorsBroadcastTextTooLong                  = ID{key: "errors.broadcast_text_too_long"}
 	ErrorsCapturedMessageNotFound               = ID{key: "errors.captured_message_not_found"}
 	ErrorsCheckFields                           = ID{key: "errors.check_fields"}
@@ -307,6 +309,7 @@ var (
 	ErrorsTelegramStartNotTelegram              = ID{key: "errors.telegram_start_not_telegram"}
 	ErrorsTelemetryLocked                       = ID{key: "errors.telemetry_locked"}
 	ErrorsTemplateNotFound                      = ID{key: "errors.template_not_found"}
+	ErrorsTestSendEmailRequired                 = ID{key: "errors.test_send_email_required"}
 	ErrorsTestSendRefused                       = ID{key: "errors.test_send_refused"}
 	ErrorsTimezoneUnknown                       = ID{key: "errors.timezone_unknown"}
 	ErrorsTokenNotFound                         = ID{key: "errors.token_not_found"}

@@ -226,6 +226,8 @@ func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) broadcast.Ch
 	switch source {
 	case site.BroadcastChannelEmail:
 		broadcastChannel = broadcast.ChannelEmail
+	case site.BroadcastChannelSMS:
+		broadcastChannel = broadcast.ChannelSms
 	case site.BroadcastChannelTelegram:
 		broadcastChannel = broadcast.ChannelTelegram
 	default:
@@ -683,6 +685,16 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 		signupsurveyAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
 	}
 	return signupsurveyAnswers
+}
+func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
+	var broadcastsSMSContentInput broadcasts.SMSContentInput
+	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	return broadcastsSMSContentInput
+}
+func (c *InputsImpl) SmsBroadcastContentPatch(source site.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
+	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
+	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	return broadcastsSMSContentPatch
 }
 func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Direction {
 	var paginationDirection pagination.Direction

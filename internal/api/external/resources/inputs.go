@@ -102,6 +102,8 @@ type Inputs interface {
 	EmailBroadcastContentPatch(source externalapi.EmailBroadcastContentInput) broadcasts.EmailContentPatch
 	TelegramBroadcastContentIn(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentInput
 	TelegramBroadcastContentPatch(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
+	SmsBroadcastContentIn(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
+	SmsBroadcastContentPatch(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
 	// The list's filter: the API lists every status.
 	// goverter:ignore Statuses
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
@@ -369,6 +371,8 @@ func broadcastContentIn(c Inputs, in externalapi.BroadcastContentInput) (broadca
 		return c.EmailBroadcastContentIn(in.OneOf.EmailBroadcastContentInput), nil
 	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentIn(in.OneOf.TelegramBroadcastContentInput), nil
+	case externalapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentIn(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}
@@ -385,6 +389,8 @@ func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (br
 		return c.EmailBroadcastContentPatch(in.OneOf.EmailBroadcastContentInput), nil
 	case externalapi.TelegramBroadcastContentInputBroadcastContentInputSum:
 		return c.TelegramBroadcastContentPatch(in.OneOf.TelegramBroadcastContentInput), nil
+	case externalapi.SmsBroadcastContentInputBroadcastContentInputSum:
+		return c.SmsBroadcastContentPatch(in.OneOf.SmsBroadcastContentInput), nil
 	default:
 		return nil, errUnknownChannel
 	}

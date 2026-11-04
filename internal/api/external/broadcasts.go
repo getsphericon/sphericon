@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -141,7 +142,8 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 	}
 
 	// No Asker: /api never sends from the System sender, so its cap never defers the Test send.
-	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), nil); err != nil {
+	to := outbound.TestAddress{Email: string(req.Email.Or("")), Phone: req.Phone.Or("")}
+	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, to, nil); err != nil {
 		return nil, err
 	}
 	return &externalapi.BroadcastsTestSendNoContent{}, nil

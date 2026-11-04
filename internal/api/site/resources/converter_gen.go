@@ -625,6 +625,8 @@ func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) sit
 	switch source {
 	case broadcast.ChannelEmail:
 		siteapiBroadcastChannel = site.BroadcastChannelEmail
+	case broadcast.ChannelSms:
+		siteapiBroadcastChannel = site.BroadcastChannelSMS
 	case broadcast.ChannelTelegram:
 		siteapiBroadcastChannel = site.BroadcastChannelTelegram
 	default:
@@ -2066,6 +2068,16 @@ func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.
 		}
 	}
 	return siteapiSiteSignupItemList
+}
+func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) site.SmsBroadcastContent {
+	var siteapiSmsBroadcastContent site.SmsBroadcastContent
+	if source != nil {
+		siteapiSmsBroadcastContent.Channel = smsContentChannel((*source).Channel)
+		if (*source).Text != nil {
+			siteapiSmsBroadcastContent.Text = *(*source).Text
+		}
+	}
+	return siteapiSmsBroadcastContent
 }
 func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site.SiteSmsConfirmation {
 	var siteapiSiteSmsConfirmation site.SiteSmsConfirmation

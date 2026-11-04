@@ -433,11 +433,12 @@ type Invoker interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
-	// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
-	// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
-	// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
-	// caps answer 429.
+	// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
+	// broadcast to the `phone` given, through the broadcast's Integration. It skips Send-eligibility and
+	// leaves no message and no figure. Telegram has no Test send, the author would need a Binding of their
+	// own (ADR 0080), so a Telegram broadcast is a 422. While the Workspace has no verified Sending domain
+	// an email preview goes from the System sender and only to the asking User's own address (ADR 0041):
+	// another address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -9336,11 +9337,12 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 
 // SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address. Only an email broadcast has one: Telegram has
-// no Test send, the author would need a Binding of their own (ADR 0080), so a Telegram broadcast is a
-// 422. While the Workspace has no verified Sending domain it goes from the System sender and only to
-// the asking User's own address (ADR 0041): another address is refused with 422, the System sender's
-// caps answer 429.
+// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
+// broadcast to the `phone` given, through the broadcast's Integration. It skips Send-eligibility and
+// leaves no message and no figure. Telegram has no Test send, the author would need a Binding of their
+// own (ADR 0080), so a Telegram broadcast is a 422. While the Workspace has no verified Sending domain
+// an email preview goes from the System sender and only to the asking User's own address (ADR 0041):
+// another address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
 func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {

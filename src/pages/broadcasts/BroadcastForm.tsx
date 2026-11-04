@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
+import { SmsContentEditor } from '../../components/sms/SmsContentEditor.tsx'
 import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
 import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
 import {
@@ -55,6 +56,9 @@ export function BroadcastForm(props: ResourceFormProps<CreateBroadcastInput, Bro
   }
   if (channel.data === 'telegram') {
     return <TelegramBroadcastForm {...props} />
+  }
+  if (channel.data === 'sms') {
+    return <SmsBroadcastForm {...props} />
   }
   return <EmailBroadcastForm {...props} />
 }
@@ -194,6 +198,82 @@ function TelegramBroadcastForm({
             onChange={(label) => form.setFieldValue('unsubscribeButton', label)}
           />
         </TelegramContentEditor>
+        <Group justify="flex-end">
+          <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>
+            {t(($) => $.actions.cancel)}
+          </ButtonLink>
+          <Button type="submit" loading={isPending}>
+            {t(($) => $.actions.save)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  )
+}
+
+// The editor of an SMS Broadcast: its Integration, Segment and text. Who it reaches is the
+// Segment's Contacts whose phone has an SMS Confirmation and no opt-out, so the note says that.
+function SmsBroadcastForm({
+  form,
+  isPending,
+  onSubmit,
+}: ResourceFormProps<CreateBroadcastInput, BroadcastValues>) {
+  const { t } = useTranslation()
+  const { workspaceId } = workspaceRoute.useParams()
+
+  const segmentsQuery = useQuery(
+    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
+  )
+  const segmentOptions = [
+    { value: '', label: t(($) => $.broadcasts.segmentAll) },
+    ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
+  ]
+
+  // The account the broadcast texts and paces through; blank is the Channel's default.
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
+  const integrationOptions = [
+    { value: '', label: t(($) => $.broadcasts.integrationDefault) },
+    ...(integrationsQuery.data ?? [])
+      .filter((integration) => integration.channel === 'sms')
+      .map((integration) => ({ value: integration.id, label: integration.name })),
+  ]
+
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
+        <Text size="sm">
+          {t(($) => $.broadcasts.channelShown, { channel: t(($) => $.broadcasts.channels.sms) })}
+        </Text>
+        <TextInput
+          label={t(($) => $.broadcasts.nameLabel)}
+          required
+          {...form.getInputProps('name')}
+        />
+        <Select
+          label={t(($) => $.broadcasts.integrationLabel)}
+          data={integrationOptions}
+          allowDeselect={false}
+          {...form.getInputProps('integrationId')}
+        />
+        <Select
+          label={t(($) => $.broadcasts.segmentLabel)}
+          data={segmentOptions}
+          allowDeselect={false}
+          {...form.getInputProps('segmentId')}
+        />
+        <Alert color="blue" variant="light">
+          {t(($) => $.broadcasts.segmentNoteSms)}
+        </Alert>
+        <SendCapWarning
+          workspaceId={workspaceId}
+          segmentId={form.values.segmentId}
+          segments={segmentsQuery.data?.items}
+          reach={{ channel: 'sms', integrationId: form.values.integrationId }}
+        />
+        <SmsContentEditor
+          value={form.values.text}
+          onChange={(text) => form.setFieldValue('text', text)}
+        />
         <Group justify="flex-end">
           <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.cancel)}
