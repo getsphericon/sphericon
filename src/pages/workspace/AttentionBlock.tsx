@@ -165,6 +165,16 @@ function EmailsAction({ workspaceId }: ActionProps) {
   )
 }
 
+// CredentialsAction opens the form that saves an Integration's credentials again.
+function CredentialsAction({ workspaceId, id, label }: ActionProps) {
+  const { t } = useTranslation()
+  return (
+    <AnchorLink to={emailsRoute.to} params={{ workspaceId }} search={{ integration: id }} size="sm">
+      {label ?? t(($) => $.overview.attention.actions.credentials)}
+    </AnchorLink>
+  )
+}
+
 function BroadcastAction({ workspaceId, id, label }: ActionProps) {
   const { t } = useTranslation()
   return (
@@ -205,7 +215,7 @@ function SuppressionsAction({ workspaceId }: ActionProps) {
 const ACTION = {
   sendingDomainVerificationLost: EmailsAction,
   integrationProviderStopped: EmailsAction,
-  integrationProviderRefused: EmailsAction,
+  integrationProviderRefused: CredentialsAction,
   broadcastHeld: BroadcastAction,
   automationCannotSend: AutomationAction,
   deliverabilityWarning: SuppressionsAction,
@@ -223,6 +233,7 @@ const ACTION = {
 // OBJECT_ACTIONS open the object an item is about rather than a page of the Workspace: in a group,
 // each name links to its object and the row has no link of its own.
 const OBJECT_ACTIONS: ReadonlySet<ComponentType<ActionProps>> = new Set([
+  CredentialsAction,
   BroadcastAction,
   AutomationAction,
 ])

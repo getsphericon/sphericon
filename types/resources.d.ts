@@ -1362,6 +1362,7 @@ export default interface Resources {
         "actions": {
           "automation": "Open the automation",
           "broadcast": "Open the broadcast",
+          "credentials": "Save its credentials",
           "emails": "Open email settings",
           "suppressions": "Review suppressions",
           "webhooks": "Open webhooks"
@@ -1788,6 +1789,15 @@ export default interface Resources {
         },
         "create": "Connect provider",
         "createError": "Failed to save provider",
+        "credentials": {
+          "cancel": "Cancel",
+          "description": "Save the provider's credentials again, new ones or the stored ones, and the provider checks them. A provider that refused its credentials sends again once it accepts them.",
+          "open": "Edit credentials",
+          "save": "Save credentials",
+          "saveError": "Failed to save the credentials",
+          "saved": "Credentials saved",
+          "title": "Credentials: {{name}}"
+        },
         "default": "Default",
         "defaultChanged": "Default provider changed",
         "defaultError": "Failed to change the default provider",
@@ -1798,6 +1808,7 @@ export default interface Resources {
         "empty": "No providers connected yet",
         "fields": {
           "accessKeyId": "Access key ID",
+          "accessKeyIdStored": "The stored key ends in {{last4}}. Enter it in full: the stored secret is kept only with the same key.",
           "accountSid": "Account SID",
           "apiKeySecret": "API key secret",
           "apiKeySid": "API key SID",
@@ -1813,6 +1824,7 @@ export default interface Resources {
           "port": "Port",
           "region": "AWS region",
           "secretAccessKey": "Secret access key",
+          "secretKeep": "Leave blank to keep the stored one.",
           "smsFrom": "Send from",
           "smsFromHint": "A number of the account (+15017250604), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (MG…).",
           "token": "Bot token",

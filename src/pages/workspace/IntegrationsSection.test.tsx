@@ -527,6 +527,95 @@ test('an SES-compatible service keeps both values: a blank is not saved', async 
   expect(bodies).toEqual([])
 })
 
+test('saves an SMTP server again as read back, its password kept when left blank', async () => {
+  const bodies: unknown[] = []
+  const withLogin: SiteIntegrationResource = {
+    ...smtp,
+    config: {
+      kind: 'smtp',
+      host: 'smtp.test',
+      port: 587,
+      username: 'mailer',
+      from: 'a@acme.com',
+      fromName: 'Acme',
+    },
+  }
+  worker.use(list([withLogin]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await expect.element(dialog.getByLabelText(/^SMTP host/)).toHaveValue('smtp.test')
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        config: {
+          kind: 'smtp',
+          host: 'smtp.test',
+          port: 587,
+          username: 'mailer',
+          password: null,
+          from: 'a@acme.com',
+          fromName: 'Acme',
+        },
+      },
+    ])
+})
+
+test('an SES account is saved again only with its access key ID typed in full', async () => {
+  const bodies: unknown[] = []
+  const ses: SiteIntegrationResource = {
+    ...smtp,
+    provider: 'ses',
+    config: { kind: 'ses', region: 'eu-west-1', from: 'hi@acme.com', accessKeyIdLast4: 'WXYZ' },
+  }
+  worker.use(list([ses]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  const keyId = dialog.getByLabelText(/^Access key ID/)
+  await expect.element(keyId).toHaveValue('')
+  await expect.element(keyId).toHaveAccessibleDescription(/ends in WXYZ/)
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+  await expect.element(keyId).toBeInvalid()
+  await expect.element(keyId).toHaveFocus()
+  await expect.element(dialog.getByText('This field is required')).toBeInTheDocument()
+  expect(bodies).toEqual([])
+
+  await keyId.fill('AKIAWXYZ')
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        config: {
+          kind: 'ses',
+          region: 'eu-west-1',
+          accessKeyId: 'AKIAWXYZ',
+          secretAccessKey: '',
+          endpoint: null,
+          from: 'hi@acme.com',
+          fromName: null,
+        },
+      },
+    ])
+})
+
+test('the Test inbox has no credentials to save', async () => {
+  const inbox: SiteIntegrationResource = { ...smtp, provider: 'inbox', config: { kind: 'inbox' } }
+  worker.use(list([inbox]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Provider limit' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('menuitem', { name: 'Edit credentials' }))
+    .not.toBeInTheDocument()
+})
+
 test('makes another provider the default, and the default offers no such action', async () => {
   const backup: SiteIntegrationResource = {
     ...smtp,
@@ -902,6 +991,62 @@ test("a Telegram bot's inbound settings offer no Preset", async () => {
   await expect.element(screen.getByRole('combobox', { name: 'Preset' })).not.toBeInTheDocument()
 })
 
+async function openCredentials(screen: Awaited<ReturnType<typeof renderWithRouter>>['screen']) {
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Edit credentials' }).click()
+  return screen.getByRole('dialog')
+}
+
+test("saves a Telegram bot's stored token again when the token is left blank", async () => {
+  const bodies: unknown[] = []
+  worker.use(list([telegramBot]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  const token = dialog.getByLabelText(/^Bot token/)
+  await expect.element(token).toHaveValue('')
+  await expect.element(token).not.toBeRequired()
+  await expect.element(token).toHaveAccessibleDescription(/Leave blank to keep the stored one/)
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ config: { kind: 'telegram', token: '' } }])
+  await expect.element(dialog).not.toBeInTheDocument()
+})
+
+test("a provider's refusal of the credentials shows in the form, which stays open", async () => {
+  worker.use(
+    list([telegramBot]),
+    handleSiteIntegrationsUpdate(() =>
+      problem(422, {
+        title: 'Unprocessable Entity',
+        detail: 'Telegram refused the bot token.',
+        errors: { token: ['Telegram refused the bot token.'] },
+      }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect.element(dialog.getByText('Failed to save the credentials')).toBeInTheDocument()
+  await expect.element(dialog.getByText('Telegram refused the bot token.')).toBeInTheDocument()
+})
+
+test("saves a Telegram bot's new token", async () => {
+  const bodies: unknown[] = []
+  worker.use(list([telegramBot]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await dialog.getByLabelText(/^Bot token/).fill(' 7000000001:AAnew ')
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ config: { kind: 'telegram', token: '7000000001:AAnew' } }])
+})
+
 const twilioAccount: SiteIntegrationResource = {
   ...smtp,
   id: '8',
@@ -994,6 +1139,86 @@ test('a Twilio account sending with its Auth Token sends and signs with the one 
     },
     params: { auth_token: 'authtoken' },
   })
+})
+
+test('saves a Twilio account again with its stored secret and Auth Token left blank', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([twilioAccount]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await expect.element(dialog.getByLabelText(/^Account SID/)).toHaveValue('AC-test-account')
+  await expect.element(dialog.getByLabelText(/^API key SID/)).toHaveValue('SK-test-key')
+  await expect.element(dialog.getByLabelText(/^API key secret/)).not.toBeRequired()
+  // The Auth Token that signs its callbacks rotates in the inbound settings, not here.
+  await expect.element(dialog.getByLabelText(/^Auth Token/)).not.toBeInTheDocument()
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        config: {
+          kind: 'twilio',
+          accountSid: 'AC-test-account',
+          apiKeySid: 'SK-test-key',
+          secret: '',
+          from: '+15017250604',
+        },
+      },
+    ])
+})
+
+test('a Twilio account saved again needs its Account SID', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([twilioAccount]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  const accountSid = dialog.getByLabelText(/^Account SID/)
+  await accountSid.clear()
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect.element(accountSid).toBeInvalid()
+  await expect.element(accountSid).toHaveAccessibleDescription(/This field is required/)
+  expect(bodies).toEqual([])
+})
+
+test('a Twilio account that sends with its Auth Token saves a new one as both', async () => {
+  const bodies: unknown[] = []
+  const tokenOnly: SiteIntegrationResource = {
+    ...twilioAccount,
+    config: {
+      kind: 'twilio',
+      accountSid: 'AC-test-account',
+      apiKeySid: null,
+      from: '+15017250604',
+      fromKind: 'number',
+      callbacksSet: true,
+    },
+  }
+  worker.use(list([tokenOnly]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  const dialog = await openCredentials(screen)
+  await expect.element(dialog.getByLabelText(/^API key SID/)).not.toBeInTheDocument()
+  await dialog.getByLabelText(/^Auth Token/).fill('newtoken')
+  await dialog.getByRole('button', { name: 'Save credentials' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        config: {
+          kind: 'twilio',
+          accountSid: 'AC-test-account',
+          apiKeySid: null,
+          secret: 'newtoken',
+          from: '+15017250604',
+        },
+        params: { auth_token: 'newtoken' },
+      },
+    ])
 })
 
 test('a Twilio sender whose callbacks sphericon could not set shows the address to copy', async () => {

@@ -11,13 +11,19 @@ import { SettingsFrame } from './SettingsFrame.tsx'
 export function EmailsPage() {
   const { t } = useTranslation()
   const { workspaceId } = emailsRoute.useParams()
+  const { integration } = emailsRoute.useSearch()
+  const navigate = emailsRoute.useNavigate()
 
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.emails)}>
       {(workspace) => (
         <Stack gap="xl">
           <SendCapSection sendCap={workspace.sendCap} />
-          <IntegrationsSection workspace={workspace} />
+          <IntegrationsSection
+            workspace={workspace}
+            linkedId={integration}
+            onLinkedClosed={() => void navigate({ search: {}, replace: true })}
+          />
           <SendingDomainsSection
             workspaceId={workspace.id}
             canEdit={can(workspace, 'sending_domains:manage')}
