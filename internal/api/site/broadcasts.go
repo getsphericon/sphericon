@@ -232,8 +232,7 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Test
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	to := outbound.TestAddress{Email: string(req.Email.Or("")), Phone: req.Phone.Or("")}
-	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, to, &outbound.Asker{UserID: a.UserID, Email: a.Email})
+	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), &outbound.Asker{UserID: a.UserID, Email: a.Email})
 	if err != nil {
 		return nil, err
 	}
@@ -241,9 +240,6 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Test
 		// The System sender's cap: the client waits as for any rate limit.
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, res.Limit, res.Wait, h.now())
 	}
-	out := &siteapi.SiteTestSendBroadcastResult{Captured: res.Captured}
-	if res.From != "" {
-		out.From = siteapi.NewOptEmailAddress(siteapi.EmailAddress(res.From))
-	}
-	return out, nil
+	out := mapper.TestSendResultToResource(res)
+	return &out, nil
 }

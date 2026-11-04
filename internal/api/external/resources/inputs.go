@@ -19,6 +19,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -56,6 +58,7 @@ import (
 // goverter:extend buttonsPtrIn
 // goverter:extend buttonsPatch
 // goverter:extend stringIn
+// goverter:extend emailIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
@@ -182,10 +185,16 @@ type Inputs interface {
 	// goverter:enum:map SuppressionChannelTelegram ChannelTelegram
 	// goverter:enum:map SuppressionChannelSMS ChannelSms
 	SuppressionChannel(source externalapi.SuppressionChannel) suppression.Channel
+	// goverter:enum:map ConsentChannelEmail ChannelEmail
+	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
+	// goverter:enum:map ConsentChannelSMS ChannelSMS
+	ConsentChannel(source externalapi.ConsentChannel) messaging.Channel
 
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
 	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
 	ConsentEvidence(source externalapi.ConsentEvidence) consent.Evidence
+	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	TestAddress(source *externalapi.TestSendBroadcastInput) outbound.TestAddress
 }
 
 // smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
@@ -229,6 +238,7 @@ func maxPerSecondPatch(o externalapi.OptNilMaxPerSecond) patch.Field[int] { retu
 func maxPerDayPatch(o externalapi.OptNilMaxPerDay) patch.Field[int]       { return convert.IntPatch(o) }
 func listPatch(list []string) patch.Field[[]string]                       { return convert.ListPatch(list) }
 func stringIn(o externalapi.OptString) string                             { return o.Or("") }
+func emailIn(o externalapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o externalapi.OptString) *string                         { return convert.Ptr(o) }
 func nilStringPtrIn(o externalapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o externalapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }

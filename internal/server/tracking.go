@@ -295,21 +295,17 @@ func (e engaged) click(dest string, software bool) events.DomainEvent {
 	if e.contact != nil {
 		contactID = e.contact.ID
 	}
+	click := events.LinkClick{
+		WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
+		IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
+		BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
+		OutboundMessageID: e.msg.ID, Machine: software,
+	}
 	switch e.msg.Channel {
 	case outboundmessage.ChannelTelegram:
-		return &events.TelegramClicked{
-			WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
-			IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
-			BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
-			OutboundMessageID: e.msg.ID, Machine: software,
-		}
+		return new(events.TelegramClicked(click))
 	case outboundmessage.ChannelSms:
-		return &events.SmsClicked{
-			WorkspaceID: e.msg.WorkspaceID, ContactID: contactID, Email: e.email,
-			IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
-			BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
-			OutboundMessageID: e.msg.ID, Machine: software,
-		}
+		return new(events.SmsClicked(click))
 	default:
 		return e.engagement(events.NameEmailClicked, dest, software)
 	}

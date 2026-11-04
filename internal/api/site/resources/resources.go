@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
@@ -124,6 +125,7 @@ import (
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
+// goverter:extend optEmail
 // goverter:extend optBool
 // goverter:extend optEditorDocument
 // goverter:extend optMembershipSource
@@ -418,6 +420,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source consent.ContactSMS) siteapi.SiteSmsConsent
+	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
 	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SiteSmsOptOut
 	// goverter:enum:transform value
 	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
@@ -1017,6 +1020,14 @@ func optInt32(v *int) siteapi.OptInt32 {
 
 func optString(v *string) siteapi.OptString {
 	return convert.Opt[siteapi.OptString](v)
+}
+
+// optEmail is an address, unset when there is none.
+func optEmail(v string) siteapi.OptEmailAddress {
+	if v == "" {
+		return siteapi.OptEmailAddress{}
+	}
+	return siteapi.NewOptEmailAddress(siteapi.EmailAddress(v))
 }
 
 func optMembershipSource(c Converter, v *membership.Source) siteapi.OptSiteMembershipSource {

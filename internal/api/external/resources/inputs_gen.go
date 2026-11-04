@@ -17,6 +17,8 @@ import (
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	messaging "github.com/getsphericon/sphericon/internal/messaging"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -207,6 +209,20 @@ func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInp
 		consentEvidence.Brand = (*source).Brand
 	}
 	return consentEvidence
+}
+func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) messaging.Channel {
+	var messagingChannel messaging.Channel
+	switch source {
+	case external.ConsentChannelEmail:
+		messagingChannel = messaging.ChannelEmail
+	case external.ConsentChannelSMS:
+		messagingChannel = messaging.ChannelSMS
+	case external.ConsentChannelTelegram:
+		messagingChannel = messaging.ChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return messagingChannel
 }
 func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
 	var consentEvidence consent.Evidence
@@ -534,6 +550,14 @@ func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) templa
 		templatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
 	return templatesUpdateInput
+}
+func (c *InputsImpl) TestAddress(source *external.TestSendBroadcastInput) outbound.TestAddress {
+	var outboundTestAddress outbound.TestAddress
+	if source != nil {
+		outboundTestAddress.Email = emailIn((*source).Email)
+		outboundTestAddress.Phone = stringIn((*source).Phone)
+	}
+	return outboundTestAddress
 }
 func (c *InputsImpl) WebhookCreate(source *external.CreateWebhookInput) webhooks.CreateInput {
 	var webhooksCreateInput webhooks.CreateInput

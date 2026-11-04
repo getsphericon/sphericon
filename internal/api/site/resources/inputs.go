@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -64,6 +65,7 @@ import (
 // goverter:extend buttonsPtrIn
 // goverter:extend buttonsPatch
 // goverter:extend stringIn
+// goverter:extend emailIn
 // goverter:extend stringPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
@@ -106,6 +108,8 @@ type Inputs interface {
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
 	ConsentEvidence(source *siteapi.ConsentEvidence) consent.Evidence
+	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	TestAddress(source *siteapi.TestSendBroadcastInput) outbound.TestAddress
 
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -257,6 +261,7 @@ func maxPerSecondPatch(o siteapi.OptNilMaxPerSecond) patch.Field[int] { return c
 func maxPerDayPatch(o siteapi.OptNilMaxPerDay) patch.Field[int]       { return convert.IntPatch(o) }
 func listPatch(list []string) patch.Field[[]string]                   { return convert.ListPatch(list) }
 func stringIn(o siteapi.OptString) string                             { return o.Or("") }
+func emailIn(o siteapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o siteapi.OptString) *string                         { return convert.Ptr(o) }
 func nilStringPtrIn(o siteapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }

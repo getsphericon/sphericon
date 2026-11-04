@@ -23,6 +23,7 @@ import (
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
@@ -769,6 +770,14 @@ func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) templates.
 		templatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
 	return templatesUpdateInput
+}
+func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outbound.TestAddress {
+	var outboundTestAddress outbound.TestAddress
+	if source != nil {
+		outboundTestAddress.Email = emailIn((*source).Email)
+		outboundTestAddress.Phone = stringIn((*source).Phone)
+	}
+	return outboundTestAddress
 }
 func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input

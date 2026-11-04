@@ -3,12 +3,9 @@ package external
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
-
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
@@ -29,18 +26,8 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (externalapi.UnsubscribesCreateRes, error) {
-	s := auth.TokenScoped(ctx)
-
-	var u *ent.Unsubscribe
-	var err error
-	switch req.Channel.Or(externalapi.ConsentChannelEmail) {
-	case externalapi.ConsentChannelTelegram:
-		u, err = consent.TelegramUnsubscribe(ctx, h.bus, s, req.Destination, req.SendingSource.Or(eligibility.SourceEverything))
-	case externalapi.ConsentChannelSMS:
-		u, err = consent.SMSUnsubscribe(ctx, h.bus, s, req.Destination, req.SendingSource.Or(eligibility.SourceEverything))
-	default:
-		u, err = consent.Unsubscribe(ctx, h.bus, s, req.Destination, req.SendingSource.Or(eligibility.SourceBroadcasts))
-	}
+	channel := inputs.ConsentChannel(req.Channel.Or(externalapi.ConsentChannelEmail))
+	u, err := consent.OptOut(ctx, h.bus, auth.TokenScoped(ctx), channel, req.Destination, req.SendingSource.Or(""))
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +36,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (externalapi.ConfirmationsCreateRes, error) {
-	c, err := consent.Confirm(ctx, h.bus, auth.TokenScoped(ctx), string(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
+	c, err := consent.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
 	if err != nil {
 		return nil, err
 	}

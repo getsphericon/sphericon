@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -44,8 +45,8 @@ var (
 // an imported Confirmation, and returns the Confirmation that stands: a stronger one already on
 // the destination stays. Only sms takes one: email is confirmed by its own double opt-in link and a
 // Telegram chat is its own opt-in. It never lifts an opt-out.
-func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel, destination string, ev Evidence) (*ent.Confirmation, error) {
-	if channel != eligibility.ChannelSMS {
+func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel messaging.Channel, destination string, ev Evidence) (*ent.Confirmation, error) {
+	if channel != messaging.ChannelSMS {
 		return nil, ErrConfirmationChannel
 	}
 	number, err := smsNumber(destination)
@@ -83,9 +84,9 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 	if err != nil {
 		return nil, err
 	}
-	holder, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, fmt.Errorf("find the number's contact: %w", err)
+	holder, err := holderOf(ctx, s, number)
+	if err != nil {
+		return nil, err
 	}
 	return recordIn(ctx, s, pub, grant{
 		channel: confirmation.ChannelSms, destination: number, provenance: confirmation.ProvenanceImported,
@@ -102,15 +103,27 @@ func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number
 	if err := optout.LiftSMS(ctx, s, number); err != nil {
 		return err
 	}
-	holder, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return fmt.Errorf("find the number's contact: %w", err)
+	holder, err := holderOf(ctx, s, number)
+	if err != nil {
+		return err
 	}
 	_, err = recordIn(ctx, s, pub, grant{
 		channel: confirmation.ChannelSms, destination: number, provenance: confirmation.ProvenanceKeyword,
 		contactID: holder,
 	})
 	return err
+}
+
+// holderOf is the id of the Contact whose phone number is, 0 when no Contact has it.
+func holderOf(ctx context.Context, s *ent.Scoped, number string) (int64, error) {
+	id, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
+	if ent.IsNotFound(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("find the number's contact: %w", err)
+	}
+	return id, nil
 }
 
 // SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
@@ -185,7 +198,7 @@ func ConfirmContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, cont
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if _, err := Confirm(ctx, bus, s, eligibility.ChannelSMS, number, ev); err != nil {
+	if _, err := Confirm(ctx, bus, s, messaging.ChannelSMS, number, ev); err != nil {
 		return ContactSMS{}, err
 	}
 	return ReadContactSMS(ctx, s, contactID)

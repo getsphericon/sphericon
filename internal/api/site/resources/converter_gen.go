@@ -43,6 +43,7 @@ import (
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	orders "github.com/getsphericon/sphericon/internal/orders"
+	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
@@ -2303,6 +2304,12 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	siteapiSiteTemplatesListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteTemplatesListOK
+}
+func (c *ConverterImpl) TestSendResultToResource(source outbound.Result) site.SiteTestSendBroadcastResult {
+	var siteapiSiteTestSendBroadcastResult site.SiteTestSendBroadcastResult
+	siteapiSiteTestSendBroadcastResult.From = optEmail(source.From)
+	siteapiSiteTestSendBroadcastResult.Captured = source.Captured
+	return siteapiSiteTestSendBroadcastResult
 }
 func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenResource {
 	var siteapiSiteApiTokenResource site.SiteApiTokenResource

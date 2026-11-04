@@ -84,13 +84,19 @@ function providerOf(tile: Tile): ProviderKind {
   return tile === 'sesCompatible' ? 'ses' : tile
 }
 
-// The Channel a tile's provider sends on: a Telegram bot on telegram, Twilio on sms, every other on
-// email.
+// The Channel each provider sends on (an Integration serves one Channel, ADR 0074). The API reads
+// it back on each Integration as `channel`; a form for a provider not connected yet has none to read.
+const CHANNEL_OF: Record<ProviderKind, SiteIntegrationChannel> = {
+  ses: 'email',
+  smtp: 'email',
+  inbox: 'email',
+  telegram: 'telegram',
+  twilio: 'sms',
+}
+
+// The Channel a tile's provider sends on; email before a tile is picked.
 function channelOf(tile: Tile | null): SiteIntegrationChannel {
-  if (tile === 'telegram') {
-    return 'telegram'
-  }
-  return tile === 'twilio' ? 'sms' : 'email'
+  return tile === null ? 'email' : CHANNEL_OF[providerOf(tile)]
 }
 
 // How a Twilio account sends: with an API key and its secret, or with the Auth Token.

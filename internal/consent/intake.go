@@ -1,6 +1,7 @@
 package consent
 
 import (
+	"cmp"
 	"context"
 	"net/mail"
 	"strconv"
@@ -38,6 +39,21 @@ var (
 	// ErrUnknownAutomation: the automation:<id> source names no Automation of this Workspace.
 	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", i18n.ErrorsSendingSourceAutomationUnknown)
 )
+
+// OptOut records that destination opted out on channel from a sending source, as an opt-out that
+// reached the Workspace by any route: on email Unsubscribe, on telegram TelegramUnsubscribe, on sms
+// SMSUnsubscribe. An empty source is the Channel's default: `broadcasts` on email, `everything` on
+// telegram and sms, where a person stops all of the Workspace's messages. Idempotent.
+func OptOut(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel messaging.Channel, destination, source string) (*ent.Unsubscribe, error) {
+	switch channel {
+	case messaging.ChannelTelegram:
+		return TelegramUnsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
+	case messaging.ChannelSMS:
+		return SMSUnsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
+	case messaging.ChannelEmail:
+	}
+	return Unsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceBroadcasts))
+}
 
 // Unsubscribe records an opt-out of destination from a sending source, with the
 // same effects as the unsubscribe link (RecordUnsubscribe): the row, the
