@@ -172,7 +172,9 @@ type Module struct {
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
 	m := &Module{cipher: cipher, bus: bus}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
-		NotFound:         ErrNotFound,
+		NotFound: ErrNotFound,
+		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
+		Archived:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
 	})

@@ -51,13 +51,13 @@ type Definition[O, V, E, B any] interface {
 	Editable(row *O) error
 }
 
-// Errors are the refusals of one kind of definition, in its own words.
+// Errors are the refusals of one kind of definition, in its own words. Every one is required: New
+// refuses a kind that leaves one nil.
 type Errors struct {
 	// NotFound: no such object in the Workspace, or a discarded one where only a kept one acts.
 	NotFound error
 	// Archived: the object is archived and takes no owner write until it is unarchived (ADR 0100,
-	// a 409). Only an archivable kind reaches it; a discardable one leaves it nil, and a kind that
-	// leaves it nil is refused with errArchived all the same.
+	// a 409). Only an archivable kind reaches it.
 	Archived error
 	// NothingToPublish: the object has neither a draft nor a live version.
 	NothingToPublish error
@@ -74,15 +74,11 @@ type Lifecycle[O, V, E, B any] struct {
 
 // New builds the lifecycle of a kind of definition. The bus opens the transaction of each move.
 func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Errors) *Lifecycle[O, V, E, B] {
-	if errs.Archived == nil {
-		errs.Archived = errArchived
+	if errs.NotFound == nil || errs.Archived == nil || errs.NothingToPublish == nil || errs.NothingToRevert == nil {
+		panic("drafts: a kind names every refusal of drafts.Errors")
 	}
 	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs}
 }
-
-// errArchived refuses an owner's move of an archived object of a kind that names no refusal of its
-// own (Errors.Archived), so a move never goes through for want of one.
-var errArchived = errors.New("drafts: the object is archived")
 
 // errNoVersion: an object with neither a draft nor a live version to edit, which Create never
 // leaves.
