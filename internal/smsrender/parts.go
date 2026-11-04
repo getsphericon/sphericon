@@ -76,23 +76,39 @@ func parts(n, single, each int) int {
 	return (n + each - 1) / each
 }
 
-// TooManyPartsError is a text that, as written, takes more parts than the provider sends.
-type TooManyPartsError struct {
+// Limit is the longest text a provider sends, in characters of each encoding as Measure counts them
+// (Size.Characters): a provider takes fewer characters in UCS-2 than in GSM-7.
+type Limit struct {
+	GSM7 int
+	UCS2 int
+}
+
+// Of is the limit in encoding e.
+func (l Limit) Of(e Encoding) int {
+	if e == UCS2 {
+		return l.UCS2
+	}
+	return l.GSM7
+}
+
+// TooLongError is a text that, as written, is longer than the provider sends in its encoding.
+type TooLongError struct {
 	Size  Size
 	Limit int
 }
 
-func (e *TooManyPartsError) Error() string {
-	return fmt.Sprintf("the text is %d characters in %s, %d segments; it may take %d segments at most",
-		e.Size.Characters, e.Size.Encoding, e.Size.Parts, e.Limit)
+func (e *TooLongError) Error() string {
+	return fmt.Sprintf("the text is %d characters in %s (%d segments); it may take %d characters in %s at most",
+		e.Size.Characters, e.Size.Encoding, e.Size.Parts, e.Limit, e.Size.Encoding)
 }
 
-// CheckParts refuses a text that, as written with its links as short links of linkLength characters
-// (MeasureLinked; 0 when they are not tracked), takes more than limit parts, the provider's part
-// limit. The error is a *TooManyPartsError.
-func CheckParts(text string, limit, linkLength int) error {
-	if size := MeasureLinked(text, linkLength); size.Parts > limit {
-		return &TooManyPartsError{Size: size, Limit: limit}
+// CheckLength refuses a text that, as written with its links as short links of linkLength
+// characters (MeasureLinked; 0 when they are not tracked), is longer than limit, the provider's, in
+// its encoding. The error is a *TooLongError.
+func CheckLength(text string, limit Limit, linkLength int) error {
+	size := MeasureLinked(text, linkLength)
+	if size.Characters > limit.Of(size.Encoding) {
+		return &TooLongError{Size: size, Limit: limit.Of(size.Encoding)}
 	}
 	return nil
 }

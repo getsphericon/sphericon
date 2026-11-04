@@ -2202,6 +2202,14 @@ export const zSiteSignupSurveyInput = z.object({
 });
 
 /**
+ * The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2)
+ */
+export const zSiteSmsLengthLimit = z.object({
+  gsm7: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  ucs2: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -3840,6 +3848,7 @@ export const zSiteWorkspaceResource = z.object({
   trackerUrl: z.string(),
   trackingTarget: z.exactOptional(z.string()),
   shortLinkLength: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  smsMaxLength: zSiteSmsLengthLimit,
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),

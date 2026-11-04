@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 
 	"github.com/go-faster/jx"
@@ -210,6 +211,9 @@ type Converter interface {
 	// The length of a short tracked link depends on the Workspace's serving Tracking domain
 	// (outbound.Module.ShortLinkLength): the handler attaches it.
 	// goverter:ignore ShortLinkLength
+	// The SMS provider's length limit is the send path's (outbound.Module.SMSLengthLimit): the
+	// handler attaches it through SmsLengthLimitToResource.
+	// goverter:ignore SmsMaxLength
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
@@ -421,6 +425,7 @@ type Converter interface {
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source consent.ContactSMS) siteapi.SmsConsent
 	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
+	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
 	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia

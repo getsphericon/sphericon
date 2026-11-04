@@ -2356,7 +2356,8 @@ export default interface Resources {
       "linkTrackingHint": "Each link goes out as a short link on your Tracking domain, so you see its clicks. The count includes the short links. Turn it off to keep your links as written.",
       "segments": "{{count, number}} segment" | "{{count, number}} segments",
       "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
-      "textLabel": "Message"
+      "textLabel": "Message",
+      "tooLong": "Too long: a text may take {{limit, number}} characters in {{encoding}}. Shorten it to save."
     },
     "suppressions": {
       "channelEmail": "Email",

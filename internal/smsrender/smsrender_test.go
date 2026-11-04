@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/smsrender"
 )
 
@@ -22,6 +23,8 @@ type partsCase struct {
 	Encoding   string            `json:"encoding"`
 	Characters int               `json:"characters"`
 	Parts      int               `json:"parts"`
+	// Fits is, for a limit case, whether the text is within Twilio's length limit.
+	Fits bool `json:"fits"`
 }
 
 // caseText is the text of c, its pieces repeated and joined.
@@ -76,16 +79,43 @@ func TestALongerTextNeverTakesFewerParts(t *testing.T) {
 	})
 }
 
-func TestCheckPartsRefusesATextOverTheLimit(t *testing.T) {
+func TestCheckLengthRefusesATextOverTheLimitOfItsEncoding(t *testing.T) {
+	limit := smsrender.Limit{GSM7: 306, UCS2: 70}
 	at := strings.Repeat("a", 306)
 
-	require.NoError(t, smsrender.CheckParts(at, 2, 0))
-	err := smsrender.CheckParts(at+"a", 2, 0)
+	fits := smsrender.CheckLength(at, limit, 0)
+	err := smsrender.CheckLength(at+"a", limit, 0)
 
-	tooLong, ok := errors.AsType[*smsrender.TooManyPartsError](err)
+	require.NoError(t, fits)
+	tooLong, ok := errors.AsType[*smsrender.TooLongError](err)
 	require.True(t, ok, "got %v", err)
-	assert.Equal(t, smsrender.TooManyPartsError{Size: smsrender.Size{Encoding: smsrender.GSM7, Characters: 307, Parts: 3}, Limit: 2}, *tooLong)
-	assert.Equal(t, "the text is 307 characters in GSM-7, 3 segments; it may take 2 segments at most", err.Error())
+	assert.Equal(t, smsrender.TooLongError{Size: smsrender.Size{Encoding: smsrender.GSM7, Characters: 307, Parts: 3}, Limit: 306}, *tooLong)
+	assert.Equal(t, "the text is 307 characters in GSM-7 (3 segments); it may take 306 characters in GSM-7 at most", err.Error())
+}
+
+// The limit the table pins is Twilio's, and the save refuses exactly the texts the table says do not
+// fit it; the editor's counter flags the same ones (src/utils/smsParts.test.ts).
+func TestTwiliosLengthLimitAgreesWithTheSharedTable(t *testing.T) {
+	raw, err := os.ReadFile("testdata/parts.json")
+	require.NoError(t, err)
+	var table struct {
+		Limit struct {
+			GSM7 int `json:"gsm7"`
+			UCS2 int `json:"ucs2"`
+		} `json:"limit"`
+		LimitCases []partsCase `json:"limitCases"`
+	}
+	require.NoError(t, json.Unmarshal(raw, &table))
+	require.NotEmpty(t, table.LimitCases)
+
+	assert.Equal(t, smsrender.Limit{GSM7: table.Limit.GSM7, UCS2: table.Limit.UCS2}, twilio.MaxLength)
+	for _, c := range table.LimitCases {
+		t.Run(c.Name, func(t *testing.T) {
+			err := smsrender.CheckLength(caseText(t, c), twilio.MaxLength, 0)
+
+			assert.Equal(t, c.Fits, err == nil, "refused: %v", err)
+		})
+	}
 }
 
 // linksCase is one row of testdata/links.json: a text, the links found in it, and its figures once
@@ -135,9 +165,13 @@ func TestRewriteLinksStopsAtTheFirstError(t *testing.T) {
 	assert.ErrorIs(t, err, boom)
 }
 
-func TestCheckPartsCountsTheShortLinks(t *testing.T) {
+func TestCheckLengthCountsTheShortLinks(t *testing.T) {
 	text := strings.Repeat("a", 280) + " https://shop.example/" + strings.Repeat("p", 100)
+	limit := smsrender.Limit{GSM7: 306, UCS2: 134}
 
-	require.Error(t, smsrender.CheckParts(text, 2, 0), "as written the text takes three parts")
-	assert.NoError(t, smsrender.CheckParts(text, 2, 25), "with its link short it takes two")
+	asWritten := smsrender.CheckLength(text, limit, 0)
+	shortened := smsrender.CheckLength(text, limit, 25)
+
+	require.Error(t, asWritten, "as written the text is 402 characters")
+	assert.NoError(t, shortened, "with its link short it is 306")
 }

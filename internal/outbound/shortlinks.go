@@ -11,6 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -58,6 +60,10 @@ func (m *Module) smsShortLinks(ctx context.Context, s *ent.Scoped, messageID int
 	}
 	return &shortLinks{s: s, tracker: tr, messageID: messageID, keep: keep}, nil
 }
+
+// SMSLengthLimit is the longest text an SMS goes out as: Twilio's, the one SMS provider. The SMS
+// counter flags a text over it, as the save refuses it.
+func (m *Module) SMSLengthLimit() smsrender.Limit { return twilio.MaxLength }
 
 // ShortLinkLength is the length of a short tracked link of the Workspace, on its serving Tracking
 // domain or the Instance's host: what the SMS counter counts each tracked link as. 0 when the

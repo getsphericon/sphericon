@@ -78,6 +78,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.ShortLinkLength = narrow.Int32(linkLength)
+	r.SmsMaxLength = mapper.SmsLengthLimitToResource(h.outbound.SMSLengthLimit())
 	return r, nil
 }
 

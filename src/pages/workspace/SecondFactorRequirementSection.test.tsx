@@ -25,6 +25,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   shortLinkLength: 35,
+  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   holds: [],
   role: 'member',
   createdAt: NOW,

@@ -1,7 +1,13 @@
 {
-  "about": "The SMS counter's cases, read by both counters (internal/smsrender and src/utils/smsParts.ts). A text is its pieces, each a string repeated a number of times. The expected figures are worked out by hand: GSM-7 is 160 characters in one part or 153 per part, UCS-2 70 or 67; one character outside GSM-7 makes the whole text UCS-2; a GSM-7 extension character counts as two, and UCS-2 counts UTF-16 code units.",
+  "about": "The SMS counter's cases, read by both counters (internal/smsrender and src/utils/smsParts.ts). A text is its pieces, each a string repeated a number of times. The expected figures are worked out by hand: GSM-7 is 160 characters in one part or 153 per part, UCS-2 70 or 67; one character outside GSM-7 makes the whole text UCS-2; a GSM-7 extension character counts as two, and UCS-2 counts UTF-16 code units. The limit is the longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2, counted as the counter counts them), and each limit case says whether its text fits it.",
   "cases": [
-    { "name": "empty", "text": [], "encoding": "GSM-7", "characters": 0, "parts": 0 },
+    {
+      "name": "empty",
+      "text": [],
+      "encoding": "GSM-7",
+      "characters": 0,
+      "parts": 0
+    },
     {
       "name": "one GSM-7 letter",
       "text": [["a", 1]],
@@ -215,6 +221,55 @@
       "encoding": "GSM-7",
       "characters": 23,
       "parts": 1
+    }
+  ],
+  "limit": {
+    "gsm7": 1600,
+    "ucs2": 700
+  },
+  "limitCases": [
+    {
+      "name": "1600 GSM-7 characters go",
+      "text": [["a", 1600]],
+      "fits": true
+    },
+    {
+      "name": "1601 GSM-7 characters are too long",
+      "text": [["a", 1601]],
+      "fits": false
+    },
+    {
+      "name": "1599 GSM-7 characters and a euro sign are 1601",
+      "text": [
+        ["a", 1599],
+        ["€", 1]
+      ],
+      "fits": false
+    },
+    {
+      "name": "671 UCS-2 characters, past ten segments, go",
+      "text": [["ж", 671]],
+      "fits": true
+    },
+    {
+      "name": "700 UCS-2 characters go",
+      "text": [["ж", 700]],
+      "fits": true
+    },
+    {
+      "name": "701 UCS-2 characters are too long",
+      "text": [["ж", 701]],
+      "fits": false
+    },
+    {
+      "name": "350 emoji are 700 code units and go",
+      "text": [["🙂", 350]],
+      "fits": true
+    },
+    {
+      "name": "351 emoji are too long",
+      "text": [["🙂", 351]],
+      "fits": false
     }
   ]
 }

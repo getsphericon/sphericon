@@ -194,32 +194,36 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled, "the Integration is not held by a Test send")
 }
 
-// A save refuses a text over the part limit as written, as an SMS step's does: 10 segments of 153
-// GSM-7 characters each.
-func TestSiteSMSBroadcastSaveRefusesATextOverThePartLimit(t *testing.T) {
+// A save refuses a text longer than Twilio sends as written, as an SMS step's does: 1,600
+// characters in GSM-7, 700 in UCS-2.
+func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.ConnectTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, strings.Repeat("a", 1530), nil)
+	b := createSMSBroadcast(t, c, account, strings.Repeat("a", 1600), nil)
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1531))},
+	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1601))},
 		siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 671))},
+	fits, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))},
+		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+	require.NoError(t, err)
+	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 	require.NoError(t, err)
 
 	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", created)
-	assert.Contains(t, refused.Detail.Value, "11 segments")
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, edited, "671 UCS-2 characters are 11 segments of 67")
+	assert.Contains(t, refused.Detail.Value, "1601 characters in GSM-7")
+	assert.IsType(t, &siteapi.SiteBroadcastResource{}, fits, "700 UCS-2 characters, eleven segments, go")
+	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, edited, "701 UCS-2 characters are too long")
 }
 
-// The part limit counts each link of a tracked text as the Workspace's short link (ADR 0083), the
-// length the Workspace resource reports for the editor's counter, and as written once tracking is
-// off: a text whose long link takes it past ten segments is saved while its links are tracked, and
-// turning tracking off is refused.
+// The length limit counts each link of a tracked text as the Workspace's short link (ADR 0083), the
+// length the Workspace resource reports for the editor's counter with the limit itself, and as
+// written once tracking is off: a text whose long link takes it past 1,600 characters is saved while
+// its links are tracked, and turning tracking off is refused.
 func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -241,12 +245,13 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	acme, found := lo.Find(spaces, func(w siteapi.SiteWorkspaceResource) bool { return w.ID == fixtures.AcmePublicID })
 	require.True(t, found)
 	assert.EqualValues(t, linkLength, acme.ShortLinkLength)
+	assert.Equal(t, siteapi.SiteSmsLengthLimit{Gsm7: 1600, Ucs2: 700}, acme.SmsMaxLength, "Twilio's limit, for the counter")
 	assert.Greater(t, linkLength, len("https://x/c/")+10)
 	content := testhelper.SiteSMSOf(b)
 	assert.True(t, content.LinkTracking, "tracking is on by default")
 	refused, ok := edited.(*siteapi.SiteBroadcastsUpdateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", edited)
-	assert.Contains(t, refused.Detail.Value, "11 segments", "1622 characters as written")
+	assert.Contains(t, refused.Detail.Value, "1622 characters in GSM-7", "as written")
 }
 
 func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {

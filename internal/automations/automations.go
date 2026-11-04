@@ -143,9 +143,9 @@ func validate(steps []automationsteps.Step, linkLength int) error {
 			if err := smsrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-			// Twilio is the one SMS provider, so its part limit is the one a text is held to. Its
+			// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
 			// links count as the short links they go out as, unless the step keeps them.
-			if err := smsrender.CheckParts(s.Text, twilio.MaxParts, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
+			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
 				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 			}
 		case automationsteps.HTTP:

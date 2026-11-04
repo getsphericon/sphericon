@@ -24,16 +24,19 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/smsrender"
 )
 
 // DefaultAPIURL is Twilio's own REST API.
 const DefaultAPIURL = "https://api.twilio.com"
 
-// MaxParts is the most segments a text sent through Twilio may take, counted as
-// smsrender.Measure counts them. Twilio takes a body of up to 1,600 characters and advises
-// against more than ten segments; ten segments stay under 1,600 characters in either encoding
-// (1,530 in GSM-7, 670 in UCS-2), so a text within them always goes.
-const MaxParts = 10
+// MaxLength is the longest text Twilio sends, in characters as smsrender.Measure counts them:
+// 1,600 in GSM-7 and 700 in UCS-2, the maximum length of a concatenated message
+// (https://www.twilio.com/docs/glossary/what-sms-character-limit). Twilio refuses a longer body
+// with error 21617 (https://www.twilio.com/docs/api/errors/21617) and documents no cap on segments.
+// A GSM-7 extension character counts two and a UCS-2 character beyond the BMP two UTF-16 code
+// units, as they are encoded, so a text within the limit always goes.
+var MaxLength = smsrender.Limit{GSM7: 1600, UCS2: 700}
 
 // timeout bounds one REST call. twilio-go builds its requests without the caller's context, so the
 // client below carries the context in, with this deadline: it also bounds a call whose context has

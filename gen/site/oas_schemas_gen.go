@@ -26821,6 +26821,35 @@ type SiteSmsConsentsOptOutUnprocessableEntity ProblemDetails
 
 func (*SiteSmsConsentsOptOutUnprocessableEntity) siteSmsConsentsOptOutRes() {}
 
+// The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2).
+// Ref: #/components/schemas/SiteSmsLengthLimit
+type SiteSmsLengthLimit struct {
+	// The most characters of a text in GSM-7, an extension character counting two.
+	Gsm7 int32 `json:"gsm7"`
+	// The most characters of a text in UCS-2, counted in UTF-16 code units.
+	Ucs2 int32 `json:"ucs2"`
+}
+
+// GetGsm7 returns the value of Gsm7.
+func (s *SiteSmsLengthLimit) GetGsm7() int32 {
+	return s.Gsm7
+}
+
+// GetUcs2 returns the value of Ucs2.
+func (s *SiteSmsLengthLimit) GetUcs2() int32 {
+	return s.Ucs2
+}
+
+// SetGsm7 sets the value of Gsm7.
+func (s *SiteSmsLengthLimit) SetGsm7(val int32) {
+	s.Gsm7 = val
+}
+
+// SetUcs2 sets the value of Ucs2.
+func (s *SiteSmsLengthLimit) SetUcs2(val int32) {
+	s.Ucs2 = val
+}
+
 // SMTP config without the password.
 // Ref: #/components/schemas/SiteSmtpConfig
 type SiteSmtpConfig struct {
@@ -29990,6 +30019,9 @@ type SiteWorkspaceResource struct {
 	// (`https://<Tracking domain or app host>/c/<token>`, ADR 0083): the SMS counter counts each link of a
 	// tracked text at this length, as the save does.
 	ShortLinkLength int32 `json:"shortLinkLength"`
+	// The longest text an SMS goes out as, in characters of each encoding as the SMS counter counts them:
+	// the counter flags a text over it, as the save refuses it.
+	SmsMaxLength SiteSmsLengthLimit `json:"smsMaxLength"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -30079,6 +30111,11 @@ func (s *SiteWorkspaceResource) GetTrackingTarget() OptString {
 // GetShortLinkLength returns the value of ShortLinkLength.
 func (s *SiteWorkspaceResource) GetShortLinkLength() int32 {
 	return s.ShortLinkLength
+}
+
+// GetSmsMaxLength returns the value of SmsMaxLength.
+func (s *SiteWorkspaceResource) GetSmsMaxLength() SiteSmsLengthLimit {
+	return s.SmsMaxLength
 }
 
 // GetHolds returns the value of Holds.
@@ -30179,6 +30216,11 @@ func (s *SiteWorkspaceResource) SetTrackingTarget(val OptString) {
 // SetShortLinkLength sets the value of ShortLinkLength.
 func (s *SiteWorkspaceResource) SetShortLinkLength(val int32) {
 	s.ShortLinkLength = val
+}
+
+// SetSmsMaxLength sets the value of SmsMaxLength.
+func (s *SiteWorkspaceResource) SetSmsMaxLength(val SiteSmsLengthLimit) {
+	s.SmsMaxLength = val
 }
 
 // SetHolds sets the value of Holds.

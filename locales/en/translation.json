@@ -2395,7 +2395,8 @@
     "segments_one": "{{count, number}} segment",
     "segments_other": "{{count, number}} segments",
     "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
-    "textLabel": "Message"
+    "textLabel": "Message",
+    "tooLong": "Too long: a text may take {{limit, number}} characters in {{encoding}}. Shorten it to save."
   },
   "suppressions": {
     "channelEmail": "Email",

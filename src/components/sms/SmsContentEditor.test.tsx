@@ -25,6 +25,7 @@ beforeEach(() => {
           mcpUrl: 'https://mcp.sphericon.test/',
           trackerUrl: 'https://t.sphericon.test',
           shortLinkLength: 30,
+          smsMaxLength: { gsm7: 1600, ucs2: 700 },
           holds: [],
           role: 'owner',
           createdAt: '2026-01-01T00:00:00Z',
@@ -71,4 +72,19 @@ test('a tracked link counts as the short link it goes out as, and as written onc
   await screen.getByText('Track links').click({ force: true })
 
   await expect.element(screen.getByText('126 characters · GSM-7 · 1 segment')).toBeVisible()
+})
+
+test('a text longer than the provider sends in its encoding is flagged, as the save refuses it', async () => {
+  const { screen } = await render('ж'.repeat(700))
+
+  await expect.element(screen.getByText('700 characters · UCS-2 · 11 segments')).toBeVisible()
+  await expect.element(screen.getByText(/Too long/)).not.toBeInTheDocument()
+
+  await screen.getByRole('textbox', { name: 'Message' }).fill('ж'.repeat(701))
+
+  await expect
+    .element(
+      screen.getByText('Too long: a text may take 700 characters in UCS-2. Shorten it to save.'),
+    )
+    .toBeVisible()
 })

@@ -23104,6 +23104,23 @@
         },
         "description": "The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`\nand `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only\nwith its question's `other` choice."
       },
+      "SiteSmsLengthLimit": {
+        "type": "object",
+        "required": ["gsm7", "ucs2"],
+        "properties": {
+          "gsm7": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The most characters of a text in GSM-7, an extension character counting two"
+          },
+          "ucs2": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The most characters of a text in UCS-2, counted in UTF-16 code units"
+          }
+        },
+        "description": "The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2)"
+      },
       "SiteSmtpConfig": {
         "type": "object",
         "required": ["kind", "host", "port", "from"],
@@ -24126,6 +24143,7 @@
           "mcpUrl",
           "trackerUrl",
           "shortLinkLength",
+          "smsMaxLength",
           "holds",
           "accountLinkAvailable",
           "createdAt"
@@ -24210,6 +24228,14 @@
             "type": "integer",
             "format": "int32",
             "description": "The length of a short tracked link of the Workspace (`https://<Tracking domain or app host>/c/<token>`,\nADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does."
+          },
+          "smsMaxLength": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSmsLengthLimit"
+              }
+            ],
+            "description": "The longest text an SMS goes out as, in characters of each encoding as the SMS counter counts them: the counter flags a text over it, as the save refuses it"
           },
           "holds": {
             "type": "array",

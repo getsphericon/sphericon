@@ -24,6 +24,18 @@ function parts(n: number, single: number, each: number): number {
   return n <= single ? Math.min(n, 1) : Math.ceil(n / each)
 }
 
+// The longest text the SMS provider sends, in characters of each encoding as measureSms counts
+// them: the Workspace's `smsMaxLength`.
+export interface SmsLengthLimit {
+  gsm7: number
+  ucs2: number
+}
+
+// The most characters size's encoding allows under limit.
+export function smsLimitOf(size: SmsSize, limit: SmsLengthLimit): number {
+  return size.encoding === 'UCS-2' ? limit.ucs2 : limit.gsm7
+}
+
 // A link as a phone finds it: an absolute http(s) URL up to the next whitespace, a Liquid tag inside
 // it part of it, a lone `{` its end. Whitespace is spelled out, as in internal/smsrender/links.go:
 // the two regexp engines differ on what `\s` covers.

@@ -58851,6 +58851,119 @@ func (s *SiteSmsConsentsOptOutUnprocessableEntity) UnmarshalJSON(data []byte) er
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteSmsLengthLimit) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSmsLengthLimit) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("gsm7")
+		e.Int32(s.Gsm7)
+	}
+	{
+		e.FieldStart("ucs2")
+		e.Int32(s.Ucs2)
+	}
+}
+
+var jsonFieldsNameOfSiteSmsLengthLimit = [2]string{
+	0: "gsm7",
+	1: "ucs2",
+}
+
+// Decode decodes SiteSmsLengthLimit from json.
+func (s *SiteSmsLengthLimit) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSmsLengthLimit to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "gsm7":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Gsm7 = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"gsm7\"")
+			}
+		case "ucs2":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Ucs2 = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ucs2\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSmsLengthLimit")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSmsLengthLimit) {
+					name = jsonFieldsNameOfSiteSmsLengthLimit[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSmsLengthLimit) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSmsLengthLimit) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteSmtpConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -68451,6 +68564,10 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.Int32(s.ShortLinkLength)
 	}
 	{
+		e.FieldStart("smsMaxLength")
+		s.SmsMaxLength.Encode(e)
+	}
+	{
 		e.FieldStart("holds")
 		e.ArrStart()
 		for _, elem := range s.Holds {
@@ -68486,7 +68603,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [20]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [21]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
@@ -68501,12 +68618,13 @@ var jsonFieldsNameOfSiteWorkspaceResource = [20]string{
 	11: "trackerUrl",
 	12: "trackingTarget",
 	13: "shortLinkLength",
-	14: "holds",
-	15: "secondFactorRequiredAt",
-	16: "secondFactorGraceEndsAt",
-	17: "sendCap",
-	18: "accountLinkAvailable",
-	19: "createdAt",
+	14: "smsMaxLength",
+	15: "holds",
+	16: "secondFactorRequiredAt",
+	17: "secondFactorGraceEndsAt",
+	18: "sendCap",
+	19: "accountLinkAvailable",
+	20: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -68678,8 +68796,18 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"shortLinkLength\"")
 			}
-		case "holds":
+		case "smsMaxLength":
 			requiredBitSet[1] |= 1 << 6
+			if err := func() error {
+				if err := s.SmsMaxLength.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"smsMaxLength\"")
+			}
+		case "holds":
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -68727,7 +68855,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -68739,7 +68867,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -68759,8 +68887,8 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b01111111,
-		0b01101100,
-		0b00001100,
+		0b11101100,
+		0b00011000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

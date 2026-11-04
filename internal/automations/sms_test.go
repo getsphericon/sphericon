@@ -120,12 +120,12 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 	}
 }
 
-// Twilio's part limit is ten segments: 670 UCS-2 characters save, one more is refused.
-func TestSavingAnSMSStepOverTwiliosPartLimitIsRefused(t *testing.T) {
+// Twilio sends up to 700 UCS-2 characters (eleven segments and more): 700 save, one more is refused.
+func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
-	atLimit := strings.Repeat("я", 670)
+	atLimit := strings.Repeat("я", 700)
 
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
 		Steps: &[]automationsteps.Step{smsVia(nil, atLimit)},
@@ -136,5 +136,5 @@ func TestSavingAnSMSStepOverTwiliosPartLimitIsRefused(t *testing.T) {
 	})
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
-	assert.ErrorContains(t, err, "step 1: the text is 671 characters in UCS-2, 11 segments; it may take 10 segments at most")
+	assert.ErrorContains(t, err, "step 1: the text is 701 characters in UCS-2 (11 segments); it may take 700 characters in UCS-2 at most")
 }

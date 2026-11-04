@@ -96,6 +96,9 @@ model SiteWorkspaceResource {
    * ADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does. */
   shortLinkLength: int32;
 
+  /** The longest text an SMS goes out as, in characters of each encoding as the SMS counter counts them: the counter flags a text over it, as the save refuses it */
+  smsMaxLength: SiteSmsLengthLimit;
+
   /** The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */
@@ -387,4 +390,13 @@ namespace SiteWorkspaces {
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
+}
+
+/** The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2) */
+model SiteSmsLengthLimit {
+  /** The most characters of a text in GSM-7, an extension character counting two */
+  gsm7: int32;
+
+  /** The most characters of a text in UCS-2, counted in UTF-16 code units */
+  ucs2: int32;
 }

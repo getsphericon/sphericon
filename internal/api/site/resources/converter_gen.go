@@ -51,6 +51,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	smsrender "github.com/getsphericon/sphericon/internal/smsrender"
 	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
 	webhook "github.com/getsphericon/sphericon/internal/webhook"
@@ -2124,6 +2125,12 @@ func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.Sms
 	siteapiSmsConsent.OptOut = optNilSmsOptOut(c, source.OptOut)
 	return siteapiSmsConsent
 }
+func (c *ConverterImpl) SmsLengthLimitToResource(source smsrender.Limit) site.SiteSmsLengthLimit {
+	var siteapiSiteSmsLengthLimit site.SiteSmsLengthLimit
+	siteapiSiteSmsLengthLimit.Gsm7 = count(source.GSM7)
+	siteapiSiteSmsLengthLimit.Ucs2 = count(source.UCS2)
+	return siteapiSiteSmsLengthLimit
+}
 func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SmsOptOut {
 	var siteapiSmsOptOut site.SmsOptOut
 	if source != nil {
@@ -2552,6 +2559,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.TrackerUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackingTarget: ignore
 		// siteapiSiteWorkspaceResource.ShortLinkLength: ignore
+		// siteapiSiteWorkspaceResource.SmsMaxLength: ignore
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore
