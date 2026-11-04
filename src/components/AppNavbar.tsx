@@ -175,11 +175,6 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       >
         {workflows.map((item) => link(item))}
       </NavLink>
-      {link({
-        route: activityRoute,
-        label: t(($) => $.nav.activity),
-        icon: <IconActivity size={18} />,
-      })}
       <NavLink label={t(($) => $.nav.website)} leftSection={<IconBrowser size={18} />}>
         {website.map((item) => (
           <NavLink
@@ -206,6 +201,11 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
           />
         ))}
       </NavLink>
+      {link({
+        route: activityRoute,
+        label: t(($) => $.nav.activity),
+        icon: <IconActivity size={18} />,
+      })}
       {link({
         route: settingsRoute,
         label: t(($) => $.nav.settings),
