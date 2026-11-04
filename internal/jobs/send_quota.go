@@ -53,10 +53,11 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 
 // IntegrationsDueForQuotaRefresh returns up to limit SES Integration ids,
 // least-recently-checked first with NULLS FIRST, so a never-checked Integration is
-// reached before already-checked ones. Only SES reports a quota; SMTP has none.
+// reached before already-checked ones. Only SES reports a quota; SMTP has none. A deleted
+// Integration is not kept working (ADR 0099): nobody sends with its credential.
 func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]int64, error) {
 	return client.Integration.Query().
-		Where(integration.ProviderEQ(integration.ProviderSes)).
+		Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).
 		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
 		IDs(ctx)
@@ -87,7 +88,8 @@ func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job
 
 // RefreshIntegrationQuotaByID reads one Integration's provider quota and stores it
 // (see providerlimit.RefreshQuota). The Integration may have been deleted since the
-// tick queued it, which is nothing to do. Pure of the queue so tests call it directly.
+// tick queued it, which is nothing to do: the job checks again when it runs (ADR 0099).
+// Pure of the queue so tests call it directly.
 func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher *secrets.Cipher, catalog *messaging.Catalog, id int64) error {
 	row, err := client.Integration.Get(ctx, id)
 	if ent.IsNotFound(err) {
@@ -95,6 +97,9 @@ func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher
 	}
 	if err != nil {
 		return err
+	}
+	if row.DiscardedAt != nil {
+		return nil
 	}
 	return providerlimit.RefreshQuota(ctx, client.Scoped(row.WorkspaceID), cipher, catalog, row)
 }

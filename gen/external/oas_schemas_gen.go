@@ -474,16 +474,16 @@ const (
 	AuditActionAutomationCreate            AuditAction = "automation.create"
 	AuditActionAutomationUpdate            AuditAction = "automation.update"
 	AuditActionAutomationDelete            AuditAction = "automation.delete"
-	AuditActionAutomationDiscard           AuditAction = "automation.discard"
-	AuditActionAutomationRestore           AuditAction = "automation.restore"
+	AuditActionAutomationArchive           AuditAction = "automation.archive"
+	AuditActionAutomationUnarchive         AuditAction = "automation.unarchive"
 	AuditActionBrandKitCreate              AuditAction = "brand_kit.create"
 	AuditActionBrandKitUpdate              AuditAction = "brand_kit.update"
 	AuditActionBrandKitDelete              AuditAction = "brand_kit.delete"
 	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
 	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
 	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
-	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
-	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionBroadcastArchive            AuditAction = "broadcast.archive"
+	AuditActionBroadcastUnarchive          AuditAction = "broadcast.unarchive"
 	AuditActionContactCreate               AuditAction = "contact.create"
 	AuditActionContactUpdate               AuditAction = "contact.update"
 	AuditActionContactDelete               AuditAction = "contact.delete"
@@ -500,7 +500,6 @@ const (
 	AuditActionIntegrationUpdate           AuditAction = "integration.update"
 	AuditActionIntegrationDelete           AuditAction = "integration.delete"
 	AuditActionIntegrationDiscard          AuditAction = "integration.discard"
-	AuditActionIntegrationRestore          AuditAction = "integration.restore"
 	AuditActionJoinDomainCreate            AuditAction = "join_domain.create"
 	AuditActionJoinDomainUpdate            AuditAction = "join_domain.update"
 	AuditActionJoinDomainDelete            AuditAction = "join_domain.delete"
@@ -508,17 +507,15 @@ const (
 	AuditActionRuleUpdate                  AuditAction = "rule.update"
 	AuditActionRuleDelete                  AuditAction = "rule.delete"
 	AuditActionRuleDiscard                 AuditAction = "rule.discard"
-	AuditActionRuleRestore                 AuditAction = "rule.restore"
 	AuditActionSegmentCreate               AuditAction = "segment.create"
 	AuditActionSegmentUpdate               AuditAction = "segment.update"
 	AuditActionSegmentDelete               AuditAction = "segment.delete"
-	AuditActionSegmentDiscard              AuditAction = "segment.discard"
-	AuditActionSegmentRestore              AuditAction = "segment.restore"
+	AuditActionSegmentArchive              AuditAction = "segment.archive"
+	AuditActionSegmentUnarchive            AuditAction = "segment.unarchive"
 	AuditActionSendingDomainCreate         AuditAction = "sending_domain.create"
 	AuditActionSendingDomainUpdate         AuditAction = "sending_domain.update"
 	AuditActionSendingDomainDelete         AuditAction = "sending_domain.delete"
 	AuditActionSendingDomainDiscard        AuditAction = "sending_domain.discard"
-	AuditActionSendingDomainRestore        AuditAction = "sending_domain.restore"
 	AuditActionTagCreate                   AuditAction = "tag.create"
 	AuditActionTagUpdate                   AuditAction = "tag.update"
 	AuditActionTagDelete                   AuditAction = "tag.delete"
@@ -568,16 +565,16 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionAutomationCreate,
 		AuditActionAutomationUpdate,
 		AuditActionAutomationDelete,
-		AuditActionAutomationDiscard,
-		AuditActionAutomationRestore,
+		AuditActionAutomationArchive,
+		AuditActionAutomationUnarchive,
 		AuditActionBrandKitCreate,
 		AuditActionBrandKitUpdate,
 		AuditActionBrandKitDelete,
 		AuditActionBroadcastCreate,
 		AuditActionBroadcastUpdate,
 		AuditActionBroadcastDelete,
-		AuditActionBroadcastDiscard,
-		AuditActionBroadcastRestore,
+		AuditActionBroadcastArchive,
+		AuditActionBroadcastUnarchive,
 		AuditActionContactCreate,
 		AuditActionContactUpdate,
 		AuditActionContactDelete,
@@ -594,7 +591,6 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionIntegrationUpdate,
 		AuditActionIntegrationDelete,
 		AuditActionIntegrationDiscard,
-		AuditActionIntegrationRestore,
 		AuditActionJoinDomainCreate,
 		AuditActionJoinDomainUpdate,
 		AuditActionJoinDomainDelete,
@@ -602,17 +598,15 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionRuleUpdate,
 		AuditActionRuleDelete,
 		AuditActionRuleDiscard,
-		AuditActionRuleRestore,
 		AuditActionSegmentCreate,
 		AuditActionSegmentUpdate,
 		AuditActionSegmentDelete,
-		AuditActionSegmentDiscard,
-		AuditActionSegmentRestore,
+		AuditActionSegmentArchive,
+		AuditActionSegmentUnarchive,
 		AuditActionSendingDomainCreate,
 		AuditActionSendingDomainUpdate,
 		AuditActionSendingDomainDelete,
 		AuditActionSendingDomainDiscard,
-		AuditActionSendingDomainRestore,
 		AuditActionTagCreate,
 		AuditActionTagUpdate,
 		AuditActionTagDelete,
@@ -698,9 +692,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionAutomationDelete:
 		return []byte(s), nil
-	case AuditActionAutomationDiscard:
+	case AuditActionAutomationArchive:
 		return []byte(s), nil
-	case AuditActionAutomationRestore:
+	case AuditActionAutomationUnarchive:
 		return []byte(s), nil
 	case AuditActionBrandKitCreate:
 		return []byte(s), nil
@@ -714,9 +708,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionBroadcastDelete:
 		return []byte(s), nil
-	case AuditActionBroadcastDiscard:
+	case AuditActionBroadcastArchive:
 		return []byte(s), nil
-	case AuditActionBroadcastRestore:
+	case AuditActionBroadcastUnarchive:
 		return []byte(s), nil
 	case AuditActionContactCreate:
 		return []byte(s), nil
@@ -750,8 +744,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionIntegrationDiscard:
 		return []byte(s), nil
-	case AuditActionIntegrationRestore:
-		return []byte(s), nil
 	case AuditActionJoinDomainCreate:
 		return []byte(s), nil
 	case AuditActionJoinDomainUpdate:
@@ -766,17 +758,15 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionRuleDiscard:
 		return []byte(s), nil
-	case AuditActionRuleRestore:
-		return []byte(s), nil
 	case AuditActionSegmentCreate:
 		return []byte(s), nil
 	case AuditActionSegmentUpdate:
 		return []byte(s), nil
 	case AuditActionSegmentDelete:
 		return []byte(s), nil
-	case AuditActionSegmentDiscard:
+	case AuditActionSegmentArchive:
 		return []byte(s), nil
-	case AuditActionSegmentRestore:
+	case AuditActionSegmentUnarchive:
 		return []byte(s), nil
 	case AuditActionSendingDomainCreate:
 		return []byte(s), nil
@@ -785,8 +775,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionSendingDomainDelete:
 		return []byte(s), nil
 	case AuditActionSendingDomainDiscard:
-		return []byte(s), nil
-	case AuditActionSendingDomainRestore:
 		return []byte(s), nil
 	case AuditActionTagCreate:
 		return []byte(s), nil
@@ -919,11 +907,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
 		return nil
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
 		return nil
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 		return nil
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate
@@ -943,11 +931,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
 		return nil
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
 		return nil
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 		return nil
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
@@ -997,9 +985,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionIntegrationDiscard:
 		*s = AuditActionIntegrationDiscard
 		return nil
-	case AuditActionIntegrationRestore:
-		*s = AuditActionIntegrationRestore
-		return nil
 	case AuditActionJoinDomainCreate:
 		*s = AuditActionJoinDomainCreate
 		return nil
@@ -1021,9 +1006,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionRuleDiscard:
 		*s = AuditActionRuleDiscard
 		return nil
-	case AuditActionRuleRestore:
-		*s = AuditActionRuleRestore
-		return nil
 	case AuditActionSegmentCreate:
 		*s = AuditActionSegmentCreate
 		return nil
@@ -1033,11 +1015,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
 		return nil
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
 		return nil
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 		return nil
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
@@ -1050,9 +1032,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionSendingDomainDiscard:
 		*s = AuditActionSendingDomainDiscard
-		return nil
-	case AuditActionSendingDomainRestore:
-		*s = AuditActionSendingDomainRestore
 		return nil
 	case AuditActionTagCreate:
 		*s = AuditActionTagCreate
@@ -2604,6 +2583,10 @@ type AutomationsDeactivateBadRequest ProblemDetails
 
 func (*AutomationsDeactivateBadRequest) automationsDeactivateRes() {}
 
+type AutomationsDeactivateConflict ProblemDetails
+
+func (*AutomationsDeactivateConflict) automationsDeactivateRes() {}
+
 type AutomationsDeactivateForbidden ProblemDetails
 
 func (*AutomationsDeactivateForbidden) automationsDeactivateRes() {}
@@ -2615,31 +2598,6 @@ func (*AutomationsDeactivateNotFound) automationsDeactivateRes() {}
 type AutomationsDeactivateUnauthorized ProblemDetails
 
 func (*AutomationsDeactivateUnauthorized) automationsDeactivateRes() {}
-
-type AutomationsDeleteBadRequest ProblemDetails
-
-func (*AutomationsDeleteBadRequest) automationsDeleteRes() {}
-
-type AutomationsDeleteForbidden ProblemDetails
-
-func (*AutomationsDeleteForbidden) automationsDeleteRes() {}
-
-// AutomationsDeleteNoContent is response for AutomationsDelete operation.
-type AutomationsDeleteNoContent struct{}
-
-func (*AutomationsDeleteNoContent) automationsDeleteRes() {}
-
-type AutomationsDeleteNotFound ProblemDetails
-
-func (*AutomationsDeleteNotFound) automationsDeleteRes() {}
-
-type AutomationsDeleteUnauthorized ProblemDetails
-
-func (*AutomationsDeleteUnauthorized) automationsDeleteRes() {}
-
-type AutomationsDeleteUnprocessableEntity ProblemDetails
-
-func (*AutomationsDeleteUnprocessableEntity) automationsDeleteRes() {}
 
 type AutomationsDryRunHttpStepBadRequest ProblemDetails
 
@@ -2859,6 +2817,10 @@ type AutomationsRevertBadRequest ProblemDetails
 
 func (*AutomationsRevertBadRequest) automationsRevertRes() {}
 
+type AutomationsRevertConflict ProblemDetails
+
+func (*AutomationsRevertConflict) automationsRevertRes() {}
+
 type AutomationsRevertForbidden ProblemDetails
 
 func (*AutomationsRevertForbidden) automationsRevertRes() {}
@@ -2894,6 +2856,10 @@ func (*AutomationsUnarchiveUnauthorized) automationsUnarchiveRes() {}
 type AutomationsUpdateBadRequest ProblemDetails
 
 func (*AutomationsUpdateBadRequest) automationsUpdateRes() {}
+
+type AutomationsUpdateConflict ProblemDetails
+
+func (*AutomationsUpdateConflict) automationsUpdateRes() {}
 
 type AutomationsUpdateForbidden ProblemDetails
 
@@ -3602,7 +3568,8 @@ type BroadcastResource struct {
 	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the broadcast failed.
 	FailedAt OptNilTimestamp `json:"failedAt"`
-	// When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+	// When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it
+	// is unarchived.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -3807,6 +3774,10 @@ type BroadcastsArchiveBadRequest ProblemDetails
 
 func (*BroadcastsArchiveBadRequest) broadcastsArchiveRes() {}
 
+type BroadcastsArchiveConflict ProblemDetails
+
+func (*BroadcastsArchiveConflict) broadcastsArchiveRes() {}
+
 type BroadcastsArchiveForbidden ProblemDetails
 
 func (*BroadcastsArchiveForbidden) broadcastsArchiveRes() {}
@@ -3818,10 +3789,6 @@ func (*BroadcastsArchiveNotFound) broadcastsArchiveRes() {}
 type BroadcastsArchiveUnauthorized ProblemDetails
 
 func (*BroadcastsArchiveUnauthorized) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveUnprocessableEntity ProblemDetails
-
-func (*BroadcastsArchiveUnprocessableEntity) broadcastsArchiveRes() {}
 
 type BroadcastsCreateBadRequest ProblemDetails
 
@@ -3838,31 +3805,6 @@ func (*BroadcastsCreateUnauthorized) broadcastsCreateRes() {}
 type BroadcastsCreateUnprocessableEntity ProblemDetails
 
 func (*BroadcastsCreateUnprocessableEntity) broadcastsCreateRes() {}
-
-type BroadcastsDeleteBadRequest ProblemDetails
-
-func (*BroadcastsDeleteBadRequest) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteForbidden ProblemDetails
-
-func (*BroadcastsDeleteForbidden) broadcastsDeleteRes() {}
-
-// BroadcastsDeleteNoContent is response for BroadcastsDelete operation.
-type BroadcastsDeleteNoContent struct{}
-
-func (*BroadcastsDeleteNoContent) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteNotFound ProblemDetails
-
-func (*BroadcastsDeleteNotFound) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteUnauthorized ProblemDetails
-
-func (*BroadcastsDeleteUnauthorized) broadcastsDeleteRes() {}
-
-type BroadcastsDeleteUnprocessableEntity ProblemDetails
-
-func (*BroadcastsDeleteUnprocessableEntity) broadcastsDeleteRes() {}
 
 type BroadcastsGetBadRequest ProblemDetails
 
@@ -4006,6 +3948,10 @@ type BroadcastsSetSegmentBadRequest ProblemDetails
 
 func (*BroadcastsSetSegmentBadRequest) broadcastsSetSegmentRes() {}
 
+type BroadcastsSetSegmentConflict ProblemDetails
+
+func (*BroadcastsSetSegmentConflict) broadcastsSetSegmentRes() {}
+
 type BroadcastsSetSegmentForbidden ProblemDetails
 
 func (*BroadcastsSetSegmentForbidden) broadcastsSetSegmentRes() {}
@@ -4086,6 +4032,10 @@ func (*BroadcastsUnscheduleUnprocessableEntity) broadcastsUnscheduleRes() {}
 type BroadcastsUpdateBadRequest ProblemDetails
 
 func (*BroadcastsUpdateBadRequest) broadcastsUpdateRes() {}
+
+type BroadcastsUpdateConflict ProblemDetails
+
+func (*BroadcastsUpdateConflict) broadcastsUpdateRes() {}
 
 type BroadcastsUpdateForbidden ProblemDetails
 
@@ -10708,7 +10658,6 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 }
 
 func (*InUseProblemDetails) automationsArchiveRes()   {}
-func (*InUseProblemDetails) automationsDeleteRes()    {}
 func (*InUseProblemDetails) customFieldsUpdateRes()   {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
 func (*InUseProblemDetails) segmentsArchiveRes()      {}
@@ -11320,10 +11269,11 @@ type IntegrationResource struct {
 	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
 	// an address, not the authentication (the Preset's signature or secret is).
 	HookUrl string `json:"hookUrl"`
-	// When the integration was deleted; null while it is kept. A deleted integration is no longer listed
-	// and cannot be restored, but stays readable by id for the history that names it; it is never the
-	// default, takes no new work, and its hook still reads the provider's callbacks.
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the integration was deleted (discarded); null while it is kept. A deleted integration is no
+	// longer listed, is read-only and cannot be restored, but stays readable by id for the history that
+	// names it; it is never the default, takes no new work, and its hook still reads the provider's
+	// callbacks.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11400,9 +11350,9 @@ func (s *IntegrationResource) GetHookUrl() string {
 	return s.HookUrl
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *IntegrationResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *IntegrationResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11485,9 +11435,9 @@ func (s *IntegrationResource) SetHookUrl(val string) {
 	s.HookUrl = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *IntegrationResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *IntegrationResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -15866,7 +15816,6 @@ func (*ProblemDetailsHeaders) authTokensListRes()            {}
 func (*ProblemDetailsHeaders) automationsArchiveRes()        {}
 func (*ProblemDetailsHeaders) automationsCreateRes()         {}
 func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
-func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
 func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
@@ -15878,7 +15827,6 @@ func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
 func (*ProblemDetailsHeaders) brandKitGetRes()               {}
 func (*ProblemDetailsHeaders) broadcastsArchiveRes()         {}
 func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
-func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
 func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
 func (*ProblemDetailsHeaders) broadcastsListRes()            {}
 func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
@@ -16883,9 +16831,9 @@ type RuleResource struct {
 	Draft NilRuleVersion `json:"draft"`
 	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
-	// When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id
-	// only and changes no more.
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and
+	// changes no more. Null while it is kept.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -16922,9 +16870,9 @@ func (s *RuleResource) GetActivatedAt() OptNilTimestamp {
 	return s.ActivatedAt
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *RuleResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *RuleResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -16967,9 +16915,9 @@ func (s *RuleResource) SetActivatedAt(val OptNilTimestamp) {
 	s.ActivatedAt = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *RuleResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *RuleResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -17582,6 +17530,10 @@ type SegmentsUpdateBadRequest ProblemDetails
 
 func (*SegmentsUpdateBadRequest) segmentsUpdateRes() {}
 
+type SegmentsUpdateConflict ProblemDetails
+
+func (*SegmentsUpdateConflict) segmentsUpdateRes() {}
+
 type SegmentsUpdateForbidden ProblemDetails
 
 func (*SegmentsUpdateForbidden) segmentsUpdateRes() {}
@@ -17905,9 +17857,9 @@ type SendingDomainResource struct {
 	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
 	// verified again since).
 	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot
-	// be restored, but stays readable by id.
-	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer
+	// listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -17974,9 +17926,9 @@ func (s *SendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
 	return s.VerificationLostAt
 }
 
-// GetDeletedAt returns the value of DeletedAt.
-func (s *SendingDomainResource) GetDeletedAt() OptNilTimestamp {
-	return s.DeletedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *SendingDomainResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -18049,9 +18001,9 @@ func (s *SendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
 	s.VerificationLostAt = val
 }
 
-// SetDeletedAt sets the value of DeletedAt.
-func (s *SendingDomainResource) SetDeletedAt(val OptNilTimestamp) {
-	s.DeletedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *SendingDomainResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -21836,8 +21788,7 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its Enrollments; a `message` entry names it and counts its sent Outbound
-	// messages.
+	// (id, name) and counts its active Enrollments.
 	Count OptInt32 `json:"count"`
 }
 
@@ -21892,7 +21843,6 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
-	UsedByKindMessage    UsedByKind = "message"
 )
 
 // AllValues returns all UsedByKind values.
@@ -21903,7 +21853,6 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
-		UsedByKindMessage,
 	}
 }
 
@@ -21919,8 +21868,6 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
-		return []byte(s), nil
-	case UsedByKindMessage:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -21944,9 +21891,6 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
-		return nil
-	case UsedByKindMessage:
-		*s = UsedByKindMessage
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

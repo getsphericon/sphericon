@@ -89,7 +89,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 	rows := func() *ent.AutomationQuery {
 		q := s.Automation().Query()
 		if f.Archived {
-			q = s.Automation().QueryDiscarded()
+			q = s.Automation().QueryArchived()
 		}
 		if f.Name != "" {
 			q = q.Where(automation.NameContainsFold(f.Name))

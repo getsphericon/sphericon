@@ -23,18 +23,11 @@ export function useApiErrorMessage() {
         automation: t(($) => $.usedByKind.automation),
         segment: t(($) => $.usedByKind.segment),
         enrollment: t(($) => $.usedByKind.enrollment),
-        message: t(($) => $.usedByKind.message),
       }
       const users = usedBy
         .map((user) => {
           if (user.kind === 'enrollment') {
             return t(($) => $.notifications.usedByEnrollments, {
-              count: user.count ?? 1,
-              name: user.name,
-            })
-          }
-          if (user.kind === 'message') {
-            return t(($) => $.notifications.usedByMessages, {
               count: user.count ?? 1,
               name: user.name,
             })

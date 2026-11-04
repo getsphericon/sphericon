@@ -126,7 +126,7 @@ test('shows an error alert when the rule cannot be loaded', async () => {
 test('a deleted rule is shown as deleted with its firings and offers no change', async () => {
   worker.use(
     handleSiteRulesGet({
-      body: { ...EDITED, status: 'inactive', deletedAt: TIMESTAMPS.updatedAt },
+      body: { ...EDITED, status: 'inactive', discardedAt: TIMESTAMPS.updatedAt },
     }),
     handleSiteRuleFiringsList({ body: page([FIRING], 1) }),
   )

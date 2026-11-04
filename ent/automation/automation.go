@@ -21,8 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
-	// FieldDiscardedAt holds the string denoting the discarded_at field in the database.
-	FieldDiscardedAt = "discarded_at"
+	// FieldArchivedAt holds the string denoting the archived_at field in the database.
+	FieldArchivedAt = "archived_at"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldActivatedAt holds the string denoting the activated_at field in the database.
@@ -43,8 +43,6 @@ const (
 	EdgeDraftVersion = "draft_version"
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
 	EdgeRuns = "runs"
-	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
-	EdgeOutboundMessages = "outbound_messages"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -82,13 +80,6 @@ const (
 	RunsInverseTable = "automation_runs"
 	// RunsColumn is the table column denoting the runs relation/edge.
 	RunsColumn = "automation_id"
-	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
-	OutboundMessagesTable = "outbound_messages"
-	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
-	// It exists in this package in order to avoid circular dependency with the "outboundmessage" package.
-	OutboundMessagesInverseTable = "outbound_messages"
-	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
-	OutboundMessagesColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -97,7 +88,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
-	FieldDiscardedAt,
+	FieldArchivedAt,
 	FieldStatus,
 	FieldActivatedAt,
 	FieldLiveVersionID,
@@ -175,9 +166,9 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
 }
 
-// ByDiscardedAt orders the results by the discarded_at field.
-func ByDiscardedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDiscardedAt, opts...).ToFunc()
+// ByArchivedAt orders the results by the archived_at field.
+func ByArchivedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldArchivedAt, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
@@ -253,20 +244,6 @@ func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByOutboundMessagesCount orders the results by outbound_messages count.
-func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newOutboundMessagesStep(), opts...)
-	}
-}
-
-// ByOutboundMessages orders the results by outbound_messages terms.
-func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newOutboundMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -300,12 +277,5 @@ func newRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
-	)
-}
-func newOutboundMessagesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(OutboundMessagesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
 	)
 }

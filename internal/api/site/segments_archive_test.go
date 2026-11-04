@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -36,24 +37,61 @@ func unarchiveSegment(c *siteapi.Client, id int64) (siteapi.SiteSegmentsUnarchiv
 	return c.SiteSegmentsUnarchive(context.Background(), siteapi.SiteSegmentsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 }
 
-// A Segment that a draft Broadcast uses cannot be archived: the 409 names that Broadcast
-// (ADR 0049), and the Segment stays in the list.
-func TestSiteSegmentArchiveRefusedWhileADraftBroadcastUsesIt(t *testing.T) {
+// A draft is not Live use (ADR 0099, ADR 0100): a Segment only a draft Broadcast names is
+// archived, and scheduling that draft is then refused, naming the archived Segment; the draft stays
+// a draft.
+func TestSiteSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	got, err := archiveSegment(c, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	refused, ok := got.(*siteapi.InUseProblemDetails)
+	archived, ok := got.(*siteapi.SiteSegmentResource)
 	require.Truef(t, ok, "got %T", got)
+	assert.True(t, archived.ArchivedAt.IsSet())
 
-	names := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name })
-	assert.Equal(t, []string{fixtures.BroadcastProSegmentName}, names)
-	kinds := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) siteapi.UsedByKind { return u.Kind })
-	assert.Equal(t, []siteapi.UsedByKind{siteapi.UsedByKindBroadcast}, kinds)
-	assert.EqualValues(t, http.StatusConflict, refused.Status.Or(0))
+	res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
+	require.NoError(t, err)
+	refused, ok := res.(*siteapi.SiteBroadcastsScheduleUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Contains(t, refused.Detail.Value, fixtures.SegmentProPlanName)
 
-	assert.Contains(t, listSegments(t, c, false), int64(fixtures.SegmentProPlanID))
+	b, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
+	require.NoError(t, err)
+	draft, ok := b.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", b)
+	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, draft.Status)
+}
+
+// An archived Segment is read-only until it is unarchived (ADR 0100): an edit answers 409 and
+// changes nothing; after Unarchive the same edit is saved.
+func TestSiteArchivedSegmentIsReadOnlyUntilUnarchived(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	rename := func() siteapi.SiteSegmentsUpdateRes {
+		res, err := c.SiteSegmentsUpdate(t.Context(), &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")},
+			siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentArchivedID)})
+		require.NoError(t, err)
+		return res
+	}
+
+	refused := rename()
+	kept, err := c.SiteSegmentsGet(t.Context(), siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentArchivedID)})
+	require.NoError(t, err)
+	_, err = unarchiveSegment(c, fixtures.SegmentArchivedID)
+	require.NoError(t, err)
+	saved := rename()
+
+	conflict, ok := refused.(*siteapi.SiteSegmentsUpdateConflict)
+	require.Truef(t, ok, "got %T", refused)
+	assert.EqualValues(t, http.StatusConflict, conflict.Status.Or(0))
+	unchanged, ok := kept.(*siteapi.SiteSegmentResource)
+	require.Truef(t, ok, "got %T", kept)
+	assert.Equal(t, fixtures.SegmentArchivedName, unchanged.Name)
+	renamed, ok := saved.(*siteapi.SiteSegmentResource)
+	require.Truef(t, ok, "got %T", saved)
+	assert.Equal(t, "Renamed", renamed.Name)
 }
 
 // A scheduled Broadcast holds a copy of its Segment's Condition (ADR 0065), so its Segment is
@@ -147,7 +185,8 @@ func TestSiteSegmentNameIsFreeAfterArchive(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSegmentResource{}, out)
 }
 
-// Archive and restore are recorded in the Audit log with their actor.
+// Archive and Unarchive are recorded in the Audit log with their actor, as the owner names them
+// (ADR 0100).
 func TestSiteSegmentArchiveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -163,7 +202,7 @@ func TestSiteSegmentArchiveIsAudited(t *testing.T) {
 		return entry
 	})
 	actions := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
-	assert.Equal(t, []string{"segment.discard", "segment.restore"}, actions)
+	assert.Equal(t, []string{"segment.archive", "segment.unarchive"}, actions)
 	assert.Equal(t, events.ActorUser, entries[0].Actor.Kind)
 	assert.Equal(t, fixtures.SegmentRetiredName, entries[0].TargetName)
 }

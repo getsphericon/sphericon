@@ -43,6 +43,25 @@ func TestClicksByLinkSplitsEachLinkByTheBroadcastOrAutomationThatCarriedIt(t *te
 	assert.Equal(t, 1, links[1].Clicks)
 }
 
+// Clicks are history (ADR 0099): an archived Broadcast or Automation keeps its clicks and its name.
+func TestClicksByLinkNameAnArchivedBroadcastAndAutomation(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Broadcast().Archive(ctx, fixtures.BroadcastSentID))
+	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationWinBackID))
+
+	links, err := analytics.New().ClicksByLink(ctx, acme, analytics.Window30Days)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, links)
+	assert.Equal(t, pricing, links[0].URL)
+	assert.Equal(t, []analytics.OwnerClicks{
+		{Kind: analytics.OwnerBroadcast, ID: fixtures.BroadcastSentID, Name: "Python crash course is here", Clicks: 2},
+		{Kind: analytics.OwnerAutomation, ID: fixtures.AutomationWinBackID, Name: "Win-back lapsed learners", Clicks: 1},
+	}, links[0].Owners)
+}
+
 func TestClicksByLinkCountsOnlyTheWindow(t *testing.T) {
 	links := clicksByLink(t, analytics.Window7Days)
 

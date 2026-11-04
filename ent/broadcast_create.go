@@ -63,16 +63,16 @@ func (_c *BroadcastCreate) SetWorkspaceID(v int64) *BroadcastCreate {
 	return _c
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (_c *BroadcastCreate) SetDiscardedAt(v time.Time) *BroadcastCreate {
-	_c.mutation.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (_c *BroadcastCreate) SetArchivedAt(v time.Time) *BroadcastCreate {
+	_c.mutation.SetArchivedAt(v)
 	return _c
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (_c *BroadcastCreate) SetNillableDiscardedAt(v *time.Time) *BroadcastCreate {
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableArchivedAt(v *time.Time) *BroadcastCreate {
 	if v != nil {
-		_c.SetDiscardedAt(*v)
+		_c.SetArchivedAt(*v)
 	}
 	return _c
 }
@@ -550,9 +550,9 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.DiscardedAt(); ok {
-		_spec.SetField(broadcast.FieldDiscardedAt, field.TypeTime, value)
-		_node.DiscardedAt = &value
+	if value, ok := _c.mutation.ArchivedAt(); ok {
+		_spec.SetField(broadcast.FieldArchivedAt, field.TypeTime, value)
+		_node.ArchivedAt = &value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
@@ -781,21 +781,21 @@ func (u *BroadcastUpsert) UpdateWorkspaceID() *BroadcastUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *BroadcastUpsert) SetDiscardedAt(v time.Time) *BroadcastUpsert {
-	u.Set(broadcast.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *BroadcastUpsert) SetArchivedAt(v time.Time) *BroadcastUpsert {
+	u.Set(broadcast.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *BroadcastUpsert) UpdateDiscardedAt() *BroadcastUpsert {
-	u.SetExcluded(broadcast.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateArchivedAt() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *BroadcastUpsert) ClearDiscardedAt() *BroadcastUpsert {
-	u.SetNull(broadcast.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *BroadcastUpsert) ClearArchivedAt() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldArchivedAt)
 	return u
 }
 
@@ -1253,24 +1253,24 @@ func (u *BroadcastUpsertOne) UpdateWorkspaceID() *BroadcastUpsertOne {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *BroadcastUpsertOne) SetDiscardedAt(v time.Time) *BroadcastUpsertOne {
+// SetArchivedAt sets the "archived_at" field.
+func (u *BroadcastUpsertOne) SetArchivedAt(v time.Time) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *BroadcastUpsertOne) UpdateDiscardedAt() *BroadcastUpsertOne {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateArchivedAt() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *BroadcastUpsertOne) ClearDiscardedAt() *BroadcastUpsertOne {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *BroadcastUpsertOne) ClearArchivedAt() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 
@@ -1956,24 +1956,24 @@ func (u *BroadcastUpsertBulk) UpdateWorkspaceID() *BroadcastUpsertBulk {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *BroadcastUpsertBulk) SetDiscardedAt(v time.Time) *BroadcastUpsertBulk {
+// SetArchivedAt sets the "archived_at" field.
+func (u *BroadcastUpsertBulk) SetArchivedAt(v time.Time) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *BroadcastUpsertBulk) UpdateDiscardedAt() *BroadcastUpsertBulk {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateArchivedAt() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *BroadcastUpsertBulk) ClearDiscardedAt() *BroadcastUpsertBulk {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *BroadcastUpsertBulk) ClearArchivedAt() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 

@@ -17,13 +17,11 @@ import {
   siteAutomationsPublishMutation,
   siteAutomationsArchiveMutation,
   siteAutomationsDeactivateMutation,
-  siteAutomationsDeleteMutation,
   siteAutomationsListOptions,
   siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource, SortDirection } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationState } from '../../generated/site/zod.gen.ts'
-import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
@@ -44,14 +42,6 @@ export function AutomationsListPage() {
   const { workspaceId } = automationsRoute.useParams()
   const navigate = useNavigate()
 
-  const deleteAutomation = useDeleteResource({
-    mutation: siteAutomationsDeleteMutation(),
-    workspaceId,
-    successMessage: t(($) => $.notifications.automationDeleted),
-    errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
-    consequence: t(($) => $.confirmations.deleteAutomation),
-  })
-
   const publishMutation = useResourceMutation({
     mutation: siteAutomationsPublishMutation(),
     successMessage: t(($) => $.notifications.automationPublished),
@@ -70,7 +60,7 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationArchiveErrorTitle),
   })
 
-  const restoreMutation = useResourceMutation({
+  const unarchiveMutation = useResourceMutation({
     mutation: siteAutomationsUnarchiveMutation(),
     successMessage: t(($) => $.notifications.automationRestored),
     errorTitle: t(($) => $.alerts.automationRestoreErrorTitle),
@@ -153,14 +143,15 @@ export function AutomationsListPage() {
     ...(direction && { direction }),
   }
 
-  // A row's actions in the order of docs/standards/ui.md: view, edit, the others, delete. Publish
-  // and Deactivate follow the detail page's DraftControls (draftState), so an active automation
-  // with unpublished changes offers both. Archive is undone by Restore, so only Delete is red.
+  // A row's actions in the order of docs/standards/ui.md: view, edit, the others. Publish and
+  // Deactivate follow the detail page's DraftControls (draftState), so an active automation with
+  // unpublished changes offers both. An automation is archived, never deleted (ADR 0100), and
+  // Archive is undone by Restore, so no action is red; an archived one is read-only until then.
   const rowActions = (record: SiteAutomationResource) => {
     const path = { workspaceId, id: record.id }
     if (record.archivedAt) {
       return (
-        <Menu.Item onClick={() => restoreMutation.mutate({ path })}>
+        <Menu.Item onClick={() => unarchiveMutation.mutate({ path })}>
           {t(($) => $.actions.unarchive)}
         </Menu.Item>
       )
@@ -192,9 +183,6 @@ export function AutomationsListPage() {
         ) : null}
         <Menu.Item onClick={() => archiveMutation.mutate({ path })}>
           {t(($) => $.actions.archive)}
-        </Menu.Item>
-        <Menu.Item color="red" onClick={() => deleteAutomation(record.id)}>
-          {t(($) => $.actions.delete)}
         </Menu.Item>
       </>
     )

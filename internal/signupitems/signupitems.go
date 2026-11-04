@@ -52,12 +52,10 @@ var (
 	ErrLabelTaken = validation.RefuseField("label", "signupitems: label taken", i18n.ErrorsLegalDocumentLabelTaken)
 	// ErrDocumentNotFound: no item in effect has this key, or it has no published version.
 	ErrDocumentNotFound = validation.NotFound("signupitems: no legal document", i18n.ErrorsLegalDocumentNotFound)
-	// ErrMailingsArchived: an archived item cannot stand for consent to the operator's mailings.
-	ErrMailingsArchived = validation.RefuseField("mailingsConsent", "signupitems: mailings consent on an archived item", i18n.ErrorsSignupItemMailingsArchived)
-	// ErrArchiveMailings: the item that stands for consent to the operator's mailings is unmarked
-	// before it is archived, so the mark can move to another item.
-	ErrArchiveMailings = validation.RefuseField("mailingsConsent", "signupitems: archiving the mailings consent", i18n.ErrorsSignupItemArchiveMailings)
-	// ErrOrder: a new order that is not the id of every item exactly once.
+	// ErrDeleteMailings: the item that stands for consent to the operator's mailings is unmarked
+	// before it is deleted, so the mark can move to another item.
+	ErrDeleteMailings = validation.RefuseField("mailingsConsent", "signupitems: deleting the mailings consent", i18n.ErrorsSignupItemDeleteMailings)
+	// ErrOrder: a new order that is not the id of every item in use exactly once.
 	ErrOrder = validation.RefuseField("ids", "signupitems: order not every item once", i18n.ErrorsSignupItemOrder)
 )
 
@@ -70,8 +68,8 @@ type Item struct {
 	Position        int
 	MailingsConsent bool
 	CreatedAt       time.Time
-	// ArchivedAt is when the item was archived, nil while it is in use.
-	ArchivedAt *time.Time
+	// DiscardedAt is when the item was deleted, nil while it is in use.
+	DiscardedAt *time.Time
 	// Draft is the Markdown of the next version, nil until one is written.
 	Draft *string
 	// CurrentVersion is the version in effect, nil until one is published.
@@ -117,7 +115,7 @@ type Module struct {
 
 // New builds the module over the raw client and the bus, whose transaction carries a change of
 // several rows (a new order) and the mailings consent mark (it changes what the service feed of
-// Users reports, internal/userfeed); now is the clock of publishing and archiving, nil is
+// Users reports, internal/userfeed); now is the clock of publishing and deleting, nil is
 // time.Now.
 func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 	if now == nil {
@@ -126,9 +124,10 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 	return &Module{ent: client, bus: bus, now: now}
 }
 
-// List is every Sign-up item, archived ones included, in the order of the sign-up form.
+// List is every Sign-up item that is not deleted, in the order of the sign-up form.
 func (m *Module) List(ctx context.Context) ([]Item, error) {
 	rows, err := m.ent.SignupItem.Query().
+		Where(signupitem.DiscardedAtIsNil()).
 		WithDraft().
 		Order(ent.Asc(signupitem.FieldPosition), ent.Asc(signupitem.FieldID)).
 		All(ctx)
@@ -201,12 +200,12 @@ func (m *Module) lostRace(ctx context.Context, key string) error {
 	return ErrMailingsTaken
 }
 
-// inEffect is the one definition of an item in effect: not archived, with a published version.
+// inEffect is the one definition of an item in effect: not deleted, with a published version.
 func inEffect() predicate.SignupItem {
 	return signupitem.And(signupitem.DiscardedAtIsNil(), signupitem.HasVersions())
 }
 
-// InEffect is what the sign-up form asks: the items that are not archived and have a published
+// InEffect is what the sign-up form asks: the items that are not deleted and have a published
 // version, each with its current version, in the order of the form. Named kinds keep only the
 // items of those kinds: the required acceptances are what a User must have accepted to use the
 // app (ADR 0062). With no item it reads no version.
@@ -269,7 +268,7 @@ func item(row *ent.SignupItem, current *ent.LegalDocumentVersion) Item {
 		Position:        row.Position,
 		MailingsConsent: row.MailingsConsent,
 		CreatedAt:       row.CreatedAt,
-		ArchivedAt:      row.DiscardedAt,
+		DiscardedAt:     row.DiscardedAt,
 	}
 	if row.Edges.Draft != nil {
 		it.Draft = &row.Edges.Draft.Markdown
@@ -298,7 +297,8 @@ func document(row *ent.SignupItem, current *ent.LegalDocumentVersion) Document {
 	}
 }
 
-// Get is one Sign-up item. ErrNotFound for an unknown id.
+// Get is one Sign-up item, a deleted one too: what refers to it still shows it. ErrNotFound for an
+// unknown id.
 func (m *Module) Get(ctx context.Context, id int64) (Item, error) {
 	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id)).WithDraft().Only(ctx)
 	if ent.IsNotFound(err) {
@@ -321,14 +321,10 @@ type UpdateInput struct {
 	MailingsConsent *bool
 }
 
-// Update changes a Sign-up item. ErrNotFound for an unknown id, ErrTitleBlank for a blank title,
-// ErrMailingsKind, ErrMailingsArchived and ErrMailingsTaken for a mailings consent the item cannot
-// hold.
+// Update changes a Sign-up item. ErrNotFound for an unknown or a deleted id, ErrTitleBlank for a
+// blank title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the item cannot hold.
 func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, error) {
-	row, err := m.ent.SignupItem.Get(ctx, id)
-	if ent.IsNotFound(err) {
-		return Item{}, ErrNotFound
-	}
+	row, err := m.inUse(ctx, id)
 	if err != nil {
 		return Item{}, err
 	}
@@ -341,18 +337,21 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 		title = &trimmed
 	}
 	if u.MailingsConsent != nil {
-		if *u.MailingsConsent && row.DiscardedAt != nil {
-			return Item{}, ErrMailingsArchived
-		}
 		if err := m.checkMailings(ctx, row.ID, row.Kind, *u.MailingsConsent); err != nil {
 			return Item{}, err
 		}
 	}
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.SignupItem.UpdateOneID(id).
+		// An item deleted in between is not changed.
+		changed, err := tx.SignupItem.Update().
+			Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).
 			SetNillableTitle(title).
 			SetNillableMailingsConsent(u.MailingsConsent).
-			Exec(ctx)
+			Save(ctx)
+		if err == nil && changed == 0 {
+			return ErrNotFound
+		}
+		return err
 	})
 	if ent.IsConstraintError(err) {
 		return Item{}, ErrMailingsTaken
@@ -363,34 +362,50 @@ func (m *Module) Update(ctx context.Context, id int64, u UpdateInput) (Item, err
 	return m.Get(ctx, id)
 }
 
-// Archive takes the item out of the sign-up form and its public page; its published versions
-// stay. Archiving an archived item keeps the moment it was first archived. ErrNotFound for an
-// unknown id, ErrArchiveMailings for the item that stands for consent to the operator's mailings.
-func (m *Module) Archive(ctx context.Context, id int64) (Item, error) {
+// Delete discards the item: it leaves the sign-up form, its public page and the list, and is never
+// restored; its published versions, and the answers Users gave to them, stay. Deleting a deleted
+// item keeps the moment it was first deleted. ErrNotFound for an unknown id, ErrDeleteMailings for
+// the item that stands for consent to the operator's mailings.
+func (m *Module) Delete(ctx context.Context, id int64) error {
 	row, err := m.ent.SignupItem.Get(ctx, id)
 	if ent.IsNotFound(err) {
-		return Item{}, ErrNotFound
+		return ErrNotFound
 	}
 	if err != nil {
-		return Item{}, err
+		return err
 	}
 	if row.MailingsConsent {
-		return Item{}, ErrArchiveMailings
+		return ErrDeleteMailings
 	}
-	// Only an item in use moves: a second archive leaves the first moment, and an item marked as the
-	// mailings consent in between is not archived.
-	_, err = m.ent.SignupItem.Update().
+	// Only an item in use moves: a second delete leaves the first moment, and an item marked as the
+	// mailings consent in between is not deleted.
+	moved, err := m.ent.SignupItem.Update().
 		Where(signupitem.ID(id), signupitem.DiscardedAtIsNil(), signupitem.MailingsConsent(false)).
 		SetDiscardedAt(m.now()).
 		Save(ctx)
-	if err != nil {
-		return Item{}, err
+	if err != nil || moved > 0 {
+		return err
 	}
-	return m.Get(ctx, id)
+	marked, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.MailingsConsent(true)).Exist(ctx)
+	if err == nil && marked {
+		return ErrDeleteMailings
+	}
+	return err
+}
+
+// inUse is the item with this id that a Staff member can still change: a deleted one is read-only
+// (ADR 0100). ErrNotFound for an unknown or a deleted id.
+func (m *Module) inUse(ctx context.Context, id int64) (*ent.SignupItem, error) {
+	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	return row, err
 }
 
 // Reorder puts the items in the order of ids, the order the sign-up form asks them in. ErrOrder
-// unless ids is the id of every item, archived ones included, exactly once.
+// unless ids is the id of every item that is not deleted exactly once; a deleted item keeps its
+// place, which nothing reads.
 func (m *Module) Reorder(ctx context.Context, ids []int64) ([]Item, error) {
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		return reorder(ctx, tx, ids)
@@ -402,9 +417,9 @@ func (m *Module) Reorder(ctx context.Context, ids []int64) ([]Item, error) {
 }
 
 // reorder writes the positions of ids in the transaction tx, once it has checked they are every
-// item exactly once.
+// item in use exactly once.
 func reorder(ctx context.Context, tx *ent.Client, ids []int64) error {
-	existing, err := tx.SignupItem.Query().IDs(ctx)
+	existing, err := tx.SignupItem.Query().Where(signupitem.DiscardedAtIsNil()).IDs(ctx)
 	if err != nil {
 		return err
 	}
@@ -460,16 +475,12 @@ func (m *Module) checkMailings(ctx context.Context, id int64, kind signupitem.Ki
 }
 
 // SaveDraft replaces the draft of the item's Legal document. A visitor sees nothing of it until it
-// is published. ErrNotFound for an unknown id.
+// is published. ErrNotFound for an unknown or a deleted id.
 func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item, error) {
-	exists, err := m.ent.SignupItem.Query().Where(signupitem.ID(id)).Exist(ctx)
-	if err != nil {
+	if _, err := m.inUse(ctx, id); err != nil {
 		return Item{}, err
 	}
-	if !exists {
-		return Item{}, ErrNotFound
-	}
-	err = m.ent.LegalDocumentDraft.Create().
+	err := m.ent.LegalDocumentDraft.Create().
 		SetItemID(id).
 		SetMarkdown(markdown).
 		OnConflictColumns(legaldocumentdraft.FieldItemID).
@@ -484,9 +495,10 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 
 // Publish makes the item's draft a new version under label, published by the Staff member
 // staffID now: it takes effect at once and is never changed afterwards. ErrNotFound for an
-// unknown id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the item has.
+// unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
+// item has.
 func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
-	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id)).WithDraft().Only(ctx)
+	row, err := m.ent.SignupItem.Query().Where(signupitem.ID(id), signupitem.DiscardedAtIsNil()).WithDraft().Only(ctx)
 	if ent.IsNotFound(err) {
 		return Item{}, ErrNotFound
 	}

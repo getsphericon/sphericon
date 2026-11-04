@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -112,7 +113,8 @@ func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunner
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
 // trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
 // (stepping.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
-// Contact already enrolled is Skipped, not Failed. The Enrollment and the job that starts stepping
+// Contact already enrolled is Skipped, not Failed. The read here answers early; the Enrollment
+// checks the Automation again under its lock, which is what decides (automations.ErrInactive). The Enrollment and the job that starts stepping
 // it commit together, so a retry never finds an enrolled Contact whose run never started.
 type enrollAction struct {
 	bus *events.Bus
@@ -130,6 +132,8 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	}
 	enrolled, err := stepping.EnrollOnRule(ctx, a.bus, s, auto.ID, in.ContactID, in.Firing.SourceID)
 	switch {
+	case errors.Is(err, automations.ErrInactive):
+		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	case err != nil:
 		return rules.Result{}, err
 	case !enrolled:

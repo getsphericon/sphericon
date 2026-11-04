@@ -502,7 +502,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
 		siteapiSiteAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
-		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -560,7 +560,7 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, pEntAutomationVersion2)
 	var pTimeTime *time.Time
 	if source.Automation != nil {
-		pTimeTime = source.Automation.DiscardedAt
+		pTimeTime = source.Automation.ArchivedAt
 	}
 	siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp(pTimeTime)
 	siteapiSiteAutomationResource.Revenue = optMessageRevenue(c, source.Revenue)
@@ -731,7 +731,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		// siteapiSiteBroadcastResource.Stats: ignore
 		// siteapiSiteBroadcastResource.Progress: ignore
-		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteBroadcastResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		siteapiSiteBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1317,7 +1317,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.Site
 		// siteapiSiteIntegrationResource.Params: ignore
 		// siteapiSiteIntegrationResource.SecretsRetiring: ignore
 		// siteapiSiteIntegrationResource.HookUrl: ignore
-		siteapiSiteIntegrationResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteIntegrationResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1925,7 +1925,7 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 		siteapiSiteRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
 		siteapiSiteRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
-		siteapiSiteRuleResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1973,7 +1973,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 		siteapiSiteSegmentResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSegmentResource.Name = (*source).Name
 		siteapiSiteSegmentResource.Condition = segmentCondition((*source).Condition)
-		siteapiSiteSegmentResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteSegmentResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		siteapiSiteSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -2020,7 +2020,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
-		siteapiSiteSendingDomainResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteSendingDomainResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

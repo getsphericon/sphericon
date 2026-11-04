@@ -47,16 +47,8 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	return &res, nil
 }
 
-func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.AutomationsDeleteParams) (externalapi.AutomationsDeleteRes, error) {
-	id := int64(params.ID)
-	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
-	if err != nil {
-		return nil, err
-	}
-	return &externalapi.AutomationsDeleteNoContent{}, nil
-}
-
-// AutomationsArchive archives an automation (ADR 0049); active enrollments refuse it with 409.
+// AutomationsArchive archives an automation (ADR 0100); Live use (active enrollments, an active
+// rule) refuses it with 409.
 func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (externalapi.AutomationsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
@@ -68,7 +60,7 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 	return &res, nil
 }
 
-// AutomationsUnarchive restores an archived automation.
+// AutomationsUnarchive brings an archived automation back, inactive.
 func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (externalapi.AutomationsUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)

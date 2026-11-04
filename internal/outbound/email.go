@@ -1,7 +1,6 @@
 package outbound
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -205,7 +204,7 @@ func (a emailAdapter) prepare(ctx context.Context, s *ent.Scoped, content Conten
 	if err != nil {
 		return sendAs{}, "", err
 	}
-	from, name := effectiveFrom(a.sender, email.FromEmail, email.FromName)
+	from, name := messaging.EffectiveFrom(a.sender, email.FromEmail, email.FromName)
 	if a.DeliversOutside() {
 		verified, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
 		if err != nil {
@@ -275,14 +274,4 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 		AutomationID:      f.req.Ref.AutomationID,
 		Captured:          f.captured,
 	})
-}
-
-// effectiveFrom is the From the message goes out with: the given one, else the sender's
-// configured default.
-func effectiveFrom(sender messaging.EmailSender, from, name string) (address, displayName string) {
-	if d, ok := sender.(messaging.DefaultFromer); ok {
-		df, dn := d.DefaultFrom()
-		return cmp.Or(from, df), cmp.Or(name, dn)
-	}
-	return from, name
 }

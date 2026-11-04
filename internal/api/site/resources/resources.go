@@ -153,8 +153,6 @@ type Converter interface {
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []siteapi.SiteContactResource
-	// The contract names the discarded state \"archived\" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
@@ -296,8 +294,6 @@ type Converter interface {
 	// Warnings are the lint of the content just saved (ADR 0040): the handler attaches them
 	// to the response of a save.
 	// goverter:ignore Warnings
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
@@ -347,8 +343,6 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	LintFindingsToResource(source []emailrender.Finding) []siteapi.LintFinding
 
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
@@ -358,7 +352,6 @@ type Converter interface {
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
 	// An Automation with the revenue the automations module read for it (ADR 0064).
 	// goverter:autoMap Automation
-	// goverter:map Automation.DiscardedAt ArchivedAt
 	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationWithRevenueToResource(source automations.WithRevenue) siteapi.SiteAutomationResource
@@ -388,7 +381,6 @@ type Converter interface {
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
 	// goverter:ignore ProviderLimit
-	// goverter:map DiscardedAt DeletedAt
 	IntegrationToResource(source *ent.Integration) siteapi.SiteIntegrationResource
 	// The redacted provider configs: the handler only wraps the one that is set in the
 	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
@@ -479,9 +471,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	InvitationsToResources(source []*ent.Invitation) siteapi.SiteInvitationsListOKApplicationJSON
 
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
-	// are the edges the rules module loads (ADR 0065).
-	// goverter:map DiscardedAt DeletedAt
+	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource
@@ -531,8 +521,6 @@ type Converter interface {
 	// goverter:ignore DkimRecord
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt DeletedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) siteapi.SiteSendingDomainResource
 	// goverter:map . Type | dnsRecordType

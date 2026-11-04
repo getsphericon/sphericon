@@ -111,10 +111,10 @@ enum AuditAction {
   automationDelete: "automation.delete",
 
   /** Archived an automation */
-  automationDiscard: "automation.discard",
+  automationArchive: "automation.archive",
 
-  /** Restored an automation */
-  automationRestore: "automation.restore",
+  /** Unarchived an automation */
+  automationUnarchive: "automation.unarchive",
 
   /** Created the brand kit */
   brandKitCreate: "brand_kit.create",
@@ -135,10 +135,10 @@ enum AuditAction {
   broadcastDelete: "broadcast.delete",
 
   /** Archived a broadcast */
-  broadcastDiscard: "broadcast.discard",
+  broadcastArchive: "broadcast.archive",
 
-  /** Restored a broadcast */
-  broadcastRestore: "broadcast.restore",
+  /** Unarchived a broadcast */
+  broadcastUnarchive: "broadcast.unarchive",
 
   /** Created a contact */
   contactCreate: "contact.create",
@@ -188,9 +188,6 @@ enum AuditAction {
   /** Deleted an integration for good (it stays as history) */
   integrationDiscard: "integration.discard",
 
-  /** Restored an integration */
-  integrationRestore: "integration.restore",
-
   /** Created a join domain */
   joinDomainCreate: "join_domain.create",
 
@@ -209,11 +206,8 @@ enum AuditAction {
   /** Deleted a rule */
   ruleDelete: "rule.delete",
 
-  /** Deleted a rule that has firings, which are kept */
+  /** Deleted a rule for good (its firings stay as history) */
   ruleDiscard: "rule.discard",
-
-  /** Restored a deleted rule (no surface does it) */
-  ruleRestore: "rule.restore",
 
   /** Created a segment */
   segmentCreate: "segment.create",
@@ -225,10 +219,10 @@ enum AuditAction {
   segmentDelete: "segment.delete",
 
   /** Archived a segment */
-  segmentDiscard: "segment.discard",
+  segmentArchive: "segment.archive",
 
-  /** Restored a segment */
-  segmentRestore: "segment.restore",
+  /** Unarchived a segment */
+  segmentUnarchive: "segment.unarchive",
 
   /** Created a sending domain */
   sendingDomainCreate: "sending_domain.create",
@@ -241,9 +235,6 @@ enum AuditAction {
 
   /** Deleted a sending domain for good (it stays as history) */
   sendingDomainDiscard: "sending_domain.discard",
-
-  /** Restored a sending domain */
-  sendingDomainRestore: "sending_domain.restore",
 
   /** Created a tag */
   tagCreate: "tag.create",

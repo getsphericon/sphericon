@@ -177,6 +177,30 @@ func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {
 	})
 }
 
+// A deleted Telegram Integration is read-only (ADR 0100): enabling it, giving it a new token of its
+// bot or a new hook key answers 404, and nothing reaches Telegram after the delete.
+func TestSiteTelegramDeletedIntegrationTouchesNoBot(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	row, _ := connectedTelegram(t, env, c)
+	deleted, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleted)
+	before := len(env.Telegram.Requests())
+
+	res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
+		Enabled: siteapi.NewOptBool(true), Config: siteapi.NewOptIntegrationConfigInput(telegramInput(env.Telegram.Rotate(acmeBotID))),
+	})
+	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, res)
+
+	rekeyed, err := c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteIntegrationsRegenerateKeyNotFound{}, rekeyed)
+
+	assert.Len(t, env.Telegram.Requests(), before, "no Bot API call after the delete")
+}
+
 func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

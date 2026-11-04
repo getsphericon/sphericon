@@ -108,25 +108,27 @@ func TestSiteBroadcastUpdateCannotChangeTheChannel(t *testing.T) {
 	assert.Equal(t, before.Subject, after.Subject)
 }
 
-// The list filters by Channel: email lists the email Broadcasts, which today are all of them.
+// The list filters by Channel: email lists the email Broadcasts, telegram the Telegram one, and
+// together they are all of them.
 func TestSiteBroadcastsListFiltersByChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := t.Context()
+	list := func(channel siteapi.OptBroadcastChannel) *siteapi.SiteBroadcastsListOK {
+		t.Helper()
+		got, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID, Channel: channel})
+		require.NoError(t, err)
+		page, ok := got.(*siteapi.SiteBroadcastsListOK)
+		require.Truef(t, ok, "got %T", got)
+		return page
+	}
 
-	all, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	email, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{
-		WorkspaceId: fixtures.AcmePublicID, Channel: siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelEmail),
-	})
-	require.NoError(t, err)
-	everyList, ok := all.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", all)
-	emailList, ok := email.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", email)
-
+	everyList := list(siteapi.OptBroadcastChannel{})
+	emailList := list(siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelEmail))
+	telegramList := list(siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelTelegram))
 	channels := lo.Uniq(lo.Map(emailList.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.BroadcastChannel { return b.Channel }))
 
-	assert.Equal(t, everyList.TotalItems, emailList.TotalItems)
 	assert.Equal(t, []siteapi.BroadcastChannel{siteapi.BroadcastChannelEmail}, channels)
+	assert.Equal(t, []string{fixtures.BroadcastTelegramDraftName}, lo.Map(telegramList.Items, func(b siteapi.SiteBroadcastResource, _ int) string { return b.Name }))
+	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems)
 }

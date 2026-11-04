@@ -1,5 +1,5 @@
-# Sign-up items (ADR 0062), one of each kind and a second optional consent, all archived: the
-# Instance of the fixtures asks nothing at sign-up, and a test that needs the items in effect brings
+# Sign-up items (ADR 0062), one of each kind and a second optional consent, all deleted: the
+# Instance of the fixtures asks and lists nothing, and a test that needs the items in use brings
 # them back with env.PutSignupItemsInEffect. ServiceTerms has two published versions, so its first is
 # a stale one; PartnerOffers has none, so it is never asked.
 - id: 1 # fixture: ServiceTerms

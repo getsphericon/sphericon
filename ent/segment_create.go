@@ -57,16 +57,16 @@ func (_c *SegmentCreate) SetWorkspaceID(v int64) *SegmentCreate {
 	return _c
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (_c *SegmentCreate) SetDiscardedAt(v time.Time) *SegmentCreate {
-	_c.mutation.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (_c *SegmentCreate) SetArchivedAt(v time.Time) *SegmentCreate {
+	_c.mutation.SetArchivedAt(v)
 	return _c
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (_c *SegmentCreate) SetNillableDiscardedAt(v *time.Time) *SegmentCreate {
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (_c *SegmentCreate) SetNillableArchivedAt(v *time.Time) *SegmentCreate {
 	if v != nil {
-		_c.SetDiscardedAt(*v)
+		_c.SetArchivedAt(*v)
 	}
 	return _c
 }
@@ -210,9 +210,9 @@ func (_c *SegmentCreate) createSpec() (*Segment, *sqlgraph.CreateSpec) {
 		_spec.SetField(segment.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.DiscardedAt(); ok {
-		_spec.SetField(segment.FieldDiscardedAt, field.TypeTime, value)
-		_node.DiscardedAt = &value
+	if value, ok := _c.mutation.ArchivedAt(); ok {
+		_spec.SetField(segment.FieldArchivedAt, field.TypeTime, value)
+		_node.ArchivedAt = &value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
@@ -315,21 +315,21 @@ func (u *SegmentUpsert) UpdateWorkspaceID() *SegmentUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *SegmentUpsert) SetDiscardedAt(v time.Time) *SegmentUpsert {
-	u.Set(segment.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *SegmentUpsert) SetArchivedAt(v time.Time) *SegmentUpsert {
+	u.Set(segment.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *SegmentUpsert) UpdateDiscardedAt() *SegmentUpsert {
-	u.SetExcluded(segment.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *SegmentUpsert) UpdateArchivedAt() *SegmentUpsert {
+	u.SetExcluded(segment.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *SegmentUpsert) ClearDiscardedAt() *SegmentUpsert {
-	u.SetNull(segment.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *SegmentUpsert) ClearArchivedAt() *SegmentUpsert {
+	u.SetNull(segment.FieldArchivedAt)
 	return u
 }
 
@@ -442,24 +442,24 @@ func (u *SegmentUpsertOne) UpdateWorkspaceID() *SegmentUpsertOne {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *SegmentUpsertOne) SetDiscardedAt(v time.Time) *SegmentUpsertOne {
+// SetArchivedAt sets the "archived_at" field.
+func (u *SegmentUpsertOne) SetArchivedAt(v time.Time) *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *SegmentUpsertOne) UpdateDiscardedAt() *SegmentUpsertOne {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *SegmentUpsertOne) UpdateArchivedAt() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *SegmentUpsertOne) ClearDiscardedAt() *SegmentUpsertOne {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *SegmentUpsertOne) ClearArchivedAt() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 
@@ -743,24 +743,24 @@ func (u *SegmentUpsertBulk) UpdateWorkspaceID() *SegmentUpsertBulk {
 	})
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *SegmentUpsertBulk) SetDiscardedAt(v time.Time) *SegmentUpsertBulk {
+// SetArchivedAt sets the "archived_at" field.
+func (u *SegmentUpsertBulk) SetArchivedAt(v time.Time) *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.SetDiscardedAt(v)
+		s.SetArchivedAt(v)
 	})
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *SegmentUpsertBulk) UpdateDiscardedAt() *SegmentUpsertBulk {
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *SegmentUpsertBulk) UpdateArchivedAt() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.UpdateDiscardedAt()
+		s.UpdateArchivedAt()
 	})
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *SegmentUpsertBulk) ClearDiscardedAt() *SegmentUpsertBulk {
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *SegmentUpsertBulk) ClearArchivedAt() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
-		s.ClearDiscardedAt()
+		s.ClearArchivedAt()
 	})
 }
 

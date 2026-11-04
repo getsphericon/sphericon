@@ -8,12 +8,10 @@ import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteBroadcastsArchiveMutation,
-  siteBroadcastsDeleteMutation,
   siteBroadcastsListOptions,
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
-import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -30,14 +28,6 @@ export function BroadcastsListPage() {
   const { locale } = useFormat()
   const { workspaceId } = broadcastsRoute.useParams()
   const navigate = useNavigate()
-
-  const deleteBroadcast = useDeleteResource({
-    mutation: siteBroadcastsDeleteMutation(),
-    workspaceId,
-    successMessage: t(($) => $.notifications.broadcastDeleted),
-    errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
-    consequence: t(($) => $.confirmations.deleteBroadcast),
-  })
 
   const archiveBroadcast = useResourceMutation({
     mutation: siteBroadcastsArchiveMutation(),
@@ -176,18 +166,14 @@ export function BroadcastsListPage() {
                     {t(($) => $.broadcasts.report)}
                   </MenuItemLink>
                   <MenuItemLink
-                    disabled={record.status !== 'draft'}
+                    disabled={record.status !== 'draft' || Boolean(record.archivedAt)}
                     to={broadcastsEditRoute.to}
                     params={{ workspaceId, broadcastId: record.id }}
                   >
                     {t(($) => $.actions.edit)}
                   </MenuItemLink>
-                  {record.status === 'draft' && (
-                    <Menu.Item color="red" onClick={() => deleteBroadcast(record.id)}>
-                      {t(($) => $.actions.delete)}
-                    </Menu.Item>
-                  )}
-                  {(record.status === 'sent' || record.status === 'failed') &&
+                  {record.status !== 'scheduled' &&
+                    record.status !== 'sending' &&
                     (record.archivedAt ? (
                       <Menu.Item
                         onClick={() =>
@@ -198,7 +184,6 @@ export function BroadcastsListPage() {
                       </Menu.Item>
                     ) : (
                       <Menu.Item
-                        color="red"
                         onClick={() =>
                           archiveBroadcast.mutate({ path: { workspaceId, id: record.id } })
                         }

@@ -18,6 +18,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -416,10 +417,15 @@ func (m *Module) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now ti
 	return items, nil
 }
 
-// failedRuns reads, per Automation, the runs that failed in the last week.
+// failedRuns reads, per kept Automation, the runs that failed in the last week; an archived
+// Automation asks for no attention (ADR 0099), as an archived Broadcast does not.
 func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
 	runs, err := s.AutomationRun().Query().
-		Where(automationrun.StatusEQ(automationrun.StatusFailed), automationrun.EndedAtGTE(now.Add(-recent))).
+		Where(
+			automationrun.StatusEQ(automationrun.StatusFailed),
+			automationrun.EndedAtGTE(now.Add(-recent)),
+			automationrun.HasAutomationWith(automation.ArchivedAtIsNil()),
+		).
 		WithAutomation().
 		Order(ent.Asc(automationrun.FieldEndedAt)).
 		All(ctx)

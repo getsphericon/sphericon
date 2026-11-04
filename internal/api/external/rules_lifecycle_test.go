@@ -12,7 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestExternalRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
+// Delete discards a Rule whether or not it has fired (ADR 0100): each is still read by id with
+// discardedAt set, and a write to it is not found.
+func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
@@ -22,17 +24,18 @@ func TestExternalRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
 		deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
-	}
 
-	gone, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleInactiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesGetNotFound{}, gone)
-	kept, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleTagClickedID)})
-	require.NoError(t, err)
-	res, ok := kept.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", kept)
-	_, deletedAt := res.DeletedAt.Get()
-	assert.True(t, deletedAt, "a Rule with Firings is kept, marked deleted")
+		kept, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: id})
+		require.NoError(t, err)
+		res, ok := kept.(*externalapi.RuleResource)
+		require.Truef(t, ok, "got %T", kept)
+		_, discardedAt := res.DiscardedAt.Get()
+		assert.True(t, discardedAt, "the Rule is kept, marked discarded")
+		renamed, err := c.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Name: externalapi.NewOptString("renamed")},
+			externalapi.RulesUpdateParams{ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &externalapi.RulesUpdateNotFound{}, renamed, "a deleted Rule changes no more")
+	}
 }
 
 func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {

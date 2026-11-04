@@ -127,13 +127,8 @@ enum UsedByKind {
   /** An active Rule that uses the row, through a Condition leaf or an Action */
   rule,
 
-  /** The Enrollments of an Automation, as one entry carrying their count: the active ones when
-   * the Automation is archived, all of them when it is deleted */
+  /** The active Enrollments of an Automation that is archived, as one entry carrying their count */
   enrollment,
-
-  /** The Outbound messages an Automation has sent, as one entry carrying their count: facts that
-   * a delete would orphan, which stay even when no Enrollment is left */
-  message,
 }
 
 /** A row that uses the one a removal was refused for: what a client shows to say what to
@@ -149,8 +144,7 @@ model UsedBy {
   name: string;
 
   /** How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages. */
+   * Automation (id, name) and counts its active Enrollments. */
   count?: int32;
 }
 

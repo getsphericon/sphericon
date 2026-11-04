@@ -61,7 +61,7 @@ import (
 
 var (
 	_ = time.Time{}
-	_ predicate.Contact
+	_ predicate.Workspace
 )
 
 // ErrNotInWorkspace: a reference id set on a scoped builder belongs to another Workspace
@@ -2271,43 +2271,40 @@ type AutomationScoped struct{ s *Scoped }
 // Automation returns the Automation entities of the Workspace.
 func (s *Scoped) Automation() *AutomationScoped { return &AutomationScoped{s: s} }
 
-// Query returns a Automation query already confined to the Workspace, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too).
+// Query returns a Automation query already confined to the Workspace, hiding archived rows
+// (a list query; QueryWithArchived sees them too).
 func (t *AutomationScoped) Query() *AutomationQuery {
-	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.DiscardedAtIsNil())
+	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil())
 }
 
-// QueryWithDiscarded returns a Automation query confined to the Workspace that also sees discarded rows.
-func (t *AutomationScoped) QueryWithDiscarded() *AutomationQuery {
+// QueryWithArchived returns a Automation query confined to the Workspace that also sees archived rows.
+func (t *AutomationScoped) QueryWithArchived() *AutomationQuery {
 	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Automation query confined to the Workspace that sees only discarded rows.
-func (t *AutomationScoped) QueryDiscarded() *AutomationQuery {
-	return t.QueryWithDiscarded().Where(automation.DiscardedAtNotNil())
+// QueryArchived returns a Automation query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *AutomationScoped) QueryArchived() *AutomationQuery {
+	return t.QueryWithArchived().Where(automation.ArchivedAtNotNil())
 }
 
-// Get returns the Automation with the id, discarded or not; a row of another Workspace is not found.
+// Get returns the Automation with the id, archived or not; a row of another Workspace is not found.
 func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, error) {
-	return t.QueryWithDiscarded().Where(automation.ID(id)).Only(ctx)
+	return t.QueryWithArchived().Where(automation.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Automation with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
-func (t *AutomationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Automation) error {
-	return t.setDiscarded(ctx, id, true, ps)
+// Archive stamps archived_at on the kept Automation with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *AutomationScoped) Archive(ctx context.Context, id int64, ps ...predicate.Automation) error {
+	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *AutomationUpdateOne) { u.SetArchivedAt(time.Now()) })
 }
 
-// Undiscard clears discarded_at on the discarded Automation with the id; a row that is not
-// discarded is not found.
-func (t *AutomationScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Automation as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *AutomationScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
+// Unarchive clears archived_at on the Automation with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *AutomationScoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *AutomationUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -2315,27 +2312,13 @@ func (t *AutomationScoped) Restore(ctx context.Context, id int64) error {
 	return err
 }
 
-func (t *AutomationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Automation) error {
-	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, automation.DiscardedAtIsNil())
-	} else {
-		where = append(where, automation.DiscardedAtNotNil())
-	}
+func (t *AutomationScoped) setArchived(ctx context.Context, id int64, where []predicate.Automation, verb string, set func(*AutomationUpdateOne)) error {
 	write := func(c *Client) (*Automation, error) {
 		u := c.Automation.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
+		set(u)
 		return u.Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Automation.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -2466,15 +2449,15 @@ func (x *AutomationScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationS
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedCreate) SetDiscardedAt(v time.Time) *AutomationScopedCreate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedCreate) SetArchivedAt(v time.Time) *AutomationScopedCreate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedCreate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedCreate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableArchivedAt(v *time.Time) *AutomationScopedCreate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
@@ -2568,18 +2551,6 @@ func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedC
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedCreate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedCreate {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedCreate {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2594,9 +2565,6 @@ func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -2704,21 +2672,21 @@ func (u *AutomationScopedUpsert) UpdateUpdatedAt() *AutomationScopedUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *AutomationScopedUpsert) SetDiscardedAt(v time.Time) *AutomationScopedUpsert {
-	u.u.Set(automation.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *AutomationScopedUpsert) SetArchivedAt(v time.Time) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateDiscardedAt() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateArchivedAt() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *AutomationScopedUpsert) ClearDiscardedAt() *AutomationScopedUpsert {
-	u.u.SetNull(automation.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *AutomationScopedUpsert) ClearArchivedAt() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldArchivedAt)
 	return u
 }
 
@@ -2972,21 +2940,21 @@ func (x *AutomationScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationScopedU
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedUpdateOne) SetDiscardedAt(v time.Time) *AutomationScopedUpdateOne {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedUpdateOne) SetArchivedAt(v time.Time) *AutomationScopedUpdateOne {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdateOne {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableArchivedAt(v *time.Time) *AutomationScopedUpdateOne {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *AutomationScopedUpdateOne) ClearDiscardedAt() *AutomationScopedUpdateOne {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *AutomationScopedUpdateOne) ClearArchivedAt() *AutomationScopedUpdateOne {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -3152,36 +3120,6 @@ func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationS
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdateOne) ClearOutboundMessages() *AutomationScopedUpdateOne {
-	x.b.ClearOutboundMessages()
-	return x
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
-func (x *AutomationScopedUpdateOne) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.RemoveOutboundMessageIDs(ids...)
-	return x
-}
-
-// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
-func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdateOne {
-	x.b.RemoveOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3196,9 +3134,6 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -3275,21 +3210,21 @@ func (x *AutomationScopedUpdate) SetUpdatedAt(v time.Time) *AutomationScopedUpda
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *AutomationScopedUpdate) SetDiscardedAt(v time.Time) *AutomationScopedUpdate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *AutomationScopedUpdate) SetArchivedAt(v time.Time) *AutomationScopedUpdate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableDiscardedAt(v *time.Time) *AutomationScopedUpdate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableArchivedAt(v *time.Time) *AutomationScopedUpdate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *AutomationScopedUpdate) ClearDiscardedAt() *AutomationScopedUpdate {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *AutomationScopedUpdate) ClearArchivedAt() *AutomationScopedUpdate {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -3455,36 +3390,6 @@ func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScop
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
-// ClearOutboundMessages clears the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedUpdate) ClearOutboundMessages() *AutomationScopedUpdate {
-	x.b.ClearOutboundMessages()
-	return x
-}
-
-// RemoveOutboundMessageIDs removes the "outbound_messages" edge to OutboundMessage entities by IDs.
-func (x *AutomationScopedUpdate) RemoveOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.RemoveOutboundMessageIDs(ids...)
-	return x
-}
-
-// RemoveOutboundMessages removes "outbound_messages" edges to OutboundMessage entities.
-func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *AutomationScopedUpdate {
-	x.b.RemoveOutboundMessages(v...)
-	return x
-}
-
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3499,9 +3404,6 @@ func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -7216,43 +7118,40 @@ type BroadcastScoped struct{ s *Scoped }
 // Broadcast returns the Broadcast entities of the Workspace.
 func (s *Scoped) Broadcast() *BroadcastScoped { return &BroadcastScoped{s: s} }
 
-// Query returns a Broadcast query already confined to the Workspace, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too).
+// Query returns a Broadcast query already confined to the Workspace, hiding archived rows
+// (a list query; QueryWithArchived sees them too).
 func (t *BroadcastScoped) Query() *BroadcastQuery {
-	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws), broadcast.DiscardedAtIsNil())
+	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtIsNil())
 }
 
-// QueryWithDiscarded returns a Broadcast query confined to the Workspace that also sees discarded rows.
-func (t *BroadcastScoped) QueryWithDiscarded() *BroadcastQuery {
+// QueryWithArchived returns a Broadcast query confined to the Workspace that also sees archived rows.
+func (t *BroadcastScoped) QueryWithArchived() *BroadcastQuery {
 	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Broadcast query confined to the Workspace that sees only discarded rows.
-func (t *BroadcastScoped) QueryDiscarded() *BroadcastQuery {
-	return t.QueryWithDiscarded().Where(broadcast.DiscardedAtNotNil())
+// QueryArchived returns a Broadcast query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *BroadcastScoped) QueryArchived() *BroadcastQuery {
+	return t.QueryWithArchived().Where(broadcast.ArchivedAtNotNil())
 }
 
-// Get returns the Broadcast with the id, discarded or not; a row of another Workspace is not found.
+// Get returns the Broadcast with the id, archived or not; a row of another Workspace is not found.
 func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error) {
-	return t.QueryWithDiscarded().Where(broadcast.ID(id)).Only(ctx)
+	return t.QueryWithArchived().Where(broadcast.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Broadcast with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
-func (t *BroadcastScoped) Discard(ctx context.Context, id int64, ps ...predicate.Broadcast) error {
-	return t.setDiscarded(ctx, id, true, ps)
+// Archive stamps archived_at on the kept Broadcast with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *BroadcastScoped) Archive(ctx context.Context, id int64, ps ...predicate.Broadcast) error {
+	where := append([]predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *BroadcastUpdateOne) { u.SetArchivedAt(time.Now()) })
 }
 
-// Undiscard clears discarded_at on the discarded Broadcast with the id; a row that is not
-// discarded is not found.
-func (t *BroadcastScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Broadcast as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *BroadcastScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
+// Unarchive clears archived_at on the Broadcast with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *BroadcastScoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *BroadcastUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -7260,27 +7159,13 @@ func (t *BroadcastScoped) Restore(ctx context.Context, id int64) error {
 	return err
 }
 
-func (t *BroadcastScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Broadcast) error {
-	where := append([]predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, broadcast.DiscardedAtIsNil())
-	} else {
-		where = append(where, broadcast.DiscardedAtNotNil())
-	}
+func (t *BroadcastScoped) setArchived(ctx context.Context, id int64, where []predicate.Broadcast, verb string, set func(*BroadcastUpdateOne)) error {
 	write := func(c *Client) (*Broadcast, error) {
 		u := c.Broadcast.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
+		set(u)
 		return u.Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Broadcast.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -7411,15 +7296,15 @@ func (x *BroadcastScopedCreate) SetNillableUpdatedAt(v *time.Time) *BroadcastSco
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *BroadcastScopedCreate) SetDiscardedAt(v time.Time) *BroadcastScopedCreate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *BroadcastScopedCreate) SetArchivedAt(v time.Time) *BroadcastScopedCreate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedCreate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableArchivedAt(v *time.Time) *BroadcastScopedCreate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
@@ -7817,21 +7702,21 @@ func (u *BroadcastScopedUpsert) UpdateUpdatedAt() *BroadcastScopedUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *BroadcastScopedUpsert) SetDiscardedAt(v time.Time) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *BroadcastScopedUpsert) SetArchivedAt(v time.Time) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateDiscardedAt() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateArchivedAt() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *BroadcastScopedUpsert) ClearDiscardedAt() *BroadcastScopedUpsert {
-	u.u.SetNull(broadcast.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *BroadcastScopedUpsert) ClearArchivedAt() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldArchivedAt)
 	return u
 }
 
@@ -8379,21 +8264,21 @@ func (x *BroadcastScopedUpdateOne) SetUpdatedAt(v time.Time) *BroadcastScopedUpd
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *BroadcastScopedUpdateOne) SetDiscardedAt(v time.Time) *BroadcastScopedUpdateOne {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *BroadcastScopedUpdateOne) SetArchivedAt(v time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedUpdateOne {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableArchivedAt(v *time.Time) *BroadcastScopedUpdateOne {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *BroadcastScopedUpdateOne) ClearDiscardedAt() *BroadcastScopedUpdateOne {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *BroadcastScopedUpdateOne) ClearArchivedAt() *BroadcastScopedUpdateOne {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -8910,21 +8795,21 @@ func (x *BroadcastScopedUpdate) SetUpdatedAt(v time.Time) *BroadcastScopedUpdate
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *BroadcastScopedUpdate) SetDiscardedAt(v time.Time) *BroadcastScopedUpdate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *BroadcastScopedUpdate) SetArchivedAt(v time.Time) *BroadcastScopedUpdate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableDiscardedAt(v *time.Time) *BroadcastScopedUpdate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableArchivedAt(v *time.Time) *BroadcastScopedUpdate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *BroadcastScopedUpdate) ClearDiscardedAt() *BroadcastScopedUpdate {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *BroadcastScopedUpdate) ClearArchivedAt() *BroadcastScopedUpdate {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -17946,60 +17831,20 @@ func (t *IntegrationScoped) QueryWithDiscarded() *IntegrationQuery {
 	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Integration query confined to the Workspace that sees only discarded rows.
-func (t *IntegrationScoped) QueryDiscarded() *IntegrationQuery {
-	return t.QueryWithDiscarded().Where(integration.DiscardedAtNotNil())
-}
-
 // Get returns the Integration with the id, discarded or not; a row of another Workspace is not found.
 func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, error) {
 	return t.QueryWithDiscarded().Where(integration.ID(id)).Only(ctx)
 }
 
 // Discard stamps discarded_at on the kept Integration with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
+// another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
+// row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *IntegrationScoped) Discard(ctx context.Context, id int64, ps ...predicate.Integration) error {
-	return t.setDiscarded(ctx, id, true, ps)
-}
-
-// Undiscard clears discarded_at on the discarded Integration with the id; a row that is not
-// discarded is not found.
-func (t *IntegrationScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Integration as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *IntegrationScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
-	if !IsNotFound(err) {
-		return err
-	}
-	_, err = t.Get(ctx, id)
-	return err
-}
-
-func (t *IntegrationScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Integration) error {
-	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, integration.DiscardedAtIsNil())
-	} else {
-		where = append(where, integration.DiscardedAtNotNil())
-	}
+	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*Integration, error) {
-		u := c.Integration.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
-		return u.Save(ctx)
+		return c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Integration.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -18009,7 +17854,7 @@ func (t *IntegrationScoped) setDiscarded(ctx context.Context, id int64, discard 
 			if err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChangeIntegration(verb, before, after))
+			return ts.record(ctx, auditChangeIntegration("discard", before, after))
 		})
 	}
 	_, err := write(t.s.c)
@@ -26656,60 +26501,20 @@ func (t *RuleScoped) QueryWithDiscarded() *RuleQuery {
 	return t.s.c.Rule.Query().Where(rule.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Rule query confined to the Workspace that sees only discarded rows.
-func (t *RuleScoped) QueryDiscarded() *RuleQuery {
-	return t.QueryWithDiscarded().Where(rule.DiscardedAtNotNil())
-}
-
 // Get returns the Rule with the id, discarded or not; a row of another Workspace is not found.
 func (t *RuleScoped) Get(ctx context.Context, id int64) (*Rule, error) {
 	return t.QueryWithDiscarded().Where(rule.ID(id)).Only(ctx)
 }
 
 // Discard stamps discarded_at on the kept Rule with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
+// another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
+// row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *RuleScoped) Discard(ctx context.Context, id int64, ps ...predicate.Rule) error {
-	return t.setDiscarded(ctx, id, true, ps)
-}
-
-// Undiscard clears discarded_at on the discarded Rule with the id; a row that is not
-// discarded is not found.
-func (t *RuleScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Rule as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *RuleScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
-	if !IsNotFound(err) {
-		return err
-	}
-	_, err = t.Get(ctx, id)
-	return err
-}
-
-func (t *RuleScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Rule) error {
-	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, rule.DiscardedAtIsNil())
-	} else {
-		where = append(where, rule.DiscardedAtNotNil())
-	}
+	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*Rule, error) {
-		u := c.Rule.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
-		return u.Save(ctx)
+		return c.Rule.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Rule.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -26719,7 +26524,7 @@ func (t *RuleScoped) setDiscarded(ctx context.Context, id int64, discard bool, p
 			if err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChangeRule(verb, before, after))
+			return ts.record(ctx, auditChangeRule("discard", before, after))
 		})
 	}
 	_, err := write(t.s.c)
@@ -30067,43 +29872,40 @@ type SegmentScoped struct{ s *Scoped }
 // Segment returns the Segment entities of the Workspace.
 func (s *Scoped) Segment() *SegmentScoped { return &SegmentScoped{s: s} }
 
-// Query returns a Segment query already confined to the Workspace, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too).
+// Query returns a Segment query already confined to the Workspace, hiding archived rows
+// (a list query; QueryWithArchived sees them too).
 func (t *SegmentScoped) Query() *SegmentQuery {
-	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws), segment.DiscardedAtIsNil())
+	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil())
 }
 
-// QueryWithDiscarded returns a Segment query confined to the Workspace that also sees discarded rows.
-func (t *SegmentScoped) QueryWithDiscarded() *SegmentQuery {
+// QueryWithArchived returns a Segment query confined to the Workspace that also sees archived rows.
+func (t *SegmentScoped) QueryWithArchived() *SegmentQuery {
 	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Segment query confined to the Workspace that sees only discarded rows.
-func (t *SegmentScoped) QueryDiscarded() *SegmentQuery {
-	return t.QueryWithDiscarded().Where(segment.DiscardedAtNotNil())
+// QueryArchived returns a Segment query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *SegmentScoped) QueryArchived() *SegmentQuery {
+	return t.QueryWithArchived().Where(segment.ArchivedAtNotNil())
 }
 
-// Get returns the Segment with the id, discarded or not; a row of another Workspace is not found.
+// Get returns the Segment with the id, archived or not; a row of another Workspace is not found.
 func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
-	return t.QueryWithDiscarded().Where(segment.ID(id)).Only(ctx)
+	return t.QueryWithArchived().Where(segment.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Segment with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
-func (t *SegmentScoped) Discard(ctx context.Context, id int64, ps ...predicate.Segment) error {
-	return t.setDiscarded(ctx, id, true, ps)
+// Archive stamps archived_at on the kept Segment with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *SegmentScoped) Archive(ctx context.Context, id int64, ps ...predicate.Segment) error {
+	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *SegmentUpdateOne) { u.SetArchivedAt(time.Now()) })
 }
 
-// Undiscard clears discarded_at on the discarded Segment with the id; a row that is not
-// discarded is not found.
-func (t *SegmentScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Segment as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *SegmentScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
+// Unarchive clears archived_at on the Segment with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *SegmentScoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *SegmentUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -30111,27 +29913,13 @@ func (t *SegmentScoped) Restore(ctx context.Context, id int64) error {
 	return err
 }
 
-func (t *SegmentScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Segment) error {
-	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, segment.DiscardedAtIsNil())
-	} else {
-		where = append(where, segment.DiscardedAtNotNil())
-	}
+func (t *SegmentScoped) setArchived(ctx context.Context, id int64, where []predicate.Segment, verb string, set func(*SegmentUpdateOne)) error {
 	write := func(c *Client) (*Segment, error) {
 		u := c.Segment.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
+		set(u)
 		return u.Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Segment.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -30262,15 +30050,15 @@ func (x *SegmentScopedCreate) SetNillableUpdatedAt(v *time.Time) *SegmentScopedC
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedCreate) SetDiscardedAt(v time.Time) *SegmentScopedCreate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedCreate) SetArchivedAt(v time.Time) *SegmentScopedCreate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedCreate) SetNillableDiscardedAt(v *time.Time) *SegmentScopedCreate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedCreate) SetNillableArchivedAt(v *time.Time) *SegmentScopedCreate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
@@ -30401,21 +30189,21 @@ func (u *SegmentScopedUpsert) UpdateUpdatedAt() *SegmentScopedUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *SegmentScopedUpsert) SetDiscardedAt(v time.Time) *SegmentScopedUpsert {
-	u.u.Set(segment.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *SegmentScopedUpsert) SetArchivedAt(v time.Time) *SegmentScopedUpsert {
+	u.u.Set(segment.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *SegmentScopedUpsert) UpdateDiscardedAt() *SegmentScopedUpsert {
-	u.u.SetExcluded(segment.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *SegmentScopedUpsert) UpdateArchivedAt() *SegmentScopedUpsert {
+	u.u.SetExcluded(segment.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *SegmentScopedUpsert) ClearDiscardedAt() *SegmentScopedUpsert {
-	u.u.SetNull(segment.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *SegmentScopedUpsert) ClearArchivedAt() *SegmentScopedUpsert {
+	u.u.SetNull(segment.FieldArchivedAt)
 	return u
 }
 
@@ -30633,21 +30421,21 @@ func (x *SegmentScopedUpdateOne) SetUpdatedAt(v time.Time) *SegmentScopedUpdateO
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedUpdateOne) SetDiscardedAt(v time.Time) *SegmentScopedUpdateOne {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedUpdateOne) SetArchivedAt(v time.Time) *SegmentScopedUpdateOne {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *SegmentScopedUpdateOne {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedUpdateOne) SetNillableArchivedAt(v *time.Time) *SegmentScopedUpdateOne {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *SegmentScopedUpdateOne) ClearDiscardedAt() *SegmentScopedUpdateOne {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *SegmentScopedUpdateOne) ClearArchivedAt() *SegmentScopedUpdateOne {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -30759,21 +30547,21 @@ func (x *SegmentScopedUpdate) SetUpdatedAt(v time.Time) *SegmentScopedUpdate {
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedUpdate) SetDiscardedAt(v time.Time) *SegmentScopedUpdate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedUpdate) SetArchivedAt(v time.Time) *SegmentScopedUpdate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableDiscardedAt(v *time.Time) *SegmentScopedUpdate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedUpdate) SetNillableArchivedAt(v *time.Time) *SegmentScopedUpdate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *SegmentScopedUpdate) ClearDiscardedAt() *SegmentScopedUpdate {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *SegmentScopedUpdate) ClearArchivedAt() *SegmentScopedUpdate {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -31399,60 +31187,20 @@ func (t *SendingDomainScoped) QueryWithDiscarded() *SendingDomainQuery {
 	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a SendingDomain query confined to the Workspace that sees only discarded rows.
-func (t *SendingDomainScoped) QueryDiscarded() *SendingDomainQuery {
-	return t.QueryWithDiscarded().Where(sendingdomain.DiscardedAtNotNil())
-}
-
 // Get returns the SendingDomain with the id, discarded or not; a row of another Workspace is not found.
 func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain, error) {
 	return t.QueryWithDiscarded().Where(sendingdomain.ID(id)).Only(ctx)
 }
 
 // Discard stamps discarded_at on the kept SendingDomain with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
+// another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
+// row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, ps ...predicate.SendingDomain) error {
-	return t.setDiscarded(ctx, id, true, ps)
-}
-
-// Undiscard clears discarded_at on the discarded SendingDomain with the id; a row that is not
-// discarded is not found.
-func (t *SendingDomainScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept SendingDomain as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *SendingDomainScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
-	if !IsNotFound(err) {
-		return err
-	}
-	_, err = t.Get(ctx, id)
-	return err
-}
-
-func (t *SendingDomainScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.SendingDomain) error {
-	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, sendingdomain.DiscardedAtIsNil())
-	} else {
-		where = append(where, sendingdomain.DiscardedAtNotNil())
-	}
+	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil()}, ps...)
 	write := func(c *Client) (*SendingDomain, error) {
-		u := c.SendingDomain.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
-		return u.Save(ctx)
+		return c.SendingDomain.UpdateOneID(id).Where(where...).SetDiscardedAt(time.Now()).Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.SendingDomain.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -31462,7 +31210,7 @@ func (t *SendingDomainScoped) setDiscarded(ctx context.Context, id int64, discar
 			if err != nil {
 				return err
 			}
-			return ts.record(ctx, auditChangeSendingDomain(verb, before, after))
+			return ts.record(ctx, auditChangeSendingDomain("discard", before, after))
 		})
 	}
 	_, err := write(t.s.c)

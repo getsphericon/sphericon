@@ -183,7 +183,7 @@ model SiteBroadcastResource {
   /** Progress and ETA while the broadcast is sending; null otherwise. Returned by get and send only, never by the list */
   progress?: SiteBroadcastProgress | null;
 
-  /** When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived. */
+  /** When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived. */
   archivedAt?: Timestamp | null;
 
   /** Creation timestamp */
@@ -237,23 +237,23 @@ model SiteBroadcastsListFilter {
 }
 
 /**
- * Delete removes a draft for good; a sent or failed broadcast is history and is archived
- * instead (ADR 0049), so a delete of any other status is a 422.
+ * A broadcast is archived, never deleted (ADR 0100). An archived broadcast is read-only until it
+ * is unarchived: an update, a send or a schedule of one is a 409.
  */
 @tag("Site Broadcasts")
 interface SiteBroadcasts
-  extends WorkspaceCrud<
+  extends WorkspaceCrudKept<
       SiteBroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
       never,
-      UnprocessableEntityProblem,
-      SiteBroadcastsListFilter
+      SiteBroadcastsListFilter,
+      ConflictProblem
     > {
   /**
-   * Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and
-   * figures, and can be restored. A draft is deleted and a scheduled or sending broadcast
-   * cannot be archived (422).
+   * Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+   * figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot
+   * be archived (409). Archiving an archived broadcast changes nothing.
    */
   @action("archive")
   @autoRoute
@@ -262,9 +262,9 @@ interface SiteBroadcasts
     | SiteBroadcastResource
     | BadRequestProblem
     | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | ConflictProblem;
 
-  /** Restore an archived broadcast to the list */
+  /** Bring an archived broadcast back to the list, in the status it had */
   @action("unarchive")
   @autoRoute
   @requiresPermissions(#[])
@@ -273,7 +273,7 @@ interface SiteBroadcasts
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. */
+  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409. */
   @action("send")
   @autoRoute
   @requiresPermissions(#[])
@@ -281,9 +281,10 @@ interface SiteBroadcasts
     | SiteBroadcastResource
     | BadRequestProblem
     | NotFoundProblem
+    | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. */
+  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too. */
   @action("schedule")
   @autoRoute
   @requiresPermissions(#[])
@@ -343,7 +344,6 @@ namespace SiteBroadcastLinks {
 }
 
 @@requiresPermissions(SiteBroadcasts.create, #[]);
-@@requiresPermissions(SiteBroadcasts.delete, #[]);
 @@requiresPermissions(SiteBroadcasts.get, #[]);
 @@requiresPermissions(SiteBroadcasts.list, #[]);
 @@requiresPermissions(SiteBroadcasts.update, #[]);

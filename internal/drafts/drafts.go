@@ -3,14 +3,18 @@
 // object points at its live version, what it does, and at its draft, the one version above live.
 // An edit writes the draft and never the live version, Publish makes the draft live and the
 // object active, Revert drops the draft, Deactivate stops the object and keeps its live version,
-// and Archive stops it before it leaves the lists, so Unarchive never re-arms a send without a
-// Publish.
+// Archive stops it before it leaves the lists, so Unarchive never re-arms a send without a
+// Publish, and Discard stops it for good (ADR 0100: an archivable kind is archived, a discardable
+// one discarded).
 //
 // The package owns the moves and their order; each kind of definition supplies its body through
 // Definition (merge and validate an edit, compare, write, the check before Publish and before
 // Archive), and the generated storage half (ent.VersionedStore, the scoped client's <N>Pointers)
 // moves the pointers and the state. Every move runs in one transaction under the row's lock, and
-// each write of the row is audited. It takes a *ent.Scoped on every call and holds no client.
+// each write of the row is audited. Create, Edit, Publish and Archive take the Workspace's lock
+// first (ADR 0099): a definition names Tags, Segments, Integrations and Automations whose removal
+// checks for it under that lock, Publish makes it Live use, and Archive checks what still needs it.
+// It takes a *ent.Scoped on every call and holds no client.
 package drafts
 
 import (
@@ -42,14 +46,19 @@ type Definition[O, V, E, B any] interface {
 	// Archivable refuses to archive the object while live work still needs it.
 	Archivable(ctx context.Context, ts *ent.Scoped, row *O) error
 	// Editable refuses an edit or a Revert of the object as it is under the lock: a deleted Rule,
-	// kept for its Firings, takes neither.
+	// kept for its Firings, takes neither. An archived object is refused by the lifecycle itself
+	// (Errors.Archived).
 	Editable(row *O) error
 }
 
-// Errors are the refusals of one kind of definition, in its own words.
+// Errors are the refusals of one kind of definition, in its own words. Every one is required: New
+// refuses a kind that leaves one nil.
 type Errors struct {
-	// NotFound: no such object in the Workspace, or an archived one where only a kept one acts.
+	// NotFound: no such object in the Workspace, or a discarded one where only a kept one acts.
 	NotFound error
+	// Archived: the object is archived and takes no owner write until it is unarchived (ADR 0100,
+	// a 409). Only an archivable kind reaches it.
+	Archived error
 	// NothingToPublish: the object has neither a draft nor a live version.
 	NothingToPublish error
 	// NothingToRevert: the object has no draft above a live version.
@@ -65,6 +74,9 @@ type Lifecycle[O, V, E, B any] struct {
 
 // New builds the lifecycle of a kind of definition. The bus opens the transaction of each move.
 func New[O, V, E, B any](bus *events.Bus, def Definition[O, V, E, B], errs Errors) *Lifecycle[O, V, E, B] {
+	if errs.NotFound == nil || errs.Archived == nil || errs.NothingToPublish == nil || errs.NothingToRevert == nil {
+		panic("drafts: a kind names every refusal of drafts.Errors")
+	}
 	return &Lifecycle[O, V, E, B]{bus: bus, def: def, errs: errs}
 }
 
@@ -105,7 +117,7 @@ func (l *Lifecycle[O, V, E, B]) Get(ctx context.Context, s *ent.Scoped, id int64
 // edit is the whole definition.
 func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner func(ctx context.Context, ts *ent.Scoped) (int64, error), edit E) (*O, error) {
 	var id int64
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		body, err := l.def.Merge(ctx, ts, nil, edit)
 		if err != nil {
 			return err
@@ -131,13 +143,13 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
 // untouched. own, when given, changes the object's own row (its name) under the same lock.
 func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, own func(ctx context.Context, ts *ent.Scoped, row *O) error, edit E) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
 			return err
 		}
-		if err := l.def.Editable(st.Row); err != nil {
+		if err := l.editable(st); err != nil {
 			return err
 		}
 		if own != nil {
@@ -185,17 +197,17 @@ func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int6
 // moving from inactive to active records the moment (activated_at); one already active keeps its
 // own. A version the definition finds unpublishable is refused and stays as it was: the draft, or
 // the inactive live version a Publish without a draft would make active again. Publish is send-class: the
-// surfaces gate it by the publish scope. An archived object acts on nothing and is restored before
-// it is published, so it is as good as absent here (NotFound).
+// surfaces gate it by the publish scope. A discarded object is as good as absent here (NotFound);
+// an archived one is unarchived before it is published (Archived).
 func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
 			return err
 		}
-		if st.Archived {
-			return l.errs.NotFound
+		if err := l.acting(st); err != nil {
+			return err
 		}
 		now := time.Now()
 		var activatedAt *time.Time
@@ -235,7 +247,7 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 		if err != nil {
 			return err
 		}
-		if err := l.def.Editable(st.Row); err != nil {
+		if err := l.editable(st); err != nil {
 			return err
 		}
 		if st.LiveID == nil || st.DraftID == nil {
@@ -255,8 +267,9 @@ func (l *Lifecycle[O, V, E, B]) Revert(ctx context.Context, s *ent.Scoped, id in
 }
 
 // Deactivate makes the object inactive: it stops acting, and the work already in flight finishes.
-// Its live version and draft stay. It is authoring: it can only stop sending, never start it. An
-// archived object acts on nothing, so it is as good as absent here (NotFound).
+// Its live version and draft stay. It is authoring: it can only stop sending, never start it. A
+// discarded object is as good as absent here (NotFound); an archived one takes no owner write
+// (Archived).
 func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
@@ -264,8 +277,8 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 		if err != nil {
 			return err
 		}
-		if st.Archived {
-			return l.errs.NotFound
+		if err := l.acting(st); err != nil {
+			return err
 		}
 		if !st.Active {
 			return nil
@@ -278,13 +291,13 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 	return l.Get(ctx, s, id)
 }
 
-// Archive discards the object (ADR 0049): it leaves the lists and acts on nothing, and its history
+// Archive puts the object aside (ADR 0100): it leaves the lists and acts on nothing, and its history
 // stays. It also makes the object inactive, under the same lock as Publish, so an archived object
-// is never active and restoring it brings it back inactive. The definition may refuse it while
+// is never active and unarchiving it brings it back inactive. The definition may refuse it while
 // live work still needs the object. Archiving an archived object changes nothing. It returns the
-// object.
+// object; a discardable kind is refused (ent.ErrNotArchivable).
 func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
-	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
@@ -301,7 +314,7 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 				return err
 			}
 		}
-		return store.Discard(ctx, id)
+		return store.Archive(ctx, id)
 	})
 	if err != nil {
 		return nil, err
@@ -310,7 +323,8 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 }
 
 // Unarchive brings an archived object back to the lists, inactive: only Publish arms it again.
-// Restoring one that is not archived changes nothing. It returns the object.
+// Unarchiving one that is not archived changes nothing. It returns the object; a discardable kind
+// is refused (ent.ErrNotArchivable).
 func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
 	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
@@ -326,12 +340,61 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 				return err
 			}
 		}
-		return store.Undiscard(ctx, id)
+		return store.Unarchive(ctx, id)
 	})
 	if err != nil {
 		return nil, err
 	}
 	return l.Get(ctx, s, id)
+}
+
+// Discard removes the object for good (ADR 0100): it leaves every list and every new work, is still
+// read by id so what refers to it shows its name, and is never restored. It makes the object
+// inactive first, under the same lock as Publish, so a discarded object never acts again.
+// Discarding a discarded object changes nothing. It returns the object; an archivable kind is
+// refused (ent.ErrNotDiscardable).
+func (l *Lifecycle[O, V, E, B]) Discard(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
+	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		store := l.def.Store(ts)
+		st, err := l.lock(ctx, store, id)
+		if err != nil {
+			return err
+		}
+		if st.Discarded {
+			return nil
+		}
+		if st.Active {
+			if err := store.Deactivate(ctx, id); err != nil {
+				return err
+			}
+		}
+		return store.Discard(ctx, id)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return l.Get(ctx, s, id)
+}
+
+// acting refuses a move that arms or stops an object that no longer acts: a discarded one is as
+// good as absent (NotFound), an archived one is unarchived first (Archived).
+func (l *Lifecycle[O, V, E, B]) acting(st ent.VersionState[O, V]) error {
+	switch {
+	case st.Discarded:
+		return l.errs.NotFound
+	case st.Archived:
+		return l.errs.Archived
+	}
+	return nil
+}
+
+// editable refuses an owner's edit or Revert of an archived object (Archived), then asks the
+// definition.
+func (l *Lifecycle[O, V, E, B]) editable(st ent.VersionState[O, V]) error {
+	if st.Archived {
+		return l.errs.Archived
+	}
+	return l.def.Editable(st.Row)
 }
 
 // lock takes the object's row for the rest of the transaction, archived or not, so the moves of

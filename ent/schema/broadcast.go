@@ -38,7 +38,7 @@ func (Broadcast) Annotations() []schema.Annotation {
 }
 
 func (Broadcast) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "broadcasts"}, DiscardMixin{}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "broadcasts"}, ArchiveMixin{}}
 }
 
 func (Broadcast) Fields() []ent.Field {
@@ -156,8 +156,8 @@ func (Broadcast) Fields() []ent.Field {
 func (Broadcast) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("recipients", BroadcastRecipient.Type),
-		// A Segment and an Integration are discarded, never deleted (ADR 0049), so a Broadcast's
-		// reference to one always resolves, as history too. Only Workspace erasure purges them,
+		// A Segment is archived and an Integration discarded, never deleted (ADR 0100), so a
+		// Broadcast's reference to one always resolves, as history too. Only Workspace erasure purges them,
 		// after the Broadcasts.
 		edge.To("segment", Segment.Type).
 			Field("segment_id").

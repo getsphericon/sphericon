@@ -45,13 +45,15 @@ function SegmentDetail() {
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Title order={4}>{segmentQuery.data.name}</Title>
         <Group gap="xs">
-          <ButtonLink
-            variant="default"
-            to={segmentsEditRoute.to}
-            params={{ workspaceId, segmentId }}
-          >
-            {t(($) => $.actions.edit)}
-          </ButtonLink>
+          {segmentQuery.data.archivedAt ? null : (
+            <ButtonLink
+              variant="default"
+              to={segmentsEditRoute.to}
+              params={{ workspaceId, segmentId }}
+            >
+              {t(($) => $.actions.edit)}
+            </ButtonLink>
+          )}
           <ButtonLink variant="subtle" to={segmentsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>

@@ -1539,7 +1539,7 @@
       },
       "put": {
         "operationId": "Automations_update",
-        "description": "Update a resource",
+        "description": "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1588,6 +1588,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1663,132 +1673,12 @@
           }
         },
         "x-required-scopes": ["automations:write"]
-      },
-      "delete": {
-        "operationId": "Automations_delete",
-        "description": "Delete a resource",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/AutomationResourceKey"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InUseProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Automations"],
-        "x-required-scopes": ["automations:write"]
       }
     },
     "/automations/{id}/archive": {
       "post": {
         "operationId": "Automations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them).",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1907,7 +1797,7 @@
     "/automations/{id}/deactivate": {
       "post": {
         "operationId": "Automations_deactivate",
-        "description": "Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope.",
+        "description": "Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1956,6 +1846,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2016,7 +1916,7 @@
     "/automations/{id}/publish": {
       "post": {
         "operationId": "Automations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -2272,7 +2172,7 @@
     "/automations/{id}/revert": {
       "post": {
         "operationId": "Automations_revert",
-        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope.",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -2321,6 +2221,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2391,7 +2301,7 @@
     "/automations/{id}/unarchive": {
       "post": {
         "operationId": "Automations_unarchive",
-        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
+        "description": "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -3014,6 +2924,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -3081,122 +3001,12 @@
           }
         },
         "x-required-scopes": ["broadcasts:write"]
-      },
-      "delete": {
-        "operationId": "Broadcasts_delete",
-        "description": "Delete a resource",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BroadcastResourceKey"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Broadcasts"],
-        "x-required-scopes": ["broadcasts:write"]
       }
     },
     "/broadcasts/{id}/archive": {
       "post": {
         "operationId": "Broadcasts_archive",
-        "description": "Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.",
+        "description": "Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3253,8 +3063,8 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3424,7 +3234,7 @@
     "/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "Broadcasts_schedule",
-        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
+        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3566,7 +3376,7 @@
     "/broadcasts/{id}/segment": {
       "put": {
         "operationId": "Broadcasts_setSegment",
-        "description": "Set the Segment of a draft broadcast, or null for all contacts. Does not send.",
+        "description": "Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3615,6 +3425,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3817,7 +3637,7 @@
     "/broadcasts/{id}/unarchive": {
       "post": {
         "operationId": "Broadcasts_unarchive",
-        "description": "Restore an archived broadcast to the list",
+        "description": "Bring an archived broadcast back to the list, in the status it had",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -8045,7 +7865,7 @@
       },
       "put": {
         "operationId": "Integrations_update",
-        "description": "Update an integration",
+        "description": "Update an integration; a deleted one is read-only and answers 404",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -8294,7 +8114,7 @@
     "/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "Integrations_regenerateKey",
-        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.",
+        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/IntegrationResourceKey"
@@ -10295,6 +10115,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -11115,7 +10945,7 @@
       },
       "put": {
         "operationId": "SendingDomains_update",
-        "description": "Update a resource",
+        "description": "Update a Sending domain; a deleted one is read-only and answers 404",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
@@ -11364,7 +11194,7 @@
     "/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SendingDomains_verify",
-        "description": "Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.",
+        "description": "Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
@@ -14349,16 +14179,16 @@
           "automation.create",
           "automation.update",
           "automation.delete",
-          "automation.discard",
-          "automation.restore",
+          "automation.archive",
+          "automation.unarchive",
           "brand_kit.create",
           "brand_kit.update",
           "brand_kit.delete",
           "broadcast.create",
           "broadcast.update",
           "broadcast.delete",
-          "broadcast.discard",
-          "broadcast.restore",
+          "broadcast.archive",
+          "broadcast.unarchive",
           "contact.create",
           "contact.update",
           "contact.delete",
@@ -14375,7 +14205,6 @@
           "integration.update",
           "integration.delete",
           "integration.discard",
-          "integration.restore",
           "join_domain.create",
           "join_domain.update",
           "join_domain.delete",
@@ -14383,17 +14212,15 @@
           "rule.update",
           "rule.delete",
           "rule.discard",
-          "rule.restore",
           "segment.create",
           "segment.update",
           "segment.delete",
-          "segment.discard",
-          "segment.restore",
+          "segment.archive",
+          "segment.unarchive",
           "sending_domain.create",
           "sending_domain.update",
           "sending_domain.delete",
           "sending_domain.discard",
-          "sending_domain.restore",
           "tag.create",
           "tag.update",
           "tag.delete",
@@ -15406,7 +15233,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
+            "description": "When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived."
           },
           "createdAt": {
             "allOf": [
@@ -19031,7 +18858,7 @@
             "type": "string",
             "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -19039,7 +18866,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks."
+            "description": "When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks."
           },
           "createdAt": {
             "allOf": [
@@ -19846,7 +19673,7 @@
             "nullable": true,
             "description": "When the Rule last became active by Publish. It acts only on Events recorded after it."
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -19854,7 +19681,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id only and changes no more."
+            "description": "When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept."
           },
           "createdAt": {
             "allOf": [
@@ -20232,7 +20059,7 @@
             "nullable": true,
             "description": "When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -20240,7 +20067,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id."
+            "description": "When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id."
           },
           "createdAt": {
             "allOf": [
@@ -21626,14 +21453,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "message"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "Versions": {

@@ -14,7 +14,7 @@ import (
 // Archived ones count: restoring one must not leave it naming a missing Tag. A Condition keeps the
 // name, not an id, so deleting the Tag would leave it matching nothing.
 func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, error) {
-	all, err := s.Segment().QueryWithDiscarded().Order(ent.Asc(segment.FieldID)).All(ctx)
+	all, err := s.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

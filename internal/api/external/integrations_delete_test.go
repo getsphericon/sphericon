@@ -47,12 +47,36 @@ func TestExternalIntegrationsDelete(t *testing.T) {
 	require.NoError(t, err)
 	deleted, ok := got.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "a deleted Integration is still readable by id, got %T", got)
-	assert.True(t, deleted.DeletedAt.IsSet())
+	assert.True(t, deleted.DiscardedAt.IsSet())
 	assert.False(t, deleted.IsDefault)
 
 	missing, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, missing)
+}
+
+// A deleted Integration is read, never changed (ADR 0100): an edit and a new hook key answer 404,
+// and Get still answers.
+func TestExternalIntegrationsDeletedOneIsReadOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	ctx := context.Background()
+	id := entityIDString(fixtures.IntegrationAcmeArchivedID)
+
+	renamed, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("Renamed")},
+		externalapi.IntegrationsUpdateParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsUpdateNotFound{}, renamed)
+
+	rekeyed, err := c.IntegrationsRegenerateKey(ctx, externalapi.IntegrationsRegenerateKeyParams{ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsRegenerateKeyNotFound{}, rekeyed)
+
+	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
+	require.NoError(t, err)
+	row, ok := got.(*externalapi.IntegrationResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.Equal(t, "Old relay (archived)", row.Name, "the refused edit left it as it was")
 }
 
 // usersOfRefusal are the (kind, id) pairs a delete refusal names.

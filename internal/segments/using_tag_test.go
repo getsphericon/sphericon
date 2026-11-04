@@ -20,7 +20,7 @@ func TestUsingTagIncludesArchivedSegments(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Segment().Discard(ctx, fixtures.SegmentNewsletterReadersID))
+	require.NoError(t, acme.Segment().Archive(ctx, fixtures.SegmentNewsletterReadersID))
 
 	using, err := segments.UsingTag(ctx, acme, "newsletter")
 	require.NoError(t, err)

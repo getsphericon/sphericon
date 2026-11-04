@@ -12,7 +12,7 @@ interface ConfirmationOptions {
   description: ReactNode
   confirmLabel?: ReactNode
   // The additional confirmation: the confirm button stays disabled until this exact name is typed.
-  // For a credential or endpoint something live depends on.
+  // For a deletion that cannot be undone, or a credential or endpoint something live depends on.
   typedName?: string | undefined
   onConfirm: () => void
 }

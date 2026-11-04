@@ -13,16 +13,11 @@ package sendingdomains
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
@@ -65,15 +60,22 @@ type Verifier interface {
 	VerifySendingDomain(ctx context.Context, sendingDomainID int64) error
 }
 
-// Module holds the shared collaborators; it is stateless otherwise.
-type Module struct {
-	bus    *events.Bus
-	cipher *secrets.Cipher
-	verify Verifier
+// Senders builds the EmailSender of an Integration, as a send through it does: the Live use check
+// reads the From it is configured with from it. *messaging.Resolver satisfies it.
+type Senders interface {
+	EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier) *Module {
-	return &Module{bus: bus, cipher: cipher, verify: verify}
+// Module holds the shared collaborators; it is stateless otherwise.
+type Module struct {
+	bus     *events.Bus
+	cipher  *secrets.Cipher
+	verify  Verifier
+	senders Senders
+}
+
+func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier, senders Senders) *Module {
+	return &Module{bus: bus, cipher: cipher, verify: verify, senders: senders}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -135,39 +137,40 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 }
 
 // Update edits a Sending domain. Changing the selector moves the DKIM record, so the
-// domain becomes unverified until the new record is published and checked.
+// domain becomes unverified until the new record is published and checked. An unknown id, or a
+// deleted domain's, is ErrNotFound, whatever the edit.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
-	var selector string
-	given, changes := in.Selector.Get()
-	if changes {
-		var err error
-		if selector, err = validSelector(given); err != nil {
-			return nil, err
-		}
-	}
-
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		cur, err := ts.SendingDomain().Get(ctx, id)
+		cur, err := editable(ctx, ts, id)
 		if err != nil {
-			return notFound(err)
+			return err
 		}
 		row = cur
-		if !changes || selector == cur.DkimSelector {
+		given, changes := in.Selector.Get()
+		if !changes {
+			return nil
+		}
+		selector, err := validSelector(given)
+		if err != nil {
+			return err
+		}
+		if selector == cur.DkimSelector {
 			return nil
 		}
 		if dkimstate.Is(cur) {
 			// The published record is under the old selector: the verification is lost. The
 			// loss lands only while the domain is still verified; a miss means a check moved
 			// it meanwhile, and the plain edit below stands.
-			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified()).
+			row, err = ts.SendingDomain().UpdateOneID(id).Where(dkimstate.Verified(), sendingdomain.DiscardedAtIsNil()).
 				SetDkimSelector(selector).SetVerificationLostAt(time.Now()).Save(ctx)
 			if !ent.IsNotFound(err) {
 				return err
 			}
 		}
-		row, err = ts.SendingDomain().UpdateOneID(id).SetDkimSelector(selector).Save(ctx)
-		return err
+		// A Delete that landed meanwhile leaves no row to edit.
+		row, err = ts.SendingDomain().UpdateOneID(id).Where(sendingdomain.DiscardedAtIsNil()).SetDkimSelector(selector).Save(ctx)
+		return notFound(err)
 	})
 	if err != nil {
 		return nil, err
@@ -176,15 +179,16 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 }
 
 // Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
-// restored, and the record of mail sent from it stays. Live work that sends from it refuses the
-// delete with an *inuse.Error naming that work. A domain is used through the domain of a From
-// address, not an id: a scheduled or sending Broadcast uses the domain of its From address, and
-// when it has none, of the default Integration's configured one; an active Automation that sends
-// email uses the domain of that configured From, as its steps carry no From of their own. A sent or
-// failed Broadcast is history and does not block. Deleting a deleted domain changes nothing; an
-// unknown id is ErrNotFound.
+// restored, and the record of mail sent from it stays. Its Live use (ADR 0099) refuses the delete
+// with an *inuse.Error naming that work. A domain is used through the domain of a From address, not
+// an id: a scheduled or sending Broadcast, the live version of an active Automation or a version an
+// unfinished Enrollment stands on uses the domain of the From its email goes out with, its own or,
+// without one, the From of the Integration it goes through (an Automation step carries none). A sent
+// or failed Broadcast is history and does not block. Deleting a deleted domain changes nothing; an
+// unknown id is ErrNotFound. The check and the discard hold the Workspace's lock (ADR 0099), so no
+// work becomes live between them.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)
@@ -203,66 +207,42 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	})
 }
 
-// liveUsers is the live work whose From address is on the domain.
+// liveUsers is the Live use of the domain (ADR 0099): the work whose email goes out from an address
+// on it, its own From or, without one, the From of the Integration it goes through, by the same
+// resolution a send takes (messaging.Through, messaging.EffectiveFrom).
 func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([]inuse.User, error) {
-	configured, err := m.configuredFromDomain(ctx, s)
+	sends, err := liveuse.Sends(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	live, err := s.Broadcast().Query().
-		Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
-		Order(ent.Asc(broadcast.FieldID)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	onDomain := lo.Filter(live, func(b *ent.Broadcast, _ int) bool {
-		from := messaging.DomainOf(lo.FromPtr(b.FromEmail))
-		if b.FromEmail == nil || from == "" {
-			from = configured
+	senders := map[int64]messaging.EmailSender{}
+	var onDomain []liveuse.Send
+	for _, send := range sends {
+		if send.Channel != messaging.ChannelEmail {
+			continue
 		}
-		return from == domain
-	})
-	users := inuse.Broadcasts(onDomain)
-	if configured != domain {
-		return users, nil
+		var sender messaging.EmailSender
+		if send.Integration != nil {
+			if sender = senders[send.Integration.ID]; sender == nil {
+				if sender, err = m.senders.EmailSender(ctx, s, send.Integration); err != nil {
+					return nil, err
+				}
+				senders[send.Integration.ID] = sender
+			}
+		}
+		if from, _ := messaging.EffectiveFrom(sender, send.From, ""); messaging.DomainOf(from) == domain {
+			onDomain = append(onDomain, send)
+		}
 	}
-	automations, err := liveuse.SendingAutomations(ctx, s, messaging.ChannelEmail, liveuse.AnyIntegration)
-	if err != nil {
-		return nil, err
-	}
-	return append(users, automations...), nil
-}
-
-// configuredFromDomain is the domain of the From address the Workspace's default email
-// Integration is configured with, "" when there is no such Integration or it has no From.
-func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (string, error) {
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
-	if errors.Is(err, messaging.ErrNoProvider) {
-		return "", nil
-	}
-	if err != nil {
-		return "", err
-	}
-	raw, err := m.cipher.Decrypt(integ.ConfigEncrypted)
-	if err != nil {
-		return "", err
-	}
-	var cfg struct {
-		From string `json:"from"`
-	}
-	if err := json.Unmarshal(raw, &cfg); err != nil {
-		return "", err
-	}
-	return messaging.DomainOf(cfg.From), nil
+	return liveuse.Users(onDomain), nil
 }
 
 // Verify runs the live DNS check of the domain now and returns the domain as the check left
 // it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt` are the outcome. It confirms the domain is in the
-// Workspace first (ErrNotFound).
+// Workspace and kept first: an unknown or a deleted domain is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	if _, err := s.SendingDomain().Get(ctx, id); err != nil {
-		return nil, notFound(err)
+	if _, err := editable(ctx, s, id); err != nil {
+		return nil, err
 	}
 	if err := m.verify.VerifySendingDomain(ctx, id); err != nil {
 		return nil, err
@@ -303,6 +283,19 @@ func validSelector(raw string) (string, error) {
 		return "", &validation.Error{Field: "dkimSelector", Message: i18n.T(i18n.ErrorsDkimSelectorInvalid, nil)}
 	}
 	return sel, nil
+}
+
+// editable returns the Sending domain of the id for its owner to change. A deleted one is read,
+// never changed (ADR 0100): it is ErrNotFound, as an unknown id is.
+func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+	row, err := s.SendingDomain().Get(ctx, id)
+	if err != nil {
+		return nil, notFound(err)
+	}
+	if row.DiscardedAt != nil {
+		return nil, ErrNotFound
+	}
+	return row, nil
 }
 
 // Get returns the Sending domain with the id, deleted or not; an unknown id, or one of another

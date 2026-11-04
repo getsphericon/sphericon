@@ -26,9 +26,9 @@ func listedAutomationIDs(t *testing.T, c *externalapi.Client, archived bool) []e
 	return lo.Map(list.Items, func(a externalapi.AutomationResource, _ int) externalapi.EntityId { return a.ID })
 }
 
-// /api archives, lists and restores an Automation; active Enrollments refuse the archive with 409
-// and their count, and an Automation with Enrollments is not deleted.
-func TestExternalAutomationsArchiveAndRestore(t *testing.T) {
+// /api archives, lists and unarchives an Automation; active Enrollments refuse the archive with 409
+// and their count, and an archived Automation takes no edit.
+func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "automations:write", "automations:read")
 	ctx := context.Background()
@@ -50,12 +50,9 @@ func TestExternalAutomationsArchiveAndRestore(t *testing.T) {
 	assert.NotContains(t, listedAutomationIDs(t, c, false), id)
 	assert.Contains(t, listedAutomationIDs(t, c, true), id)
 
-	del, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: id})
+	edited, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")}, externalapi.AutomationsUpdateParams{ID: id})
 	require.NoError(t, err)
-	refusedDelete, ok := del.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", del)
-	require.Len(t, refusedDelete.UsedBy, 1)
-	assert.Equal(t, externalapi.UsedByKindEnrollment, refusedDelete.UsedBy[0].Kind)
+	assert.IsType(t, &externalapi.AutomationsUpdateConflict{}, edited, "an archived automation is read-only")
 
 	back, err := c.AutomationsUnarchive(ctx, externalapi.AutomationsUnarchiveParams{ID: id})
 	require.NoError(t, err)
@@ -65,21 +62,23 @@ func TestExternalAutomationsArchiveAndRestore(t *testing.T) {
 	assert.Contains(t, listedAutomationIDs(t, c, false), id)
 }
 
-// An Automation with no Enrollment that has sent mail is history too: the Outbound messages are
-// facts that stay, so the delete answers 409 naming them, not a 500 from the foreign key.
-func TestExternalAutomationsDeleteRefusesOneThatSentMail(t *testing.T) {
+// An Automation that has sent mail is archived like any other, never deleted (ADR 0100): it leaves
+// the list, shows in the archived one and is still read by id.
+func TestExternalAutomationsArchiveKeepsOneThatSentMail(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "automations:write", "automations:read")
 	ctx := context.Background()
+	id := entityIDString(fixtures.AutomationOnOpenID)
 
-	out, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: entityIDString(fixtures.AutomationOnOpenID)})
+	out, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	refused, ok := out.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", out)
-	require.Len(t, refused.UsedBy, 1)
-	assert.Equal(t, externalapi.UsedByKindMessage, refused.UsedBy[0].Kind)
-	assert.Positive(t, refused.UsedBy[0].Count.Or(0))
-	assert.Contains(t, listedAutomationIDs(t, c, false), entityIDString(fixtures.AutomationOnOpenID))
+	got, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
+	require.NoError(t, err)
+
+	assert.IsType(t, &externalapi.AutomationResource{}, out)
+	assert.IsType(t, &externalapi.AutomationResource{}, got, "an archived automation is still read by id")
+	assert.NotContains(t, listedAutomationIDs(t, c, false), id)
+	assert.Contains(t, listedAutomationIDs(t, c, true), id)
 }
 
 // Contact erasure reaches the Enrollments of an archived Automation.

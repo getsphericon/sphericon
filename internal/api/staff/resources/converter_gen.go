@@ -92,7 +92,7 @@ func (c *ConverterImpl) SignupItemToResource(source signupitems.Item) staff.Staf
 	staffapiStaffSignupItemResource.MailingsConsent = source.MailingsConsent
 	staffapiStaffSignupItemResource.Draft = optDraft(source.Draft)
 	staffapiStaffSignupItemResource.CurrentVersion = optVersion(c, source.CurrentVersion)
-	staffapiStaffSignupItemResource.ArchivedAt = optTimestamp(source.ArchivedAt)
+	staffapiStaffSignupItemResource.DiscardedAt = optTimestamp(source.DiscardedAt)
 	staffapiStaffSignupItemResource.CreatedAt = timestamp(source.CreatedAt)
 	return staffapiStaffSignupItemResource
 }

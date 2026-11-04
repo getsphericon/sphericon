@@ -30,8 +30,8 @@ type Broadcast struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
-	// DiscardedAt holds the value of the "discarded_at" field.
-	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
+	// ArchivedAt holds the value of the "archived_at" field.
+	ArchivedAt *time.Time `json:"archived_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
@@ -154,7 +154,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
-		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldDiscardedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
+		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldArchivedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -195,12 +195,12 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case broadcast.FieldDiscardedAt:
+		case broadcast.FieldArchivedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field discarded_at", values[i])
+				return fmt.Errorf("unexpected type %T for field archived_at", values[i])
 			} else if value.Valid {
-				_m.DiscardedAt = new(time.Time)
-				*_m.DiscardedAt = value.Time
+				_m.ArchivedAt = new(time.Time)
+				*_m.ArchivedAt = value.Time
 			}
 		case broadcast.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -425,8 +425,8 @@ func (_m *Broadcast) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	if v := _m.DiscardedAt; v != nil {
-		builder.WriteString("discarded_at=")
+	if v := _m.ArchivedAt; v != nil {
+		builder.WriteString("archived_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

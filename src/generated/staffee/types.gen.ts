@@ -45,16 +45,16 @@ export const AuditAction = {
   AUTOMATION_CREATE: 'automation.create',
   AUTOMATION_UPDATE: 'automation.update',
   AUTOMATION_DELETE: 'automation.delete',
-  AUTOMATION_DISCARD: 'automation.discard',
-  AUTOMATION_RESTORE: 'automation.restore',
+  AUTOMATION_ARCHIVE: 'automation.archive',
+  AUTOMATION_UNARCHIVE: 'automation.unarchive',
   BRAND_KIT_CREATE: 'brand_kit.create',
   BRAND_KIT_UPDATE: 'brand_kit.update',
   BRAND_KIT_DELETE: 'brand_kit.delete',
   BROADCAST_CREATE: 'broadcast.create',
   BROADCAST_UPDATE: 'broadcast.update',
   BROADCAST_DELETE: 'broadcast.delete',
-  BROADCAST_DISCARD: 'broadcast.discard',
-  BROADCAST_RESTORE: 'broadcast.restore',
+  BROADCAST_ARCHIVE: 'broadcast.archive',
+  BROADCAST_UNARCHIVE: 'broadcast.unarchive',
   CONTACT_CREATE: 'contact.create',
   CONTACT_UPDATE: 'contact.update',
   CONTACT_DELETE: 'contact.delete',
@@ -71,7 +71,6 @@ export const AuditAction = {
   INTEGRATION_UPDATE: 'integration.update',
   INTEGRATION_DELETE: 'integration.delete',
   INTEGRATION_DISCARD: 'integration.discard',
-  INTEGRATION_RESTORE: 'integration.restore',
   JOIN_DOMAIN_CREATE: 'join_domain.create',
   JOIN_DOMAIN_UPDATE: 'join_domain.update',
   JOIN_DOMAIN_DELETE: 'join_domain.delete',
@@ -79,17 +78,15 @@ export const AuditAction = {
   RULE_UPDATE: 'rule.update',
   RULE_DELETE: 'rule.delete',
   RULE_DISCARD: 'rule.discard',
-  RULE_RESTORE: 'rule.restore',
   SEGMENT_CREATE: 'segment.create',
   SEGMENT_UPDATE: 'segment.update',
   SEGMENT_DELETE: 'segment.delete',
-  SEGMENT_DISCARD: 'segment.discard',
-  SEGMENT_RESTORE: 'segment.restore',
+  SEGMENT_ARCHIVE: 'segment.archive',
+  SEGMENT_UNARCHIVE: 'segment.unarchive',
   SENDING_DOMAIN_CREATE: 'sending_domain.create',
   SENDING_DOMAIN_UPDATE: 'sending_domain.update',
   SENDING_DOMAIN_DELETE: 'sending_domain.delete',
   SENDING_DOMAIN_DISCARD: 'sending_domain.discard',
-  SENDING_DOMAIN_RESTORE: 'sending_domain.restore',
   TAG_CREATE: 'tag.create',
   TAG_UPDATE: 'tag.update',
   TAG_DELETE: 'tag.delete',
@@ -1019,8 +1016,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -1034,8 +1030,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**

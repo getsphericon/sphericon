@@ -58,8 +58,8 @@ type Invoker interface {
 	// AutomationsArchive invokes Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /automations/{id}/archive
 	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
@@ -71,17 +71,11 @@ type Invoker interface {
 	AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (AutomationsCreateRes, error)
 	// AutomationsDeactivate invokes Automations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
-	// scope.
+	// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
+	// Needs the automations:write scope.
 	//
 	// POST /automations/{id}/deactivate
 	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
-	// AutomationsDelete invokes Automations_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /automations/{id}
-	AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error)
 	// AutomationsDryRunHttpStep invokes Automations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -106,7 +100,7 @@ type Invoker interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused. Needs the automations:publish scope.
+	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
 	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
@@ -121,20 +115,22 @@ type Invoker interface {
 	AutomationsReport(ctx context.Context, params AutomationsReportParams) (AutomationsReportRes, error)
 	// AutomationsRevert invokes Automations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
-	// Needs the automations:write scope.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
 	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
 	// AutomationsUnarchive invokes Automations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /automations/{id}/unarchive
 	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
 	// AutomationsUpdate invokes Automations_update operation.
 	//
-	// Update a resource.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived. Needs the automations:write scope.
 	//
 	// PUT /automations/{id}
 	AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error)
@@ -148,8 +144,9 @@ type Invoker interface {
 	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
 	// BroadcastsArchive invokes Broadcasts_archive operation.
 	//
-	// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
-	// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+	// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
+	// can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409).
+	// Archiving an archived broadcast changes nothing.
 	//
 	// POST /broadcasts/{id}/archive
 	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
@@ -159,12 +156,6 @@ type Invoker interface {
 	//
 	// POST /broadcasts
 	BroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (BroadcastsCreateRes, error)
-	// BroadcastsDelete invokes Broadcasts_delete operation.
-	//
-	// Delete a resource.
-	//
-	// DELETE /broadcasts/{id}
-	BroadcastsDelete(ctx context.Context, params BroadcastsDeleteParams) (BroadcastsDeleteRes, error)
 	// BroadcastsGet invokes Broadcasts_get operation.
 	//
 	// Get a resource by ID.
@@ -189,14 +180,15 @@ type Invoker interface {
 	// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
 	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
 	// the integration it sends through cannot send (disabled or archived, or no default): a draft may name
-	// such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and
-	// mcp:send over MCP.
+	// such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class:
+	// needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
 	// BroadcastsSetSegment invokes Broadcasts_setSegment operation.
 	//
-	// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
+	// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
+	// is a 409.
 	//
 	// PUT /broadcasts/{id}/segment
 	BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
@@ -211,7 +203,7 @@ type Invoker interface {
 	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
 	// BroadcastsUnarchive invokes Broadcasts_unarchive operation.
 	//
-	// Restore an archived broadcast to the list.
+	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /broadcasts/{id}/unarchive
 	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
@@ -459,13 +451,13 @@ type Invoker interface {
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 	// pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-	// is a 422). Needs a person: hidden from MCP.
+	// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
 	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUpdate invokes Integrations_update operation.
 	//
-	// Update an integration.
+	// Update an integration; a deleted one is read-only and answers 404.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
@@ -616,14 +608,15 @@ type Invoker interface {
 	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
 	// SendingDomainsUpdate invokes SendingDomains_update operation.
 	//
-	// Update a resource.
+	// Update a Sending domain; a deleted one is read-only and answers 404.
 	//
 	// PUT /sending-domains/{id}
 	SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error)
 	// SendingDomainsVerify invokes SendingDomains_verify operation.
 	//
 	// Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-	// `lastCheckedAt`). Verification is never set by the caller.
+	// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+	// again (404).
 	//
 	// POST /sending-domains/{id}/verify
 	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error)
@@ -1723,8 +1716,8 @@ func (c *Client) sendAuthTokensList(ctx context.Context) (res AuthTokensListRes,
 // AutomationsArchive invokes Automations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-// (`usedBy` carries their count).
+// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+// an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /automations/{id}/archive
 func (c *Client) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error) {
@@ -1975,8 +1968,8 @@ func (c *Client) sendAutomationsCreate(ctx context.Context, request *CreateAutom
 
 // AutomationsDeactivate invokes Automations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
-// scope.
+// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
+// Needs the automations:write scope.
 //
 // POST /automations/{id}/deactivate
 func (c *Client) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error) {
@@ -2102,140 +2095,6 @@ func (c *Client) sendAutomationsDeactivate(ctx context.Context, params Automatio
 
 	stage = "DecodeResponse"
 	result, err := decodeAutomationsDeactivateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// AutomationsDelete invokes Automations_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /automations/{id}
-func (c *Client) AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error) {
-	res, err := c.sendAutomationsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendAutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (res AutomationsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Automations_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/automations/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/automations/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, AutomationsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeAutomationsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -2667,7 +2526,7 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused. Needs the automations:publish scope.
+// refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
 func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error) {
@@ -2961,8 +2820,8 @@ func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsRe
 
 // AutomationsRevert invokes Automations_revert operation.
 //
-// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
-// Needs the automations:write scope.
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+// 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
 func (c *Client) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error) {
@@ -3097,7 +2956,8 @@ func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRe
 
 // AutomationsUnarchive invokes Automations_unarchive operation.
 //
-// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+// again.
 //
 // POST /automations/{id}/unarchive
 func (c *Client) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error) {
@@ -3232,7 +3092,8 @@ func (c *Client) sendAutomationsUnarchive(ctx context.Context, params Automation
 
 // AutomationsUpdate invokes Automations_update operation.
 //
-// Update a resource.
+// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+// archived. Needs the automations:write scope.
 //
 // PUT /automations/{id}
 func (c *Client) AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error) {
@@ -3484,8 +3345,9 @@ func (c *Client) sendBrandKitGet(ctx context.Context) (res BrandKitGetRes, err e
 
 // BroadcastsArchive invokes Broadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
-// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
+// can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409).
+// Archiving an archived broadcast changes nothing.
 //
 // POST /broadcasts/{id}/archive
 func (c *Client) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error) {
@@ -3727,140 +3589,6 @@ func (c *Client) sendBroadcastsCreate(ctx context.Context, request *CreateBroadc
 
 	stage = "DecodeResponse"
 	result, err := decodeBroadcastsCreateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// BroadcastsDelete invokes Broadcasts_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /broadcasts/{id}
-func (c *Client) BroadcastsDelete(ctx context.Context, params BroadcastsDeleteParams) (BroadcastsDeleteRes, error) {
-	res, err := c.sendBroadcastsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendBroadcastsDelete(ctx context.Context, params BroadcastsDeleteParams) (res BroadcastsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Broadcasts_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/broadcasts/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, BroadcastsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/broadcasts/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, BroadcastsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeBroadcastsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -4328,8 +4056,8 @@ func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsRepo
 // segment's condition: recipients are resolved at send time from that copy, so a later edit of the
 // segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
 // the integration it sends through cannot send (disabled or archived, or no default): a draft may name
-// such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and
-// mcp:send over MCP.
+// such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class:
+// needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
 func (c *Client) BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error) {
@@ -4467,7 +4195,8 @@ func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBr
 
 // BroadcastsSetSegment invokes Broadcasts_setSegment operation.
 //
-// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
+// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
+// is a 409.
 //
 // PUT /broadcasts/{id}/segment
 func (c *Client) BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error) {
@@ -4746,7 +4475,7 @@ func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBr
 
 // BroadcastsUnarchive invokes Broadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /broadcasts/{id}/unarchive
 func (c *Client) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error) {
@@ -9569,7 +9298,7 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 // pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-// is a 422). Needs a person: hidden from MCP.
+// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
@@ -9704,7 +9433,7 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 
 // IntegrationsUpdate invokes Integrations_update operation.
 //
-// Update an integration.
+// Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
 func (c *Client) IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error) {
@@ -12959,7 +12688,7 @@ func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomai
 
 // SendingDomainsUpdate invokes SendingDomains_update operation.
 //
-// Update a resource.
+// Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
 func (c *Client) SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error) {
@@ -13097,7 +12826,8 @@ func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSe
 // SendingDomainsVerify invokes SendingDomains_verify operation.
 //
 // Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-// `lastCheckedAt`). Verification is never set by the caller.
+// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+// again (404).
 //
 // POST /sending-domains/{id}/verify
 func (c *Client) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error) {

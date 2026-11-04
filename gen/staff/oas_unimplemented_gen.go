@@ -123,17 +123,6 @@ func (UnimplementedHandler) StaffMeGet(ctx context.Context) (r StaffMeGetRes, _ 
 	return r, ht.ErrNotImplemented
 }
 
-// StaffSignupItemsArchive implements StaffSignupItems_archive operation.
-//
-// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
-// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
-// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
-//
-// POST /signup-items/{id}/archive
-func (UnimplementedHandler) StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (r StaffSignupItemsArchiveRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // StaffSignupItemsCreate implements StaffSignupItems_create operation.
 //
 // Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
@@ -144,9 +133,21 @@ func (UnimplementedHandler) StaffSignupItemsCreate(ctx context.Context, req *Sta
 	return r, ht.ErrNotImplemented
 }
 
+// StaffSignupItemsDelete implements StaffSignupItems_delete operation.
+//
+// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
+// never restored; its published versions and Users' answers stay. Deleting a deleted item changes
+// nothing. The item that stands for consent to the operator's mailings is refused (422) until it is
+// unmarked.
+//
+// DELETE /signup-items/{id}
+func (UnimplementedHandler) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (r StaffSignupItemsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // StaffSignupItemsGet implements StaffSignupItems_get operation.
 //
-// One Sign-up item.
+// One Sign-up item, a deleted one too.
 //
 // GET /signup-items/{id}
 func (UnimplementedHandler) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (r StaffSignupItemsGetRes, _ error) {
@@ -155,7 +156,7 @@ func (UnimplementedHandler) StaffSignupItemsGet(ctx context.Context, params Staf
 
 // StaffSignupItemsList implements StaffSignupItems_list operation.
 //
-// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
+// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 //
 // GET /signup-items
 func (UnimplementedHandler) StaffSignupItemsList(ctx context.Context) (r StaffSignupItemsListRes, _ error) {
@@ -175,7 +176,8 @@ func (UnimplementedHandler) StaffSignupItemsListVersions(ctx context.Context, pa
 // StaffSignupItemsPublish implements StaffSignupItems_publish operation.
 //
 // Publish the draft as a new version under a label: it takes effect at once, and is never changed or
-// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
+// removed afterwards. A label the item already has, and an item without a draft, are refused (422); a
+// deleted item is not found.
 //
 // POST /signup-items/{id}/versions
 func (UnimplementedHandler) StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (r StaffSignupItemsPublishRes, _ error) {
@@ -185,7 +187,7 @@ func (UnimplementedHandler) StaffSignupItemsPublish(ctx context.Context, req *St
 // StaffSignupItemsReorder implements StaffSignupItems_reorder operation.
 //
 // Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
-// every item's id exactly once is refused (422).
+// the id of every item that is not deleted, exactly once, is refused (422).
 //
 // PUT /signup-items/order
 func (UnimplementedHandler) StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (r StaffSignupItemsReorderRes, _ error) {
@@ -195,7 +197,7 @@ func (UnimplementedHandler) StaffSignupItemsReorder(ctx context.Context, req *St
 // StaffSignupItemsSaveDraft implements StaffSignupItems_saveDraft operation.
 //
 // Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
-// until it is published.
+// until it is published. A deleted item is not found.
 //
 // PUT /signup-items/{id}/draft
 func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (r StaffSignupItemsSaveDraftRes, _ error) {
@@ -204,8 +206,8 @@ func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *
 
 // StaffSignupItemsUpdate implements StaffSignupItems_update operation.
 //
-// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
-// or is archived, and a second mailings consent are refused (422).
+// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
+// and a second mailings consent are refused (422); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
 func (UnimplementedHandler) StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (r StaffSignupItemsUpdateRes, _ error) {

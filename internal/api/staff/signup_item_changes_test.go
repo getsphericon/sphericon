@@ -7,14 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
 // A Staff member keeps the Sign-up items in step with the market (#737): reorders, retitles and
-// archives them, and reads every published version of an item. The items are the fixture ones,
-// brought into effect where a test needs them asked.
+// deletes them, and reads every published version of an item. The items are the fixture ones,
+// brought into use where a test needs them.
 
 // reorder sends the new order of the items and returns the answer.
 func reorder(t *testing.T, c *staffapi.Client, ids ...staffapi.EntityId) staffapi.StaffSignupItemsReorderRes {
@@ -24,21 +26,29 @@ func reorder(t *testing.T, c *staffapi.Client, ids ...staffapi.EntityId) staffap
 	return res
 }
 
-// archive archives the item and returns the answer.
-func archive(t *testing.T, c *staffapi.Client, id staffapi.EntityId) staffapi.StaffSignupItemsArchiveRes {
+// deleteItem deletes the item and returns the answer.
+func deleteItem(t *testing.T, c *staffapi.Client, id staffapi.EntityId) staffapi.StaffSignupItemsDeleteRes {
 	t.Helper()
-	res, err := c.StaffSignupItemsArchive(t.Context(), staffapi.StaffSignupItemsArchiveParams{ID: id})
+	res, err := c.StaffSignupItemsDelete(t.Context(), staffapi.StaffSignupItemsDeleteParams{ID: id})
 	require.NoError(t, err)
 	return res
 }
 
-// archived archives the item, which must succeed.
-func archived(t *testing.T, c *staffapi.Client, id staffapi.EntityId) *staffapi.StaffSignupItemResource {
+// deleted deletes the item, which must succeed.
+func deleted(t *testing.T, c *staffapi.Client, id staffapi.EntityId) {
 	t.Helper()
-	res := archive(t, c, id)
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the item is archived, got %T", res)
-	return item
+	res := deleteItem(t, c, id)
+	require.IsTypef(t, &staffapi.StaffSignupItemsDeleteNoContent{}, res, "the item is deleted, got %T", res)
+}
+
+// listedKeys is the keys of the items the console lists, in their order.
+func listedKeys(t *testing.T, c *staffapi.Client) []staffapi.SignupItemKey {
+	t.Helper()
+	res, err := c.StaffSignupItemsList(t.Context())
+	require.NoError(t, err)
+	list, ok := res.(*staffapi.StaffSignupItemList)
+	require.Truef(t, ok, "the items are listed, got %T", res)
+	return lo.Map(list.Items, func(it staffapi.StaffSignupItemResource, _ int) staffapi.SignupItemKey { return it.Key })
 }
 
 // update changes the item and returns the answer.
@@ -81,11 +91,11 @@ func (h *harness) askedKeys(t *testing.T) []siteapi.SignupItemKey {
 	return lo.Map(visible, func(it siteapi.SiteSignupItem, _ int) siteapi.SignupItemKey { return it.Key })
 }
 
-// allInEffect brings the fixture items that have a published version into effect: the sign-up form
-// asks ServiceTerms, OperatorNews and DataNotice, in that order.
+// allInEffect brings every fixture item into use: the sign-up form asks ServiceTerms, OperatorNews
+// and DataNotice, in that order, and PartnerOffers, which has no published version, is only listed.
 func (h *harness) allInEffect(t *testing.T) {
 	t.Helper()
-	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.OperatorNewsID, fixtures.DataNoticeID)
+	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.OperatorNewsID, fixtures.DataNoticeID, fixtures.PartnerOffersID)
 }
 
 func TestReorderingChangesTheOrderTheFormAsks(t *testing.T) {
@@ -103,18 +113,20 @@ func TestReorderingChangesTheOrderTheFormAsks(t *testing.T) {
 	assert.Equal(t, []siteapi.SignupItemKey{fixtures.DataNoticeKey, fixtures.OperatorNewsKey, fixtures.ServiceTermsKey}, asked)
 }
 
-func TestAnArchivedItemKeepsItsPlaceInTheOrder(t *testing.T) {
+func TestADeletedItemIsNotPartOfTheOrder(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
-	// DataNotice stays archived, as the fixtures leave it.
+	// DataNotice and PartnerOffers stay deleted, as the fixtures leave them.
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.OperatorNewsID)
 
-	res := reorder(t, c, fixtures.OperatorNewsID, fixtures.DataNoticeID, fixtures.ServiceTermsID, fixtures.PartnerOffersID)
+	withDeleted := reorder(t, c, fixtures.OperatorNewsID, fixtures.DataNoticeID, fixtures.ServiceTermsID)
+	res := reorder(t, c, fixtures.OperatorNewsID, fixtures.ServiceTermsID)
 
+	assert.Equal(t, []string{"ids"}, refusedFields(t, withDeleted), "a deleted item is not in the order")
 	list, ok := res.(*staffapi.StaffSignupItemList)
 	require.Truef(t, ok, "the items are reordered, got %T", res)
 	listed := lo.Map(list.Items, func(it staffapi.StaffSignupItemResource, _ int) staffapi.SignupItemKey { return it.Key })
-	assert.Equal(t, []staffapi.SignupItemKey{fixtures.OperatorNewsKey, fixtures.DataNoticeKey, fixtures.ServiceTermsKey, fixtures.PartnerOffersKey}, listed)
+	assert.Equal(t, []staffapi.SignupItemKey{fixtures.OperatorNewsKey, fixtures.ServiceTermsKey}, listed)
 	asked := h.askedKeys(t)
 	assert.Equal(t, []siteapi.SignupItemKey{fixtures.OperatorNewsKey, fixtures.ServiceTermsKey}, asked)
 }
@@ -173,58 +185,76 @@ func TestABlankTitleIsRefused(t *testing.T) {
 	assert.Equal(t, before, after, "the title is unchanged")
 }
 
-func TestAnArchivedItemLeavesTheFormAndItsPageButKeepsItsVersions(t *testing.T) {
+func TestADeletedItemLeavesTheFormItsPageAndTheListButKeepsItsVersionsAndAnswers(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.DataNoticeID)
 
-	item := archived(t, c, fixtures.ServiceTermsID)
+	deleted(t, c, fixtures.ServiceTermsID)
 
-	assert.True(t, item.ArchivedAt.Set, "the console shows the item archived")
 	asked := h.askedKeys(t)
 	assert.Equal(t, []siteapi.SignupItemKey{fixtures.DataNoticeKey}, asked)
-	assert.IsType(t, &siteapi.SiteLegalDocumentsGetNotFound{}, h.publicDocument(t, fixtures.ServiceTermsKey), "an archived item has no public page")
+	assert.IsType(t, &siteapi.SiteLegalDocumentsGetNotFound{}, h.publicDocument(t, fixtures.ServiceTermsKey), "a deleted item has no public page")
+	assert.Equal(t, []staffapi.SignupItemKey{fixtures.DataNoticeKey}, listedKeys(t, c), "the console no longer lists it")
+	item := getItem(t, c, fixtures.ServiceTermsID)
+	assert.True(t, item.DiscardedAt.Set, "it is still read by id, deleted")
 	listed := versions(t, c, fixtures.ServiceTermsID)
 	assert.Equal(t, []staffapi.LegalDocumentLabel{fixtures.ServiceTermsCurrentLabel, fixtures.ServiceTermsStaleLabel}, labels(listed))
+	answers, err := h.env.DB.ConsentRecord.Query().
+		Where(consentrecord.HasVersionWith(legaldocumentversion.ItemID(fixtures.ServiceTermsID))).
+		IDs(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, []int64{fixtures.MaryTermsAcceptedID}, answers, "the Users' answers to it stay, so consent stays provable")
 }
 
-func TestArchivingAnArchivedItemKeepsTheMomentItWasArchived(t *testing.T) {
+func TestDeletingADeletedItemKeepsTheMomentItWasDeleted(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 	before := getItem(t, c, fixtures.DataNoticeID)
-	require.True(t, before.ArchivedAt.Set, "the fixture item is archived")
+	require.True(t, before.DiscardedAt.Set, "the fixture item is deleted")
 
-	again := archived(t, c, fixtures.DataNoticeID)
+	deleted(t, c, fixtures.DataNoticeID)
 
-	assert.Equal(t, before.ArchivedAt, again.ArchivedAt)
+	after := getItem(t, c, fixtures.DataNoticeID)
+	assert.Equal(t, before.DiscardedAt, after.DiscardedAt)
 }
 
-func TestTheMailingsConsentIsNotArchivedWhileItIsMarked(t *testing.T) {
+func TestTheMailingsConsentIsNotDeletedWhileItIsMarked(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 	h.markMailings(t, fixtures.OperatorNewsID)
 
-	refused := archive(t, c, fixtures.OperatorNewsID)
+	refused := deleteItem(t, c, fixtures.OperatorNewsID)
+	kept := getItem(t, c, fixtures.OperatorNewsID)
 	update(t, c, fixtures.OperatorNewsID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(false)})
-	unmarked := archived(t, c, fixtures.OperatorNewsID)
+	deleted(t, c, fixtures.OperatorNewsID)
 
 	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, refused))
-	assert.True(t, unmarked.ArchivedAt.Set, "once unmarked it is archived")
+	assert.False(t, kept.DiscardedAt.Set, "the marked item is kept")
+	unmarked := getItem(t, c, fixtures.OperatorNewsID)
+	assert.True(t, unmarked.DiscardedAt.Set, "once unmarked it is deleted")
 }
 
-func TestAnArchivedItemCannotBecomeTheMailingsConsent(t *testing.T) {
+func TestADeletedItemCannotBeChanged(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
-	// PartnerOffers stays archived, as the fixtures leave it.
-	h.env.PutSignupItemsInEffect(t.Context(), fixtures.OperatorNewsID)
+	// ServiceTerms stays deleted, as the fixtures leave it.
 
+	retitled := update(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("Terms of use")})
 	marked := update(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
-	other := update(t, c, fixtures.OperatorNewsID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
+	drafted, err := c.StaffSignupItemsSaveDraft(t.Context(), &staffapi.StaffLegalDocumentDraftInput{Markdown: "# Terms"}, staffapi.StaffSignupItemsSaveDraftParams{ID: fixtures.ServiceTermsID})
+	require.NoError(t, err)
+	published, err := c.StaffSignupItemsPublish(t.Context(), &staffapi.StaffLegalDocumentPublishInput{Label: "2026-11"}, staffapi.StaffSignupItemsPublishParams{ID: fixtures.ServiceTermsID})
+	require.NoError(t, err)
 
-	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, marked))
-	moved, ok := other.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "an item in use takes the mark, got %T", other)
-	assert.True(t, moved.MailingsConsent)
+	assert.IsType(t, &staffapi.StaffSignupItemsUpdateNotFound{}, retitled)
+	assert.IsType(t, &staffapi.StaffSignupItemsUpdateNotFound{}, marked)
+	assert.IsType(t, &staffapi.StaffSignupItemsSaveDraftNotFound{}, drafted)
+	assert.IsType(t, &staffapi.StaffSignupItemsPublishNotFound{}, published)
+	item := getItem(t, c, fixtures.ServiceTermsID)
+	assert.EqualValues(t, "Terms of service", item.Title, "the title is unchanged")
+	listed := versions(t, c, fixtures.ServiceTermsID)
+	assert.Equal(t, []staffapi.LegalDocumentLabel{fixtures.ServiceTermsCurrentLabel, fixtures.ServiceTermsStaleLabel}, labels(listed), "no version is published")
 }
 
 func TestTheVersionsAreListedLatestFirstWithWhoPublishedThem(t *testing.T) {
@@ -250,11 +280,11 @@ func TestTheVersionsOfAnUnknownItemAreNotFound(t *testing.T) {
 	assert.IsType(t, &staffapi.StaffSignupItemsListVersionsNotFound{}, res)
 }
 
-func TestArchivingAnUnknownItemIsNotFound(t *testing.T) {
+func TestDeletingAnUnknownItemIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	res := archive(t, c, 999999)
+	res := deleteItem(t, c, 999999)
 
-	assert.IsType(t, &staffapi.StaffSignupItemsArchiveNotFound{}, res)
+	assert.IsType(t, &staffapi.StaffSignupItemsDeleteNotFound{}, res)
 }

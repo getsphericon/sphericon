@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
@@ -86,8 +85,8 @@ func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 // copyCondition writes the copy of the Segment's Condition that a move needs (ADR 0065): leaving
 // draft arms the Broadcast and takes the copy, returning to draft drops it, and every other move
 // (a reschedule included) keeps it. A Broadcast to all contacts copies nothing. An archived
-// Segment takes no part in new work (ADR 0049), so arming a draft that still names one is
-// ErrSegmentNotFound.
+// Segment takes no part in new work (ADR 0100), so arming a draft that still names one is
+// ErrSegmentArchived, naming it.
 func copyCondition(ctx context.Context, s *ent.Scoped, id int64, from, to broadcast.Status, u *ent.BroadcastScopedUpdate) error {
 	if to == broadcast.StatusDraft {
 		u.ClearCondition()
@@ -106,10 +105,7 @@ func copyCondition(ctx context.Context, s *ent.Scoped, id int64, from, to broadc
 		u.Where(broadcast.SegmentIDIsNil()).ClearCondition()
 		return nil
 	}
-	seg, err := s.Segment().Query().Where(segment.ID(*b.SegmentID)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return ErrSegmentNotFound
-	}
+	seg, err := keptSegment(ctx, s, *b.SegmentID)
 	if err != nil {
 		return err
 	}

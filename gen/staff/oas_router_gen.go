@@ -23,19 +23,19 @@ var (
 	rn13AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn18AllowedHeaders = map[string]string{
+	rn15AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
+	}
+	rn19AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn17AllowedHeaders = map[string]string{
+		"PATCH": "Content-Type",
 	}
 	rn21AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn16AllowedHeaders = map[string]string{
-		"PATCH": "Content-Type",
-	}
-	rn22AllowedHeaders = map[string]string{
-		"PUT": "Content-Type",
-	}
-	rn20AllowedHeaders = map[string]string{
+	rn18AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -404,7 +404,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					default:
 						s.notAllowed(w, r, notAllowedParams{
 							allowedMethods: "GET,POST",
-							allowedHeaders: rn18AllowedHeaders,
+							allowedHeaders: rn15AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
@@ -441,7 +441,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "PUT",
-									allowedHeaders: rn21AllowedHeaders,
+									allowedHeaders: rn19AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
 								})
@@ -463,6 +463,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 					if len(elem) == 0 {
 						switch r.Method {
+						case "DELETE":
+							s.handleStaffSignupItemsDeleteRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
 						case "GET":
 							s.handleStaffSignupItemsGetRequest([1]string{
 								args[0],
@@ -473,8 +477,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}, elemIsEscaped, w, r)
 						default:
 							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "GET,PATCH",
-								allowedHeaders: rn16AllowedHeaders,
+								allowedMethods: "DELETE,GET,PATCH",
+								allowedHeaders: rn17AllowedHeaders,
 								acceptPost:     "",
 								acceptPatch:    "application/json",
 							})
@@ -495,33 +499,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							break
 						}
 						switch elem[0] {
-						case 'a': // Prefix: "archive"
-
-							if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
-								case "POST":
-									s.handleStaffSignupItemsArchiveRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
-								}
-
-								return
-							}
-
 						case 'd': // Prefix: "draft"
 
 							if l := len("draft"); len(elem) >= l && elem[0:l] == "draft" {
@@ -540,7 +517,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "PUT",
-										allowedHeaders: rn22AllowedHeaders,
+										allowedHeaders: rn21AllowedHeaders,
 										acceptPost:     "",
 										acceptPatch:    "",
 									})
@@ -571,7 +548,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "GET,POST",
-										allowedHeaders: rn20AllowedHeaders,
+										allowedHeaders: rn18AllowedHeaders,
 										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
@@ -1072,6 +1049,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 					if len(elem) == 0 {
 						switch method {
+						case "DELETE":
+							r.name = StaffSignupItemsDeleteOperation
+							r.summary = ""
+							r.operationID = "StaffSignupItems_delete"
+							r.operationGroup = ""
+							r.pathPattern = "/signup-items/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
 						case "GET":
 							r.name = StaffSignupItemsGetOperation
 							r.summary = ""
@@ -1107,31 +1093,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							break
 						}
 						switch elem[0] {
-						case 'a': // Prefix: "archive"
-
-							if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
-								case "POST":
-									r.name = StaffSignupItemsArchiveOperation
-									r.summary = ""
-									r.operationID = "StaffSignupItems_archive"
-									r.operationGroup = ""
-									r.pathPattern = "/signup-items/{id}/archive"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
-								}
-							}
-
 						case 'd': // Prefix: "draft"
 
 							if l := len("draft"); len(elem) >= l && elem[0:l] == "draft" {

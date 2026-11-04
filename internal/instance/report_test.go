@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/integration"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/instance"
@@ -100,4 +101,22 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 
 	assert.Equal(t, telemetryapi.TelemetryEditionEe, report.Edition)
 	assert.Equal(t, telemetryapi.TelemetryDeployShapeKubernetes, report.DeployShape)
+}
+
+// The providers in use are those of kept Integrations (ADR 0099): once every SES Integration of
+// the Instance is deleted, SES is no longer listed.
+func TestReportProvidersComeFromKeptIntegrationsOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ses, err := env.DB.Integration.Query().
+		Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).
+		All(t.Context())
+	require.NoError(t, err)
+	require.NotEmpty(t, ses)
+	for _, i := range ses {
+		require.NoError(t, env.DB.Scoped(i.WorkspaceID).Integration().Discard(t.Context(), i.ID))
+	}
+
+	report := buildReport(t, env, time.Now())
+
+	assert.Equal(t, []telemetryapi.TelemetryIntegrationKind{telemetryapi.TelemetryIntegrationKindSMTP}, report.IntegrationKinds)
 }

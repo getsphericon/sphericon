@@ -99,16 +99,16 @@ export const zAuditAction = z.enum([
   'automation.create',
   'automation.update',
   'automation.delete',
-  'automation.discard',
-  'automation.restore',
+  'automation.archive',
+  'automation.unarchive',
   'brand_kit.create',
   'brand_kit.update',
   'brand_kit.delete',
   'broadcast.create',
   'broadcast.update',
   'broadcast.delete',
-  'broadcast.discard',
-  'broadcast.restore',
+  'broadcast.archive',
+  'broadcast.unarchive',
   'contact.create',
   'contact.update',
   'contact.delete',
@@ -125,7 +125,6 @@ export const zAuditAction = z.enum([
   'integration.update',
   'integration.delete',
   'integration.discard',
-  'integration.restore',
   'join_domain.create',
   'join_domain.update',
   'join_domain.delete',
@@ -133,17 +132,15 @@ export const zAuditAction = z.enum([
   'rule.update',
   'rule.delete',
   'rule.discard',
-  'rule.restore',
   'segment.create',
   'segment.update',
   'segment.delete',
-  'segment.discard',
-  'segment.restore',
+  'segment.archive',
+  'segment.unarchive',
   'sending_domain.create',
   'sending_domain.update',
   'sending_domain.delete',
   'sending_domain.discard',
-  'sending_domain.restore',
   'tag.create',
   'tag.update',
   'tag.delete',
@@ -3225,7 +3222,7 @@ export const zSiteIntegrationResource = z.object({
   params: zJsonObject,
   secretsRetiring: z.array(z.string()),
   hookUrl: z.string(),
-  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3408,7 +3405,7 @@ export const zSiteSendingDomainResource = z.object({
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
   verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3687,8 +3684,7 @@ export const zUsedByKind = z.enum([
   'automation',
   'segment',
   'rule',
-  'enrollment',
-  'message'
+  'enrollment'
 ]);
 
 /**
@@ -3918,7 +3914,7 @@ export const zSiteRuleResource = z.object({
   live: z.lazy((): any => zSiteRuleVersion).nullable(),
   draft: z.lazy((): any => zSiteRuleVersion).nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
-  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -5056,16 +5052,6 @@ export const zSiteAutomationReportsGetQuery = z.object({
  */
 export const zSiteAutomationReportsGetResponse = zSiteAutomationReport;
 
-export const zSiteAutomationsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteAutomationsDeleteResponse = z.void();
-
 export const zSiteAutomationsGetPath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -5211,16 +5197,6 @@ export const zSiteBroadcastLinksListPath = z.object({
  * The request has succeeded.
  */
 export const zSiteBroadcastLinksListResponse = zSiteBroadcastLinkClicksList;
-
-export const zSiteBroadcastsDeletePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * There is no content to send for this request, but the headers may be useful.
- */
-export const zSiteBroadcastsDeleteResponse = z.void();
 
 export const zSiteBroadcastsGetPath = z.object({
   workspaceId: zWorkspaceId,

@@ -1088,146 +1088,9 @@ func encodeAutomationsDeactivateResponse(response AutomationsDeactivateRes, w ht
 
 		return nil
 
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeAutomationsDeleteResponse(response AutomationsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *AutomationsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *AutomationsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *AutomationsDeleteUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *AutomationsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *AutomationsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
+	case *AutomationsDeactivateConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *AutomationsDeleteUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2065,6 +1928,18 @@ func encodeAutomationsRevertResponse(response AutomationsRevertRes, w http.Respo
 
 		return nil
 
+	case *AutomationsRevertConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *AutomationsRevertUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
@@ -2341,6 +2216,18 @@ func encodeAutomationsUpdateResponse(response AutomationsUpdateRes, w http.Respo
 
 		return nil
 
+	case *AutomationsUpdateConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *AutomationsUpdateUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
@@ -2593,9 +2480,9 @@ func encodeBroadcastsArchiveResponse(response BroadcastsArchiveRes, w http.Respo
 
 		return nil
 
-	case *BroadcastsArchiveUnprocessableEntity:
+	case *BroadcastsArchiveConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
+		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2726,143 +2613,6 @@ func encodeBroadcastsCreateResponse(response BroadcastsCreateRes, w http.Respons
 		return nil
 
 	case *BroadcastsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeBroadcastsDeleteResponse(response BroadcastsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *BroadcastsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *BroadcastsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *BroadcastsDeleteUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *BroadcastsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *BroadcastsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *BroadcastsDeleteUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
 
@@ -3558,6 +3308,18 @@ func encodeBroadcastsSetSegmentResponse(response BroadcastsSetSegmentRes, w http
 
 		return nil
 
+	case *BroadcastsSetSegmentConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *BroadcastsSetSegmentUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
@@ -4106,6 +3868,18 @@ func encodeBroadcastsUpdateResponse(response BroadcastsUpdateRes, w http.Respons
 	case *BroadcastsUpdateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *BroadcastsUpdateConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -10895,6 +10669,18 @@ func encodeSegmentsUpdateResponse(response SegmentsUpdateRes, w http.ResponseWri
 	case *SegmentsUpdateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SegmentsUpdateConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

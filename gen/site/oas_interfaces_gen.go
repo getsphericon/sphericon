@@ -129,10 +129,6 @@ type SiteAutomationsDeactivateRes interface {
 	siteAutomationsDeactivateRes()
 }
 
-type SiteAutomationsDeleteRes interface {
-	siteAutomationsDeleteRes()
-}
-
 type SiteAutomationsDryRunHttpStepRes interface {
 	siteAutomationsDryRunHttpStepRes()
 }
@@ -183,10 +179,6 @@ type SiteBroadcastsArchiveRes interface {
 
 type SiteBroadcastsCreateRes interface {
 	siteBroadcastsCreateRes()
-}
-
-type SiteBroadcastsDeleteRes interface {
-	siteBroadcastsDeleteRes()
 }
 
 type SiteBroadcastsGetRes interface {

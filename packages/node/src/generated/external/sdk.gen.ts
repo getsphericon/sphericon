@@ -3,7 +3,7 @@
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { AuditEntriesListData, AuditEntriesListErrors, AuditEntriesListResponses, AuthMeGetData, AuthMeGetErrors, AuthMeGetResponses, AuthTokensBootstrapData, AuthTokensBootstrapErrors, AuthTokensBootstrapResponses, AuthTokensCreateData, AuthTokensCreateErrors, AuthTokensCreateResponses, AuthTokensDeleteData, AuthTokensDeleteErrors, AuthTokensDeleteResponses, AuthTokensListData, AuthTokensListErrors, AuthTokensListResponses, AutomationsArchiveData, AutomationsArchiveErrors, AutomationsArchiveResponses, AutomationsCreateData, AutomationsCreateErrors, AutomationsCreateResponses, AutomationsDeactivateData, AutomationsDeactivateErrors, AutomationsDeactivateResponses, AutomationsDeleteData, AutomationsDeleteErrors, AutomationsDeleteResponses, AutomationsDryRunHttpStepData, AutomationsDryRunHttpStepErrors, AutomationsDryRunHttpStepResponses, AutomationsGetData, AutomationsGetErrors, AutomationsGetResponses, AutomationsListData, AutomationsListErrors, AutomationsListResponses, AutomationsPublishData, AutomationsPublishErrors, AutomationsPublishResponses, AutomationsReportData, AutomationsReportErrors, AutomationsReportResponses, AutomationsRevertData, AutomationsRevertErrors, AutomationsRevertResponses, AutomationsUnarchiveData, AutomationsUnarchiveErrors, AutomationsUnarchiveResponses, AutomationsUpdateData, AutomationsUpdateErrors, AutomationsUpdateResponses, BrandKitGetData, BrandKitGetErrors, BrandKitGetResponses, BroadcastsArchiveData, BroadcastsArchiveErrors, BroadcastsArchiveResponses, BroadcastsCreateData, BroadcastsCreateErrors, BroadcastsCreateResponses, BroadcastsDeleteData, BroadcastsDeleteErrors, BroadcastsDeleteResponses, BroadcastsGetData, BroadcastsGetErrors, BroadcastsGetResponses, BroadcastsListData, BroadcastsListErrors, BroadcastsListResponses, BroadcastsReportData, BroadcastsReportErrors, BroadcastsReportResponses, BroadcastsScheduleData, BroadcastsScheduleErrors, BroadcastsScheduleResponses, BroadcastsSetSegmentData, BroadcastsSetSegmentErrors, BroadcastsSetSegmentResponses, BroadcastsTestSendData, BroadcastsTestSendErrors, BroadcastsTestSendResponses, BroadcastsUnarchiveData, BroadcastsUnarchiveErrors, BroadcastsUnarchiveResponses, BroadcastsUnscheduleData, BroadcastsUnscheduleErrors, BroadcastsUnscheduleResponses, BroadcastsUpdateData, BroadcastsUpdateErrors, BroadcastsUpdateResponses, CapturedMessagesDeleteAllData, CapturedMessagesDeleteAllErrors, CapturedMessagesDeleteAllResponses, CapturedMessagesDeleteData, CapturedMessagesDeleteErrors, CapturedMessagesDeleteResponses, CapturedMessagesGetData, CapturedMessagesGetErrors, CapturedMessagesGetResponses, CapturedMessagesListData, CapturedMessagesListErrors, CapturedMessagesListResponses, ConfirmationsCreateData, ConfirmationsCreateErrors, ConfirmationsCreateResponses, ContactsBatchUpsertData, ContactsBatchUpsertErrors, ContactsBatchUpsertResponses, ContactsCreateData, ContactsCreateErrors, ContactsCreateResponses, ContactsDeleteData, ContactsDeleteErrors, ContactsDeleteResponses, ContactsEraseByData, ContactsEraseByErrors, ContactsEraseByResponses, ContactsExportData, ContactsExportErrors, ContactsExportResponses, ContactsGetData, ContactsGetErrors, ContactsGetResponses, ContactsListData, ContactsListErrors, ContactsListResponses, ContactsUpdateData, ContactsUpdateErrors, ContactsUpdateResponses, CustomFieldsListData, CustomFieldsListErrors, CustomFieldsListResponses, CustomFieldsUpdateData, CustomFieldsUpdateErrors, CustomFieldsUpdateResponses, EmailLintLintData, EmailLintLintErrors, EmailLintLintResponses, EmailSchemaGetData, EmailSchemaGetErrors, EmailSchemaGetResponses, EmailsSendData, EmailsSendErrors, EmailsSendResponses, EnrollmentsGetData, EnrollmentsGetErrors, EnrollmentsGetResponses, EnrollmentsListData, EnrollmentsListErrors, EnrollmentsListResponses, EventActionsListData, EventActionsListErrors, EventActionsListResponses, EventsBatchSubmitData, EventsBatchSubmitErrors, EventsBatchSubmitResponses, EventsCreateData, EventsCreateErrors, EventsCreateResponses, ExportAuditData, ExportAuditErrors, ExportAuditResponses, ExportContactsData, ExportContactsErrors, ExportContactsResponses, ExportErasuresData, ExportErasuresErrors, ExportErasuresResponses, ExportEventsData, ExportEventsErrors, ExportEventsResponses, ExportMessagesData, ExportMessagesErrors, ExportMessagesResponses, IntegrationsCreateData, IntegrationsCreateErrors, IntegrationsCreateResponses, IntegrationsDeleteData, IntegrationsDeleteErrors, IntegrationsDeleteResponses, IntegrationsGetData, IntegrationsGetErrors, IntegrationsGetResponses, IntegrationsListData, IntegrationsListErrors, IntegrationsListResponses, IntegrationsRegenerateKeyData, IntegrationsRegenerateKeyErrors, IntegrationsRegenerateKeyResponses, IntegrationsUpdateData, IntegrationsUpdateErrors, IntegrationsUpdateResponses, PresetsListData, PresetsListErrors, PresetsListResponses, RuleFiringsListData, RuleFiringsListErrors, RuleFiringsListResponses, RulesCreateData, RulesCreateErrors, RulesCreateResponses, RulesDeactivateData, RulesDeactivateErrors, RulesDeactivateResponses, RulesDeleteData, RulesDeleteErrors, RulesDeleteResponses, RulesDryRunData, RulesDryRunErrors, RulesDryRunResponses, RulesGetData, RulesGetErrors, RulesGetResponses, RulesListData, RulesListErrors, RulesListResponses, RulesPublishData, RulesPublishErrors, RulesPublishResponses, RulesRevertData, RulesRevertErrors, RulesRevertResponses, RulesUpdateData, RulesUpdateErrors, RulesUpdateResponses, SegmentsArchiveData, SegmentsArchiveErrors, SegmentsArchiveResponses, SegmentsCreateData, SegmentsCreateErrors, SegmentsCreateResponses, SegmentsGetData, SegmentsGetErrors, SegmentsGetResponses, SegmentsListData, SegmentsListErrors, SegmentsListResponses, SegmentsPreviewData, SegmentsPreviewErrors, SegmentsPreviewResponses, SegmentsUnarchiveData, SegmentsUnarchiveErrors, SegmentsUnarchiveResponses, SegmentsUpdateData, SegmentsUpdateErrors, SegmentsUpdateResponses, SendingDomainRatesListData, SendingDomainRatesListErrors, SendingDomainRatesListResponses, SendingDomainsCreateData, SendingDomainsCreateErrors, SendingDomainsCreateResponses, SendingDomainsDeleteData, SendingDomainsDeleteErrors, SendingDomainsDeleteResponses, SendingDomainsGetData, SendingDomainsGetErrors, SendingDomainsGetResponses, SendingDomainsListData, SendingDomainsListErrors, SendingDomainsListResponses, SendingDomainsUpdateData, SendingDomainsUpdateErrors, SendingDomainsUpdateResponses, SendingDomainsVerifyData, SendingDomainsVerifyErrors, SendingDomainsVerifyResponses, SmsConsentsGetData, SmsConsentsGetErrors, SmsConsentsGetResponses, SuppressionsCreateData, SuppressionsCreateErrors, SuppressionsCreateResponses, TagsApplyData, TagsApplyErrors, TagsApplyResponses, TagsDeleteData, TagsDeleteErrors, TagsDeleteResponses, TagsListData, TagsListErrors, TagsListForContactData, TagsListForContactErrors, TagsListForContactResponses, TagsListResponses, TagsRemoveData, TagsRemoveErrors, TagsRemoveResponses, TelegramStartLinksIssueData, TelegramStartLinksIssueErrors, TelegramStartLinksIssueResponses, TemplatesCreateData, TemplatesCreateErrors, TemplatesCreateResponses, TemplatesDeleteData, TemplatesDeleteErrors, TemplatesDeleteResponses, TemplatesGetData, TemplatesGetErrors, TemplatesGetResponses, TemplatesListData, TemplatesListErrors, TemplatesListResponses, TemplatesUpdateData, TemplatesUpdateErrors, TemplatesUpdateResponses, TrackingDomainsListData, TrackingDomainsListErrors, TrackingDomainsListResponses, TrackingDomainsRemoveData, TrackingDomainsRemoveErrors, TrackingDomainsRemoveResponses, TrackingDomainsSetData, TrackingDomainsSetErrors, TrackingDomainsSetResponses, TrackingDomainsVerifyData, TrackingDomainsVerifyErrors, TrackingDomainsVerifyResponses, UnsubscribesCreateData, UnsubscribesCreateErrors, UnsubscribesCreateResponses, WebhooksCreateData, WebhooksCreateErrors, WebhooksCreateResponses, WebhooksDeleteData, WebhooksDeleteErrors, WebhooksDeleteResponses, WebhooksGetData, WebhooksGetErrors, WebhooksGetResponses, WebhooksListData, WebhooksListErrors, WebhooksListResponses, WebhooksRegenerateSecretData, WebhooksRegenerateSecretErrors, WebhooksRegenerateSecretResponses, WebhooksTestData, WebhooksTestErrors, WebhooksTestResponses, WebhooksUpdateData, WebhooksUpdateErrors, WebhooksUpdateResponses, WorkspaceGetData, WorkspaceGetErrors, WorkspaceGetResponses } from './types.gen.ts';
+import type { AuditEntriesListData, AuditEntriesListErrors, AuditEntriesListResponses, AuthMeGetData, AuthMeGetErrors, AuthMeGetResponses, AuthTokensBootstrapData, AuthTokensBootstrapErrors, AuthTokensBootstrapResponses, AuthTokensCreateData, AuthTokensCreateErrors, AuthTokensCreateResponses, AuthTokensDeleteData, AuthTokensDeleteErrors, AuthTokensDeleteResponses, AuthTokensListData, AuthTokensListErrors, AuthTokensListResponses, AutomationsArchiveData, AutomationsArchiveErrors, AutomationsArchiveResponses, AutomationsCreateData, AutomationsCreateErrors, AutomationsCreateResponses, AutomationsDeactivateData, AutomationsDeactivateErrors, AutomationsDeactivateResponses, AutomationsDryRunHttpStepData, AutomationsDryRunHttpStepErrors, AutomationsDryRunHttpStepResponses, AutomationsGetData, AutomationsGetErrors, AutomationsGetResponses, AutomationsListData, AutomationsListErrors, AutomationsListResponses, AutomationsPublishData, AutomationsPublishErrors, AutomationsPublishResponses, AutomationsReportData, AutomationsReportErrors, AutomationsReportResponses, AutomationsRevertData, AutomationsRevertErrors, AutomationsRevertResponses, AutomationsUnarchiveData, AutomationsUnarchiveErrors, AutomationsUnarchiveResponses, AutomationsUpdateData, AutomationsUpdateErrors, AutomationsUpdateResponses, BrandKitGetData, BrandKitGetErrors, BrandKitGetResponses, BroadcastsArchiveData, BroadcastsArchiveErrors, BroadcastsArchiveResponses, BroadcastsCreateData, BroadcastsCreateErrors, BroadcastsCreateResponses, BroadcastsGetData, BroadcastsGetErrors, BroadcastsGetResponses, BroadcastsListData, BroadcastsListErrors, BroadcastsListResponses, BroadcastsReportData, BroadcastsReportErrors, BroadcastsReportResponses, BroadcastsScheduleData, BroadcastsScheduleErrors, BroadcastsScheduleResponses, BroadcastsSetSegmentData, BroadcastsSetSegmentErrors, BroadcastsSetSegmentResponses, BroadcastsTestSendData, BroadcastsTestSendErrors, BroadcastsTestSendResponses, BroadcastsUnarchiveData, BroadcastsUnarchiveErrors, BroadcastsUnarchiveResponses, BroadcastsUnscheduleData, BroadcastsUnscheduleErrors, BroadcastsUnscheduleResponses, BroadcastsUpdateData, BroadcastsUpdateErrors, BroadcastsUpdateResponses, CapturedMessagesDeleteAllData, CapturedMessagesDeleteAllErrors, CapturedMessagesDeleteAllResponses, CapturedMessagesDeleteData, CapturedMessagesDeleteErrors, CapturedMessagesDeleteResponses, CapturedMessagesGetData, CapturedMessagesGetErrors, CapturedMessagesGetResponses, CapturedMessagesListData, CapturedMessagesListErrors, CapturedMessagesListResponses, ConfirmationsCreateData, ConfirmationsCreateErrors, ConfirmationsCreateResponses, ContactsBatchUpsertData, ContactsBatchUpsertErrors, ContactsBatchUpsertResponses, ContactsCreateData, ContactsCreateErrors, ContactsCreateResponses, ContactsDeleteData, ContactsDeleteErrors, ContactsDeleteResponses, ContactsEraseByData, ContactsEraseByErrors, ContactsEraseByResponses, ContactsExportData, ContactsExportErrors, ContactsExportResponses, ContactsGetData, ContactsGetErrors, ContactsGetResponses, ContactsListData, ContactsListErrors, ContactsListResponses, ContactsUpdateData, ContactsUpdateErrors, ContactsUpdateResponses, CustomFieldsListData, CustomFieldsListErrors, CustomFieldsListResponses, CustomFieldsUpdateData, CustomFieldsUpdateErrors, CustomFieldsUpdateResponses, EmailLintLintData, EmailLintLintErrors, EmailLintLintResponses, EmailSchemaGetData, EmailSchemaGetErrors, EmailSchemaGetResponses, EmailsSendData, EmailsSendErrors, EmailsSendResponses, EnrollmentsGetData, EnrollmentsGetErrors, EnrollmentsGetResponses, EnrollmentsListData, EnrollmentsListErrors, EnrollmentsListResponses, EventActionsListData, EventActionsListErrors, EventActionsListResponses, EventsBatchSubmitData, EventsBatchSubmitErrors, EventsBatchSubmitResponses, EventsCreateData, EventsCreateErrors, EventsCreateResponses, ExportAuditData, ExportAuditErrors, ExportAuditResponses, ExportContactsData, ExportContactsErrors, ExportContactsResponses, ExportErasuresData, ExportErasuresErrors, ExportErasuresResponses, ExportEventsData, ExportEventsErrors, ExportEventsResponses, ExportMessagesData, ExportMessagesErrors, ExportMessagesResponses, IntegrationsCreateData, IntegrationsCreateErrors, IntegrationsCreateResponses, IntegrationsDeleteData, IntegrationsDeleteErrors, IntegrationsDeleteResponses, IntegrationsGetData, IntegrationsGetErrors, IntegrationsGetResponses, IntegrationsListData, IntegrationsListErrors, IntegrationsListResponses, IntegrationsRegenerateKeyData, IntegrationsRegenerateKeyErrors, IntegrationsRegenerateKeyResponses, IntegrationsUpdateData, IntegrationsUpdateErrors, IntegrationsUpdateResponses, PresetsListData, PresetsListErrors, PresetsListResponses, RuleFiringsListData, RuleFiringsListErrors, RuleFiringsListResponses, RulesCreateData, RulesCreateErrors, RulesCreateResponses, RulesDeactivateData, RulesDeactivateErrors, RulesDeactivateResponses, RulesDeleteData, RulesDeleteErrors, RulesDeleteResponses, RulesDryRunData, RulesDryRunErrors, RulesDryRunResponses, RulesGetData, RulesGetErrors, RulesGetResponses, RulesListData, RulesListErrors, RulesListResponses, RulesPublishData, RulesPublishErrors, RulesPublishResponses, RulesRevertData, RulesRevertErrors, RulesRevertResponses, RulesUpdateData, RulesUpdateErrors, RulesUpdateResponses, SegmentsArchiveData, SegmentsArchiveErrors, SegmentsArchiveResponses, SegmentsCreateData, SegmentsCreateErrors, SegmentsCreateResponses, SegmentsGetData, SegmentsGetErrors, SegmentsGetResponses, SegmentsListData, SegmentsListErrors, SegmentsListResponses, SegmentsPreviewData, SegmentsPreviewErrors, SegmentsPreviewResponses, SegmentsUnarchiveData, SegmentsUnarchiveErrors, SegmentsUnarchiveResponses, SegmentsUpdateData, SegmentsUpdateErrors, SegmentsUpdateResponses, SendingDomainRatesListData, SendingDomainRatesListErrors, SendingDomainRatesListResponses, SendingDomainsCreateData, SendingDomainsCreateErrors, SendingDomainsCreateResponses, SendingDomainsDeleteData, SendingDomainsDeleteErrors, SendingDomainsDeleteResponses, SendingDomainsGetData, SendingDomainsGetErrors, SendingDomainsGetResponses, SendingDomainsListData, SendingDomainsListErrors, SendingDomainsListResponses, SendingDomainsUpdateData, SendingDomainsUpdateErrors, SendingDomainsUpdateResponses, SendingDomainsVerifyData, SendingDomainsVerifyErrors, SendingDomainsVerifyResponses, SmsConsentsGetData, SmsConsentsGetErrors, SmsConsentsGetResponses, SuppressionsCreateData, SuppressionsCreateErrors, SuppressionsCreateResponses, TagsApplyData, TagsApplyErrors, TagsApplyResponses, TagsDeleteData, TagsDeleteErrors, TagsDeleteResponses, TagsListData, TagsListErrors, TagsListForContactData, TagsListForContactErrors, TagsListForContactResponses, TagsListResponses, TagsRemoveData, TagsRemoveErrors, TagsRemoveResponses, TelegramStartLinksIssueData, TelegramStartLinksIssueErrors, TelegramStartLinksIssueResponses, TemplatesCreateData, TemplatesCreateErrors, TemplatesCreateResponses, TemplatesDeleteData, TemplatesDeleteErrors, TemplatesDeleteResponses, TemplatesGetData, TemplatesGetErrors, TemplatesGetResponses, TemplatesListData, TemplatesListErrors, TemplatesListResponses, TemplatesUpdateData, TemplatesUpdateErrors, TemplatesUpdateResponses, TrackingDomainsListData, TrackingDomainsListErrors, TrackingDomainsListResponses, TrackingDomainsRemoveData, TrackingDomainsRemoveErrors, TrackingDomainsRemoveResponses, TrackingDomainsSetData, TrackingDomainsSetErrors, TrackingDomainsSetResponses, TrackingDomainsVerifyData, TrackingDomainsVerifyErrors, TrackingDomainsVerifyResponses, UnsubscribesCreateData, UnsubscribesCreateErrors, UnsubscribesCreateResponses, WebhooksCreateData, WebhooksCreateErrors, WebhooksCreateResponses, WebhooksDeleteData, WebhooksDeleteErrors, WebhooksDeleteResponses, WebhooksGetData, WebhooksGetErrors, WebhooksGetResponses, WebhooksListData, WebhooksListErrors, WebhooksListResponses, WebhooksRegenerateSecretData, WebhooksRegenerateSecretErrors, WebhooksRegenerateSecretResponses, WebhooksTestData, WebhooksTestErrors, WebhooksTestResponses, WebhooksUpdateData, WebhooksUpdateErrors, WebhooksUpdateResponses, WorkspaceGetData, WorkspaceGetErrors, WorkspaceGetResponses } from './types.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -119,15 +119,6 @@ export const enrollmentsGet = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Delete a resource
- */
-export const automationsDelete = <ThrowOnError extends boolean = false>(options: Options<AutomationsDeleteData, ThrowOnError>): RequestResult<AutomationsDeleteResponses, AutomationsDeleteErrors, ThrowOnError> => (options.client ?? client).delete<AutomationsDeleteResponses, AutomationsDeleteErrors, ThrowOnError>({
-  security: [{ scheme: 'bearer', type: 'http' }],
-  url: '/automations/{id}',
-  ...options
-});
-
-/**
  * Get a resource by ID
  */
 export const automationsGet = <ThrowOnError extends boolean = false>(options: Options<AutomationsGetData, ThrowOnError>): RequestResult<AutomationsGetResponses, AutomationsGetErrors, ThrowOnError> => (options.client ?? client).get<AutomationsGetResponses, AutomationsGetErrors, ThrowOnError>({
@@ -137,7 +128,7 @@ export const automationsGet = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Update a resource
+ * Update an automation: its name, and its definition written to the draft. 409 when the automation is archived. Needs the automations:write scope.
  */
 export const automationsUpdate = <ThrowOnError extends boolean = false>(options: Options<AutomationsUpdateData, ThrowOnError>): RequestResult<AutomationsUpdateResponses, AutomationsUpdateErrors, ThrowOnError> => (options.client ?? client).put<AutomationsUpdateResponses, AutomationsUpdateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -150,7 +141,7 @@ export const automationsUpdate = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+ * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them).
  */
 export const automationsArchive = <ThrowOnError extends boolean = false>(options: Options<AutomationsArchiveData, ThrowOnError>): RequestResult<AutomationsArchiveResponses, AutomationsArchiveErrors, ThrowOnError> => (options.client ?? client).post<AutomationsArchiveResponses, AutomationsArchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -159,7 +150,7 @@ export const automationsArchive = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope.
+ * Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived. Needs the automations:write scope.
  */
 export const automationsDeactivate = <ThrowOnError extends boolean = false>(options: Options<AutomationsDeactivateData, ThrowOnError>): RequestResult<AutomationsDeactivateResponses, AutomationsDeactivateErrors, ThrowOnError> => (options.client ?? client).post<AutomationsDeactivateResponses, AutomationsDeactivateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -168,7 +159,7 @@ export const automationsDeactivate = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. Needs the automations:publish scope.
+ * Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope.
  */
 export const automationsPublish = <ThrowOnError extends boolean = false>(options: Options<AutomationsPublishData, ThrowOnError>): RequestResult<AutomationsPublishResponses, AutomationsPublishErrors, ThrowOnError> => (options.client ?? client).post<AutomationsPublishResponses, AutomationsPublishErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -189,7 +180,7 @@ export const automationsReport = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope.
+ * Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope.
  */
 export const automationsRevert = <ThrowOnError extends boolean = false>(options: Options<AutomationsRevertData, ThrowOnError>): RequestResult<AutomationsRevertResponses, AutomationsRevertErrors, ThrowOnError> => (options.client ?? client).post<AutomationsRevertResponses, AutomationsRevertErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -198,7 +189,7 @@ export const automationsRevert = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Restore an archived automation to the list, inactive: only publish makes it enroll again
+ * Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again
  */
 export const automationsUnarchive = <ThrowOnError extends boolean = false>(options: Options<AutomationsUnarchiveData, ThrowOnError>): RequestResult<AutomationsUnarchiveResponses, AutomationsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<AutomationsUnarchiveResponses, AutomationsUnarchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -240,15 +231,6 @@ export const broadcastsCreate = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Delete a resource
- */
-export const broadcastsDelete = <ThrowOnError extends boolean = false>(options: Options<BroadcastsDeleteData, ThrowOnError>): RequestResult<BroadcastsDeleteResponses, BroadcastsDeleteErrors, ThrowOnError> => (options.client ?? client).delete<BroadcastsDeleteResponses, BroadcastsDeleteErrors, ThrowOnError>({
-  security: [{ scheme: 'bearer', type: 'http' }],
-  url: '/broadcasts/{id}',
-  ...options
-});
-
-/**
  * Get a resource by ID
  */
 export const broadcastsGet = <ThrowOnError extends boolean = false>(options: Options<BroadcastsGetData, ThrowOnError>): RequestResult<BroadcastsGetResponses, BroadcastsGetErrors, ThrowOnError> => (options.client ?? client).get<BroadcastsGetResponses, BroadcastsGetErrors, ThrowOnError>({
@@ -271,7 +253,7 @@ export const broadcastsUpdate = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+ * Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing.
  */
 export const broadcastsArchive = <ThrowOnError extends boolean = false>(options: Options<BroadcastsArchiveData, ThrowOnError>): RequestResult<BroadcastsArchiveResponses, BroadcastsArchiveErrors, ThrowOnError> => (options.client ?? client).post<BroadcastsArchiveResponses, BroadcastsArchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -289,7 +271,7 @@ export const broadcastsReport = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
+ * Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
  */
 export const broadcastsSchedule = <ThrowOnError extends boolean = false>(options: Options<BroadcastsScheduleData, ThrowOnError>): RequestResult<BroadcastsScheduleResponses, BroadcastsScheduleErrors, ThrowOnError> => (options.client ?? client).post<BroadcastsScheduleResponses, BroadcastsScheduleErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -302,7 +284,7 @@ export const broadcastsSchedule = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Set the Segment of a draft broadcast, or null for all contacts. Does not send.
+ * Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409.
  */
 export const broadcastsSetSegment = <ThrowOnError extends boolean = false>(options: Options<BroadcastsSetSegmentData, ThrowOnError>): RequestResult<BroadcastsSetSegmentResponses, BroadcastsSetSegmentErrors, ThrowOnError> => (options.client ?? client).put<BroadcastsSetSegmentResponses, BroadcastsSetSegmentErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -328,7 +310,7 @@ export const broadcastsTestSend = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Restore an archived broadcast to the list
+ * Bring an archived broadcast back to the list, in the status it had
  */
 export const broadcastsUnarchive = <ThrowOnError extends boolean = false>(options: Options<BroadcastsUnarchiveData, ThrowOnError>): RequestResult<BroadcastsUnarchiveResponses, BroadcastsUnarchiveErrors, ThrowOnError> => (options.client ?? client).post<BroadcastsUnarchiveResponses, BroadcastsUnarchiveErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -747,7 +729,7 @@ export const integrationsGet = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
- * Update an integration
+ * Update an integration; a deleted one is read-only and answers 404
  */
 export const integrationsUpdate = <ThrowOnError extends boolean = false>(options: Options<IntegrationsUpdateData, ThrowOnError>): RequestResult<IntegrationsUpdateResponses, IntegrationsUpdateErrors, ThrowOnError> => (options.client ?? client).put<IntegrationsUpdateResponses, IntegrationsUpdateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -760,7 +742,7 @@ export const integrationsUpdate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Needs a person: hidden from MCP.
+ * Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
  */
 export const integrationsRegenerateKey = <ThrowOnError extends boolean = false>(options: Options<IntegrationsRegenerateKeyData, ThrowOnError>): RequestResult<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError> => (options.client ?? client).post<IntegrationsRegenerateKeyResponses, IntegrationsRegenerateKeyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -1004,7 +986,7 @@ export const sendingDomainsGet = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Update a resource
+ * Update a Sending domain; a deleted one is read-only and answers 404
  */
 export const sendingDomainsUpdate = <ThrowOnError extends boolean = false>(options: Options<SendingDomainsUpdateData, ThrowOnError>): RequestResult<SendingDomainsUpdateResponses, SendingDomainsUpdateErrors, ThrowOnError> => (options.client ?? client).put<SendingDomainsUpdateResponses, SendingDomainsUpdateErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -1017,7 +999,7 @@ export const sendingDomainsUpdate = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.
+ * Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404).
  */
 export const sendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SendingDomainsVerifyData, ThrowOnError>): RequestResult<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

@@ -46,9 +46,10 @@ model StaffSignupItemResource {
    * has one. */
   currentVersion?: StaffLegalDocumentVersion;
 
-  /** When the item was archived, absent while it is in use. An archived item is no longer asked
-   * and its public page is gone; its published versions stay. */
-  archivedAt?: Timestamp;
+  /** When the item was deleted, absent while it is in use. A deleted item is no longer asked or
+   * listed, its public page is gone and it cannot be changed; its published versions and Users'
+   * answers stay, and it is still read by id. */
+  discardedAt?: Timestamp;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -84,7 +85,7 @@ model StaffSignupItemUpdate {
   mailingsConsent?: boolean;
 }
 
-/** The new order of the sign-up form: the id of every Sign-up item, archived ones included, each
+/** The new order of the sign-up form: the id of every Sign-up item that is not deleted, each
  * once */
 model StaffSignupItemOrder {
   ids: EntityId[];
@@ -104,7 +105,7 @@ model StaffLegalDocumentPublishInput {
 @route("/signup-items")
 @tag("StaffMember Signup Items")
 namespace StaffSignupItems {
-  /** The Instance's Sign-up items, archived ones included, in the order of the sign-up form */
+  /** The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form */
   @get
   op list(): StaffSignupItemList | UnauthorizedProblem;
 
@@ -121,7 +122,7 @@ namespace StaffSignupItems {
     | UnprocessableEntityProblem;
 
   /** Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
-   * is not every item's id exactly once is refused (422). */
+   * is not the id of every item that is not deleted, exactly once, is refused (422). */
   @put
   @route("/order")
   op reorder(@body body: StaffSignupItemOrder):
@@ -130,7 +131,7 @@ namespace StaffSignupItems {
     | UnauthorizedProblem
     | UnprocessableEntityProblem;
 
-  /** One Sign-up item */
+  /** One Sign-up item, a deleted one too */
   @get
   @route("/{id}")
   op get(@path id: EntityId):
@@ -140,7 +141,7 @@ namespace StaffSignupItems {
     | NotFoundProblem;
 
   /** Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
-   * consent or is archived, and a second mailings consent are refused (422). */
+   * consent, and a second mailings consent are refused (422); a deleted item is not found. */
   @patch
   @route("/{id}")
   op update(@path id: EntityId, @body body: StaffSignupItemUpdate):
@@ -150,14 +151,14 @@ namespace StaffSignupItems {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its
-   * published versions stay. Archiving an archived item changes nothing, and an archived item is never
-   * restored. The item that stands for consent to the operator's mailings is refused (422) until
-   * it is unmarked. */
-  @post
-  @route("/{id}/archive")
-  op archive(@path id: EntityId):
-    | StaffSignupItemResource
+  /** Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once,
+   * and is never restored; its published versions and Users' answers stay. Deleting a deleted item
+   * changes nothing. The item that stands for consent to the operator's mailings is refused (422)
+   * until it is unmarked. */
+  @delete
+  @route("/{id}")
+  op delete(@path id: EntityId):
+    | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
@@ -174,7 +175,7 @@ namespace StaffSignupItems {
     | NotFoundProblem;
 
   /** Save the draft of the item's Legal document. It is edited freely and changes nothing a
-   * visitor sees until it is published. */
+   * visitor sees until it is published. A deleted item is not found. */
   @put
   @route("/{id}/draft")
   op saveDraft(@path id: EntityId, @body body: StaffLegalDocumentDraftInput):
@@ -185,7 +186,7 @@ namespace StaffSignupItems {
 
   /** Publish the draft as a new version under a label: it takes effect at once, and is never
    * changed or removed afterwards. A label the item already has, and an item without a draft,
-   * are refused (422). */
+   * are refused (422); a deleted item is not found. */
   @post
   @route("/{id}/versions")
   op publish(@path id: EntityId, @body body: StaffLegalDocumentPublishInput):

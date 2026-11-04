@@ -27,10 +27,18 @@ import { AutomationReport } from './AutomationReport.tsx'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
 
-// The Integration a send step sends through, by name (its id until the name loads).
+// The Integration a send step sends through, by name (its id until the name loads), and said to
+// be deleted when it is: a deleted one stays readable by id for what names it.
 function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string }) {
+  const { t } = useTranslation()
   const query = useQuery(siteIntegrationsGetOptions({ path: { workspaceId, id } }))
-  return query.data?.name ?? id
+  const integration = query.data
+  if (!integration) {
+    return id
+  }
+  return integration.discardedAt
+    ? t(($) => $.automations.integrationDeleted, { name: integration.name })
+    : integration.name
 }
 
 // A step by its kind, with the subject of an email or the Tag of a tag step.
@@ -141,20 +149,23 @@ function AutomationDetail() {
           <AutomationStatusBadge automation={automation} />
         </Group>
         <Group gap="xs">
+          {/* An archived automation is read-only until it is unarchived (ADR 0100). */}
           {automation.archivedAt ? null : (
-            <DraftControls
-              workspaceId={workspaceId}
-              resource={automation}
-              {...automationDraftActions(t)}
-            />
+            <>
+              <DraftControls
+                workspaceId={workspaceId}
+                resource={automation}
+                {...automationDraftActions(t)}
+              />
+              <ButtonLink
+                variant="default"
+                to={automationsEditRoute.to}
+                params={{ workspaceId, automationId }}
+              >
+                {t(($) => $.actions.edit)}
+              </ButtonLink>
+            </>
           )}
-          <ButtonLink
-            variant="default"
-            to={automationsEditRoute.to}
-            params={{ workspaceId, automationId }}
-          >
-            {t(($) => $.actions.edit)}
-          </ButtonLink>
           <ButtonLink variant="subtle" to={automationsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>

@@ -25,8 +25,8 @@ type Automation struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
-	// DiscardedAt holds the value of the "discarded_at" field.
-	DiscardedAt *time.Time `json:"discarded_at,omitempty"`
+	// ArchivedAt holds the value of the "archived_at" field.
+	ArchivedAt *time.Time `json:"archived_at,omitempty"`
 	// Status holds the value of the "status" field.
 	Status automation.Status `json:"status,omitempty"`
 	// ActivatedAt holds the value of the "activated_at" field.
@@ -55,11 +55,9 @@ type AutomationEdges struct {
 	DraftVersion *AutomationVersion `json:"draft_version,omitempty"`
 	// Runs holds the value of the runs edge.
 	Runs []*AutomationRun `json:"runs,omitempty"`
-	// OutboundMessages holds the value of the outbound_messages edge.
-	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -113,15 +111,6 @@ func (e AutomationEdges) RunsOrErr() ([]*AutomationRun, error) {
 	return nil, &NotLoadedError{edge: "runs"}
 }
 
-// OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
-// was not loaded in eager-loading.
-func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[5] {
-		return e.OutboundMessages, nil
-	}
-	return nil, &NotLoadedError{edge: "outbound_messages"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Automation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -131,7 +120,7 @@ func (*Automation) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case automation.FieldStatus, automation.FieldName:
 			values[i] = new(sql.NullString)
-		case automation.FieldCreatedAt, automation.FieldUpdatedAt, automation.FieldDiscardedAt, automation.FieldActivatedAt:
+		case automation.FieldCreatedAt, automation.FieldUpdatedAt, automation.FieldArchivedAt, automation.FieldActivatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -172,12 +161,12 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case automation.FieldDiscardedAt:
+		case automation.FieldArchivedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field discarded_at", values[i])
+				return fmt.Errorf("unexpected type %T for field archived_at", values[i])
 			} else if value.Valid {
-				_m.DiscardedAt = new(time.Time)
-				*_m.DiscardedAt = value.Time
+				_m.ArchivedAt = new(time.Time)
+				*_m.ArchivedAt = value.Time
 			}
 		case automation.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -250,11 +239,6 @@ func (_m *Automation) QueryRuns() *AutomationRunQuery {
 	return NewAutomationClient(_m.config).QueryRuns(_m)
 }
 
-// QueryOutboundMessages queries the "outbound_messages" edge of the Automation entity.
-func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
-	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
-}
-
 // Update returns a builder for updating this Automation.
 // Note that you need to call Automation.Unwrap() before calling this method if this Automation
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -287,8 +271,8 @@ func (_m *Automation) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	if v := _m.DiscardedAt; v != nil {
-		builder.WriteString("discarded_at=")
+	if v := _m.ArchivedAt; v != nil {
+		builder.WriteString("archived_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

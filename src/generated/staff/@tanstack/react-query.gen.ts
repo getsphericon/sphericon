@@ -4,8 +4,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffInstanceAcknowledgeNotice, staffInstanceClearDefaultSendCap, staffInstanceGetState, staffInstanceListAuditEntries, staffInstancePreviewTelemetryReport, staffInstanceSetDefaultSendCap, staffInstanceSetTelemetry, staffMeGet, staffSignupItemsArchive, staffSignupItemsCreate, staffSignupItemsGet, staffSignupItemsList, staffSignupItemsListVersions, staffSignupItemsPublish, staffSignupItemsReorder, staffSignupItemsSaveDraft, staffSignupItemsUpdate } from '../sdk.gen.ts';
-import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeError, StaffInstanceAcknowledgeNoticeResponse, StaffInstanceClearDefaultSendCapData, StaffInstanceClearDefaultSendCapError, StaffInstanceClearDefaultSendCapResponse, StaffInstanceGetStateData, StaffInstanceGetStateError, StaffInstanceGetStateResponse, StaffInstanceListAuditEntriesData, StaffInstanceListAuditEntriesError, StaffInstanceListAuditEntriesResponse, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportError, StaffInstancePreviewTelemetryReportResponse, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapError, StaffInstanceSetDefaultSendCapResponse, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryError, StaffInstanceSetTelemetryResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupItemsArchiveData, StaffSignupItemsArchiveError, StaffSignupItemsArchiveResponse, StaffSignupItemsCreateData, StaffSignupItemsCreateError, StaffSignupItemsCreateResponse, StaffSignupItemsGetData, StaffSignupItemsGetError, StaffSignupItemsGetResponse, StaffSignupItemsListData, StaffSignupItemsListError, StaffSignupItemsListResponse, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsError, StaffSignupItemsListVersionsResponse, StaffSignupItemsPublishData, StaffSignupItemsPublishError, StaffSignupItemsPublishResponse, StaffSignupItemsReorderData, StaffSignupItemsReorderError, StaffSignupItemsReorderResponse, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftError, StaffSignupItemsSaveDraftResponse, StaffSignupItemsUpdateData, StaffSignupItemsUpdateError, StaffSignupItemsUpdateResponse } from '../types.gen.ts';
+import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffInstanceAcknowledgeNotice, staffInstanceClearDefaultSendCap, staffInstanceGetState, staffInstanceListAuditEntries, staffInstancePreviewTelemetryReport, staffInstanceSetDefaultSendCap, staffInstanceSetTelemetry, staffMeGet, staffSignupItemsCreate, staffSignupItemsDelete, staffSignupItemsGet, staffSignupItemsList, staffSignupItemsListVersions, staffSignupItemsPublish, staffSignupItemsReorder, staffSignupItemsSaveDraft, staffSignupItemsUpdate } from '../sdk.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeError, StaffInstanceAcknowledgeNoticeResponse, StaffInstanceClearDefaultSendCapData, StaffInstanceClearDefaultSendCapError, StaffInstanceClearDefaultSendCapResponse, StaffInstanceGetStateData, StaffInstanceGetStateError, StaffInstanceGetStateResponse, StaffInstanceListAuditEntriesData, StaffInstanceListAuditEntriesError, StaffInstanceListAuditEntriesResponse, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportError, StaffInstancePreviewTelemetryReportResponse, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapError, StaffInstanceSetDefaultSendCapResponse, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryError, StaffInstanceSetTelemetryResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupItemsCreateData, StaffSignupItemsCreateError, StaffSignupItemsCreateResponse, StaffSignupItemsDeleteData, StaffSignupItemsDeleteError, StaffSignupItemsDeleteResponse, StaffSignupItemsGetData, StaffSignupItemsGetError, StaffSignupItemsGetResponse, StaffSignupItemsListData, StaffSignupItemsListError, StaffSignupItemsListResponse, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsError, StaffSignupItemsListVersionsResponse, StaffSignupItemsPublishData, StaffSignupItemsPublishError, StaffSignupItemsPublishResponse, StaffSignupItemsReorderData, StaffSignupItemsReorderError, StaffSignupItemsReorderResponse, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftError, StaffSignupItemsSaveDraftResponse, StaffSignupItemsUpdateData, StaffSignupItemsUpdateError, StaffSignupItemsUpdateResponse } from '../types.gen.ts';
 
 export type MutationKey<TOptions extends Partial<Options>> = [
   Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -357,7 +357,7 @@ export const staffMeGetOptions = (options?: Options<StaffMeGetData>) => queryOpt
 export const staffSignupItemsListQueryKey = (options?: Options<StaffSignupItemsListData>) => createQueryKey('staffSignupItemsList', options, false, ['StaffMember Signup Items']);
 
 /**
- * The Instance's Sign-up items, archived ones included, in the order of the sign-up form
+ * The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form
  */
 export const staffSignupItemsListOptions = (options?: Options<StaffSignupItemsListData>) => queryOptions<StaffSignupItemsListResponse, StaffSignupItemsListError, StaffSignupItemsListResponse, ReturnType<typeof staffSignupItemsListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -397,7 +397,7 @@ export const staffSignupItemsReorderMutationKey = (options?: Partial<Options<Sta
 
 /**
  * Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
- * is not every item's id exactly once is refused (422).
+ * is not the id of every item that is not deleted, exactly once, is refused (422).
  */
 export const staffSignupItemsReorderMutation = (options?: Partial<Options<StaffSignupItemsReorderData>>): UseMutationOptions<StaffSignupItemsReorderResponse, StaffSignupItemsReorderError, Options<StaffSignupItemsReorderData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsReorderResponse, StaffSignupItemsReorderError, Options<StaffSignupItemsReorderData>> = {
@@ -414,10 +414,33 @@ export const staffSignupItemsReorderMutation = (options?: Partial<Options<StaffS
   return mutationOptions;
 };
 
+export const staffSignupItemsDeleteMutationKey = (options?: Partial<Options<StaffSignupItemsDeleteData>>) => createMutationKey('staffSignupItemsDelete', options, ['StaffMember Signup Items']);
+
+/**
+ * Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once,
+ * and is never restored; its published versions and Users' answers stay. Deleting a deleted item
+ * changes nothing. The item that stands for consent to the operator's mailings is refused (422)
+ * until it is unmarked.
+ */
+export const staffSignupItemsDeleteMutation = (options?: Partial<Options<StaffSignupItemsDeleteData>>): UseMutationOptions<StaffSignupItemsDeleteResponse, StaffSignupItemsDeleteError, Options<StaffSignupItemsDeleteData>> => {
+  const mutationOptions: UseMutationOptions<StaffSignupItemsDeleteResponse, StaffSignupItemsDeleteError, Options<StaffSignupItemsDeleteData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffSignupItemsDelete({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: staffSignupItemsDeleteMutationKey(options)
+  };
+  return mutationOptions;
+};
+
 export const staffSignupItemsGetQueryKey = (options: Options<StaffSignupItemsGetData>) => createQueryKey('staffSignupItemsGet', options, false, ['StaffMember Signup Items']);
 
 /**
- * One Sign-up item
+ * One Sign-up item, a deleted one too
  */
 export const staffSignupItemsGetOptions = (options: Options<StaffSignupItemsGetData>) => queryOptions<StaffSignupItemsGetResponse, StaffSignupItemsGetError, StaffSignupItemsGetResponse, ReturnType<typeof staffSignupItemsGetQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -436,7 +459,7 @@ export const staffSignupItemsUpdateMutationKey = (options?: Partial<Options<Staf
 
 /**
  * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
- * consent or is archived, and a second mailings consent are refused (422).
+ * consent, and a second mailings consent are refused (422); a deleted item is not found.
  */
 export const staffSignupItemsUpdateMutation = (options?: Partial<Options<StaffSignupItemsUpdateData>>): UseMutationOptions<StaffSignupItemsUpdateResponse, StaffSignupItemsUpdateError, Options<StaffSignupItemsUpdateData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsUpdateResponse, StaffSignupItemsUpdateError, Options<StaffSignupItemsUpdateData>> = {
@@ -453,34 +476,11 @@ export const staffSignupItemsUpdateMutation = (options?: Partial<Options<StaffSi
   return mutationOptions;
 };
 
-export const staffSignupItemsArchiveMutationKey = (options?: Partial<Options<StaffSignupItemsArchiveData>>) => createMutationKey('staffSignupItemsArchive', options, ['StaffMember Signup Items']);
-
-/**
- * Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its
- * published versions stay. Archiving an archived item changes nothing, and an archived item is never
- * restored. The item that stands for consent to the operator's mailings is refused (422) until
- * it is unmarked.
- */
-export const staffSignupItemsArchiveMutation = (options?: Partial<Options<StaffSignupItemsArchiveData>>): UseMutationOptions<StaffSignupItemsArchiveResponse, StaffSignupItemsArchiveError, Options<StaffSignupItemsArchiveData>> => {
-  const mutationOptions: UseMutationOptions<StaffSignupItemsArchiveResponse, StaffSignupItemsArchiveError, Options<StaffSignupItemsArchiveData>> = {
-    mutationFn: async (fnOptions) => {
-      const { data } = await staffSignupItemsArchive({
-        ...options,
-        ...fnOptions,
-        throwOnError: true
-      });
-      return data;
-    },
-    mutationKey: staffSignupItemsArchiveMutationKey(options)
-  };
-  return mutationOptions;
-};
-
 export const staffSignupItemsSaveDraftMutationKey = (options?: Partial<Options<StaffSignupItemsSaveDraftData>>) => createMutationKey('staffSignupItemsSaveDraft', options, ['StaffMember Signup Items']);
 
 /**
  * Save the draft of the item's Legal document. It is edited freely and changes nothing a
- * visitor sees until it is published.
+ * visitor sees until it is published. A deleted item is not found.
  */
 export const staffSignupItemsSaveDraftMutation = (options?: Partial<Options<StaffSignupItemsSaveDraftData>>): UseMutationOptions<StaffSignupItemsSaveDraftResponse, StaffSignupItemsSaveDraftError, Options<StaffSignupItemsSaveDraftData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsSaveDraftResponse, StaffSignupItemsSaveDraftError, Options<StaffSignupItemsSaveDraftData>> = {
@@ -521,7 +521,7 @@ export const staffSignupItemsPublishMutationKey = (options?: Partial<Options<Sta
 /**
  * Publish the draft as a new version under a label: it takes effect at once, and is never
  * changed or removed afterwards. A label the item already has, and an item without a draft,
- * are refused (422).
+ * are refused (422); a deleted item is not found.
  */
 export const staffSignupItemsPublishMutation = (options?: Partial<Options<StaffSignupItemsPublishData>>): UseMutationOptions<StaffSignupItemsPublishResponse, StaffSignupItemsPublishError, Options<StaffSignupItemsPublishData>> => {
   const mutationOptions: UseMutationOptions<StaffSignupItemsPublishResponse, StaffSignupItemsPublishError, Options<StaffSignupItemsPublishData>> = {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -97,6 +98,7 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
+	finishEnrollments(t, acme)
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }
@@ -167,6 +169,7 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
+	finishEnrollments(t, acme)
 	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del())
 }
 
@@ -208,11 +211,12 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 	require.NoError(t, err)
 	kept, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", got)
-	deleted := kept.DeletedAt.IsSet()
+	deleted := kept.DiscardedAt.IsSet()
 	assert.False(t, deleted)
 }
 
-// A draft's email does not establish a dependency; only the kept, active live version does.
+// A draft's email does not establish a dependency, nor does the live version of an inactive or
+// archived Automation no Enrollment stands on any more.
 func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) {
 	// Each email Step names the Integration it sends through (ADR 0081).
 	mailgunEmail := fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmeMailgunID)
@@ -239,8 +243,11 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 				SetSteps(mailgunEmail).Exec(ctx)
 			require.NoError(t, err)
 			err = s.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
-				SetStatus(tc.status).SetNillableDiscardedAt(tc.archived).Exec(ctx)
+				SetStatus(tc.status).SetNillableArchivedAt(tc.archived).Exec(ctx)
 			require.NoError(t, err)
+			// An Enrollment still standing on the version keeps it sending
+			// (TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn).
+			finishEnrollments(t, s)
 
 			require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID))
 
@@ -257,5 +264,95 @@ func stopMailgunSender(t *testing.T, s *ent.Scoped) {
 	t.Helper()
 	err := s.Automation().UpdateOneID(fixtures.AutomationJobsEmailsThenTagID).
 		SetStatus(automation.StatusInactive).Exec(t.Context())
+	require.NoError(t, err)
+}
+
+// A Broadcast that names no Integration sends through its own Channel's default, never another
+// Channel's (ADR 0099): a scheduled Telegram one blocks deleting the Telegram default and is no
+// user of the email default.
+func TestSiteTelegramBroadcastUsesTheTelegramDefaultOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	err := acme.Integration().UpdateOneID(fixtures.IntegrationAcmeTelegramID).SetIsDefault(true).Exec(ctx)
+	require.NoError(t, err)
+	err = acme.Broadcast().UpdateOneID(fixtures.BroadcastTelegramDraftID).
+		SetStatus(broadcast.StatusScheduled).SetScheduledAt(time.Now().Add(time.Hour)).Exec(ctx)
+	require.NoError(t, err)
+
+	refused, ok := deleteIntegration(t, c, fixtures.IntegrationAcmeTelegramID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastTelegramDraftName}}, usedBy(refused))
+
+	refused, ok = deleteIntegration(t, c, fixtures.IntegrationAcmeDefaultID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok, "the email default is still used by the email Broadcasts")
+	assert.NotContains(t, usedBy(refused)[siteapi.UsedByKindBroadcast], fixtures.BroadcastTelegramDraftName)
+}
+
+// A send with no From of its own goes out with the From of the Integration it goes through, so a
+// Broadcast and an Automation step through a non-default Integration use that Integration's From
+// domain, not the default's (ADR 0099).
+func TestSiteSendingDomainIsUsedThroughTheFromOfTheIntegrationASendGoesThrough(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	sealed, err := env.Cipher.Encrypt([]byte(`{"host":"smtp.postmarkapp.example","port":587,"from":"hello@` + fixtures.SendingDomainUnverifiedDomain + `"}`))
+	require.NoError(t, err)
+	err = acme.Integration().UpdateOneID(fixtures.IntegrationAcmePostmarkID).SetConfigEncrypted(sealed).Exec(ctx)
+	require.NoError(t, err)
+	err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).
+		ClearFromEmail().SetIntegrationID(fixtures.IntegrationAcmePostmarkID).Exec(ctx)
+	require.NoError(t, err)
+	err = acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
+		SetSteps(fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmePostmarkID)).Exec(ctx)
+	require.NoError(t, err)
+	finishEnrollments(t, acme) // the Automation uses the domain through its live version alone
+
+	refused, ok := deleteSendingDomain(t, c, fixtures.SendingDomainUnverifiedID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{
+		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastScheduledName},
+		siteapi.UsedByKindAutomation: {fixtures.AutomationWelcomeSeriesName},
+	}, usedBy(refused))
+
+	refused, ok = deleteSendingDomain(t, c, fixtures.SendingDomainCodebasicsID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok, "the default's domain is still used by the Sending Broadcast")
+	users := usedBy(refused)
+	assert.NotContains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastScheduledName)
+	assert.NotContains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationWelcomeSeriesName)
+}
+
+// An Automation deactivated while Enrollments still stand on a version keeps sending through that
+// version's Integrations, so it uses them until the Enrollments finish (ADR 0099).
+func TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	stopMailgunSender(t, acme)
+	err := acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
+		SetSteps(fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmeMailgunID)).Exec(ctx)
+	require.NoError(t, err)
+	err = acme.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
+		SetStatus(automation.StatusInactive).Exec(ctx)
+	require.NoError(t, err)
+
+	refused, ok := deleteIntegration(t, c, fixtures.IntegrationAcmeMailgunID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationWelcomeSeriesName}}, usedBy(refused))
+
+	finishEnrollments(t, acme)
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, fixtures.IntegrationAcmeMailgunID))
+}
+
+// finishEnrollments completes the Workspace's unfinished Enrollments: no version sends any more
+// for want of an Enrollment standing on it.
+func finishEnrollments(t *testing.T, s *ent.Scoped) {
+	t.Helper()
+	err := s.AutomationRun().Update().
+		Where(automationrun.StatusEQ(automationrun.StatusActive)).
+		SetStatus(automationrun.StatusCompleted).SetEndedAt(time.Now()).Exec(t.Context())
 	require.NoError(t, err)
 }

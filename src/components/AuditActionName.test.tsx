@@ -45,16 +45,16 @@ const names: Record<AnyAuditAction, string> = {
   'automation.create': 'Created an automation',
   'automation.update': 'Changed an automation',
   'automation.delete': 'Deleted an automation',
-  'automation.discard': 'Archived an automation',
-  'automation.restore': 'Restored an automation',
+  'automation.archive': 'Archived an automation',
+  'automation.unarchive': 'Unarchived an automation',
   'brand_kit.create': 'Created the brand kit',
   'brand_kit.update': 'Changed the brand kit',
   'brand_kit.delete': 'Deleted the brand kit',
   'broadcast.create': 'Created a broadcast',
   'broadcast.update': 'Changed a broadcast',
   'broadcast.delete': 'Deleted a broadcast',
-  'broadcast.discard': 'Archived a broadcast',
-  'broadcast.restore': 'Restored a broadcast',
+  'broadcast.archive': 'Archived a broadcast',
+  'broadcast.unarchive': 'Unarchived a broadcast',
   'contact.create': 'Created a contact',
   'contact.update': 'Changed a contact',
   'contact.delete': 'Deleted a contact',
@@ -71,7 +71,6 @@ const names: Record<AnyAuditAction, string> = {
   'integration.update': 'Changed an integration',
   'integration.delete': 'Deleted an integration',
   'integration.discard': 'Deleted an integration',
-  'integration.restore': 'Restored an integration',
   'join_domain.create': 'Created a join domain',
   'join_domain.update': 'Changed a join domain',
   'join_domain.delete': 'Deleted a join domain',
@@ -79,17 +78,15 @@ const names: Record<AnyAuditAction, string> = {
   'rule.update': 'Changed a rule',
   'rule.delete': 'Deleted a rule',
   'rule.discard': 'Deleted a rule, keeping its firings',
-  'rule.restore': 'Restored a rule',
   'segment.create': 'Created a segment',
   'segment.update': 'Changed a segment',
   'segment.delete': 'Deleted a segment',
-  'segment.discard': 'Archived a segment',
-  'segment.restore': 'Restored a segment',
+  'segment.archive': 'Archived a segment',
+  'segment.unarchive': 'Unarchived a segment',
   'sending_domain.create': 'Created a sending domain',
   'sending_domain.update': 'Changed a sending domain',
   'sending_domain.delete': 'Deleted a sending domain',
   'sending_domain.discard': 'Deleted a sending domain',
-  'sending_domain.restore': 'Restored a sending domain',
   'tag.create': 'Created a tag',
   'tag.update': 'Changed a tag',
   'tag.delete': 'Deleted a tag',
@@ -116,4 +113,20 @@ test('an action keeps its code on hover', async () => {
   await screen.getByText('Suspended the workspace').hover()
 
   await expect.element(screen.getByText('workspace.suspend')).toBeInTheDocument()
+})
+
+// An Integration's `restore`, which v0.2 to v0.3 recorded when an Integration was unarchived, is
+// gone from the contract with ADR 0100; the entries stay in the log and still read as words.
+test('an Integration restore an older release recorded is shown by its words', async () => {
+  const screen = await renderWithProviders(<AuditActionName action="integration.restore" />)
+
+  await expect
+    .element(screen.getByText('Restored an integration', { exact: true }))
+    .toBeInTheDocument()
+})
+
+test('an action the contract does not declare is shown by its code', async () => {
+  const screen = await renderWithProviders(<AuditActionName action="tag.archive" />)
+
+  await expect.element(screen.getByText('tag.archive', { exact: true })).toBeInTheDocument()
 })

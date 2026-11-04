@@ -597,7 +597,7 @@
     "/signup-items": {
       "get": {
         "operationId": "StaffSignupItems_list",
-        "description": "The Instance's Sign-up items, archived ones included, in the order of the sign-up form",
+        "description": "The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form",
         "parameters": [],
         "responses": {
           "200": {
@@ -685,7 +685,7 @@
     "/signup-items/order": {
       "put": {
         "operationId": "StaffSignupItems_reorder",
-        "description": "Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that\nis not every item's id exactly once is refused (422).",
+        "description": "Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that\nis not the id of every item that is not deleted, exactly once, is refused (422).",
         "parameters": [],
         "responses": {
           "200": {
@@ -745,7 +745,7 @@
     "/signup-items/{id}": {
       "get": {
         "operationId": "StaffSignupItems_get",
-        "description": "One Sign-up item",
+        "description": "One Sign-up item, a deleted one too",
         "parameters": [
           {
             "name": "id",
@@ -802,7 +802,7 @@
       },
       "patch": {
         "operationId": "StaffSignupItems_update",
-        "description": "Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional\nconsent or is archived, and a second mailings consent are refused (422).",
+        "description": "Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional\nconsent, and a second mailings consent are refused (422); a deleted item is not found.",
         "parameters": [
           {
             "name": "id",
@@ -876,12 +876,10 @@
             }
           }
         }
-      }
-    },
-    "/signup-items/{id}/archive": {
-      "post": {
-        "operationId": "StaffSignupItems_archive",
-        "description": "Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its\npublished versions stay. Archiving an archived item changes nothing, and an archived item is never\nrestored. The item that stands for consent to the operator's mailings is refused (422) until\nit is unmarked.",
+      },
+      "delete": {
+        "operationId": "StaffSignupItems_delete",
+        "description": "Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once,\nand is never restored; its published versions and Users' answers stay. Deleting a deleted item\nchanges nothing. The item that stands for consent to the operator's mailings is refused (422)\nuntil it is unmarked.",
         "parameters": [
           {
             "name": "id",
@@ -893,15 +891,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffSignupItemResource"
-                }
-              }
-            }
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -950,7 +941,7 @@
     "/signup-items/{id}/draft": {
       "put": {
         "operationId": "StaffSignupItems_saveDraft",
-        "description": "Save the draft of the item's Legal document. It is edited freely and changes nothing a\nvisitor sees until it is published.",
+        "description": "Save the draft of the item's Legal document. It is edited freely and changes nothing a\nvisitor sees until it is published. A deleted item is not found.",
         "parameters": [
           {
             "name": "id",
@@ -1076,7 +1067,7 @@
       },
       "post": {
         "operationId": "StaffSignupItems_publish",
-        "description": "Publish the draft as a new version under a label: it takes effect at once, and is never\nchanged or removed afterwards. A label the item already has, and an item without a draft,\nare refused (422).",
+        "description": "Publish the draft as a new version under a label: it takes effect at once, and is never\nchanged or removed afterwards. A label the item already has, and an item without a draft,\nare refused (422); a deleted item is not found.",
         "parameters": [
           {
             "name": "id",
@@ -1888,7 +1879,7 @@
             }
           }
         },
-        "description": "The new order of the sign-up form: the id of every Sign-up item, archived ones included, each\nonce"
+        "description": "The new order of the sign-up form: the id of every Sign-up item that is not deleted, each\nonce"
       },
       "StaffSignupItemResource": {
         "type": "object",
@@ -1946,13 +1937,13 @@
             ],
             "description": "The version in effect, absent until one is published. Visitors see the item only once it\nhas one."
           },
-          "archivedAt": {
+          "discardedAt": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "description": "When the item was archived, absent while it is in use. An archived item is no longer asked\nand its public page is gone; its published versions stay."
+            "description": "When the item was deleted, absent while it is in use. A deleted item is no longer asked or\nlisted, its public page is gone and it cannot be changed; its published versions and Users'\nanswers stay, and it is still read by id."
           },
           "createdAt": {
             "allOf": [
@@ -2017,14 +2008,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "message"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "WorkspaceId": {

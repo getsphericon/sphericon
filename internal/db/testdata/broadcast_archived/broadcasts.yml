@@ -1,0 +1,22 @@
+# Rows of the schema before the Broadcast moved to archived_at (ADR 0100): a sent one archived
+# through discarded_at, and a kept draft.
+- id: 1
+  name: Archived newsletter
+  channel: email
+  subject: Last month
+  body: '<p>Last month</p>'
+  status: sent
+  sent_at: '2026-01-15 00:00:00'
+  workspace_id: 1
+  discarded_at: '2026-02-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+- id: 2
+  name: Kept draft
+  channel: email
+  subject: Next month
+  body: '<p>Next month</p>'
+  status: draft
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

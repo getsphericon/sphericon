@@ -75,16 +75,16 @@ const (
 	AuditActionAutomationCreate            AuditAction = "automation.create"
 	AuditActionAutomationUpdate            AuditAction = "automation.update"
 	AuditActionAutomationDelete            AuditAction = "automation.delete"
-	AuditActionAutomationDiscard           AuditAction = "automation.discard"
-	AuditActionAutomationRestore           AuditAction = "automation.restore"
+	AuditActionAutomationArchive           AuditAction = "automation.archive"
+	AuditActionAutomationUnarchive         AuditAction = "automation.unarchive"
 	AuditActionBrandKitCreate              AuditAction = "brand_kit.create"
 	AuditActionBrandKitUpdate              AuditAction = "brand_kit.update"
 	AuditActionBrandKitDelete              AuditAction = "brand_kit.delete"
 	AuditActionBroadcastCreate             AuditAction = "broadcast.create"
 	AuditActionBroadcastUpdate             AuditAction = "broadcast.update"
 	AuditActionBroadcastDelete             AuditAction = "broadcast.delete"
-	AuditActionBroadcastDiscard            AuditAction = "broadcast.discard"
-	AuditActionBroadcastRestore            AuditAction = "broadcast.restore"
+	AuditActionBroadcastArchive            AuditAction = "broadcast.archive"
+	AuditActionBroadcastUnarchive          AuditAction = "broadcast.unarchive"
 	AuditActionContactCreate               AuditAction = "contact.create"
 	AuditActionContactUpdate               AuditAction = "contact.update"
 	AuditActionContactDelete               AuditAction = "contact.delete"
@@ -101,7 +101,6 @@ const (
 	AuditActionIntegrationUpdate           AuditAction = "integration.update"
 	AuditActionIntegrationDelete           AuditAction = "integration.delete"
 	AuditActionIntegrationDiscard          AuditAction = "integration.discard"
-	AuditActionIntegrationRestore          AuditAction = "integration.restore"
 	AuditActionJoinDomainCreate            AuditAction = "join_domain.create"
 	AuditActionJoinDomainUpdate            AuditAction = "join_domain.update"
 	AuditActionJoinDomainDelete            AuditAction = "join_domain.delete"
@@ -109,17 +108,15 @@ const (
 	AuditActionRuleUpdate                  AuditAction = "rule.update"
 	AuditActionRuleDelete                  AuditAction = "rule.delete"
 	AuditActionRuleDiscard                 AuditAction = "rule.discard"
-	AuditActionRuleRestore                 AuditAction = "rule.restore"
 	AuditActionSegmentCreate               AuditAction = "segment.create"
 	AuditActionSegmentUpdate               AuditAction = "segment.update"
 	AuditActionSegmentDelete               AuditAction = "segment.delete"
-	AuditActionSegmentDiscard              AuditAction = "segment.discard"
-	AuditActionSegmentRestore              AuditAction = "segment.restore"
+	AuditActionSegmentArchive              AuditAction = "segment.archive"
+	AuditActionSegmentUnarchive            AuditAction = "segment.unarchive"
 	AuditActionSendingDomainCreate         AuditAction = "sending_domain.create"
 	AuditActionSendingDomainUpdate         AuditAction = "sending_domain.update"
 	AuditActionSendingDomainDelete         AuditAction = "sending_domain.delete"
 	AuditActionSendingDomainDiscard        AuditAction = "sending_domain.discard"
-	AuditActionSendingDomainRestore        AuditAction = "sending_domain.restore"
 	AuditActionTagCreate                   AuditAction = "tag.create"
 	AuditActionTagUpdate                   AuditAction = "tag.update"
 	AuditActionTagDelete                   AuditAction = "tag.delete"
@@ -169,16 +166,16 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionAutomationCreate,
 		AuditActionAutomationUpdate,
 		AuditActionAutomationDelete,
-		AuditActionAutomationDiscard,
-		AuditActionAutomationRestore,
+		AuditActionAutomationArchive,
+		AuditActionAutomationUnarchive,
 		AuditActionBrandKitCreate,
 		AuditActionBrandKitUpdate,
 		AuditActionBrandKitDelete,
 		AuditActionBroadcastCreate,
 		AuditActionBroadcastUpdate,
 		AuditActionBroadcastDelete,
-		AuditActionBroadcastDiscard,
-		AuditActionBroadcastRestore,
+		AuditActionBroadcastArchive,
+		AuditActionBroadcastUnarchive,
 		AuditActionContactCreate,
 		AuditActionContactUpdate,
 		AuditActionContactDelete,
@@ -195,7 +192,6 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionIntegrationUpdate,
 		AuditActionIntegrationDelete,
 		AuditActionIntegrationDiscard,
-		AuditActionIntegrationRestore,
 		AuditActionJoinDomainCreate,
 		AuditActionJoinDomainUpdate,
 		AuditActionJoinDomainDelete,
@@ -203,17 +199,15 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionRuleUpdate,
 		AuditActionRuleDelete,
 		AuditActionRuleDiscard,
-		AuditActionRuleRestore,
 		AuditActionSegmentCreate,
 		AuditActionSegmentUpdate,
 		AuditActionSegmentDelete,
-		AuditActionSegmentDiscard,
-		AuditActionSegmentRestore,
+		AuditActionSegmentArchive,
+		AuditActionSegmentUnarchive,
 		AuditActionSendingDomainCreate,
 		AuditActionSendingDomainUpdate,
 		AuditActionSendingDomainDelete,
 		AuditActionSendingDomainDiscard,
-		AuditActionSendingDomainRestore,
 		AuditActionTagCreate,
 		AuditActionTagUpdate,
 		AuditActionTagDelete,
@@ -299,9 +293,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionAutomationDelete:
 		return []byte(s), nil
-	case AuditActionAutomationDiscard:
+	case AuditActionAutomationArchive:
 		return []byte(s), nil
-	case AuditActionAutomationRestore:
+	case AuditActionAutomationUnarchive:
 		return []byte(s), nil
 	case AuditActionBrandKitCreate:
 		return []byte(s), nil
@@ -315,9 +309,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionBroadcastDelete:
 		return []byte(s), nil
-	case AuditActionBroadcastDiscard:
+	case AuditActionBroadcastArchive:
 		return []byte(s), nil
-	case AuditActionBroadcastRestore:
+	case AuditActionBroadcastUnarchive:
 		return []byte(s), nil
 	case AuditActionContactCreate:
 		return []byte(s), nil
@@ -351,8 +345,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionIntegrationDiscard:
 		return []byte(s), nil
-	case AuditActionIntegrationRestore:
-		return []byte(s), nil
 	case AuditActionJoinDomainCreate:
 		return []byte(s), nil
 	case AuditActionJoinDomainUpdate:
@@ -367,17 +359,15 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionRuleDiscard:
 		return []byte(s), nil
-	case AuditActionRuleRestore:
-		return []byte(s), nil
 	case AuditActionSegmentCreate:
 		return []byte(s), nil
 	case AuditActionSegmentUpdate:
 		return []byte(s), nil
 	case AuditActionSegmentDelete:
 		return []byte(s), nil
-	case AuditActionSegmentDiscard:
+	case AuditActionSegmentArchive:
 		return []byte(s), nil
-	case AuditActionSegmentRestore:
+	case AuditActionSegmentUnarchive:
 		return []byte(s), nil
 	case AuditActionSendingDomainCreate:
 		return []byte(s), nil
@@ -386,8 +376,6 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionSendingDomainDelete:
 		return []byte(s), nil
 	case AuditActionSendingDomainDiscard:
-		return []byte(s), nil
-	case AuditActionSendingDomainRestore:
 		return []byte(s), nil
 	case AuditActionTagCreate:
 		return []byte(s), nil
@@ -520,11 +508,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
 		return nil
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
 		return nil
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 		return nil
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate
@@ -544,11 +532,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
 		return nil
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
 		return nil
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 		return nil
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
@@ -598,9 +586,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionIntegrationDiscard:
 		*s = AuditActionIntegrationDiscard
 		return nil
-	case AuditActionIntegrationRestore:
-		*s = AuditActionIntegrationRestore
-		return nil
 	case AuditActionJoinDomainCreate:
 		*s = AuditActionJoinDomainCreate
 		return nil
@@ -622,9 +607,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionRuleDiscard:
 		*s = AuditActionRuleDiscard
 		return nil
-	case AuditActionRuleRestore:
-		*s = AuditActionRuleRestore
-		return nil
 	case AuditActionSegmentCreate:
 		*s = AuditActionSegmentCreate
 		return nil
@@ -634,11 +616,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
 		return nil
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
 		return nil
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 		return nil
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
@@ -651,9 +633,6 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionSendingDomainDiscard:
 		*s = AuditActionSendingDomainDiscard
-		return nil
-	case AuditActionSendingDomainRestore:
-		*s = AuditActionSendingDomainRestore
 		return nil
 	case AuditActionTagCreate:
 		*s = AuditActionTagCreate

@@ -7,7 +7,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
-// StaffSignupItemsList is every Sign-up item of the Instance, in the order of the sign-up form.
+// StaffSignupItemsList is every Sign-up item of the Instance that is not deleted, in the order of
+// the sign-up form.
 func (h *Handlers) StaffSignupItemsList(ctx context.Context) (staffapi.StaffSignupItemsListRes, error) {
 	items, err := h.items.List(ctx)
 	if err != nil {
@@ -52,13 +53,12 @@ func (h *Handlers) StaffSignupItemsReorder(ctx context.Context, req *staffapi.St
 	return &staffapi.StaffSignupItemList{Items: mapper.SignupItemsToResources(items)}, nil
 }
 
-// StaffSignupItemsArchive archives a Sign-up item.
-func (h *Handlers) StaffSignupItemsArchive(ctx context.Context, params staffapi.StaffSignupItemsArchiveParams) (staffapi.StaffSignupItemsArchiveRes, error) {
-	it, err := h.items.Archive(ctx, int64(params.ID))
-	if err != nil {
+// StaffSignupItemsDelete deletes a Sign-up item.
+func (h *Handlers) StaffSignupItemsDelete(ctx context.Context, params staffapi.StaffSignupItemsDeleteParams) (staffapi.StaffSignupItemsDeleteRes, error) {
+	if err := h.items.Delete(ctx, int64(params.ID)); err != nil {
 		return nil, err
 	}
-	return new(mapper.SignupItemToResource(it)), nil
+	return &staffapi.StaffSignupItemsDeleteNoContent{}, nil
 }
 
 // StaffSignupItemsListVersions is every published version of the item's Legal document.

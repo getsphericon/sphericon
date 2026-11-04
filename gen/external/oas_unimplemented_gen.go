@@ -60,8 +60,8 @@ func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r AuthTokensLis
 // AutomationsArchive implements Automations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-// (`usedBy` carries their count).
+// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+// an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /automations/{id}/archive
 func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (r AutomationsArchiveRes, _ error) {
@@ -79,20 +79,11 @@ func (UnimplementedHandler) AutomationsCreate(ctx context.Context, req *CreateAu
 
 // AutomationsDeactivate implements Automations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
-// scope.
+// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
+// Needs the automations:write scope.
 //
 // POST /automations/{id}/deactivate
 func (UnimplementedHandler) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (r AutomationsDeactivateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// AutomationsDelete implements Automations_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /automations/{id}
-func (UnimplementedHandler) AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (r AutomationsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -129,7 +120,7 @@ func (UnimplementedHandler) AutomationsList(ctx context.Context, params Automati
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused. Needs the automations:publish scope.
+// refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
 func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r AutomationsPublishRes, _ error) {
@@ -150,8 +141,8 @@ func (UnimplementedHandler) AutomationsReport(ctx context.Context, params Automa
 
 // AutomationsRevert implements Automations_revert operation.
 //
-// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
-// Needs the automations:write scope.
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+// 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
 func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (r AutomationsRevertRes, _ error) {
@@ -160,7 +151,8 @@ func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params Automa
 
 // AutomationsUnarchive implements Automations_unarchive operation.
 //
-// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+// again.
 //
 // POST /automations/{id}/unarchive
 func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (r AutomationsUnarchiveRes, _ error) {
@@ -169,7 +161,8 @@ func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params Aut
 
 // AutomationsUpdate implements Automations_update operation.
 //
-// Update a resource.
+// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+// archived. Needs the automations:write scope.
 //
 // PUT /automations/{id}
 func (UnimplementedHandler) AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (r AutomationsUpdateRes, _ error) {
@@ -189,8 +182,9 @@ func (UnimplementedHandler) BrandKitGet(ctx context.Context) (r BrandKitGetRes, 
 
 // BroadcastsArchive implements Broadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be
-// restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived.
+// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
+// can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409).
+// Archiving an archived broadcast changes nothing.
 //
 // POST /broadcasts/{id}/archive
 func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (r BroadcastsArchiveRes, _ error) {
@@ -203,15 +197,6 @@ func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params Broadc
 //
 // POST /broadcasts
 func (UnimplementedHandler) BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (r BroadcastsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// BroadcastsDelete implements Broadcasts_delete operation.
-//
-// Delete a resource.
-//
-// DELETE /broadcasts/{id}
-func (UnimplementedHandler) BroadcastsDelete(ctx context.Context, params BroadcastsDeleteParams) (r BroadcastsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -248,8 +233,8 @@ func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params Broadca
 // segment's condition: recipients are resolved at send time from that copy, so a later edit of the
 // segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
 // the integration it sends through cannot send (disabled or archived, or no default): a draft may name
-// such an integration, only scheduling it is refused. Send-class: needs the broadcasts:send scope, and
-// mcp:send over MCP.
+// such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class:
+// needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
 func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (r BroadcastsScheduleRes, _ error) {
@@ -258,7 +243,8 @@ func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *Schedul
 
 // BroadcastsSetSegment implements Broadcasts_setSegment operation.
 //
-// Set the Segment of a draft broadcast, or null for all contacts. Does not send.
+// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
+// is a 409.
 //
 // PUT /broadcasts/{id}/segment
 func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (r BroadcastsSetSegmentRes, _ error) {
@@ -279,7 +265,7 @@ func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSen
 
 // BroadcastsUnarchive implements Broadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /broadcasts/{id}/unarchive
 func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (r BroadcastsUnarchiveRes, _ error) {
@@ -632,7 +618,7 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 //
 // Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
 // pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal
-// is a 422). Needs a person: hidden from MCP.
+// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
 func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
@@ -641,7 +627,7 @@ func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, param
 
 // IntegrationsUpdate implements Integrations_update operation.
 //
-// Update an integration.
+// Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
 func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r IntegrationsUpdateRes, _ error) {
@@ -864,7 +850,7 @@ func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params Sendi
 
 // SendingDomainsUpdate implements SendingDomains_update operation.
 //
-// Update a resource.
+// Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
 func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (r SendingDomainsUpdateRes, _ error) {
@@ -874,7 +860,8 @@ func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *Updat
 // SendingDomainsVerify implements SendingDomains_verify operation.
 //
 // Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
-// `lastCheckedAt`). Verification is never set by the caller.
+// `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked
+// again (404).
 //
 // POST /sending-domains/{id}/verify
 func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (r SendingDomainsVerifyRes, _ error) {

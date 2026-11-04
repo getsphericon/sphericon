@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
@@ -6,6 +7,7 @@ import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
 import { editedVersionKey } from './editedVersion.ts'
 
@@ -28,6 +30,14 @@ function AutomationEdit() {
   const automation = useSuspenseQuery(
     siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }),
   ).data
+
+  // An archived Automation is read-only until it is unarchived (ADR 0100): its page, which offers
+  // no Edit, stands in for the builder.
+  if (automation.archivedAt) {
+    return (
+      <Navigate to={automationsDetailRoute.to} params={{ workspaceId, automationId }} replace />
+    )
+  }
 
   // A new Automation is created with a draft and Publish only moves it to live, so one of the two
   // is always there.

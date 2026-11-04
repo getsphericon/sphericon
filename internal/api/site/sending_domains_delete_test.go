@@ -49,7 +49,7 @@ func TestSiteSendingDomainsDelete(t *testing.T) {
 	require.NoError(t, err)
 	opened, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "a deleted domain can still be read by id, got %T", got)
-	assert.True(t, opened.DeletedAt.IsSet())
+	assert.True(t, opened.DiscardedAt.IsSet())
 
 	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomain(t, c, id), "deleting it again changes nothing")
 }
@@ -65,6 +65,24 @@ func TestSiteSendingDomainsDeletedNameIsReusable(t *testing.T) {
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, again, "a deleted name is free again")
+}
+
+// A deleted Sending domain is never verified again (ADR 0100): Verify answers 404 and runs no check.
+func TestSiteSendingDomainsDeletedOneIsNotVerified(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	id := idStr(fixtures.SendingDomainArchivedID)
+
+	res, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNotFound{}, res)
+
+	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	require.NoError(t, err)
+	row, ok := got.(*siteapi.SiteSendingDomainResource)
+	require.Truef(t, ok, "a deleted domain is still read by id, got %T", got)
+	assert.False(t, row.LastCheckedAt.Set && !row.LastCheckedAt.Null, "no check ran")
 }
 
 // Deleting a domain that live work sends from is refused with 409 naming that work, and the

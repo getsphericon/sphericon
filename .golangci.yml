@@ -161,7 +161,7 @@ linters:
         - pattern: ^ent\.\w+\.(SetLiveVersionID|SetDraftVersionID|ClearDraftVersionID)$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
-        - pattern: ^ent\.(\w+Pointers|VersionedStore(\[.*\])?)\.(SetDraft|ClearDraft|Promote|Activate|Deactivate|DeleteVersion|Discard|Undiscard)$
+        - pattern: ^ent\.(\w+Pointers|VersionedStore(\[.*\])?)\.(SetDraft|ClearDraft|Promote|Activate|Deactivate|DeleteVersion|Archive|Unarchive|Discard)$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
         - pattern: ^time\.Sleep$

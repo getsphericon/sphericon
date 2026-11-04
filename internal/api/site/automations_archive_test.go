@@ -56,8 +56,8 @@ func TestSiteAutomationsArchiveRefusedWithActiveEnrollments(t *testing.T) {
 }
 
 // With no active Enrollment the Automation is archived: it leaves the default list, shows with
-// archived=true, can still be opened, and comes back when restored.
-func TestSiteAutomationsArchiveAndRestore(t *testing.T) {
+// archived=true, can still be opened, and comes back when unarchived.
+func TestSiteAutomationsArchiveAndUnarchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -112,60 +112,59 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
 }
 
-// Delete purges an Automation with no Enrollments; one with any Enrollment is history and
-// answers 422, whatever the status of its Enrollments.
-func TestSiteAutomationsDeleteOnlyPurgesUnenrolled(t *testing.T) {
+// An Automation is archived, never deleted (ADR 0100): one never published and one that has sent
+// mail are both archived, and both stay readable by id.
+func TestSiteAutomationsArchiveKeepsEveryAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	del := func(id int64) (siteapi.SiteAutomationsDeleteRes, error) {
-		return c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
-	}
 
-	gone, err := del(fixtures.AutomationWinBackID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsDeleteNoContent{}, gone)
-	exists, err := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationWinBackID)).Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, exists, "purged for good")
-
-	purged, err := del(fixtures.AutomationArchivedID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsDeleteNoContent{}, purged, "an archived automation with no Enrollments is purged too")
-
-	for _, id := range []int64{fixtures.AutomationWelcomeSeriesID, fixtures.AutomationNotifySlackID} {
-		out, err := del(id)
+	for _, id := range []int64{fixtures.AutomationWinBackID, fixtures.AutomationOnOpenID} {
+		out, err := archiveAutomation(c, id)
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.InUseProblemDetails{}, out, "automation %d: its Enrollments are history, so 409", id)
-	}
+		archived, ok := out.(*siteapi.SiteAutomationResource)
+		require.Truef(t, ok, "automation %d: got %T", id, out)
+		assert.True(t, archived.ArchivedAt.IsSet())
 
-	missing, err := del(999999)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsDeleteNotFound{}, missing)
+		got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+		require.NoError(t, err)
+		assert.IsTypef(t, &siteapi.SiteAutomationResource{}, got, "automation %d is kept", id)
+	}
+	shown := listAutomations(t, c, true)
+	assert.Contains(t, shown, int64(fixtures.AutomationWinBackID))
+	assert.Contains(t, shown, int64(fixtures.AutomationOnOpenID))
 }
 
-// An Automation with no Enrollment that has sent mail is history too: the Outbound messages are
-// facts that stay, so the delete answers 409 naming them, not a 500 from the foreign key.
-func TestSiteAutomationsDeleteRefusesOneThatSentMail(t *testing.T) {
+// An archived Automation is read-only until it is unarchived (ADR 0100): an edit, Publish, Revert
+// and Deactivate answer 409, and its name and draft stay as they were.
+func TestSiteAnArchivedAutomationIsReadOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
+	params := siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)}
+	before, err := c.SiteAutomationsGet(ctx, params)
+	require.NoError(t, err)
 
-	out, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationOnOpenID),
-	})
+	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")},
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	require.NoError(t, err)
-	refused, ok := out.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", out)
-	require.Len(t, refused.UsedBy, 1)
-	assert.Equal(t, siteapi.UsedByKindMessage, refused.UsedBy[0].Kind)
-	assert.Positive(t, refused.UsedBy[0].Count.Or(0))
-	exists, err := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationOnOpenID)).Exist(ctx)
+	published, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	require.NoError(t, err)
-	assert.True(t, exists, "kept")
+	reverted, err := c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
+	require.NoError(t, err)
+	deactivated, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
+	require.NoError(t, err)
+	after, err := c.SiteAutomationsGet(ctx, params)
+	require.NoError(t, err)
+
+	assert.IsType(t, &siteapi.SiteAutomationsUpdateConflict{}, edited)
+	assert.IsType(t, &siteapi.SiteAutomationsPublishConflict{}, published)
+	assert.IsType(t, &siteapi.SiteAutomationsRevertConflict{}, reverted)
+	assert.IsType(t, &siteapi.SiteAutomationsDeactivateConflict{}, deactivated)
+	assert.Equal(t, before, after)
 }
 
-// Archive and restore are recorded in the Audit log with their actor.
+// Archive and Unarchive are recorded in the Audit log with their actor, by their own names.
 func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -181,12 +180,13 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 		return entry
 	})
 	actions := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
-	assert.Equal(t, []string{"automation.discard", "automation.restore"}, actions)
+	assert.Equal(t, []string{"automation.archive", "automation.unarchive"}, actions)
 	assert.Equal(t, events.ActorUser, entries[0].Actor.Kind)
 	assert.Equal(t, "Notify Slack on signup", entries[0].TargetName)
 }
 
-// An archived Automation is not live work: it no longer holds the default Integration.
+// An archived Automation no Enrollment stands on is not live work: it no longer holds the default
+// Integration.
 func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -205,8 +205,9 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	require.Contains(t, names, fixtures.AutomationWelcomeSeriesName)
 
 	for _, id := range acme.Automation().Query().Where(automation.StatusEQ(automation.StatusActive)).IDsX(ctx) {
-		require.NoError(t, acme.Automation().Discard(ctx, id))
+		require.NoError(t, acme.Automation().Archive(ctx, id))
 	}
+	finishEnrollments(t, acme)
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }

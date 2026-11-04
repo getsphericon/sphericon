@@ -85,6 +85,7 @@ var (
 	ErrorsAccountLinkNotConfigured              = ID{key: "errors.account_link_not_configured"}
 	ErrorsAlreadyMember                         = ID{key: "errors.already_member"}
 	ErrorsAuditCursorInvalid                    = ID{key: "errors.audit_cursor_invalid"}
+	ErrorsAutomationArchived                    = ID{key: "errors.automation_archived"}
 	ErrorsAutomationExitEventInvalid            = ID{key: "errors.automation_exit_event_invalid"}
 	ErrorsAutomationGoalEventInvalid            = ID{key: "errors.automation_goal_event_invalid"}
 	ErrorsAutomationIntegrationNotFound         = ID{key: "errors.automation_integration_not_found"}
@@ -100,6 +101,7 @@ var (
 	ErrorsBrandkitFooter                        = ID{key: "errors.brandkit_footer"}
 	ErrorsBrandkitLogo                          = ID{key: "errors.brandkit_logo"}
 	ErrorsBrandkitNotSaved                      = ID{key: "errors.brandkit_not_saved"}
+	ErrorsBroadcastArchived                     = ID{key: "errors.broadcast_archived"}
 	ErrorsBroadcastChannelFixed                 = ID{key: "errors.broadcast_channel_fixed"}
 	ErrorsBroadcastChannelNoIntegration         = ID{key: "errors.broadcast_channel_no_integration"}
 	ErrorsBroadcastFromNotVerified              = ID{key: "errors.broadcast_from_not_verified"}
@@ -112,6 +114,7 @@ var (
 	ErrorsBroadcastNotFound                     = ID{key: "errors.broadcast_not_found"}
 	ErrorsBroadcastNotScheduled                 = ID{key: "errors.broadcast_not_scheduled"}
 	ErrorsBroadcastNotSendable                  = ID{key: "errors.broadcast_not_sendable"}
+	ErrorsBroadcastSegmentArchived              = ID{key: "errors.broadcast_segment_archived"}
 	ErrorsBroadcastSegmentNotFound              = ID{key: "errors.broadcast_segment_not_found"}
 	ErrorsBroadcastTextBlank                    = ID{key: "errors.broadcast_text_blank"}
 	ErrorsBroadcastTextTooLong                  = ID{key: "errors.broadcast_text_too_long"}
@@ -154,7 +157,6 @@ var (
 	ErrorsFeedCursorInvalid                     = ID{key: "errors.feed_cursor_invalid"}
 	ErrorsIdentityProofRequired                 = ID{key: "errors.identity_proof_required"}
 	ErrorsIntegrationDefaultConflict            = ID{key: "errors.integration_default_conflict"}
-	ErrorsIntegrationDeletedDefault             = ID{key: "errors.integration_deleted_default"}
 	ErrorsIntegrationInvalid                    = ID{key: "errors.integration_invalid"}
 	ErrorsIntegrationKindMismatch               = ID{key: "errors.integration_kind_mismatch"}
 	ErrorsIntegrationNotFound                   = ID{key: "errors.integration_not_found"}
@@ -269,6 +271,7 @@ var (
 	ErrorsSecondFactorRequired                  = ID{key: "errors.second_factor_required"}
 	ErrorsSecondFactorResetNothing              = ID{key: "errors.second_factor_reset_nothing"}
 	ErrorsSecondFactorResetSelf                 = ID{key: "errors.second_factor_reset_self"}
+	ErrorsSegmentArchived                       = ID{key: "errors.segment_archived"}
 	ErrorsSegmentConditionInvalid               = ID{key: "errors.segment_condition_invalid"}
 	ErrorsSegmentInvalid                        = ID{key: "errors.segment_invalid"}
 	ErrorsSegmentNotFound                       = ID{key: "errors.segment_not_found"}
@@ -286,9 +289,8 @@ var (
 	ErrorsSendingSourceTelegram                 = ID{key: "errors.sending_source_telegram"}
 	ErrorsSigninPendingGone                     = ID{key: "errors.signin_pending_gone"}
 	ErrorsSigninProviderUnknown                 = ID{key: "errors.signin_provider_unknown"}
-	ErrorsSignupItemArchiveMailings             = ID{key: "errors.signup_item_archive_mailings"}
+	ErrorsSignupItemDeleteMailings              = ID{key: "errors.signup_item_delete_mailings"}
 	ErrorsSignupItemKeyTaken                    = ID{key: "errors.signup_item_key_taken"}
-	ErrorsSignupItemMailingsArchived            = ID{key: "errors.signup_item_mailings_archived"}
 	ErrorsSignupItemMailingsKind                = ID{key: "errors.signup_item_mailings_kind"}
 	ErrorsSignupItemMailingsTaken               = ID{key: "errors.signup_item_mailings_taken"}
 	ErrorsSignupItemNotFound                    = ID{key: "errors.signup_item_not_found"}

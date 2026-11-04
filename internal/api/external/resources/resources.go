@@ -136,8 +136,6 @@ type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
@@ -182,8 +180,6 @@ type Converter interface {
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// goverter:useEmptyOnNil:slice
 	ApiTokensToInfos(source []*ent.ApiToken) []externalapi.ApiTokenInfo
-	// The contract names the discarded state \"archived\" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []externalapi.SegmentResource
@@ -214,9 +210,7 @@ type Converter interface {
 	StartLinkToResource(source bindings.StartLink) externalapi.TelegramStartLinkResource
 	// goverter:useEmptyOnNil:slice
 	TagsToResources(source []*ent.Tag) []externalapi.TagResource
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the
-	// draft are the edges the automations module loads (ADR 0065).
-	// goverter:map DiscardedAt ArchivedAt
+	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
@@ -246,7 +240,6 @@ type Converter interface {
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
 	// goverter:ignore ProviderLimit
-	// goverter:map DiscardedAt DeletedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
 
 	// A Captured message names its From as the contract does, and the nullable parts as null.
@@ -294,9 +287,7 @@ type Converter interface {
 	// goverter:ignore SendCap
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
 
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
-	// are the edges the rules module loads (ADR 0065).
-	// goverter:map DiscardedAt DeletedAt
+	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) externalapi.RuleResource
@@ -334,8 +325,6 @@ type Converter interface {
 	// goverter:ignore DkimRecord
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
-	// The contract names the discarded state "archived" (ADR 0049).
-	// goverter:map DiscardedAt DeletedAt
 	// goverter:map . Verified | sendingDomainVerified
 	SendingDomainToResource(source *ent.SendingDomain) externalapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType

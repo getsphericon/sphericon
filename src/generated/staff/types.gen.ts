@@ -589,7 +589,7 @@ export type StaffSignupItemList = {
 };
 
 /**
- * The new order of the sign-up form: the id of every Sign-up item, archived ones included, each
+ * The new order of the sign-up form: the id of every Sign-up item that is not deleted, each
  * once
  */
 export type StaffSignupItemOrder = {
@@ -632,10 +632,11 @@ export type StaffSignupItemResource = {
    */
   currentVersion?: StaffLegalDocumentVersion;
   /**
-   * When the item was archived, absent while it is in use. An archived item is no longer asked
-   * and its public page is gone; its published versions stay.
+   * When the item was deleted, absent while it is in use. A deleted item is no longer asked or
+   * listed, its public page is gone and it cannot be changed; its published versions and Users'
+   * answers stay, and it is still read by id.
    */
-  archivedAt?: Timestamp;
+  discardedAt?: Timestamp;
   /**
    * Creation timestamp
    */
@@ -680,8 +681,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -695,8 +695,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**
@@ -1126,6 +1125,45 @@ export type StaffSignupItemsReorderResponses = {
 
 export type StaffSignupItemsReorderResponse = StaffSignupItemsReorderResponses[keyof StaffSignupItemsReorderResponses];
 
+export type StaffSignupItemsDeleteData = {
+  body?: never;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/signup-items/{id}';
+};
+
+export type StaffSignupItemsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffSignupItemsDeleteError = StaffSignupItemsDeleteErrors[keyof StaffSignupItemsDeleteErrors];
+
+export type StaffSignupItemsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type StaffSignupItemsDeleteResponse = StaffSignupItemsDeleteResponses[keyof StaffSignupItemsDeleteResponses];
+
 export type StaffSignupItemsGetData = {
   body?: never;
   path: {
@@ -1199,45 +1237,6 @@ export type StaffSignupItemsUpdateResponses = {
 };
 
 export type StaffSignupItemsUpdateResponse = StaffSignupItemsUpdateResponses[keyof StaffSignupItemsUpdateResponses];
-
-export type StaffSignupItemsArchiveData = {
-  body?: never;
-  path: {
-    id: EntityId;
-  };
-  query?: never;
-  url: '/signup-items/{id}/archive';
-};
-
-export type StaffSignupItemsArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-};
-
-export type StaffSignupItemsArchiveError = StaffSignupItemsArchiveErrors[keyof StaffSignupItemsArchiveErrors];
-
-export type StaffSignupItemsArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: StaffSignupItemResource;
-};
-
-export type StaffSignupItemsArchiveResponse = StaffSignupItemsArchiveResponses[keyof StaffSignupItemsArchiveResponses];
 
 export type StaffSignupItemsSaveDraftData = {
   body: StaffLegalDocumentDraftInput;

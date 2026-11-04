@@ -280,7 +280,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
 		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
-		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -410,7 +410,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
-		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiBroadcastResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -954,7 +954,7 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		// externalapiIntegrationResource.Params: ignore
 		// externalapiIntegrationResource.SecretsRetiring: ignore
 		// externalapiIntegrationResource.HookUrl: ignore
-		externalapiIntegrationResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiIntegrationResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1230,7 +1230,7 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 		externalapiRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
 		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
-		externalapiRuleResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1269,7 +1269,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 		externalapiSegmentResource.ID = external.EntityId((*source).ID)
 		externalapiSegmentResource.Name = (*source).Name
 		externalapiSegmentResource.Condition = segmentCondition((*source).Condition)
-		externalapiSegmentResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiSegmentResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1325,7 +1325,7 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
-		externalapiSendingDomainResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		externalapiSendingDomainResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

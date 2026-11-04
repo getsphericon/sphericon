@@ -361,8 +361,8 @@ func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params
 // SiteAutomationsArchive implements SiteAutomations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-// (`usedBy` carries their count).
+// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+// an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (r SiteAutomationsArchiveRes, _ error) {
@@ -380,19 +380,10 @@ func (UnimplementedHandler) SiteAutomationsCreate(ctx context.Context, req *Site
 
 // SiteAutomationsDeactivate implements SiteAutomations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments).
+// Deactivate an automation (stops new enrollments). 409 when it is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/deactivate
 func (UnimplementedHandler) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (r SiteAutomationsDeactivateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteAutomationsDelete implements SiteAutomations_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/automations/{id}
-func (UnimplementedHandler) SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (r SiteAutomationsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -429,7 +420,7 @@ func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params Site
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused.
+// refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (r SiteAutomationsPublishRes, _ error) {
@@ -438,7 +429,8 @@ func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params S
 
 // SiteAutomationsRevert implements SiteAutomations_revert operation.
 //
-// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+// 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
 func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (r SiteAutomationsRevertRes, _ error) {
@@ -447,7 +439,8 @@ func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params Si
 
 // SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+// again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (r SiteAutomationsUnarchiveRes, _ error) {
@@ -456,7 +449,8 @@ func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params
 
 // SiteAutomationsUpdate implements SiteAutomations_update operation.
 //
-// Update a resource from the site UI.
+// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+// archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
 func (UnimplementedHandler) SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (r SiteAutomationsUpdateRes, _ error) {
@@ -507,8 +501,9 @@ func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params S
 
 // SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r SiteBroadcastsArchiveRes, _ error) {
@@ -521,15 +516,6 @@ func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params Si
 //
 // POST /workspaces/{workspaceId}/broadcasts
 func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (r SiteBroadcastsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteBroadcastsDelete implements SiteBroadcasts_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-func (UnimplementedHandler) SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (r SiteBroadcastsDeleteRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -557,7 +543,7 @@ func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteB
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused.
+// scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r SiteBroadcastsScheduleRes, _ error) {
@@ -567,7 +553,7 @@ func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *Sch
 // SiteBroadcastsSend implements SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused.
+// resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (r SiteBroadcastsSendRes, _ error) {
@@ -590,7 +576,7 @@ func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *Tes
 
 // SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (r SiteBroadcastsUnarchiveRes, _ error) {
@@ -899,7 +885,8 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 // SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 //
 // Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
@@ -908,7 +895,7 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 
 // SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 //
-// Update an integration. Owners and admins only.
+// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
 func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {
@@ -985,7 +972,7 @@ func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params Si
 // SiteLegalDocumentsGet implements SiteLegalDocuments_get operation.
 //
 // The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
-// unknown or archived item and for one with no published version. Answered while an acceptance is
+// unknown or deleted item and for one with no published version. Answered while an acceptance is
 // pending, for the screen that shows the new texts (ADR 0062).
 //
 // GET /legal-documents/{key}
@@ -995,7 +982,7 @@ func (UnimplementedHandler) SiteLegalDocumentsGet(ctx context.Context, params Si
 
 // SiteLegalDocumentsSignupItems implements SiteLegalDocuments_signupItems operation.
 //
-// The Sign-up items in effect: those not archived that have a published version, with that version's
+// The Sign-up items in effect: those not deleted that have a published version, with that version's
 // label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
 //
 // GET /signup-items
@@ -1063,7 +1050,7 @@ func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOA
 
 // SiteOptionalConsentsList implements SiteOptionalConsents_list operation.
 //
-// The optional consents in effect (not archived, with a published version) and the User's current
+// The optional consents in effect (not deleted, with a published version) and the User's current
 // answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
 // A required acceptance and a notice are not listed: they are not the User's to change.
 //
@@ -1558,7 +1545,8 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 // SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 //
 // Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-// returned domain are the outcome. Owners and admins only.
+// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r SiteSendingDomainsVerifyRes, _ error) {

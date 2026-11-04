@@ -172,7 +172,9 @@ type Module struct {
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
 	m := &Module{cipher: cipher, bus: bus}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
-		NotFound:         ErrNotFound,
+		NotFound: ErrNotFound,
+		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
+		Archived:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
 	})
@@ -282,7 +284,7 @@ func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.Rul
 	return publishable(ctx, ts, draft)
 }
 
-// Archivable never refuses: Delete discards a Rule with Firings, which are history and stay.
+// Archivable never refuses: a Rule is discarded, never archived (ADR 0100), so it is never asked.
 func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
 
 // Editable refuses a deleted Rule: it is kept for its Firings and changes no more.
@@ -403,16 +405,12 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 	return lo.Compact([]*ent.RuleVersion{live, draft})
 }
 
-// Delete removes a Rule (ADR 0049, ADR 0098). One with no Firings is purged, with its versions.
-// One with Firings is discarded so they stay as history: it is deactivated under the lock Publish
-// takes, so it never fires again, and it leaves the lists for good; Get still reads it. Deleting a
-// deleted Rule changes nothing.
+// Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
+// internal/drafts' Discard: it is deactivated under the lock Publish takes, so it never fires
+// again, and it leaves the lists for good with its versions and Firings kept; Get still reads it.
+// Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
-	if err != nil || n > 0 {
-		return err
-	}
-	_, err = m.life.Archive(ctx, s, id)
+	_, err := m.life.Discard(ctx, s, id)
 	return err
 }
 
@@ -761,10 +759,26 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 }
 
 // fire writes the Firing of the Rule version for the Event and queues its Actions job in the same
-// transaction. It returns nil when the Rule already fired for this Event.
+// transaction. It returns nil when the Rule already fired for this Event, and when, by the time the
+// Firing is written, the Rule no longer fires on v for it: Evaluate read the Rule before this
+// transaction, so a Delete, a Deactivate or a Publish may have landed since. It share-locks the
+// Rule's row and checks it again under the lock: those moves lock the row exclusively, so each has
+// either committed before the check or waits for the Firing (ADR 0098, ADR 0099).
 func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (*ent.RuleFiring, error) {
 	var fired *ent.RuleFiring
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		still, err := ts.Rule().Query().
+			Where(
+				rule.ID(v.RuleID),
+				rule.StatusEQ(rule.StatusActive),
+				rule.ActivatedAtLTE(ev.RecordedAt),
+				rule.LiveVersionID(v.ID),
+			).
+			ForShare().
+			IDs(ctx)
+		if err != nil || len(still) == 0 {
+			return err
+		}
 		// Check first so a redelivered Event does not trip the unique index (a violation would
 		// poison the transaction); the index stays as the race safety net.
 		exists, err := ts.RuleFiring().Query().
@@ -900,25 +914,27 @@ func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) er
 	return nil
 }
 
-// EnrollingInto returns the kept Rules whose live version or draft has an Action enrolling
-// Contacts in the Automation. A removal of the Automation is refused while there are any (ADR
-// 0049, ADR 0054; spec #767, "In use").
-func EnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
-	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
+// ActiveEnrollingInto returns the active Rules whose live version has an Action enrolling Contacts
+// in the Automation, in id order: Live use of the Automation, which refuses its Archive (ADR 0099,
+// ADR 0100). A draft enrolls nobody until it is published, and Publish refuses an archived
+// Automation, so neither a draft nor an inactive Rule counts.
+func ActiveEnrollingInto(ctx context.Context, s *ent.Scoped, automationID int64) ([]*ent.Rule, error) {
+	active, err := s.Rule().Query().
+		Where(rule.StatusEQ(rule.StatusActive), rule.HasLiveVersion()).
+		WithLiveVersion().
+		Order(ent.Asc(rule.FieldID)).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var using []*ent.Rule
-	for _, r := range kept {
-		for _, v := range versions(r) {
-			actions, err := DecodeActions(v.Actions)
-			if err != nil {
-				return nil, err
-			}
-			if slices.ContainsFunc(actions, func(a Action) bool { return a.EnrollsInto(automationID) }) {
-				using = append(using, r)
-				break
-			}
+	for _, r := range active {
+		actions, err := DecodeActions(r.Edges.LiveVersion.Actions)
+		if err != nil {
+			return nil, err
+		}
+		if slices.ContainsFunc(actions, func(a Action) bool { return a.EnrollsInto(automationID) }) {
+			using = append(using, r)
 		}
 	}
 	return using, nil

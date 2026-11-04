@@ -153,7 +153,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 4}}'
-# Archived (ADR 0049): a sent broadcast that was discarded. It has no recipients, so it adds
+# Archived (ADR 0100): a sent broadcast put aside. It has no recipients, so it adds
 # nothing to the analytics figures.
 - id: 107 # fixture: BroadcastArchived
   name: Old product tour
@@ -163,7 +163,7 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 40}}'
-  discarded_at: '{{daysAgo 5}}'
+  archived_at: '{{daysAgo 5}}'
   segment_id: 106
   workspace_id: 1
   created_at: '{{daysAgo 41}}'
@@ -221,6 +221,18 @@
   from_name: CodeBasics
   from_email: hello@lost.acme.com
   body: '<p>Lorem ipsum learning content.</p>'
+  status: draft
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
+# A Telegram draft that names no Integration: once scheduled it sends through the Telegram
+# default, never the email one (ADR 0099).
+- id: 112 # fixture: BroadcastTelegramDraft
+  name: Telegram course news
+  channel: telegram
+  text: 'The SQL course is live'
+  buttons: '[]'
   status: draft
   workspace_id: 1
   created_at: '{{daysAgo 2}}'

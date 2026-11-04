@@ -151,15 +151,24 @@ func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
 	assert.Equal(t, automation.StatusActive, stored.Status)
 }
 
-func TestDeleteRemovesTheAutomation(t *testing.T) {
+// An Automation is archived, never deleted (ADR 0100): a never-published one too. It is still read
+// by id, and archiving it again changes nothing.
+func TestArchiveKeepsANeverPublishedAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID))
-	_, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID)
-	require.ErrorIs(t, err, automations.ErrNotFound)
-	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWinBackID), automations.ErrNotFound, "deleting twice")
+	archived, err := m.Archive(ctx, s, fixtures.AutomationWinBackID)
+	require.NoError(t, err)
+	again, err := m.Archive(ctx, s, fixtures.AutomationWinBackID)
+	require.NoError(t, err)
+	kept, err := m.Get(ctx, s, fixtures.AutomationWinBackID)
+	require.NoError(t, err)
+
+	assert.NotNil(t, archived.ArchivedAt)
+	assert.Equal(t, archived.ArchivedAt, again.ArchivedAt, "archiving twice")
+	assert.Equal(t, archived.ArchivedAt, kept.ArchivedAt)
 }
 
 // Every operation is workspace-scoped: another tenant's id is "not found" and the
@@ -180,7 +189,8 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Revert(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID), automations.ErrNotFound)
+	_, err = m.Archive(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 
 	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), 999999)
 	require.ErrorIs(t, err, automations.ErrNotFound, "an unknown id")
@@ -191,8 +201,8 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	assert.Equal(t, automation.StatusInactive, stored.Status)
 }
 
-// An archived Automation enrolls nobody, so it is neither published nor deactivated: both are
-// "not found" until it is restored, and change nothing.
+// An archived Automation is read-only until it is unarchived (ADR 0100): Publish and Deactivate
+// are refused as archived (409), and change nothing.
 func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
@@ -204,9 +214,9 @@ func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = m.Publish(ctx, acme, fixtures.AutomationNotifySlackID)
-	require.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrArchived)
 	_, err = m.Deactivate(ctx, acme, fixtures.AutomationNotifySlackID)
-	require.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrArchived)
 
 	after, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
@@ -236,7 +246,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	drafted := using()
 	assert.ElementsMatch(t, []string{fixtures.AutomationWinBackName, fixtures.AutomationTagOnEngagementName}, drafted, "a draft names it too")
 
-	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationTagOnEngagementID))
+	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationTagOnEngagementID))
 	archived := using()
 	assert.Equal(t, []string{fixtures.AutomationWinBackName}, archived, "an archived Automation uses nothing")
 }

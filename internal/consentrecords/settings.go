@@ -15,7 +15,7 @@ import (
 
 // The refusals of a change in account settings.
 var (
-	// ErrNotInEffect: the item is unknown, archived or has no published version.
+	// ErrNotInEffect: the item is unknown, deleted or has no published version.
 	ErrNotInEffect = validation.NotFound("consentrecords: item not in effect", i18n.ErrorsOptionalConsentNotFound)
 	// ErrNotOptional: a required acceptance or a notice is not the User's to change.
 	ErrNotOptional = validation.Refuse("consentrecords: not an optional consent", i18n.ErrorsOptionalConsentNotOptional)

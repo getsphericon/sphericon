@@ -247,7 +247,7 @@ func TestLicenseKeyStates(t *testing.T) {
 	}
 }
 
-func TestDKIMIsCheckedForEverySendingDomain(t *testing.T) {
+func TestDKIMIsCheckedForEveryKeptSendingDomain(t *testing.T) {
 	in := healthy(t)
 	r := doctor.Run(context.Background(), in)
 
@@ -299,6 +299,18 @@ func TestRedactorHidesEverySecretInBothFormats(t *testing.T) {
 	assert.NotContains(t, out.String(), "p@ss")
 	assert.Contains(t, out.String(), "[redacted]")
 	assert.Contains(t, out.String(), "abc", "a value under four characters is left alone")
+}
+
+// A deleted Sending domain is not kept working (ADR 0099): once the owner removes its records,
+// the check would otherwise fail for ever.
+func TestADeletedSendingDomainIsLeftOutOfTheDKIMCheck(t *testing.T) {
+	in := healthy(t)
+
+	r := doctor.Run(context.Background(), in)
+
+	names := lo.Map(r.Checks, func(c doctor.Check, _ int) string { return c.Name })
+	assert.Contains(t, names, "dkim mail.acme.com")
+	assert.NotContains(t, names, "dkim old.acme.com")
 }
 
 func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {

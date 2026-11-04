@@ -8,6 +8,7 @@ import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { SegmentForm } from './SegmentForm.tsx'
 import type { SegmentValues } from './SegmentForm.tsx'
 
@@ -41,6 +42,10 @@ const segmentResource = defineResource({
     to: segmentsEditRoute.to,
     params: { workspaceId, segmentId: created.id },
   }),
+  readOnlyTarget: (loaded, { workspaceId, id }) =>
+    loaded.archivedAt
+      ? { to: segmentsDetailRoute.to, params: { workspaceId, segmentId: id } }
+      : undefined,
 })
 
 // Function declarations (hoisted) because the route files and this module import each other.

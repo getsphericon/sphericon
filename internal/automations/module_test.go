@@ -26,7 +26,8 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 
 	_, err = m.Publish(ctx, acme, fixtures.AutomationGlobexID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	require.ErrorIs(t, m.Delete(ctx, acme, fixtures.AutomationGlobexID), automations.ErrNotFound)
+	_, err = m.Archive(ctx, acme, fixtures.AutomationGlobexID)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 
 	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", TriggerEvent: "contact.created"})
 	require.NoError(t, err)

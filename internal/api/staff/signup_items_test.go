@@ -115,7 +115,7 @@ func unprocessable(t *testing.T, res any) staffapi.ProblemDetails {
 		return staffapi.ProblemDetails(*p)
 	case *staffapi.StaffSignupItemsReorderUnprocessableEntity:
 		return staffapi.ProblemDetails(*p)
-	case *staffapi.StaffSignupItemsArchiveUnprocessableEntity:
+	case *staffapi.StaffSignupItemsDeleteUnprocessableEntity:
 		return staffapi.ProblemDetails(*p)
 	}
 	require.Failf(t, "not a 422", "got %T", res)

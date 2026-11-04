@@ -81,9 +81,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "automation.delete":
 		return nil
-	case "automation.discard":
+	case "automation.archive":
 		return nil
-	case "automation.restore":
+	case "automation.unarchive":
 		return nil
 	case "brand_kit.create":
 		return nil
@@ -97,9 +97,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "broadcast.delete":
 		return nil
-	case "broadcast.discard":
+	case "broadcast.archive":
 		return nil
-	case "broadcast.restore":
+	case "broadcast.unarchive":
 		return nil
 	case "contact.create":
 		return nil
@@ -133,8 +133,6 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "integration.discard":
 		return nil
-	case "integration.restore":
-		return nil
 	case "join_domain.create":
 		return nil
 	case "join_domain.update":
@@ -149,17 +147,15 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "rule.discard":
 		return nil
-	case "rule.restore":
-		return nil
 	case "segment.create":
 		return nil
 	case "segment.update":
 		return nil
 	case "segment.delete":
 		return nil
-	case "segment.discard":
+	case "segment.archive":
 		return nil
-	case "segment.restore":
+	case "segment.unarchive":
 		return nil
 	case "sending_domain.create":
 		return nil
@@ -168,8 +164,6 @@ func (s AuditAction) Validate() error {
 	case "sending_domain.delete":
 		return nil
 	case "sending_domain.discard":
-		return nil
-	case "sending_domain.restore":
 		return nil
 	case "tag.create":
 		return nil

@@ -66,8 +66,8 @@ model SendingDomainResource {
   /** When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since) */
   verificationLostAt?: Timestamp | null;
 
-  /** When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id. */
-  deletedAt?: Timestamp | null;
+  /** When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id. */
+  discardedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -134,7 +134,7 @@ interface SendingDomains {
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Update a resource */
+  /** Update a Sending domain; a deleted one is read-only and answers 404 */
   @updatesResource(SendingDomainResource)
   @put
   @autoRoute
@@ -166,7 +166,7 @@ interface SendingDomains {
     | NotFoundProblem
     | InUseProblem;
 
-  /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
+  /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404). */
   @action("verify")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])

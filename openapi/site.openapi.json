@@ -1683,7 +1683,7 @@
     "/legal-documents/{key}": {
       "get": {
         "operationId": "SiteLegalDocuments_get",
-        "description": "The current version of a Sign-up item's Legal document, for its public page. Public. 404\nfor an unknown or archived item and for one with no published version. Answered while an\nacceptance is pending, for the screen that shows the new texts (ADR 0062).",
+        "description": "The current version of a Sign-up item's Legal document, for its public page. Public. 404\nfor an unknown or deleted item and for one with no published version. Answered while an\nacceptance is pending, for the screen that shows the new texts (ADR 0062).",
         "parameters": [
           {
             "name": "key",
@@ -2314,7 +2314,7 @@
     "/me/optional-consents": {
       "get": {
         "operationId": "SiteOptionalConsents_list",
-        "description": "The optional consents in effect (not archived, with a published version) and the User's\ncurrent answer to each. They belong to the User, so no Workspace is read. Empty when the\nInstance has none. A required acceptance and a notice are not listed: they are not the User's\nto change.",
+        "description": "The optional consents in effect (not deleted, with a published version) and the User's\ncurrent answer to each. They belong to the User, so no Workspace is read. Empty when the\nInstance has none. A required acceptance and a notice are not listed: they are not the User's\nto change.",
         "parameters": [],
         "responses": {
           "200": {
@@ -3680,7 +3680,7 @@
     "/signup-items": {
       "get": {
         "operationId": "SiteLegalDocuments_signupItems",
-        "description": "The Sign-up items in effect: those not archived that have a published version, with that\nversion's label. Public; empty when the Instance has none. Answered while an acceptance\nis pending (ADR 0062).",
+        "description": "The Sign-up items in effect: those not deleted that have a published version, with that\nversion's label. Public; empty when the Instance has none. Answered while an acceptance\nis pending (ADR 0062).",
         "parameters": [],
         "responses": {
           "200": {
@@ -5553,7 +5553,7 @@
       },
       "put": {
         "operationId": "SiteAutomations_update",
-        "description": "Update a resource from the site UI",
+        "description": "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5593,6 +5593,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -5616,61 +5626,12 @@
           }
         },
         "x-required-permissions": []
-      },
-      "delete": {
-        "operationId": "SiteAutomations_delete",
-        "description": "Delete a resource from the site UI",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InUseProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Automations"],
-        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/archive": {
       "post": {
         "operationId": "SiteAutomations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and\nkeeps its enrollments. It can be restored, inactive. Refused with 409 while it has active\nenrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and\nkeeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active\nenrollments or an active rule enrolls contacts in it (`usedBy` names them).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5728,7 +5689,7 @@
     "/workspaces/{workspaceId}/automations/{id}/deactivate": {
       "post": {
         "operationId": "SiteAutomations_deactivate",
-        "description": "Deactivate an automation (stops new enrollments)",
+        "description": "Deactivate an automation (stops new enrollments). 409 when it is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5767,6 +5728,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Automations"],
@@ -5776,7 +5747,7 @@
     "/workspaces/{workspaceId}/automations/{id}/publish": {
       "post": {
         "operationId": "SiteAutomations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when any send step of the version\ngoing live sends through an integration that cannot send (disabled, archived, of another\nchannel, or no default for the step's channel): a draft may name such an integration, only\npublishing it is refused.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither. 409 when any send step of the version\ngoing live sends through an integration that cannot send (disabled, archived, of another\nchannel, or no default for the step's channel): a draft may name such an integration, only\npublishing it is refused. 409 for an archived automation too.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5844,7 +5815,7 @@
     "/workspaces/{workspaceId}/automations/{id}/revert": {
       "post": {
         "operationId": "SiteAutomations_revert",
-        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5884,6 +5855,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -5902,7 +5883,7 @@
     "/workspaces/{workspaceId}/automations/{id}/unarchive": {
       "post": {
         "operationId": "SiteAutomations_unarchive",
-        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
+        "description": "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -6462,6 +6443,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -6485,61 +6476,12 @@
           }
         },
         "x-required-permissions": []
-      },
-      "delete": {
-        "operationId": "SiteBroadcasts_delete",
-        "description": "Delete a resource from the site UI",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Broadcasts"],
-        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/archive": {
       "post": {
         "operationId": "SiteBroadcasts_archive",
-        "description": "Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and\nfigures, and can be restored. A draft is deleted and a scheduled or sending broadcast\ncannot be archived (422).",
+        "description": "Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and\nfigures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot\nbe archived (409). Archiving an archived broadcast changes nothing.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6579,8 +6521,8 @@
               }
             }
           },
-          "422": {
-            "description": "RFC 7807 validation response",
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6597,7 +6539,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
-        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.",
+        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6675,7 +6617,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/send": {
       "post": {
         "operationId": "SiteBroadcasts_send",
-        "description": "Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused.",
+        "description": "Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -6707,6 +6649,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6845,7 +6797,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/unarchive": {
       "post": {
         "operationId": "SiteBroadcasts_unarchive",
-        "description": "Restore an archived broadcast to the list",
+        "description": "Bring an archived broadcast back to the list, in the status it had",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -9090,7 +9042,7 @@
       },
       "put": {
         "operationId": "SiteIntegrations_update",
-        "description": "Update an integration. Owners and admins only.",
+        "description": "Update an integration; a deleted one is read-only and answers 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -9237,7 +9189,7 @@
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "SiteIntegrations_regenerateKey",
-        "description": "Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.",
+        "description": "Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
@@ -11482,6 +11434,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -12003,7 +11965,7 @@
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SiteSendingDomains_verify",
-        "description": "Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of\nthe returned domain are the outcome. Owners and admins only.",
+        "description": "Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of\nthe returned domain are the outcome; a deleted domain is never checked again (404). Owners and\nadmins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
@@ -14813,16 +14775,16 @@
           "automation.create",
           "automation.update",
           "automation.delete",
-          "automation.discard",
-          "automation.restore",
+          "automation.archive",
+          "automation.unarchive",
           "brand_kit.create",
           "brand_kit.update",
           "brand_kit.delete",
           "broadcast.create",
           "broadcast.update",
           "broadcast.delete",
-          "broadcast.discard",
-          "broadcast.restore",
+          "broadcast.archive",
+          "broadcast.unarchive",
           "contact.create",
           "contact.update",
           "contact.delete",
@@ -14839,7 +14801,6 @@
           "integration.update",
           "integration.delete",
           "integration.discard",
-          "integration.restore",
           "join_domain.create",
           "join_domain.update",
           "join_domain.delete",
@@ -14847,17 +14808,15 @@
           "rule.update",
           "rule.delete",
           "rule.discard",
-          "rule.restore",
           "segment.create",
           "segment.update",
           "segment.delete",
-          "segment.discard",
-          "segment.restore",
+          "segment.archive",
+          "segment.unarchive",
           "sending_domain.create",
           "sending_domain.update",
           "sending_domain.delete",
           "sending_domain.discard",
-          "sending_domain.restore",
           "tag.create",
           "tag.update",
           "tag.delete",
@@ -18588,7 +18547,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived."
+            "description": "When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived."
           },
           "createdAt": {
             "allOf": [
@@ -20630,7 +20589,7 @@
             "type": "string",
             "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -20638,7 +20597,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none)."
+            "description": "When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks (a Telegram bot's webhook is removed, so Telegram sends it none)."
           },
           "createdAt": {
             "allOf": [
@@ -22289,7 +22248,7 @@
             "nullable": true,
             "description": "When the Rule last became active by Publish. It acts only on Events recorded after it."
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -22297,7 +22256,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id only and changes no more."
+            "description": "When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept."
           },
           "createdAt": {
             "allOf": [
@@ -22724,7 +22683,7 @@
             "nullable": true,
             "description": "When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or verified again since)"
           },
-          "deletedAt": {
+          "discardedAt": {
             "type": "string",
             "allOf": [
               {
@@ -22732,7 +22691,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id."
+            "description": "When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id."
           },
           "createdAt": {
             "allOf": [
@@ -24944,14 +24903,14 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its Enrollments; a `message` entry names it and counts its\nsent Outbound messages."
+            "description": "How many rows the entry stands for; absent means one. An `enrollment` entry names the\nAutomation (id, name) and counts its active Enrollments."
           }
         },
         "description": "A row that uses the one a removal was refused for: what a client shows to say what to\nchange first"
       },
       "UsedByKind": {
         "type": "string",
-        "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "message"],
+        "enum": ["broadcast", "automation", "segment", "rule", "enrollment"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
       },
       "UserName": {

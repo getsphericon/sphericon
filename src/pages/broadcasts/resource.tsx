@@ -17,6 +17,7 @@ import { defineResource } from '../../resources/defineResource.tsx'
 import type { ResourceFormSchema, ResourceValues } from '../../resources/resourceFormSchema.ts'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { BroadcastForm } from './BroadcastForm.tsx'
 import type { BroadcastValues } from './BroadcastForm.tsx'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
@@ -142,6 +143,10 @@ const broadcastResource = defineResource({
     to: broadcastsEditRoute.to,
     params: { workspaceId, broadcastId: created.id },
   }),
+  readOnlyTarget: (loaded, { workspaceId, id }) =>
+    loaded.archivedAt
+      ? { to: broadcastsReportRoute.to, params: { workspaceId, broadcastId: id } }
+      : undefined,
 })
 
 // Function declarations (hoisted) because the route files and this module import each other.

@@ -99,10 +99,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionAutomationUpdate
 	case AuditActionAutomationDelete:
 		*s = AuditActionAutomationDelete
-	case AuditActionAutomationDiscard:
-		*s = AuditActionAutomationDiscard
-	case AuditActionAutomationRestore:
-		*s = AuditActionAutomationRestore
+	case AuditActionAutomationArchive:
+		*s = AuditActionAutomationArchive
+	case AuditActionAutomationUnarchive:
+		*s = AuditActionAutomationUnarchive
 	case AuditActionBrandKitCreate:
 		*s = AuditActionBrandKitCreate
 	case AuditActionBrandKitUpdate:
@@ -115,10 +115,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionBroadcastUpdate
 	case AuditActionBroadcastDelete:
 		*s = AuditActionBroadcastDelete
-	case AuditActionBroadcastDiscard:
-		*s = AuditActionBroadcastDiscard
-	case AuditActionBroadcastRestore:
-		*s = AuditActionBroadcastRestore
+	case AuditActionBroadcastArchive:
+		*s = AuditActionBroadcastArchive
+	case AuditActionBroadcastUnarchive:
+		*s = AuditActionBroadcastUnarchive
 	case AuditActionContactCreate:
 		*s = AuditActionContactCreate
 	case AuditActionContactUpdate:
@@ -151,8 +151,6 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionIntegrationDelete
 	case AuditActionIntegrationDiscard:
 		*s = AuditActionIntegrationDiscard
-	case AuditActionIntegrationRestore:
-		*s = AuditActionIntegrationRestore
 	case AuditActionJoinDomainCreate:
 		*s = AuditActionJoinDomainCreate
 	case AuditActionJoinDomainUpdate:
@@ -167,18 +165,16 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionRuleDelete
 	case AuditActionRuleDiscard:
 		*s = AuditActionRuleDiscard
-	case AuditActionRuleRestore:
-		*s = AuditActionRuleRestore
 	case AuditActionSegmentCreate:
 		*s = AuditActionSegmentCreate
 	case AuditActionSegmentUpdate:
 		*s = AuditActionSegmentUpdate
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
 	case AuditActionSendingDomainUpdate:
@@ -187,8 +183,6 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionSendingDomainDelete
 	case AuditActionSendingDomainDiscard:
 		*s = AuditActionSendingDomainDiscard
-	case AuditActionSendingDomainRestore:
-		*s = AuditActionSendingDomainRestore
 	case AuditActionTagCreate:
 		*s = AuditActionTagCreate
 	case AuditActionTagUpdate:

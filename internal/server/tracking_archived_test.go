@@ -25,7 +25,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
 
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Discard(ctx, b.ID))
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Archive(ctx, b.ID))
 	token, err := tr.Token(fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
 

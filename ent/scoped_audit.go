@@ -208,7 +208,7 @@ var AutomationAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the Automation to its value.
 func (e *Automation) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at":     derefAudit(e.DiscardedAt),
+		"archived_at":      derefAudit(e.ArchivedAt),
 		"status":           e.Status,
 		"activated_at":     derefAudit(e.ActivatedAt),
 		"live_version_id":  derefAudit(e.LiveVersionID),
@@ -328,7 +328,7 @@ var BroadcastAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the Broadcast to its value.
 func (e *Broadcast) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at":       derefAudit(e.DiscardedAt),
+		"archived_at":        derefAudit(e.ArchivedAt),
 		"name":               e.Name,
 		"channel":            e.Channel,
 		"subject":            derefAudit(e.Subject),
@@ -851,9 +851,9 @@ var SegmentAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the Segment to its value.
 func (e *Segment) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at": derefAudit(e.DiscardedAt),
-		"name":         e.Name,
-		"condition":    derefAudit(e.Condition),
+		"archived_at": derefAudit(e.ArchivedAt),
+		"name":        e.Name,
+		"condition":   derefAudit(e.Condition),
 	}
 }
 

@@ -99,7 +99,7 @@ export function RuleDetailPage() {
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group>
           <Title order={4}>{rule.name}</Title>
-          {rule.deletedAt ? (
+          {rule.discardedAt ? (
             <Badge variant="light" color="red">
               {t(($) => $.rules.statusDeleted)}
             </Badge>
@@ -113,7 +113,7 @@ export function RuleDetailPage() {
         </Group>
         <Group gap="xs">
           {/* A deleted Rule is kept for its Firings and changes no more (ADR 0098). */}
-          {rule.deletedAt ? null : (
+          {rule.discardedAt ? null : (
             <>
               <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
               {rule.status === 'active' ? (

@@ -109,20 +109,6 @@ func TestExternalBroadcastsListPaginates(t *testing.T) {
 	assert.Greater(t, page.TotalPages, int32(2))
 }
 
-func TestExternalBroadcastsDeleteOnlyDrafts(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, authorScopes...)
-	ctx := context.Background()
-
-	out, err := c.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsDeleteNoContent{}, out)
-
-	out, err = c.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: sentBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsDeleteUnprocessableEntity{}, out, "a sent broadcast is history")
-}
-
 func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
@@ -213,9 +199,6 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	upd, err := readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateForbidden{}, upd)
-	del, err := readOnly.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsDeleteForbidden{}, del)
 	aud, err := readOnly.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
@@ -319,9 +302,9 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	upd, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("hijack")}, externalapi.BroadcastsUpdateParams{ID: foreignID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateNotFound{}, upd)
-	del, err := c.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: foreignID})
+	arch, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: foreignID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsDeleteNotFound{}, del)
+	assert.IsType(t, &externalapi.BroadcastsArchiveNotFound{}, arch)
 	rep, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: foreignID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsReportNotFound{}, rep)
@@ -354,7 +337,9 @@ func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 		&externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentArchivedID))},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, refused)
+	problem, ok := refused.(*externalapi.BroadcastsSetSegmentUnprocessableEntity)
+	require.Truef(t, ok, "got %T", refused)
+	assert.Contains(t, problem.Detail.Value, fixtures.SegmentArchivedName, "the refusal names the archived Segment")
 
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, before.SegmentID, after.SegmentID)

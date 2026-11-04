@@ -182,9 +182,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "automation.delete":
 		return nil
-	case "automation.discard":
+	case "automation.archive":
 		return nil
-	case "automation.restore":
+	case "automation.unarchive":
 		return nil
 	case "brand_kit.create":
 		return nil
@@ -198,9 +198,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "broadcast.delete":
 		return nil
-	case "broadcast.discard":
+	case "broadcast.archive":
 		return nil
-	case "broadcast.restore":
+	case "broadcast.unarchive":
 		return nil
 	case "contact.create":
 		return nil
@@ -234,8 +234,6 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "integration.discard":
 		return nil
-	case "integration.restore":
-		return nil
 	case "join_domain.create":
 		return nil
 	case "join_domain.update":
@@ -250,17 +248,15 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "rule.discard":
 		return nil
-	case "rule.restore":
-		return nil
 	case "segment.create":
 		return nil
 	case "segment.update":
 		return nil
 	case "segment.delete":
 		return nil
-	case "segment.discard":
+	case "segment.archive":
 		return nil
-	case "segment.restore":
+	case "segment.unarchive":
 		return nil
 	case "sending_domain.create":
 		return nil
@@ -269,8 +265,6 @@ func (s AuditAction) Validate() error {
 	case "sending_domain.delete":
 		return nil
 	case "sending_domain.discard":
-		return nil
-	case "sending_domain.restore":
 		return nil
 	case "tag.create":
 		return nil
@@ -3813,23 +3807,15 @@ func (s *SiteAutomationsDeactivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsDeactivateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsDeactivateNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAutomationsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAutomationsDeleteNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3981,6 +3967,14 @@ func (s *SiteAutomationsRevertBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteAutomationsRevertConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteAutomationsRevertNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4025,6 +4019,14 @@ func (s *SiteAutomationsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteAutomationsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4485,7 +4487,7 @@ func (s *SiteBroadcastsArchiveBadRequest) Validate() error {
 	return nil
 }
 
-func (s *SiteBroadcastsArchiveNotFound) Validate() error {
+func (s *SiteBroadcastsArchiveConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4493,7 +4495,7 @@ func (s *SiteBroadcastsArchiveNotFound) Validate() error {
 	return nil
 }
 
-func (s *SiteBroadcastsArchiveUnprocessableEntity) Validate() error {
+func (s *SiteBroadcastsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4518,30 +4520,6 @@ func (s *SiteBroadcastsCreateNotFound) Validate() error {
 }
 
 func (s *SiteBroadcastsCreateUnprocessableEntity) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteBroadcastsDeleteUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4682,6 +4660,14 @@ func (s *SiteBroadcastsSendBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteBroadcastsSendConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteBroadcastsSendNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4739,6 +4725,14 @@ func (s *SiteBroadcastsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteBroadcastsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBroadcastsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -11177,6 +11171,14 @@ func (s *SiteSegmentsUpdateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteSegmentsUpdateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSegmentsUpdateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -15342,8 +15344,6 @@ func (s UsedByKind) Validate() error {
 	case "rule":
 		return nil
 	case "enrollment":
-		return nil
-	case "message":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

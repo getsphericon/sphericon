@@ -28,12 +28,9 @@ const (
 	// Rule is a kept Rule that uses the row in its live version or its draft: through a Condition
 	// leaf or an Action.
 	Rule Kind = "rule"
-	// Enrollment stands for the Enrollments of an Automation: one User naming the
+	// Enrollment stands for the active Enrollments of an Automation: one User naming the
 	// Automation, with their Count.
 	Enrollment Kind = "enrollment"
-	// Message stands for the Outbound messages an Automation has sent: one User naming the
-	// Automation, with their Count.
-	Message Kind = "message"
 )
 
 // Subject is the row a refused removal was for.
@@ -41,7 +38,6 @@ type Subject string
 
 // The rows a removal can be refused for; the text reads "<subject> is in use by ...".
 const (
-	SubjectSegment       Subject = "segment"
 	SubjectTag           Subject = "tag"
 	SubjectIntegration   Subject = "integration"
 	SubjectSendingDomain Subject = "sending domain"
@@ -56,19 +52,14 @@ type User struct {
 	Kind Kind
 	ID   int64
 	Name string
-	// Count is how many rows an Enrollment or Message User stands for; every other kind is one row and
-	// leaves it zero.
+	// Count is how many rows an Enrollment User stands for; every other kind is one row and leaves
+	// it zero.
 	Count int
 }
 
 // Enrollments is the User that stands for count Enrollments of the Automation.
 func Enrollments(automationID int64, name string, count int) User {
 	return User{Kind: Enrollment, ID: automationID, Name: name, Count: count}
-}
-
-// Messages is the User that stands for count Outbound messages the Automation has sent.
-func Messages(automationID int64, name string, count int) User {
-	return User{Kind: Message, ID: automationID, Name: name, Count: count}
 }
 
 // Broadcasts maps Broadcasts to their Users, in the order given.

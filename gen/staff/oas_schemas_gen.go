@@ -2099,7 +2099,7 @@ func (s *StaffSignupItemList) SetItems(val []StaffSignupItemResource) {
 func (*StaffSignupItemList) staffSignupItemsListRes()    {}
 func (*StaffSignupItemList) staffSignupItemsReorderRes() {}
 
-// The new order of the sign-up form: the id of every Sign-up item, archived ones included, each once.
+// The new order of the sign-up form: the id of every Sign-up item that is not deleted, each once.
 // Ref: #/components/schemas/StaffSignupItemOrder
 type StaffSignupItemOrder struct {
 	Ids []EntityId `json:"ids"`
@@ -2133,9 +2133,10 @@ type StaffSignupItemResource struct {
 	Draft OptLegalDocumentMarkdown `json:"draft"`
 	// The version in effect, absent until one is published. Visitors see the item only once it has one.
 	CurrentVersion OptStaffLegalDocumentVersion `json:"currentVersion"`
-	// When the item was archived, absent while it is in use. An archived item is no longer asked and its
-	// public page is gone; its published versions stay.
-	ArchivedAt OptTimestamp `json:"archivedAt"`
+	// When the item was deleted, absent while it is in use. A deleted item is no longer asked or listed,
+	// its public page is gone and it cannot be changed; its published versions and Users' answers stay,
+	// and it is still read by id.
+	DiscardedAt OptTimestamp `json:"discardedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -2180,9 +2181,9 @@ func (s *StaffSignupItemResource) GetCurrentVersion() OptStaffLegalDocumentVersi
 	return s.CurrentVersion
 }
 
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *StaffSignupItemResource) GetArchivedAt() OptTimestamp {
-	return s.ArchivedAt
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *StaffSignupItemResource) GetDiscardedAt() OptTimestamp {
+	return s.DiscardedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -2230,9 +2231,9 @@ func (s *StaffSignupItemResource) SetCurrentVersion(val OptStaffLegalDocumentVer
 	s.CurrentVersion = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *StaffSignupItemResource) SetArchivedAt(val OptTimestamp) {
-	s.ArchivedAt = val
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *StaffSignupItemResource) SetDiscardedAt(val OptTimestamp) {
+	s.DiscardedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -2240,7 +2241,6 @@ func (s *StaffSignupItemResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*StaffSignupItemResource) staffSignupItemsArchiveRes()   {}
 func (*StaffSignupItemResource) staffSignupItemsCreateRes()    {}
 func (*StaffSignupItemResource) staffSignupItemsGetRes()       {}
 func (*StaffSignupItemResource) staffSignupItemsPublishRes()   {}
@@ -2277,22 +2277,6 @@ func (s *StaffSignupItemUpdate) SetMailingsConsent(val OptBool) {
 	s.MailingsConsent = val
 }
 
-type StaffSignupItemsArchiveBadRequest ProblemDetails
-
-func (*StaffSignupItemsArchiveBadRequest) staffSignupItemsArchiveRes() {}
-
-type StaffSignupItemsArchiveNotFound ProblemDetails
-
-func (*StaffSignupItemsArchiveNotFound) staffSignupItemsArchiveRes() {}
-
-type StaffSignupItemsArchiveUnauthorized ProblemDetails
-
-func (*StaffSignupItemsArchiveUnauthorized) staffSignupItemsArchiveRes() {}
-
-type StaffSignupItemsArchiveUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsArchiveUnprocessableEntity) staffSignupItemsArchiveRes() {}
-
 type StaffSignupItemsCreateBadRequest ProblemDetails
 
 func (*StaffSignupItemsCreateBadRequest) staffSignupItemsCreateRes() {}
@@ -2304,6 +2288,27 @@ func (*StaffSignupItemsCreateUnauthorized) staffSignupItemsCreateRes() {}
 type StaffSignupItemsCreateUnprocessableEntity ProblemDetails
 
 func (*StaffSignupItemsCreateUnprocessableEntity) staffSignupItemsCreateRes() {}
+
+type StaffSignupItemsDeleteBadRequest ProblemDetails
+
+func (*StaffSignupItemsDeleteBadRequest) staffSignupItemsDeleteRes() {}
+
+// StaffSignupItemsDeleteNoContent is response for StaffSignupItemsDelete operation.
+type StaffSignupItemsDeleteNoContent struct{}
+
+func (*StaffSignupItemsDeleteNoContent) staffSignupItemsDeleteRes() {}
+
+type StaffSignupItemsDeleteNotFound ProblemDetails
+
+func (*StaffSignupItemsDeleteNotFound) staffSignupItemsDeleteRes() {}
+
+type StaffSignupItemsDeleteUnauthorized ProblemDetails
+
+func (*StaffSignupItemsDeleteUnauthorized) staffSignupItemsDeleteRes() {}
+
+type StaffSignupItemsDeleteUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsDeleteUnprocessableEntity) staffSignupItemsDeleteRes() {}
 
 type StaffSignupItemsGetBadRequest ProblemDetails
 

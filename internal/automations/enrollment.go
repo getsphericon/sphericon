@@ -104,6 +104,9 @@ func Enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 // sourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
 // action and properties, as the Rule's own http Action binds them (#752). When no such Event is
 // stored any more (Retention or an Erasure removed it), it begins now and its `event` is empty.
+// The Rule job reads the Automation before it enrolls, so a Deactivate or an Archive may have
+// landed since: under the lock it enrolls nobody and returns ErrInactive unless the Automation is
+// still kept and active (ADR 0099).
 func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string) (runID int64, enrolled bool, err error) {
 	fired, err := storedEvent(ctx, s, sourceID)
 	if err != nil {
@@ -113,7 +116,15 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, auto
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
-	return enroll(ctx, s, pub, automationID, contactID, o, admitsAll)
+	inactive := false
+	runID, enrolled, err = enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
+		inactive = a.ArchivedAt != nil || a.Status != automation.StatusActive
+		return !inactive
+	})
+	if err == nil && inactive {
+		return 0, false, ErrInactive
+	}
+	return runID, enrolled, err
 }
 
 // EnrollOnTrigger enrolls the Contact as Enroll does, for the Event of the Origin (OriginOf): the
@@ -124,7 +135,7 @@ func EnrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, auto
 func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o Origin) (runID int64, enrolled bool, err error) {
 	return enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) bool {
 		live := a.Edges.LiveVersion
-		return a.DiscardedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == o.Action
+		return a.ArchivedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == o.Action
 	})
 }
 
@@ -158,7 +169,7 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 	// Share-lock the Automation row and read its live version under the lock, so a Publish (it
 	// locks the row exclusively) is either finished before the version is read or waits for this
 	// Enrollment: the Enrollment never begins on a version that is no longer live.
-	a, err := s.Automation().QueryWithDiscarded().Where(automation.ID(automationID)).WithLiveVersion().ForShare().Only(ctx)
+	a, err := s.Automation().QueryWithArchived().Where(automation.ID(automationID)).WithLiveVersion().ForShare().Only(ctx)
 	if ent.IsNotFound(err) {
 		// Another Workspace's Automation is not in this one: the reference check the Create
 		// below would make says so, so keep that answer.

@@ -112,7 +112,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Ve
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
 live and draft pointers and its status; `internal/drafts` is the one lifecycle over them and the
-only caller of their writes (`forbidigo`).
+only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
+`QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
+`Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
 
 - **Handlers and domain modules hold no `*ent.Client` and no bare `int64` workspace id.**
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
@@ -158,7 +160,9 @@ only caller of their writes (`forbidigo`).
      Workspace with the raw client and scopes each claim to the Workspace of the Membership it
      loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
-  5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
+  5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
+     `WithinWorkspaceLockTx` / `WithinWorkspaceLockEnqueueTx`, which first take the Workspace's
+     advisory lock, ADR 0099), and `tx.Scoped(...)` inside
      `accounts.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
      sign-up also runs in its own transaction), re-scope a transaction's client to the same Workspace;
      `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
@@ -309,7 +313,15 @@ only caller of their writes (`forbidigo`).
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
   exist iff a state change commits is queued in that transaction with
   `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and
-  enqueue after, with a best-effort undo. Email via `internal/messaging`
+  enqueue after, with a best-effort undo.
+- **The Workspace lock (ADR 0099)**: a removal that checks Live use (archiving or deleting a
+  Segment, an Integration, a Sending domain, a Tag) and a write that creates it (a Broadcast's
+  claim, saving a Segment, Create, Edit, Publish and Archive of a Versioned definition) run in
+  `events.Bus.WithinWorkspaceLockTx` (or `WithinWorkspaceLockEnqueueTx`), whose first statement
+  takes the Workspace's transaction-scoped advisory lock, so a check never passes on work that
+  becomes live before the removal commits. The lock comes before any row lock. A hot path (a Rule
+  firing, an Enrollment, a send) never takes it: it locks the row it acts on and checks it again
+  under that lock. Email via `internal/messaging`
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).

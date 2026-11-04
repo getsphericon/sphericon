@@ -102,7 +102,8 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	tracker := q.exists(client.Visitor.Query().Where(visitor.LastSeenAtGTE(since)).Exist(ctx))
 	externalAPI := q.exists(client.ApiToken.Query().Where(apitoken.LastUsedAtGTE(since)).Exist(ctx))
 	webhooks := q.exists(client.WebhookEndpoint.Query().Exist(ctx))
-	providers, err := client.Integration.Query().Unique(true).Select(integration.FieldProvider).Strings(ctx)
+	// The providers in use are those of kept Integrations: a deleted one is not set up (ADR 0099).
+	providers, err := client.Integration.Query().Where(integration.DiscardedAtIsNil()).Unique(true).Select(integration.FieldProvider).Strings(ctx)
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}

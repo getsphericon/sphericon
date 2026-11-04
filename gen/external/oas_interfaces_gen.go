@@ -37,10 +37,6 @@ type AutomationsDeactivateRes interface {
 	automationsDeactivateRes()
 }
 
-type AutomationsDeleteRes interface {
-	automationsDeleteRes()
-}
-
 type AutomationsDryRunHttpStepRes interface {
 	automationsDryRunHttpStepRes()
 }
@@ -83,10 +79,6 @@ type BroadcastsArchiveRes interface {
 
 type BroadcastsCreateRes interface {
 	broadcastsCreateRes()
-}
-
-type BroadcastsDeleteRes interface {
-	broadcastsDeleteRes()
 }
 
 type BroadcastsGetRes interface {

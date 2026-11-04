@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// Delete removes a Rule whether or not it has fired. One that never fired is gone; one with
-// Firings leaves the list and is still read by id, inactive with deletedAt set, with its Firings
-// (ADR 0098), and deleting it again changes nothing.
-func TestSiteRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
+// Delete discards a Rule whether or not it has fired (ADR 0100): each leaves the list and is still
+// read by id, inactive with discardedAt set, with its Firings, and changes no more; deleting it
+// again changes nothing.
+func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -29,28 +29,29 @@ func TestSiteRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
 		deleted, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, deleted)
-	}
 
-	gone, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: never})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesGetNotFound{}, gone)
-	kept, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: fired})
-	require.NoError(t, err)
-	res, ok := kept.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", kept)
-	_, deletedAt := res.DeletedAt.Get()
-	assert.True(t, deletedAt)
-	assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
+		kept, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: id})
+		require.NoError(t, err)
+		res, ok := kept.(*siteapi.SiteRuleResource)
+		require.Truef(t, ok, "got %T", kept)
+		_, discardedAt := res.DiscardedAt.Get()
+		assert.True(t, discardedAt)
+		assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
+
+		again, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, again)
+		renamed, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptString("renamed")},
+			siteapi.SiteRulesUpdateParams{WorkspaceId: ws, ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteRulesUpdateNotFound{}, renamed, "a deleted Rule changes no more")
+		published, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteRulesPublishNotFound{}, published, "a deleted Rule is never published again")
+	}
 	firings, err := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: ws, RuleId: fired})
 	require.NoError(t, err)
 	assert.NotEmpty(t, firings.(*siteapi.SiteRuleFiringsListOK).Items)
-	again, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: fired})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, again)
-	renamed, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptString("renamed")},
-		siteapi.SiteRulesUpdateParams{WorkspaceId: ws, ID: fired})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesUpdateNotFound{}, renamed, "a deleted Rule changes no more")
 
 	listed, err := c.SiteRulesList(ctx, siteapi.SiteRulesListParams{WorkspaceId: ws})
 	require.NoError(t, err)

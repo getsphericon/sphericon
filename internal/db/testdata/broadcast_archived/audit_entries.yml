@@ -1,0 +1,44 @@
+# Audit entries written before the Broadcast moved to archived_at (ADR 0100): its archive and
+# unarchive under the old names, and an Integration's discard, which keeps its name.
+- id: 1
+  workspace_id: 1
+  entry_key: broadcast-discard
+  occurred_at: '2026-02-01 00:00:00'
+  actor_kind: user
+  actor_id: '1'
+  actor_name: John
+  action: broadcast.discard
+  target_type: broadcast
+  target_id: '1'
+  target_name: Archived newsletter
+  diff: '{}'
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+- id: 2
+  workspace_id: 1
+  entry_key: broadcast-restore
+  occurred_at: '2026-02-02 00:00:00'
+  actor_kind: user
+  actor_id: '1'
+  actor_name: John
+  action: broadcast.restore
+  target_type: broadcast
+  target_id: '1'
+  target_name: Archived newsletter
+  diff: '{}'
+  created_at: '2026-02-02 00:00:00'
+  updated_at: '2026-02-02 00:00:00'
+- id: 3
+  workspace_id: 1
+  entry_key: integration-discard
+  occurred_at: '2026-02-03 00:00:00'
+  actor_kind: user
+  actor_id: '1'
+  actor_name: John
+  action: integration.discard
+  target_type: integration
+  target_id: '1'
+  target_name: Mailer
+  diff: '{}'
+  created_at: '2026-02-03 00:00:00'
+  updated_at: '2026-02-03 00:00:00'

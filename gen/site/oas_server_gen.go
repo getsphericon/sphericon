@@ -263,8 +263,8 @@ type Handler interface {
 	// SiteAutomationsArchive implements SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -276,16 +276,10 @@ type Handler interface {
 	SiteAutomationsCreate(ctx context.Context, req *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error)
 	// SiteAutomationsDeactivate implements SiteAutomations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments).
+	// Deactivate an automation (stops new enrollments). 409 when it is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/deactivate
 	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error)
-	// SiteAutomationsDelete implements SiteAutomations_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
 	// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -310,25 +304,28 @@ type Handler interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused.
+	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
 	// SiteAutomationsRevert implements SiteAutomations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
 	// SiteAutomationsUpdate implements SiteAutomations_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
@@ -364,8 +361,9 @@ type Handler interface {
 	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error)
 	// SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
 	//
-	// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-	// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+	// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+	// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+	// archived (409). Archiving an archived broadcast changes nothing.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error)
@@ -375,12 +373,6 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/broadcasts
 	SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
-	// SiteBroadcastsDelete implements SiteBroadcasts_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (SiteBroadcastsDeleteRes, error)
 	// SiteBroadcastsGet implements SiteBroadcasts_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -399,14 +391,14 @@ type Handler interface {
 	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 	// rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 	// cannot send (disabled or archived, or no default): a draft may name such an integration, only
-	// scheduling it is refused.
+	// scheduling it is refused. An archived broadcast is a 409 too.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
 	// SiteBroadcastsSend implements SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-	// resolved from; an archived segment is refused.
+	// resolved from; an archived segment is refused. An archived broadcast is a 409.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
@@ -423,7 +415,7 @@ type Handler interface {
 	SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
 	// SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
 	//
-	// Restore an archived broadcast to the list.
+	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error)
@@ -636,13 +628,14 @@ type Handler interface {
 	// SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
 	//
 	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-	// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+	// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
-	// Update an integration. Owners and admins only.
+	// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/integrations/{id}
 	SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
@@ -695,14 +688,14 @@ type Handler interface {
 	// SiteLegalDocumentsGet implements SiteLegalDocuments_get operation.
 	//
 	// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
-	// unknown or archived item and for one with no published version. Answered while an acceptance is
+	// unknown or deleted item and for one with no published version. Answered while an acceptance is
 	// pending, for the screen that shows the new texts (ADR 0062).
 	//
 	// GET /legal-documents/{key}
 	SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error)
 	// SiteLegalDocumentsSignupItems implements SiteLegalDocuments_signupItems operation.
 	//
-	// The Sign-up items in effect: those not archived that have a published version, with that version's
+	// The Sign-up items in effect: those not deleted that have a published version, with that version's
 	// label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
 	//
 	// GET /signup-items
@@ -749,7 +742,7 @@ type Handler interface {
 	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
 	// SiteOptionalConsentsList implements SiteOptionalConsents_list operation.
 	//
-	// The optional consents in effect (not archived, with a published version) and the User's current
+	// The optional consents in effect (not deleted, with a published version) and the User's current
 	// answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
 	// A required acceptance and a notice are not listed: they are not the User's to change.
 	//
@@ -1100,7 +1093,8 @@ type Handler interface {
 	// SiteSendingDomainsVerify implements SiteSendingDomains_verify operation.
 	//
 	// Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-	// returned domain are the outcome. Owners and admins only.
+	// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)

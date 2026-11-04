@@ -94,12 +94,6 @@ export function SegmentsListPage() {
                   >
                     {t(($) => $.actions.view)}
                   </MenuItemLink>
-                  <MenuItemLink
-                    to={segmentsEditRoute.to}
-                    params={{ workspaceId, segmentId: record.id }}
-                  >
-                    {t(($) => $.actions.edit)}
-                  </MenuItemLink>
                   {record.archivedAt ? (
                     <Menu.Item
                       onClick={() =>
@@ -109,14 +103,21 @@ export function SegmentsListPage() {
                       {t(($) => $.actions.unarchive)}
                     </Menu.Item>
                   ) : (
-                    <Menu.Item
-                      color="red"
-                      onClick={() =>
-                        archiveSegment.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.actions.archive)}
-                    </Menu.Item>
+                    <>
+                      <MenuItemLink
+                        to={segmentsEditRoute.to}
+                        params={{ workspaceId, segmentId: record.id }}
+                      >
+                        {t(($) => $.actions.edit)}
+                      </MenuItemLink>
+                      <Menu.Item
+                        onClick={() =>
+                          archiveSegment.mutate({ path: { workspaceId, id: record.id } })
+                        }
+                      >
+                        {t(($) => $.actions.archive)}
+                      </Menu.Item>
+                    </>
                   )}
                 </RowActionsMenu>
               </Group>

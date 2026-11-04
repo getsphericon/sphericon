@@ -10,9 +10,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/signupitems"
 )
 
-// PutSignupItemsInEffect brings the fixture Sign-up items with these ids back from the archive: the
-// fixture Instance asks nothing at sign-up, so a test that wants items asked lifts some of them
-// instead of creating items.
+// PutSignupItemsInEffect brings the fixture Sign-up items with these ids back into use, which only a
+// test does (a deleted item is never restored): the fixture Instance asks nothing at sign-up, so a
+// test that wants items asked or listed lifts some of them instead of creating items.
 func (env *TestEnv) PutSignupItemsInEffect(ctx context.Context, ids ...int64) {
 	if err := env.DB.SignupItem.Update().Where(signupitem.IDIn(ids...)).ClearDiscardedAt().Exec(ctx); err != nil {
 		panic(err)

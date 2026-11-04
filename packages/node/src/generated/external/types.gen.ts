@@ -119,16 +119,16 @@ export const AuditAction = {
   AUTOMATION_CREATE: 'automation.create',
   AUTOMATION_UPDATE: 'automation.update',
   AUTOMATION_DELETE: 'automation.delete',
-  AUTOMATION_DISCARD: 'automation.discard',
-  AUTOMATION_RESTORE: 'automation.restore',
+  AUTOMATION_ARCHIVE: 'automation.archive',
+  AUTOMATION_UNARCHIVE: 'automation.unarchive',
   BRAND_KIT_CREATE: 'brand_kit.create',
   BRAND_KIT_UPDATE: 'brand_kit.update',
   BRAND_KIT_DELETE: 'brand_kit.delete',
   BROADCAST_CREATE: 'broadcast.create',
   BROADCAST_UPDATE: 'broadcast.update',
   BROADCAST_DELETE: 'broadcast.delete',
-  BROADCAST_DISCARD: 'broadcast.discard',
-  BROADCAST_RESTORE: 'broadcast.restore',
+  BROADCAST_ARCHIVE: 'broadcast.archive',
+  BROADCAST_UNARCHIVE: 'broadcast.unarchive',
   CONTACT_CREATE: 'contact.create',
   CONTACT_UPDATE: 'contact.update',
   CONTACT_DELETE: 'contact.delete',
@@ -145,7 +145,6 @@ export const AuditAction = {
   INTEGRATION_UPDATE: 'integration.update',
   INTEGRATION_DELETE: 'integration.delete',
   INTEGRATION_DISCARD: 'integration.discard',
-  INTEGRATION_RESTORE: 'integration.restore',
   JOIN_DOMAIN_CREATE: 'join_domain.create',
   JOIN_DOMAIN_UPDATE: 'join_domain.update',
   JOIN_DOMAIN_DELETE: 'join_domain.delete',
@@ -153,17 +152,15 @@ export const AuditAction = {
   RULE_UPDATE: 'rule.update',
   RULE_DELETE: 'rule.delete',
   RULE_DISCARD: 'rule.discard',
-  RULE_RESTORE: 'rule.restore',
   SEGMENT_CREATE: 'segment.create',
   SEGMENT_UPDATE: 'segment.update',
   SEGMENT_DELETE: 'segment.delete',
-  SEGMENT_DISCARD: 'segment.discard',
-  SEGMENT_RESTORE: 'segment.restore',
+  SEGMENT_ARCHIVE: 'segment.archive',
+  SEGMENT_UNARCHIVE: 'segment.unarchive',
   SENDING_DOMAIN_CREATE: 'sending_domain.create',
   SENDING_DOMAIN_UPDATE: 'sending_domain.update',
   SENDING_DOMAIN_DELETE: 'sending_domain.delete',
   SENDING_DOMAIN_DISCARD: 'sending_domain.discard',
-  SENDING_DOMAIN_RESTORE: 'sending_domain.restore',
   TAG_CREATE: 'tag.create',
   TAG_UPDATE: 'tag.update',
   TAG_DELETE: 'tag.delete',
@@ -913,7 +910,7 @@ export type BroadcastResource = {
    */
   failedAt?: Timestamp | null;
   /**
-   * When the broadcast was archived; null while it is kept. Only a sent or failed broadcast is archived.
+   * When the broadcast was archived; null while it is kept. An archived broadcast is read-only until it is unarchived.
    */
   archivedAt?: Timestamp | null;
   /**
@@ -3344,9 +3341,9 @@ export type IntegrationResource = {
    */
   hookUrl: string;
   /**
-   * When the integration was deleted; null while it is kept. A deleted integration is no longer listed and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks.
+   * When the integration was deleted (discarded); null while it is kept. A deleted integration is no longer listed, is read-only and cannot be restored, but stays readable by id for the history that names it; it is never the default, takes no new work, and its hook still reads the provider's callbacks.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -4029,9 +4026,9 @@ export type RuleResource = {
    */
   activatedAt?: Timestamp | null;
   /**
-   * When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id only and changes no more.
+   * When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -4279,9 +4276,9 @@ export type SendingDomainResource = {
    */
   verificationLostAt?: Timestamp | null;
   /**
-   * When the domain was deleted; null while it is kept. A deleted domain is no longer listed and cannot be restored, but stays readable by id.
+   * When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */
@@ -5288,8 +5285,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its Enrollments; a `message` entry names it and counts its
-   * sent Outbound messages.
+   * Automation (id, name) and counts its active Enrollments.
    */
   count?: number;
 };
@@ -5303,8 +5299,7 @@ export const UsedByKind = {
   AUTOMATION: 'automation',
   SEGMENT: 'segment',
   RULE: 'rule',
-  ENROLLMENT: 'enrollment',
-  MESSAGE: 'message'
+  ENROLLMENT: 'enrollment'
 } as const;
 
 /**
@@ -6169,62 +6164,6 @@ export type EnrollmentsGetResponses = {
 
 export type EnrollmentsGetResponse = EnrollmentsGetResponses[keyof EnrollmentsGetResponses];
 
-export type AutomationsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/automations/{id}';
-};
-
-export type AutomationsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type AutomationsDeleteError = AutomationsDeleteErrors[keyof AutomationsDeleteErrors];
-
-export type AutomationsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type AutomationsDeleteResponse = AutomationsDeleteResponses[keyof AutomationsDeleteResponses];
-
 export type AutomationsGetData = {
   body?: never;
   path: {
@@ -6300,6 +6239,10 @@ export type AutomationsUpdateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6402,6 +6345,10 @@ export type AutomationsDeactivateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -6553,6 +6500,10 @@ export type AutomationsRevertErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6773,56 +6724,6 @@ export type BroadcastsCreateResponses = {
 
 export type BroadcastsCreateResponse = BroadcastsCreateResponses[keyof BroadcastsCreateResponses];
 
-export type BroadcastsDeleteData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/broadcasts/{id}';
-};
-
-export type BroadcastsDeleteErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type BroadcastsDeleteError = BroadcastsDeleteErrors[keyof BroadcastsDeleteErrors];
-
-export type BroadcastsDeleteResponses = {
-  /**
-   * There is no content to send for this request, but the headers may be useful.
-   */
-  204: void;
-};
-
-export type BroadcastsDeleteResponse = BroadcastsDeleteResponses[keyof BroadcastsDeleteResponses];
-
 export type BroadcastsGetData = {
   body?: never;
   path: {
@@ -6899,6 +6800,10 @@ export type BroadcastsUpdateErrors = {
    */
   404: ProblemDetails;
   /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -6949,9 +6854,9 @@ export type BroadcastsArchiveErrors = {
    */
   404: ProblemDetails;
   /**
-   * RFC 7807 validation response
+   * RFC 7807 conflict response
    */
-  422: ProblemDetails;
+  409: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -7098,6 +7003,10 @@ export type BroadcastsSetSegmentErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -9956,6 +9865,10 @@ export type SegmentsUpdateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */

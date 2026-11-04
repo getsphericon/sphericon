@@ -52,16 +52,16 @@ export function useAuditActionLabel() {
       'automation.create': t(($) => $.auditActions.automationCreate),
       'automation.update': t(($) => $.auditActions.automationUpdate),
       'automation.delete': t(($) => $.auditActions.automationDelete),
-      'automation.discard': t(($) => $.auditActions.automationDiscard),
-      'automation.restore': t(($) => $.auditActions.automationRestore),
+      'automation.archive': t(($) => $.auditActions.automationArchive),
+      'automation.unarchive': t(($) => $.auditActions.automationUnarchive),
       'brand_kit.create': t(($) => $.auditActions.brandKitCreate),
       'brand_kit.update': t(($) => $.auditActions.brandKitUpdate),
       'brand_kit.delete': t(($) => $.auditActions.brandKitDelete),
       'broadcast.create': t(($) => $.auditActions.broadcastCreate),
       'broadcast.update': t(($) => $.auditActions.broadcastUpdate),
       'broadcast.delete': t(($) => $.auditActions.broadcastDelete),
-      'broadcast.discard': t(($) => $.auditActions.broadcastDiscard),
-      'broadcast.restore': t(($) => $.auditActions.broadcastRestore),
+      'broadcast.archive': t(($) => $.auditActions.broadcastArchive),
+      'broadcast.unarchive': t(($) => $.auditActions.broadcastUnarchive),
       'contact.create': t(($) => $.auditActions.contactCreate),
       'contact.update': t(($) => $.auditActions.contactUpdate),
       'contact.delete': t(($) => $.auditActions.contactDelete),
@@ -78,7 +78,6 @@ export function useAuditActionLabel() {
       'integration.update': t(($) => $.auditActions.integrationUpdate),
       'integration.delete': t(($) => $.auditActions.integrationDelete),
       'integration.discard': t(($) => $.auditActions.integrationDiscard),
-      'integration.restore': t(($) => $.auditActions.integrationRestore),
       'join_domain.create': t(($) => $.auditActions.joinDomainCreate),
       'join_domain.update': t(($) => $.auditActions.joinDomainUpdate),
       'join_domain.delete': t(($) => $.auditActions.joinDomainDelete),
@@ -86,17 +85,15 @@ export function useAuditActionLabel() {
       'rule.update': t(($) => $.auditActions.ruleUpdate),
       'rule.delete': t(($) => $.auditActions.ruleDelete),
       'rule.discard': t(($) => $.auditActions.ruleDiscard),
-      'rule.restore': t(($) => $.auditActions.ruleRestore),
       'segment.create': t(($) => $.auditActions.segmentCreate),
       'segment.update': t(($) => $.auditActions.segmentUpdate),
       'segment.delete': t(($) => $.auditActions.segmentDelete),
-      'segment.discard': t(($) => $.auditActions.segmentDiscard),
-      'segment.restore': t(($) => $.auditActions.segmentRestore),
+      'segment.archive': t(($) => $.auditActions.segmentArchive),
+      'segment.unarchive': t(($) => $.auditActions.segmentUnarchive),
       'sending_domain.create': t(($) => $.auditActions.sendingDomainCreate),
       'sending_domain.update': t(($) => $.auditActions.sendingDomainUpdate),
       'sending_domain.delete': t(($) => $.auditActions.sendingDomainDelete),
       'sending_domain.discard': t(($) => $.auditActions.sendingDomainDiscard),
-      'sending_domain.restore': t(($) => $.auditActions.sendingDomainRestore),
       'tag.create': t(($) => $.auditActions.tagCreate),
       'tag.update': t(($) => $.auditActions.tagUpdate),
       'tag.delete': t(($) => $.auditActions.tagDelete),
@@ -107,6 +104,13 @@ export function useAuditActionLabel() {
       'webhook_endpoint.update': t(($) => $.auditActions.webhookEndpointUpdate),
       'webhook_endpoint.delete': t(($) => $.auditActions.webhookEndpointDelete),
     }
-    return (action: AnyAuditAction): string => words[action]
+    // An entry an older release recorded with an action the contract has since dropped is still in
+    // the log: it reads as its words when they are known, and as its code otherwise.
+    const past: Partial<Record<string, string>> = {
+      // v0.2 to v0.3 recorded unarchiving an Integration as its restore (gone with ADR 0100).
+      'integration.restore': t(($) => $.auditActions.integrationRestore),
+    }
+    const byCode: Partial<Record<string, string>> = { ...past, ...words }
+    return (action: string): string => byCode[action] ?? action
   }, [t])
 }

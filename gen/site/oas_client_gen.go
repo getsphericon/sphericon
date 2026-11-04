@@ -284,8 +284,8 @@ type Invoker interface {
 	// SiteAutomationsArchive invokes SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-	// (`usedBy` carries their count).
+	// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -297,16 +297,10 @@ type Invoker interface {
 	SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error)
 	// SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments).
+	// Deactivate an automation (stops new enrollments). 409 when it is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/deactivate
 	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error)
-	// SiteAutomationsDelete invokes SiteAutomations_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
 	// SiteAutomationsDryRunHttpStep invokes SiteAutomations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
@@ -331,25 +325,28 @@ type Invoker interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused.
+	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
 	// SiteAutomationsRevert invokes SiteAutomations_revert operation.
 	//
-	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+	// again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
 	// SiteAutomationsUpdate invokes SiteAutomations_update operation.
 	//
-	// Update a resource from the site UI.
+	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
@@ -385,8 +382,9 @@ type Invoker interface {
 	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error)
 	// SiteBroadcastsArchive invokes SiteBroadcasts_archive operation.
 	//
-	// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-	// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+	// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+	// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+	// archived (409). Archiving an archived broadcast changes nothing.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error)
@@ -396,12 +394,6 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/broadcasts
 	SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
-	// SiteBroadcastsDelete invokes SiteBroadcasts_delete operation.
-	//
-	// Delete a resource from the site UI.
-	//
-	// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (SiteBroadcastsDeleteRes, error)
 	// SiteBroadcastsGet invokes SiteBroadcasts_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -420,14 +412,14 @@ type Invoker interface {
 	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 	// rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 	// cannot send (disabled or archived, or no default): a draft may name such an integration, only
-	// scheduling it is refused.
+	// scheduling it is refused. An archived broadcast is a 409 too.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
 	// SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-	// resolved from; an archived segment is refused.
+	// resolved from; an archived segment is refused. An archived broadcast is a 409.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
@@ -444,7 +436,7 @@ type Invoker interface {
 	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
 	// SiteBroadcastsUnarchive invokes SiteBroadcasts_unarchive operation.
 	//
-	// Restore an archived broadcast to the list.
+	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error)
@@ -657,13 +649,14 @@ type Invoker interface {
 	// SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 	//
 	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-	// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+	// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUpdate invokes SiteIntegrations_update operation.
 	//
-	// Update an integration. Owners and admins only.
+	// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/integrations/{id}
 	SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
@@ -716,14 +709,14 @@ type Invoker interface {
 	// SiteLegalDocumentsGet invokes SiteLegalDocuments_get operation.
 	//
 	// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
-	// unknown or archived item and for one with no published version. Answered while an acceptance is
+	// unknown or deleted item and for one with no published version. Answered while an acceptance is
 	// pending, for the screen that shows the new texts (ADR 0062).
 	//
 	// GET /legal-documents/{key}
 	SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error)
 	// SiteLegalDocumentsSignupItems invokes SiteLegalDocuments_signupItems operation.
 	//
-	// The Sign-up items in effect: those not archived that have a published version, with that version's
+	// The Sign-up items in effect: those not deleted that have a published version, with that version's
 	// label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
 	//
 	// GET /signup-items
@@ -770,7 +763,7 @@ type Invoker interface {
 	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
 	// SiteOptionalConsentsList invokes SiteOptionalConsents_list operation.
 	//
-	// The optional consents in effect (not archived, with a published version) and the User's current
+	// The optional consents in effect (not deleted, with a published version) and the User's current
 	// answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
 	// A required acceptance and a notice are not listed: they are not the User's to change.
 	//
@@ -1121,7 +1114,8 @@ type Invoker interface {
 	// SiteSendingDomainsVerify invokes SiteSendingDomains_verify operation.
 	//
 	// Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-	// returned domain are the outcome. Owners and admins only.
+	// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
@@ -5791,8 +5785,8 @@ func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAu
 // SiteAutomationsArchive invokes SiteAutomations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
-// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
-// (`usedBy` carries their count).
+// its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or
+// an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (c *Client) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error) {
@@ -6087,7 +6081,7 @@ func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCre
 
 // SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments).
+// Deactivate an automation (stops new enrollments). 409 when it is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/deactivate
 func (c *Client) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error) {
@@ -6235,162 +6229,6 @@ func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteA
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAutomationsDeactivateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SiteAutomationsDelete invokes SiteAutomations_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/automations/{id}
-func (c *Client) SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error) {
-	res, err := c.sendSiteAutomationsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendSiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (res SiteAutomationsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteAutomations_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/automations/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteAutomationsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [4]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/automations/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[3] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, SiteAutomationsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteAutomationsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -6956,7 +6794,7 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused.
+// refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error) {
@@ -7113,7 +6951,8 @@ func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAuto
 
 // SiteAutomationsRevert invokes SiteAutomations_revert operation.
 //
-// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
+// 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
 func (c *Client) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error) {
@@ -7270,7 +7109,8 @@ func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutom
 
 // SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list, inactive: only publish makes it enroll again.
+// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
+// again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (c *Client) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error) {
@@ -7427,7 +7267,8 @@ func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAu
 
 // SiteAutomationsUpdate invokes SiteAutomations_update operation.
 //
-// Update a resource from the site UI.
+// Update an automation: its name, and its definition written to the draft. 409 when the automation is
+// archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
 func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error) {
@@ -8157,8 +7998,9 @@ func (c *Client) sendSiteBroadcastLinksList(ctx context.Context, params SiteBroa
 
 // SiteBroadcastsArchive invokes SiteBroadcasts_archive operation.
 //
-// Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and figures, and
-// can be restored. A draft is deleted and a scheduled or sending broadcast cannot be archived (422).
+// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (c *Client) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error) {
@@ -8444,162 +8286,6 @@ func (c *Client) sendSiteBroadcastsCreate(ctx context.Context, request *CreateBr
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteBroadcastsCreateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SiteBroadcastsDelete invokes SiteBroadcasts_delete operation.
-//
-// Delete a resource from the site UI.
-//
-// DELETE /workspaces/{workspaceId}/broadcasts/{id}
-func (c *Client) SiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (SiteBroadcastsDeleteRes, error) {
-	res, err := c.sendSiteBroadcastsDelete(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendSiteBroadcastsDelete(ctx context.Context, params SiteBroadcastsDeleteParams) (res SiteBroadcastsDeleteRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteBroadcasts_delete"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/broadcasts/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteBroadcastsDeleteOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [4]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/broadcasts/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[3] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, SiteBroadcastsDeleteOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteBroadcastsDeleteResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9019,7 +8705,7 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused.
+// scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (c *Client) SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error) {
@@ -9180,7 +8866,7 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *Schedu
 // SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
-// resolved from; an archived segment is refused.
+// resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (c *Client) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error) {
@@ -9502,7 +9188,7 @@ func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *TestSe
 
 // SiteBroadcastsUnarchive invokes SiteBroadcasts_unarchive operation.
 //
-// Restore an archived broadcast to the list.
+// Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
 func (c *Client) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error) {
@@ -14505,7 +14191,8 @@ func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegr
 // SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 //
 // Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
-// integration's webhook follows it (Telegram's refusal is a 422). Owners and admins only.
+// integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404.
+// Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
 func (c *Client) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error) {
@@ -14662,7 +14349,7 @@ func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params S
 
 // SiteIntegrationsUpdate invokes SiteIntegrations_update operation.
 //
-// Update an integration. Owners and admins only.
+// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
 func (c *Client) SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error) {
@@ -15841,7 +15528,7 @@ func (c *Client) sendSiteJoinDomainsVerify(ctx context.Context, params SiteJoinD
 // SiteLegalDocumentsGet invokes SiteLegalDocuments_get operation.
 //
 // The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
-// unknown or archived item and for one with no published version. Answered while an acceptance is
+// unknown or deleted item and for one with no published version. Answered while an acceptance is
 // pending, for the screen that shows the new texts (ADR 0062).
 //
 // GET /legal-documents/{key}
@@ -15943,7 +15630,7 @@ func (c *Client) sendSiteLegalDocumentsGet(ctx context.Context, params SiteLegal
 
 // SiteLegalDocumentsSignupItems invokes SiteLegalDocuments_signupItems operation.
 //
-// The Sign-up items in effect: those not archived that have a published version, with that version's
+// The Sign-up items in effect: those not deleted that have a published version, with that version's
 // label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
 //
 // GET /signup-items
@@ -16913,7 +16600,7 @@ func (c *Client) sendSiteOAuthDescribe(ctx context.Context, params SiteOAuthDesc
 
 // SiteOptionalConsentsList invokes SiteOptionalConsents_list operation.
 //
-// The optional consents in effect (not archived, with a published version) and the User's current
+// The optional consents in effect (not deleted, with a published version) and the User's current
 // answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
 // A required acceptance and a notice are not listed: they are not the User's to change.
 //
@@ -23576,7 +23263,8 @@ func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSend
 // SiteSendingDomainsVerify invokes SiteSendingDomains_verify operation.
 //
 // Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
-// returned domain are the outcome. Owners and admins only.
+// returned domain are the outcome; a deleted domain is never checked again (404). Owners and admins
+// only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
 func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error) {

@@ -64,7 +64,7 @@ var (
 		"segments_list", "segments_create", "segments_get", "segments_update", "segments_archive", "segments_unarchive", "segments_preview",
 		"contacts_upsert_batch", "events_record_batch",
 		"contacts_list", "contacts_create", "contacts_get", "contacts_update", "contacts_delete", "contacts_erase_by", "contacts_export",
-		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update", "broadcasts_delete",
+		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update",
 		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
 		"events_record", "events_actions_list", "whoami", "workspace_get",
 		"custom_fields_list", "custom_fields_update", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
@@ -76,7 +76,7 @@ var (
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove", "tags_delete", "telegram_start_links_issue",
-		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
+		"automations_list", "automations_create", "automations_get", "automations_update",
 		"rules_list", "rules_create", "rules_get", "rules_update", "rules_dry_run", "rules_deactivate", "rules_revert", "rules_delete", "rule_firings_list",
 		"automations_deactivate", "automations_revert", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "automations_report", "enrollments_list", "enrollments_get",
 	}

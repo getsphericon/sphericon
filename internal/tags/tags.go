@@ -206,44 +206,56 @@ func publishChange(ctx context.Context, s *ent.Scoped, pub events.Publisher, act
 // *inuse.Error naming those Segments and Automations (ADR 0049, ADR 0065), because both name the
 // Tag and would silently stop matching or applying.
 // The Condition an armed Broadcast copied from its Segment counts too (ADR 0065). A missing Tag is
-// ErrNotFound.
+// ErrNotFound. The check and the delete run in one transaction under the Workspace's lock (ADR
+// 0099), which saving a Segment, a Rule or an Automation takes too, so none of them names the Tag
+// between the check and the delete.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	t, err := s.Tag().Get(ctx, id)
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	if err != nil {
-		return err
-	}
+	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		t, err := ts.Tag().Get(ctx, id)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		users, err := tagUsers(ctx, ts, t.Name)
+		if err != nil {
+			return err
+		}
+		if len(users) > 0 {
+			return &inuse.Error{What: inuse.SubjectTag, Users: users}
+		}
+		return ts.Tag().DeleteOneID(id).Exec(ctx)
+	})
+}
+
+// tagUsers is what names the Tag: Segments, kept Automations, kept Rules and armed Broadcasts.
+func tagUsers(ctx context.Context, s *ent.Scoped, name string) ([]inuse.User, error) {
 	var users []inuse.User
-	segs, err := segments.UsingTag(ctx, s, t.Name)
+	segs, err := segments.UsingTag(ctx, s, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, seg := range segs {
 		users = append(users, inuse.User{Kind: inuse.Segment, ID: seg.ID, Name: seg.Name})
 	}
-	autos, err := automations.UsingTag(ctx, s, t.Name)
+	autos, err := automations.UsingTag(ctx, s, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, a := range autos {
 		users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
 	}
-	live, err := rules.UsingTag(ctx, s, t.Name)
+	live, err := rules.UsingTag(ctx, s, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	users = append(users, inuse.Rules(live)...)
-	armed, err := broadcasts.UsingTag(ctx, s, t.Name)
+	armed, err := broadcasts.UsingTag(ctx, s, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	users = append(users, inuse.Broadcasts(armed)...)
-	if len(users) > 0 {
-		return &inuse.Error{What: inuse.SubjectTag, Users: users}
-	}
-	return s.Tag().DeleteOneID(id).Exec(ctx)
+	return append(users, inuse.Broadcasts(armed)...), nil
 }
 
 func requireContact(ctx context.Context, s *ent.Scoped, contactID int64) error {

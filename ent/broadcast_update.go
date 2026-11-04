@@ -57,23 +57,23 @@ func (_u *BroadcastUpdate) SetNillableWorkspaceID(v *int64) *BroadcastUpdate {
 	return _u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (_u *BroadcastUpdate) SetDiscardedAt(v time.Time) *BroadcastUpdate {
-	_u.mutation.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (_u *BroadcastUpdate) SetArchivedAt(v time.Time) *BroadcastUpdate {
+	_u.mutation.SetArchivedAt(v)
 	return _u
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (_u *BroadcastUpdate) SetNillableDiscardedAt(v *time.Time) *BroadcastUpdate {
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableArchivedAt(v *time.Time) *BroadcastUpdate {
 	if v != nil {
-		_u.SetDiscardedAt(*v)
+		_u.SetArchivedAt(*v)
 	}
 	return _u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (_u *BroadcastUpdate) ClearDiscardedAt() *BroadcastUpdate {
-	_u.mutation.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (_u *BroadcastUpdate) ClearArchivedAt() *BroadcastUpdate {
+	_u.mutation.ClearArchivedAt()
 	return _u
 }
 
@@ -643,11 +643,11 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(broadcast.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DiscardedAt(); ok {
-		_spec.SetField(broadcast.FieldDiscardedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.ArchivedAt(); ok {
+		_spec.SetField(broadcast.FieldArchivedAt, field.TypeTime, value)
 	}
-	if _u.mutation.DiscardedAtCleared() {
-		_spec.ClearField(broadcast.FieldDiscardedAt, field.TypeTime)
+	if _u.mutation.ArchivedAtCleared() {
+		_spec.ClearField(broadcast.FieldArchivedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)
@@ -941,23 +941,23 @@ func (_u *BroadcastUpdateOne) SetNillableWorkspaceID(v *int64) *BroadcastUpdateO
 	return _u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (_u *BroadcastUpdateOne) SetDiscardedAt(v time.Time) *BroadcastUpdateOne {
-	_u.mutation.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (_u *BroadcastUpdateOne) SetArchivedAt(v time.Time) *BroadcastUpdateOne {
+	_u.mutation.SetArchivedAt(v)
 	return _u
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (_u *BroadcastUpdateOne) SetNillableDiscardedAt(v *time.Time) *BroadcastUpdateOne {
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableArchivedAt(v *time.Time) *BroadcastUpdateOne {
 	if v != nil {
-		_u.SetDiscardedAt(*v)
+		_u.SetArchivedAt(*v)
 	}
 	return _u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (_u *BroadcastUpdateOne) ClearDiscardedAt() *BroadcastUpdateOne {
-	_u.mutation.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (_u *BroadcastUpdateOne) ClearArchivedAt() *BroadcastUpdateOne {
+	_u.mutation.ClearArchivedAt()
 	return _u
 }
 
@@ -1557,11 +1557,11 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(broadcast.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DiscardedAt(); ok {
-		_spec.SetField(broadcast.FieldDiscardedAt, field.TypeTime, value)
+	if value, ok := _u.mutation.ArchivedAt(); ok {
+		_spec.SetField(broadcast.FieldArchivedAt, field.TypeTime, value)
 	}
-	if _u.mutation.DiscardedAtCleared() {
-		_spec.ClearField(broadcast.FieldDiscardedAt, field.TypeTime)
+	if _u.mutation.ArchivedAtCleared() {
+		_spec.ClearField(broadcast.FieldArchivedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(broadcast.FieldName, field.TypeString, value)

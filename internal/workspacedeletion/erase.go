@@ -179,19 +179,20 @@ func stepOf[W scopedTable[Q, D], Q rowQuery[Q], D rowDelete[D, P], P any](
 	)
 }
 
-// discardableTable is the scoped wrapper of an entity with the DiscardMixin (ADR 0049).
-type discardableTable[Q, D any] interface {
-	QueryWithDiscarded() Q
+// keptTable is the scoped wrapper of an entity with the DiscardMixin or the ArchiveMixin (ADR
+// 0100): it has Purge in place of Delete.
+type keptTable[D any] interface {
 	Purge() D
 }
 
-// purgeStepOf is the erase step of a discardable entity: Workspace erasure sees discarded
-// rows too and removes them with Purge.
-func purgeStepOf[W discardableTable[Q, D], Q rowQuery[Q], D rowDelete[D, P], P any](
-	table func(*ent.Scoped) W, idIn func(...int64) P,
+// purgeStepOf is the erase step of a discardable or an archivable entity: every names the query
+// that sees its discarded or archived rows too ((*ent.RuleScoped).QueryWithDiscarded,
+// QueryWithArchived), and Workspace erasure removes them all with Purge.
+func purgeStepOf[W keptTable[D], Q rowQuery[Q], D rowDelete[D, P], P any](
+	table func(*ent.Scoped) W, every func(W) Q, idIn func(...int64) P,
 ) eraseStep {
 	return eraseStepOf(
-		func(s *ent.Scoped) Q { return table(s).QueryWithDiscarded() },
+		func(s *ent.Scoped) Q { return every(table(s)) },
 		func(s *ent.Scoped) D { return table(s).Purge() },
 		idIn,
 	)
@@ -228,7 +229,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
 	stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
 	stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
-	purgeStepOf((*ent.Scoped).Rule, rule.IDIn),
+	purgeStepOf((*ent.Scoped).Rule, (*ent.RuleScoped).QueryWithDiscarded, rule.IDIn),
 	stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
 	stepOf((*ent.Scoped).AutomationVersion, automationversion.IDIn),
 	stepOf((*ent.Scoped).Visitor, visitor.IDIn),
@@ -242,9 +243,9 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
 	stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
-	purgeStepOf((*ent.Scoped).Broadcast, broadcast.IDIn),
-	purgeStepOf((*ent.Scoped).Automation, automation.IDIn),
-	purgeStepOf((*ent.Scoped).Segment, segment.IDIn),
+	purgeStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, broadcast.IDIn),
+	purgeStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, automation.IDIn),
+	purgeStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, segment.IDIn),
 	stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
 	stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),
 	stepOf((*ent.Scoped).Contact, contact.IDIn),
@@ -252,8 +253,8 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).CustomField, customfield.IDIn),
 	// The tracking host change log hook records each released host here.
 	stepOf((*ent.Scoped).TrackingDomain, trackingdomain.IDIn),
-	purgeStepOf((*ent.Scoped).SendingDomain, sendingdomain.IDIn),
-	purgeStepOf((*ent.Scoped).Integration, integration.IDIn),
+	purgeStepOf((*ent.Scoped).SendingDomain, (*ent.SendingDomainScoped).QueryWithDiscarded, sendingdomain.IDIn),
+	purgeStepOf((*ent.Scoped).Integration, (*ent.IntegrationScoped).QueryWithDiscarded, integration.IDIn),
 	stepOf((*ent.Scoped).JoinDomain, joindomain.IDIn),
 	// Owner Memberships last: the owner hook advances the feed as they go.
 	stepOf((*ent.Scoped).Membership, membership.IDIn),
