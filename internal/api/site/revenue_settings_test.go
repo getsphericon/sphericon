@@ -145,10 +145,10 @@ func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *tes
 	s := newShop(t, env)
 
 	s.completed("A-1", "10.00", "EUR")
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 	s.completed("A-2", "10.00", "USD")
-	env.DeliverOrders(t)
-	env.DeliverOrders(t) // at-least-once delivery: the whole outbox again
+	env.WorkOrderJobs(t)
+	env.WorkOrderJobs(t) // at-least-once delivery: the whole outbox again
 
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Value)
 	published := env.OutboxEvents(t, events.NameAuditEntry)

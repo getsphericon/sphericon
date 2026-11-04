@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
@@ -19,7 +20,43 @@ import (
 func EventConsumers() []events.Consumer {
 	return []events.Consumer{
 		{Wants: suppresses, Job: func(env events.Envelope) river.JobArgs { return SuppressEventArgs{events.EventJob{Envelope: env}} }},
+		{Wants: isOrder, Job: func(env events.Envelope) river.JobArgs { return OrderEventArgs{events.EventJob{Envelope: env}} }},
 	}
+}
+
+// OrderEventArgs is the orders consumer's job (ADR 0064): a collected order Event that makes or
+// moves an Order.
+type OrderEventArgs struct {
+	events.EventJob
+}
+
+func (OrderEventArgs) Kind() string { return "event_order" }
+
+// isOrder wants a collected order Event, loaded history included: a Backfill triggers no
+// Automation and no Rule, but its Orders are revenue all the same.
+func isOrder(_ events.Envelope, ev events.DomainEvent) bool {
+	collected, ok := ev.(*events.CollectedEvent)
+	return ok && orders.IsOrderAction(collected.Action)
+}
+
+// OrderEventWorker reads an order Event into the Workspace's Orders. Jobs run concurrently and in
+// any order: events.RecordOrder takes a lock per Workspace, and an Event that arrives before the
+// Order Completed it names is held until that one comes.
+type OrderEventWorker struct {
+	river.WorkerDefaults[OrderEventArgs]
+
+	ent      *ent.Client
+	recorder events.OrderRecorder
+}
+
+// NewOrderEventWorker is the orders consumer's worker over the raw client, which RecordOrder
+// opens the Event's transaction on, and the Orders module.
+func NewOrderEventWorker(client *ent.Client, recorder events.OrderRecorder) *OrderEventWorker {
+	return &OrderEventWorker{ent: client, recorder: recorder}
+}
+
+func (w *OrderEventWorker) Work(ctx context.Context, job *river.Job[OrderEventArgs]) error {
+	return events.RecordOrder(ctx, w.ent, w.recorder, job.Args.Envelope)
 }
 
 // SuppressEventArgs is the suppression consumer's job: a hard bounce or a complaint whose address

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -137,6 +138,7 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
 	// The consumers of the domain events (EventConsumers).
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
+	river.AddWorker(workers, NewOrderEventWorker(entClient, orders.New(acc)))
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {

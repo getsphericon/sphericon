@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
@@ -36,20 +34,6 @@ type OrderRecorder interface {
 	Prepare(ctx context.Context, s *ent.Scoped, ev OrderEvent) error
 	// Record applies one order Event to the Workspace behind s, inside the transaction.
 	Record(ctx context.Context, s *ent.Scoped, ev OrderEvent) error
-}
-
-// ordersConsumer reads the order Events (ADR 0064) into Orders. Like the other subscribers it
-// is a raw-client entry: an envelope carries only a Workspace id, so the scope is built here,
-// in the transaction of the write. A Backfilled Event is read too: a Backfill triggers
-// Automations and Rules, not this consumer.
-func ordersConsumer(client *ent.Client, recorder OrderRecorder) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		return RecordOrder(msg.Context(), client, recorder, env)
-	}
 }
 
 // RecordOrder is the orders subscriber's work on one envelope; exported, like Suppress, so it

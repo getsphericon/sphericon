@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -52,7 +51,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, err)
 	reader, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(t, err)
-	require.NoError(t, events.RegisterSubscribers(router, sqlDB, events.Handlers(client, queue, queue, queue, orders.New(noAdoption{}), nil), testhelper.PrivateOutbox()))
+	require.NoError(t, events.RegisterSubscribers(router, sqlDB, events.Handlers(client, queue, queue, queue, nil), testhelper.PrivateOutbox()))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
@@ -89,8 +88,3 @@ func queued(ctx context.Context, t *testing.T, reader *river.Client[*sql.Tx], ki
 	require.NoError(t, err)
 	return len(res.Jobs)
 }
-
-// noAdoption adopts no Reporting currency: no order Event is published here.
-type noAdoption struct{}
-
-func (noAdoption) AdoptReportingCurrency(context.Context, *ent.Scoped, string) error { return nil }

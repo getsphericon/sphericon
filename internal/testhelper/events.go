@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 )
 
 // A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). Nothing
@@ -38,6 +39,14 @@ func WorkEventJobs[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Wor
 	for _, args := range env.JobsOf(t, kind.Kind()) {
 		require.NoError(t, Work(t.Context(), t, worker, decodeArgs[T](t, args)), kind.Kind())
 	}
+}
+
+// WorkOrderJobs works every queued orders job (WorkEventJobs) with the env's Orders module, as
+// the orders consumer's worker would. Each call works them all again, so calling it twice
+// exercises a redelivered order Event.
+func (env *TestEnv) WorkOrderJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, jobs.NewOrderEventWorker(env.DB, env.Orders))
 }
 
 // decodeArgs is a queued job's args, read back as JobsOf returns them, decoded into T.

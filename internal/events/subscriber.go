@@ -99,8 +99,6 @@ const (
 	GroupAutomations = "automations"
 	GroupRules       = "rules"
 	GroupWebhooks    = "webhooks"
-	// GroupOrders reads the order Events into Orders (ADR 0064).
-	GroupOrders = "orders"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
 	// so the outbox prune never deletes an Audit entry the subscriber has not consumed
 	// (ADR 0022); the subscriber is always registered, licensed or not.
@@ -112,7 +110,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupAutomations, GroupRules, GroupWebhooks, GroupOrders}
+	return []string{GroupAutomations, GroupRules, GroupWebhooks}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -160,13 +158,12 @@ func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool)
 // then extra, the consumers owned outside core (the Enterprise audit subscriber, ee/), each its
 // own group named like its handler. RegisterSubscribers runs them on the router, and
 // ReplayDeadLetters runs one group's dead letters through its handler.
-func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Subscriber) ConsumerHandlers {
+func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, extra []Subscriber) ConsumerHandlers {
 	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
 	hs = append(hs, ConsumerHandlers{
 		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
 		{GroupRules, "evaluate_rules", RulesConsumer(rules)},
 		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
-		{GroupOrders, "record_orders", ordersConsumer(client, orders)},
 	}...)
 	for _, c := range extra {
 		hs = append(hs, ConsumerHandler{c.Name, c.Name, c.Handler()})

@@ -73,7 +73,7 @@ func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing
 	}})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.EventsCreateNoContent{}, res)
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	res, err = c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Refunded", map[string]string{"order_id": `"A-1"`, "total": `10.5`}),

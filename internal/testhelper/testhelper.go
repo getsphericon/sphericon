@@ -168,7 +168,7 @@ type TestEnv struct {
 	// Outbound module.
 	Holds *holds.Holds
 
-	// Orders is the orders subscriber's module, which DeliverOrders drives, for a test that hands
+	// Orders is the orders consumer's module, which WorkOrderJobs drives, for a test that hands
 	// it an order Event itself.
 	Orders *orders.Module
 

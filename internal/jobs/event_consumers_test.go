@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,11 +16,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -145,4 +150,92 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	last := published[len(published)-1]
 	assert.Equal(t, "01JROOT", last.CorrelationID)
 	assert.Equal(t, "01JHANDLED", last.CausationID)
+}
+
+// orderEvent is a collected order Event of Alice in Acme.
+func orderEvent(action string, props map[string]any, backfill bool) *events.CollectedEvent {
+	return &events.CollectedEvent{
+		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: action,
+		Properties: props, Backfill: backfill,
+	}
+}
+
+// An order Event inserts one orders job, loaded history included; any other event inserts none.
+func TestAnOrderEventQueuesOneOrdersJob(t *testing.T) {
+	env := testhelper.Setup(t)
+	publishEvent(t, env, orderEvent(orders.ActionCompleted, map[string]any{"order_id": "Q-1", "total": 20.0, "currency": "USD"}, false))
+	publishEvent(t, env, orderEvent(orders.ActionRefunded, map[string]any{"order_id": "Q-0", "total": 5.0}, true))
+	publishEvent(t, env, orderEvent("page_view", nil, false))
+	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "order-less@example.com"))
+
+	queued := env.EventJobs(t, jobs.OrderEventArgs{}.Kind())
+
+	require.Len(t, queued, 2)
+	for _, e := range queued {
+		ev, err := events.Decode(e)
+		require.NoError(t, err)
+		collected, ok := ev.(*events.CollectedEvent)
+		require.True(t, ok)
+		assert.True(t, orders.IsOrderAction(collected.Action), collected.Action)
+	}
+}
+
+// fixedCurrency adopts nothing: the Workspace has its Reporting currency already.
+type fixedCurrency struct{}
+
+func (fixedCurrency) AdoptReportingCurrency(context.Context, *ent.Scoped, string) error { return nil }
+
+// Two order Events of one Order worked at the same moment leave it as working them one after the
+// other does, whichever runs first: the refund either finds the Order or is held until the Order
+// Completed applies it. One transaction at a time reads a Workspace's order Events.
+func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := testhelper.RealDB(t)
+	sqlDB.SetMaxOpenConns(8)
+	client := db.NewEntClient(sqlDB)
+	// test writes: the Workspace's Reporting currency, so no Order Completed adopts one.
+	client.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").ExecX(ctx)
+	bus := events.New(sqlDB)
+	inserter, err := jobs.NewInserter(sqlDB)
+	require.NoError(t, err)
+	bus.UseJobs(inserter)
+	bus.UseConsumers(jobs.EventConsumers()...)
+	for _, ev := range []*events.CollectedEvent{
+		orderEvent(orders.ActionCompleted, map[string]any{"order_id": "C-1", "total": 100.0, "currency": "USD"}, false),
+		orderEvent(orders.ActionRefunded, map[string]any{"order_id": "C-1", "total": 10.0, "refund_id": "R-1"}, false),
+	} {
+		require.NoError(t, bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) }))
+	}
+	listed, err := inserter.JobList(ctx, river.NewJobListParams().Kinds(jobs.OrderEventArgs{}.Kind()))
+	require.NoError(t, err)
+	require.Len(t, listed.Jobs, 2)
+	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), jobs.BaseConfig(),
+		river.Worker[jobs.OrderEventArgs](jobs.NewOrderEventWorker(client, orders.New(fixedCurrency{}))))
+
+	var wg sync.WaitGroup
+	errs := make([]error, len(listed.Jobs))
+	for i, job := range listed.Jobs {
+		wg.Go(func() {
+			tx, err := sqlDB.BeginTx(ctx, nil)
+			if err != nil {
+				errs[i] = err
+				return
+			}
+			defer func() { _ = tx.Rollback() }()
+			_, errs[i] = w.WorkJob(ctx, t, tx, job)
+		})
+	}
+	wg.Wait()
+
+	for _, err := range errs {
+		require.NoError(t, err)
+	}
+	o, err := client.Order.Query().Where(order.WorkspaceID(fixtures.AcmeID), order.OrderID("C-1")).Only(ctx)
+	require.NoError(t, err)
+	movements, err := client.OrderMovement.Query().Where(ordermovement.OrderID(o.ID)).All(ctx)
+	require.NoError(t, err)
+	held, err := client.HeldOrderEvent.Query().Where(heldorderevent.OrderID("C-1")).Count(ctx)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []int64{10000, -1000}, lo.Map(movements, func(m *ent.OrderMovement, _ int) int64 { return m.Amount }))
+	assert.Zero(t, held, "nothing waits for an Order that exists")
 }

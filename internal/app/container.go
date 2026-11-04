@@ -458,7 +458,7 @@ var editionPackage = do.Package(
 	do.Lazy(func(i do.Injector) (events.ConsumerHandlers, error) {
 		edition := do.MustInvoke[*ee.Edition](i)
 		jc := do.MustInvoke[*jobsClient](i)
-		return events.Handlers(do.MustInvoke[*ent.Client](i), jc.Client, jc.Client, edition.Webhooks(jc.Client), do.MustInvoke[*orders.Module](i), edition.Consumers), nil
+		return events.Handlers(do.MustInvoke[*ent.Client](i), jc.Client, jc.Client, edition.Webhooks(jc.Client), edition.Consumers), nil
 	}),
 )
 
