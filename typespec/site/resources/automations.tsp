@@ -213,10 +213,36 @@ model SiteUpdateAutomationInput {
   steps?: SiteAutomationStep[];
 }
 
-/** Filter of the automation list */
+/** The state an automation is in, as the list shows it: draft until it is first published, then
+ * active or inactive */
+enum SiteAutomationState {
+  draft,
+  active,
+  inactive,
+}
+
+/** What the automation list is ordered by */
+enum SiteAutomationsSort {
+  name,
+  createdAt,
+}
+
+/** Filter and order of the automation list */
 model SiteAutomationsListFilter {
   /** true lists the archived automations instead of the kept ones; the default hides them */
   @query archived?: boolean;
+
+  /** Keeps the automations whose name contains this text, ignoring case */
+  @query name?: string;
+
+  /** Keeps the automations in this state */
+  @query state?: SiteAutomationState;
+
+  /** What the list is ordered by; the default is createdAt */
+  @query sort?: SiteAutomationsSort;
+
+  /** The direction of the order; the default is desc, the newest first, or asc when sorted by name */
+  @query direction?: SortDirection;
 }
 
 /**

@@ -182,3 +182,13 @@ func MapCursor[T, U any](p CursorPage[T], f func(T) U) CursorPage[U] {
 	}
 	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
 }
+
+// Direction is the direction of a list's order, the contract's SortDirection.
+type Direction string
+
+const (
+	// Asc is the smallest first: A to Z, the oldest first.
+	Asc Direction = "asc"
+	// Desc is the largest first: Z to A, the newest first.
+	Desc Direction = "desc"
+)

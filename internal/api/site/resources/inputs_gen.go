@@ -22,6 +22,7 @@ import (
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -93,6 +94,20 @@ func (c *InputsImpl) AutomationReportPeriod(source site.SiteAutomationReportsGet
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return automationsReportPeriod
+}
+func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automations.State {
+	var automationsState automations.State
+	switch source {
+	case site.SiteAutomationStateActive:
+		automationsState = automations.StateActive
+	case site.SiteAutomationStateDraft:
+		automationsState = automations.StateDraft
+	case site.SiteAutomationStateInactive:
+		automationsState = automations.StateInactive
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsState
 }
 func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationsteps.Step {
 	var automationstepsStep automationsteps.Step
@@ -166,6 +181,27 @@ func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) au
 		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
 	}
 	return automationsUpdateInput
+}
+func (c *InputsImpl) AutomationsListFilter(source site.SiteAutomationsListParams) automations.ListFilter {
+	var automationsListFilter automations.ListFilter
+	automationsListFilter.Archived = boolIn(source.Archived)
+	automationsListFilter.Name = stringIn(source.Name)
+	automationsListFilter.State = automationStateIn(c, source.State)
+	automationsListFilter.Sort = automationsSortIn(c, source.Sort)
+	automationsListFilter.Direction = sortDirectionIn(c, source.Direction)
+	return automationsListFilter
+}
+func (c *InputsImpl) AutomationsSort(source site.SiteAutomationsSort) automations.Sort {
+	var automationsSort automations.Sort
+	switch source {
+	case site.SiteAutomationsSortCreatedAt:
+		automationsSort = automations.SortCreatedAt
+	case site.SiteAutomationsSortName:
+		automationsSort = automations.SortName
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationsSort
 }
 func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.Input {
 	var brandkitInput brandkit.Input
@@ -635,6 +671,18 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 		signupsurveyAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
 	}
 	return signupsurveyAnswers
+}
+func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Direction {
+	var paginationDirection pagination.Direction
+	switch source {
+	case site.SortDirectionAsc:
+		paginationDirection = pagination.Asc
+	case site.SortDirectionDesc:
+		paginationDirection = pagination.Desc
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return paginationDirection
 }
 func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) suppression.Channel {
 	var suppressionChannel suppression.Channel

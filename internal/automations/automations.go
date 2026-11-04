@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -412,22 +411,6 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 	return slices.ContainsFunc(steps, func(st automationsteps.Step) bool {
 		return (st.Type == automationsteps.ApplyTag || st.Type == automationsteps.RemoveTag) && strings.TrimSpace(st.Tag) == name
 	}), nil
-}
-
-// List returns one page of the Workspace's Automations, newest first: the kept ones, or with
-// archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Automation], error) {
-	rows := func() *ent.AutomationQuery {
-		if archived {
-			return s.Automation().QueryDiscarded()
-		}
-		return s.Automation().Query()
-	}
-	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
-		func(ctx context.Context, limit, offset int) ([]*ent.Automation, error) {
-			return withVersions(rows()).Order(ent.Desc(automation.FieldID)).Limit(limit).Offset(offset).All(ctx)
-		})
 }
 
 // Get returns one Automation of the Workspace, archived or not: an archived Automation is

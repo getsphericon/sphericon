@@ -6942,6 +6942,98 @@ func (o OptSiteAutomationReportsGetPeriod) Or(d SiteAutomationReportsGetPeriod) 
 	return d
 }
 
+// NewOptSiteAutomationState returns new OptSiteAutomationState with value set to v.
+func NewOptSiteAutomationState(v SiteAutomationState) OptSiteAutomationState {
+	return OptSiteAutomationState{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationState is optional SiteAutomationState.
+type OptSiteAutomationState struct {
+	Value SiteAutomationState
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationState was set.
+func (o OptSiteAutomationState) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationState) Reset() {
+	var v SiteAutomationState
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationState) SetTo(v SiteAutomationState) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationState) Get() (v SiteAutomationState, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationState) Or(d SiteAutomationState) SiteAutomationState {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteAutomationsSort returns new OptSiteAutomationsSort with value set to v.
+func NewOptSiteAutomationsSort(v SiteAutomationsSort) OptSiteAutomationsSort {
+	return OptSiteAutomationsSort{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationsSort is optional SiteAutomationsSort.
+type OptSiteAutomationsSort struct {
+	Value SiteAutomationsSort
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationsSort was set.
+func (o OptSiteAutomationsSort) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationsSort) Reset() {
+	var v SiteAutomationsSort
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationsSort) SetTo(v SiteAutomationsSort) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationsSort) Get() (v SiteAutomationsSort, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationsSort) Or(d SiteAutomationsSort) SiteAutomationsSort {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteBroadcastsOrder returns new OptSiteBroadcastsOrder with value set to v.
 func NewOptSiteBroadcastsOrder(v SiteBroadcastsOrder) OptSiteBroadcastsOrder {
 	return OptSiteBroadcastsOrder{
@@ -7948,6 +8040,52 @@ func (o OptSiteWebhookFailure) Get() (v SiteWebhookFailure, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteWebhookFailure) Or(d SiteWebhookFailure) SiteWebhookFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSortDirection returns new OptSortDirection with value set to v.
+func NewOptSortDirection(v SortDirection) OptSortDirection {
+	return OptSortDirection{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSortDirection is optional SortDirection.
+type OptSortDirection struct {
+	Value SortDirection
+	Set   bool
+}
+
+// IsSet returns true if OptSortDirection was set.
+func (o OptSortDirection) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSortDirection) Reset() {
+	var v SortDirection
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSortDirection) SetTo(v SortDirection) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSortDirection) Get() (v SortDirection, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSortDirection) Or(d SortDirection) SortDirection {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -12515,6 +12653,57 @@ func (s *SiteAutomationResultsPoint) SetDate(val string) {
 	s.Date = val
 }
 
+// The state an automation is in, as the list shows it: draft until it is first published, then active
+// or inactive.
+// Ref: #/components/schemas/SiteAutomationState
+type SiteAutomationState string
+
+const (
+	SiteAutomationStateDraft    SiteAutomationState = "draft"
+	SiteAutomationStateActive   SiteAutomationState = "active"
+	SiteAutomationStateInactive SiteAutomationState = "inactive"
+)
+
+// AllValues returns all SiteAutomationState values.
+func (SiteAutomationState) AllValues() []SiteAutomationState {
+	return []SiteAutomationState{
+		SiteAutomationStateDraft,
+		SiteAutomationStateActive,
+		SiteAutomationStateInactive,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationState) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationStateDraft:
+		return []byte(s), nil
+	case SiteAutomationStateActive:
+		return []byte(s), nil
+	case SiteAutomationStateInactive:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationState) UnmarshalText(data []byte) error {
+	switch SiteAutomationState(data) {
+	case SiteAutomationStateDraft:
+		*s = SiteAutomationStateDraft
+		return nil
+	case SiteAutomationStateActive:
+		*s = SiteAutomationStateActive
+		return nil
+	case SiteAutomationStateInactive:
+		*s = SiteAutomationStateInactive
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
 // Ref: #/components/schemas/SiteAutomationStatus
 type SiteAutomationStatus string
@@ -13154,6 +13343,49 @@ func (*SiteAutomationsRevertNotFound) siteAutomationsRevertRes() {}
 type SiteAutomationsRevertUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsRevertUnprocessableEntity) siteAutomationsRevertRes() {}
+
+// What the automation list is ordered by.
+// Ref: #/components/schemas/SiteAutomationsSort
+type SiteAutomationsSort string
+
+const (
+	SiteAutomationsSortName      SiteAutomationsSort = "name"
+	SiteAutomationsSortCreatedAt SiteAutomationsSort = "createdAt"
+)
+
+// AllValues returns all SiteAutomationsSort values.
+func (SiteAutomationsSort) AllValues() []SiteAutomationsSort {
+	return []SiteAutomationsSort{
+		SiteAutomationsSortName,
+		SiteAutomationsSortCreatedAt,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationsSort) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationsSortName:
+		return []byte(s), nil
+	case SiteAutomationsSortCreatedAt:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationsSort) UnmarshalText(data []byte) error {
+	switch SiteAutomationsSort(data) {
+	case SiteAutomationsSortName:
+		*s = SiteAutomationsSortName
+		return nil
+	case SiteAutomationsSortCreatedAt:
+		*s = SiteAutomationsSortCreatedAt
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type SiteAutomationsUnarchiveBadRequest ProblemDetails
 
@@ -29460,6 +29692,50 @@ func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
 	switch SmtpConfigInputKind(data) {
 	case SmtpConfigInputKindSMTP:
 		*s = SmtpConfigInputKindSMTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Direction of a list's order. Only the surfaces with a sortable list import this file, so the others
+// do not carry an unused schema.
+// Ref: #/components/schemas/SortDirection
+type SortDirection string
+
+const (
+	SortDirectionAsc  SortDirection = "asc"
+	SortDirectionDesc SortDirection = "desc"
+)
+
+// AllValues returns all SortDirection values.
+func (SortDirection) AllValues() []SortDirection {
+	return []SortDirection{
+		SortDirectionAsc,
+		SortDirectionDesc,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SortDirection) MarshalText() ([]byte, error) {
+	switch s {
+	case SortDirectionAsc:
+		return []byte(s), nil
+	case SortDirectionDesc:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SortDirection) UnmarshalText(data []byte) error {
+	switch SortDirection(data) {
+	case SortDirectionAsc:
+		*s = SortDirectionAsc
+		return nil
+	case SortDirectionDesc:
+		*s = SortDirectionDesc
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

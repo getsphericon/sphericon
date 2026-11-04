@@ -20,8 +20,8 @@ type WithRevenue struct {
 
 // ListWithRevenue is List with the revenue of each Automation of the page, read in one grouped
 // query whatever the page's size.
-func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[WithRevenue], error) {
-	page, err := m.List(ctx, s, p, archived)
+func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter) (pagination.Page[WithRevenue], error) {
+	page, err := m.List(ctx, s, p, f)
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}

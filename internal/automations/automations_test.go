@@ -104,7 +104,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 
 func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	page, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
+	page, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule()).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, automations.ListFilter{})
 	require.NoError(t, err)
 	require.Greater(t, page.TotalItems, 1)
 	for _, a := range page.Items {

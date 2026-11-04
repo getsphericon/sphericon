@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -95,6 +96,9 @@ import (
 // goverter:extend broadcastContentIn
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
+// goverter:extend automationStateIn
+// goverter:extend automationsSortIn
+// goverter:extend sortDirectionIn
 type Inputs interface {
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
@@ -110,6 +114,7 @@ type Inputs interface {
 	// The list's filter; the statuses go member by member (BroadcastStatuses).
 	// goverter:map Status Statuses
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
+	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhooks.UpdateInput
@@ -195,6 +200,12 @@ type Inputs interface {
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
 	// goverter:enum:transform value
 	BroadcastChannel(source siteapi.BroadcastChannel) broadcast.Channel
+	// goverter:enum:transform value
+	AutomationState(source siteapi.SiteAutomationState) automations.State
+	// goverter:enum:transform value
+	AutomationsSort(source siteapi.SiteAutomationsSort) automations.Sort
+	// goverter:enum:transform value
+	SortDirection(source siteapi.SortDirection) pagination.Direction
 	// goverter:enum:transform value
 	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
 	// goverter:enum:transform value
@@ -427,6 +438,33 @@ func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *broadcast.C
 		return nil
 	}
 	return new(c.BroadcastChannel(v))
+}
+
+// automationStateIn is the State the Automation list is narrowed to: empty for every State.
+func automationStateIn(c Inputs, o siteapi.OptSiteAutomationState) automations.State {
+	v, ok := o.Get()
+	if !ok {
+		return ""
+	}
+	return c.AutomationState(v)
+}
+
+// automationsSortIn is what the Automation list is ordered by: empty for the default.
+func automationsSortIn(c Inputs, o siteapi.OptSiteAutomationsSort) automations.Sort {
+	v, ok := o.Get()
+	if !ok {
+		return ""
+	}
+	return c.AutomationsSort(v)
+}
+
+// sortDirectionIn is the direction of a list's order: empty for the list's default.
+func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction {
+	v, ok := o.Get()
+	if !ok {
+		return ""
+	}
+	return c.SortDirection(v)
 }
 
 func createSegmentCondition(g siteapi.SiteConditionGroup) (*string, error) {

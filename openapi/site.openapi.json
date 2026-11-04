@@ -5037,7 +5037,19 @@
             "$ref": "#/components/parameters/PageQuery.pageSize"
           },
           {
-            "$ref": "#/components/parameters/SiteAutomationsListFilter"
+            "$ref": "#/components/parameters/SiteAutomationsListFilter.archived"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationsListFilter.name"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationsListFilter.state"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationsListFilter.sort"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationsListFilter.direction"
           }
         ],
         "responses": {
@@ -13937,13 +13949,53 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
-      "SiteAutomationsListFilter": {
+      "SiteAutomationsListFilter.archived": {
         "name": "archived",
         "in": "query",
         "required": false,
         "description": "true lists the archived automations instead of the kept ones; the default hides them",
         "schema": {
           "type": "boolean"
+        },
+        "explode": false
+      },
+      "SiteAutomationsListFilter.direction": {
+        "name": "direction",
+        "in": "query",
+        "required": false,
+        "description": "The direction of the order; the default is desc, the newest first, or asc when sorted by name",
+        "schema": {
+          "$ref": "#/components/schemas/SortDirection"
+        },
+        "explode": false
+      },
+      "SiteAutomationsListFilter.name": {
+        "name": "name",
+        "in": "query",
+        "required": false,
+        "description": "Keeps the automations whose name contains this text, ignoring case",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "SiteAutomationsListFilter.sort": {
+        "name": "sort",
+        "in": "query",
+        "required": false,
+        "description": "What the list is ordered by; the default is createdAt",
+        "schema": {
+          "$ref": "#/components/schemas/SiteAutomationsSort"
+        },
+        "explode": false
+      },
+      "SiteAutomationsListFilter.state": {
+        "name": "state",
+        "in": "query",
+        "required": false,
+        "description": "Keeps the automations in this state",
+        "schema": {
+          "$ref": "#/components/schemas/SiteAutomationState"
         },
         "explode": false
       },
@@ -17746,6 +17798,11 @@
         },
         "description": "One Report day of an automation's results"
       },
+      "SiteAutomationState": {
+        "type": "string",
+        "enum": ["draft", "active", "inactive"],
+        "description": "The state an automation is in, as the list shows it: draft until it is first published, then\nactive or inactive"
+      },
       "SiteAutomationStatus": {
         "type": "string",
         "enum": ["active", "inactive"],
@@ -17919,6 +17976,11 @@
           }
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
+      },
+      "SiteAutomationsSort": {
+        "type": "string",
+        "enum": ["name", "createdAt"],
+        "description": "What the automation list is ordered by"
       },
       "SiteBindingResource": {
         "type": "object",
@@ -23888,6 +23950,11 @@
           }
         },
         "description": "SMTP credentials"
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": ["asc", "desc"],
+        "description": "Direction of a list's order. Only the surfaces with a sortable list import this file, so the\nothers do not carry an unused schema."
       },
       "TelegramBroadcastContent": {
         "type": "object",

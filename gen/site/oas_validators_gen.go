@@ -3399,6 +3399,19 @@ func (s *SiteAutomationResults) Validate() error {
 	return nil
 }
 
+func (s SiteAutomationState) Validate() error {
+	switch s {
+	case "draft":
+		return nil
+	case "active":
+		return nil
+	case "inactive":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s SiteAutomationStatus) Validate() error {
 	switch s {
 	case "active":
@@ -3801,6 +3814,17 @@ func (s *SiteAutomationsRevertUnprocessableEntity) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s SiteAutomationsSort) Validate() error {
+	switch s {
+	case "name":
+		return nil
+	case "createdAt":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteAutomationsUnarchiveBadRequest) Validate() error {
@@ -14478,6 +14502,17 @@ func (s *SmtpConfigInput) Validate() error {
 func (s SmtpConfigInputKind) Validate() error {
 	switch s {
 	case "smtp":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SortDirection) Validate() error {
+	switch s {
+	case "asc":
+		return nil
+	case "desc":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

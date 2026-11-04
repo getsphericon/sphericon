@@ -2468,6 +2468,22 @@ export type SiteAutomationResultsPoint = {
 };
 
 /**
+ * The state an automation is in, as the list shows it: draft until it is first published, then
+ * active or inactive
+ */
+export const SiteAutomationState = {
+  DRAFT: 'draft',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive'
+} as const;
+
+/**
+ * The state an automation is in, as the list shows it: draft until it is first published, then
+ * active or inactive
+ */
+export type SiteAutomationState = typeof SiteAutomationState[keyof typeof SiteAutomationState];
+
+/**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const SiteAutomationStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
@@ -2628,6 +2644,16 @@ export type SiteAutomationVersion = {
    */
   steps: Array<SiteAutomationStep>;
 };
+
+/**
+ * What the automation list is ordered by
+ */
+export const SiteAutomationsSort = { NAME: 'name', CREATED_AT: 'createdAt' } as const;
+
+/**
+ * What the automation list is ordered by
+ */
+export type SiteAutomationsSort = typeof SiteAutomationsSort[keyof typeof SiteAutomationsSort];
 
 /**
  * A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by what the bot receives, so it is read here and never written.
@@ -7015,6 +7041,18 @@ export type SmtpConfigInput = {
 };
 
 /**
+ * Direction of a list's order. Only the surfaces with a sortable list import this file, so the
+ * others do not carry an unused schema.
+ */
+export const SortDirection = { ASC: 'asc', DESC: 'desc' } as const;
+
+/**
+ * Direction of a list's order. Only the surfaces with a sortable list import this file, so the
+ * others do not carry an unused schema.
+ */
+export type SortDirection = typeof SortDirection[keyof typeof SortDirection];
+
+/**
  * Telegram's content of a Broadcast as stored
  */
 export type TelegramBroadcastContent = {
@@ -7462,7 +7500,27 @@ export type SiteAutomationResourceParentKey = WorkspaceId;
 /**
  * true lists the archived automations instead of the kept ones; the default hides them
  */
-export type SiteAutomationsListFilter = boolean;
+export type SiteAutomationsListFilterArchived = boolean;
+
+/**
+ * The direction of the order; the default is desc, the newest first, or asc when sorted by name
+ */
+export type SiteAutomationsListFilterDirection = SortDirection;
+
+/**
+ * Keeps the automations whose name contains this text, ignoring case
+ */
+export type SiteAutomationsListFilterName = string;
+
+/**
+ * What the list is ordered by; the default is createdAt
+ */
+export type SiteAutomationsListFilterSort = SiteAutomationsSort;
+
+/**
+ * Keeps the automations in this state
+ */
+export type SiteAutomationsListFilterState = SiteAutomationState;
 
 /**
  * Unique identifier
@@ -10150,6 +10208,22 @@ export type SiteAutomationsListData = {
      * true lists the archived automations instead of the kept ones; the default hides them
      */
     archived?: boolean;
+    /**
+     * Keeps the automations whose name contains this text, ignoring case
+     */
+    name?: string;
+    /**
+     * Keeps the automations in this state
+     */
+    state?: SiteAutomationState;
+    /**
+     * What the list is ordered by; the default is createdAt
+     */
+    sort?: SiteAutomationsSort;
+    /**
+     * The direction of the order; the default is desc, the newest first, or asc when sorted by name
+     */
+    direction?: SortDirection;
   };
   url: '/workspaces/{workspaceId}/automations';
 };

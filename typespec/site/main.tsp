@@ -6,6 +6,7 @@ import "../common/scalars.tsp";
 import "../common/audit.tsp";
 import "../common/money.tsp";
 import "../common/pagination.tsp";
+import "../common/sort.tsp";
 import "../common/errors.tsp";
 // scopes.tsp before crud.tsp: the external CRUD templates constrain their scope parameters to
 // ApiTokenScope, and a scope enum first checked through them loses its doc and extensions.

@@ -6691,6 +6691,22 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 					Name: "archived",
 					In:   "query",
 				}: params.Archived,
+				{
+					Name: "name",
+					In:   "query",
+				}: params.Name,
+				{
+					Name: "state",
+					In:   "query",
+				}: params.State,
+				{
+					Name: "sort",
+					In:   "query",
+				}: params.Sort,
+				{
+					Name: "direction",
+					In:   "query",
+				}: params.Direction,
 			},
 			Raw: r,
 		}

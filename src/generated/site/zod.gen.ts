@@ -878,6 +878,16 @@ export const zSiteAutomationResultsPoint = z.object({
 });
 
 /**
+ * The state an automation is in, as the list shows it: draft until it is first published, then
+ * active or inactive
+ */
+export const zSiteAutomationState = z.enum([
+  'draft',
+  'active',
+  'inactive'
+]);
+
+/**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
@@ -902,6 +912,11 @@ export const zSiteAutomationStepType = z.enum([
   'remove_tag',
   'http'
 ]);
+
+/**
+ * What the automation list is ordered by
+ */
+export const zSiteAutomationsSort = z.enum(['name', 'createdAt']);
 
 /**
  * What slows a sending broadcast
@@ -2339,6 +2354,12 @@ export const zSmtpConfigInput = z.object({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable())
 });
+
+/**
+ * Direction of a list's order. Only the surfaces with a sortable list import this file, so the
+ * others do not carry an unused schema.
+ */
+export const zSortDirection = z.enum(['asc', 'desc']);
 
 /**
  * A link button under a Telegram message: an inline URL button on a row of its own
@@ -3891,7 +3912,27 @@ export const zSiteAutomationResourceParentKey = zWorkspaceId;
 /**
  * true lists the archived automations instead of the kept ones; the default hides them
  */
-export const zSiteAutomationsListFilter = z.boolean();
+export const zSiteAutomationsListFilterArchived = z.boolean();
+
+/**
+ * The direction of the order; the default is desc, the newest first, or asc when sorted by name
+ */
+export const zSiteAutomationsListFilterDirection = zSortDirection;
+
+/**
+ * Keeps the automations whose name contains this text, ignoring case
+ */
+export const zSiteAutomationsListFilterName = z.string();
+
+/**
+ * What the list is ordered by; the default is createdAt
+ */
+export const zSiteAutomationsListFilterSort = zSiteAutomationsSort;
+
+/**
+ * Keeps the automations in this state
+ */
+export const zSiteAutomationsListFilterState = zSiteAutomationState;
 
 /**
  * Unique identifier
@@ -4780,7 +4821,11 @@ export const zSiteAutomationsListPath = z.object({
 export const zSiteAutomationsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  archived: z.exactOptional(z.boolean()),
+  name: z.exactOptional(z.string()),
+  state: z.exactOptional(zSiteAutomationState),
+  sort: z.exactOptional(zSiteAutomationsSort),
+  direction: z.exactOptional(zSortDirection)
 });
 
 /**

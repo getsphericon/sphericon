@@ -10,7 +10,7 @@ import (
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
 	ws := workspaceScope(ctx)
 
-	page, err := h.automations.ListWithRevenue(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	page, err := h.automations.ListWithRevenue(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.AutomationsListFilter(params))
 	if err != nil {
 		return nil, err
 	}
