@@ -114,8 +114,8 @@ model RuleResource {
   /** When the Rule last became active by Publish. It acts only on Events recorded after it. */
   activatedAt?: Timestamp | null;
 
-  /** When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id only and changes no more. */
-  deletedAt?: Timestamp | null;
+  /** When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept. */
+  discardedAt?: Timestamp | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;

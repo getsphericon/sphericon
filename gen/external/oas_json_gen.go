@@ -35945,9 +35945,9 @@ func (s *RuleResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.DeletedAt.Set {
-			e.FieldStart("deletedAt")
-			s.DeletedAt.Encode(e)
+		if s.DiscardedAt.Set {
+			e.FieldStart("discardedAt")
+			s.DiscardedAt.Encode(e)
 		}
 	}
 	{
@@ -35967,7 +35967,7 @@ var jsonFieldsNameOfRuleResource = [9]string{
 	3: "live",
 	4: "draft",
 	5: "activatedAt",
-	6: "deletedAt",
+	6: "discardedAt",
 	7: "createdAt",
 	8: "updatedAt",
 }
@@ -36043,15 +36043,15 @@ func (s *RuleResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"activatedAt\"")
 			}
-		case "deletedAt":
+		case "discardedAt":
 			if err := func() error {
-				s.DeletedAt.Reset()
-				if err := s.DeletedAt.Decode(d); err != nil {
+				s.DiscardedAt.Reset()
+				if err := s.DiscardedAt.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deletedAt\"")
+				return errors.Wrap(err, "decode field \"discardedAt\"")
 			}
 		case "createdAt":
 			requiredBitSet[0] |= 1 << 7

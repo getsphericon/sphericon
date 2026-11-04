@@ -294,9 +294,7 @@ type Converter interface {
 	// goverter:ignore SendCap
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
 
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
-	// are the edges the rules module loads (ADR 0065).
-	// goverter:map DiscardedAt DeletedAt
+	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) externalapi.RuleResource

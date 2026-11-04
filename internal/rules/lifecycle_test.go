@@ -100,16 +100,20 @@ func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing
 	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "deleted and active (publish: %v, delete: %v)", publishErr, deleteErr)
 }
 
-func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
+// Delete discards a Rule that never fired too: there is no purge for a row without history yet
+// (ADR 0100). It is still read by id, and its versions with it.
+func TestDeleteKeepsARuleThatNeverFired(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
 
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleInactiveID))
 
-	n, err := acme(env).Rule().QueryWithDiscarded().Where(rule.ID(fixtures.RuleInactiveID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n, "no row is kept for a Rule that never fired")
+	got, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
+	require.NoError(t, err, "a deleted Rule that never fired is still read by id")
+	assert.NotNil(t, got.DiscardedAt)
+	live, draft := rules.LiveAndDraft(got)
+	assert.True(t, live != nil || draft != nil, "its versions are kept with it")
 }
 
 func TestDeleteOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
@@ -233,7 +237,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 }
 
 // Create, update, publish, deactivate and delete each leave an Audit entry, and the Actions' values
-// never reach one (a later Action kind may hold a secret).
+// never reach one (a later Action kind may hold a secret). Delete records a discard (ADR 0100).
 func TestRuleChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -263,6 +267,6 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	}
 	assert.Equal(t, "rule.create", seen[0])
 	assert.Contains(t, seen, "rule.update")
-	assert.Contains(t, seen, "rule.delete")
+	assert.Equal(t, "rule.discard", seen[len(seen)-1])
 	assert.GreaterOrEqual(t, len(seen), 5, "update, publish, deactivate and delete each wrote one")
 }

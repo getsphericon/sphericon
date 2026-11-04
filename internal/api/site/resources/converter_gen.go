@@ -1925,7 +1925,7 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 		siteapiSiteRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
 		siteapiSiteRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
-		siteapiSiteRuleResource.DeletedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSiteRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

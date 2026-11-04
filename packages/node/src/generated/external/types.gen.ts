@@ -4029,9 +4029,9 @@ export type RuleResource = {
    */
   activatedAt?: Timestamp | null;
   /**
-   * When the Rule was deleted, keeping its Firings; null while it is kept. A deleted Rule is read by id only and changes no more.
+   * When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and changes no more. Null while it is kept.
    */
-  deletedAt?: Timestamp | null;
+  discardedAt?: Timestamp | null;
   /**
    * Creation timestamp
    */

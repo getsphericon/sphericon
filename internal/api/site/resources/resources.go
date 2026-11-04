@@ -479,9 +479,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	InvitationsToResources(source []*ent.Invitation) siteapi.SiteInvitationsListOKApplicationJSON
 
-	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
-	// are the edges the rules module loads (ADR 0065).
-	// goverter:map DiscardedAt DeletedAt
+	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource

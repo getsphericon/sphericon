@@ -403,16 +403,12 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 	return lo.Compact([]*ent.RuleVersion{live, draft})
 }
 
-// Delete removes a Rule (ADR 0049, ADR 0098). One with no Firings is purged, with its versions.
-// One with Firings is discarded so they stay as history (internal/drafts' Discard): it is
-// deactivated under the lock Publish takes, so it never fires again, and it leaves the lists for
-// good; Get still reads it. Deleting a deleted Rule changes nothing.
+// Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
+// internal/drafts' Discard: it is deactivated under the lock Publish takes, so it never fires
+// again, and it leaves the lists for good with its versions and Firings kept; Get still reads it.
+// Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
-	if err != nil || n > 0 {
-		return err
-	}
-	_, err = m.life.Discard(ctx, s, id)
+	_, err := m.life.Discard(ctx, s, id)
 	return err
 }
 
