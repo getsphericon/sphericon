@@ -25,7 +25,7 @@ var (
 	// ErrNotFound: no such Segment in this Workspace.
 	ErrNotFound = validation.NotFound("segments: segment not found", i18n.ErrorsSegmentNotFound)
 	// ErrArchived: the Segment is archived, so it is read-only until it is unarchived (ADR 0100).
-	ErrArchived = validation.Conflict("segments: segment archived", i18n.ErrorsSegmentArchived)
+	ErrArchived = validation.Conflict("segments: segment is archived", i18n.ErrorsSegmentArchived)
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted

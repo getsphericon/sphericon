@@ -46,7 +46,7 @@ const names: Record<AnyAuditAction, string> = {
   'automation.update': 'Changed an automation',
   'automation.delete': 'Deleted an automation',
   'automation.archive': 'Archived an automation',
-  'automation.unarchive': 'Restored an automation',
+  'automation.unarchive': 'Unarchived an automation',
   'brand_kit.create': 'Created the brand kit',
   'brand_kit.update': 'Changed the brand kit',
   'brand_kit.delete': 'Deleted the brand kit',

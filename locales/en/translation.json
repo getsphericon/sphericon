@@ -239,7 +239,7 @@
     "automationArchive": "Archived an automation",
     "automationCreate": "Created an automation",
     "automationDelete": "Deleted an automation",
-    "automationUnarchive": "Restored an automation",
+    "automationUnarchive": "Unarchived an automation",
     "automationUpdate": "Changed an automation",
     "brandKitCreate": "Created the brand kit",
     "brandKitDelete": "Deleted the brand kit",

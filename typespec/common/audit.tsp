@@ -113,7 +113,7 @@ enum AuditAction {
   /** Archived an automation */
   automationArchive: "automation.archive",
 
-  /** Restored an archived automation */
+  /** Unarchived an automation */
   automationUnarchive: "automation.unarchive",
 
   /** Created the brand kit */
