@@ -61,6 +61,10 @@ type OutboundMessage struct {
 	BouncedAt *time.Time `json:"bounced_at,omitempty"`
 	// ComplainedAt holds the value of the "complained_at" field.
 	ComplainedAt *time.Time `json:"complained_at,omitempty"`
+	// UndeliveredAt holds the value of the "undelivered_at" field.
+	UndeliveredAt *time.Time `json:"undelivered_at,omitempty"`
+	// UndeliveredCode holds the value of the "undelivered_code" field.
+	UndeliveredCode *string `json:"undelivered_code,omitempty"`
 	// OpenedAt holds the value of the "opened_at" field.
 	OpenedAt *time.Time `json:"opened_at,omitempty"`
 	// ClickedAt holds the value of the "clicked_at" field.
@@ -222,9 +226,9 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -363,6 +367,20 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ComplainedAt = new(time.Time)
 				*_m.ComplainedAt = value.Time
+			}
+		case outboundmessage.FieldUndeliveredAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field undelivered_at", values[i])
+			} else if value.Valid {
+				_m.UndeliveredAt = new(time.Time)
+				*_m.UndeliveredAt = value.Time
+			}
+		case outboundmessage.FieldUndeliveredCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field undelivered_code", values[i])
+			} else if value.Valid {
+				_m.UndeliveredCode = new(string)
+				*_m.UndeliveredCode = value.String
 			}
 		case outboundmessage.FieldOpenedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -598,6 +616,16 @@ func (_m *OutboundMessage) String() string {
 	if v := _m.ComplainedAt; v != nil {
 		builder.WriteString("complained_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.UndeliveredAt; v != nil {
+		builder.WriteString("undelivered_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.UndeliveredCode; v != nil {
+		builder.WriteString("undelivered_code=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	if v := _m.OpenedAt; v != nil {

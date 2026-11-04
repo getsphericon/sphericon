@@ -15090,6 +15090,7 @@
           "clickedCount",
           "unsubscribedCount",
           "deliveredCount",
+          "undeliveredCount",
           "bouncedCount",
           "complainedCount",
           "capturedCount",
@@ -15161,6 +15162,12 @@
             "nullable": true,
             "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
+          "undeliveredCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none"
+          },
           "bouncedCount": {
             "type": "integer",
             "format": "int32",
@@ -15191,7 +15198,7 @@
             "description": "Unique clicks ÷ messages sent (0-1)"
           }
         },
-        "description": "Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does\nnot report is null, never zero: Telegram and SMS report no delivered, opened, bounced or\ncomplained count and so no open rate."
+        "description": "Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does\nnot report is null, never zero: Telegram reports no delivered, opened, bounced or complained\ncount and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or\ncomplained count or open rate; only SMS reports undelivered."
       },
       "BroadcastResource": {
         "type": "object",
@@ -16441,6 +16448,21 @@
             ],
             "nullable": true,
             "description": "When the provider first reported the message bounced"
+          },
+          "undeliveredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after"
+          },
+          "undeliveredCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's error code of the undelivered report (Twilio's ErrorCode)"
           },
           "complainedAt": {
             "type": "string",
@@ -18243,6 +18265,8 @@
           "sent_at",
           "delivered_at",
           "bounced_at",
+          "undelivered_at",
+          "undelivered_code",
           "complained_at",
           "opened_at",
           "clicked_at",
@@ -18399,6 +18423,21 @@
             ],
             "nullable": true,
             "description": "When the provider first reported the message bounced"
+          },
+          "undelivered_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after"
+          },
+          "undelivered_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's error code of the undelivered report (Twilio's ErrorCode)"
           },
           "complained_at": {
             "type": "string",

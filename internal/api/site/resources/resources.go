@@ -308,6 +308,7 @@ type Converter interface {
 	// goverter:map Unsubscribed UnsubscribedCount
 	// goverter:map Failed FailedCount
 	// goverter:map Delivered DeliveredCount
+	// goverter:map Undelivered UndeliveredCount
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
@@ -879,7 +880,7 @@ func transactionalChannel(outboundmessage.Channel) siteapi.SiteTransactionalEmai
 
 // transactionalStatus maps an Outbound message's status onto the transactional
 // send status enum.
-func transactionalStatus(m ent.OutboundMessage) siteapi.SiteTransactionalEmailStatus {
+func transactionalStatus(m *ent.OutboundMessage) siteapi.SiteTransactionalEmailStatus {
 	switch m.Status {
 	case outboundmessage.StatusSent:
 		return siteapi.SiteTransactionalEmailStatusSent
@@ -893,7 +894,7 @@ func transactionalStatus(m ent.OutboundMessage) siteapi.SiteTransactionalEmailSt
 }
 
 // transactionalError exposes the failure text only for a failed send.
-func transactionalError(m ent.OutboundMessage) siteapi.OptNilString {
+func transactionalError(m *ent.OutboundMessage) siteapi.OptNilString {
 	if m.Status != outboundmessage.StatusFailed || m.Reason == nil {
 		return siteapi.OptNilString{}
 	}

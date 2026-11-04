@@ -156,6 +156,7 @@ type Converter interface {
 	// goverter:map Figures.Clicked ClickedCount
 	// goverter:map Figures.Unsubscribed UnsubscribedCount
 	// goverter:map Figures.Delivered DeliveredCount
+	// goverter:map Figures.Undelivered UndeliveredCount
 	// goverter:map Figures.Bounced BouncedCount
 	// goverter:map Figures.Complained ComplainedCount
 	// goverter:map Figures.Captured CapturedCount

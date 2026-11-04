@@ -105,6 +105,10 @@ func (e *BindingChange) Project() Projection {
 // keeps, in bytes (1 KiB).
 const MaxReceivedText = 1024
 
+// outboundMessageIDProperty is the key of the Event property naming the Outbound message an Event
+// of a send is about.
+const outboundMessageIDProperty = "outboundMessageId"
+
 // ReceivedText is a message's text as a received Event keeps it: cut at MaxReceivedText bytes,
 // never inside a character.
 func ReceivedText(s string) string {
@@ -164,7 +168,7 @@ func (*TelegramSent) EventVersion() int  { return 1 }
 func (e *TelegramSent) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramSent) EventID() string  { return e.DedupID }
 func (e *TelegramSent) Project() Projection {
-	props := map[string]any{"destination": e.Destination, "outboundMessageId": e.OutboundMessageID}
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
 	if e.IntegrationID != 0 {
 		props["integrationId"] = e.IntegrationID
 	}
@@ -208,7 +212,7 @@ func (*SmsSent) EventVersion() int  { return 1 }
 func (e *SmsSent) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsSent) EventID() string  { return e.DedupID }
 func (e *SmsSent) Project() Projection {
-	props := map[string]any{"destination": e.Destination, "outboundMessageId": e.OutboundMessageID}
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
 	if e.IntegrationID != 0 {
 		props["integrationId"] = e.IntegrationID
 	}
@@ -226,6 +230,50 @@ func (e *SmsSent) Project() Projection {
 	}
 	return Projection{
 		Subject: e.Email, Action: NameSmsSent, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
+// SmsDelivery is the SMS provider's final report of a text it accepted (sms.delivered,
+// sms.undelivered, ADR 0079), recorded in the transaction of the Ingest request that stamped the
+// Outbound message: only the report that moved the message records one, so a redelivered or late
+// report records nothing. Destination is the number in E.164; ErrorCode is the provider's code of
+// an undelivered text (Twilio's ErrorCode), "" when it gave none. The Broadcast or Automation the
+// text came from is named when there is one.
+type SmsDelivery struct {
+	Action            string `json:"action"` // sms.delivered|sms.undelivered
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	Destination       string `json:"destination"`
+	ErrorCode         string `json:"errorCode,omitempty"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Surface           string `json:"surface,omitempty"`
+	SendingSource     string `json:"sendingSource,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (e *SmsDelivery) EventName() string { return e.Action }
+func (*SmsDelivery) EventVersion() int   { return 1 }
+func (e *SmsDelivery) Workspace() int64  { return e.WorkspaceID }
+func (e *SmsDelivery) EventID() string   { return e.DedupID }
+func (e *SmsDelivery) Project() Projection {
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
+	for k, v := range map[string]string{"errorCode": e.ErrorCode, "surface": e.Surface, "sendingSource": e.SendingSource} {
+		if v != "" {
+			props[k] = v
+		}
+	}
+	for k, v := range map[string]int64{"integrationId": e.IntegrationID, "broadcastId": e.BroadcastID, "automationId": e.AutomationID} {
+		if v != 0 {
+			props[k] = v
+		}
+	}
+	return Projection{
+		Subject: e.Email, Action: e.Action, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
 	}
 }
@@ -252,7 +300,7 @@ func (*TelegramClicked) EventVersion() int  { return 1 }
 func (e *TelegramClicked) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramClicked) EventID() string  { return e.DedupID }
 func (e *TelegramClicked) Project() Projection {
-	props := map[string]any{"url": e.URL, "outboundMessageId": e.OutboundMessageID}
+	props := map[string]any{"url": e.URL, outboundMessageIDProperty: e.OutboundMessageID}
 	if e.IntegrationID != 0 {
 		props["integrationId"] = e.IntegrationID
 	}

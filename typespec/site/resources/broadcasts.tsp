@@ -33,7 +33,9 @@ model SiteMessageRevenue {
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
  * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * and SMS report no delivered, opened, bounced or complained count and so no delivery or open rate.
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
  */
 model SiteBroadcastStats {
   /** Number of recipients the broadcast targets */
@@ -62,6 +64,9 @@ model SiteBroadcastStats {
 
   /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   deliveredCount: int32 | null;
+
+  /** Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  undeliveredCount: int32 | null;
 
   /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   bouncedCount: int32 | null;

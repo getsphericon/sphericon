@@ -23845,6 +23845,30 @@ func (x *OutboundMessageScopedCreate) SetNillableComplainedAt(v *time.Time) *Out
 	return x
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedCreate) SetUndeliveredAt(v time.Time) *OutboundMessageScopedCreate {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedCreate {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedCreate) SetUndeliveredCode(v string) *OutboundMessageScopedCreate {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedCreate {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (x *OutboundMessageScopedCreate) SetOpenedAt(v time.Time) *OutboundMessageScopedCreate {
 	x.b.SetOpenedAt(v)
@@ -24354,6 +24378,42 @@ func (u *OutboundMessageScopedUpsert) UpdateComplainedAt() *OutboundMessageScope
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageScopedUpsert) ClearComplainedAt() *OutboundMessageScopedUpsert {
 	u.u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (u *OutboundMessageScopedUpsert) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldUndeliveredAt, v)
+	return u
+}
+
+// UpdateUndeliveredAt sets the "undelivered_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateUndeliveredAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (u *OutboundMessageScopedUpsert) ClearUndeliveredAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (u *OutboundMessageScopedUpsert) SetUndeliveredCode(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldUndeliveredCode, v)
+	return u
+}
+
+// UpdateUndeliveredCode sets the "undelivered_code" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateUndeliveredCode() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldUndeliveredCode)
+	return u
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (u *OutboundMessageScopedUpsert) ClearUndeliveredCode() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldUndeliveredCode)
 	return u
 }
 
@@ -24884,6 +24944,42 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableComplainedAt(v *time.Time) *
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdateOne) ClearComplainedAt() *OutboundMessageScopedUpdateOne {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearUndeliveredAt() *OutboundMessageScopedUpdateOne {
+	x.b.ClearUndeliveredAt()
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdateOne) SetUndeliveredCode(v string) *OutboundMessageScopedUpdateOne {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedUpdateOne {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdateOne) ClearUndeliveredCode() *OutboundMessageScopedUpdateOne {
+	x.b.ClearUndeliveredCode()
 	return x
 }
 
@@ -25498,6 +25594,42 @@ func (x *OutboundMessageScopedUpdate) SetNillableComplainedAt(v *time.Time) *Out
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (x *OutboundMessageScopedUpdate) ClearComplainedAt() *OutboundMessageScopedUpdate {
 	x.b.ClearComplainedAt()
+	return x
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdate) SetUndeliveredAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetUndeliveredAt(v)
+	return x
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageScopedUpdate {
+	x.b.SetNillableUndeliveredAt(v)
+	return x
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (x *OutboundMessageScopedUpdate) ClearUndeliveredAt() *OutboundMessageScopedUpdate {
+	x.b.ClearUndeliveredAt()
+	return x
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdate) SetUndeliveredCode(v string) *OutboundMessageScopedUpdate {
+	x.b.SetUndeliveredCode(v)
+	return x
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableUndeliveredCode(v *string) *OutboundMessageScopedUpdate {
+	x.b.SetNillableUndeliveredCode(v)
+	return x
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (x *OutboundMessageScopedUpdate) ClearUndeliveredCode() *OutboundMessageScopedUpdate {
+	x.b.ClearUndeliveredCode()
 	return x
 }
 

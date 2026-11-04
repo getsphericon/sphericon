@@ -36353,6 +36353,8 @@ type OutboundMessageMutation struct {
 	delivered_at               *time.Time
 	bounced_at                 *time.Time
 	complained_at              *time.Time
+	undelivered_at             *time.Time
+	undelivered_code           *string
 	opened_at                  *time.Time
 	clicked_at                 *time.Time
 	captured                   *bool
@@ -37267,6 +37269,104 @@ func (m *OutboundMessageMutation) ResetComplainedAt() {
 	delete(m.clearedFields, outboundmessage.FieldComplainedAt)
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (m *OutboundMessageMutation) SetUndeliveredAt(t time.Time) {
+	m.undelivered_at = &t
+}
+
+// UndeliveredAt returns the value of the "undelivered_at" field in the mutation.
+func (m *OutboundMessageMutation) UndeliveredAt() (r time.Time, exists bool) {
+	v := m.undelivered_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUndeliveredAt returns the old "undelivered_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldUndeliveredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUndeliveredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUndeliveredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUndeliveredAt: %w", err)
+	}
+	return oldValue.UndeliveredAt, nil
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (m *OutboundMessageMutation) ClearUndeliveredAt() {
+	m.undelivered_at = nil
+	m.clearedFields[outboundmessage.FieldUndeliveredAt] = struct{}{}
+}
+
+// UndeliveredAtCleared returns if the "undelivered_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) UndeliveredAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldUndeliveredAt]
+	return ok
+}
+
+// ResetUndeliveredAt resets all changes to the "undelivered_at" field.
+func (m *OutboundMessageMutation) ResetUndeliveredAt() {
+	m.undelivered_at = nil
+	delete(m.clearedFields, outboundmessage.FieldUndeliveredAt)
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (m *OutboundMessageMutation) SetUndeliveredCode(s string) {
+	m.undelivered_code = &s
+}
+
+// UndeliveredCode returns the value of the "undelivered_code" field in the mutation.
+func (m *OutboundMessageMutation) UndeliveredCode() (r string, exists bool) {
+	v := m.undelivered_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUndeliveredCode returns the old "undelivered_code" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldUndeliveredCode(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUndeliveredCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUndeliveredCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUndeliveredCode: %w", err)
+	}
+	return oldValue.UndeliveredCode, nil
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (m *OutboundMessageMutation) ClearUndeliveredCode() {
+	m.undelivered_code = nil
+	m.clearedFields[outboundmessage.FieldUndeliveredCode] = struct{}{}
+}
+
+// UndeliveredCodeCleared returns if the "undelivered_code" field was cleared in this mutation.
+func (m *OutboundMessageMutation) UndeliveredCodeCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldUndeliveredCode]
+	return ok
+}
+
+// ResetUndeliveredCode resets all changes to the "undelivered_code" field.
+func (m *OutboundMessageMutation) ResetUndeliveredCode() {
+	m.undelivered_code = nil
+	delete(m.clearedFields, outboundmessage.FieldUndeliveredCode)
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (m *OutboundMessageMutation) SetOpenedAt(t time.Time) {
 	m.opened_at = &t
@@ -38167,7 +38267,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 32)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -38221,6 +38321,12 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.complained_at != nil {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
+	}
+	if m.undelivered_at != nil {
+		fields = append(fields, outboundmessage.FieldUndeliveredAt)
+	}
+	if m.undelivered_code != nil {
+		fields = append(fields, outboundmessage.FieldUndeliveredCode)
 	}
 	if m.opened_at != nil {
 		fields = append(fields, outboundmessage.FieldOpenedAt)
@@ -38302,6 +38408,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.BouncedAt()
 	case outboundmessage.FieldComplainedAt:
 		return m.ComplainedAt()
+	case outboundmessage.FieldUndeliveredAt:
+		return m.UndeliveredAt()
+	case outboundmessage.FieldUndeliveredCode:
+		return m.UndeliveredCode()
 	case outboundmessage.FieldOpenedAt:
 		return m.OpenedAt()
 	case outboundmessage.FieldClickedAt:
@@ -38371,6 +38481,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldBouncedAt(ctx)
 	case outboundmessage.FieldComplainedAt:
 		return m.OldComplainedAt(ctx)
+	case outboundmessage.FieldUndeliveredAt:
+		return m.OldUndeliveredAt(ctx)
+	case outboundmessage.FieldUndeliveredCode:
+		return m.OldUndeliveredCode(ctx)
 	case outboundmessage.FieldOpenedAt:
 		return m.OldOpenedAt(ctx)
 	case outboundmessage.FieldClickedAt:
@@ -38529,6 +38643,20 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetComplainedAt(v)
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUndeliveredAt(v)
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUndeliveredCode(v)
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		v, ok := value.(time.Time)
@@ -38689,6 +38817,12 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldComplainedAt) {
 		fields = append(fields, outboundmessage.FieldComplainedAt)
 	}
+	if m.FieldCleared(outboundmessage.FieldUndeliveredAt) {
+		fields = append(fields, outboundmessage.FieldUndeliveredAt)
+	}
+	if m.FieldCleared(outboundmessage.FieldUndeliveredCode) {
+		fields = append(fields, outboundmessage.FieldUndeliveredCode)
+	}
 	if m.FieldCleared(outboundmessage.FieldOpenedAt) {
 		fields = append(fields, outboundmessage.FieldOpenedAt)
 	}
@@ -38765,6 +38899,12 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ClearComplainedAt()
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		m.ClearUndeliveredAt()
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		m.ClearUndeliveredCode()
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		m.ClearOpenedAt()
@@ -38860,6 +39000,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldComplainedAt:
 		m.ResetComplainedAt()
+		return nil
+	case outboundmessage.FieldUndeliveredAt:
+		m.ResetUndeliveredAt()
+		return nil
+	case outboundmessage.FieldUndeliveredCode:
+		m.ResetUndeliveredCode()
 		return nil
 	case outboundmessage.FieldOpenedAt:
 		m.ResetOpenedAt()

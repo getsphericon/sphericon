@@ -15397,6 +15397,21 @@
             "nullable": true,
             "description": "When the provider first reported the message bounced"
           },
+          "undeliveredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after"
+          },
+          "undeliveredCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's error code of the undelivered report (Twilio's ErrorCode)"
+          },
           "complainedAt": {
             "type": "string",
             "allOf": [
@@ -18602,6 +18617,7 @@
           "clickedCount",
           "unsubscribedCount",
           "deliveredCount",
+          "undeliveredCount",
           "bouncedCount",
           "complainedCount",
           "capturedCount",
@@ -18660,6 +18676,12 @@
             "format": "int32",
             "nullable": true,
             "description": "Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none"
+          },
+          "undeliveredCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none"
           },
           "bouncedCount": {
             "type": "integer",
@@ -18721,7 +18743,7 @@
             "description": "Orders credited to the Broadcast and their net revenue (ADR 0064)"
           }
         },
-        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nand SMS report no delivered, opened, bounced or complained count and so no delivery or open rate."
+        "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS\nreports delivered and undelivered, and no opened, bounced or complained count, delivery or open\nrate; only SMS reports undelivered."
       },
       "SiteBroadcastStatus": {
         "type": "string",

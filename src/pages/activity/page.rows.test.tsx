@@ -253,3 +253,22 @@ test('an Event without what its row names shows the words of its action', async 
   await expect.element(screen.getByText('Entered an automation')).toBeVisible()
   await expect.element(screen.getByText('Visited a page')).toBeVisible()
 })
+
+test("an SMS message's delivery state shows, an undelivered one with the provider's error code", async () => {
+  serve(
+    event('1', 'sms.sent', { destination: '+14155550177' }),
+    event('2', 'sms.delivered', { destination: '+14155550177' }),
+    event('3', 'sms.undelivered', { destination: '+14155550177', errorCode: '30003' }),
+    event('4', 'sms.undelivered', { destination: '+14155550177' }),
+  )
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
+
+  await expect.element(screen.getByText('Was sent a text message')).toBeVisible()
+  await expect.element(screen.getByText('Text message delivered')).toBeVisible()
+  await expect
+    .element(screen.getByText('Text message not delivered (error 30003)', { exact: true }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByText('Text message not delivered', { exact: true }))
+    .toBeVisible()
+})

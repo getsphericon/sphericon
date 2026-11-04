@@ -73,3 +73,19 @@ func (env *TestEnv) PostTwilioCallback(t *testing.T, hookURL, authToken string, 
 	env.Server.ServeHTTP(rec, req)
 	return rec
 }
+
+// ReportTwilioStatus posts the status callback Twilio sends about a message it accepted from the
+// account: to the StatusCallback the message was sent with, signed with the account's Auth Token,
+// with Twilio's status and, when it gives one, its error code. It returns the response.
+func (env *TestEnv) ReportTwilioStatus(t *testing.T, account TwilioAccount, msg twiliotest.Message, status, errorCode string) *httptest.ResponseRecorder {
+	t.Helper()
+	require.NotEmpty(t, msg.StatusCallback, "the message was sent without a StatusCallback")
+	form := url.Values{
+		"MessageSid": {msg.SID}, "SmsSid": {msg.SID}, "MessageStatus": {status}, "SmsStatus": {status},
+		"AccountSid": {account.Account.SID}, "From": {TwilioNumber}, "To": {msg.To}, "ApiVersion": {"2010-04-01"},
+	}
+	if errorCode != "" {
+		form.Set("ErrorCode", errorCode)
+	}
+	return env.PostTwilioCallback(t, msg.StatusCallback, account.Account.AuthToken, form)
+}

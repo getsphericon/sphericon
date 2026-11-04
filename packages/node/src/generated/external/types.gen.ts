@@ -793,8 +793,9 @@ export type BroadcastContentInput = ({
 
 /**
  * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
- * not report is null, never zero: Telegram and SMS report no delivered, opened, bounced or
- * complained count and so no open rate.
+ * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
+ * count and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or
+ * complained count or open rate; only SMS reports undelivered.
  */
 export type BroadcastReport = {
   /**
@@ -841,6 +842,10 @@ export type BroadcastReport = {
    * Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
   deliveredCount: number | null;
+  /**
+   * Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none
+   */
+  undeliveredCount: number | null;
   /**
    * Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none
    */
@@ -1761,6 +1766,14 @@ export type ContactExportOutboundMessage = {
    * When the provider first reported the message bounced
    */
   bouncedAt?: Timestamp | null;
+  /**
+   * When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after
+   */
+  undeliveredAt?: Timestamp | null;
+  /**
+   * The provider's error code of the undelivered report (Twilio's ErrorCode)
+   */
+  undeliveredCode?: string | null;
   /**
    * When the provider first reported a spam complaint about the message
    */
@@ -3029,6 +3042,14 @@ export type ExportMessageRow = {
    * When the provider first reported the message bounced
    */
   bounced_at: Timestamp | null;
+  /**
+   * When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after
+   */
+  undelivered_at: Timestamp | null;
+  /**
+   * The provider's error code of the undelivered report (Twilio's ErrorCode)
+   */
+  undelivered_code: string | null;
   /**
    * When the provider first reported a spam complaint about the message
    */

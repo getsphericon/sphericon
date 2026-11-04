@@ -421,8 +421,10 @@ The durable record of one Outbound send — which surface and which of its recor
 the Sending source (none for Transactional), the Sending domain, the provider's message id, the
 outcome, and the delivery result: the first Delivery notice of each kind that arrives stamps it once
 (delivered, read and undelivered on any Channel that reports them; bounced and complained on
-email), and a stamp is never removed, so reports of old sends do not shrink
-when Events expire. Claimed before the provider is called, under a per-logical-send idempotency key, so a
+email), and a stamp is never removed, so reports of old sends do not shrink when Events expire.
+Delivered and undelivered are final: the first of them stamps and the other never follows, so a
+late report cannot move a message backwards, and a message with no final report has neither.
+Claimed before the provider is called, under a per-logical-send idempotency key, so a
 retry never sends twice. Holds provenance and outcome, never rendered content. A Broadcast
 recipient points at its Outbound message; it does not replace it.
 _Avoid_: Send log, delivery row, email record

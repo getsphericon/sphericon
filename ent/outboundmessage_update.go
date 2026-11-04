@@ -300,6 +300,46 @@ func (_u *OutboundMessageUpdate) ClearComplainedAt() *OutboundMessageUpdate {
 	return _u
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (_u *OutboundMessageUpdate) SetUndeliveredAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetUndeliveredAt(v)
+	return _u
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetUndeliveredAt(*v)
+	}
+	return _u
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (_u *OutboundMessageUpdate) ClearUndeliveredAt() *OutboundMessageUpdate {
+	_u.mutation.ClearUndeliveredAt()
+	return _u
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (_u *OutboundMessageUpdate) SetUndeliveredCode(v string) *OutboundMessageUpdate {
+	_u.mutation.SetUndeliveredCode(v)
+	return _u
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableUndeliveredCode(v *string) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetUndeliveredCode(*v)
+	}
+	return _u
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (_u *OutboundMessageUpdate) ClearUndeliveredCode() *OutboundMessageUpdate {
+	_u.mutation.ClearUndeliveredCode()
+	return _u
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (_u *OutboundMessageUpdate) SetOpenedAt(v time.Time) *OutboundMessageUpdate {
 	_u.mutation.SetOpenedAt(v)
@@ -787,6 +827,18 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UndeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredAt, field.TypeTime, value)
+	}
+	if _u.mutation.UndeliveredAtCleared() {
+		_spec.ClearField(outboundmessage.FieldUndeliveredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UndeliveredCode(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredCode, field.TypeString, value)
+	}
+	if _u.mutation.UndeliveredCodeCleared() {
+		_spec.ClearField(outboundmessage.FieldUndeliveredCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.OpenedAt(); ok {
 		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)
@@ -1382,6 +1434,46 @@ func (_u *OutboundMessageUpdateOne) ClearComplainedAt() *OutboundMessageUpdateOn
 	return _u
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (_u *OutboundMessageUpdateOne) SetUndeliveredAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetUndeliveredAt(v)
+	return _u
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetUndeliveredAt(*v)
+	}
+	return _u
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (_u *OutboundMessageUpdateOne) ClearUndeliveredAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearUndeliveredAt()
+	return _u
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (_u *OutboundMessageUpdateOne) SetUndeliveredCode(v string) *OutboundMessageUpdateOne {
+	_u.mutation.SetUndeliveredCode(v)
+	return _u
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableUndeliveredCode(v *string) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetUndeliveredCode(*v)
+	}
+	return _u
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (_u *OutboundMessageUpdateOne) ClearUndeliveredCode() *OutboundMessageUpdateOne {
+	_u.mutation.ClearUndeliveredCode()
+	return _u
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (_u *OutboundMessageUpdateOne) SetOpenedAt(v time.Time) *OutboundMessageUpdateOne {
 	_u.mutation.SetOpenedAt(v)
@@ -1899,6 +1991,18 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.ComplainedAtCleared() {
 		_spec.ClearField(outboundmessage.FieldComplainedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UndeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredAt, field.TypeTime, value)
+	}
+	if _u.mutation.UndeliveredAtCleared() {
+		_spec.ClearField(outboundmessage.FieldUndeliveredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UndeliveredCode(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredCode, field.TypeString, value)
+	}
+	if _u.mutation.UndeliveredCodeCleared() {
+		_spec.ClearField(outboundmessage.FieldUndeliveredCode, field.TypeString)
 	}
 	if value, ok := _u.mutation.OpenedAt(); ok {
 		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)

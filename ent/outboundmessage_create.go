@@ -259,6 +259,34 @@ func (_c *OutboundMessageCreate) SetNillableComplainedAt(v *time.Time) *Outbound
 	return _c
 }
 
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (_c *OutboundMessageCreate) SetUndeliveredAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetUndeliveredAt(v)
+	return _c
+}
+
+// SetNillableUndeliveredAt sets the "undelivered_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableUndeliveredAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetUndeliveredAt(*v)
+	}
+	return _c
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (_c *OutboundMessageCreate) SetUndeliveredCode(v string) *OutboundMessageCreate {
+	_c.mutation.SetUndeliveredCode(v)
+	return _c
+}
+
+// SetNillableUndeliveredCode sets the "undelivered_code" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableUndeliveredCode(v *string) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetUndeliveredCode(*v)
+	}
+	return _c
+}
+
 // SetOpenedAt sets the "opened_at" field.
 func (_c *OutboundMessageCreate) SetOpenedAt(v time.Time) *OutboundMessageCreate {
 	_c.mutation.SetOpenedAt(v)
@@ -697,6 +725,14 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.ComplainedAt(); ok {
 		_spec.SetField(outboundmessage.FieldComplainedAt, field.TypeTime, value)
 		_node.ComplainedAt = &value
+	}
+	if value, ok := _c.mutation.UndeliveredAt(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredAt, field.TypeTime, value)
+		_node.UndeliveredAt = &value
+	}
+	if value, ok := _c.mutation.UndeliveredCode(); ok {
+		_spec.SetField(outboundmessage.FieldUndeliveredCode, field.TypeString, value)
+		_node.UndeliveredCode = &value
 	}
 	if value, ok := _c.mutation.OpenedAt(); ok {
 		_spec.SetField(outboundmessage.FieldOpenedAt, field.TypeTime, value)
@@ -1163,6 +1199,42 @@ func (u *OutboundMessageUpsert) UpdateComplainedAt() *OutboundMessageUpsert {
 // ClearComplainedAt clears the value of the "complained_at" field.
 func (u *OutboundMessageUpsert) ClearComplainedAt() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldComplainedAt)
+	return u
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (u *OutboundMessageUpsert) SetUndeliveredAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldUndeliveredAt, v)
+	return u
+}
+
+// UpdateUndeliveredAt sets the "undelivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateUndeliveredAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (u *OutboundMessageUpsert) ClearUndeliveredAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldUndeliveredAt)
+	return u
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (u *OutboundMessageUpsert) SetUndeliveredCode(v string) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldUndeliveredCode, v)
+	return u
+}
+
+// UpdateUndeliveredCode sets the "undelivered_code" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateUndeliveredCode() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldUndeliveredCode)
+	return u
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (u *OutboundMessageUpsert) ClearUndeliveredCode() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldUndeliveredCode)
 	return u
 }
 
@@ -1701,6 +1773,48 @@ func (u *OutboundMessageUpsertOne) UpdateComplainedAt() *OutboundMessageUpsertOn
 func (u *OutboundMessageUpsertOne) ClearComplainedAt() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (u *OutboundMessageUpsertOne) SetUndeliveredAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetUndeliveredAt(v)
+	})
+}
+
+// UpdateUndeliveredAt sets the "undelivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateUndeliveredAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateUndeliveredAt()
+	})
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (u *OutboundMessageUpsertOne) ClearUndeliveredAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearUndeliveredAt()
+	})
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (u *OutboundMessageUpsertOne) SetUndeliveredCode(v string) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetUndeliveredCode(v)
+	})
+}
+
+// UpdateUndeliveredCode sets the "undelivered_code" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateUndeliveredCode() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateUndeliveredCode()
+	})
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (u *OutboundMessageUpsertOne) ClearUndeliveredCode() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearUndeliveredCode()
 	})
 }
 
@@ -2438,6 +2552,48 @@ func (u *OutboundMessageUpsertBulk) UpdateComplainedAt() *OutboundMessageUpsertB
 func (u *OutboundMessageUpsertBulk) ClearComplainedAt() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearComplainedAt()
+	})
+}
+
+// SetUndeliveredAt sets the "undelivered_at" field.
+func (u *OutboundMessageUpsertBulk) SetUndeliveredAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetUndeliveredAt(v)
+	})
+}
+
+// UpdateUndeliveredAt sets the "undelivered_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateUndeliveredAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateUndeliveredAt()
+	})
+}
+
+// ClearUndeliveredAt clears the value of the "undelivered_at" field.
+func (u *OutboundMessageUpsertBulk) ClearUndeliveredAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearUndeliveredAt()
+	})
+}
+
+// SetUndeliveredCode sets the "undelivered_code" field.
+func (u *OutboundMessageUpsertBulk) SetUndeliveredCode(v string) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetUndeliveredCode(v)
+	})
+}
+
+// UpdateUndeliveredCode sets the "undelivered_code" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateUndeliveredCode() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateUndeliveredCode()
+	})
+}
+
+// ClearUndeliveredCode clears the value of the "undelivered_code" field.
+func (u *OutboundMessageUpsertBulk) ClearUndeliveredCode() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearUndeliveredCode()
 	})
 }
 

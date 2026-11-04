@@ -43,7 +43,7 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 // who is gone (ADR 0021), and so is telegram.received, the person's own words. The other telegram.*
 // System events are anonymized like email's, bound and unbound included: they say a Contact's
 // chat came and went, and with the Contact and the Destination dropped they are counts. sms.sent
-// is anonymized like email.sent.
+// is anonymized like email.sent, and sms.delivered and sms.undelivered like email's delivery notices.
 func anonymized(action string) bool {
 	switch action {
 	case events.NameEmailSent, events.NameEmailOpened, events.NameEmailClicked,
@@ -52,7 +52,7 @@ func anonymized(action string) bool {
 		events.NameContactCreated,
 		events.NameTelegramSent, events.NameTelegramClicked, events.NameTelegramUnsubscribed,
 		events.NameTelegramBound, events.NameTelegramUnbound,
-		events.NameSmsSent:
+		events.NameSmsSent, events.NameSmsDelivered, events.NameSmsUndelivered:
 		return true
 	}
 	return false

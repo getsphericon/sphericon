@@ -71,16 +71,12 @@ export function EventSummary({ workspaceId, event }: Row) {
           suffix={t(($) => $.eventRows.asSpam)}
         />
       )
-    case 'email.bounced': {
-      const byKind: Record<string, string> = {
-        hard: t(($) => $.eventRows.bouncedHard),
-        soft: t(($) => $.eventRows.bouncedSoft),
-      }
-      const kind = text(event.properties, 'bounceKind') ?? ''
-      return <EmailEvent {...row} prefix={byKind[kind] ?? t(($) => $.eventRows.bounced)} />
-    }
+    case 'email.bounced':
+      return <BouncedEmail {...row} />
     case 'email.clicked':
       return <ClickedLink {...row} />
+    case 'sms.undelivered':
+      return <SmsUndelivered event={event} />
     default:
       return <EventActionName action={event.action} />
   }
@@ -269,6 +265,28 @@ function ClickedLink({ workspaceId, event }: Row) {
       <EmailSubject workspaceId={workspaceId} event={event} subject={subject} />
     </Text>
   )
+}
+
+// BouncedEmail is the row of a bounce: whether it was hard or soft, when the provider said so.
+function BouncedEmail(row: Row) {
+  const { t } = useTranslation()
+  const byKind: Record<string, string> = {
+    hard: t(($) => $.eventRows.bouncedHard),
+    soft: t(($) => $.eventRows.bouncedSoft),
+  }
+  const kind = text(row.event.properties, 'bounceKind') ?? ''
+  return <EmailEvent {...row} prefix={byKind[kind] ?? t(($) => $.eventRows.bounced)} />
+}
+
+// SmsUndelivered is the row of a text the provider could not deliver: its words, and the provider's
+// error code when it gave one.
+function SmsUndelivered({ event }: { event: SiteEventResource }) {
+  const { t } = useTranslation()
+  const code = text(event.properties, 'errorCode')
+  if (code === undefined) {
+    return <EventActionName action={event.action} />
+  }
+  return <Verb action={event.action}>{t(($) => $.eventRows.smsUndelivered, { code })}</Verb>
 }
 
 function PageView({ event }: { event: SiteEventResource }) {

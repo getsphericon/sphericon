@@ -3,17 +3,24 @@ package ingest
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/integration"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/optout"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // sms reads the texts people send an SMS Integration's sender (ADR 0076, ADR 0077). The sender's
@@ -23,7 +30,66 @@ import (
 // a number a Contact has is recorded as sms.received on that Contact. A number no Contact has, or
 // one that is no phone number, records nothing else and creates no Contact. sphericon answers none
 // of them: a STOP's or a START's confirmation is the provider's auto-reply.
+//
+// It also reads the delivery reports of the texts sent through the Integration (ADR 0079).
 type sms struct{ Ignore }
+
+// DeliveryNotice reads a final delivery report of a text: delivered, or undelivered with the
+// provider's error code. It lands on the text the provider's id names among the Integration's, and
+// moves it only forward: the first final report stamps it and records sms.delivered or
+// sms.undelivered, and any later one, a redelivery included, changes nothing. A report of no text we
+// sent records nothing. An undelivered report saying the number reaches no handset suppresses the
+// number like a hard bounce, as the same answer at send time does. A text whose Contact was erased
+// is stamped, with no Event and no Suppression: the person is gone.
+func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
+	result, action := outbound.ResultDelivered, events.NameSmsDelivered
+	switch n.Kind {
+	case preset.Delivery:
+	case preset.Undelivered:
+		result, action = outbound.ResultUndelivered, events.NameSmsUndelivered
+	case preset.Bounce, preset.Complaint, preset.Delay, preset.Drop:
+		return nil // email's kinds: a Preset that names one on sms reports no final state
+	}
+	msg, err := outbound.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
+	if err != nil || msg == nil {
+		return err
+	}
+	code := lo.Ternary(result == outbound.ResultUndelivered, n.ErrorCode, "")
+	moved, err := outbound.StampFinal(ctx, tx.Scoped, msg.ID, result, code, tx.Now)
+	if err != nil || !moved || msg.ContactID == nil {
+		return err
+	}
+	if result == outbound.ResultUndelivered && deadNumber(tx.Integration.Provider, code) {
+		err := suppression.Add(ctx, tx.Scoped, suppression.Entry{
+			Channel: entsuppression.ChannelSms, Destination: msg.Destination, Reason: entsuppression.ReasonBounce,
+			ContactID: *msg.ContactID,
+		})
+		if err != nil {
+			return fmt.Errorf("ingest: suppress a dead number: %w", err)
+		}
+	}
+	c, err := tx.Scoped.Contact().Get(ctx, *msg.ContactID)
+	if err != nil {
+		return fmt.Errorf("ingest: the contact of sms message %d: %w", msg.ID, err)
+	}
+	return tx.Pub.Publish(ctx, &events.SmsDelivery{
+		Action: action, WorkspaceID: tx.Scoped.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+		IntegrationID: tx.Integration.ID, Destination: msg.Destination, ErrorCode: code,
+		BroadcastID: lo.FromPtr(msg.BroadcastID), AutomationID: lo.FromPtr(msg.AutomationID), OutboundMessageID: msg.ID,
+		Surface: string(msg.Kind), SendingSource: lo.FromPtr(msg.SendingSource), DedupID: tx.DedupKey(n.ID),
+	})
+}
+
+// deadNumber says whether the provider's error code of an undelivered report means the number
+// reaches no handset (Twilio's 30005, 30006), read the way the provider's adapter reads the same
+// code at send time.
+func deadNumber(provider integration.Provider, code string) bool {
+	n, err := strconv.Atoi(code)
+	if err != nil || provider != integration.ProviderTwilio {
+		return false
+	}
+	return twilio.Classify(0, n) == messaging.SMSRefusalDeadNumber
+}
 
 // InboundMessage reads a text for what it means: a stop, a start, or a reply.
 func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) error {

@@ -1682,6 +1682,12 @@ func ScopedEntities() []ScopedEntity {
 				if src.ComplainedAt != nil {
 					b.SetComplainedAt(*src.ComplainedAt)
 				}
+				if src.UndeliveredAt != nil {
+					b.SetUndeliveredAt(*src.UndeliveredAt)
+				}
+				if src.UndeliveredCode != nil {
+					b.SetUndeliveredCode(*src.UndeliveredCode)
+				}
 				if src.OpenedAt != nil {
 					b.SetOpenedAt(*src.OpenedAt)
 				}

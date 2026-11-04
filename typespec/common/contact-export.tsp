@@ -231,6 +231,12 @@ model ContactExportOutboundMessage {
   /** When the provider first reported the message bounced */
   bouncedAt?: Timestamp | null;
 
+  /** When the provider reported the message undelivered (SMS); a message delivered first is never undelivered after */
+  undeliveredAt?: Timestamp | null;
+
+  /** The provider's error code of the undelivered report (Twilio's ErrorCode) */
+  undeliveredCode?: string | null;
+
   /** When the provider first reported a spam complaint about the message */
   complainedAt?: Timestamp | null;
 

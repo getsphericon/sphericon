@@ -278,10 +278,13 @@ var telegramTriggers = []string{
 	events.NameTelegramBound, events.NameTelegramUnbound, "telegram.received", "telegram.clicked", "telegram.unsubscribed",
 }
 
-// smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent
-// and the consent they gave. The send's own records (`sms.sent`) are infrastructure, like
-// `email.sent`.
-var smsTriggers = []string{events.NameSmsReceived, events.NameSmsConfirmed}
+// smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
+// the consent they gave, and whether a text reached their phone (a delivery report, which on SMS
+// says the number works or not, unlike email's infrastructure notices). The acceptance (`sms.sent`)
+// is infrastructure, like `email.sent`.
+var smsTriggers = []string{
+	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsDelivered, events.NameSmsUndelivered,
+}
 
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {

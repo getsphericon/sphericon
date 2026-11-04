@@ -28,6 +28,7 @@ const STATS = {
   unsubscribedCount: 3,
   failedCount: 10,
   deliveredCount: 171,
+  undeliveredCount: null,
   bouncedCount: 13,
   complainedCount: 6,
   capturedCount: 9,
@@ -289,11 +290,48 @@ test('a Telegram broadcast shows its figures without open or delivery ones', asy
   for (const absent of [
     'Opened',
     'Delivered',
+    'Undelivered',
     'Bounced',
     'Complained',
     'Open rate',
     'Delivery rate',
   ]) {
+    expect(screen.getByText(absent, { exact: true }).elements()).toHaveLength(0)
+  }
+})
+
+// SMS reports delivered and undelivered texts, and no opens, bounces or complaints.
+test('an SMS broadcast shows its delivered and undelivered figures', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        channel: 'sms',
+        content: { channel: 'sms', text: 'Hello' },
+        stats: {
+          ...STATS,
+          openedCount: null,
+          deliveredCount: 150,
+          undeliveredCount: 17,
+          bouncedCount: null,
+          complainedCount: null,
+          capturedCount: null,
+          deliveryRate: null,
+          openRate: null,
+          clickToOpenRate: null,
+        },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Delivered', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('150', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Undelivered', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('17', { exact: true })).toBeInTheDocument()
+  for (const absent of ['Opened', 'Bounced', 'Complained', 'Open rate', 'Delivery rate']) {
     expect(screen.getByText(absent, { exact: true }).elements()).toHaveLength(0)
   }
 })

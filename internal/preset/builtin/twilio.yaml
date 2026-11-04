@@ -18,29 +18,31 @@ params:
 verify:
   kind: twilio
   secret: auth_token
-# Reading the callbacks (ADR 0076). A callback that carries MessageStatus is the status callback
-# of a message we sent: it is a Delivery notice on `sms` for the number it went To, keyed by the
-# message SID and the status (Twilio posts several statuses for one message), carrying Twilio's
-# status and error code as they came. Its kind is provisional until the delivery-reports ticket
-# settles which statuses mean what: delivered is a delivery; undelivered, failed and canceled are
-# a drop; the statuses on the way (queued, sending, sent, ...) are a delay. A callback without a
-# MessageStatus that carries a Body is a message a person sent From their number: an Inbound
-# message with the country Twilio says the number is in (FromCountry), whose meaning (a STOP, a
-# reply) the core reads. A repeated parameter is not read.
+# Reading the callbacks (ADR 0076, ADR 0079). A callback that carries MessageStatus is the status
+# callback of a message we sent, for the number it went To, keyed by the message SID and the status
+# (Twilio posts several statuses for one message), carrying Twilio's status and error code as they
+# came. Only a final report is a Delivery notice on `sms`: delivered is a delivery; undelivered, and
+# failed after Twilio accepted the message, are undelivered, with the error code. The statuses on
+# the way (queued, accepted, sending, sent, ...) and canceled (a scheduled message we never send)
+# report no result and yield nothing. A callback without a MessageStatus that carries a Body is a
+# message a person sent From their number: an Inbound message with the country Twilio says the
+# number is in (FromCountry), whose meaning (a STOP, a reply) the core reads. A repeated parameter
+# is not read.
 transform: |
   def keep: with_entries(select(.value != null and .value != ""));
   def str: if type == "string" then . else null end;
   def kindOf: if . == "delivered" then "delivery"
-    elif . == "undelivered" or . == "failed" or . == "canceled" then "drop"
-    else "delay" end;
+    elif . == "undelivered" or . == "failed" then "undelivered"
+    else null end;
   [(.body | objects) as $b
    | ($b.MessageSid | str) as $sid
    | ($b.MessageStatus | str) as $status
    | select($sid != null and $sid != "")
    | if $status != null then
        ($b.To | str) as $to
-       | select($status != "" and $to != null and $to != "")
-       | {kind: ($status | kindOf), id: ($sid + "/" + $status), channel: "sms", destination: $to,
+       | ($status | kindOf) as $kind
+       | select($kind != null and $to != null and $to != "")
+       | {kind: $kind, id: ($sid + "/" + $status), channel: "sms", destination: $to,
           message_id: $sid, status: $status, error_code: ($b.ErrorCode | str)}
      else
        ($b.From | str) as $from
@@ -67,7 +69,7 @@ tests:
           country: US
           message_id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
           text: Yes, see you at 5 👍
-  - name: an undelivered status callback becomes a Delivery notice with Twilio's status and error code
+  - name: an undelivered status callback becomes an undelivered notice with Twilio's status and error code
     params:
       auth_token: twilio-test-auth-token-0123456789
     request:
@@ -81,10 +83,28 @@ tests:
         - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/undelivered
           channel: sms
           destination: '+14155552671'
-          kind: drop
+          kind: undelivered
           message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
           status: undelivered
           error_code: '30003'
+  - name: a failed status callback after acceptance is undelivered too
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: cfFF1JXkhRrZiLywZ/ljJvMyYyg=
+      body: ErrorCode=30008&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=failed&MessageStatus=failed&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01
+    expect:
+      notices:
+        - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/failed
+          channel: sms
+          destination: '+14155552671'
+          kind: undelivered
+          message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
+          status: failed
+          error_code: '30008'
   - name: a delivered status callback becomes a delivery
     params:
       auth_token: twilio-test-auth-token-0123456789
@@ -102,7 +122,7 @@ tests:
           kind: delivery
           message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
           status: delivered
-  - name: a sent status callback keeps its status on a delay
+  - name: a sent status callback reports no result and yields nothing
     params:
       auth_token: twilio-test-auth-token-0123456789
     request:
@@ -112,13 +132,18 @@ tests:
         X-Twilio-Signature: r+zPH+GxwwPlSWDWrQtmOy7+zgY=
       body: AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&MessageStatus=sent&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=sent&To=%2B14155552671&ApiVersion=2010-04-01
     expect:
-      notices:
-        - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/sent
-          channel: sms
-          destination: '+14155552671'
-          kind: delay
-          message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
-          status: sent
+      notices: []
+  - name: a canceled status callback yields nothing
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: 7PUPbs4vrD9D03SrDRXNsOockeY=
+      body: AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&MessageStatus=canceled&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=canceled&To=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      notices: []
   - name: the URL's query is part of what is signed
     params:
       auth_token: twilio-test-auth-token-0123456789

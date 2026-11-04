@@ -64,8 +64,9 @@ model SetBroadcastSegmentInput {
 
 /**
  * Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does
- * not report is null, never zero: Telegram and SMS report no delivered, opened, bounced or
- * complained count and so no open rate.
+ * not report is null, never zero: Telegram reports no delivered, opened, bounced or complained
+ * count and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or
+ * complained count or open rate; only SMS reports undelivered.
  */
 model BroadcastReport {
   /** Lifecycle status */
@@ -100,6 +101,9 @@ model BroadcastReport {
 
   /** Messages the provider reported delivered, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   deliveredCount: int32 | null;
+
+  /** Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the delivery result stamped on each message; null on a Channel whose provider reports none */
+  undeliveredCount: int32 | null;
 
   /** Messages the provider reported bounced, read from the delivery result stamped on each message; null on a Channel whose provider reports none */
   bouncedCount: int32 | null;

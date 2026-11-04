@@ -82,6 +82,10 @@ const (
 	// NameSmsSent is a text the SMS provider accepted for a Contact (ADR 0079): handed to the
 	// provider, not delivered; a delivery report says that.
 	NameSmsSent = "sms.sent"
+	// NameSmsDelivered and the one below are the SMS provider's final report of a text it accepted
+	// (ADR 0079): it reached the handset, or it did not, with the provider's error code.
+	NameSmsDelivered   = "sms.delivered"
+	NameSmsUndelivered = "sms.undelivered"
 	// NameSmsConfirmed is a phone number's SMS Confirmation (ADR 0077), the proof of its consent;
 	// marketing.confirmed is email's alone.
 	NameSmsConfirmed = "sms.confirmed"
@@ -273,6 +277,8 @@ var registry = map[string]func() DomainEvent{
 	NameTelegramUnsubscribed:  func() DomainEvent { return &TelegramUnsubscribed{} },
 	NameSmsReceived:           func() DomainEvent { return &SmsReceived{} },
 	NameSmsSent:               func() DomainEvent { return &SmsSent{} },
+	NameSmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
+	NameSmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }
@@ -399,7 +405,7 @@ func (e *EmailEngagement) Project() Projection {
 		props["automationId"] = e.AutomationID
 	}
 	if e.OutboundMessageID != 0 {
-		props["outboundMessageId"] = e.OutboundMessageID
+		props[outboundMessageIDProperty] = e.OutboundMessageID
 	}
 	if e.Captured {
 		props[CapturedProperty] = true
@@ -468,9 +474,9 @@ func (e *EmailDelivery) Project() Projection {
 		}
 	}
 	for k, v := range map[string]int64{
-		"outboundMessageId": e.OutboundMessageID,
-		"broadcastId":       e.BroadcastID,
-		"automationId":      e.AutomationID,
+		outboundMessageIDProperty: e.OutboundMessageID,
+		"broadcastId":             e.BroadcastID,
+		"automationId":            e.AutomationID,
 	} {
 		if v != 0 {
 			props[k] = v

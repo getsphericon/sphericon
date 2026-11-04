@@ -2040,6 +2040,11 @@ type ContactExportOutboundMessage struct {
 	DeliveredAt OptNilTimestamp `json:"deliveredAt"`
 	// When the provider first reported the message bounced.
 	BouncedAt OptNilTimestamp `json:"bouncedAt"`
+	// When the provider reported the message undelivered (SMS); a message delivered first is never
+	// undelivered after.
+	UndeliveredAt OptNilTimestamp `json:"undeliveredAt"`
+	// The provider's error code of the undelivered report (Twilio's ErrorCode).
+	UndeliveredCode OptNilString `json:"undeliveredCode"`
 	// When the provider first reported a spam complaint about the message.
 	ComplainedAt OptNilTimestamp `json:"complainedAt"`
 	// When the contact first opened the message (a person, not a mail client).
@@ -2123,6 +2128,16 @@ func (s *ContactExportOutboundMessage) GetDeliveredAt() OptNilTimestamp {
 // GetBouncedAt returns the value of BouncedAt.
 func (s *ContactExportOutboundMessage) GetBouncedAt() OptNilTimestamp {
 	return s.BouncedAt
+}
+
+// GetUndeliveredAt returns the value of UndeliveredAt.
+func (s *ContactExportOutboundMessage) GetUndeliveredAt() OptNilTimestamp {
+	return s.UndeliveredAt
+}
+
+// GetUndeliveredCode returns the value of UndeliveredCode.
+func (s *ContactExportOutboundMessage) GetUndeliveredCode() OptNilString {
+	return s.UndeliveredCode
 }
 
 // GetComplainedAt returns the value of ComplainedAt.
@@ -2233,6 +2248,16 @@ func (s *ContactExportOutboundMessage) SetDeliveredAt(val OptNilTimestamp) {
 // SetBouncedAt sets the value of BouncedAt.
 func (s *ContactExportOutboundMessage) SetBouncedAt(val OptNilTimestamp) {
 	s.BouncedAt = val
+}
+
+// SetUndeliveredAt sets the value of UndeliveredAt.
+func (s *ContactExportOutboundMessage) SetUndeliveredAt(val OptNilTimestamp) {
+	s.UndeliveredAt = val
+}
+
+// SetUndeliveredCode sets the value of UndeliveredCode.
+func (s *ContactExportOutboundMessage) SetUndeliveredCode(val OptNilString) {
+	s.UndeliveredCode = val
 }
 
 // SetComplainedAt sets the value of ComplainedAt.
@@ -14544,8 +14569,10 @@ func (*SiteBroadcastResource) siteBroadcastsUpdateRes()    {}
 
 // Delivery figures of a broadcast, derived from its recipients and their messages, per Channel (ADR
 // 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and unsubscribed. A
-// figure the broadcast's Channel does not report is null, never zero: Telegram and SMS report no
-// delivered, opened, bounced or complained count and so no delivery or open rate.
+// figure the broadcast's Channel does not report is null, never zero: Telegram reports no delivered,
+// opened, bounced or complained count and so no delivery or open rate; SMS reports delivered and
+// undelivered, and no opened, bounced or complained count, delivery or open rate; only SMS reports
+// undelivered.
 // Ref: #/components/schemas/SiteBroadcastStats
 type SiteBroadcastStats struct {
 	// Number of recipients the broadcast targets.
@@ -14567,6 +14594,9 @@ type SiteBroadcastStats struct {
 	// Messages the provider reported delivered, read from the delivery result stamped on each message;
 	// null on a Channel whose provider reports none.
 	DeliveredCount NilInt32 `json:"deliveredCount"`
+	// Messages the provider reported undelivered (an SMS the carrier could not deliver), read from the
+	// delivery result stamped on each message; null on a Channel whose provider reports none.
+	UndeliveredCount NilInt32 `json:"undeliveredCount"`
 	// Messages the provider reported bounced, read from the delivery result stamped on each message; null
 	// on a Channel whose provider reports none.
 	BouncedCount NilInt32 `json:"bouncedCount"`
@@ -14636,6 +14666,11 @@ func (s *SiteBroadcastStats) GetUnsubscribedCount() int32 {
 // GetDeliveredCount returns the value of DeliveredCount.
 func (s *SiteBroadcastStats) GetDeliveredCount() NilInt32 {
 	return s.DeliveredCount
+}
+
+// GetUndeliveredCount returns the value of UndeliveredCount.
+func (s *SiteBroadcastStats) GetUndeliveredCount() NilInt32 {
+	return s.UndeliveredCount
 }
 
 // GetBouncedCount returns the value of BouncedCount.
@@ -14731,6 +14766,11 @@ func (s *SiteBroadcastStats) SetUnsubscribedCount(val int32) {
 // SetDeliveredCount sets the value of DeliveredCount.
 func (s *SiteBroadcastStats) SetDeliveredCount(val NilInt32) {
 	s.DeliveredCount = val
+}
+
+// SetUndeliveredCount sets the value of UndeliveredCount.
+func (s *SiteBroadcastStats) SetUndeliveredCount(val NilInt32) {
+	s.UndeliveredCount = val
 }
 
 // SetBouncedCount sets the value of BouncedCount.

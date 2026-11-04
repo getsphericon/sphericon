@@ -62,6 +62,9 @@ const (
 	Delivery  Kind = "delivery"
 	Delay     Kind = "delay"
 	Drop      Kind = "drop"
+	// Undelivered: the message did not reach the person, on a Channel other than email (an SMS the
+	// carrier could not deliver, ADR 0079). Email says bounced instead.
+	Undelivered Kind = "undelivered"
 )
 
 // MaxReasonChars caps a notice's provider reason, in characters.
@@ -90,7 +93,7 @@ type DeliveryNotice struct {
 	// MessageID is the provider's id of the message the notice is about, "" when the
 	// provider returns none: it links the notice to its Outbound message.
 	MessageID string `json:"message_id,omitempty"`
-	// Reason is the provider's short explanation of a bounce, delay or drop, capped at
+	// Reason is the provider's short explanation of a bounce, delay, drop or undelivered, capped at
 	// MaxReasonChars characters.
 	Reason string `json:"reason,omitempty"`
 	// Status is the provider's own word for the state it reports (Twilio's MessageStatus), ""

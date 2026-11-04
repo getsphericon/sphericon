@@ -139,7 +139,7 @@ func validateFacts(out any) (Result, error) {
 }
 
 // noticeKinds are the kinds of a Delivery notice.
-var noticeKinds = []Kind{Bounce, Complaint, Delivery, Delay, Drop}
+var noticeKinds = []Kind{Bounce, Complaint, Delivery, Delay, Drop, Undelivered}
 
 // addFact validates one element of the program's output by its kind and appends it to r.
 func addFact(r *Result, item any) error {
@@ -172,7 +172,7 @@ func addFact(r *Result, item any) error {
 		}
 		r.Notices = append(r.Notices, n)
 	default:
-		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay or drop",
+		return fmt.Errorf("kind %v is not %s, %s, bounce, complaint, delivery, delay, drop or undelivered",
 			obj["kind"], kindInboundMessage, kindReachabilityChange)
 	}
 	return nil
@@ -214,6 +214,9 @@ func validateNotice(raw []byte) (DeliveryNotice, error) {
 	ch := Channel(lo.FromPtrOr(r.Channel, string(emailChannel)))
 	if !slices.Contains(channels, ch) {
 		return DeliveryNotice{}, fmt.Errorf("channel %q is not a Channel", ch)
+	}
+	if Kind(r.Kind) == Undelivered && ch == emailChannel {
+		return DeliveryNotice{}, errors.New("undelivered is not a kind on email: a message that did not arrive bounced")
 	}
 	dest, err := noticeDestination(ch, r.Destination)
 	if err != nil {

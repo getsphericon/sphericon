@@ -678,6 +678,7 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
 	siteapiSiteBroadcastStats.DeliveredCount = nilInt32(source.Delivered)
+	siteapiSiteBroadcastStats.UndeliveredCount = nilInt32(source.Undelivered)
 	siteapiSiteBroadcastStats.BouncedCount = nilInt32(source.Bounced)
 	siteapiSiteBroadcastStats.ComplainedCount = nilInt32(source.Complained)
 	siteapiSiteBroadcastStats.CapturedCount = nilInt32(source.Captured)
@@ -1566,6 +1567,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
 		siteapiContactExportOutboundMessage.BouncedAt = optNilTimestamp((*source).BouncedAt)
+		siteapiContactExportOutboundMessage.UndeliveredAt = optNilTimestamp((*source).UndeliveredAt)
+		siteapiContactExportOutboundMessage.UndeliveredCode = optNilString((*source).UndeliveredCode)
 		siteapiContactExportOutboundMessage.ComplainedAt = optNilTimestamp((*source).ComplainedAt)
 		siteapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		siteapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
@@ -2401,8 +2404,8 @@ func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessa
 			siteapiSiteTransactionalEmailResource.TemplateId = site.EntityId(*(*source).TemplateID)
 		}
 		siteapiSiteTransactionalEmailResource.ContactId = optNilEntityID((*source).ContactID)
-		siteapiSiteTransactionalEmailResource.Status = transactionalStatus((*source))
-		siteapiSiteTransactionalEmailResource.Error = transactionalError((*source))
+		siteapiSiteTransactionalEmailResource.Status = transactionalStatus(source)
+		siteapiSiteTransactionalEmailResource.Error = transactionalError(source)
 		siteapiSiteTransactionalEmailResource.Captured = (*source).Captured
 		siteapiSiteTransactionalEmailResource.CreatedAt = timestamp((*source).CreatedAt)
 	}

@@ -43,6 +43,26 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 
+// A delivery report of a text is the person's state on the Channel, not the send's record: unlike
+// email's, sms.delivered and sms.undelivered may start, end and complete an Automation (#1032).
+func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
+	delivered, undelivered := "sms.delivered", "sms.undelivered"
+
+	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
+		Name: "Undelivered", TriggerEvent: undelivered, ExitEvents: []string{delivered},
+	})
+	require.NoError(t, err)
+	assert.NotZero(t, onUndelivered.ID)
+	onDelivered, err := m.Create(t.Context(), s, automations.CreateInput{
+		Name: "Delivered", TriggerEvent: delivered, ExitEvents: []string{}, GoalEvent: &undelivered,
+	})
+	require.NoError(t, err)
+	assert.NotZero(t, onDelivered.ID)
+}
+
 func smsVia(id *int64, text string) automationsteps.Step {
 	return automationsteps.Step{Type: automationsteps.SMS, IntegrationID: id, Text: text}
 }
