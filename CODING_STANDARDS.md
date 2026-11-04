@@ -53,7 +53,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
   Whatever a function takes, a composite literal of a `gen/*` type whose elements copy a field of an ent entity
   (directly, through a conversion or a helper call, or through a loaded edge: a handler that loops over the rows a
-  module returned) is a finding in the handler packages, `internal/server` and the handler types of `ee/staff`; a
+  module returned) is a finding in the handler packages (`/collect` too), `internal/server` and the handler types of `ee/staff`; a
   value handed to a converter method, and a fact decided from a field (`u.PasswordHash != ""`), are not. Make it a
   `Converter` method (a list method for a slice), with a value the row does not hold as a `goverter:map ... | helper`
   or a `goverter:context` argument.

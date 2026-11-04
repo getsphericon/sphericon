@@ -7,8 +7,8 @@
 // `goverter:map ... | helper` line, or a function that maps through a converter method and only
 // attaches the fields the converter ignores. Whatever the function takes, a composite literal of a
 // generated API type that copies a field of an ent entity (directly, through a conversion or a helper
-// call, or through a loaded edge) is a hand-written mapping too, in the API packages: the handlers,
-// internal/server (which renders the refusals) and the handler types' methods of ee/staff. A handler
+// call, or through a loaded edge) is a hand-written mapping too, in the API packages: the handlers
+// of every surface, internal/server (which renders the refusals) and the handler types' methods of ee/staff. A handler
 // that loops over the entities a module returned takes no entity, so only the literal shows it. A
 // value handed to a converter method is mapped by goverter, and a fact decided from a field (a
 // comparison, a negation) copies none.
@@ -102,9 +102,10 @@ func run(pass *analysis.Pass) (any, error) {
 }
 
 // literalPackages are the packages that build API types from what a module returned: the handlers
-// and internal/server, which renders the refusals with the contract's problem types. The resources
-// subpackages are the goverter homes, whose registered helpers read entity fields by design.
-var literalPackages = append([]string{"/internal/server"}, handlerPackages...)
+// of every surface (/collect too, which takes no module input) and internal/server, which renders
+// the refusals with the contract's problem types. The resources subpackages are the goverter homes,
+// whose registered helpers read entity fields by design.
+var literalPackages = append([]string{"/internal/server", "/internal/api/collect"}, handlerPackages...)
 
 func isLiteralPackage(path string) bool {
 	for _, p := range literalPackages {
