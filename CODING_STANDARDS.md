@@ -51,6 +51,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
+  Whatever a function takes, a composite literal of a `gen/*` type whose elements copy a field of an ent entity
+  (directly, through a conversion or a helper call, or through a loaded edge: a handler that loops over the rows a
+  module returned) is a finding in the handler packages, `internal/server` and the handler types of `ee/staff`; a
+  value handed to a converter method, and a fact decided from a field (`u.PasswordHash != ""`), are not. Make it a
+  `Converter` method (a list method for a slice), with a value the row does not hold as a `goverter:map ... | helper`
+  or a `goverter:context` argument.
   The input direction is checked too: a struct literal of a module input (a struct named `...Input` of a package
   under `internal/`) in a handler package (`/site`, `/api`, `/staff`, and in `ee/staff` the methods of its handler
   types) is a finding. Add a method to the surface's `Inputs` (`resources/inputs.go`; `ServiceInputs` for the service

@@ -23,16 +23,7 @@ func (h *Handlers) SiteIdentitiesList(ctx context.Context) (*siteapi.SiteLinkedI
 	if err != nil {
 		return nil, err
 	}
-	items := make([]siteapi.SiteLinkedIdentity, len(rows))
-	for i, row := range rows {
-		items[i] = siteapi.SiteLinkedIdentity{
-			ID:          siteapi.EntityId(row.ID),
-			Provider:    row.Provider,
-			DisplayName: signin.DisplayName(row.Provider),
-			CreatedAt:   siteapi.Timestamp(row.CreatedAt),
-		}
-	}
-	return &siteapi.SiteLinkedIdentities{Items: items}, nil
+	return &siteapi.SiteLinkedIdentities{Items: mapper.IdentitiesToResources(rows)}, nil
 }
 
 // SiteIdentitiesLink begins linking a provider account to the session User: the same flow as

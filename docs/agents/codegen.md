@@ -16,6 +16,7 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
+ent + inuse + gen/site (what a refusal names)  ──goverter──▶ internal/server/refusals/converter_gen.go  (rendered by refusalProblem in internal/server)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 gen/service request bodies  ──goverter──▶ ee/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
@@ -65,8 +66,8 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   field never takes a method's own transform, and goverter casts an enum whose package the
   converter's file does not import (it sees the package through ent's export data, without its
   constants), so the method is what makes the check happen. `TestAPIConvertsNoEnumByCast`
-  (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter or handler package,
-  generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
+  (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter or handler package or
+  in `internal/server` (the refusals), generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
   `convert.PtrVia` (request) and the enum method.
 
 - **An opaque JSON object is a shared model, never an inline `Record<unknown>`.** A field whose

@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"net/http"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
 type devDebugKey struct{}
@@ -18,27 +20,19 @@ func devDebug(next http.Handler) http.Handler {
 	})
 }
 
-// problemDebug is the `debug` member of a development server's 500 problem
-// (ProblemDebug in the contract).
-type problemDebug struct {
-	Error     string `json:"error"`
-	Stack     string `json:"stack,omitempty"`
-	RequestID string `json:"requestId,omitempty"`
-	Method    string `json:"method"`
-	Path      string `json:"path"`
-}
-
-// debugProblem describes the failed request for a 500 body, or returns nil when the server
-// is not a development one. stack is empty for an error a handler returned.
-func debugProblem(r *http.Request, w http.ResponseWriter, cause, stack string) *problemDebug {
+// debugProblem describes the failed request for a 500 body (the contract's ProblemDebug), or
+// returns nil when the server is not a development one. stack is empty for an error a handler
+// returned, and an empty stack or request id is left out.
+func debugProblem(r *http.Request, w http.ResponseWriter, cause, stack string) *siteapi.ProblemDebug {
 	if enabled, _ := r.Context().Value(devDebugKey{}).(bool); !enabled {
 		return nil
 	}
-	return &problemDebug{
-		Error:     cause,
-		Stack:     stack,
-		RequestID: w.Header().Get("X-Request-ID"),
-		Method:    r.Method,
-		Path:      r.URL.Path,
+	dbg := &siteapi.ProblemDebug{Error: cause, Method: r.Method, Path: r.URL.Path}
+	if stack != "" {
+		dbg.Stack = siteapi.NewOptString(stack)
 	}
+	if id := w.Header().Get("X-Request-ID"); id != "" {
+		dbg.RequestId = siteapi.NewOptString(id)
+	}
+	return dbg
 }

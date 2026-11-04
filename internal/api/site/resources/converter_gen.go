@@ -1064,6 +1064,15 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.S
 	siteapiSiteDnsRecord.Value = source.Value
 	return siteapiSiteDnsRecord
 }
+func (c *ConverterImpl) DomainJoinToResource(source *ent.Workspace) *site.SiteDomainJoinResource {
+	var pSiteapiSiteDomainJoinResource *site.SiteDomainJoinResource
+	if source != nil {
+		var siteapiSiteDomainJoinResource site.SiteDomainJoinResource
+		siteapiSiteDomainJoinResource.Enabled = (*source).DomainJoinEnabled
+		pSiteapiSiteDomainJoinResource = &siteapiSiteDomainJoinResource
+	}
+	return pSiteapiSiteDomainJoinResource
+}
 func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) site.EmailBroadcastContent {
 	var siteapiEmailBroadcastContent site.EmailBroadcastContent
 	if source != nil {
@@ -1262,6 +1271,24 @@ func (c *ConverterImpl) HoldsToResources(source []*ent.Hold) []site.SiteWorkspac
 	}
 	return siteapiSiteWorkspaceHoldList
 }
+func (c *ConverterImpl) IdentitiesToResources(source []*ent.UserIdentity) []site.SiteLinkedIdentity {
+	var siteapiSiteLinkedIdentityList []site.SiteLinkedIdentity
+	siteapiSiteLinkedIdentityList = make([]site.SiteLinkedIdentity, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteLinkedIdentityList[i] = c.IdentityToResource(source[i])
+	}
+	return siteapiSiteLinkedIdentityList
+}
+func (c *ConverterImpl) IdentityToResource(source *ent.UserIdentity) site.SiteLinkedIdentity {
+	var siteapiSiteLinkedIdentity site.SiteLinkedIdentity
+	if source != nil {
+		siteapiSiteLinkedIdentity.ID = site.EntityId((*source).ID)
+		siteapiSiteLinkedIdentity.Provider = (*source).Provider
+		siteapiSiteLinkedIdentity.DisplayName = providerDisplayName((*source).Provider)
+		siteapiSiteLinkedIdentity.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteLinkedIdentity
+}
 func (c *ConverterImpl) InstanceReleaseToResource(source instance.Release) site.SiteInstanceRelease {
 	var siteapiSiteInstanceRelease site.SiteInstanceRelease
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
@@ -1334,6 +1361,22 @@ func (c *ConverterImpl) InvitableRoleToResource(source invitation.Role) site.Sit
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteInvitableRole
+}
+func (c *ConverterImpl) InvitationToLookupResult(source *ent.Invitation) *site.SiteInvitationLookupResult {
+	var pSiteapiSiteInvitationLookupResult *site.SiteInvitationLookupResult
+	if source != nil {
+		var siteapiSiteInvitationLookupResult site.SiteInvitationLookupResult
+		var pString *string
+		if (*source).Edges.Workspace != nil {
+			pString = &(*source).Edges.Workspace.Name
+		}
+		if pString != nil {
+			siteapiSiteInvitationLookupResult.WorkspaceName = *pString
+		}
+		siteapiSiteInvitationLookupResult.Email = site.EmailAddress((*source).Email)
+		pSiteapiSiteInvitationLookupResult = &siteapiSiteInvitationLookupResult
+	}
+	return pSiteapiSiteInvitationLookupResult
 }
 func (c *ConverterImpl) InvitationToResource(source *ent.Invitation) site.SiteInvitationResource {
 	var siteapiSiteInvitationResource site.SiteInvitationResource
@@ -2488,6 +2531,13 @@ func (c *ConverterImpl) UserToResource(source *ent.User) *site.SiteUserResource 
 		pSiteapiSiteUserResource = &siteapiSiteUserResource
 	}
 	return pSiteapiSiteUserResource
+}
+func (c *ConverterImpl) VerifyEmailResultToResource(source *ent.Workspace) site.SiteVerifyEmailResult {
+	var siteapiSiteVerifyEmailResult site.SiteVerifyEmailResult
+	if source != nil {
+		siteapiSiteVerifyEmailResult.LandingWorkspaceId = site.WorkspaceId((*source).PublicID)
+	}
+	return siteapiSiteVerifyEmailResult
 }
 func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportVisitor {
 	var siteapiContactExportVisitor site.ContactExportVisitor

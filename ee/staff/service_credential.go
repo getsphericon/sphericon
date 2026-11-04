@@ -38,8 +38,8 @@ type forbiddenError struct{}
 func (forbiddenError) Error() string { return "staff: the credential's scopes do not allow this" }
 
 // Problem is the RFC 7807 answer the composition root renders for the error.
-func (forbiddenError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, "", "the credential's scopes do not allow this operation"
+func (forbiddenError) Problem() (status int, detail string) {
+	return http.StatusForbidden, "the credential's scopes do not allow this operation"
 }
 
 // lastUsedGranularity is how stale a credential's last-used time may get before a

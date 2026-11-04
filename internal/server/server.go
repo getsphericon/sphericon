@@ -5,7 +5,6 @@ package server
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -42,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -294,9 +294,9 @@ func ProblemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	// A handler error that knows its own problem (a token without a scope) is rendered as it
 	// says.
 	if known, ok := errors.AsType[problemError](err); ok {
-		status, code, detail := known.Problem()
-		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", status, "code", code, "detail", detail)
-		writeCodedProblem(w, status, code, detail)
+		status, detail := known.Problem()
+		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", status, "detail", detail)
+		writeProblem(w, status, detail)
 		return
 	}
 	// A refusal of a module that every surface answers alike (review rule 15).
@@ -338,28 +338,23 @@ func ProblemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 		// The client gets this text as the problem's detail; the log keeps it beside the access line.
 		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", code, "detail", err.Error())
 	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(code)
-	prob := map[string]any{
-		"status": code,
-		"title":  http.StatusText(code),
+	p := &siteapi.ProblemDetails{
+		Status: siteapi.NewOptInt32(narrow.Int32(code)),
+		Title:  siteapi.NewOptString(http.StatusText(code)),
 	}
 	if code < http.StatusInternalServerError {
-		prob["detail"] = err.Error()
+		p.Detail = siteapi.NewOptString(err.Error())
 	} else if dbg := debugProblem(r, w, err.Error(), ""); dbg != nil {
-		prob["debug"] = dbg
+		p.Debug = siteapi.NewOptProblemDebug(*dbg)
 	}
-	if err := json.NewEncoder(w).Encode(prob); err != nil {
-		slog.Warn("write json response", "error", err)
-	}
+	refusal{status: code, body: p}.write(w)
 }
 
 // problemError is an error a handler returns that carries the problem it is
-// answered with: the HTTP status, the machine-readable problem code and the
-// localized detail.
+// answered with: the HTTP status and the localized detail.
 type problemError interface {
 	error
-	Problem() (status int, code, detail string)
+	Problem() (status int, detail string)
 }
 
 func writeProblem(w http.ResponseWriter, status int, detail string) {
@@ -368,29 +363,21 @@ func writeProblem(w http.ResponseWriter, status int, detail string) {
 
 // writeCodedProblem renders an RFC 7807 problem; code, when set, is the problem's
 // machine-readable code.
-func writeCodedProblem(w http.ResponseWriter, status int, code, detail string) {
+func writeCodedProblem(w http.ResponseWriter, status int, code siteapi.ProblemCode, detail string) {
 	writeCodedProblemWith(w, status, code, detail, nil)
 }
 
 // writeCodedProblemWith is writeCodedProblem plus the debug block a development server adds
 // to a 500 (nil: none).
-func writeCodedProblemWith(w http.ResponseWriter, status int, code, detail string, dbg *problemDebug) {
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(status)
-	prob := map[string]any{
-		"status": status,
-		"title":  http.StatusText(status),
-		"detail": detail,
-	}
+func writeCodedProblemWith(w http.ResponseWriter, status int, code siteapi.ProblemCode, detail string, dbg *siteapi.ProblemDebug) {
+	p := problemBody(status, detail)
 	if code != "" {
-		prob["code"] = code
+		p.Code = siteapi.NewOptProblemCode(code)
 	}
 	if dbg != nil {
-		prob["debug"] = dbg
+		p.Debug = siteapi.NewOptProblemDebug(*dbg)
 	}
-	if err := json.NewEncoder(w).Encode(prob); err != nil {
-		slog.Warn("write json response", "error", err)
-	}
+	refusal{status: status, body: p}.write(w)
 }
 
 // --- cross-cutting net/http middleware ---
@@ -428,7 +415,7 @@ func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 				return
 			}
 			w.Header().Set("Retry-After", "5")
-			writeCodedProblem(w, http.StatusServiceUnavailable, string(siteapi.ProblemCodeMigrationsPending), fmt.Sprintf(
+			writeCodedProblem(w, http.StatusServiceUnavailable, siteapi.ProblemCodeMigrationsPending, fmt.Sprintf(
 				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
 				pending))
 		})

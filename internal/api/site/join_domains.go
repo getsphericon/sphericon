@@ -73,5 +73,5 @@ func (h *Handlers) SiteDomainJoinSet(ctx context.Context, req *siteapi.SiteSetDo
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteDomainJoinResource{Enabled: w.DomainJoinEnabled}, nil
+	return mapper.DomainJoinToResource(w), nil
 }

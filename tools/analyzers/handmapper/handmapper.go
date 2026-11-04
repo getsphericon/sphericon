@@ -5,7 +5,13 @@
 // function that takes an ent entity and returns a type of a generated API package (gen/...) is a
 // hand-written mapper, unless it is a helper the package registers with `goverter:extend` or a
 // `goverter:map ... | helper` line, or a function that maps through a converter method and only
-// attaches the fields the converter ignores.
+// attaches the fields the converter ignores. Whatever the function takes, a composite literal of a
+// generated API type that copies a field of an ent entity (directly, through a conversion or a helper
+// call, or through a loaded edge) is a hand-written mapping too, in the API packages: the handlers,
+// internal/server (which renders the refusals) and the handler types' methods of ee/staff. A handler
+// that loops over the entities a module returned takes no entity, so only the literal shows it. A
+// value handed to a converter method is mapped by goverter, and a fact decided from a field (a
+// comparison, a negation) copies none.
 //
 // Input: a request becomes a module's input only through the generated goverter Inputs of its
 // surface (resources/inputs.go). A struct literal of a module input type in a handler package (/site,
@@ -55,9 +61,11 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
 	via := viaConverter(pass, insp)
-	if recvs, isMixed := mixed.Receivers(pass.Pkg.Path()); isMixed || isHandlerPackage(pass.Pkg.Path()) {
+	recvs, isMixed := mixed.Receivers(pass.Pkg.Path())
+	if isMixed || isHandlerPackage(pass.Pkg.Path()) {
 		reportInputLiterals(pass, insp, recvs)
 	}
+	reported := map[*ast.FuncDecl]bool{}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
 		fn, isNode := n.(*ast.FuncDecl)
 		if !isNode {
@@ -80,12 +88,141 @@ func run(pass *analysis.Pass) (any, error) {
 		if via[obj] {
 			return
 		}
+		reported[fn] = true
 		pass.Reportf(fn.Name.Pos(), "%s", rule.Message(1,
 			fn.Name.Name+" maps an ent entity to an API resource by hand",
 			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it"))
 	})
+	if isMixed || isLiteralPackage(pass.Pkg.Path()) {
+		reportEntityLiterals(pass, insp, recvs, func(fn *ast.FuncDecl) bool {
+			return reported[fn] || registered[fn.Name.Name]
+		}, via)
+	}
 	return nil, nil
 }
+
+// literalPackages are the packages that build API types from what a module returned: the handlers
+// and internal/server, which renders the refusals with the contract's problem types. The resources
+// subpackages are the goverter homes, whose registered helpers read entity fields by design.
+var literalPackages = append([]string{"/internal/server"}, handlerPackages...)
+
+func isLiteralPackage(path string) bool {
+	for _, p := range literalPackages {
+		if strings.HasSuffix(path, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// reportEntityLiterals reports each composite literal of a generated API type that reads a field of an
+// ent entity in one of its elements: a resource mapped by hand, whatever the enclosing function takes
+// (a handler that loops over the entities a module returned takes none). A value handed to a converter
+// method, or to a function of the package that maps through one, is not read by hand; a function
+// literal is a function of its own (its literals are visited on their own), and so is a nested literal
+// of an API type. In a mixed package (recvs not nil) only the methods of the handler types are read,
+// and a function the function-level check already reported (skip) is not reported twice.
+func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, recvs []string, skip func(*ast.FuncDecl) bool, via map[types.Object]bool) {
+	insp.WithStack([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
+		lit, isLit := n.(*ast.CompositeLit)
+		if !isLit || !push || skippedFile(pass, lit.Pos()) {
+			return true
+		}
+		if recvs != nil && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
+			return true
+		}
+		if fn := enclosingFunc(stack); fn != nil && skip(fn) {
+			return true
+		}
+		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
+		if !ok || !isResource(named) {
+			return true
+		}
+		entity := entityFieldRead(pass, lit, via)
+		if entity == nil {
+			return true
+		}
+		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
+			qualified(named)+" is built by hand from the fields of "+qualified(entity),
+			"add a method to the surface's goverter Converter (a list method for a slice of entities; a value it cannot see is a `goverter:map ... | helper`) and call it"))
+		return true
+	})
+}
+
+// decision are the operators whose result is a fact decided from their operands (a comparison, a
+// logical operator), not a copy of them: `PasswordSet: u.PasswordHash != ""` maps no field.
+var decision = map[token.Token]bool{
+	token.EQL: true, token.NEQ: true, token.LSS: true, token.LEQ: true, token.GTR: true, token.GEQ: true,
+	token.LAND: true, token.LOR: true,
+}
+
+// entityFieldRead is the entity whose field an element of lit copies, or nil: a field read directly or
+// through a conversion or a helper call, but not one a comparison or a negation decides a fact from. Of
+// a chain through a loaded edge (inv.Edges.Workspace.Name) it is the entity the chain starts from.
+func entityFieldRead(pass *analysis.Pass, lit *ast.CompositeLit, via map[types.Object]bool) *types.Named {
+	var found *types.Named
+	for _, elt := range lit.Elts {
+		if kv, ok := elt.(*ast.KeyValueExpr); ok {
+			elt = kv.Value
+		}
+		ast.Inspect(elt, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.FuncLit:
+				return false
+			case *ast.CompositeLit:
+				named, ok := types.Unalias(pass.TypesInfo.TypeOf(n)).(*types.Named)
+				return !ok || !isResource(named)
+			case *ast.CallExpr:
+				return !mapsThroughConverter(pass, n, via)
+			case *ast.BinaryExpr:
+				return !decision[n.Op]
+			case *ast.UnaryExpr:
+				return n.Op != token.NOT
+			case *ast.SelectorExpr:
+				if s := pass.TypesInfo.Selections[n]; s != nil && s.Kind() == types.FieldVal {
+					if named, ok := deref(s.Recv()).(*types.Named); ok && isEntity(named) {
+						found = named
+					}
+				}
+			}
+			return true
+		})
+	}
+	return found
+}
+
+// mapsThroughConverter is a call of a converter method, or of a function of the package that maps
+// through one (viaConverter).
+func mapsThroughConverter(pass *analysis.Pass, call *ast.CallExpr, via map[types.Object]bool) bool {
+	switch f := call.Fun.(type) {
+	case *ast.Ident:
+		return via[pass.TypesInfo.Uses[f]]
+	case *ast.SelectorExpr:
+		if s := pass.TypesInfo.Selections[f]; s != nil && isConverter(s.Recv()) {
+			return true
+		}
+		return via[pass.TypesInfo.Uses[f.Sel]]
+	}
+	return false
+}
+
+func enclosingFunc(stack []ast.Node) *ast.FuncDecl {
+	for _, n := range slices.Backward(stack) {
+		if d, ok := n.(*ast.FuncDecl); ok {
+			return d
+		}
+	}
+	return nil
+}
+
+func deref(t types.Type) types.Type {
+	if p, ok := t.(*types.Pointer); ok {
+		return p.Elem()
+	}
+	return t
+}
+
+func qualified(n *types.Named) string { return n.Obj().Pkg().Name() + "." + n.Obj().Name() }
 
 // handlerPackages are the packages of the /site, /api and core /staff handlers, which hand a module
 // what the request says. Their subpackages are not handlers: resources holds the goverter Inputs and

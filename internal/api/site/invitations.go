@@ -99,10 +99,7 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	return &siteapi.SiteInvitationLookupResult{
-		WorkspaceName: inv.Edges.Workspace.Name,
-		Email:         siteapi.EmailAddress(inv.Email),
-	}, nil
+	return mapper.InvitationToLookupResult(inv), nil
 }
 
 // acceptForm is what SitePublicInvitationsAccept checks beyond the contract.

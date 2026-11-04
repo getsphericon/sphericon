@@ -199,8 +199,8 @@ func (e scopeRequiredError) Error() string {
 }
 
 // Problem is the 403 a valid token without the scope is answered with.
-func (e scopeRequiredError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, "", e.Error()
+func (e scopeRequiredError) Problem() (status int, detail string) {
+	return http.StatusForbidden, e.Error()
 }
 
 // guardedAuth is the sequence both token surfaces share (ADR 0025): a client address
