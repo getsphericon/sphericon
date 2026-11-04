@@ -30,7 +30,7 @@ var tokenScopes = scopeStrings(
 	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite, externalapi.ApiTokenScopeContactsExport,
 	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
 	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsPublish,
-	externalapi.ApiTokenScopeEventsWrite,
+	externalapi.ApiTokenScopeEventsWrite, externalapi.ApiTokenScopeWebhooksWrite,
 )
 
 // scopeStrings names scopes by the contract's generated constants; the token store takes strings.

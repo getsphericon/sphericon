@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// A collected Event enrolls its Contact in the Automation it triggers: the ingest publishes it,
+// its automations job queues the evaluation, which makes the Enrollment, whose email step sends.
 func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
