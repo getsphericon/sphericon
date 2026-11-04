@@ -105,15 +105,9 @@ func copyCondition(ctx context.Context, s *ent.Scoped, id int64, from, to broadc
 		u.Where(broadcast.SegmentIDIsNil()).ClearCondition()
 		return nil
 	}
-	seg, err := s.Segment().Get(ctx, *b.SegmentID)
-	if ent.IsNotFound(err) {
-		return ErrSegmentNotFound
-	}
+	seg, err := keptSegment(ctx, s, *b.SegmentID)
 	if err != nil {
 		return err
-	}
-	if seg.ArchivedAt != nil {
-		return ErrSegmentArchived.With(seg.Name)
 	}
 	u.Where(broadcast.SegmentID(*b.SegmentID)).SetCondition(lo.FromPtr(seg.Condition))
 	return nil

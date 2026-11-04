@@ -325,7 +325,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent
 // another Channel than the Broadcast's never sends it (ADR 0074) and is refused too.
 func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging.Channel, segmentID, integrationID *int64) error {
 	if segmentID != nil {
-		if err := keptSegment(ctx, s, *segmentID); err != nil {
+		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			return err
 		}
 	}
@@ -349,21 +349,22 @@ func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging
 	return nil
 }
 
-// keptSegment refuses a Segment a write sets on a Broadcast that is missing from the Workspace
-// (ErrSegmentNotFound) or archived (ErrSegmentArchived, naming it): an archived Segment leaves new
-// work (ADR 0100). A Broadcast already pointing at one keeps it as history.
-func keptSegment(ctx context.Context, s *ent.Scoped, id int64) error {
+// keptSegment returns the Segment new work of a Broadcast takes (a write that sets it, a draft that
+// is armed), refusing one that is missing from the Workspace (ErrSegmentNotFound) or archived
+// (ErrSegmentArchived, naming it): an archived Segment leaves new work (ADR 0100). A Broadcast
+// already pointing at one keeps it as history.
+func keptSegment(ctx context.Context, s *ent.Scoped, id int64) (*ent.Segment, error) {
 	seg, err := s.Segment().Get(ctx, id)
 	if ent.IsNotFound(err) {
-		return ErrSegmentNotFound
+		return nil, ErrSegmentNotFound
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if seg.ArchivedAt != nil {
-		return ErrSegmentArchived.With(seg.Name)
+		return nil, ErrSegmentArchived.With(seg.Name)
 	}
-	return nil
+	return seg, nil
 }
 
 // Get returns one Broadcast of the Workspace.
@@ -442,8 +443,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if err != nil {
 		return nil, err
 	}
-	if cur.ArchivedAt != nil {
-		return nil, ErrArchived
+	if err := refuseArchived(cur); err != nil {
+		return nil, err
 	}
 	channel := messaging.Channel(cur.Channel)
 	if f.Content != nil && f.Content.Channel() != channel {
@@ -468,7 +469,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 // is nil. It never schedules or sends.
 func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, segmentID *int64) (*ent.Broadcast, error) {
 	if segmentID != nil {
-		if err := keptSegment(ctx, s, *segmentID); err != nil {
+		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			// A foreign or unknown broadcast is still reported as such first.
 			if _, getErr := m.Get(ctx, s, id); getErr != nil {
 				return nil, getErr
@@ -500,9 +501,11 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Bro
 		if err != nil && !ent.IsNotFound(err) {
 			return err
 		}
-		if archived, err = m.Get(ctx, ts, id); err != nil {
+		got, err := m.Get(ctx, ts, id)
+		if err != nil {
 			return err
 		}
+		archived = got
 		if !lo.Contains(archivable, archived.Status) {
 			return ErrNotArchivable
 		}
@@ -579,6 +582,12 @@ func (m *Module) notArchived(ctx context.Context, s *ent.Scoped, id int64) error
 	if err != nil {
 		return err
 	}
+	return refuseArchived(b)
+}
+
+// refuseArchived is ErrArchived for an archived Broadcast: it is read-only to its owner until it
+// is unarchived (ADR 0100).
+func refuseArchived(b *ent.Broadcast) error {
 	if b.ArchivedAt != nil {
 		return ErrArchived
 	}
