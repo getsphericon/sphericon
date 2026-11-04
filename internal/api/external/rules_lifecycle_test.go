@@ -12,50 +12,28 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestExternalRulesArchiveUnarchiveAndDelete(t *testing.T) {
+func TestExternalRulesDeleteRemovesARuleWithOrWithoutFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 
-	archived, err := c.RulesArchive(ctx, externalapi.RulesArchiveParams{ID: entityIDString(fixtures.RuleTagClickedID)})
-	require.NoError(t, err)
-	res, ok := archived.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", archived)
-	_, isArchived := res.ArchivedAt.Get()
-	assert.True(t, isArchived)
-	assert.Equal(t, externalapi.RuleStatusInactive, res.Status)
+	for _, rule := range []int64{fixtures.RuleTagClickedID, fixtures.RuleInactiveID} {
+		id := entityIDString(rule)
+		deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
 
-	list, err := c.RulesList(ctx, externalapi.RulesListParams{Archived: externalapi.NewOptBool(true)})
-	require.NoError(t, err)
-	assert.Len(t, list.(*externalapi.RulesListOK).Items, 1)
-
-	restored, err := c.RulesUnarchive(ctx, externalapi.RulesUnarchiveParams{ID: entityIDString(fixtures.RuleTagClickedID)})
-	require.NoError(t, err)
-	back, ok := restored.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", restored)
-	_, isArchived = back.ArchivedAt.Get()
-	assert.False(t, isArchived)
-
-	refused, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleTagClickedID)})
-	require.NoError(t, err)
-	problem, ok := refused.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", refused)
-	require.Len(t, problem.UsedBy, 1)
-	assert.Equal(t, externalapi.UsedByKindFiring, problem.UsedBy[0].Kind)
-
-	deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
+		gone, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: id})
+		require.NoError(t, err)
+		assert.IsType(t, &externalapi.RulesGetNotFound{}, gone)
+	}
 }
 
-func TestExternalRulesArchiveAndDeleteNeedTheAutomationsWriteScope(t *testing.T) {
+func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	reader := env.ExternalScoped(t, "automations:read")
 
-	archive, err := reader.RulesArchive(ctx, externalapi.RulesArchiveParams{ID: entityIDString(fixtures.RuleInactiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesArchiveForbidden{}, archive)
 	del, err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesDeleteForbidden{}, del)

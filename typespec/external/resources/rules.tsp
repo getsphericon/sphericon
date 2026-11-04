@@ -114,9 +114,6 @@ model RuleResource {
   /** When the Rule last became active by Publish. It acts only on Events recorded after it. */
   activatedAt?: Timestamp | null;
 
-  /** When the Rule was archived; null while it is kept */
-  archivedAt?: Timestamp | null;
-
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -186,10 +183,6 @@ model RuleDryRunResource {
   actions: RuleDryRunAction[];
 }
 
-/**
- * Delete removes a Rule that has no Firings for good; one with Firings is history and is
- * archived instead (ADR 0049), so a delete of it is a 409 whose `usedBy` carries their count.
- */
 @tag("Rules")
 interface Rules
   extends ExternalCrud<
@@ -198,35 +191,8 @@ interface Rules
       UpdateRuleInput,
       ApiTokenScope.automationsRead,
       ApiTokenScope.automationsWrite,
-      ApiTokenScope.automationsWrite,
-      never,
-      InUseProblem,
-      ArchivedFilter
+      ApiTokenScope.automationsWrite
     > {
-  /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, inactive. */
-  @action("archive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.automationsWrite])
-  archive(...ResourceParameters<RuleResource>):
-    | RuleResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
-
-  /** Restore an archived Rule to the list, inactive */
-  @action("unarchive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.automationsWrite])
-  unarchive(...ResourceParameters<RuleResource>):
-    | RuleResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
-
   /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute

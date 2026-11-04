@@ -61,8 +61,9 @@ type kind struct {
 	publish    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	revert     func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	deactivate func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
-	archive    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
-	unarchive  func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
+	// archive and unarchive are set only for the archivableKinds.
+	archive   func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
+	unarchive func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	// versions are the numbers of the object's versions, in order.
 	versions func(t *testing.T, id int64) []int
 
@@ -168,12 +169,6 @@ func ruleKind(env *testhelper.TestEnv) kind {
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return ruleView(m.Deactivate(ctx, s, id))
 		},
-		archive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return ruleView(m.Archive(ctx, s, id))
-		},
-		unarchive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
-			return ruleView(m.Unarchive(ctx, s, id))
-		},
 		versions: func(t *testing.T, id int64) []int {
 			t.Helper()
 			rows, err := env.DB.RuleVersion.Query().
@@ -195,6 +190,25 @@ var kinds = []struct {
 }{
 	{"automation", automationKind},
 	{"rule", ruleKind},
+}
+
+// archivableKinds are the kinds with an Archive: a Rule is deleted instead (ADR 0098).
+var archivableKinds = kinds[:1]
+
+func TestArchiveOfAnotherWorkspacesObjectIsNotFound(t *testing.T) {
+	for _, row := range archivableKinds {
+		t.Run(row.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			k := row.build(env)
+			ctx := context.Background()
+
+			_, archiveErr := k.archive(ctx, acme(env), k.foreign)
+			_, unarchiveErr := k.unarchive(ctx, acme(env), k.foreign)
+
+			require.ErrorIs(t, archiveErr, k.errNotFound)
+			require.ErrorIs(t, unarchiveErr, k.errNotFound)
+		})
+	}
 }
 
 func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.AcmeID) }
@@ -379,16 +393,12 @@ func TestAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 			_, publishErr := k.publish(ctx, s, k.foreign)
 			_, revertErr := k.revert(ctx, s, k.foreign)
 			_, deactivateErr := k.deactivate(ctx, s, k.foreign)
-			_, archiveErr := k.archive(ctx, s, k.foreign)
-			_, unarchiveErr := k.unarchive(ctx, s, k.foreign)
 
 			require.ErrorIs(t, getErr, k.errNotFound)
 			require.ErrorIs(t, editErr, k.errNotFound)
 			require.ErrorIs(t, publishErr, k.errNotFound)
 			require.ErrorIs(t, revertErr, k.errNotFound)
 			require.ErrorIs(t, deactivateErr, k.errNotFound)
-			require.ErrorIs(t, archiveErr, k.errNotFound)
-			require.ErrorIs(t, unarchiveErr, k.errNotFound)
 		})
 	}
 }
@@ -431,7 +441,7 @@ func TestTheMovesAreAudited(t *testing.T) {
 // Archive stops the object before it leaves the lists, so Unarchive brings it back inactive: only
 // Publish arms it again (an Automation archived active used to come back enrolling).
 func TestArchiveLeavesTheObjectInactiveAndUnarchiveDoesNotRearmIt(t *testing.T) {
-	for _, row := range kinds {
+	for _, row := range archivableKinds {
 		t.Run(row.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			k := row.build(env)

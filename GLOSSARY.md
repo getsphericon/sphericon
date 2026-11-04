@@ -513,7 +513,7 @@ _Avoid_: Revision, snapshot
 
 **Versioned definition**:
 An object whose definition is kept in versions, a **live version** and a **draft**, and changes only
-by **Publish**; its name, status and archiving stay on the object. Today the Automation, the Rule
+by **Publish**; its name, status and archiving (a Rule is deleted instead) stay on the object. Today the Automation, the Rule
 and the On-site form. They share one lifecycle: an edit writes the draft, Publish makes it live,
 **Revert** drops it, Deactivate stops the object, and Archive makes it inactive too, so restoring it
 never re-arms a send or brings a form back onto a site.
@@ -641,9 +641,9 @@ _Avoid_: Theme, style guide
 **Discard**:
 Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
 clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
-Automation, a Segment, a Rule: a list view of the archived ones restores them) or Delete (an
-Integration, a Sending domain: never restored, still readable by id; a Workspace, restorable for
-its window). A Sign-up item is archived for good: it stays listed,
+Automation, a Segment: a list view of the archived ones restores them) or Delete (an
+Integration, a Sending domain: never restored, still readable by id; a Rule with Firings: never
+restored, not found by id, ADR 0098; a Workspace, restorable for its window). A Sign-up item is archived for good: it stays listed,
 marked archived, and is never restored. A discarded row is hidden from
 lists and from new work, but not from history: reports still count it. A row that other live
 work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what

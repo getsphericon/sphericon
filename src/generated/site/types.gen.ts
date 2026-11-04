@@ -5528,10 +5528,6 @@ export type SiteRuleResource = {
    */
   activatedAt?: Timestamp | null;
   /**
-   * When the Rule was archived; null while it is kept
-   */
-  archivedAt?: Timestamp | null;
-  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -7347,7 +7343,6 @@ export const UsedByKind = {
   SEGMENT: 'segment',
   RULE: 'rule',
   ENROLLMENT: 'enrollment',
-  FIRING: 'firing',
   MESSAGE: 'message'
 } as const;
 
@@ -13561,10 +13556,6 @@ export type SiteRulesListData = {
      * Page size
      */
     pageSize?: number;
-    /**
-     * true lists the archived resources instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
   };
   url: '/workspaces/{workspaceId}/rules';
 };
@@ -13681,12 +13672,6 @@ export type SiteRulesDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
 };
 
 export type SiteRulesDeleteError = SiteRulesDeleteErrors[keyof SiteRulesDeleteErrors];
@@ -13781,45 +13766,6 @@ export type SiteRulesUpdateResponses = {
 };
 
 export type SiteRulesUpdateResponse = SiteRulesUpdateResponses[keyof SiteRulesUpdateResponses];
-
-export type SiteRulesArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/rules/{id}/archive';
-};
-
-export type SiteRulesArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type SiteRulesArchiveError = SiteRulesArchiveErrors[keyof SiteRulesArchiveErrors];
-
-export type SiteRulesArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteRuleResource;
-};
-
-export type SiteRulesArchiveResponse = SiteRulesArchiveResponses[keyof SiteRulesArchiveResponses];
 
 export type SiteRulesDeactivateData = {
   body?: never;
@@ -13984,45 +13930,6 @@ export type SiteRulesRevertResponses = {
 };
 
 export type SiteRulesRevertResponse = SiteRulesRevertResponses[keyof SiteRulesRevertResponses];
-
-export type SiteRulesUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/rules/{id}/unarchive';
-};
-
-export type SiteRulesUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type SiteRulesUnarchiveError = SiteRulesUnarchiveErrors[keyof SiteRulesUnarchiveErrors];
-
-export type SiteRulesUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteRuleResource;
-};
-
-export type SiteRulesUnarchiveResponse = SiteRulesUnarchiveResponses[keyof SiteRulesUnarchiveResponses];
 
 export type SiteRuleFiringsListData = {
   body?: never;

@@ -15,7 +15,6 @@ import {
   siteRulesGetOptions,
   siteRulesGetQueryKey,
   siteRulesListQueryKey,
-  siteRulesUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteRuleActionStatus } from '../../generated/site/types.gen.ts'
 import type { SiteRuleVersion } from '../../generated/site/types.gen.ts'
@@ -86,13 +85,6 @@ export function RuleDetailPage() {
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
 
-  const restore = useResourceMutation({
-    mutation: siteRulesUnarchiveMutation(),
-    invalidate,
-    successMessage: t(($) => $.notifications.ruleRestored),
-    errorTitle: t(($) => $.alerts.ruleRestoreErrorTitle),
-  })
-
   if (ruleQuery.isLoading) {
     return <PageSkeleton />
   }
@@ -114,27 +106,19 @@ export function RuleDetailPage() {
           </Badge>
         </Group>
         <Group gap="xs">
-          {rule.archivedAt ? (
-            <Button loading={restore.isPending} onClick={() => restore.mutate({ path })}>
-              {t(($) => $.actions.unarchive)}
+          <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
+          {rule.status === 'active' ? (
+            <Button
+              variant="default"
+              loading={deactivate.isPending}
+              onClick={() => deactivate.mutate({ path })}
+            >
+              {t(($) => $.rules.deactivate)}
             </Button>
-          ) : (
-            <>
-              <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
-              {rule.status === 'active' ? (
-                <Button
-                  variant="default"
-                  loading={deactivate.isPending}
-                  onClick={() => deactivate.mutate({ path })}
-                >
-                  {t(($) => $.rules.deactivate)}
-                </Button>
-              ) : null}
-              <ButtonLink variant="default" to={rulesEditRoute.to} params={{ workspaceId, ruleId }}>
-                {t(($) => $.actions.edit)}
-              </ButtonLink>
-            </>
-          )}
+          ) : null}
+          <ButtonLink variant="default" to={rulesEditRoute.to} params={{ workspaceId, ruleId }}>
+            {t(($) => $.actions.edit)}
+          </ButtonLink>
           <ButtonLink variant="subtle" to={rulesRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>

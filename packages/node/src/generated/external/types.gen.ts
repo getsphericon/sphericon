@@ -3852,10 +3852,6 @@ export type RuleResource = {
    */
   activatedAt?: Timestamp | null;
   /**
-   * When the Rule was archived; null while it is kept
-   */
-  archivedAt?: Timestamp | null;
-  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -4940,7 +4936,6 @@ export const UsedByKind = {
   SEGMENT: 'segment',
   RULE: 'rule',
   ENROLLMENT: 'enrollment',
-  FIRING: 'firing',
   MESSAGE: 'message'
 } as const;
 
@@ -8766,10 +8761,6 @@ export type RulesListData = {
      * Page size
      */
     pageSize?: number;
-    /**
-     * true lists the archived resources instead of the kept ones; the default hides them
-     */
-    archived?: boolean;
   };
   url: '/rules';
 };
@@ -8900,12 +8891,6 @@ export type RulesDeleteErrors = {
    */
   404: ProblemDetails;
   /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -9021,52 +9006,6 @@ export type RulesUpdateResponses = {
 };
 
 export type RulesUpdateResponse = RulesUpdateResponses[keyof RulesUpdateResponses];
-
-export type RulesArchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/rules/{id}/archive';
-};
-
-export type RulesArchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type RulesArchiveError = RulesArchiveErrors[keyof RulesArchiveErrors];
-
-export type RulesArchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: RuleResource;
-};
-
-export type RulesArchiveResponse = RulesArchiveResponses[keyof RulesArchiveResponses];
 
 export type RulesDeactivateData = {
   body?: never;
@@ -9259,52 +9198,6 @@ export type RulesRevertResponses = {
 };
 
 export type RulesRevertResponse = RulesRevertResponses[keyof RulesRevertResponses];
-
-export type RulesUnarchiveData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/rules/{id}/unarchive';
-};
-
-export type RulesUnarchiveErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type RulesUnarchiveError = RulesUnarchiveErrors[keyof RulesUnarchiveErrors];
-
-export type RulesUnarchiveResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: RuleResource;
-};
-
-export type RulesUnarchiveResponse = RulesUnarchiveResponses[keyof RulesUnarchiveResponses];
 
 export type RuleFiringsListData = {
   body?: never;

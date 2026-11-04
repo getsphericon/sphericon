@@ -3522,7 +3522,6 @@ export const zUsedByKind = z.enum([
   'segment',
   'rule',
   'enrollment',
-  'firing',
   'message'
 ]);
 
@@ -3751,7 +3750,6 @@ export const zSiteRuleResource = z.object({
   live: z.lazy((): any => zSiteRuleVersion).nullable(),
   draft: z.lazy((): any => zSiteRuleVersion).nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -6170,8 +6168,7 @@ export const zSiteRulesListPath = z.object({
 
 export const zSiteRulesListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean())
+  pageSize: z.int().gte(1).lte(100).optional().default(25)
 });
 
 /**
@@ -6218,16 +6215,6 @@ export const zSiteRulesUpdatePath = z.object({
  */
 export const zSiteRulesUpdateResponse = zSiteRuleResource;
 
-export const zSiteRulesArchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteRulesArchiveResponse = zSiteRuleResource;
-
 export const zSiteRulesDeactivatePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -6257,16 +6244,6 @@ export const zSiteRulesRevertPath = z.object({
  * The request has succeeded.
  */
 export const zSiteRulesRevertResponse = zSiteRuleResource;
-
-export const zSiteRulesUnarchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteRulesUnarchiveResponse = zSiteRuleResource;
 
 export const zSiteSegmentsListPath = z.object({
   workspaceId: zWorkspaceId

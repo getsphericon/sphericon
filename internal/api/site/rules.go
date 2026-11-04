@@ -10,7 +10,7 @@ import (
 func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
 	ws := workspaceScope(ctx)
 
-	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
+	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 	return &res, nil
 }
 
-// SiteRulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
+// SiteRulesDelete removes a Rule: one with Firings is discarded so they stay as history.
 func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRulesDeleteParams) (siteapi.SiteRulesDeleteRes, error) {
 	ws := workspaceScope(ctx)
 
@@ -68,32 +68,6 @@ func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRules
 		return nil, err
 	}
 	return &siteapi.SiteRulesDeleteNoContent{}, nil
-}
-
-// SiteRulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
-func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRulesArchiveParams) (siteapi.SiteRulesArchiveRes, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	r, err := h.rules.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.RuleToResource(r)
-	return &res, nil
-}
-
-// SiteRulesUnarchive restores an archived Rule to the list, as a draft.
-func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRulesUnarchiveParams) (siteapi.SiteRulesUnarchiveRes, error) {
-	ws := workspaceScope(ctx)
-
-	id := int64(params.ID)
-	r, err := h.rules.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.RuleToResource(r)
-	return &res, nil
 }
 
 // SiteRulesPublish makes the Rule active: it reacts to the Events recorded from now on.

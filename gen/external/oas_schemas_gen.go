@@ -10233,7 +10233,6 @@ func (*InUseProblemDetails) automationsArchiveRes()   {}
 func (*InUseProblemDetails) automationsDeleteRes()    {}
 func (*InUseProblemDetails) customFieldsUpdateRes()   {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
-func (*InUseProblemDetails) rulesDeleteRes()          {}
 func (*InUseProblemDetails) segmentsArchiveRes()      {}
 func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
 func (*InUseProblemDetails) tagsDeleteRes()           {}
@@ -15008,7 +15007,6 @@ func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
 func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
-func (*ProblemDetailsHeaders) rulesArchiveRes()              {}
 func (*ProblemDetailsHeaders) rulesCreateRes()               {}
 func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
 func (*ProblemDetailsHeaders) rulesDeleteRes()               {}
@@ -15017,7 +15015,6 @@ func (*ProblemDetailsHeaders) rulesGetRes()                  {}
 func (*ProblemDetailsHeaders) rulesListRes()                 {}
 func (*ProblemDetailsHeaders) rulesPublishRes()              {}
 func (*ProblemDetailsHeaders) rulesRevertRes()               {}
-func (*ProblemDetailsHeaders) rulesUnarchiveRes()            {}
 func (*ProblemDetailsHeaders) rulesUpdateRes()               {}
 func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
 func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
@@ -15973,8 +15970,6 @@ type RuleResource struct {
 	Draft NilRuleVersion `json:"draft"`
 	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
-	// When the Rule was archived; null while it is kept.
-	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -16009,11 +16004,6 @@ func (s *RuleResource) GetDraft() NilRuleVersion {
 // GetActivatedAt returns the value of ActivatedAt.
 func (s *RuleResource) GetActivatedAt() OptNilTimestamp {
 	return s.ActivatedAt
-}
-
-// GetArchivedAt returns the value of ArchivedAt.
-func (s *RuleResource) GetArchivedAt() OptNilTimestamp {
-	return s.ArchivedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -16056,11 +16046,6 @@ func (s *RuleResource) SetActivatedAt(val OptNilTimestamp) {
 	s.ActivatedAt = val
 }
 
-// SetArchivedAt sets the value of ArchivedAt.
-func (s *RuleResource) SetArchivedAt(val OptNilTimestamp) {
-	s.ArchivedAt = val
-}
-
 // SetCreatedAt sets the value of CreatedAt.
 func (s *RuleResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -16071,13 +16056,11 @@ func (s *RuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*RuleResource) rulesArchiveRes()    {}
 func (*RuleResource) rulesCreateRes()     {}
 func (*RuleResource) rulesDeactivateRes() {}
 func (*RuleResource) rulesGetRes()        {}
 func (*RuleResource) rulesPublishRes()    {}
 func (*RuleResource) rulesRevertRes()     {}
-func (*RuleResource) rulesUnarchiveRes()  {}
 func (*RuleResource) rulesUpdateRes()     {}
 
 // Rule lifecycle status: active reacts to Events, inactive acts on nothing.
@@ -16175,22 +16158,6 @@ func (s *RuleVersion) SetCondition(val OptConditionGroup) {
 func (s *RuleVersion) SetActions(val []RuleAction) {
 	s.Actions = val
 }
-
-type RulesArchiveBadRequest ProblemDetails
-
-func (*RulesArchiveBadRequest) rulesArchiveRes() {}
-
-type RulesArchiveForbidden ProblemDetails
-
-func (*RulesArchiveForbidden) rulesArchiveRes() {}
-
-type RulesArchiveNotFound ProblemDetails
-
-func (*RulesArchiveNotFound) rulesArchiveRes() {}
-
-type RulesArchiveUnauthorized ProblemDetails
-
-func (*RulesArchiveUnauthorized) rulesArchiveRes() {}
 
 type RulesCreateBadRequest ProblemDetails
 
@@ -16402,22 +16369,6 @@ func (*RulesRevertUnauthorized) rulesRevertRes() {}
 type RulesRevertUnprocessableEntity ProblemDetails
 
 func (*RulesRevertUnprocessableEntity) rulesRevertRes() {}
-
-type RulesUnarchiveBadRequest ProblemDetails
-
-func (*RulesUnarchiveBadRequest) rulesUnarchiveRes() {}
-
-type RulesUnarchiveForbidden ProblemDetails
-
-func (*RulesUnarchiveForbidden) rulesUnarchiveRes() {}
-
-type RulesUnarchiveNotFound ProblemDetails
-
-func (*RulesUnarchiveNotFound) rulesUnarchiveRes() {}
-
-type RulesUnarchiveUnauthorized ProblemDetails
-
-func (*RulesUnarchiveUnauthorized) rulesUnarchiveRes() {}
 
 type RulesUpdateBadRequest ProblemDetails
 
@@ -20353,7 +20304,6 @@ const (
 	UsedByKindSegment    UsedByKind = "segment"
 	UsedByKindRule       UsedByKind = "rule"
 	UsedByKindEnrollment UsedByKind = "enrollment"
-	UsedByKindFiring     UsedByKind = "firing"
 	UsedByKindMessage    UsedByKind = "message"
 )
 
@@ -20365,7 +20315,6 @@ func (UsedByKind) AllValues() []UsedByKind {
 		UsedByKindSegment,
 		UsedByKindRule,
 		UsedByKindEnrollment,
-		UsedByKindFiring,
 		UsedByKindMessage,
 	}
 }
@@ -20382,8 +20331,6 @@ func (s UsedByKind) MarshalText() ([]byte, error) {
 	case UsedByKindRule:
 		return []byte(s), nil
 	case UsedByKindEnrollment:
-		return []byte(s), nil
-	case UsedByKindFiring:
 		return []byte(s), nil
 	case UsedByKindMessage:
 		return []byte(s), nil
@@ -20409,9 +20356,6 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return nil
 	case UsedByKindEnrollment:
 		*s = UsedByKindEnrollment
-		return nil
-	case UsedByKindFiring:
-		*s = UsedByKindFiring
 		return nil
 	case UsedByKindMessage:
 		*s = UsedByKindMessage

@@ -35,7 +35,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -247,6 +246,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
 	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
+		if r.DiscardedAt != nil {
+			return ErrNotFound // deleted, its Firings kept
+		}
 		if in.Name == nil || *in.Name == r.Name {
 			return nil
 		}
@@ -283,7 +285,7 @@ func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.Rul
 	return publishable(ctx, ts, draft)
 }
 
-// Archivable never refuses: a Rule's Firings are history that stays with an archived Rule.
+// Archivable never refuses: Delete discards a Rule with Firings, which are history and stay.
 func (versioned) Archivable(context.Context, *ent.Scoped, *ent.Rule) error { return nil }
 
 // merge lays the fields of an edit over the version it starts from (nil for a new Rule) and
@@ -356,9 +358,10 @@ func rewrite(ctx context.Context, s *ent.Scoped, draft *ent.RuleVersion, def def
 	return saveTriggers(ctx, s, draft.ID, def.triggers)
 }
 
-// Get returns one Rule of the Workspace with its live and draft versions, archived or not.
+// Get returns one Rule of the Workspace with its live and draft versions. A deleted Rule kept for
+// its Firings is not found.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	r, err := withVersions(s.Rule().QueryWithDiscarded().Where(rule.ID(id))).Only(ctx)
+	r, err := withVersions(s.Rule().Query().Where(rule.ID(id))).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
@@ -366,14 +369,9 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, e
 }
 
 // List returns one page of the Workspace's Rules with their live and draft versions, newest
-// first: the kept ones, or with archived the archived ones.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Rule], error) {
-	rows := func() *ent.RuleQuery {
-		if archived {
-			return s.Rule().QueryDiscarded()
-		}
-		return s.Rule().Query()
-	}
+// first.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Rule], error) {
+	rows := func() *ent.RuleQuery { return s.Rule().Query() }
 	return pagination.List(ctx, p,
 		func(ctx context.Context) (int, error) { return rows().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Rule, error) {
@@ -400,45 +398,25 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 	return lo.Compact([]*ent.RuleVersion{live, draft})
 }
 
-// Archive discards a Rule (ADR 0049, internal/drafts): it leaves the lists and acts on nothing, and
-// its Firings stay. Archiving also deactivates it under the lock Publish takes, so no Rule is ever
-// archived and active, and restoring it brings back an inactive Rule that cannot start firing
-// before someone publishes it again. Archiving an archived Rule changes nothing. It returns the
-// Rule.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	return m.life.Archive(ctx, s, id)
-}
-
-// Unarchive brings an archived Rule back to the lists, inactive. Restoring one that is not
-// archived changes nothing. It returns the Rule.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
-	return m.life.Unarchive(ctx, s, id)
-}
-
-// Delete purges a Rule that has no Firings (ADR 0049), with its versions. One with any Firing is
-// history and is archived instead: an *inuse.Error carrying their count.
+// Delete removes a Rule (ADR 0049). One with no Firings is purged, with its versions. One with
+// Firings is discarded so they stay as history: it is deactivated under the lock Publish takes, so
+// it never fires again, and it leaves the lists and every by-id read for good. Deleting a deleted
+// Rule is not found.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	n, err := s.Rule().Purge().Where(rule.ID(id), rule.Not(rule.HasFirings())).Exec(ctx)
-	if err != nil {
+	if err != nil || n > 0 {
 		return err
 	}
-	if n > 0 {
-		return nil
-	}
-	r, err := m.Get(ctx, s, id)
-	if err != nil {
+	if _, err := m.Get(ctx, s, id); err != nil {
 		return err
 	}
-	firings, err := s.RuleFiring().Query().Where(rulefiring.RuleID(id)).Count(ctx)
-	if err != nil {
-		return err
-	}
-	return &inuse.Error{What: inuse.SubjectRule, Users: []inuse.User{inuse.Firings(id, r.Name, firings)}}
+	_, err = m.life.Archive(ctx, s, id)
+	return err
 }
 
 // UnfitForCustomFieldType returns the Workspace's kept Rules, in id order, whose live version or
 // draft tests the Custom field key in its Condition with a leaf a field of type t does not take, so
-// it would stop compiling were the field retyped. An archived Rule acts on nothing, so it does not
+// it would stop compiling were the field retyped. A deleted Rule acts on nothing, so it does not
 // count.
 func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Rule, error) {
 	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
@@ -454,7 +432,7 @@ func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t c
 }
 
 // UsingTag returns the Workspace's kept Rules, in id order, whose live version or draft names the
-// Tag by its name: in a Condition leaf or in a tag Action (spec #767, "In use"). An archived Rule
+// Tag by its name: in a Condition leaf or in a tag Action (spec #767, "In use"). A deleted Rule
 // acts on nothing, so it does not hold the Tag.
 func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Rule, error) {
 	kept, err := withVersions(s.Rule().Query()).Order(ent.Asc(rule.FieldID)).All(ctx)
@@ -521,6 +499,9 @@ func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
 // authoring, and an audited write of the Rule. A Rule with no draft, or one never published
 // (whose draft is its whole definition), has nothing to revert (ErrNothingToRevert).
 func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
+	if _, err := m.Get(ctx, s, id); err != nil {
+		return nil, err // a deleted Rule has nothing to revert
+	}
 	return m.life.Revert(ctx, s, id)
 }
 

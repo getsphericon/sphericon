@@ -78,7 +78,7 @@ const names: Record<AnyAuditAction, string> = {
   'rule.create': 'Created a rule',
   'rule.update': 'Changed a rule',
   'rule.delete': 'Deleted a rule',
-  'rule.discard': 'Archived a rule',
+  'rule.discard': 'Deleted a rule, keeping its firings',
   'rule.restore': 'Restored a rule',
   'segment.create': 'Created a segment',
   'segment.update': 'Changed a segment',

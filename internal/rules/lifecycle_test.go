@@ -14,10 +14,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -25,64 +25,78 @@ import (
 
 func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.AcmeID) }
 
-func TestArchiveHidesARuleFromTheListAndStopsItFiring(t *testing.T) {
+// A Rule with Firings is discarded by Delete: it leaves the list and every by-id read, it stops
+// firing, and its Firings stay as history (ADR 0049).
+func TestDeleteOfARuleWithFiringsHidesItStopsItFiringAndKeepsTheFirings(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-
-	_, err := m.Archive(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err)
-
-	kept, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100}, false)
-	require.NoError(t, err)
-	for _, r := range kept.Items {
-		assert.NotEqual(t, int64(fixtures.RuleTagClickedID), r.ID)
+	firings := func() int {
+		n, err := acme(env).RuleFiring().Query().Where(rulefiring.RuleID(fixtures.RuleTagClickedID)).Count(ctx)
+		require.NoError(t, err)
+		return n
 	}
-	archived, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100}, true)
+	before := firings()
+	require.Positive(t, before)
+
+	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleTagClickedID))
+
+	kept, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
-	require.Len(t, archived.Items, 1)
-	assert.Equal(t, rule.StatusInactive, archived.Items[0].Status, "an archived Rule is no longer active")
-	assert.NotNil(t, archived.Items[0].DiscardedAt)
-	assert.Empty(t, evaluate(t, env, fixtures.ContactAliceID, "rule_click", "evt-after-archive"))
-	got, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err, "an archived Rule is still addressable")
-	assert.NotNil(t, got.DiscardedAt)
+	assert.NotContains(t, lo.Map(kept.Items, func(r *ent.Rule, _ int) int64 { return r.ID }), int64(fixtures.RuleTagClickedID))
+	_, err = m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
+	require.ErrorIs(t, err, rules.ErrNotFound)
+	assert.Empty(t, evaluate(t, env, fixtures.ContactAliceID, "rule_click", "evt-after-delete"))
+	assert.Equal(t, before, firings())
 }
 
-func TestArchivingAnArchivedRuleChangesNothing(t *testing.T) {
+// A deleted Rule is gone for every move: none of them reaches it.
+func TestADeletedRuleIsNotFoundByAnyMove(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	_, err := m.Archive(ctx, acme(env), fixtures.RuleInactiveID)
-	require.NoError(t, err)
+	s := acme(env)
+	id := int64(fixtures.RuleTagClickedID)
+	require.NoError(t, m.Delete(ctx, s, id))
 
-	_, err = m.Archive(ctx, acme(env), fixtures.RuleInactiveID)
-	require.NoError(t, err)
-
-	got, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
-	require.NoError(t, err)
-	assert.NotNil(t, got.DiscardedAt)
+	name := "renamed"
+	moves := map[string]func() error{
+		"delete":     func() error { return m.Delete(ctx, s, id) },
+		"update":     func() error { _, err := m.Update(ctx, s, id, rules.UpdateInput{Name: &name}); return err },
+		"publish":    func() error { _, err := m.Publish(ctx, s, id); return err },
+		"revert":     func() error { _, err := m.Revert(ctx, s, id); return err },
+		"deactivate": func() error { _, err := m.Deactivate(ctx, s, id); return err },
+		"firings": func() error {
+			_, err := m.Firings(ctx, s, id, pagination.Params{Page: 1, PageSize: 10})
+			return err
+		},
+	}
+	for move, run := range moves {
+		assert.ErrorIs(t, run(), rules.ErrNotFound, move)
+	}
 }
 
-// Publishing and archiving a Rule at the same moment leave it archived and inactive, or active
-// and kept; never archived and active (an archived Rule must act on nothing).
-func TestPublishingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testing.T) {
+// Publishing and deleting a fired Rule at the same moment leave it deleted and inactive, or active
+// and kept; never deleted and active (a deleted Rule must act on nothing).
+func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := db.NewEntClient(sqlDB)
 	m := rules.New(nil, events.New(sqlDB))
 	s := client.Scoped(fixtures.AcmeID)
+	_, err := m.Deactivate(t.Context(), s, fixtures.RuleTagClickedID)
+	require.NoError(t, err)
 
 	// Either may be refused because the other won; what matters is the state they leave.
-	var publishErr, archiveErr error
+	var publishErr, deleteErr error
 	var wg sync.WaitGroup
-	wg.Go(func() { _, publishErr = m.Publish(t.Context(), s, fixtures.RuleInactiveID) })
-	wg.Go(func() { _, archiveErr = m.Archive(t.Context(), s, fixtures.RuleInactiveID) })
+	wg.Go(func() { _, publishErr = m.Publish(t.Context(), s, fixtures.RuleTagClickedID) })
+	wg.Go(func() { deleteErr = m.Delete(t.Context(), s, fixtures.RuleTagClickedID) })
 	wg.Wait()
 
-	got, err := m.Get(t.Context(), s, fixtures.RuleInactiveID)
+	got, err := s.Rule().QueryWithDiscarded().Where(rule.ID(fixtures.RuleTagClickedID)).Only(t.Context())
 	require.NoError(t, err)
-	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active (publish: %v, archive: %v)", publishErr, archiveErr)
+	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "deleted and active (publish: %v, delete: %v)", publishErr, deleteErr)
 }
 
 func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
@@ -92,24 +106,9 @@ func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
 
 	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleInactiveID))
 
-	_, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
-	assert.ErrorIs(t, err, rules.ErrNotFound)
-}
-
-func TestDeleteRefusesARuleWithFiringsAndNamesTheirCount(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := rules.New(env.Cipher, env.Bus)
-
-	err := m.Delete(context.Background(), acme(env), fixtures.RuleTagClickedID)
-
-	refused, ok := inuse.As(err)
-	require.True(t, ok, "got %v", err)
-	assert.Equal(t, inuse.SubjectRule, refused.What)
-	require.Len(t, refused.Users, 1)
-	assert.Equal(t, inuse.Firing, refused.Users[0].Kind)
-	assert.Equal(t, 2, refused.Users[0].Count)
-	_, err = m.Get(context.Background(), acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err, "the Rule stays")
+	n, err := acme(env).Rule().QueryWithDiscarded().Where(rule.ID(fixtures.RuleInactiveID)).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, n, "no row is kept for a Rule that never fired")
 }
 
 func TestDeleteOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
@@ -155,14 +154,12 @@ func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.RuleVipOnlyID, fixtures.RuleMultiTriggerID}, ids)
 }
 
-func TestAnArchivedRuleUsesNoTag(t *testing.T) {
+func TestADeletedRuleUsesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	_, err := m.Archive(ctx, acme(env), fixtures.RuleVipOnlyID)
-	require.NoError(t, err)
-	_, err = m.Archive(ctx, acme(env), fixtures.RuleMultiTriggerID)
-	require.NoError(t, err)
+	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleVipOnlyID))
+	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleMultiTriggerID))
 
 	using, err := rules.UsingTag(ctx, acme(env), "vip")
 
@@ -234,7 +231,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 	}
 }
 
-// Create, update, publish, deactivate and archive each leave an Audit entry, and the Actions' values
+// Create, update, publish, deactivate and delete each leave an Audit entry, and the Actions' values
 // never reach one (a later Action kind may hold a secret).
 func TestRuleChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -252,8 +249,7 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 	_, err = m.Deactivate(ctx, s, r.ID)
 	require.NoError(t, err)
-	_, err = m.Archive(ctx, s, r.ID)
-	require.NoError(t, err)
+	require.NoError(t, m.Delete(ctx, s, r.ID))
 
 	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
@@ -266,6 +262,6 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	}
 	assert.Equal(t, "rule.create", seen[0])
 	assert.Contains(t, seen, "rule.update")
-	assert.Contains(t, seen, "rule.discard")
-	assert.GreaterOrEqual(t, len(seen), 5, "update, publish, deactivate and archive each wrote one")
+	assert.Contains(t, seen, "rule.delete")
+	assert.GreaterOrEqual(t, len(seen), 5, "update, publish, deactivate and delete each wrote one")
 }
