@@ -32,7 +32,7 @@ export function TagsListPage() {
   })
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Title order={2}>{t(($) => $.nav.tags)}</Title>
 
       <PagedTable

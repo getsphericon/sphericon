@@ -117,7 +117,7 @@ export function ContactsListPage() {
   }
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <ContactCreateModal opened={createOpened} onClose={closeCreate} />
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>

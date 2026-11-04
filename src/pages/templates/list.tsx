@@ -29,7 +29,7 @@ export function TemplatesListPage() {
   })
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.templates)}</Title>
         <ButtonLink to={templatesCreateRoute.to} params={{ workspaceId }}>

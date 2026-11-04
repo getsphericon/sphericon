@@ -1,9 +1,10 @@
 import { BarChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
+import { SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsSubscribedPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
@@ -45,7 +46,8 @@ function SubscribedPeopleReport() {
       <Stack gap="xs">
         <Title order={4}>{t(($) => $.analytics.subscribedPeople.flow)}</Title>
         {changedDays.length === 0 ? (
-          <EmptyState
+          <CenteredEmptyState
+            height={260}
             icon={<IconChartBar />}
             title={t(($) => $.analytics.subscribedPeople.empty)}
           />

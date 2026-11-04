@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { CenteredEmptyState } from '../components/CenteredEmptyState.tsx'
 import { staffWorkspacesListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
 import type { StaffWorkspaceReview } from '../generated/staffee/types.gen.ts'
 import { zStaffWorkspaceReview } from '../generated/staffee/zod.gen.ts'
@@ -41,7 +42,7 @@ export function ConsoleWorkspacesPage() {
   })
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Title order={2}>{t(($) => $.console.workspaces.title)}</Title>
       <Group>
         <TextInput
@@ -77,59 +78,65 @@ export function ConsoleWorkspacesPage() {
           title={t(($) => $.console.workspaces.loadError)}
         />
       ) : null}
-      <DataTable
-        minHeight={workspacesQuery.data?.items.length ? 0 : 200}
-        withTableBorder
-        highlightOnHover
-        fetching={workspacesQuery.isFetching}
-        records={workspacesQuery.data?.items ?? []}
-        idAccessor="id"
-        columns={[
-          { accessor: 'id', title: t(($) => $.console.workspaces.id) },
-          { accessor: 'name', title: t(($) => $.console.workspaces.name) },
-          {
-            accessor: 'createdAt',
-            title: t(($) => $.console.workspaces.createdAt),
-            visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.sm})`,
-            render: (record) => <Text size="sm">{formatDateTime(record.createdAt)}</Text>,
-          },
-          {
-            accessor: 'suspension',
-            title: t(($) => $.console.workspaces.status),
-            render: (record) => (
-              <Group gap="xs">
-                {record.suspension ? (
-                  <Badge color="red" variant="light">
-                    {t(($) => $.console.workspaces.suspended)}
-                  </Badge>
-                ) : (
-                  <Badge color="green" variant="light">
-                    {t(($) => $.console.workspaces.active)}
-                  </Badge>
-                )}
-                {record.warned ? (
-                  <Badge color="yellow" variant="light">
-                    {t(($) => $.console.workspaces.warned)}
-                  </Badge>
-                ) : null}
-                {record.exempt ? (
-                  <Badge color="grape" variant="light">
-                    {t(($) => $.console.workspaces.exempt)}
-                  </Badge>
-                ) : null}
-              </Group>
-            ),
-          },
-        ]}
-        onRowClick={({ record }) =>
-          void navigate({ to: consoleWorkspaceRoute.to, params: { workspaceId: record.id } })
-        }
-        emptyState={<EmptyState title={t(($) => $.console.workspaces.empty)} />}
-        totalRecords={workspacesQuery.data?.totalItems ?? 0}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={setPage}
-      />
+      {/* No Workspace matches (the total, not the page) shows its empty state in place of the
+          table, centered in the page. */}
+      {workspacesQuery.data?.totalItems === 0 ? (
+        <CenteredEmptyState title={t(($) => $.console.workspaces.empty)} />
+      ) : (
+        <DataTable
+          minHeight={workspacesQuery.data?.items.length ? 0 : 200}
+          withTableBorder
+          highlightOnHover
+          fetching={workspacesQuery.isFetching}
+          records={workspacesQuery.data?.items ?? []}
+          idAccessor="id"
+          columns={[
+            { accessor: 'id', title: t(($) => $.console.workspaces.id) },
+            { accessor: 'name', title: t(($) => $.console.workspaces.name) },
+            {
+              accessor: 'createdAt',
+              title: t(($) => $.console.workspaces.createdAt),
+              visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.sm})`,
+              render: (record) => <Text size="sm">{formatDateTime(record.createdAt)}</Text>,
+            },
+            {
+              accessor: 'suspension',
+              title: t(($) => $.console.workspaces.status),
+              render: (record) => (
+                <Group gap="xs">
+                  {record.suspension ? (
+                    <Badge color="red" variant="light">
+                      {t(($) => $.console.workspaces.suspended)}
+                    </Badge>
+                  ) : (
+                    <Badge color="green" variant="light">
+                      {t(($) => $.console.workspaces.active)}
+                    </Badge>
+                  )}
+                  {record.warned ? (
+                    <Badge color="yellow" variant="light">
+                      {t(($) => $.console.workspaces.warned)}
+                    </Badge>
+                  ) : null}
+                  {record.exempt ? (
+                    <Badge color="grape" variant="light">
+                      {t(($) => $.console.workspaces.exempt)}
+                    </Badge>
+                  ) : null}
+                </Group>
+              ),
+            },
+          ]}
+          onRowClick={({ record }) =>
+            void navigate({ to: consoleWorkspaceRoute.to, params: { workspaceId: record.id } })
+          }
+          emptyState={<EmptyState title={t(($) => $.console.workspaces.empty)} />}
+          totalRecords={workspacesQuery.data?.totalItems ?? 0}
+          recordsPerPage={PAGE_SIZE}
+          page={page}
+          onPageChange={setPage}
+        />
+      )}
     </Stack>
   )
 }

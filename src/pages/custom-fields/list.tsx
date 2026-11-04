@@ -1,7 +1,6 @@
 import {
   Badge,
   Button,
-  EmptyState,
   Group,
   Menu,
   Modal,
@@ -17,6 +16,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -47,7 +47,7 @@ export function CustomFieldsListPage() {
   )
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Title order={2}>{t(($) => $.nav.customFields)}</Title>
       <Text c="dimmed">{t(($) => $.customFields.hint)}</Text>
 
@@ -73,18 +73,21 @@ function CustomFieldsTable({
     .items
   const [editing, setEditing] = useState<SiteCustomFieldResource | null>(null)
 
+  // No field at all shows its empty state in place of the table, centered in the page.
+  if (records.length === 0) {
+    return (
+      <CenteredEmptyState
+        title={t(($) => $.customFields.noRecords)}
+        description={t(($) => $.customFields.emptyState)}
+      />
+    )
+  }
+
   return (
     <>
       <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
         records={records}
-        emptyState={
-          <EmptyState
-            title={t(($) => $.customFields.noRecords)}
-            description={t(($) => $.customFields.emptyState)}
-          />
-        }
         columns={[
           { accessor: 'name', title: t(($) => $.customFields.nameLabel) },
           { accessor: 'key', title: t(($) => $.customFields.keyLabel) },

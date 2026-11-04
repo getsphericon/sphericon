@@ -60,7 +60,7 @@ export function RulesListPage() {
   const routeNavigate = rulesRoute.useNavigate()
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.rules)}</Title>
         <ButtonLink to={rulesCreateRoute.to} params={{ workspaceId }}>

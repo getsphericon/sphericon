@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { usePaginationText } from '../hooks/usePaginationText.ts'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
+import { CenteredEmptyState } from './CenteredEmptyState.tsx'
 import { RelativeTime } from './RelativeTime.tsx'
 import { TableSkeleton } from './Skeletons.tsx'
 
@@ -72,9 +73,14 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   // The time of the last successful fetch: a failed refresh leaves it, and a placeholder page
   // shown while another loads has none (0), so the time then waits for the page's own fetch.
   const refreshedAt = list.dataUpdatedAt > 0 ? new Date(list.dataUpdatedAt).toISOString() : null
+  // A list with nothing in it shows its empty state in place of the table, centered in the page.
+  // It is the total that says so, not the page: a later page can come back empty while the list
+  // is not, and its table keeps the pagination back.
+  const nothing = data !== undefined && totalItems === 0
 
   return (
-    <Stack>
+    // It grows into the page's free height, so an empty list's state sits in the page's middle.
+    <Stack flex={1}>
       <Group justify="space-between" gap="xs">
         <Text fw={600}>
           {t(($) => $.table.collection, { name: collection, total: totalItems })}
@@ -105,11 +111,16 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
 
       {list.isError ? <ApiErrorAlert error={list.error} title={loadErrorTitle} /> : null}
 
+      {nothing ? (
+        <CenteredEmptyState title={empty.title} description={empty.description}>
+          {empty.action ? <EmptyState.Actions>{empty.action}</EmptyState.Actions> : null}
+        </CenteredEmptyState>
+      ) : null}
+
       {/* While the first page loads only the skeleton shows: an empty table would flash its
           empty state under it. */}
-      {list.isLoading ? (
-        <TableSkeleton />
-      ) : (
+      {list.isLoading ? <TableSkeleton /> : null}
+      {list.isLoading || nothing ? null : (
         <ViewTransition>
           <DataTable<TPage['items'][number]>
             minHeight={data?.items.length ? 0 : 200}

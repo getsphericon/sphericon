@@ -28,7 +28,7 @@ export function CapturedMessagesListPage() {
   })
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.capturedMessages.title)}</Title>
         <Button

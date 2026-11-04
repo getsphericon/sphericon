@@ -14,8 +14,10 @@ export function AnalyticsLayout() {
   const range = useAnalyticsRange()
   const navigate = useNavigate()
 
+  // The section grows into the main area's free height, so a report that is empty as a whole
+  // centers its CenteredEmptyState in what is left below the window.
   return (
-    <Stack>
+    <Stack flex={1}>
       <SegmentedControl
         w={{ base: '100%', sm: 'fit-content' }}
         value={range}

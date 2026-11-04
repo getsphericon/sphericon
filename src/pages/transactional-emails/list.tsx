@@ -32,7 +32,7 @@ export function TransactionalEmailsListPage() {
   const { workspaceId } = transactionalEmailsRoute.useParams()
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Title order={2}>{t(($) => $.transactionalEmails.title)}</Title>
 
       <PagedTable

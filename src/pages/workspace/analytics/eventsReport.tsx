@@ -1,8 +1,8 @@
-import { EmptyState } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { EventActionName } from '../../../components/EventActionName.tsx'
 import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
@@ -33,7 +33,7 @@ function EventsReport() {
   ).data.actions
 
   return actions.length === 0 ? (
-    <EmptyState title={t(($) => $.analytics.events.empty)} />
+    <CenteredEmptyState title={t(($) => $.analytics.events.empty)} />
   ) : (
     <DataTable
       withTableBorder

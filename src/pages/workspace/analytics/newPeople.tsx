@@ -1,9 +1,10 @@
 import { BarChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Text } from '@mantine/core'
+import { SimpleGrid, Stack, Text } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsNewPeopleOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
@@ -39,7 +40,11 @@ function NewPeopleReport() {
         <StatCard label={t(($) => $.analytics.newPeople.total)} value={report.total} />
       </SimpleGrid>
       {report.total === 0 ? (
-        <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.newPeople.empty)} />
+        <CenteredEmptyState
+          height={300}
+          icon={<IconChartBar />}
+          title={t(($) => $.analytics.newPeople.empty)}
+        />
       ) : (
         <BarChart
           h={300}

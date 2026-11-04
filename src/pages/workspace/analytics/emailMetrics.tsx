@@ -1,9 +1,10 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import { EmptyState, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { IconChartBar } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { StatCard } from '../../../components/StatCard.tsx'
 import { siteAnalyticsOverviewOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
@@ -57,7 +58,11 @@ function EmailMetricsReport() {
             />
           </SimpleGrid>
           {email.sentCount === 0 ? (
-            <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.email.empty)} />
+            <CenteredEmptyState
+              height={260}
+              icon={<IconChartBar />}
+              title={t(($) => $.analytics.email.empty)}
+            />
           ) : (
             <AreaChart
               h={260}
@@ -116,7 +121,11 @@ function EmailMetricsReport() {
                 ]}
               />
             ) : (
-              <EmptyState icon={<IconChartBar />} title={t(($) => $.analytics.contacts.empty)} />
+              <CenteredEmptyState
+                height={200}
+                icon={<IconChartBar />}
+                title={t(($) => $.analytics.contacts.empty)}
+              />
             )}
           </Stack>
 

@@ -1,5 +1,4 @@
 import {
-  Box,
   EmptyState,
   Badge,
   Button,
@@ -20,6 +19,7 @@ import { DataTable } from 'mantine-datatable'
 import { useDeferredValue, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -80,70 +80,73 @@ function SuppressionsTable({
   ).data
 
   return (
-    <Stack gap="xs">
+    // It grows into the page's free height, so an empty list's state sits in the page's middle.
+    <Stack gap="xs" flex={1}>
       <Text fw={600}>
         {t(($) => $.table.collection, { name: t(($) => $.suppressions.title), total: totalItems })}
       </Text>
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        fetching={fetching}
-        columns={[
-          { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
-          {
-            accessor: 'reason',
-            title: t(($) => $.suppressions.reasonColumn),
-            render: (record) => (
-              <Badge variant="light" color={REASON_COLORS[record.reason]}>
-                {t(($) => $.suppressions.reasons[record.reason])}
-              </Badge>
-            ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => {
-              if (record.liftedAt) {
-                return (
-                  <Badge variant="light" color="gray">
-                    {t(($) => $.suppressions.liftedBadge)}
-                  </Badge>
-                )
-              }
-              if (!canManage) {
-                return null
-              }
-              return (
-                <Group justify="flex-end">
-                  <RowActionsMenu>
-                    <Menu.Item onClick={() => onLift(record.id)}>
-                      {t(($) => $.suppressions.lift)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                </Group>
-              )
+      {/* No suppression at all (the total, not the page) shows its empty state in place of the
+          table, centered in the page. */}
+      {totalItems === 0 ? (
+        <CenteredEmptyState title={t(($) => $.suppressions.empty)}>
+          {canManage ? (
+            <EmptyState.Actions>
+              <Button variant="default" onClick={onCreate}>
+                {t(($) => $.suppressions.create)}
+              </Button>
+            </EmptyState.Actions>
+          ) : null}
+        </CenteredEmptyState>
+      ) : (
+        <DataTable
+          withTableBorder
+          records={records}
+          idAccessor="id"
+          fetching={fetching}
+          columns={[
+            { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
+            {
+              accessor: 'reason',
+              title: t(($) => $.suppressions.reasonColumn),
+              render: (record) => (
+                <Badge variant="light" color={REASON_COLORS[record.reason]}>
+                  {t(($) => $.suppressions.reasons[record.reason])}
+                </Badge>
+              ),
             },
-          },
-        ]}
-        emptyState={
-          <EmptyState title={t(($) => $.suppressions.empty)}>
-            {canManage ? (
-              <EmptyState.Actions>
-                <Button variant="default" onClick={onCreate}>
-                  {t(($) => $.suppressions.create)}
-                </Button>
-              </EmptyState.Actions>
-            ) : null}
-          </EmptyState>
-        }
-        totalRecords={totalItems}
-        paginationText={paginationText}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={onPageChange}
-      />
+            {
+              accessor: 'actions',
+              title: '',
+              render: (record) => {
+                if (record.liftedAt) {
+                  return (
+                    <Badge variant="light" color="gray">
+                      {t(($) => $.suppressions.liftedBadge)}
+                    </Badge>
+                  )
+                }
+                if (!canManage) {
+                  return null
+                }
+                return (
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      <Menu.Item onClick={() => onLift(record.id)}>
+                        {t(($) => $.suppressions.lift)}
+                      </Menu.Item>
+                    </RowActionsMenu>
+                  </Group>
+                )
+              },
+            },
+          ]}
+          totalRecords={totalItems}
+          paginationText={paginationText}
+          recordsPerPage={PAGE_SIZE}
+          page={page}
+          onPageChange={onPageChange}
+        />
+      )}
     </Stack>
   )
 }
@@ -200,7 +203,7 @@ export function SuppressionsListPage() {
     })
 
   return (
-    <Box>
+    <Stack gap={0} flex={1}>
       <Group justify="space-between" mb="sm">
         <Title order={2}>{t(($) => $.suppressions.title)}</Title>
         {canManage ? (
@@ -273,6 +276,6 @@ export function SuppressionsListPage() {
           </Stack>
         </form>
       </Modal>
-    </Box>
+    </Stack>
   )
 }

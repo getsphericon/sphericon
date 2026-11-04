@@ -1,7 +1,8 @@
-import { Alert, EmptyState, Group, Stack, Table, Text } from '@mantine/core'
+import { Alert, Group, Stack, Table, Text } from '@mantine/core'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteAnalyticsClicksByLinkOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsLinkOwner } from '../../../generated/site/types.gen.ts'
@@ -55,7 +56,7 @@ function ClicksByLinkReport() {
   const retentionDays = report.eventsRetentionDays
 
   return (
-    <Stack>
+    <Stack flex={1}>
       {retentionDays > 0 && retentionDays < windowDays(range) && (
         <Alert color="yellow">
           {t(($) => $.analytics.clicksByLink.retentionNote, { days: retentionDays })}
@@ -63,7 +64,7 @@ function ClicksByLinkReport() {
       )}
 
       {report.links.length === 0 ? (
-        <EmptyState title={t(($) => $.analytics.clicksByLink.empty)} />
+        <CenteredEmptyState title={t(($) => $.analytics.clicksByLink.empty)} />
       ) : (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">

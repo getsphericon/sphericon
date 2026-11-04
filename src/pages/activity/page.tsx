@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { CenteredEmptyState } from '../../components/CenteredEmptyState.tsx'
 import { EventActionOption } from '../../components/EventActionName.tsx'
 import { DetailedEventRowDetails } from '../../components/EventRowDetails.tsx'
 import { EventSummary } from '../../components/EventSummary.tsx'
@@ -71,7 +72,7 @@ export function ActivityPage() {
   const totalItems = eventsQuery.data?.totalItems ?? 0
 
   return (
-    <Stack>
+    <Stack flex={1}>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.activity.title)}</Title>
         <Group gap="md">
@@ -99,47 +100,52 @@ export function ActivityPage() {
 
       {eventsQuery.isLoading ? <TableSkeleton /> : null}
 
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        highlightOnHover
-        records={records}
-        idAccessor="id"
-        columns={[
-          {
-            accessor: 'createdAt',
-            title: t(($) => $.activity.time),
-            render: (record) => <RelativeTime value={record.createdAt} />,
-          },
-          {
-            accessor: 'action',
-            title: t(($) => $.activity.action),
-            render: (record) => (
-              <Group gap="xs">
-                <EventSummary workspaceId={workspaceId} event={record} />
-                {record.properties?.captured === true ? (
-                  <Badge color="gray" variant="outline">
-                    {t(($) => $.activity.captured)}
-                  </Badge>
-                ) : null}
-              </Group>
-            ),
-          },
-          {
-            accessor: 'subject',
-            title: t(($) => $.activity.subject),
-            render: (record) => record.email ?? record.subjectId,
-          },
-        ]}
-        rowExpansion={{ content: DetailedEventRowDetails }}
-        totalRecords={totalItems}
-        paginationText={paginationText}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={setPage}
-        fetching={eventsQuery.isFetching}
-        emptyState={<EmptyState title={t(($) => $.activity.noRecords)} />}
-      />
+      {/* No event at all shows its empty state in place of the table, centered in the page. */}
+      {eventsQuery.data !== undefined && totalItems === 0 ? (
+        <CenteredEmptyState title={t(($) => $.activity.noRecords)} />
+      ) : (
+        <DataTable
+          minHeight={records.length === 0 ? 200 : 0}
+          withTableBorder
+          highlightOnHover
+          records={records}
+          idAccessor="id"
+          columns={[
+            {
+              accessor: 'createdAt',
+              title: t(($) => $.activity.time),
+              render: (record) => <RelativeTime value={record.createdAt} />,
+            },
+            {
+              accessor: 'action',
+              title: t(($) => $.activity.action),
+              render: (record) => (
+                <Group gap="xs">
+                  <EventSummary workspaceId={workspaceId} event={record} />
+                  {record.properties?.captured === true ? (
+                    <Badge color="gray" variant="outline">
+                      {t(($) => $.activity.captured)}
+                    </Badge>
+                  ) : null}
+                </Group>
+              ),
+            },
+            {
+              accessor: 'subject',
+              title: t(($) => $.activity.subject),
+              render: (record) => record.email ?? record.subjectId,
+            },
+          ]}
+          rowExpansion={{ content: DetailedEventRowDetails }}
+          totalRecords={totalItems}
+          paginationText={paginationText}
+          recordsPerPage={PAGE_SIZE}
+          page={page}
+          onPageChange={setPage}
+          fetching={eventsQuery.isFetching}
+          emptyState={<EmptyState title={t(($) => $.activity.noRecords)} />}
+        />
+      )}
     </Stack>
   )
 }

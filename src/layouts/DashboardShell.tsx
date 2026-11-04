@@ -1,4 +1,4 @@
-import { AppShell, Box, Burger, Button, Group, ScrollArea, Title } from '@mantine/core'
+import { AppShell, Box, Burger, Button, Group, ScrollArea, Stack, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconBook } from '@tabler/icons-react'
 import { Outlet, useLocation } from '@tanstack/react-router'
@@ -79,8 +79,16 @@ export function DashboardShell({
       </AppShell.Navbar>
 
       <AppShell.Main>
-        {banner}
-        {content ?? <Outlet />}
+        {/* The main area's free height (the viewport less the header and the shell's padding), as
+            a column: a page whose root takes flex={1} fills it, so an empty list or report centers
+            its CenteredEmptyState on the page. A page that does not stays at the top as before. */}
+        <Stack
+          gap={0}
+          mih="calc(100dvh - var(--app-shell-header-offset, 0rem) - 2 * var(--app-shell-padding))"
+        >
+          {banner}
+          {content ?? <Outlet />}
+        </Stack>
       </AppShell.Main>
     </AppShell>
   )
