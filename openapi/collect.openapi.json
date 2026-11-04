@@ -505,7 +505,8 @@
           "phone": {
             "type": "string",
             "nullable": true,
-            "maxLength": 32
+            "maxLength": 32,
+            "description": "Phone number — an alias key, stored in E.164. A number without a country code is read with\nthe `country` trait or the country of the contact the other keys find; one that does not\nparse is refused"
           },
           "subjectId": {
             "type": "string",

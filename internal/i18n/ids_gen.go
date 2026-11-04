@@ -229,7 +229,10 @@ var (
 	ErrorsPermissionWorkspaceTimezone           = ID{key: "errors.permission.workspace_timezone"}
 	ErrorsPermissionWorkspaceUpdate             = ID{key: "errors.permission.workspace_update"}
 	ErrorsPersonalTokenNotFound                 = ID{key: "errors.personal_token_not_found"}
+	ErrorsPhoneCountryRequired                  = ID{key: "errors.phone_country_required"}
 	ErrorsPhoneExists                           = ID{key: "errors.phone_exists"}
+	ErrorsPhoneExtension                        = ID{key: "errors.phone_extension"}
+	ErrorsPhoneInvalid                          = ID{key: "errors.phone_invalid"}
 	ErrorsPresetParamInvalid                    = ID{key: "errors.preset_param_invalid"}
 	ErrorsPresetParamsInvalid                   = ID{key: "errors.preset_params_invalid"}
 	ErrorsPresetParamsWithoutPreset             = ID{key: "errors.preset_params_without_preset"}

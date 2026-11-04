@@ -655,7 +655,8 @@ export type CreateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -3488,7 +3489,7 @@ export type SiteContactResource = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key. May be absent.
+   * Phone number in E.164 (`+14155550100`) — an alias key. May be absent.
    */
   phone?: string | null;
   /**
@@ -3576,7 +3577,8 @@ export type SiteCreateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -6521,7 +6523,8 @@ export type SiteUpdateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**
@@ -7234,7 +7237,8 @@ export type UpdateContactInput = {
    */
   email?: EmailAddress | null;
   /**
-   * Phone number — an alias key
+   * Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone`
    */
   phone?: string | null;
   /**

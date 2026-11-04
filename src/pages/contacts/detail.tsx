@@ -39,9 +39,10 @@ import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
-import { contactFullName, contactName } from '../../utils/contactName.ts'
+import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryName } from '../../utils/countries.ts'
 import { can } from '../../utils/permissions.ts'
+import { formatPhone } from '../../utils/phone.ts'
 import { TelegramSection } from './TelegramSection.tsx'
 
 const EVENTS_PAGE_SIZE = 10
@@ -237,7 +238,7 @@ function ContactDetails({ contact }: { contact: SiteContactResource }) {
       rows={[
         { label: t(($) => $.table.email), value: contact.email ?? '' },
         { label: t(($) => $.table.subjectId), value: contact.subjectId ?? '' },
-        { label: t(($) => $.table.phone), value: contact.phone ?? '' },
+        { label: t(($) => $.table.phone), value: contact.phone ? formatPhone(contact.phone) : '' },
         { label: t(($) => $.table.firstName), value: contact.firstName ?? '' },
         { label: t(($) => $.table.lastName), value: contact.lastName ?? '' },
         {
@@ -291,7 +292,7 @@ export function ContactDetailPage() {
             alt={contactName(contact)}
           />
           <Stack gap={4}>
-            <Title order={4}>{contact.email ?? contact.subjectId ?? contact.phone ?? '—'}</Title>
+            <Title order={4}>{contactIdentifier(contact) ?? '—'}</Title>
             {fullName ? <Text c="dimmed">{fullName}</Text> : null}
           </Stack>
         </Group>

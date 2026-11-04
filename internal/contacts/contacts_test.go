@@ -53,10 +53,10 @@ func TestCreateConflictOnAliasKey(t *testing.T) {
 func TestCreateConflictOnPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
-	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15550001")})
+	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550115")})
 	require.NoError(t, err)
 
-	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15550001")})
+	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550115")})
 	require.ErrorIs(t, err, contacts.ErrPhoneTaken)
 }
 
@@ -107,20 +107,20 @@ func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
 		Email:        new("Alice@example.com"),
-		Phone:        new("+15550002"),
+		Phone:        new("+14155550116"),
 		FirstName:    patch.Set("Alicia"),
 		CustomFields: map[string]any{"plan": "team"},
 	})
 	require.NoError(t, err)
 	assert.False(t, res.Created)
 	assert.Equal(t, int64(fixtures.ContactAliceID), res.Contact.ID)
-	assert.Equal(t, "+15550002", lo.FromPtr(res.Contact.Phone), "a missing alias key is filled in")
+	assert.Equal(t, "+14155550116", lo.FromPtr(res.Contact.Phone), "a missing alias key is filled in")
 	assert.Equal(t, "team", res.Contact.CustomFields["plan"])
 	assert.Equal(t, "Alicia", lo.FromPtr(res.Contact.FirstName), "an asserted attribute overwrites the stored one")
 	assert.Zero(t, createdEvents(t, env, fixtures.ContactAliceID))
 
 	// The newly added phone now resolves the same contact.
-	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+15550002")})
+	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+14155550116")})
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.ContactAliceID), again.Contact.ID)
 }

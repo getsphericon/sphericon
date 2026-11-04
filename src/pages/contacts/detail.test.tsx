@@ -187,6 +187,14 @@ test('shows the country by name with its flag', async () => {
   await expect.element(screen.getByRole('img', { name: 'United States' })).toBeInTheDocument()
 })
 
+test('shows the phone stored in E.164 in the readable international format', async () => {
+  worker.use(handleSiteContactsGet({ body: { ...ADA, phone: '+49301234567' } }), NO_EVENTS)
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('+49 30 1234567', { exact: true })).toBeInTheDocument()
+})
+
 test('a contact with no country has no flag', async () => {
   worker.use(handleSiteContactsGet({ body: { ...ADA, country: null } }), NO_EVENTS)
 
@@ -374,8 +382,10 @@ test('falls back from the email to the subject id, the phone and a dash in the h
   const bySubject = await heading({ ...base, subjectId: 'user-77' })
   await expect.element(bySubject.getByRole('heading', { name: 'user-77' })).toBeInTheDocument()
 
-  const byPhone = await heading({ ...base, phone: '+15550100' })
-  await expect.element(byPhone.getByRole('heading', { name: '+15550100' })).toBeInTheDocument()
+  const byPhone = await heading({ ...base, phone: '+14155550100' })
+  await expect
+    .element(byPhone.getByRole('heading', { name: '+1 415 555 0100' }))
+    .toBeInTheDocument()
 
   const bare = await heading(base)
   await expect.element(bare.getByRole('heading', { name: '—' })).toBeInTheDocument()

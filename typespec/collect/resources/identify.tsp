@@ -9,6 +9,9 @@ model CollectIdentifyInput {
 
   email?: EmailAddress | null;
 
+  /** Phone number — an alias key, stored in E.164. A number without a country code is read with
+   * the `country` trait or the country of the contact the other keys find; one that does not
+   * parse is refused */
   @maxLength(32)
   phone?: string | null;
 

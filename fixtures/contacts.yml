@@ -359,7 +359,7 @@
 - id: 300 # fixture: ContactErasable
   subject_id: user-erin-300
   email: erin@initech.test
-  phone: '+15550100300'
+  phone: '+14155550300'
   first_name: Erin
   last_name: Ersatz
   country: DE
@@ -378,7 +378,7 @@
 - id: 800 # fixture: ContactExportSubject
   subject_id: user:export-subject
   email: export.subject@example.com
-  phone: '+15550000800'
+  phone: '+14155550800'
   first_name: Eva
   last_name: Export
   time_zone: Europe/Berlin
@@ -1010,7 +1010,7 @@
 - id: 5540 # fixture: OscorpAnna
   email: anna@oscorp.test
   first_name: Anna
-  phone: '+1555'
+  phone: '+49301234568'
   country: DE
   locale: de-DE
   city: Berlin
@@ -1027,7 +1027,7 @@
 - id: 5542 # fixture: OscorpBella
   email: bella@oscorp.test
   first_name: Bella
-  phone: '+1666'
+  phone: '+33612345678'
   country: FR
   locale: fr
   city: Paris

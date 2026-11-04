@@ -54,7 +54,7 @@ func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {
 
 	res, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-phone",
-		Phone:     collectapi.NewOptNilString("+15553331"),
+		Phone:     collectapi.NewOptNilString("+14155550117"),
 		SubjectId: collectapi.NewOptNilString("crm-77"),
 	})
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {
 	ct, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.SubjectID("crm-77")).Only(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, ct.Phone)
-	assert.Equal(t, "+15553331", *ct.Phone)
+	assert.Equal(t, "+14155550117", *ct.Phone)
 
 	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-phone")).Only(ctx)
 	require.NoError(t, err)

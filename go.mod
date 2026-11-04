@@ -51,6 +51,7 @@ require (
 	github.com/monperrus/crawler-user-agents v1.66.0
 	github.com/mymmrac/telego v1.12.1
 	github.com/nicksnyder/go-i18n/v2 v2.7.0
+	github.com/nyaruka/phonenumbers v1.8.1
 	github.com/ogen-go/ogen v1.24.0
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/osteele/liquid v1.9.2

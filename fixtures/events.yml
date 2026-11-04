@@ -533,7 +533,7 @@
   contact_id: 300
   subject_id: user-erin-300
   email: erin@initech.test
-  phone: '+15550100300'
+  phone: '+14155550300'
   action: contact.created
   properties: '{"email":"erin@initech.test"}'
   workspace_id: 3

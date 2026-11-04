@@ -90,6 +90,7 @@ export default defineConfig({
       'dayjs',
       'dayjs/plugin/customParseFormat.js',
       'dayjs/plugin/localizedFormat.js',
+      'libphonenumber-js/min',
       // The dayjs locale data the date inputs load for a Regional format, each a dynamic import
       // (src/utils/dayjsLocale.ts): optimized up front, or the first use reloads the page.
       ...Object.keys(DAYJS_LOCALE_LOADERS).map((name) => `dayjs/locale/${name}.js`),

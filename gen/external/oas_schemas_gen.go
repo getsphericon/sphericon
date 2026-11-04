@@ -6924,7 +6924,7 @@ type ContactResource struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key. May be absent for anonymous contacts.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key. May be absent.
+	// Phone number in E.164 (`+14155550100`) — an alias key. May be absent.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -7568,7 +7568,8 @@ type CreateContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — optional; any alias key may be absent.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -19576,7 +19577,8 @@ type UpdateContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`
@@ -20069,7 +20071,8 @@ type UpsertContactInput struct {
 	SubjectId OptNilString `json:"subjectId"`
 	// Email address — an alias key.
 	Email OptNilEmailAddress `json:"email"`
-	// Phone number — an alias key.
+	// Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code is
+	// read with the contact's `country`; one that does not parse is refused on `phone`.
 	Phone OptNilString `json:"phone"`
 	// First name.
 	FirstName OptNilString `json:"firstName"`

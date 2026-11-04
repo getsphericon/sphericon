@@ -69,7 +69,8 @@ func TestCollectIdentifyFieldsAreBoundedInLength(t *testing.T) {
 	rejected := &collectapi.CollectIdentifyCreateBadRequest{}
 	assert.IsType(t, &collectapi.CollectOkResponse{}, identify(collectapi.CollectIdentifyInput{
 		VisitorId: strings.Repeat("v", 255),
-		Phone:     collectapi.NewOptNilString(strings.Repeat("1", 32)),
+		// 32 characters: a valid number, its digits spaced out.
+		Phone:     collectapi.NewOptNilString("+1" + strings.Repeat(" ", 18) + "415 555 0118"),
 		SubjectId: collectapi.NewOptNilString(strings.Repeat("s", 255)),
 	}), "at the limit")
 

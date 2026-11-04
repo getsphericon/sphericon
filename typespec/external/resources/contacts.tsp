@@ -19,7 +19,7 @@ model ContactResource {
   /** Email address — an alias key. May be absent for anonymous contacts. */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key. May be absent. */
+  /** Phone number in E.164 (`+14155550100`) — an alias key. May be absent. */
   phone?: string | null;
 
   /** First name */
@@ -156,7 +156,8 @@ model UpsertContactInput {
   /** Email address — an alias key */
   email?: EmailAddress | null;
 
-  /** Phone number — an alias key */
+  /** Phone number — an alias key, stored in E.164 (`+14155550100`). A number without a country code
+   * is read with the contact's `country`; one that does not parse is refused on `phone` */
   phone?: string | null;
 
   /** First name */
