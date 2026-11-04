@@ -46,6 +46,7 @@ const workspace = {
   permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
@@ -421,7 +422,38 @@ test('an SMS broadcast is written as a plain text and saved under its Channel', 
       {
         name: 'Flash sale',
         integrationId: '3',
-        content: { channel: 'sms', text: 'Hi {{ first_name }}, 20% off' },
+        content: { channel: 'sms', text: 'Hi {{ first_name }}, 20% off', linkTracking: true },
+      },
+    ])
+})
+
+test('an SMS broadcast counts its links as short links and may keep them as written', async () => {
+  const bodies: unknown[] = []
+  serve([], bodies)
+  worker.use(handleSiteIntegrationsList({ body: [EMAIL_INTEGRATION, SMS_INTEGRATION] }))
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const text = `Sale https://shop.example/${'p'.repeat(100)}`
+
+  await screen.getByRole('radio', { name: 'SMS' }).click()
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Name/).fill('Flash sale')
+  await screen.getByRole('combobox', { name: 'Send through' }).click()
+  await screen.getByRole('option', { name: 'Acme Twilio' }).click()
+  await screen.getByRole('textbox', { name: /^Message/ }).fill(text)
+  await expect
+    .element(screen.getByText(`${5 + workspace.shortLinkLength} characters · GSM-7 · 1 segment`))
+    .toBeVisible()
+  await screen.getByText('Track links').click({ force: true })
+  await expect.element(screen.getByText('126 characters · GSM-7 · 1 segment')).toBeVisible()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Flash sale',
+        integrationId: '3',
+        content: { channel: 'sms', text, linkTracking: false },
       },
     ])
 })

@@ -14,7 +14,7 @@ const MachineProperty = "machine"
 
 // ClickActions are the Events of a click on a link of a message, one per Channel that tracks them
 // (ADR 0083): what a link report counts and what Attribution credits.
-var ClickActions = []string{NameEmailClicked, NameTelegramClicked}
+var ClickActions = []string{NameEmailClicked, NameTelegramClicked, NameSmsClicked}
 
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
 func IsEngagement(action string) bool {

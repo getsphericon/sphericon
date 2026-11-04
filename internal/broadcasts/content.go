@@ -177,49 +177,74 @@ func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped
 }
 
 // SMSContentInput is the SMS content of a new Broadcast, the same Message content as an SMS step
-// (ADR 0078): one plain text with Liquid merge tags. A text the write leaves out is empty.
+// (ADR 0078): one plain text with Liquid merge tags, and whether its links go out as short tracked
+// links (ADR 0083). A field the write leaves out takes its default: an empty text, link tracking on.
 type SMSContentInput struct {
-	Text *string
+	Text         *string
+	LinkTracking *bool
 }
 
 // Channel is SMS.
 func (SMSContentInput) Channel() messaging.Channel { return messaging.ChannelSMS }
 
-// create stores the text. A text whose Liquid does not render, or over the part limit, is refused;
-// a blank one is refused at Schedule, not here, so a draft can be saved before it is written.
-func (c SMSContentInput) create(_ context.Context, _ *Module, _ *ent.Scoped, q *ent.BroadcastScopedCreate) error {
-	if err := checkSMS(c.Text); err != nil {
-		return err
+// create stores the content. A text whose Liquid does not render, or over the part limit, is
+// refused; a blank one is refused at Schedule, not here, so a draft can be saved before it is
+// written.
+func (c SMSContentInput) create(ctx context.Context, m *Module, s *ent.Scoped, q *ent.BroadcastScopedCreate) error {
+	tracked := lo.FromPtrOr(c.LinkTracking, true)
+	if c.Text != nil {
+		if err := m.checkSMS(ctx, s, *c.Text, tracked); err != nil {
+			return err
+		}
 	}
-	q.SetText(lo.FromPtr(c.Text))
+	q.SetText(lo.FromPtr(c.Text)).SetLinkTracking(tracked)
 	return nil
 }
 
-// SMSContentPatch is an edit of an SMS draft's text: a text that keeps leaves the stored one; it
-// cannot be cleared.
+// SMSContentPatch is an edit of an SMS draft's content: a field that keeps leaves the stored one;
+// the text cannot be cleared.
 type SMSContentPatch struct {
-	Text patch.Field[string]
+	Text         patch.Field[string]
+	LinkTracking patch.Field[bool]
 }
 
 // Channel is SMS.
 func (SMSContentPatch) Channel() messaging.Channel { return messaging.ChannelSMS }
 
-func (c SMSContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
-	if err := checkSMS(c.Text.Ptr()); err != nil {
-		return err
+// update checks the text the draft will hold, the stored one when only link tracking changes:
+// turning tracking off counts its links as written, which can take it over the part limit.
+func (c SMSContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+	text, textSet := c.Text.Get()
+	tracked, trackingSet := c.LinkTracking.Get()
+	if textSet || trackingSet {
+		if !textSet {
+			text = lo.FromPtr(cur.Text)
+		}
+		if !trackingSet {
+			tracked = cur.LinkTracking
+		}
+		if err := m.checkSMS(ctx, s, text, tracked); err != nil {
+			return err
+		}
 	}
 	patch.ApplySet(c.Text, u.SetText)
+	patch.ApplySet(c.LinkTracking, u.SetLinkTracking)
 	return nil
 }
 
-// checkSMS refuses a given text whose Liquid does not render, as email's content is refused, and
-// one that as written takes more segments than the provider's part limit, as an SMS step's save
-// does. Twilio is the one SMS provider, so its limit is the one a text is held to.
-func checkSMS(text *string) error {
-	if text == nil {
-		return nil
+// checkSMS refuses a text whose Liquid does not render, as email's content is refused, and one
+// that takes more segments than the provider's part limit, as an SMS step's save does: its links
+// counted as the Workspace's short links when tracked, as written when not. Twilio is the one SMS
+// provider, so its limit is the one a text is held to.
+func (m *Module) checkSMS(ctx context.Context, s *ent.Scoped, text string, tracked bool) error {
+	linkLength := 0
+	if tracked {
+		var err error
+		if linkLength, err = m.out.ShortLinkLength(ctx, s); err != nil {
+			return err
+		}
 	}
-	if err := errors.Join(smsrender.Check(*text), smsrender.CheckParts(*text, twilio.MaxParts)); err != nil {
+	if err := errors.Join(smsrender.Check(text), smsrender.CheckParts(text, twilio.MaxParts, linkLength)); err != nil {
 		return fmt.Errorf("%w: %w", emailrender.ErrInvalidContent, err)
 	}
 	return nil

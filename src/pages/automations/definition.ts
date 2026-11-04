@@ -97,7 +97,11 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
     return telegramProperties(step)
   }
   if (step.type === 'sms') {
-    return { integrationId: step.integrationId ?? '', text: step.text ?? '' }
+    return {
+      integrationId: step.integrationId ?? '',
+      text: step.text ?? '',
+      linkTracking: step.linkTracking === false ? 'off' : '',
+    }
   }
   return {
     integrationId: step.integrationId ?? '',
@@ -232,13 +236,14 @@ function telegramStep(props: Record<string, unknown>): AutomationStep {
 }
 
 // The SMS step a node holds. A step that names no Integration ('') leaves it out: it sends
-// through the SMS default.
+// through the SMS default. Link tracking is on unless the node turned it 'off'.
 function smsStep(props: Record<string, unknown>): AutomationStep {
   const integrationId = asText(props.integrationId)
   return {
     type: 'sms',
     text: asText(props.text),
     ...(integrationId === '' ? {} : { integrationId }),
+    ...(props.linkTracking === 'off' ? { linkTracking: false } : {}),
   }
 }
 

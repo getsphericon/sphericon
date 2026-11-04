@@ -116,6 +116,11 @@ func UnsubscribeButton(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldUnsubscribeButton, v))
 }
 
+// LinkTracking applies equality check predicate on the "link_tracking" field. It's identical to LinkTrackingEQ.
+func LinkTracking(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldLinkTracking, v))
+}
+
 // Body applies equality check predicate on the "body" field. It's identical to BodyEQ.
 func Body(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldBody, v))
@@ -864,6 +869,16 @@ func UnsubscribeButtonEqualFold(v string) predicate.Broadcast {
 // UnsubscribeButtonContainsFold applies the ContainsFold predicate on the "unsubscribe_button" field.
 func UnsubscribeButtonContainsFold(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldContainsFold(FieldUnsubscribeButton, v))
+}
+
+// LinkTrackingEQ applies the EQ predicate on the "link_tracking" field.
+func LinkTrackingEQ(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldLinkTracking, v))
+}
+
+// LinkTrackingNEQ applies the NEQ predicate on the "link_tracking" field.
+func LinkTrackingNEQ(v bool) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldLinkTracking, v))
 }
 
 // BodyEQ applies the EQ predicate on the "body" field.

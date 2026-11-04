@@ -71,6 +71,9 @@ type Step struct {
 	Buttons []telegramrender.Button `json:"buttons,omitempty"`
 	// LinkPreview is whether a link in a Telegram step's text unfolds a preview; nil is on.
 	LinkPreview *bool `json:"linkPreview,omitempty"`
+	// LinkTracking is whether the links of an SMS step's text go out as short tracked links (ADR
+	// 0083); nil is on.
+	LinkTracking *bool `json:"linkTracking,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
@@ -82,6 +85,10 @@ type Step struct {
 	Secret      string            `json:"secret,omitempty"`
 	ClearSecret bool              `json:"-"`
 }
+
+// TracksLinks reports whether the links of an SMS step go out as short tracked links: unless the
+// step turned it off.
+func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTracking }
 
 // Decode parses a stored definition. An empty definition has no steps.
 func Decode(definition string) ([]Step, error) {

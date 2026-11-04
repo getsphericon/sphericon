@@ -27,9 +27,11 @@ export const TELEGRAM_ACTIONS = [
   'telegram.unsubscribed',
 ] as const
 
-// A Contact giving its consent to SMS marketing (ADR 0077), a text it sent from its phone
-// (ADR 0076), and whether a text reached its phone, as the provider reported it (ADR 0079).
+// A Contact clicking a link of a text (ADR 0083), giving its consent to SMS marketing (ADR 0077),
+// a text it sent from its phone (ADR 0076), and whether a text reached its phone, as the provider
+// reported it (ADR 0079).
 export const SMS_ACTIONS = [
+  'sms.clicked',
   'sms.confirmed',
   'sms.delivered',
   'sms.received',

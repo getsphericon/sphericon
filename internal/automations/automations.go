@@ -93,7 +93,11 @@ func Encode(steps []automationsteps.Step) (string, error) {
 				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
 			})
 		case automationsteps.SMS:
-			stored = append(stored, automationsteps.Step{Type: automationsteps.SMS, IntegrationID: s.IntegrationID, Text: s.Text})
+			sms := automationsteps.Step{Type: automationsteps.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
+			if !s.TracksLinks() {
+				sms.LinkTracking = new(false) // on is the default, stored as nothing
+			}
+			stored = append(stored, sms)
 		default:
 			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
@@ -106,7 +110,9 @@ func Encode(steps []automationsteps.Step) (string, error) {
 	return string(b), err
 }
 
-func validate(steps []automationsteps.Step) error {
+// validate checks each step on its own. linkLength is the length of the Workspace's short tracked
+// links, what an SMS step's links count as.
+func validate(steps []automationsteps.Step, linkLength int) error {
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
@@ -137,8 +143,9 @@ func validate(steps []automationsteps.Step) error {
 			if err := smsrender.Check(s.Text); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-			// Twilio is the one SMS provider, so its part limit is the one a text is held to.
-			if err := smsrender.CheckParts(s.Text, twilio.MaxParts); err != nil {
+			// Twilio is the one SMS provider, so its part limit is the one a text is held to. Its
+			// links count as the short links they go out as, unless the step keeps them.
+			if err := smsrender.CheckParts(s.Text, twilio.MaxParts, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
 				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 			}
 		case automationsteps.HTTP:
@@ -183,7 +190,7 @@ func (s SendStep) Content() (outbound.Content, error) {
 			UnsubscribeButton: s.Step.UnsubscribeButton,
 		}, nil
 	case automationsteps.SMS:
-		return outbound.SMSContent{Text: s.Step.Text}, nil
+		return outbound.SMSContent{Text: s.Step.Text, NoLinkTracking: !s.Step.TracksLinks()}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}
@@ -279,11 +286,11 @@ var telegramTriggers = []string{
 }
 
 // smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
-// the consent they gave, and whether a text reached their phone (a delivery report, which on SMS
-// says the number works or not, unlike email's infrastructure notices). The acceptance (`sms.sent`)
-// is infrastructure, like `email.sent`.
+// the consent they gave, a link they clicked, and whether a text reached their phone (a delivery
+// report, which on SMS says the number works or not, unlike email's infrastructure notices). The
+// acceptance (`sms.sent`) is infrastructure, like `email.sent`.
 var smsTriggers = []string{
-	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsDelivered, events.NameSmsUndelivered,
+	events.NameSmsReceived, events.NameSmsConfirmed, events.NameSmsClicked, events.NameSmsDelivered, events.NameSmsUndelivered,
 }
 
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
@@ -549,7 +556,11 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.steps != nil {
-		if err := validate(*e.steps); err != nil {
+		linkLength, err := v.m.out.ShortLinkLength(ctx, ts)
+		if err != nil {
+			return definition{}, err
+		}
+		if err := validate(*e.steps, linkLength); err != nil {
 			return definition{}, err
 		}
 		for i := range *e.steps {

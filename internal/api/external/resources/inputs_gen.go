@@ -93,6 +93,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationst
 		}
 	}
 	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
@@ -466,11 +467,13 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 func (c *InputsImpl) SmsBroadcastContentIn(source external.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput
 	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	broadcastsSMSContentInput.LinkTracking = boolPtrIn(source.LinkTracking)
 	return broadcastsSMSContentInput
 }
 func (c *InputsImpl) SmsBroadcastContentPatch(source external.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
 	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
 	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
 	return broadcastsSMSContentPatch
 }
 func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) suppression.Channel {

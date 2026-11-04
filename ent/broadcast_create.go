@@ -193,6 +193,20 @@ func (_c *BroadcastCreate) SetNillableUnsubscribeButton(v *string) *BroadcastCre
 	return _c
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (_c *BroadcastCreate) SetLinkTracking(v bool) *BroadcastCreate {
+	_c.mutation.SetLinkTracking(v)
+	return _c
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableLinkTracking(v *bool) *BroadcastCreate {
+	if v != nil {
+		_c.SetLinkTracking(*v)
+	}
+	return _c
+}
+
 // SetBody sets the "body" field.
 func (_c *BroadcastCreate) SetBody(v string) *BroadcastCreate {
 	_c.mutation.SetBody(v)
@@ -436,6 +450,10 @@ func (_c *BroadcastCreate) defaults() {
 		v := broadcast.DefaultLinkPreview
 		_c.mutation.SetLinkPreview(v)
 	}
+	if _, ok := _c.mutation.LinkTracking(); !ok {
+		v := broadcast.DefaultLinkTracking
+		_c.mutation.SetLinkTracking(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := broadcast.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -471,6 +489,9 @@ func (_c *BroadcastCreate) check() error {
 	}
 	if _, ok := _c.mutation.LinkPreview(); !ok {
 		return &ValidationError{Name: "link_preview", err: errors.New(`ent: missing required field "Broadcast.link_preview"`)}
+	}
+	if _, ok := _c.mutation.LinkTracking(); !ok {
+		return &ValidationError{Name: "link_tracking", err: errors.New(`ent: missing required field "Broadcast.link_tracking"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Broadcast.status"`)}
@@ -572,6 +593,10 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UnsubscribeButton(); ok {
 		_spec.SetField(broadcast.FieldUnsubscribeButton, field.TypeString, value)
 		_node.UnsubscribeButton = &value
+	}
+	if value, ok := _c.mutation.LinkTracking(); ok {
+		_spec.SetField(broadcast.FieldLinkTracking, field.TypeBool, value)
+		_node.LinkTracking = value
 	}
 	if value, ok := _c.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
@@ -921,6 +946,18 @@ func (u *BroadcastUpsert) UpdateUnsubscribeButton() *BroadcastUpsert {
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (u *BroadcastUpsert) ClearUnsubscribeButton() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (u *BroadcastUpsert) SetLinkTracking(v bool) *BroadcastUpsert {
+	u.Set(broadcast.FieldLinkTracking, v)
+	return u
+}
+
+// UpdateLinkTracking sets the "link_tracking" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateLinkTracking() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldLinkTracking)
 	return u
 }
 
@@ -1409,6 +1446,20 @@ func (u *BroadcastUpsertOne) UpdateUnsubscribeButton() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) ClearUnsubscribeButton() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearUnsubscribeButton()
+	})
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (u *BroadcastUpsertOne) SetLinkTracking(v bool) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetLinkTracking(v)
+	})
+}
+
+// UpdateLinkTracking sets the "link_tracking" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateLinkTracking() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateLinkTracking()
 	})
 }
 
@@ -2098,6 +2149,20 @@ func (u *BroadcastUpsertBulk) UpdateUnsubscribeButton() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) ClearUnsubscribeButton() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearUnsubscribeButton()
+	})
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (u *BroadcastUpsertBulk) SetLinkTracking(v bool) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetLinkTracking(v)
+	})
+}
+
+// UpdateLinkTracking sets the "link_tracking" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateLinkTracking() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateLinkTracking()
 	})
 }
 

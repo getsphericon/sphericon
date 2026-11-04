@@ -23,7 +23,7 @@ func broadcastRecipientKey(recipientID int64) string {
 
 // BroadcastContent is the Message content of a Broadcast, in the shape of its Channel (ADR 0078,
 // 0080): on email its subject, body and From, on Telegram its text, image, buttons, link preview and
-// unsubscribe button, on SMS its text.
+// unsubscribe button, on SMS its text and whether its links are tracked.
 func BroadcastContent(b *ent.Broadcast) (Content, error) {
 	switch b.Channel {
 	case broadcast.ChannelEmail:
@@ -42,7 +42,7 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 			UnsubscribeButton: lo.FromPtr(b.UnsubscribeButton),
 		}, nil
 	case broadcast.ChannelSms:
-		return SMSContent{Text: lo.FromPtr(b.Text)}, nil
+		return SMSContent{Text: lo.FromPtr(b.Text), NoLinkTracking: !b.LinkTracking}, nil
 	default:
 		return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 	}

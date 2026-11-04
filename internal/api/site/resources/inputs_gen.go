@@ -130,6 +130,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationst
 		}
 	}
 	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
 	automationstepsStep.ID = stringIn(source.ID)
 	automationstepsStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
@@ -689,11 +690,13 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput
 	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
+	broadcastsSMSContentInput.LinkTracking = boolPtrIn(source.LinkTracking)
 	return broadcastsSMSContentInput
 }
 func (c *InputsImpl) SmsBroadcastContentPatch(source site.SmsBroadcastContentInput) broadcasts.SMSContentPatch {
 	var broadcastsSMSContentPatch broadcasts.SMSContentPatch
 	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
+	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
 	return broadcastsSMSContentPatch
 }
 func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Direction {

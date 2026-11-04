@@ -7525,6 +7525,18 @@ func (x *BroadcastScopedCreate) SetNillableUnsubscribeButton(v *string) *Broadca
 	return x
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedCreate) SetLinkTracking(v bool) *BroadcastScopedCreate {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableLinkTracking(v *bool) *BroadcastScopedCreate {
+	x.b.SetNillableLinkTracking(v)
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedCreate) SetBody(v string) *BroadcastScopedCreate {
 	x.b.SetBody(v)
@@ -7970,6 +7982,18 @@ func (u *BroadcastScopedUpsert) UpdateUnsubscribeButton() *BroadcastScopedUpsert
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (u *BroadcastScopedUpsert) ClearUnsubscribeButton() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldUnsubscribeButton)
+	return u
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (u *BroadcastScopedUpsert) SetLinkTracking(v bool) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldLinkTracking, v)
+	return u
+}
+
+// UpdateLinkTracking sets the "link_tracking" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateLinkTracking() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldLinkTracking)
 	return u
 }
 
@@ -8523,6 +8547,18 @@ func (x *BroadcastScopedUpdateOne) ClearUnsubscribeButton() *BroadcastScopedUpda
 	return x
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedUpdateOne) SetLinkTracking(v bool) *BroadcastScopedUpdateOne {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableLinkTracking(v *bool) *BroadcastScopedUpdateOne {
+	x.b.SetNillableLinkTracking(v)
+	return x
+}
+
 // SetBody sets the "body" field.
 func (x *BroadcastScopedUpdateOne) SetBody(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBody(v)
@@ -9039,6 +9075,18 @@ func (x *BroadcastScopedUpdate) SetNillableUnsubscribeButton(v *string) *Broadca
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (x *BroadcastScopedUpdate) ClearUnsubscribeButton() *BroadcastScopedUpdate {
 	x.b.ClearUnsubscribeButton()
+	return x
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (x *BroadcastScopedUpdate) SetLinkTracking(v bool) *BroadcastScopedUpdate {
+	x.b.SetLinkTracking(v)
+	return x
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableLinkTracking(v *bool) *BroadcastScopedUpdate {
+	x.b.SetNillableLinkTracking(v)
 	return x
 }
 
@@ -34596,6 +34644,12 @@ func (x *TrackedLinkScopedCreate) SetNillableUpdatedAt(v *time.Time) *TrackedLin
 // SetOutboundMessageID sets the "outbound_message_id" field.
 func (x *TrackedLinkScopedCreate) SetOutboundMessageID(v int64) *TrackedLinkScopedCreate {
 	x.b.SetOutboundMessageID(v)
+	return x
+}
+
+// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
+func (x *TrackedLinkScopedCreate) SetNillableOutboundMessageID(v *int64) *TrackedLinkScopedCreate {
+	x.b.SetNillableOutboundMessageID(v)
 	return x
 }
 

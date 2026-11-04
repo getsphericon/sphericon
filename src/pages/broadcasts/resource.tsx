@@ -10,6 +10,7 @@ import {
   zBroadcastChannel,
   zCreateBroadcastInput,
   zEmailBroadcastContentInput,
+  zSmsBroadcastContentInput,
   zTelegramBroadcastContentInput,
 } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
@@ -36,6 +37,7 @@ const blankBroadcast: BroadcastValues = {
   buttons: [],
   linkPreview: true,
   unsubscribeButton: '',
+  linkTracking: true,
 }
 
 // The form edits a Broadcast flat: its name, Segment and Integration beside its Channel's content
@@ -57,6 +59,7 @@ const flatSchema = resourceFormSchema(
       linkPreview: true,
       unsubscribeButton: true,
     }).shape,
+    ...zSmsBroadcastContentInput.pick({ linkTracking: true }).shape,
   }),
   blankBroadcast,
 )
@@ -84,6 +87,7 @@ function contentOf({
   buttons,
   linkPreview,
   unsubscribeButton,
+  linkTracking,
   ...email
 }: Omit<FlatBroadcast, 'name' | 'segmentId' | 'integrationId'>): CreateBroadcastInput['content'] {
   if (channel === 'telegram') {
@@ -97,7 +101,11 @@ function contentOf({
     }
   }
   if (channel === 'sms') {
-    return { channel, ...(text !== undefined && { text }) }
+    return {
+      channel,
+      ...(text !== undefined && { text }),
+      ...(linkTracking !== undefined && { linkTracking }),
+    }
   }
   return { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) }
 }

@@ -1090,6 +1090,7 @@ export default interface Resources {
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",
       "pageView": "Visited a page",
+      "smsClicked": "Clicked a link in a text message",
       "smsConfirmed": "Confirmed SMS opt-in",
       "smsDelivered": "Text message delivered",
       "smsReceived": "Sent a text message",
@@ -2351,6 +2352,8 @@ export default interface Resources {
       "characters": "{{count, number}} character" | "{{count, number}} characters",
       "counter": "{{characters}} · {{encoding}} · {{segments}}",
       "insertMergeTag": "Insert a merge tag",
+      "linkTracking": "Track links",
+      "linkTrackingHint": "Each link goes out as a short link on your Tracking domain, so you see its clicks. The count includes the short links. Turn it off to keep your links as written.",
       "segments": "{{count, number}} segment" | "{{count, number}} segments",
       "textHint": "Plain text. Merge tags are written as they are, and nothing is added to the message.",
       "textLabel": "Message"

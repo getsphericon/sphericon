@@ -713,6 +713,12 @@ func (s BroadcastContentInputSum) encodeFields(e *jx.Encoder) {
 					s.Text.Encode(e)
 				}
 			}
+			{
+				if s.LinkTracking.Set {
+					e.FieldStart("linkTracking")
+					s.LinkTracking.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -883,6 +889,10 @@ func (s BroadcastContentSum) encodeFields(e *jx.Encoder) {
 			{
 				e.FieldStart("text")
 				e.Str(s.Text)
+			}
+			{
+				e.FieldStart("linkTracking")
+				e.Bool(s.LinkTracking)
 			}
 		}
 	}
@@ -20045,9 +20055,15 @@ func (s *SiteAutomationStep) encodeFields(e *jx.Encoder) {
 			s.LinkPreview.Encode(e)
 		}
 	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteAutomationStep = [19]string{
+var jsonFieldsNameOfSiteAutomationStep = [20]string{
 	0:  "type",
 	1:  "subject",
 	2:  "body",
@@ -20067,6 +20083,7 @@ var jsonFieldsNameOfSiteAutomationStep = [19]string{
 	16: "imageUrl",
 	17: "buttons",
 	18: "linkPreview",
+	19: "linkTracking",
 }
 
 // Decode decodes SiteAutomationStep from json.
@@ -20281,6 +20298,16 @@ func (s *SiteAutomationStep) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"linkPreview\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
 			return d.Skip()
@@ -68786,6 +68813,10 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("shortLinkLength")
+		e.Int32(s.ShortLinkLength)
+	}
+	{
 		e.FieldStart("holds")
 		e.ArrStart()
 		for _, elem := range s.Holds {
@@ -68821,7 +68852,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [19]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [20]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
@@ -68835,12 +68866,13 @@ var jsonFieldsNameOfSiteWorkspaceResource = [19]string{
 	10: "mcpUrl",
 	11: "trackerUrl",
 	12: "trackingTarget",
-	13: "holds",
-	14: "secondFactorRequiredAt",
-	15: "secondFactorGraceEndsAt",
-	16: "sendCap",
-	17: "accountLinkAvailable",
-	18: "createdAt",
+	13: "shortLinkLength",
+	14: "holds",
+	15: "secondFactorRequiredAt",
+	16: "secondFactorGraceEndsAt",
+	17: "sendCap",
+	18: "accountLinkAvailable",
+	19: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -69000,8 +69032,20 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"trackingTarget\"")
 			}
-		case "holds":
+		case "shortLinkLength":
 			requiredBitSet[1] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.ShortLinkLength = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"shortLinkLength\"")
+			}
+		case "holds":
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -69049,7 +69093,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -69061,7 +69105,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -69081,8 +69125,8 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b01111111,
-		0b00101100,
-		0b00000110,
+		0b01101100,
+		0b00001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -70607,11 +70651,16 @@ func (s *SmsBroadcastContent) encodeFields(e *jx.Encoder) {
 		e.FieldStart("text")
 		e.Str(s.Text)
 	}
+	{
+		e.FieldStart("linkTracking")
+		e.Bool(s.LinkTracking)
+	}
 }
 
-var jsonFieldsNameOfSmsBroadcastContent = [2]string{
+var jsonFieldsNameOfSmsBroadcastContent = [3]string{
 	0: "channel",
 	1: "text",
+	2: "linkTracking",
 }
 
 // Decode decodes SmsBroadcastContent from json.
@@ -70645,6 +70694,18 @@ func (s *SmsBroadcastContent) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"text\"")
 			}
+		case "linkTracking":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkTracking = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -70655,7 +70716,7 @@ func (s *SmsBroadcastContent) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -70758,11 +70819,18 @@ func (s *SmsBroadcastContentInput) encodeFields(e *jx.Encoder) {
 			s.Text.Encode(e)
 		}
 	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSmsBroadcastContentInput = [2]string{
+var jsonFieldsNameOfSmsBroadcastContentInput = [3]string{
 	0: "channel",
 	1: "text",
+	2: "linkTracking",
 }
 
 // Decode decodes SmsBroadcastContentInput from json.
@@ -70793,6 +70861,16 @@ func (s *SmsBroadcastContentInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
 			return d.Skip()

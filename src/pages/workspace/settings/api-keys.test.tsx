@@ -26,6 +26,7 @@ const workspace = {
   permissions: ['tokens:manage' as const],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',

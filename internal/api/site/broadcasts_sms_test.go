@@ -211,6 +211,38 @@ func TestSiteSMSBroadcastSaveRefusesATextOverThePartLimit(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, edited, "671 UCS-2 characters are 11 segments of 67")
 }
 
+// The part limit counts each link of a tracked text as the Workspace's short link (ADR 0083), the
+// length the Workspace resource reports for the editor's counter, and as written once tracking is
+// off: a text whose long link takes it past ten segments is saved while its links are tracked, and
+// turning tracking off is refused.
+func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	account := env.ConnectTwilio(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	spaces, err := c.SiteWorkspacesList(ctx)
+	require.NoError(t, err)
+	linkLength, err := env.OutboundModule().ShortLinkLength(ctx, env.DB.Scoped(fixtures.AcmeID))
+	require.NoError(t, err)
+	text := strings.Repeat("a", 1400) + " https://shop.example/" + strings.Repeat("p", 200)
+
+	b := createSMSBroadcast(t, c, account, text, nil)
+	untracked := testhelper.SiteSMS(text)
+	untracked.OneOf.SmsBroadcastContentInput.LinkTracking = siteapi.NewOptBool(false)
+	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: siteapi.NewOptBroadcastContentInput(untracked)},
+		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+	require.NoError(t, err)
+
+	acme, found := lo.Find(spaces, func(w siteapi.SiteWorkspaceResource) bool { return w.ID == fixtures.AcmePublicID })
+	require.True(t, found)
+	assert.EqualValues(t, linkLength, acme.ShortLinkLength)
+	assert.Greater(t, linkLength, len("https://x/c/")+10)
+	assert.True(t, testhelper.SiteSMSOf(b).LinkTracking, "tracking is on by default")
+	refused, ok := edited.(*siteapi.SiteBroadcastsUpdateUnprocessableEntity)
+	require.Truef(t, ok, "got %T", edited)
+	assert.Contains(t, refused.Detail.Value, "11 segments", "1622 characters as written")
+}
+
 func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 	env := testhelper.Setup(t)
 	account := env.ConnectTwilio(t)

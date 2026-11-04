@@ -28,6 +28,7 @@ export function useEventActionLabel() {
       'telegram.unbound': t(($) => $.eventActions.telegramUnbound),
       'telegram.unsubscribed': t(($) => $.eventActions.telegramUnsubscribed),
       'telegram.sent': t(($) => $.eventActions.telegramSent),
+      'sms.clicked': t(($) => $.eventActions.smsClicked),
       'sms.confirmed': t(($) => $.eventActions.smsConfirmed),
       'sms.received': t(($) => $.eventActions.smsReceived),
       'sms.sent': t(($) => $.eventActions.smsSent),

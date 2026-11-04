@@ -92,6 +92,10 @@ model SiteWorkspaceResource {
    * no Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset). */
   trackingTarget?: string;
 
+  /** The length of a short tracked link of the Workspace (`https://<Tracking domain or app host>/c/<token>`,
+   * ADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does. */
+  shortLinkLength: int32;
+
   /** The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */

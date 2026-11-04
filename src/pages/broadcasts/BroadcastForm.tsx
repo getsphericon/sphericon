@@ -44,6 +44,7 @@ export interface BroadcastValues {
   buttons: TelegramButton[]
   linkPreview: boolean
   unsubscribeButton: string
+  linkTracking: boolean
 }
 
 // A new Broadcast asks for its Channel first (ADR 0080), then shows that Channel's editor; the
@@ -271,8 +272,11 @@ function SmsBroadcastForm({
           reach={{ channel: 'sms', integrationId: form.values.integrationId }}
         />
         <SmsContentEditor
-          value={form.values.text}
-          onChange={(text) => form.setFieldValue('text', text)}
+          value={{ text: form.values.text, linkTracking: form.values.linkTracking }}
+          onChange={(next) => {
+            form.setFieldValue('text', next.text)
+            form.setFieldValue('linkTracking', next.linkTracking)
+          }}
         />
         <Group justify="flex-end">
           <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>

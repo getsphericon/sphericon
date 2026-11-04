@@ -602,6 +602,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.UnsubscribeButton != nil {
 					b.SetUnsubscribeButton(*src.UnsubscribeButton)
 				}
+				b.SetLinkTracking(src.LinkTracking)
 				if src.Body != nil {
 					b.SetBody(*src.Body)
 				}
@@ -2390,7 +2391,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.TrackedLink().Create()
-				b.SetOutboundMessageID(remap("OutboundMessage", src.OutboundMessageID))
+				if src.OutboundMessageID != nil {
+					b.SetOutboundMessageID(remap("OutboundMessage", *src.OutboundMessageID))
+				}
 				b.SetToken(src.Token + "-replanted")
 				b.SetURL(src.URL)
 				created, err := b.Save(ctx)

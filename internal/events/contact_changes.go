@@ -278,6 +278,48 @@ func (e *SmsDelivery) Project() Projection {
 	}
 }
 
+// SmsClicked is a click on a short tracked link of an SMS (sms.clicked, ADR 0083), with the URL it
+// led to and the Broadcast or Automation and Outbound message it came from. Machine is set on a hit
+// made by software (a messaging app fetching the link for its preview, a carrier's filter): it stays
+// in the log and counts toward no figure, no rollup, no Trigger and no Attribution. The number the
+// text went to is not repeated: the Outbound message holds it.
+type SmsClicked struct {
+	WorkspaceID       int64  `json:"workspaceId"`
+	ContactID         int64  `json:"contactId"`
+	Email             string `json:"email,omitempty"`
+	IntegrationID     int64  `json:"integrationId,omitempty"`
+	URL               string `json:"url"`
+	BroadcastID       int64  `json:"broadcastId,omitempty"`
+	AutomationID      int64  `json:"automationId,omitempty"`
+	OutboundMessageID int64  `json:"outboundMessageId"`
+	Machine           bool   `json:"machine,omitempty"`
+	DedupID           string `json:"dedupId,omitempty"`
+}
+
+func (*SmsClicked) EventName() string  { return NameSmsClicked }
+func (*SmsClicked) EventVersion() int  { return 1 }
+func (e *SmsClicked) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsClicked) EventID() string  { return e.DedupID }
+func (e *SmsClicked) Project() Projection {
+	props := map[string]any{"url": e.URL, outboundMessageIDProperty: e.OutboundMessageID}
+	if e.IntegrationID != 0 {
+		props["integrationId"] = e.IntegrationID
+	}
+	if e.BroadcastID != 0 {
+		props["broadcastId"] = e.BroadcastID
+	}
+	if e.AutomationID != 0 {
+		props["automationId"] = e.AutomationID
+	}
+	if e.Machine {
+		props[MachineProperty] = true
+	}
+	return Projection{
+		Subject: e.Email, Action: NameSmsClicked, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Properties: props,
+	}
+}
+
 // TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked, ADR
 // 0083), with the URL it led to and the Broadcast or Automation and Outbound message it came from.
 // Machine is set on a hit made by software (Telegram's link-preview fetcher among them): it stays

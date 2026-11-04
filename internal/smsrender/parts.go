@@ -87,10 +87,11 @@ func (e *TooManyPartsError) Error() string {
 		e.Size.Characters, e.Size.Encoding, e.Size.Parts, e.Limit)
 }
 
-// CheckParts refuses a text that, as written, takes more than limit parts, the provider's part
+// CheckParts refuses a text that, as written with its links as short links of linkLength characters
+// (MeasureLinked; 0 when they are not tracked), takes more than limit parts, the provider's part
 // limit. The error is a *TooManyPartsError.
-func CheckParts(text string, limit int) error {
-	if size := Measure(text); size.Parts > limit {
+func CheckParts(text string, limit, linkLength int) error {
+	if size := MeasureLinked(text, linkLength); size.Parts > limit {
 		return &TooManyPartsError{Size: size, Limit: limit}
 	}
 	return nil

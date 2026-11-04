@@ -63,14 +63,18 @@ model TelegramBroadcastContentInput {
 
 /**
  * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
- * omitted text is empty; on update an omitted text keeps its value.
+ * omitted field takes its default (an empty text, link tracking on); on update an omitted field
+ * keeps its value.
  */
 model SmsBroadcastContentInput {
   /** The Channel the content is for: the Broadcast's own, which an update cannot change */
   channel: "sms";
 
-  /** The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one. */
+  /** The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one, and a save one over the part limit, its links counted as short links while `linkTracking` is on. */
   text?: string;
+
+  /** Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted. */
+  linkTracking?: boolean;
 }
 
 /** What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078) */
@@ -133,6 +137,9 @@ model SmsBroadcastContent {
 
   /** The text, plain, with Liquid merge tags */
   text: string;
+
+  /** Whether each link of the text goes out as a short tracked link */
+  linkTracking: boolean;
 }
 
 /** What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078) */

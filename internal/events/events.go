@@ -89,6 +89,8 @@ const (
 	// NameSmsConfirmed is a phone number's SMS Confirmation (ADR 0077), the proof of its consent;
 	// marketing.confirmed is email's alone.
 	NameSmsConfirmed = "sms.confirmed"
+	// NameSmsClicked is a click on a short tracked link of an SMS (ADR 0083).
+	NameSmsClicked = "sms.clicked"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -279,6 +281,7 @@ var registry = map[string]func() DomainEvent{
 	NameSmsSent:               func() DomainEvent { return &SmsSent{} },
 	NameSmsDelivered:          func() DomainEvent { return &SmsDelivery{} },
 	NameSmsUndelivered:        func() DomainEvent { return &SmsDelivery{} },
+	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }

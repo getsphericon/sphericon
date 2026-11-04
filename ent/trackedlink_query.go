@@ -483,7 +483,10 @@ func (_q *TrackedLinkQuery) loadOutboundMessage(ctx context.Context, query *Outb
 	ids := make([]int64, 0, len(nodes))
 	nodeids := make(map[int64][]*TrackedLink)
 	for i := range nodes {
-		fk := nodes[i].OutboundMessageID
+		if nodes[i].OutboundMessageID == nil {
+			continue
+		}
+		fk := *nodes[i].OutboundMessageID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}

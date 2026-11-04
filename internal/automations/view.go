@@ -21,6 +21,9 @@ type StepView struct {
 	Buttons           []telegramrender.Button
 	LinkPreview       *bool
 	UnsubscribeButton *string
+	// LinkTracking is set, true by default, on an SMS step only: whether its links go out as short
+	// tracked links.
+	LinkTracking *bool
 	// Doc is an email step's editor document, and EditorVersion the editor that rendered it; a
 	// step written as HTML has neither.
 	Doc           json.RawMessage
@@ -83,6 +86,7 @@ func viewOf(s *automationsteps.Step) StepView {
 	case automationsteps.SMS:
 		v.IntegrationID = s.IntegrationID
 		v.Text = &s.Text
+		v.LinkTracking = new(s.TracksLinks())
 	case automationsteps.Email:
 		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject

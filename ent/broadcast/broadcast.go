@@ -44,6 +44,8 @@ const (
 	FieldLinkPreview = "link_preview"
 	// FieldUnsubscribeButton holds the string denoting the unsubscribe_button field in the database.
 	FieldUnsubscribeButton = "unsubscribe_button"
+	// FieldLinkTracking holds the string denoting the link_tracking field in the database.
+	FieldLinkTracking = "link_tracking"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
 	// FieldDoc holds the string denoting the doc field in the database.
@@ -125,6 +127,7 @@ var Columns = []string{
 	FieldButtons,
 	FieldLinkPreview,
 	FieldUnsubscribeButton,
+	FieldLinkTracking,
 	FieldBody,
 	FieldDoc,
 	FieldEditorVersion,
@@ -160,6 +163,8 @@ var (
 	NameValidator func(string) error
 	// DefaultLinkPreview holds the default value on creation for the "link_preview" field.
 	DefaultLinkPreview bool
+	// DefaultLinkTracking holds the default value on creation for the "link_tracking" field.
+	DefaultLinkTracking bool
 )
 
 // Channel defines the type for the "channel" enum field.
@@ -296,6 +301,11 @@ func ByLinkPreview(opts ...sql.OrderTermOption) OrderOption {
 // ByUnsubscribeButton orders the results by the unsubscribe_button field.
 func ByUnsubscribeButton(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUnsubscribeButton, opts...).ToFunc()
+}
+
+// ByLinkTracking orders the results by the link_tracking field.
+func ByLinkTracking(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkTracking, opts...).ToFunc()
 }
 
 // ByBody orders the results by the body field.

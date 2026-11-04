@@ -72,6 +72,11 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.SendCap = mapper.SendCapStatusToResource(sendCap)
+	linkLength, err := h.outbound.ShortLinkLength(ctx, s)
+	if err != nil {
+		return r, err
+	}
+	r.ShortLinkLength = int32(linkLength) //nolint:gosec // a URL's length
 	return r, nil
 }
 

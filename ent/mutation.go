@@ -9300,6 +9300,7 @@ type BroadcastMutation struct {
 	appendbuttons      []telegramrender.Button
 	link_preview       *bool
 	unsubscribe_button *string
+	link_tracking      *bool
 	body               *string
 	doc                *jsontext.Value
 	appenddoc          jsontext.Value
@@ -10052,6 +10053,42 @@ func (m *BroadcastMutation) UnsubscribeButtonCleared() bool {
 func (m *BroadcastMutation) ResetUnsubscribeButton() {
 	m.unsubscribe_button = nil
 	delete(m.clearedFields, broadcast.FieldUnsubscribeButton)
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (m *BroadcastMutation) SetLinkTracking(b bool) {
+	m.link_tracking = &b
+}
+
+// LinkTracking returns the value of the "link_tracking" field in the mutation.
+func (m *BroadcastMutation) LinkTracking() (r bool, exists bool) {
+	v := m.link_tracking
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkTracking returns the old "link_tracking" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldLinkTracking(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkTracking is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkTracking requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkTracking: %w", err)
+	}
+	return oldValue.LinkTracking, nil
+}
+
+// ResetLinkTracking resets all changes to the "link_tracking" field.
+func (m *BroadcastMutation) ResetLinkTracking() {
+	m.link_tracking = nil
 }
 
 // SetBody sets the "body" field.
@@ -10814,7 +10851,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -10856,6 +10893,9 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.unsubscribe_button != nil {
 		fields = append(fields, broadcast.FieldUnsubscribeButton)
+	}
+	if m.link_tracking != nil {
+		fields = append(fields, broadcast.FieldLinkTracking)
 	}
 	if m.body != nil {
 		fields = append(fields, broadcast.FieldBody)
@@ -10929,6 +10969,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.LinkPreview()
 	case broadcast.FieldUnsubscribeButton:
 		return m.UnsubscribeButton()
+	case broadcast.FieldLinkTracking:
+		return m.LinkTracking()
 	case broadcast.FieldBody:
 		return m.Body()
 	case broadcast.FieldDoc:
@@ -10990,6 +11032,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLinkPreview(ctx)
 	case broadcast.FieldUnsubscribeButton:
 		return m.OldUnsubscribeButton(ctx)
+	case broadcast.FieldLinkTracking:
+		return m.OldLinkTracking(ctx)
 	case broadcast.FieldBody:
 		return m.OldBody(ctx)
 	case broadcast.FieldDoc:
@@ -11120,6 +11164,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUnsubscribeButton(v)
+		return nil
+	case broadcast.FieldLinkTracking:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkTracking(v)
 		return nil
 	case broadcast.FieldBody:
 		v, ok := value.(string)
@@ -11415,6 +11466,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldUnsubscribeButton:
 		m.ResetUnsubscribeButton()
+		return nil
+	case broadcast.FieldLinkTracking:
+		m.ResetLinkTracking()
 		return nil
 	case broadcast.FieldBody:
 		m.ResetBody()
@@ -58473,7 +58527,7 @@ func (m *TrackedLinkMutation) OutboundMessageID() (r int64, exists bool) {
 // OldOutboundMessageID returns the old "outbound_message_id" field's value of the TrackedLink entity.
 // If the TrackedLink object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v int64, err error) {
+func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldOutboundMessageID is only allowed on UpdateOne operations")
 	}
@@ -58487,9 +58541,22 @@ func (m *TrackedLinkMutation) OldOutboundMessageID(ctx context.Context) (v int64
 	return oldValue.OutboundMessageID, nil
 }
 
+// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
+func (m *TrackedLinkMutation) ClearOutboundMessageID() {
+	m.outbound_message = nil
+	m.clearedFields[trackedlink.FieldOutboundMessageID] = struct{}{}
+}
+
+// OutboundMessageIDCleared returns if the "outbound_message_id" field was cleared in this mutation.
+func (m *TrackedLinkMutation) OutboundMessageIDCleared() bool {
+	_, ok := m.clearedFields[trackedlink.FieldOutboundMessageID]
+	return ok
+}
+
 // ResetOutboundMessageID resets all changes to the "outbound_message_id" field.
 func (m *TrackedLinkMutation) ResetOutboundMessageID() {
 	m.outbound_message = nil
+	delete(m.clearedFields, trackedlink.FieldOutboundMessageID)
 }
 
 // SetToken sets the "token" field.
@@ -58599,7 +58666,7 @@ func (m *TrackedLinkMutation) ClearOutboundMessage() {
 
 // OutboundMessageCleared reports if the "outbound_message" edge to the OutboundMessage entity was cleared.
 func (m *TrackedLinkMutation) OutboundMessageCleared() bool {
-	return m.clearedoutbound_message
+	return m.OutboundMessageIDCleared() || m.clearedoutbound_message
 }
 
 // OutboundMessageIDs returns the "outbound_message" edge IDs in the mutation.
@@ -58795,7 +58862,11 @@ func (m *TrackedLinkMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *TrackedLinkMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(trackedlink.FieldOutboundMessageID) {
+		fields = append(fields, trackedlink.FieldOutboundMessageID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -58808,6 +58879,11 @@ func (m *TrackedLinkMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *TrackedLinkMutation) ClearField(name string) error {
+	switch name {
+	case trackedlink.FieldOutboundMessageID:
+		m.ClearOutboundMessageID()
+		return nil
+	}
 	return fmt.Errorf("unknown TrackedLink nullable field %s", name)
 }
 

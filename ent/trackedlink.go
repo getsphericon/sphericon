@@ -26,7 +26,7 @@ type TrackedLink struct {
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// OutboundMessageID holds the value of the "outbound_message_id" field.
-	OutboundMessageID int64 `json:"outbound_message_id,omitempty"`
+	OutboundMessageID *int64 `json:"outbound_message_id,omitempty"`
 	// Token holds the value of the "token" field.
 	Token string `json:"token,omitempty"`
 	// URL holds the value of the "url" field.
@@ -124,7 +124,8 @@ func (_m *TrackedLink) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field outbound_message_id", values[i])
 			} else if value.Valid {
-				_m.OutboundMessageID = value.Int64
+				_m.OutboundMessageID = new(int64)
+				*_m.OutboundMessageID = value.Int64
 			}
 		case trackedlink.FieldToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -193,8 +194,10 @@ func (_m *TrackedLink) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	builder.WriteString("outbound_message_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.OutboundMessageID))
+	if v := _m.OutboundMessageID; v != nil {
+		builder.WriteString("outbound_message_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("token=")
 	builder.WriteString(_m.Token)

@@ -215,8 +215,9 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         label: t(($) => $.automations.stepSms),
         description: t(($) => $.automations.smsNodeDescription),
         // `integrationId` is the SMS Integration the step sends through, '' for the SMS default
-        // (ADR 0081).
-        defaultPropertiesData: { integrationId: '', text: '' },
+        // (ADR 0081). `linkTracking` is the text control's sibling, 'off' when the step keeps its
+        // links as written (the form holds only strings).
+        defaultPropertiesData: { integrationId: '', text: '', linkTracking: '' },
         schema: {
           type: 'object',
           required: ['text'],
@@ -232,6 +233,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               label: t(($) => $.smsEditor.textLabel),
               format: SMS_TEXT_FORMAT,
             },
+            linkTracking: { type: 'string' },
           },
         },
         uischema: {

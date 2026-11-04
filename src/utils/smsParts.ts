@@ -24,10 +24,55 @@ function parts(n: number, single: number, each: number): number {
   return n <= single ? Math.min(n, 1) : Math.ceil(n / each)
 }
 
-// measureSms counts text as written: merge tags count as their own characters. GSM-7 is 160
-// characters in one part or 153 per part; one character outside it makes the whole text UCS-2,
-// 70 in one part or 67 per part.
-export function measureSms(text: string): SmsSize {
+// A link as a phone finds it: an absolute http(s) URL up to the next whitespace, a Liquid tag inside
+// it part of it, a lone `{` its end. Whitespace is spelled out, as in internal/smsrender/links.go:
+// the two regexp engines differ on what `\s` covers.
+const LINK = /https?:\/\/(?:\{\{.*?\}\}|\{%.*?%\}|[^\t\n\f\r {])+/g
+// The punctuation that ends a sentence rather than a link.
+const TRAILING = '.,;:!?\'"'
+
+const count = (s: string, c: string) => s.split(c).length - 1
+
+// The length of candidate once trailing sentence marks, and a `)` with no `(` inside the link, are cut.
+function trim(candidate: string): number {
+  let end = candidate.length
+  while (end > 0) {
+    const c = candidate.charAt(end - 1)
+    const head = candidate.slice(0, end)
+    if (TRAILING.includes(c) || (c === ')' && count(head, '(') < count(head, ')'))) {
+      end--
+    } else {
+      break
+    }
+  }
+  return end
+}
+
+// smsLinks are the links of text, in order: what the send turns into short tracked links (ADR 0083).
+export function smsLinks(text: string): string[] {
+  const out: string[] = []
+  for (const m of text.matchAll(LINK)) {
+    const end = trim(m[0])
+    if (end > m[0].indexOf('://') + 3) {
+      out.push(m[0].slice(0, end))
+    }
+  }
+  return out
+}
+
+// measureSms counts text as it goes out, each link a short link of linkLength characters (the
+// Workspace's `shortLinkLength`); 0, a text whose links are not tracked, counts them as written.
+// Merge tags count as their own characters. GSM-7 is 160 characters in one part or 153 per part;
+// one character outside it makes the whole text UCS-2, 70 in one part or 67 per part.
+export function measureSms(written: string, linkLength = 0): SmsSize {
+  const short = 'x'.repeat(linkLength)
+  const text =
+    linkLength > 0
+      ? written.replace(LINK, (m) => {
+          const end = trim(m)
+          return end > m.indexOf('://') + 3 ? short + m.slice(end) : m
+        })
+      : written
   let septets = 0
   for (const char of text) {
     if (GSM7_BASIC.has(char)) {

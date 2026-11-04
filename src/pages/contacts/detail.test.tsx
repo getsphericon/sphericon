@@ -307,6 +307,7 @@ function holding(permissions: Permission[]) {
         permissions,
         mcpUrl: 'https://sphericon.test',
         trackerUrl: 'https://t.sphericon.test',
+        shortLinkLength: 35,
         holds: [],
         role: 'member',
         createdAt: NOW,

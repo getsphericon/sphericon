@@ -13343,7 +13343,9 @@ type SiteAutomationStep struct {
 	//
 	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
 	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
-	// Contact's phone as written, with nothing appended.
+	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
 	Text OptString `json:"text"`
 	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
 	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
@@ -13356,6 +13358,9 @@ type SiteAutomationStep struct {
 	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
 	// image.
 	LinkPreview OptBool `json:"linkPreview"`
+	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
+	// `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
 }
 
 // GetType returns the value of Type.
@@ -13453,6 +13458,11 @@ func (s *SiteAutomationStep) GetLinkPreview() OptBool {
 	return s.LinkPreview
 }
 
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SiteAutomationStep) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -13546,6 +13556,11 @@ func (s *SiteAutomationStep) SetButtons(val []TelegramButton) {
 // SetLinkPreview sets the value of LinkPreview.
 func (s *SiteAutomationStep) SetLinkPreview(val OptBool) {
 	s.LinkPreview = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SiteAutomationStep) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
 }
 
 // The messages of the send step at one position.
@@ -30114,6 +30129,10 @@ type SiteWorkspaceResource struct {
 	// The edge host a Tracking domain's CNAME points at (ADR 0071); absent when the Instance offers no
 	// Tracking domains (SPHERICON_TRACKING_CNAME_TARGET unset).
 	TrackingTarget OptString `json:"trackingTarget"`
+	// The length of a short tracked link of the Workspace
+	// (`https://<Tracking domain or app host>/c/<token>`, ADR 0083): the SMS counter counts each link of a
+	// tracked text at this length, as the save does.
+	ShortLinkLength int32 `json:"shortLinkLength"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -30198,6 +30217,11 @@ func (s *SiteWorkspaceResource) GetTrackerUrl() string {
 // GetTrackingTarget returns the value of TrackingTarget.
 func (s *SiteWorkspaceResource) GetTrackingTarget() OptString {
 	return s.TrackingTarget
+}
+
+// GetShortLinkLength returns the value of ShortLinkLength.
+func (s *SiteWorkspaceResource) GetShortLinkLength() int32 {
+	return s.ShortLinkLength
 }
 
 // GetHolds returns the value of Holds.
@@ -30293,6 +30317,11 @@ func (s *SiteWorkspaceResource) SetTrackerUrl(val string) {
 // SetTrackingTarget sets the value of TrackingTarget.
 func (s *SiteWorkspaceResource) SetTrackingTarget(val OptString) {
 	s.TrackingTarget = val
+}
+
+// SetShortLinkLength sets the value of ShortLinkLength.
+func (s *SiteWorkspaceResource) SetShortLinkLength(val int32) {
+	s.ShortLinkLength = val
 }
 
 // SetHolds sets the value of Holds.
@@ -30509,6 +30538,8 @@ type SmsBroadcastContent struct {
 	Channel SmsBroadcastContentChannel `json:"channel"`
 	// The text, plain, with Liquid merge tags.
 	Text string `json:"text"`
+	// Whether each link of the text goes out as a short tracked link.
+	LinkTracking bool `json:"linkTracking"`
 }
 
 // GetChannel returns the value of Channel.
@@ -30521,6 +30552,11 @@ func (s *SmsBroadcastContent) GetText() string {
 	return s.Text
 }
 
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsBroadcastContent) GetLinkTracking() bool {
+	return s.LinkTracking
+}
+
 // SetChannel sets the value of Channel.
 func (s *SmsBroadcastContent) SetChannel(val SmsBroadcastContentChannel) {
 	s.Channel = val
@@ -30529,6 +30565,11 @@ func (s *SmsBroadcastContent) SetChannel(val SmsBroadcastContentChannel) {
 // SetText sets the value of Text.
 func (s *SmsBroadcastContent) SetText(val string) {
 	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsBroadcastContent) SetLinkTracking(val bool) {
+	s.LinkTracking = val
 }
 
 // The Channel the content is for.
@@ -30567,13 +30608,18 @@ func (s *SmsBroadcastContentChannel) UnmarshalText(data []byte) error {
 }
 
 // SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
-// omitted text is empty; on update an omitted text keeps its value.
+// omitted field takes its default (an empty text, link tracking on); on update an omitted field keeps
+// its value.
 // Ref: #/components/schemas/SmsBroadcastContentInput
 type SmsBroadcastContentInput struct {
 	// The Channel the content is for: the Broadcast's own, which an update cannot change.
 	Channel SmsBroadcastContentInputChannel `json:"channel"`
-	// The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one.
+	// The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one,
+	// and a save one over the part limit, its links counted as short links while `linkTracking` is on.
 	Text OptString `json:"text"`
+	// Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose
+	// clicks record `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
 }
 
 // GetChannel returns the value of Channel.
@@ -30586,6 +30632,11 @@ func (s *SmsBroadcastContentInput) GetText() OptString {
 	return s.Text
 }
 
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsBroadcastContentInput) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
 // SetChannel sets the value of Channel.
 func (s *SmsBroadcastContentInput) SetChannel(val SmsBroadcastContentInputChannel) {
 	s.Channel = val
@@ -30594,6 +30645,11 @@ func (s *SmsBroadcastContentInput) SetChannel(val SmsBroadcastContentInputChanne
 // SetText sets the value of Text.
 func (s *SmsBroadcastContentInput) SetText(val OptString) {
 	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsBroadcastContentInput) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
 }
 
 // The Channel the content is for: the Broadcast's own, which an update cannot change.

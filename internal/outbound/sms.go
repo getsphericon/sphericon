@@ -20,9 +20,11 @@ import (
 )
 
 // SMSContent is SMS's Message content (ADR 0078): one plain text with Liquid merge tags, no media,
-// nothing appended.
+// nothing appended. Its links go out as short tracked links (ADR 0083) unless NoLinkTracking.
 type SMSContent struct {
 	Text string
+	// NoLinkTracking keeps the links as written. Negated so that the zero value is the default.
+	NoLinkTracking bool
 }
 
 // Channel is SMS.
@@ -92,9 +94,12 @@ func (smsChannel) optedOut(ctx context.Context, s *ent.Scoped, _ events.Publishe
 type smsMessage struct{ body string }
 
 // render renders the text for one recipient: Liquid with the Contact's and the Enrollment's merge
-// tags, and `unsubscribe_url` when the text uses it. A text that does not render, or renders to
-// nothing, is the message's own failure, the same on every attempt.
-func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, _ int64, dest string, ws *ent.Workspace) (any, error) {
+// tags, and `unsubscribe_url` when the text uses it. Then every link but the unsubscribe link
+// becomes a short tracked link of the message (ADR 0083), unless the content keeps its links; a Test
+// send (messageID 0) gets the Workspace's message-less short links, so it shows the same form. A
+// text that does not render, or renders to nothing, is the message's own failure, the same on every
+// attempt.
+func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
 	content, ok := req.Content.(SMSContent)
 	if !ok {
 		return nil, fmt.Errorf("outbound: %T is no SMS content", req.Content)
@@ -109,6 +114,17 @@ func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, _ in
 	}
 	if body == "" {
 		return nil, contentError{errors.New(reasonContentEmpty)}
+	}
+	if content.NoLinkTracking {
+		return smsMessage{body: body}, nil
+	}
+	unsub, _ := vars[unsubscribeURLTag].(string)
+	links, err := c.m.smsShortLinks(ctx, s, messageID, unsub)
+	if err != nil {
+		return nil, err
+	}
+	if body, err = smsrender.RewriteLinks(body, func(url string) (string, error) { return links.short(ctx, url) }); err != nil {
+		return nil, err
 	}
 	return smsMessage{body: body}, nil
 }

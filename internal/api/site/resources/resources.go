@@ -205,6 +205,9 @@ type Converter interface {
 	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
+	// The length of a short tracked link depends on the Workspace's serving Tracking domain
+	// (outbound.Module.ShortLinkLength): the handler attaches it.
+	// goverter:ignore ShortLinkLength
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource

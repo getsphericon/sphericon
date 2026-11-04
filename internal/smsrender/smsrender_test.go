@@ -79,11 +79,65 @@ func TestALongerTextNeverTakesFewerParts(t *testing.T) {
 func TestCheckPartsRefusesATextOverTheLimit(t *testing.T) {
 	at := strings.Repeat("a", 306)
 
-	require.NoError(t, smsrender.CheckParts(at, 2))
-	err := smsrender.CheckParts(at+"a", 2)
+	require.NoError(t, smsrender.CheckParts(at, 2, 0))
+	err := smsrender.CheckParts(at+"a", 2, 0)
 
 	tooLong, ok := errors.AsType[*smsrender.TooManyPartsError](err)
 	require.True(t, ok, "got %v", err)
 	assert.Equal(t, smsrender.TooManyPartsError{Size: smsrender.Size{Encoding: smsrender.GSM7, Characters: 307, Parts: 3}, Limit: 2}, *tooLong)
 	assert.Equal(t, "the text is 307 characters in GSM-7, 3 segments; it may take 2 segments at most", err.Error())
+}
+
+// linksCase is one row of testdata/links.json: a text, the links found in it, and its figures once
+// each link is a short link of linkLength characters.
+type linksCase struct {
+	partsCase
+
+	Links      []string `json:"links"`
+	LinkLength int      `json:"linkLength"`
+}
+
+func TestLinksAndTheirShortLengthAgreeWithTheSharedTable(t *testing.T) {
+	raw, err := os.ReadFile("testdata/links.json")
+	require.NoError(t, err)
+	var table struct {
+		Cases []linksCase `json:"cases"`
+	}
+	require.NoError(t, json.Unmarshal(raw, &table))
+	require.NotEmpty(t, table.Cases)
+
+	for _, c := range table.Cases {
+		t.Run(c.Name, func(t *testing.T) {
+			text := caseText(t, c.partsCase)
+
+			require.NotNil(t, c.Links, "every case names its links")
+			assert.Equal(t, c.Links, smsrender.Links(text))
+			assert.Equal(t, smsrender.Size{Encoding: smsrender.Encoding(c.Encoding), Characters: c.Characters, Parts: c.Parts},
+				smsrender.MeasureLinked(text, c.LinkLength))
+		})
+	}
+}
+
+func TestRewriteLinksReplacesEveryLinkAndKeepsTheRest(t *testing.T) {
+	got, err := smsrender.RewriteLinks("Shop https://a.example/x, then https://b.example/y. Bye", func(url string) (string, error) {
+		return "<" + url + ">", nil
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "Shop <https://a.example/x>, then <https://b.example/y>. Bye", got)
+}
+
+func TestRewriteLinksStopsAtTheFirstError(t *testing.T) {
+	boom := errors.New("boom")
+
+	_, err := smsrender.RewriteLinks("https://a.example/x", func(string) (string, error) { return "", boom })
+
+	assert.ErrorIs(t, err, boom)
+}
+
+func TestCheckPartsCountsTheShortLinks(t *testing.T) {
+	text := strings.Repeat("a", 280) + " https://shop.example/" + strings.Repeat("p", 100)
+
+	require.Error(t, smsrender.CheckParts(text, 2, 0), "as written the text takes three parts")
+	assert.NoError(t, smsrender.CheckParts(text, 2, 25), "with its link short it takes two")
 }

@@ -243,6 +243,20 @@ func (_u *BroadcastUpdate) ClearUnsubscribeButton() *BroadcastUpdate {
 	return _u
 }
 
+// SetLinkTracking sets the "link_tracking" field.
+func (_u *BroadcastUpdate) SetLinkTracking(v bool) *BroadcastUpdate {
+	_u.mutation.SetLinkTracking(v)
+	return _u
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableLinkTracking(v *bool) *BroadcastUpdate {
+	if v != nil {
+		_u.SetLinkTracking(*v)
+	}
+	return _u
+}
+
 // SetBody sets the "body" field.
 func (_u *BroadcastUpdate) SetBody(v string) *BroadcastUpdate {
 	_u.mutation.SetBody(v)
@@ -688,6 +702,9 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.UnsubscribeButtonCleared() {
 		_spec.ClearField(broadcast.FieldUnsubscribeButton, field.TypeString)
 	}
+	if value, ok := _u.mutation.LinkTracking(); ok {
+		_spec.SetField(broadcast.FieldLinkTracking, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
 	}
@@ -1107,6 +1124,20 @@ func (_u *BroadcastUpdateOne) SetNillableUnsubscribeButton(v *string) *Broadcast
 // ClearUnsubscribeButton clears the value of the "unsubscribe_button" field.
 func (_u *BroadcastUpdateOne) ClearUnsubscribeButton() *BroadcastUpdateOne {
 	_u.mutation.ClearUnsubscribeButton()
+	return _u
+}
+
+// SetLinkTracking sets the "link_tracking" field.
+func (_u *BroadcastUpdateOne) SetLinkTracking(v bool) *BroadcastUpdateOne {
+	_u.mutation.SetLinkTracking(v)
+	return _u
+}
+
+// SetNillableLinkTracking sets the "link_tracking" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableLinkTracking(v *bool) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetLinkTracking(*v)
+	}
 	return _u
 }
 
@@ -1584,6 +1615,9 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.UnsubscribeButtonCleared() {
 		_spec.ClearField(broadcast.FieldUnsubscribeButton, field.TypeString)
+	}
+	if value, ok := _u.mutation.LinkTracking(); ok {
+		_spec.SetField(broadcast.FieldLinkTracking, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)

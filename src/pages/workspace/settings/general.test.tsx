@@ -34,6 +34,7 @@ const workspace: SiteWorkspaceResource = {
   permissions: ['workspace:update', 'workspace:timezone', 'workspace:delete'],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
   holds: [],
   role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',

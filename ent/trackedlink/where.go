@@ -205,6 +205,16 @@ func OutboundMessageIDNotIn(vs ...int64) predicate.TrackedLink {
 	return predicate.TrackedLink(sql.FieldNotIn(FieldOutboundMessageID, vs...))
 }
 
+// OutboundMessageIDIsNil applies the IsNil predicate on the "outbound_message_id" field.
+func OutboundMessageIDIsNil() predicate.TrackedLink {
+	return predicate.TrackedLink(sql.FieldIsNull(FieldOutboundMessageID))
+}
+
+// OutboundMessageIDNotNil applies the NotNil predicate on the "outbound_message_id" field.
+func OutboundMessageIDNotNil() predicate.TrackedLink {
+	return predicate.TrackedLink(sql.FieldNotNull(FieldOutboundMessageID))
+}
+
 // TokenEQ applies the EQ predicate on the "token" field.
 func TokenEQ(v string) predicate.TrackedLink {
 	return predicate.TrackedLink(sql.FieldEQ(FieldToken, v))

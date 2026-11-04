@@ -22,6 +22,7 @@ const workspace: SiteWorkspaceResource = {
   permissions: ['webhooks:manage'],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
+  shortLinkLength: 35,
   holds: [],
   role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',

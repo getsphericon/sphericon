@@ -110,7 +110,7 @@ model SiteAutomationStep {
 
   /** The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
    *
-   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone as written, with nothing appended. */
+   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links. */
   text?: string;
 
   /** The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button. */
@@ -126,6 +126,9 @@ model SiteAutomationStep {
 
   /** Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image. */
   linkPreview?: boolean;
+
+  /** Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted. */
+  linkTracking?: boolean;
 }
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */

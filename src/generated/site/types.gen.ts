@@ -2647,7 +2647,7 @@ export type SiteAutomationStep = {
   /**
    * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
    *
-   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone as written, with nothing appended.
+   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
    */
   text?: string;
   /**
@@ -2666,6 +2666,10 @@ export type SiteAutomationStep = {
    * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
    */
   linkPreview?: boolean;
+  /**
+   * Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
 };
 
 /**
@@ -7177,6 +7181,11 @@ export type SiteWorkspaceResource = {
    */
   trackingTarget?: string;
   /**
+   * The length of a short tracked link of the Workspace (`https://<Tracking domain or app host>/c/<token>`,
+   * ADR 0083): the SMS counter counts each link of a tracked text at this length, as the save does.
+   */
+  shortLinkLength: number;
+  /**
    * The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.
@@ -7233,11 +7242,16 @@ export type SmsBroadcastContent = {
    * The text, plain, with Liquid merge tags
    */
   text: string;
+  /**
+   * Whether each link of the text goes out as a short tracked link
+   */
+  linkTracking: boolean;
 };
 
 /**
  * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
- * omitted text is empty; on update an omitted text keeps its value.
+ * omitted field takes its default (an empty text, link tracking on); on update an omitted field
+ * keeps its value.
  */
 export type SmsBroadcastContentInput = {
   /**
@@ -7245,9 +7259,13 @@ export type SmsBroadcastContentInput = {
    */
   channel: 'sms';
   /**
-   * The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one.
+   * The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one, and a save one over the part limit, its links counted as short links while `linkTracking` is on.
    */
   text?: string;
+  /**
+   * Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
 };
 
 /**

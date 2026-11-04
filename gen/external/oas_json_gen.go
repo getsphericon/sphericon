@@ -3562,9 +3562,15 @@ func (s *AutomationStep) encodeFields(e *jx.Encoder) {
 			s.LinkPreview.Encode(e)
 		}
 	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfAutomationStep = [19]string{
+var jsonFieldsNameOfAutomationStep = [20]string{
 	0:  "type",
 	1:  "subject",
 	2:  "body",
@@ -3584,6 +3590,7 @@ var jsonFieldsNameOfAutomationStep = [19]string{
 	16: "imageUrl",
 	17: "buttons",
 	18: "linkPreview",
+	19: "linkTracking",
 }
 
 // Decode decodes AutomationStep from json.
@@ -3798,6 +3805,16 @@ func (s *AutomationStep) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"linkPreview\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
 			return d.Skip()
@@ -7028,6 +7045,12 @@ func (s BroadcastContentInputSum) encodeFields(e *jx.Encoder) {
 					s.Text.Encode(e)
 				}
 			}
+			{
+				if s.LinkTracking.Set {
+					e.FieldStart("linkTracking")
+					s.LinkTracking.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -7198,6 +7221,10 @@ func (s BroadcastContentSum) encodeFields(e *jx.Encoder) {
 			{
 				e.FieldStart("text")
 				e.Str(s.Text)
+			}
+			{
+				e.FieldStart("linkTracking")
+				e.Bool(s.LinkTracking)
 			}
 		}
 	}
@@ -42457,11 +42484,16 @@ func (s *SmsBroadcastContent) encodeFields(e *jx.Encoder) {
 		e.FieldStart("text")
 		e.Str(s.Text)
 	}
+	{
+		e.FieldStart("linkTracking")
+		e.Bool(s.LinkTracking)
+	}
 }
 
-var jsonFieldsNameOfSmsBroadcastContent = [2]string{
+var jsonFieldsNameOfSmsBroadcastContent = [3]string{
 	0: "channel",
 	1: "text",
+	2: "linkTracking",
 }
 
 // Decode decodes SmsBroadcastContent from json.
@@ -42495,6 +42527,18 @@ func (s *SmsBroadcastContent) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"text\"")
 			}
+		case "linkTracking":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkTracking = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -42505,7 +42549,7 @@ func (s *SmsBroadcastContent) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -42608,11 +42652,18 @@ func (s *SmsBroadcastContentInput) encodeFields(e *jx.Encoder) {
 			s.Text.Encode(e)
 		}
 	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSmsBroadcastContentInput = [2]string{
+var jsonFieldsNameOfSmsBroadcastContentInput = [3]string{
 	0: "channel",
 	1: "text",
+	2: "linkTracking",
 }
 
 // Decode decodes SmsBroadcastContentInput from json.
@@ -42643,6 +42694,16 @@ func (s *SmsBroadcastContentInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
 			return d.Skip()

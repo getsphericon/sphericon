@@ -14865,7 +14865,7 @@
           },
           "text": {
             "type": "string",
-            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone as written, with nothing appended."
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
           },
           "unsubscribeButton": {
             "type": "string",
@@ -14887,6 +14887,10 @@
           "linkPreview": {
             "type": "boolean",
             "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
@@ -20255,7 +20259,7 @@
       },
       "SmsBroadcastContent": {
         "type": "object",
-        "required": ["channel", "text"],
+        "required": ["channel", "text", "linkTracking"],
         "properties": {
           "channel": {
             "type": "string",
@@ -20265,6 +20269,10 @@
           "text": {
             "type": "string",
             "description": "The text, plain, with Liquid merge tags"
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether each link of the text goes out as a short tracked link"
           }
         },
         "description": "SMS's content of a Broadcast as stored"
@@ -20280,10 +20288,14 @@
           },
           "text": {
             "type": "string",
-            "description": "The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one."
+            "description": "The text, plain, with Liquid merge tags; nothing is appended to it. Schedule refuses a blank one, and a save one over the part limit, its links counted as short links while `linkTracking` is on."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
-        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted text is empty; on update an omitted text keeps its value."
+        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted field takes its default (an empty text, link tracking on); on update an omitted field\nkeeps its value."
       },
       "SmsFromKind": {
         "type": "string",

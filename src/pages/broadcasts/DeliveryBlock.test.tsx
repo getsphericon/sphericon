@@ -161,7 +161,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
   const sms: SiteBroadcastResource = {
     ...draft,
     channel: 'sms',
-    content: { channel: 'sms', text: 'Hello' },
+    content: { channel: 'sms', text: 'Hello', linkTracking: true },
   }
   const { screen } = await renderWithRouter(<DeliveryBlock broadcast={sms} />, MOUNT)
 

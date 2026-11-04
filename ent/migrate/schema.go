@@ -449,6 +449,7 @@ var (
 		{Name: "buttons", Type: field.TypeJSON, Nullable: true},
 		{Name: "link_preview", Type: field.TypeBool, Default: true},
 		{Name: "unsubscribe_button", Type: field.TypeString, Nullable: true},
+		{Name: "link_tracking", Type: field.TypeBool, Default: true},
 		{Name: "body", Type: field.TypeString, Nullable: true},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
@@ -471,19 +472,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[24]},
+				Columns:    []*schema.Column{BroadcastsColumns[25]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[25]},
+				Columns:    []*schema.Column{BroadcastsColumns[26]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[26]},
+				Columns:    []*schema.Column{BroadcastsColumns[27]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -492,17 +493,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[26]},
+				Columns: []*schema.Column{BroadcastsColumns[27]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[24]},
+				Columns: []*schema.Column{BroadcastsColumns[25]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[25]},
+				Columns: []*schema.Column{BroadcastsColumns[26]},
 			},
 		},
 	}
@@ -2563,7 +2564,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "token", Type: field.TypeString, Unique: true},
 		{Name: "url", Type: field.TypeString, Size: 2147483647},
-		{Name: "outbound_message_id", Type: field.TypeInt64},
+		{Name: "outbound_message_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// TrackedLinksTable holds the schema information for the "tracked_links" table.

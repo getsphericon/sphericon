@@ -2381,16 +2381,19 @@ export const zSiteWebhookTestResult = z.object({
  */
 export const zSmsBroadcastContent = z.object({
   channel: z.enum(['sms']),
-  text: z.string()
+  text: z.string(),
+  linkTracking: z.boolean()
 });
 
 /**
  * SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an
- * omitted text is empty; on update an omitted text keeps its value.
+ * omitted field takes its default (an empty text, link tracking on); on update an omitted field
+ * keeps its value.
  */
 export const zSmsBroadcastContentInput = z.object({
   channel: z.enum(['sms']),
-  text: z.exactOptional(z.string())
+  text: z.exactOptional(z.string()),
+  linkTracking: z.exactOptional(z.boolean())
 });
 
 /**
@@ -2475,7 +2478,8 @@ export const zSiteAutomationStep = z.object({
   unsubscribeButton: z.exactOptional(z.string().max(64)),
   imageUrl: z.exactOptional(z.string()),
   buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
-  linkPreview: z.exactOptional(z.boolean())
+  linkPreview: z.exactOptional(z.boolean()),
+  linkTracking: z.exactOptional(z.boolean())
 });
 
 /**
@@ -3835,6 +3839,7 @@ export const zSiteWorkspaceResource = z.object({
   mcpUrl: z.string(),
   trackerUrl: z.string(),
   trackingTarget: z.exactOptional(z.string()),
+  shortLinkLength: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),

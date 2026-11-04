@@ -84,6 +84,10 @@ func (Broadcast) Fields() []ent.Field {
 		field.String("unsubscribe_button").
 			Optional().
 			Nillable(),
+		// Whether the links of an SMS Broadcast's text go out as short tracked links (ADR 0083). Only
+		// an SMS Broadcast reads it; any other keeps the default.
+		field.Bool("link_tracking").
+			Default(true),
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
 			Optional().

@@ -235,6 +235,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 		}
 	}
 	externalapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
+	externalapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return externalapiAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
@@ -1354,6 +1355,7 @@ func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) ext
 		if (*source).Text != nil {
 			externalapiSmsBroadcastContent.Text = *(*source).Text
 		}
+		externalapiSmsBroadcastContent.LinkTracking = (*source).LinkTracking
 	}
 	return externalapiSmsBroadcastContent
 }

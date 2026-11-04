@@ -456,6 +456,7 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 		}
 	}
 	siteapiSiteAutomationStep.LinkPreview = optBool(source.LinkPreview)
+	siteapiSiteAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return siteapiSiteAutomationStep
 }
 func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
@@ -2100,6 +2101,7 @@ func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) sit
 		if (*source).Text != nil {
 			siteapiSmsBroadcastContent.Text = *(*source).Text
 		}
+		siteapiSmsBroadcastContent.LinkTracking = (*source).LinkTracking
 	}
 	return siteapiSmsBroadcastContent
 }
@@ -2542,6 +2544,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.McpUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackerUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackingTarget: ignore
+		// siteapiSiteWorkspaceResource.ShortLinkLength: ignore
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore

@@ -1,6 +1,6 @@
 // Package linkclicks counts the clicks of the messages of one Broadcast or Automation, or of the
 // whole Workspace, by link. It is a leaf the per-owner reports and the Clicks by link report share:
-// the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`), machine clicks left out (ADR 0053), and takes a
+// the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`, `sms.clicked`), machine clicks left out (ADR 0053), and takes a
 // scoped client like every Workspace read.
 package linkclicks
 
