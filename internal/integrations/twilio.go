@@ -157,7 +157,9 @@ func (m *Module) editTwilio(ctx context.Context, row *ent.Integration, in Update
 		next.Secret = stored.Secret
 	}
 	next.CallbacksSet = stored.CallbacksSet
-	if next == stored {
+	// The same credentials saved again change nothing, unless Twilio refused them at a send: the
+	// Owner saves them once the account works again, and they are checked anew and the hold goes.
+	if next == stored && row.ProviderRefusedAt == nil {
 		return nil, nil
 	}
 	plaintext, err := m.connectTwilio(ctx, next, row.IngestKey)
