@@ -24,9 +24,11 @@ GROUP BY queue`
 
 // RegisterQueueMetrics exports river.queue.depth (jobs ready to run) and
 // river.queue.oldest_available_age (seconds) per queue on the global meter
-// provider. The only label is the queue name, a bounded technical dimension.
-// A queue with no ready jobs reports no sample. The query runs once per scrape.
-// The returned function unregisters the callback.
+// provider: the queue lag an operator alerts on, which river does not report itself. The only
+// label is the queue name, a bounded technical dimension. A queue the client works (Queues)
+// with no ready job reports 0 for both, so an alert sees it recover. A job scheduled for later
+// is not ready and a running job no longer waits, so neither counts. The query runs once per
+// scrape. The returned function unregisters the callback.
 func RegisterQueueMetrics(riverDB *sql.DB) (func() error, error) {
 	meter := otel.Meter(otelScope)
 	depth, err := meter.Int64ObservableGauge(
@@ -52,6 +54,7 @@ func RegisterQueueMetrics(riverDB *sql.DB) (func() error, error) {
 			return fmt.Errorf("queue stats: %w", err)
 		}
 		defer func() { _ = rows.Close() }()
+		idle := Queues()
 		for rows.Next() {
 			var queue string
 			var n int64
@@ -59,11 +62,20 @@ func RegisterQueueMetrics(riverDB *sql.DB) (func() error, error) {
 			if err := rows.Scan(&queue, &n, &age); err != nil {
 				return fmt.Errorf("queue stats scan: %w", err)
 			}
+			delete(idle, queue)
 			attrs := metric.WithAttributes(attribute.String("queue", queue))
 			o.ObserveInt64(depth, n, attrs)
 			o.ObserveFloat64(oldest, age, attrs)
 		}
-		return rows.Err()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		for queue := range idle {
+			attrs := metric.WithAttributes(attribute.String("queue", queue))
+			o.ObserveInt64(depth, 0, attrs)
+			o.ObserveFloat64(oldest, 0, attrs)
+		}
+		return nil
 	}, depth, oldest)
 	if err != nil {
 		return nil, fmt.Errorf("queue stats callback: %w", err)
