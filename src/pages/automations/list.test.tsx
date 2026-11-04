@@ -41,19 +41,55 @@ const NURTURE: SiteAutomationResource = {
   revenue: { reportingCurrency: null, orders: 0, amount: 0 },
 }
 
-test('lists automations with their status', async () => {
+const PAUSED: SiteAutomationResource = {
+  ...WELCOME,
+  id: '3',
+  name: 'Paused flow',
+  status: 'inactive',
+}
+
+test('lists automations with their status: Draft until first published', async () => {
   worker.use(
     handleSiteAutomationsList(() =>
-      HttpResponse.json({ items: [WELCOME, NURTURE], totalItems: 2 }),
+      HttpResponse.json({ items: [WELCOME, NURTURE, PAUSED], totalItems: 3 }),
     ),
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
-  await expect.element(screen.getByText('Nurture flow')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Welcome flow' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/1')
   await expect.element(screen.getByText('Active', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Inactive', { exact: true })).toBeInTheDocument()
+})
+
+test('unpublished changes open as the details of the status', async () => {
+  const pending: SiteAutomationResource = { ...WELCOME, draft: NURTURE.draft }
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [pending], totalItems: 1 })),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'Active' }).click()
+
+  await expect
+    .element(screen.getByText(/the changes made since then are not published yet/))
+    .toBeInTheDocument()
+})
+
+test('an active automation with unpublished changes offers Publish and Deactivate', async () => {
+  const pending: SiteAutomationResource = { ...WELCOME, draft: NURTURE.draft }
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [pending], totalItems: 1 })),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+
+  await expect.element(screen.getByRole('menuitem', { name: 'Publish' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Deactivate' })).toBeInTheDocument()
 })
 
 test('shows the orders and revenue of an automation and none while the currency is unset', async () => {
@@ -68,6 +104,19 @@ test('shows the orders and revenue of an automation and none while the currency 
   await expect.element(screen.getByText('$99.00')).toBeInTheDocument()
   await expect.element(screen.getByText('2', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('$0.00')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('-', { exact: true }).first()).toBeInTheDocument()
+})
+
+test('the empty archived view invites no create action', async () => {
+  worker.use(handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, ARCHIVED_ROUTE)
+
+  await expect.element(screen.getByText('No archived automations')).toBeInTheDocument()
+  // Only the header's button: the empty state adds none.
+  await expect
+    .element(screen.getByRole('button', { name: 'Create automation' }))
+    .toBeInTheDocument()
 })
 
 test('shows the empty state when there are no automations', async () => {
@@ -75,10 +124,10 @@ test('shows the empty state when there are no automations', async () => {
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
 
-  await expect.element(screen.getByText('No automations yet')).toBeInTheDocument()
+  await expect.element(screen.getByText('No automations', { exact: true })).toBeInTheDocument()
   // One create action in the empty state, the same label as the header's button.
   await expect
-    .element(screen.getByRole('button', { name: 'New automation' }).nth(1))
+    .element(screen.getByRole('button', { name: 'Create automation' }).nth(1))
     .toBeInTheDocument()
 })
 
@@ -90,7 +139,7 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load automations').first()).toBeInTheDocument()
 })
 
-test('New automation opens the create modal and Edit links to the edit page', async () => {
+test('Create automation opens the create modal and Edit links to the edit page', async () => {
   worker.use(
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
   )
@@ -98,7 +147,7 @@ test('New automation opens the create modal and Edit links to the edit page', as
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'New automation' }).first().click()
+  await screen.getByRole('button', { name: 'Create automation' }).first().click()
   await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Cancel' }).click()
   await screen.getByRole('button', { name: 'More actions' }).first().click()

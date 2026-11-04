@@ -10,18 +10,19 @@ export function formatMessageRevenue(revenue: SiteMessageRevenue, locale: string
   return formatMoney(revenue.amount, revenue.reportingCurrency, locale)
 }
 
-// The Orders and Revenue cells of a list row: blank while the Reporting currency is unset (or the
-// row has no revenue), so a table never shows a zero it did not count.
+// The Orders and Revenue cells of a list row: a hyphen, the empty value of docs/standards/ui.md,
+// while the Reporting currency is unset (or the row has no revenue), so a table never shows a zero
+// it did not count.
 export function messageRevenueCells(
   revenue: SiteMessageRevenue | undefined,
   locale: string,
 ): {
-  orders: number | ''
+  orders: number | '-'
   revenue: string
 } {
   const formatted = revenue ? formatMessageRevenue(revenue, locale) : null
   if (!revenue || formatted === null) {
-    return { orders: '', revenue: '' }
+    return { orders: '-', revenue: '-' }
   }
   return { orders: revenue.orders, revenue: formatted }
 }

@@ -24,6 +24,7 @@ import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
 import { AutomationReport } from './AutomationReport.tsx'
+import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
 
 // The Integration a send step sends through, by name (its id until the name loads).
@@ -136,11 +137,7 @@ function AutomationDetail() {
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <Group gap="sm">
           <Title order={4}>{automation.name}</Title>
-          <Badge variant="light" color={automation.status === 'active' ? 'teal' : 'gray'}>
-            {automation.status === 'active'
-              ? t(($) => $.automations.statusActive)
-              : t(($) => $.automations.statusInactive)}
-          </Badge>
+          <AutomationStatusBadge automation={automation} />
         </Group>
         <Group gap="xs">
           {automation.archivedAt ? null : (

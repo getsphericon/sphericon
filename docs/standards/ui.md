@@ -63,8 +63,16 @@ a form needs no code of its own for them. A form on a bare `useForm` has to be m
 
 - A list of resources is a `PagedTable` (`mantine-datatable`) on a route with a `page` search
   param. Columns run left to right by importance; a header does not change when a filter applies.
+- When a click on the row opens the resource, the first column names it and is a link to it
+  (`AnchorLink`), so it is reachable by keyboard and opens in a new tab. The link looks like the
+  row's text (its color, weight 500, underlined on hover): the whole row is the target, the name
+  is not singled out. Numbers are right-aligned.
 - Header actions act on the collection or the selection; a row's actions are in its
-  `RowActionsMenu`. One primary button per page. Order: view, edit, other, delete, create.
+  `RowActionsMenu`. One primary button per page. Order: view, edit, other, delete, create. A row
+  offers the same state actions as the resource's page (Publish where that page enables it). Only
+  an action that cannot be undone is red: Delete is, Archive (undone by Restore) is not.
+- An archived view is a place of its own, not a filter: its empty state names it ("No archived
+  automations") and offers no create action.
 - Filters search the whole collection, not the loaded page. A text filter for a known value; a
   single-value filter per property for a few properties; a property filter (a query builder) when
   there are many.
@@ -76,6 +84,8 @@ a form needs no code of its own for them. A form on a bare `useForm` has to be m
 - `PagedTable` has a refresh button above the table and the time of the last successful refresh
   beside it, in a polite live region. The rows stay on screen while it runs, and a failed refresh
   leaves the previous time. No list adds its own refresh.
+
+`automations/list.tsx` is the reference list: a new list, or one brought in line, follows it.
 
 ## Status and its details
 
@@ -98,6 +108,10 @@ This is `DetailsBadge` (`src/components/DetailsBadge.tsx`): a badge, and with `d
 that opens them in a popover, by click, tap or keyboard. Cloudscape draws a status as an icon and
 colored text with a dashed-underline trigger; we keep Mantine's `Badge`, which the app uses
 everywhere, and mark the badge that has details with an info icon.
+
+A resource with a draft (ADR 0065) is Draft until it is first published, then Active or Inactive;
+unpublished changes above a live version are a detail of that status, not a second badge
+(`AutomationStatusBadge`).
 
 ## Empty states
 

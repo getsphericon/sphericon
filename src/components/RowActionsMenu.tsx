@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 // RowActionsMenu is the three-dots button at the end of a table row; `children` are its
 // Menu.Items (destructive ones last, colored red). A click here never reaches the row's own
-// click handler (React events bubble out of the dropdown's portal too).
+// click handler (React events bubble out of the dropdown's portal too). The dropdown has a minimum
+// width, so a menu of short words ("Edit", "Archive") does not hug its labels.
 export function RowActionsMenu({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
 
@@ -17,7 +18,7 @@ export function RowActionsMenu({ children }: { children: ReactNode }) {
             <IconDotsVertical size={18} />
           </ActionIcon>
         </Menu.Target>
-        <Menu.Dropdown>{children}</Menu.Dropdown>
+        <Menu.Dropdown miw={160}>{children}</Menu.Dropdown>
       </Menu>
     </Box>
   )

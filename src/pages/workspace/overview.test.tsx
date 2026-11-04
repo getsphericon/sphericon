@@ -512,7 +512,7 @@ test('a new Workspace sees what to do and no wall of zeros', async () => {
     .element(screen.getByRole('link', { name: 'New broadcast' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/new')
   await expect
-    .element(screen.getByRole('link', { name: 'New automation' }))
+    .element(screen.getByRole('link', { name: 'Create automation' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/automations')
   await expect.element(screen.getByText('Last 30 days')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Sending', { exact: true })).not.toBeInTheDocument()
