@@ -99,7 +99,9 @@ test('archiving a segment calls archive and refreshes the list', async () => {
   await expect.element(screen.getByText('VIP customers')).not.toBeInTheDocument()
 })
 
-test('a segment a live broadcast uses is not archived and the broadcast is named', async () => {
+// The contract's archive may answer 409 naming what uses the resource; the list shows that refusal
+// and keeps the row.
+test('an archive the server refuses names what uses the segment and keeps it', async () => {
   worker.use(
     handleSiteSegmentsList({ body: page([VIPS], 1) }),
     handleSiteSegmentsArchive(() =>
