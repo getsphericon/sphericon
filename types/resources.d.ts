@@ -60,7 +60,7 @@ export default interface Resources {
       "subject": "Subject",
       "subjectId": "Subject ID",
       "time": "Time",
-      "title": "Recent activity"
+      "title": "Activity"
     },
     "alerts": {
       "automationArchiveErrorTitle": "Failed to archive automation",
@@ -164,7 +164,6 @@ export default interface Resources {
         "events": "Events",
         "newPeople": "New people",
         "opensByHour": "Opens by hour",
-        "recentActivity": "Recent activity",
         "subscribedPeople": "Subscribed people"
       },
       "newPeople": {
@@ -1210,6 +1209,7 @@ export default interface Resources {
       "revenue": "Revenue"
     },
     "nav": {
+      "activity": "Activity",
       "analytics": "Analytics",
       "automations": "Automations",
       "banners": "Banners",

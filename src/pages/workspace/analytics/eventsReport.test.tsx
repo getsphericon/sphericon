@@ -2,8 +2,8 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteAnalyticsEvents } from '../../../generated/site/msw.gen.ts'
+import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as eventsRoute } from '../../../routes/workspaces/$workspaceId/analytics/events.tsx'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -13,7 +13,7 @@ import { EventsReportPage } from './eventsReport.tsx'
 // The test router does not run the section's search validation, so the window is spelled out.
 const base = routeMount(eventsRoute, { workspaceId: 'TestWs01' })
 const mount = { ...base, initialPath: `${base.initialPath}?range=7d` }
-const feedPath = routeMount(recentActivityRoute, { workspaceId: 'TestWs01' }).initialPath
+const feedPath = routeMount(activityRoute, { workspaceId: 'TestWs01' }).initialPath
 
 test('lists each action with its counts and last occurrence', async () => {
   worker.use(
@@ -35,7 +35,7 @@ test('lists each action with its counts and last occurrence', async () => {
   await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
 })
 
-test('an action opens Recent activity filtered by it, keeping the window', async () => {
+test('an action opens the Activity feed filtered by it', async () => {
   worker.use(
     handleSiteAnalyticsEvents({
       body: {
@@ -48,7 +48,7 @@ test('an action opens Recent activity filtered by it, keeping the window', async
 
   await expect
     .element(screen.getByRole('link', { name: 'purchase' }))
-    .toHaveAttribute('href', `${feedPath}?range=7d&action=purchase`)
+    .toHaveAttribute('href', `${feedPath}?action=purchase`)
 })
 
 test('reads the section window from the URL', async () => {

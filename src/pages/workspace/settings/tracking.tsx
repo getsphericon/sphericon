@@ -20,7 +20,7 @@ import {
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useFormat } from '../../../hooks/useFormat.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
+import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
@@ -55,7 +55,7 @@ function InstallStatus({ workspaceId }: { workspaceId: string }) {
           {t(($) => $.settings.installStatusWaiting)}
         </Badge>
       )}
-      <AnchorLink to={recentActivityRoute.to} params={{ workspaceId }} size="sm">
+      <AnchorLink to={activityRoute.to} params={{ workspaceId }} size="sm">
         {t(($) => $.settings.viewActivity)}
       </AnchorLink>
     </Group>

@@ -1,13 +1,13 @@
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsActions, handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
-import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
-import { routeMount } from '../../../test/routeMount.ts'
-import { worker } from '../../../test/worker.ts'
-import { RecentActivityPage } from './recentActivity.tsx'
+import { handleSiteEventsActions, handleSiteEventsList } from '../../generated/site/msw.gen.ts'
+import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
+import { worker } from '../../test/worker.ts'
+import { ActivityPage } from './page.tsx'
 
-const mount = routeMount(recentActivityRoute, { workspaceId: 'TestWs01' })
+const mount = routeMount(activityRoute, { workspaceId: 'TestWs01' })
 
 const noActions = () => handleSiteEventsActions({ body: { actions: [] } })
 
@@ -35,7 +35,7 @@ const eventsPage = () =>
 test('renders the event feed with a live toggle and action filter', async () => {
   worker.use(noActions(), eventsPage())
 
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('purchase')).toBeInTheDocument()
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
@@ -47,7 +47,7 @@ test('renders the event feed with a live toggle and action filter', async () => 
 test('expands a row to reveal the full event properties', async () => {
   worker.use(noActions(), eventsPage())
 
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await screen.getByText('purchase').click()
 
@@ -79,7 +79,7 @@ test('says an email event of a send through a Test inbox was captured, not deliv
     }),
   )
 
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Received an email')).toBeInTheDocument()
   await expect.element(screen.getByText('Captured, not delivered')).toBeInTheDocument()

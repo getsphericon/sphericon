@@ -1,5 +1,6 @@
 import { Badge, NavLink, Stack } from '@mantine/core'
 import {
+  IconActivity,
   IconBell,
   IconBolt,
   IconBrowser,
@@ -27,13 +28,13 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { zSiteAnalyticsRange } from '../generated/site/zod.gen.ts'
+import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as clicksByLinkRoute } from '../routes/workspaces/$workspaceId/analytics/clicks-by-link.tsx'
 import { Route as deliverabilityRoute } from '../routes/workspaces/$workspaceId/analytics/deliverability.tsx'
 import { Route as emailMetricsRoute } from '../routes/workspaces/$workspaceId/analytics/email-metrics.tsx'
 import { Route as eventsRoute } from '../routes/workspaces/$workspaceId/analytics/events.tsx'
 import { Route as newPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/new-people.tsx'
 import { Route as opensByHourRoute } from '../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
-import { Route as recentActivityRoute } from '../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as subscribedPeopleRoute } from '../routes/workspaces/$workspaceId/analytics/subscribed-people.tsx'
 import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as brandKitRoute } from '../routes/workspaces/$workspaceId/brand-kit.tsx'
@@ -143,7 +144,6 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
     { route: opensByHourRoute, label: t(($) => $.analytics.nav.opensByHour) },
     { route: deliverabilityRoute, label: t(($) => $.analytics.nav.deliverability) },
     { route: eventsRoute, label: t(($) => $.analytics.nav.events) },
-    { route: recentActivityRoute, label: t(($) => $.analytics.nav.recentActivity) },
   ]
 
   return (
@@ -175,6 +175,11 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       >
         {workflows.map((item) => link(item))}
       </NavLink>
+      {link({
+        route: activityRoute,
+        label: t(($) => $.nav.activity),
+        icon: <IconActivity size={18} />,
+      })}
       <NavLink label={t(($) => $.nav.website)} leftSection={<IconBrowser size={18} />}>
         {website.map((item) => (
           <NavLink

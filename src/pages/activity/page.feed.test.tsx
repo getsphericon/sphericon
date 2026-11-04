@@ -1,16 +1,16 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteEventsActions, handleSiteEventsList } from '../../../generated/site/msw.gen.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
-import { problem } from '../../../test/problem.ts'
-import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
-import { routeMount } from '../../../test/routeMount.ts'
-import { worker } from '../../../test/worker.ts'
-import { RecentActivityPage } from './recentActivity.tsx'
+import { handleSiteEventsActions, handleSiteEventsList } from '../../generated/site/msw.gen.ts'
+import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
+import { problem } from '../../test/problem.ts'
+import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
+import { worker } from '../../test/worker.ts'
+import { ActivityPage } from './page.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
-const mount = routeMount(recentActivityRoute, { workspaceId: WORKSPACE_ID })
+const mount = routeMount(activityRoute, { workspaceId: WORKSPACE_ID })
 
 const event = (id: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -47,14 +47,14 @@ function serveEvents(queries: Query[], totalItems = 1) {
 
 test('an event without an email shows its subject id', async () => {
   serveEvents([])
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('anon:1')).toBeInTheDocument()
 })
 
 test('picking a System event by its name puts its action in the URL, on the first page, in the same window', async () => {
   serveEvents([], 60)
-  const { screen, navigate, router } = await renderWithRouter(<RecentActivityPage />, {
+  const { screen, navigate, router } = await renderWithRouter(<ActivityPage />, {
     ...mount,
     initialPath: `${mount.initialPath}?range=30d&page=2`,
   })
@@ -70,7 +70,7 @@ test('picking a System event by its name puts its action in the URL, on the firs
 test('the page in the URL is the page of the feed requested', async () => {
   const queries: Query[] = []
   serveEvents(queries, 60)
-  await renderWithRouter(<RecentActivityPage />, {
+  await renderWithRouter(<ActivityPage />, {
     ...mount,
     initialPath: `${mount.initialPath}?page=2&action=purchase`,
   })
@@ -81,7 +81,7 @@ test('the page in the URL is the page of the feed requested', async () => {
 test('the action search param is the starting filter', async () => {
   const queries: Query[] = []
   serveEvents(queries)
-  const { screen } = await renderWithRouter(<RecentActivityPage />, {
+  const { screen } = await renderWithRouter(<ActivityPage />, {
     ...mount,
     initialPath: `${mount.initialPath}?action=purchase`,
   })
@@ -93,7 +93,7 @@ test('the action search param is the starting filter', async () => {
 test('an action in the URL the Workspace has not recorded stays the filter', async () => {
   const queries: Query[] = []
   serveEvents(queries)
-  const { screen } = await renderWithRouter(<RecentActivityPage />, {
+  const { screen } = await renderWithRouter(<ActivityPage />, {
     ...mount,
     initialPath: `${mount.initialPath}?action=signup`,
   })
@@ -107,7 +107,7 @@ test('shows an error alert when the feed fails to load', async () => {
     handleSiteEventsActions({ body: { actions: [] } }),
     handleSiteEventsList(() => problem(500)),
   )
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
+  const { screen } = await renderWithRouter(<ActivityPage />, mount)
 
   await expect.element(screen.getByText('Failed to load activity').first()).toBeInTheDocument()
 })

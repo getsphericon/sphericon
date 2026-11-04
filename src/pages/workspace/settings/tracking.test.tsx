@@ -13,7 +13,7 @@ import type {
   SiteTrackingDomainResource,
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
-import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
+import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -301,10 +301,7 @@ test('the activity link points at the workspace activity feed', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Open activity feed' }))
-    .toHaveAttribute(
-      'href',
-      routeMount(recentActivityRoute, { workspaceId: 'TestWs01' }).initialPath,
-    )
+    .toHaveAttribute('href', routeMount(activityRoute, { workspaceId: 'TestWs01' }).initialPath)
 })
 
 test('shows an error alert when the workspaces fail to load', async () => {

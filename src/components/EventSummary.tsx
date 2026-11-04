@@ -27,7 +27,7 @@ interface Row {
   event: SiteEventResource
 }
 
-// EventSummary is an Event's row in a feed (a Contact's events, Recent activity): a System event
+// EventSummary is an Event's row in a feed (a Contact's events, the Activity feed): a System event
 // about a Contact names what it is about, the Tag, the Custom field or the Automation, as a link
 // while that still exists; a page view names the page. Any other Event shows its action by its
 // words (EventActionName).
