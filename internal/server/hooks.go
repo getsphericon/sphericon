@@ -97,6 +97,18 @@ func presetNameOf(row *ent.Integration) string {
 	return ""
 }
 
+// requestURL is the full URL the provider posted to: the Integration's hook URL on the public
+// address (what sphericon shows, and gives a provider to call), with the query the request came
+// with. It is built from the configured address rather than the request's scheme and host, which
+// a proxy in front of the server rewrites (behind Caddy the request arrives over plain HTTP).
+func (h *hook) requestURL(r *http.Request, row *ent.Integration) string {
+	u := h.integ.HookURL(row)
+	if r.URL.RawQuery != "" {
+		u += "?" + r.URL.RawQuery
+	}
+	return u
+}
+
 func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Integration, name string, body []byte) {
 	ctx := r.Context()
 	log := logging.FromContext(ctx)
@@ -112,7 +124,8 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 		writeProblem(w, http.StatusInternalServerError, "integration params unavailable")
 		return
 	}
-	res, err := p.Handle(ctx, preset.Request{Header: r.Header, Body: body}, params, h.now())
+	req := preset.Request{URL: h.requestURL(r, row), Header: r.Header, Body: body}
+	res, err := p.Handle(ctx, req, params, h.now())
 	switch {
 	case errors.Is(err, preset.ErrUnauthentic):
 		writeProblem(w, http.StatusForbidden, "the request is not authentic")

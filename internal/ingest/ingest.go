@@ -102,10 +102,10 @@ func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
 }
 
 // Interpret writes what the facts of one request mean on the Integration's Channel, in one
-// transaction of s's Workspace. An Inbound message that names another Channel than the
-// Integration's (an Integration serves one Channel, ADR 0074) is the Preset's mistake: it is
-// dropped and logged, so the rest of the request still counts and the provider does not
-// redeliver it forever.
+// transaction of s's Workspace. A Delivery notice or an Inbound message that names another
+// Channel than the Integration's (an Integration serves one Channel, ADR 0074) is the Preset's
+// mistake: it is dropped and logged, so the rest of the request still counts and the provider
+// does not redeliver it forever.
 func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time) error {
 	if res.Empty() {
 		return nil
@@ -115,8 +115,14 @@ func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, row *ent.Integrat
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		after = after[:0]
 		tx := Tx{Scoped: ts, Pub: pub, Integration: row, Preset: presetName, Now: now, after: &after}
-		for _, n := range res.Notices {
-			if err := interp.DeliveryNotice(ctx, tx, n); err != nil {
+		for i := range res.Notices {
+			n := &res.Notices[i]
+			if string(n.Channel) != string(row.Channel) {
+				logging.FromContext(ctx).Warn("ingest: a Delivery notice of another Channel than its Integration's is dropped",
+					"integration_id", row.ID, "preset", presetName, "channel", n.Channel, "event_id", n.ID)
+				continue
+			}
+			if err := interp.DeliveryNotice(ctx, tx, *n); err != nil {
 				return err
 			}
 		}

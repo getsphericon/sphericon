@@ -1,0 +1,233 @@
+# yaml-language-server: $schema=../preset.schema.json
+version: 1
+name: twilio
+description: Twilio's inbound message and message status callbacks of a Workspace's SMS sender, signed with the account's Auth Token.
+params:
+  type: object
+  required: [auth_token]
+  additionalProperties: false
+  properties:
+    auth_token:
+      type: string
+      title: Auth Token
+      description: The Auth Token of the Twilio account. Twilio signs every callback with it, even when messages are sent with an API key.
+      writeOnly: true
+# Twilio posts form-encoded callbacks and signs them in X-Twilio-Signature: the base64 HMAC-SHA1,
+# keyed with the Auth Token, of the full URL it posted to followed by the POST parameters sorted by
+# name, each name followed by its value (Twilio's "Webhooks security").
+verify:
+  kind: twilio
+  secret: auth_token
+# Reading the callbacks (ADR 0076). A callback that carries MessageStatus is the status callback
+# of a message we sent: it is a Delivery notice on `sms` for the number it went To, keyed by the
+# message SID and the status (Twilio posts several statuses for one message), carrying Twilio's
+# status and error code as they came. Its kind is provisional until the delivery-reports ticket
+# settles which statuses mean what: delivered is a delivery; undelivered, failed and canceled are
+# a drop; the statuses on the way (queued, sending, sent, ...) are a delay. A callback without a
+# MessageStatus that carries a Body is a message a person sent From their number: an Inbound
+# message, whose meaning (a STOP, a reply) the core reads. A repeated parameter is not read.
+transform: |
+  def keep: with_entries(select(.value != null and .value != ""));
+  def str: if type == "string" then . else null end;
+  def kindOf: if . == "delivered" then "delivery"
+    elif . == "undelivered" or . == "failed" or . == "canceled" then "drop"
+    else "delay" end;
+  [(.body | objects) as $b
+   | ($b.MessageSid | str) as $sid
+   | ($b.MessageStatus | str) as $status
+   | select($sid != null and $sid != "")
+   | if $status != null then
+       ($b.To | str) as $to
+       | select($status != "" and $to != null and $to != "")
+       | {kind: ($status | kindOf), id: ($sid + "/" + $status), channel: "sms", destination: $to,
+          message_id: $sid, status: $status, error_code: ($b.ErrorCode | str)}
+     else
+       ($b.From | str) as $from
+       | select(($b.Body | type) == "string" and $from != null and $from != "")
+       | {kind: "inbound_message", id: $sid, channel: "sms", destination: $from, message_id: $sid, text: $b.Body}
+     end
+   | keep]
+tests:
+  - name: an inbound message becomes an Inbound message from the sender's number
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: M6szQvEa49xZQtMObRCEpTDEmHg=
+      body: ToCountry=US&ToState=CA&SmsMessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&NumMedia=0&ToCity=SAN+FRANCISCO&FromZip=94105&SmsSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&FromState=CA&SmsStatus=received&FromCity=SAN+FRANCISCO&Body=Yes%2C+see+you+at+5+%F0%9F%91%8D&FromCountry=US&To=%2B15017250604&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&ToZip=94105&NumSegments=1&MessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      inbound_messages:
+        - id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
+          channel: sms
+          destination: '+14155552671'
+          message_id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
+          text: Yes, see you at 5 👍
+  - name: an undelivered status callback becomes a Delivery notice with Twilio's status and error code
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        X-Twilio-Signature: z2BJZS3s/lXaa7fFTvw9i9X4Y38=
+      body: ErrorCode=30003&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=undelivered&MessageStatus=undelivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031205
+    expect:
+      notices:
+        - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/undelivered
+          channel: sms
+          destination: '+14155552671'
+          kind: drop
+          message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
+          status: undelivered
+          error_code: '30003'
+  - name: a delivered status callback becomes a delivery
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: kU5TFF78uzd+uBQJDvulhS2bxEw=
+      body: SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=delivered&MessageStatus=delivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031204
+    expect:
+      notices:
+        - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/delivered
+          channel: sms
+          destination: '+14155552671'
+          kind: delivery
+          message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
+          status: delivered
+  - name: a sent status callback keeps its status on a delay
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: r+zPH+GxwwPlSWDWrQtmOy7+zgY=
+      body: AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&MessageStatus=sent&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=sent&To=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      notices:
+        - id: SM1342fe1b2c904d1ab04f0fc7a58abca9/sent
+          channel: sms
+          destination: '+14155552671'
+          kind: delay
+          message_id: SM1342fe1b2c904d1ab04f0fc7a58abca9
+          status: sent
+  - name: the URL's query is part of what is signed
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio?region=ie1
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: C0uzQ+w6nhaMtieB+JmO7s1rO6U=
+      body: ToCountry=US&ToState=CA&SmsMessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&NumMedia=0&ToCity=SAN+FRANCISCO&FromZip=94105&SmsSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&FromState=CA&SmsStatus=received&FromCity=SAN+FRANCISCO&Body=Yes%2C+see+you+at+5+%F0%9F%91%8D&FromCountry=US&To=%2B15017250604&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&ToZip=94105&NumSegments=1&MessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      inbound_messages:
+        - id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
+          channel: sms
+          destination: '+14155552671'
+          message_id: SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f
+          text: Yes, see you at 5 👍
+  # Twilio's published example ("Webhooks security"): a voice callback, which the transform does
+  # not read, so it verifies and yields nothing.
+  - name: Twilio's published example verifies
+    params:
+      auth_token: '12345'
+    request:
+      url: https://example.com/myapp.php?foo=1&bar=2
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: L/OH5YylLD5NRKLltdqwSvS0BnU=
+      body: CallSid=CA1234567890ABCDE&Caller=%2B14158675310&Digits=1234&From=%2B14158675310&To=%2B18005551212
+    expect:
+      notices: []
+  - name: Twilio's published example with another token is refused
+    params:
+      auth_token: '54321'
+    request:
+      url: https://example.com/myapp.php?foo=1&bar=2
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: L/OH5YylLD5NRKLltdqwSvS0BnU=
+      body: CallSid=CA1234567890ABCDE&Caller=%2B14158675310&Digits=1234&From=%2B14158675310&To=%2B18005551212
+    expect:
+      refused: unauthentic
+  - name: a wrong signature is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: kU5TFF78uzd+uBQJDvulhS2bxEw=
+      body: ErrorCode=30003&SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=undelivered&MessageStatus=undelivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031205
+    expect:
+      refused: unauthentic
+  - name: a callback without the signature header is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=delivered&MessageStatus=delivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031204
+    expect:
+      refused: unauthentic
+  - name: a callback signed for another URL is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_another
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: kU5TFF78uzd+uBQJDvulhS2bxEw=
+      body: SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=delivered&MessageStatus=delivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031204
+    expect:
+      refused: unauthentic
+  - name: a callback whose query was changed is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio?region=us1
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: C0uzQ+w6nhaMtieB+JmO7s1rO6U=
+      body: ToCountry=US&ToState=CA&SmsMessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&NumMedia=0&ToCity=SAN+FRANCISCO&FromZip=94105&SmsSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&FromState=CA&SmsStatus=received&FromCity=SAN+FRANCISCO&Body=Yes%2C+see+you+at+5+%F0%9F%91%8D&FromCountry=US&To=%2B15017250604&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&ToZip=94105&NumSegments=1&MessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      refused: unauthentic
+  - name: a changed parameter is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: M6szQvEa49xZQtMObRCEpTDEmHg=
+      body: ToCountry=US&ToState=CA&SmsMessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&NumMedia=0&ToCity=SAN+FRANCISCO&FromZip=94105&SmsSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&FromState=CA&SmsStatus=received&FromCity=SAN+FRANCISCO&Body=STOP&FromCountry=US&To=%2B15017250604&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&ToZip=94105&NumSegments=1&MessageSid=SM9b7f3c2e1a0d4c5b8e6f7a8b9c0d1e2f&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B14155552671&ApiVersion=2010-04-01
+    expect:
+      refused: unauthentic
+  - name: a callback with no URL to check it against is refused
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: kU5TFF78uzd+uBQJDvulhS2bxEw=
+      body: SmsSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&SmsStatus=delivered&MessageStatus=delivered&To=%2B14155552671&MessagingServiceSid=MG2172dd2db502e20dd981ef0d67850e1a&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&AccountSid=ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&From=%2B15017250604&ApiVersion=2010-04-01&RawDlrDoneDate=2611031204
+    expect:
+      refused: unauthentic
+  - name: a body that is not form-encoded is malformed
+    params:
+      auth_token: twilio-test-auth-token-0123456789
+    request:
+      url: https://sphericon.example/hooks/omik_test_twilio
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        X-Twilio-Signature: kU5TFF78uzd+uBQJDvulhS2bxEw=
+      body: MessageSid=%zz
+    expect:
+      refused: malformed

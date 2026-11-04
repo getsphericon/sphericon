@@ -61,9 +61,10 @@ func (p *Preset) WriteSample(ctx context.Context, w io.Writer, req Request, para
 		_, _ = fmt.Fprintf(w, "refused: %v\n", err)
 		return err
 	}
-	for _, n := range res.Notices {
-		_, _ = fmt.Fprintf(w, "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
-			noticeKind(n), n.Destination, n.ID, n.SendingDomain, n.MessageID, n.Reason)
+	for i := range res.Notices {
+		n := &res.Notices[i]
+		_, _ = fmt.Fprintf(w, "%s %s id=%s sending_domain=%s message_id=%s reason=%q channel=%s status=%s error_code=%s\n",
+			noticeKind(n), n.Destination, n.ID, n.SendingDomain, n.MessageID, n.Reason, n.Channel, n.Status, n.ErrorCode)
 	}
 	for i := range res.InboundMessages {
 		m := &res.InboundMessages[i]
@@ -84,7 +85,7 @@ func (p *Preset) WriteSample(ctx context.Context, w io.Writer, req Request, para
 }
 
 // noticeKind is the kind of a notice as printed: a bounce says whether it is hard or soft.
-func noticeKind(n DeliveryNotice) string {
+func noticeKind(n *DeliveryNotice) string {
 	if n.Kind != Bounce {
 		return string(n.Kind)
 	}

@@ -175,6 +175,22 @@ func TestAnEmailIntegrationAcceptsInboundMessagesAndReachabilityChangesAndRecord
 	assert.Empty(t, env.OutboxEvents(t))
 }
 
+// A Delivery notice its Preset says is about a message of another Channel is the Preset's mistake
+// on an email Integration: it is accepted and records nothing, while the email notice beside it
+// still counts.
+func TestAnEmailIntegrationRecordsNothingOfADeliveryNoticeOnAnotherChannel(t *testing.T) {
+	env := setupHooks(t)
+	body := `[{"id":"evt_1","channel":"sms","destination":"+14155552671","kind":"bounce","hard":true,"status":"undelivered","error_code":"30003"},` +
+		failureBody("evt_2", fixtures.ContactAliceEmail, true) + `]`
+
+	rec := signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	got := env.OutboxEvents(t, deliveryNames...)
+	require.Len(t, got, 1)
+	assert.Len(t, outboxEvents(t, env, fixtures.ContactAliceEmail), 1)
+}
+
 // A malformed fact of a new kind fails the transform as a malformed Delivery notice does: the
 // request is verified, so the fault is the Preset's, and nothing of it is recorded.
 func TestAMalformedFactIsRefusedLikeAMalformedDeliveryNotice(t *testing.T) {

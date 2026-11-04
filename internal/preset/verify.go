@@ -13,7 +13,9 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"maps"
 	"net/http"
+	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
@@ -75,6 +77,8 @@ func newVerifier(c verifyConfig, o options) (verifier, error) {
 		return &snsVerifier{c: c, certs: o.certs}, nil
 	case "hmac_body":
 		return &hmacBody{c: c, tolerance: tolerance}, nil
+	case "twilio":
+		return &twilioVerifier{secret: c.Secret}, nil
 	}
 	return nil, fmt.Errorf("verify: unknown kind %q", c.Kind)
 }
@@ -361,4 +365,57 @@ func bodyField(body any, path string) (string, error) {
 		return v.String(), nil
 	}
 	return "", fmt.Errorf("body field %s is not a string", path)
+}
+
+// twilio -----------------------------------------------------------------------------
+
+// twilioSignatureHeader is the header Twilio signs a callback in.
+const twilioSignatureHeader = "X-Twilio-Signature"
+
+// twilioVerifier checks Twilio's signature ("Webhooks security"): the base64 HMAC-SHA1, keyed
+// with the Auth Token, of the full URL the callback was posted to followed by its POST
+// parameters sorted by name (byte order, case-sensitive), each name followed by its value. The
+// values of a repeated name follow it sorted, as Twilio's reference validator signs them. It reads
+// the form body, so the engine parses it under the body limit first; the signature covers the
+// parameters as they were sent, not the object the transform sees.
+type twilioVerifier struct{ secret string }
+
+func (*twilioVerifier) overBody() bool { return true }
+
+func (t *twilioVerifier) verify(_ context.Context, req Request, _ any, params Params, _ time.Time) error {
+	secrets := secretsOf(params, t.secret)
+	if len(secrets) == 0 {
+		return errNoSecret
+	}
+	if req.URL == "" {
+		return errors.New("the request URL is unknown")
+	}
+	value := req.Header.Get(twilioSignatureHeader)
+	if value == "" {
+		return fmt.Errorf("header %s is missing", twilioSignatureHeader)
+	}
+	signature, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		return fmt.Errorf("header %s is not base64: %w", twilioSignatureHeader, err)
+	}
+	values, err := url.ParseQuery(string(req.Body))
+	if err != nil {
+		return fmt.Errorf("body is not form-encoded: %w", err)
+	}
+	if !macMatches(sha1.New, secrets, twilioSigned(req.URL, values), signature) {
+		return errors.New("signature does not match")
+	}
+	return nil
+}
+
+// twilioSigned is the content Twilio signs: the URL, then each parameter's name and value.
+func twilioSigned(rawURL string, values url.Values) []byte {
+	content := []byte(rawURL)
+	for _, name := range slices.Sorted(maps.Keys(values)) {
+		for _, v := range slices.Sorted(slices.Values(values[name])) {
+			content = append(content, name...)
+			content = append(content, v...)
+		}
+	}
+	return content
 }

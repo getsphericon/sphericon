@@ -46,10 +46,12 @@ func presetTestCommand() *cli.Command {
 		Description: "Without --payload, runs the `tests` the Preset carries and prints PASS or FAIL for each case.\n" +
 			"With --payload, verifies the sample with the Preset's scheme (--header name=value and\n" +
 			"--param name=value, repeatable, supply the request headers and the Integration's params,\n" +
-			"secrets included) and prints the facts it makes (Delivery notices, Inbound messages and\n" +
-			"Reachability changes), or the reason it was refused.",
+			"secrets included; --url the URL it was posted to, for a scheme that signs it) and prints\n" +
+			"the facts it makes (Delivery notices, Inbound messages and Reachability changes), or the\n" +
+			"reason it was refused.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "payload", Usage: "file holding the raw request body to run the Preset on"},
+			&cli.StringFlag{Name: "url", Usage: "the full URL the sample was posted to, query included"},
 			&cli.StringSliceFlag{Name: "header", Usage: "request header of the sample, name=value"},
 			&cli.StringSliceFlag{Name: "param", Usage: "Integration param of the sample, name=value"},
 			&cli.StringFlag{Name: "now", Usage: "the clock for the sample, an RFC 3339 time (default: now)"},
@@ -102,7 +104,7 @@ func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) 
 			return preset.Request{}, nil, time.Time{}, fmt.Errorf("--now is not an RFC 3339 time: %w", err)
 		}
 	}
-	return preset.Request{Header: header, Body: body}, params, now, nil
+	return preset.Request{URL: cmd.String("url"), Header: header, Body: body}, params, now, nil
 }
 
 // pairs reads repeated name=value flags.
