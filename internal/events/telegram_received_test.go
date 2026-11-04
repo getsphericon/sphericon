@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -110,18 +111,17 @@ func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, say(9, 4001, "yes please"))
 	envelopes := env.OutboxEnvelopes(t, events.NameTelegramReceived)
 	require.Len(t, envelopes, 1)
-	client := queueingJobs(t, env)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameTelegramReceived}).ExecX(t.Context())
 
 	env.WorkAutomationJobs(t)
-	require.NoError(t, events.WebhooksConsumer(env.DB, client)(events.Message(envelopes[0])))
+	env.WorkWebhookJobOf(t, envelopes[0])
 
 	triggers := lo.Filter(env.JobsOf(t, jobkind.EvaluateTrigger.Kind), func(args map[string]any, _ int) bool {
 		return args["action"] == events.NameTelegramReceived
 	})
 	require.Len(t, triggers, 1)
 	assert.EqualValues(t, fixtures.ContactBobID, triggers[0]["contact_id"])
-	delivered := deliveries(t, env)
-	require.Contains(t, delivered, int64(fixtures.WebhookCodebasicsID))
-	assert.Equal(t, events.NameTelegramReceived, delivered[fixtures.WebhookCodebasicsID].Body.Type)
+	delivered, ok := lo.Find(env.QueuedDeliveries(t), func(d jobs.DeliverWebhookArgs) bool { return d.EndpointID == fixtures.WebhookCodebasicsID })
+	require.True(t, ok, "the subscribed endpoint gets a delivery")
+	assert.Equal(t, events.NameTelegramReceived, delivered.EventName)
 }

@@ -75,6 +75,38 @@ func (env *TestEnv) WorkRuleJobOf(t *testing.T, published events.Envelope) {
 	WorkEventJobOf(t, env, jobs.NewRuleEventWorker(env.Inserter(t)), published)
 }
 
+// webhookWorker is the webhooks consumer's worker as the application builds it: its dispatcher
+// queues the deliveries in the test's transaction, behind the Edition's license gate.
+func (env *TestEnv) webhookWorker(t *testing.T) *jobs.WebhookEventWorker {
+	t.Helper()
+	return jobs.NewWebhookEventWorker(env.DB, env.edition.Webhooks(jobs.NewWebhookDispatcher(env.Inserter(t))))
+}
+
+// WorkWebhookJobs works every queued webhooks job (WorkEventJobs): each queues one delivery per
+// enabled endpoint of the event's Workspace whose filter matches.
+func (env *TestEnv) WorkWebhookJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, env.webhookWorker(t))
+}
+
+// WorkWebhookJobOf works the webhooks job the publish of published inserted, if any
+// (WorkEventJobOf).
+func (env *TestEnv) WorkWebhookJobOf(t *testing.T, published events.Envelope) {
+	t.Helper()
+	WorkEventJobOf(t, env, env.webhookWorker(t), published)
+}
+
+// QueuedDeliveries are the queued webhook deliveries, oldest first.
+func (env *TestEnv) QueuedDeliveries(t *testing.T) []jobs.DeliverWebhookArgs {
+	t.Helper()
+	queued := env.JobsOf(t, jobs.DeliverWebhookArgs{}.Kind())
+	out := make([]jobs.DeliverWebhookArgs, 0, len(queued))
+	for _, args := range queued {
+		out = append(out, decodeArgs[jobs.DeliverWebhookArgs](t, args))
+	}
+	return out
+}
+
 // Inserter is a river client over the test's connection with the application's configuration,
 // for a worker that queues follow-up jobs: what it queues is in the test's transaction, where
 // JobsOf reads it.

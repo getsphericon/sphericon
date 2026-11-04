@@ -31,11 +31,11 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	env.AgeOutbox(t, 2*time.Minute)
 	rows := env.OutboxRows(t)
 	last := rows[len(rows)-1]
-	env.SetOutboxCursor(t, events.GroupWebhooks, last.TxID, &last.Offset)
+	env.SetOutboxCursor(t, events.GroupAudit, last.TxID, &last.Offset)
 
 	scrape := metricstest.ScrapeMetrics(t)
-	assert.Zero(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": events.GroupWebhooks}), "caught up")
-	for _, g := range []string{events.GroupAudit, events.GroupExport} {
+	assert.Zero(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": events.GroupAudit}), "caught up")
+	for _, g := range []string{events.GroupExport} {
 		assert.GreaterOrEqual(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": g}), 120.0, g)
 	}
 }
@@ -50,9 +50,9 @@ func TestDeadLettersAreReportedPerConsumerGroup(t *testing.T) {
 	// test writes: a dead letter is written by the router's poison queue, which this test of the
 	// gauge does not run.
 	env.DB.OutboxDeadLetter.Create().SetUUID("dead-1").SetCreatedAt(time.Now()).SetTransactionID("1").
-		SetPayload([]byte(`{}`)).SetMetadata([]byte(`{"consumer_group":"webhooks"}`)).ExecX(t.Context())
+		SetPayload([]byte(`{}`)).SetMetadata([]byte(`{"consumer_group":"export"}`)).ExecX(t.Context())
 
 	scrape := metricstest.ScrapeMetrics(t)
-	assert.InDelta(t, 1.0, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupWebhooks}), 0)
+	assert.InDelta(t, 1.0, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupExport}), 0)
 	assert.Zero(t, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupAudit}))
 }

@@ -456,9 +456,7 @@ var editionPackage = do.Package(
 	// Every consumer group's handler: the router runs them, and a replay of a group's dead
 	// letters runs that group's.
 	do.Lazy(func(i do.Injector) (events.ConsumerHandlers, error) {
-		edition := do.MustInvoke[*ee.Edition](i)
-		jc := do.MustInvoke[*jobsClient](i)
-		return events.Handlers(do.MustInvoke[*ent.Client](i), edition.Webhooks(jc.Client), edition.Consumers), nil
+		return events.Handlers(do.MustInvoke[*ee.Edition](i).Consumers), nil
 	}),
 )
 

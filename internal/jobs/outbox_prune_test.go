@@ -70,7 +70,7 @@ func TestPruneOutboxDeletesRowsBelowLowestCursorPastFloor(t *testing.T) {
 	env.AgeOutbox(t, outboxFloor+time.Hour, off[0], off[2], off[3])
 	setAllCursors(t, env, tx, off[3])
 	lag := off[2]
-	env.SetOutboxCursor(t, events.GroupWebhooks, tx, &lag)
+	env.SetOutboxCursor(t, events.GroupAudit, tx, &lag)
 
 	prune(t, env)
 
@@ -98,7 +98,7 @@ func TestPruneOutboxSkipsWhenAGroupHasNullAck(t *testing.T) {
 	tx := env.OutboxRows(t)[0].TxID
 	env.AgeOutbox(t, outboxFloor+time.Hour)
 	setAllCursors(t, env, tx, off[1])
-	env.SetOutboxCursor(t, events.GroupWebhooks, tx, nil)
+	env.SetOutboxCursor(t, events.GroupAudit, tx, nil)
 
 	prune(t, env)
 

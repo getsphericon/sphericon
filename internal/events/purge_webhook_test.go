@@ -18,8 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// deliveryBody publishes ev through the real bus and runs the webhooks consumer over the
-// stored envelope, so the body is exactly what dispatch hands to a queued delivery.
+// deliveryBody publishes ev through the real bus and works the webhooks job it inserted, so the
+// body is exactly what dispatch hands to a queued delivery.
 func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) []byte {
 	t.Helper()
 	ctx := context.Background()
@@ -30,15 +30,11 @@ func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) 
 	envelopes := env.OutboxEnvelopes(t)
 	require.Len(t, envelopes, before+1)
 
-	queued := len(env.JobsOf(t, jobkind.DeliverWebhook.Kind))
-	require.NoError(t, events.WebhooksConsumer(env.DB, queueingJobs(t, env))(events.Message(envelopes[before])))
-	after := env.JobsOf(t, jobkind.DeliverWebhook.Kind)
+	queued := len(env.QueuedDeliveries(t))
+	env.WorkWebhookJobOf(t, envelopes[before])
+	after := env.QueuedDeliveries(t)
 	require.Len(t, after, queued+1)
-	encoded, err := json.Marshal(after[queued])
-	require.NoError(t, err)
-	var job jobs.DeliverWebhookArgs
-	require.NoError(t, json.Unmarshal(encoded, &job))
-	return job.Body
+	return after[queued].Body
 }
 
 // withoutPath returns body with the JSON object member at path removed, so a delivery

@@ -4,41 +4,14 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-func rawMsg(payload string) *message.Message {
-	return message.NewMessage(watermill.NewUUID(), []byte(payload))
-}
-
 func envelopeOf(name, data string) events.Envelope {
 	return events.Envelope{ID: "evt", Name: name, Version: 1, WorkspaceID: 1, Data: json.RawMessage(data)}
-}
-
-func envelopeMsg(t *testing.T, name, data string) *message.Message {
-	t.Helper()
-	body, err := json.Marshal(envelopeOf(name, data))
-	require.NoError(t, err)
-	return rawMsg(string(body))
-}
-
-// Every consumer rejects a payload that is not an envelope and an envelope it
-// cannot decode, so the router retries or parks the message instead of dropping it
-// silently. (The error comes before the consumer touches its dependency, hence nil.)
-func TestConsumersRejectUndecodableMessages(t *testing.T) {
-	consumers := map[string]message.NoPublishHandlerFunc{
-		"webhooks": events.WebhooksConsumer(nil, nil),
-	}
-	for name, handle := range consumers {
-		require.Error(t, handle(rawMsg("not json")), name+": not an envelope")
-		require.ErrorContains(t, handle(envelopeMsg(t, "no.such.event", "{}")), "unknown event", name)
-		require.ErrorContains(t, handle(envelopeMsg(t, events.NameContactCreated, `"scalar"`)), "decode", name)
-	}
 }
 
 // The suppression consumer hands the envelope to Suppress, which refuses one it cannot decode

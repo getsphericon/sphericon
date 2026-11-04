@@ -62,6 +62,9 @@ type Client struct {
 type Extension struct {
 	Workers      func(*river.Workers)
 	PeriodicJobs []*river.PeriodicJob
+	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
+	// Edition's license gate on Audit entries, ADR 0022).
+	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
 }
 
 // Retention groups the data-retention settings of the prune jobs.
@@ -143,14 +146,19 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, NewOrderEventWorker(entClient, orders.New(acc)))
 	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
 	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
+	dispatcher := NewWebhookDispatcher(clientInserter{c})
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
 		if e.Workers != nil {
 			e.Workers(workers)
 		}
+		if e.Webhooks != nil {
+			dispatcher = e.Webhooks(dispatcher)
+		}
 		extraPeriodic = append(extraPeriodic, e.PeriodicJobs...)
 	}
+	river.AddWorker(workers, NewWebhookEventWorker(entClient, dispatcher))
 
 	logger := slog.Default()
 	cfg := newRiverConfig(workers, logger, extraPeriodic...)

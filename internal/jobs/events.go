@@ -25,7 +25,47 @@ func EventConsumers() []events.Consumer {
 		{Wants: isOrder, Job: func(env events.Envelope) river.JobArgs { return OrderEventArgs{events.EventJob{Envelope: env}} }},
 		{Wants: triggers, Job: func(env events.Envelope) river.JobArgs { return AutomationEventArgs{events.EventJob{Envelope: env}} }},
 		{Wants: firesRules, Job: func(env events.Envelope) river.JobArgs { return RuleEventArgs{events.EventJob{Envelope: env}} }},
+		{Wants: reachesWebhooks, Job: func(env events.Envelope) river.JobArgs { return WebhookEventArgs{events.EventJob{Envelope: env}} }},
 	}
+}
+
+// WebhookEventArgs is the webhooks consumer's job (ADR 0039): an event to fan out to the
+// Workspace's Webhook endpoints. The producer never reads the endpoints; the job does.
+type WebhookEventArgs struct {
+	events.EventJob
+}
+
+func (WebhookEventArgs) Kind() string { return "event_webhook" }
+
+// reachesWebhooks wants every live event: loaded history is recorded, never delivered. Which
+// endpoints receive one is the job's to find.
+func reachesWebhooks(_ events.Envelope, ev events.DomainEvent) bool {
+	return !events.IsBackfill(ev)
+}
+
+// WebhookEventWorker serializes an event into its public webhook body (events.WebhookDeliveryOf)
+// and hands it to the dispatcher, which queues one delivery job per enabled endpoint whose filter
+// matches. It is a raw-client entry (ADR 0017): the envelope carries only a Workspace id, so the
+// scope handed to the dispatcher is built here.
+type WebhookEventWorker struct {
+	river.WorkerDefaults[WebhookEventArgs]
+
+	ent        *ent.Client
+	dispatcher events.WebhookDispatcher
+}
+
+// NewWebhookEventWorker is the webhooks consumer's worker over the raw client and dispatcher.
+func NewWebhookEventWorker(client *ent.Client, dispatcher events.WebhookDispatcher) *WebhookEventWorker {
+	return &WebhookEventWorker{ent: client, dispatcher: dispatcher}
+}
+
+func (w *WebhookEventWorker) Work(ctx context.Context, job *river.Job[WebhookEventArgs]) error {
+	env := job.Args.Envelope
+	d, err := events.WebhookDeliveryOf(env)
+	if err != nil {
+		return err
+	}
+	return w.dispatcher.Dispatch(ctx, w.ent.Scoped(env.WorkspaceID), d.Name, d.ID, d.Body)
 }
 
 // Inserter queues a job. An event consumer that turns its event into work queues the work with

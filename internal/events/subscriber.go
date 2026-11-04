@@ -56,7 +56,6 @@ func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
 // know whose cursors bound what it may delete, so a new subscriber is added here
 // and nowhere else.
 const (
-	GroupWebhooks = "webhooks"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
 	// so the outbox prune never deletes an Audit entry the subscriber has not consumed
 	// (ADR 0022); the subscriber is always registered, licensed or not.
@@ -66,15 +65,22 @@ const (
 	GroupExport = "export"
 )
 
-// coreGroups are the groups core wires itself, in registration order.
-func coreGroups() []string {
-	return []string{GroupWebhooks}
+// ConsumerGroups lists every consumer group of the outbox, in registration order: the extra
+// subscribers' (RegisterSubscribers). Core's consumers are River jobs (ADR 0101).
+func ConsumerGroups() []string {
+	return []string{GroupAudit, GroupExport}
 }
 
-// ConsumerGroups lists every consumer group registered in code, in registration
-// order: the core groups, then the extra consumers' (RegisterSubscribers).
-func ConsumerGroups() []string {
-	return append(coreGroups(), GroupAudit, GroupExport)
+// Handlers builds the handler of every consumer group: extra, the subscribers owned outside core
+// (the Enterprise audit subscriber, ee/), each its own group named like its handler.
+// RegisterSubscribers runs them on the router, and ReplayDeadLetters runs one group's dead
+// letters through its handler.
+func Handlers(extra []Subscriber) ConsumerHandlers {
+	hs := make(ConsumerHandlers, 0, len(extra))
+	for _, c := range extra {
+		hs = append(hs, ConsumerHandler{c.Name, c.Name, c.Handler()})
+	}
+	return hs
 }
 
 // RegisterSubscribers wires the domain-event consumers onto the shared watermill
@@ -110,21 +116,6 @@ type ConsumerHandlers []ConsumerHandler
 func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool) {
 	h, ok := lo.Find(hs, func(h ConsumerHandler) bool { return h.Group == group })
 	return h.Handle, ok
-}
-
-// Handlers builds the handler of every consumer group: the core ones over their dependencies,
-// then extra, the consumers owned outside core (the Enterprise audit subscriber, ee/), each its
-// own group named like its handler. RegisterSubscribers runs them on the router, and
-// ReplayDeadLetters runs one group's dead letters through its handler.
-func Handlers(client *ent.Client, dispatcher WebhookDispatcher, extra []Subscriber) ConsumerHandlers {
-	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
-	hs = append(hs, ConsumerHandlers{
-		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
-	}...)
-	for _, c := range extra {
-		hs = append(hs, ConsumerHandler{c.Name, c.Name, c.Handler()})
-	}
-	return hs
 }
 
 // Subscriber is an outbox subscriber registered from outside the events package. Name is
@@ -185,59 +176,54 @@ type webhookPayload struct {
 	Data        json.RawMessage `json:"data,omitempty"`
 }
 
-// WebhooksConsumer serializes the event into the public webhook body and hands it to the
-// dispatcher. The bus subscriber is a raw-client allowlist entry (ADR 0017): an event envelope
-// carries only a Workspace id, so the scope handed to the dispatcher is built here.
-func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		ev, err := Decode(env)
-		if err != nil {
-			return err
-		}
-		if IsBackfill(ev) {
-			return nil // loaded history: recorded, never delivered
-		}
-		p := ev.Project()
-		// Filter/route on the semantic action (e.g. "page_view"), not the bus type. An
-		// unprojected event (an Audit entry) has no Event action: it is forwarded under
-		// its bus type, only to endpoints that select it, and the edition's dispatcher
-		// gates it by license (ADR 0022).
-		name := p.Action
-		if _, unprojected := ev.(Unprojected); unprojected {
-			name = env.Name
-		}
-		data := env.Data
-		if entry, ok := ev.(*AuditEntry); ok {
-			// The staff identity never reaches a customer's endpoint (ADR 0022).
-			entry.MaskStaff()
-			if data, err = json.Marshal(entry); err != nil {
-				return fmt.Errorf("marshal audit entry: %w", err)
-			}
-		}
-		// A retried event whose repeat slipped past the collect-side check carries the same
-		// DedupKey, so the receiver sees one id for it and can drop the second delivery.
-		id := env.ID
-		if env.DedupKey != "" {
-			id = env.DedupKey
-		}
-		body, err := json.Marshal(webhookPayload{
-			ID:          id,
-			Type:        name,
-			OccurredAt:  env.OccurredAt,
-			WorkspaceID: env.WorkspaceID,
-			Subject:     p.Subject,
-			ContactID:   p.ContactID,
-			Data:        data,
-		})
-		if err != nil {
-			return fmt.Errorf("marshal webhook payload: %w", err)
-		}
-		return dispatcher.Dispatch(msg.Context(), client.Scoped(env.WorkspaceID), name, id, body)
+// WebhookDelivery is what a Webhook endpoint receives for an event (ADR 0039): the name an
+// endpoint selects it by, the id a receiver drops a repeated delivery by, and the public body,
+// which is signed.
+type WebhookDelivery struct {
+	Name string
+	ID   string
+	Body []byte
+}
+
+// WebhookDeliveryOf serializes the event of env into its public webhook body. Endpoints select
+// on the semantic action (e.g. "page_view"), not the bus type. An unprojected event (an Audit
+// entry) has no Event action: it is delivered under its bus type, only to endpoints that select
+// it, and the Edition's dispatcher gates it by license (ADR 0022); the Staff identity in it is
+// masked.
+func WebhookDeliveryOf(env Envelope) (WebhookDelivery, error) {
+	ev, err := Decode(env)
+	if err != nil {
+		return WebhookDelivery{}, err
 	}
+	p := ev.Project()
+	name := p.Action
+	if _, unprojected := ev.(Unprojected); unprojected {
+		name = env.Name
+	}
+	data := env.Data
+	if entry, ok := ev.(*AuditEntry); ok {
+		// The staff identity never reaches a customer's endpoint (ADR 0022).
+		entry.MaskStaff()
+		if data, err = json.Marshal(entry); err != nil {
+			return WebhookDelivery{}, fmt.Errorf("marshal audit entry: %w", err)
+		}
+	}
+	// An event with a natural upstream id (a provider notification) is delivered under it, so
+	// a receiver that sees it twice can drop the second delivery.
+	id := env.SourceID()
+	body, err := json.Marshal(webhookPayload{
+		ID:          id,
+		Type:        name,
+		OccurredAt:  env.OccurredAt,
+		WorkspaceID: env.WorkspaceID,
+		Subject:     p.Subject,
+		ContactID:   p.ContactID,
+		Data:        data,
+	})
+	if err != nil {
+		return WebhookDelivery{}, fmt.Errorf("marshal webhook payload: %w", err)
+	}
+	return WebhookDelivery{Name: name, ID: id, Body: body}, nil
 }
 
 // PropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule or copied

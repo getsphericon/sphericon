@@ -179,6 +179,7 @@ func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Exten
 			river.AddWorker(w, abuse.NewWorker(detector))
 		},
 		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
+		Webhooks:     e.Webhooks,
 	}
 }
 
