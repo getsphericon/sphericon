@@ -33,7 +33,7 @@ func TestTheTrackerRefusesAnOrderAmountWithTooManyPlaces(t *testing.T) {
 	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Detail.Or(""), "total has more than 2 decimal places")
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }
 
 func TestTheTrackerTakesAValidOrder(t *testing.T) {
@@ -45,7 +45,7 @@ func TestTheTrackerTakesAValidOrder(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
 }
 
 func TestTheTrackerRefusesAnOrderCompletedWithoutACurrency(t *testing.T) {
@@ -61,7 +61,7 @@ func TestTheTrackerRefusesAnOrderCompletedWithoutACurrency(t *testing.T) {
 	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Detail.Or(""), "currency is required")
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }
 
 func TestTheTrackerRefusesAnUnknownCurrencyCode(t *testing.T) {
@@ -77,5 +77,5 @@ func TestTheTrackerRefusesAnUnknownCurrencyCode(t *testing.T) {
 	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Detail.Or(""), `currency "QQQ" is not a known ISO 4217 code`)
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }

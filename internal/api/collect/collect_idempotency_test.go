@@ -45,7 +45,7 @@ func TestARetriedEventIsCountedOnce(t *testing.T) {
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res, "a repeat is accepted")
 
 	assert.Equal(t, 1, countAction(t, env, "idem_after_delivery"))
-	assert.Len(t, env.OutboxEnvelopes(t, events.NameCollected), 1, "a repeat publishes nothing")
+	assert.Len(t, env.QueuedEnvelopes(t, events.NameCollected), 1, "a repeat publishes nothing")
 }
 
 func TestARepeatSentBeforeDeliveryIsStillCountedOnce(t *testing.T) {

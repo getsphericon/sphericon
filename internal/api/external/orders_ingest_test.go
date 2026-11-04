@@ -36,7 +36,7 @@ func TestAnOrderCompletedIsAcceptedUnderItsOwnName(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.EventsCreateNoContent{}, res)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
 }
 
 func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAReason(t *testing.T) {
@@ -62,7 +62,7 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 		require.Truef(t, ok, "%s: got %T", name, res)
 		assert.Contains(t, refused.Detail.Or(""), tc.reason, name)
 	}
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected), "nothing was published")
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "nothing was published")
 }
 
 func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing.T) {

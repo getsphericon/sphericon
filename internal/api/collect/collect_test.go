@@ -96,13 +96,11 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, evRes)
 
-	// The event is published to the transactional outbox as a CollectedEvent (the
-	// persist subscriber writes the Event row asynchronously; the router isn't run
-	// under txdb). Decode the outbox row and assert the customer's event is carried
-	// as-is, with the resolved identity.
-	outbox := env.OutboxEnvelopes(t)
-	require.NotEmpty(t, outbox)
-	envlp := outbox[len(outbox)-1]
+	// The event is published as a CollectedEvent. Decode the queued event and assert the
+	// customer's event is carried as-is, with the resolved identity.
+	queued := env.QueuedEnvelopes(t)
+	require.NotEmpty(t, queued)
+	envlp := queued[len(queued)-1]
 	assert.Equal(t, events.NameCollected, envlp.Name)
 	assert.EqualValues(t, fixtures.AcmeID, envlp.WorkspaceID) // scoped to the key's workspace
 
@@ -126,8 +124,8 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	c := env.CollectAcme(t)
 	ctx := context.Background()
 
-	// A pre-identify anonymous event from a device (as the persist subscriber would have
-	// written it: visitor_id set, contact_id null) is in the fixtures.
+	// A pre-identify anonymous event from a device (as its publish would have stored it:
+	// visitor_id set, contact_id null) is in the fixtures.
 	const device = fixtures.EventAnonymousFirstVisitorID
 
 	// Identify the device → binds it to a Contact and backfills its anonymous events.

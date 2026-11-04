@@ -38,7 +38,7 @@ func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
-	collected := env.OutboxEvents(t, events.NameCollected)
+	collected := env.QueuedEvents(t, events.NameCollected)
 	require.Len(t, collected, 1)
 	got, ok := collected[0].(*events.CollectedEvent)
 	require.Truef(t, ok, "got %T", collected[0])
@@ -128,7 +128,7 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
-	collected := env.OutboxEvents(t, events.NameCollected)
+	collected := env.QueuedEvents(t, events.NameCollected)
 	require.Len(t, collected, 1, "exactly one event")
 	decoded := collected[0]
 	got, ok := decoded.(*events.CollectedEvent)

@@ -49,13 +49,13 @@ func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *test
 	require.NotNil(t, owned.VisitorID)
 	assert.Equal(t, vis.ID, *owned.VisitorID, "the chat is the Visitor's")
 	assert.Nil(t, owned.ContactID)
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramBound, nil), "a Visitor's Binding records no Event")
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil), "a Visitor's Binding records no Event")
 
 	identify(t, env, "dev-tg", "tracker.person@example.com")
 	identify(t, env, "dev-tg", "tracker.person@example.com")
 
 	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("tracker.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID, "integrationId": bot.Integration.ID}),
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID, "integrationId": bot.Integration.ID}),
 		"announced for the Contact once")
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
 		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(contact.ID),
@@ -77,7 +77,7 @@ func TestAVisitorBindingIsAnnouncedToAnotherContactItIsIdentifiedAs(t *testing.T
 	identify(t, env, "dev-shared", "first.person@example.com")
 	identify(t, env, "dev-shared", "second.person@example.com")
 
-	assert.Equal(t, 2, env.OutboxCount(t, events.NameTelegramBound, map[string]any{"integrationId": bot.Integration.ID}))
+	assert.Equal(t, 2, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"integrationId": bot.Integration.ID}))
 }
 
 func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
@@ -101,13 +101,13 @@ func TestAMessageFromAChatBoundThroughAnIdentifiedVisitorIsTheContactsMessage(t 
 	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
 
 	env.PostTelegramUpdate(t, bot, `{"update_id":4,"message":{"message_id":4,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"before"}}`)
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramReceived, nil), "a Visitor with no Contact has none to record it for")
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil), "a Visitor with no Contact has none to record it for")
 
 	identify(t, env, "dev-received", "received.person@example.com")
 	env.PostTelegramUpdate(t, bot, `{"update_id":5,"message":{"message_id":5,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"after"}}`)
 
 	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("received.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramReceived, map[string]any{"contactId": contact.ID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, map[string]any{"contactId": contact.ID}))
 }
 
 // A chat that moves from an identified Visitor to another owner is lost by the Contact the Visitor
@@ -122,7 +122,7 @@ func TestAVisitorsChatMovingAwayIsAnnouncedAsUnboundToItsContact(t *testing.T) {
 	env.StartTelegram(t, bot, 7, 6004, startLink(t, env, "dev-to").URL)
 
 	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("from.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
 }
 
 // A chat bound through a Visitor that Identify resolved to a Contact, which then starts the bot
@@ -137,7 +137,7 @@ func TestAChatStartedAgainAsTheContactItsVisitorBecameIsNotUnbound(t *testing.T)
 
 	env.BindTelegram(t, bot, contact.ID, 6005, 9)
 
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID}), "announced once, by Identify")
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramUnbound, map[string]any{"contactId": contact.ID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID}), "announced once, by Identify")
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("6005")).CountX(t.Context()))
 }

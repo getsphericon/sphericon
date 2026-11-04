@@ -63,7 +63,7 @@ func TestExternalContactsEraseRemovesUnsentBroadcastRecipients(t *testing.T) {
 	assert.Equal(t, 1, figures[still.ID].Recipients)
 }
 
-func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
+func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -80,7 +80,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 		}
 		return nil
 	}))
-	require.Len(t, env.Outbox(t, events.NameEmailSent, events.NameContactCreated), 3)
+	require.Len(t, env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated), 3)
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
@@ -90,7 +90,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 
 	eraseErasable(t, env)
 
-	left := env.Outbox(t, events.NameEmailSent, events.NameContactCreated)
+	left := env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated)
 	require.Len(t, left, 1, "only the bystander's envelope is left")
 	assert.Equal(t, strconv.FormatInt(bystanderID, 10), fmt.Sprint(left[0].Data["contactId"]))
 

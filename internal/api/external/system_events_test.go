@@ -35,13 +35,13 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 	}
 
 	apply()
-	taggedOnce := env.OutboxCount(t, events.NameContactTagged, vip)
+	taggedOnce := env.QueuedCount(t, events.NameContactTagged, vip)
 	apply()
-	taggedAgain := env.OutboxCount(t, events.NameContactTagged, vip)
+	taggedAgain := env.QueuedCount(t, events.NameContactTagged, vip)
 	remove()
-	untaggedOnce := env.OutboxCount(t, events.NameContactUntagged, vip)
+	untaggedOnce := env.QueuedCount(t, events.NameContactUntagged, vip)
 	remove()
-	untaggedAgain := env.OutboxCount(t, events.NameContactUntagged, vip)
+	untaggedAgain := env.QueuedCount(t, events.NameContactUntagged, vip)
 
 	assert.Equal(t, 1, taggedOnce, "applying a Tag the Contact lacks records contact.tagged")
 	assert.Equal(t, 1, taggedAgain, "applying it again records nothing")
@@ -97,7 +97,7 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
 	changes := env.FieldChanges(t)
-	created := env.OutboxEnvelopes(t, events.NameContactCreated)
+	created := env.QueuedEnvelopes(t, events.NameContactCreated)
 
 	assert.Empty(t, changes)
 	assert.Len(t, created, 1, "the import still records the Contact it creates")

@@ -25,7 +25,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.TagResource{}, res)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, "tag.create", e.Action)

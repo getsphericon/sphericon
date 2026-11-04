@@ -29,7 +29,7 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionContactImport, e.Action)
@@ -57,7 +57,7 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	_, err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 2)
 	for _, ev := range got {
 		e := ev.(*events.AuditEntry)

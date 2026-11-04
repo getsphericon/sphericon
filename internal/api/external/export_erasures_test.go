@@ -93,7 +93,7 @@ func TestContactErasedMessageHoldsNoAddressOrPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	eraseErasable(t, env)
 
-	envelopes := env.OutboxEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 
 	require.Len(t, envelopes, 1)
 	body := string(envelopes[0].Data)
@@ -112,7 +112,7 @@ func TestContactErasedMessageOfAnAddressAloneHoldsNoAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
 
-	envelopes := env.OutboxEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 
 	require.Len(t, envelopes, 1)
 	assert.NotContains(t, string(envelopes[0].Data), fixtures.OutboundMessageStrangerDestination)
