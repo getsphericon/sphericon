@@ -22,7 +22,7 @@ import (
 func baseline(t *testing.T) string {
 	t.Helper()
 	url := testhelper.RealDBURL(t)
-	t.Setenv("DATABASE_URL", url)
+	t.Setenv("SPHERICON_DATABASE_URL", url)
 	return url
 }
 

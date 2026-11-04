@@ -247,7 +247,7 @@ func Listeners(ctx context.Context, db *sql.DB) (int, error) {
 }
 
 // sharedDatabaseURL is the test database every process and every checkout run shares, as
-// DATABASE_URL names it before initBaseline points the process at its own leased database.
+// SPHERICON_DATABASE_URL names it before initBaseline points the process at its own leased database.
 // It is read once, so it never depends on whether a test in the process has called Setup yet.
 var sharedDatabaseURL = sync.OnceValues(func() (string, error) {
 	cfg, err := config.Load("test")

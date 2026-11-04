@@ -15,7 +15,7 @@ one overriding an earlier: `.env`, `.env.<SPHERICON_ENV>`, `.env.local`, `.env.<
 
 | Variable | Default | Rules | Secret | Description |
 | --- | --- | --- | --- | --- |
-| `DATABASE_URL` | — | required | yes | The PostgreSQL connection string, such as `postgres://user:pass@host:5432/db?sslmode=require`; `sslmode=verify-full` with `sslrootcert` also verifies the server's certificate. The job queue LISTENs for new jobs on a session of its own: behind PgBouncer, it must reach Postgres directly or a pool in session mode, never transaction mode. |
+| `SPHERICON_DATABASE_URL` | — | required | yes | The PostgreSQL connection string, such as `postgres://user:pass@host:5432/db?sslmode=require`; `sslmode=verify-full` with `sslrootcert` also verifies the server's certificate. The job queue LISTENs for new jobs on a session of its own: behind PgBouncer, it must reach Postgres directly or a pool in session mode, never transaction mode. |
 | `PORT` | `3000` |  |  | The port the public HTTP server listens on, on every interface. |
 | `SPHERICON_APP_URL` | `http://localhost:3000` |  |  | The public origin of the Instance, `https://` in production: sessions, mailed links and tracking and unsubscribe links are built on it, an `https://` origin makes the session cookie Secure, and its host is the Passkey relying party id (ADR 0052), so changing the host invalidates every registered Passkey. An Instance served on an IP address cannot use Passkeys. |
 | `SPHERICON_MCP_URL` | — |  |  | The public origin of a dedicated MCP host, such as `https://mcp.example.com`: the MCP resource is then served there while the OAuth issuer and consent screen stay on `SPHERICON_APP_URL`. Empty serves MCP on `SPHERICON_APP_URL`. |
@@ -108,7 +108,7 @@ one overriding an earlier: `.env`, `.env.<SPHERICON_ENV>`, `.env.local`, `.env.<
 
 Docker and Kubernetes mount secrets as files. Each secret variable also accepts a `<NAME>_FILE` sibling (`SPHERICON_JWT_SECRET_FILE=/run/secrets/jwt`) whose value is the path of a file read at start; the trailing newline is trimmed. A value set directly wins and its file is never read; an unreadable or empty file stops the start, naming the `_FILE` variable. `sphericon doctor` redacts every secret value from what it prints. The secret variables:
 
-- `DATABASE_URL`
+- `SPHERICON_DATABASE_URL`
 - `SPHERICON_JWT_SECRET`
 - `SPHERICON_JWT_SECRET_SECONDARY`
 - `SPHERICON_STAFF_JWT_SECRET`

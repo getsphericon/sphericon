@@ -87,7 +87,7 @@ func initBaseline() {
 			errLoad = err
 			return
 		}
-		// Read the shared URL before DATABASE_URL is pointed at this process's own database.
+		// Read the shared URL before SPHERICON_DATABASE_URL is pointed at this process's own database.
 		if _, err := sharedDatabaseURL(); err != nil {
 			errLoad = err
 			return
@@ -117,7 +117,7 @@ func initBaseline() {
 		// A test that loads the config itself (to open a pool of its own) must reach this
 		// process's database, not the shared one.
 		cfg.DatabaseURL = url
-		if err := os.Setenv("DATABASE_URL", url); err != nil {
+		if err := os.Setenv("SPHERICON_DATABASE_URL", url); err != nil {
 			errLoad = err
 			return
 		}

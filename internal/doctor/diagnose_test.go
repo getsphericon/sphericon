@@ -37,7 +37,7 @@ func stubbed(smtpErr error) doctor.Seams {
 func TestDiagnoseFailsAndPrintsTheReportInEitherFormat(t *testing.T) {
 	key, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
-	t.Setenv("DATABASE_URL", testhelper.RealDBURL(t))
+	t.Setenv("SPHERICON_DATABASE_URL", testhelper.RealDBURL(t))
 	t.Setenv("SPHERICON_ENCRYPTION_KEY", key)
 	t.Setenv("SPHERICON_JWT_SECRET", "0123456789abcdef0123456789abcdef-not-a-placeholder")
 	t.Setenv("SPHERICON_APP_URL", "https://sphericon.example.com")
@@ -67,7 +67,7 @@ func TestDiagnoseFailsAndPrintsTheReportInEitherFormat(t *testing.T) {
 
 func TestDiagnoseNeverPrintsASecret(t *testing.T) {
 	secretValues := map[string]string{
-		"DATABASE_URL":             "postgres://doctor:DbPasswordSentinel9@127.0.0.1:1/nowhere?sslmode=disable",
+		"SPHERICON_DATABASE_URL":   "postgres://doctor:DbPasswordSentinel9@127.0.0.1:1/nowhere?sslmode=disable",
 		"SPHERICON_JWT_SECRET":     "JwtSecretSentinel-change-me-0123456789",
 		"SPHERICON_ENCRYPTION_KEY": "EncryptionKeySentinel!!",
 		"SPHERICON_SMTP_PASS":      "SmtpPasswordSentinel7",
@@ -79,7 +79,7 @@ func TestDiagnoseNeverPrintsASecret(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_HOST", "smtp.example.test")
 	t.Setenv("SPHERICON_SMTP_USER", "mailer")
 	// A relay error that echoes the credentials, the way a careless server or library might.
-	echo := errors.New("535 rejected user mailer password SmtpPasswordSentinel7 via " + secretValues["DATABASE_URL"])
+	echo := errors.New("535 rejected user mailer password SmtpPasswordSentinel7 via " + secretValues["SPHERICON_DATABASE_URL"])
 
 	for _, asJSON := range []bool{false, true} {
 		var out bytes.Buffer

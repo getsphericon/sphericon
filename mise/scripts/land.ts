@@ -120,8 +120,8 @@ const body = [
 ].join('\n')
 
 // What CI runs on the title and the body, before the branch leaves the machine.
-run('mise', ['run', 'check:pr-title'], { PR_TITLE: title })
-run('mise', ['run', 'check:pr-body'], { PR_BODY: body, BASE: 'origin/main' })
+run('mise', ['run', 'check:pr-title'], { SPHERICON_PR_TITLE: title })
+run('mise', ['run', 'check:pr-body'], { SPHERICON_PR_BODY: body, SPHERICON_BASE: 'origin/main' })
 
 run('git', ['push', '-u', 'origin', 'HEAD', '--force-with-lease'])
 

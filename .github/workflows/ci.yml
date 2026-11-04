@@ -222,12 +222,12 @@ jobs:
       - name: Check migrations and breaking changes
         if: github.event_name == 'pull_request'
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          BASE: ${{ github.event.pull_request.base.sha }}
+          SPHERICON_PR_TITLE: ${{ github.event.pull_request.title }}
+          SPHERICON_PR_BODY: ${{ github.event.pull_request.body }}
+          SPHERICON_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.md"
-          PR_BODY_FILE="$RUNNER_TEMP/pr-body.md" mise run check:upgrade
+          printf '%s' "$SPHERICON_PR_BODY" > "$RUNNER_TEMP/pr-body.md"
+          SPHERICON_PR_BODY_FILE="$RUNNER_TEMP/pr-body.md" mise run check:upgrade
 
   # The Go suite over three runners. internal/api/site runs its tests one after another (they ride
   # one database in transactions, so they do not call t.Parallel: .golangci.yml, paralleltest) and

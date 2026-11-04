@@ -4,16 +4,16 @@ Worktrees live where Claude Code puts them by default: `.claude/worktrees/<name>
 primary checkout (gitignored; Vite ignores it).
 
 - Create them with the `EnterWorktree` tool or `claude --worktree`.
-- Every change is made in a worktree, however small (a doc line, a typo, a config tweak). Nothing is
-  edited or committed in the primary checkout: it only tracks `origin/main` (`git fetch origin && git
-  rebase origin/main`) and is where the dev stack, Postgres and `worktrees:rm` run.
+- Every change is made in a worktree under `.claude/worktrees/<name>`, on a branch of its own; the primary checkout stays on a clean `main` and no branch is created there. The one exception is a small visual fix that has to be seen at once in the app running from the primary checkout: it is made there, committed on `main` and landed with `git fetch origin && git rebase origin/main && git push origin main`. A doc line or a typo is not such a fix.
+  Otherwise the primary checkout only tracks `origin/main` (`git fetch origin && git rebase
+  origin/main`) and is where the dev stack, Postgres and `worktrees:rm` run.
 - Every worktree works on its own branch, which is what `EnterWorktree` and `claude --worktree`
   create (`worktree-<name>`); git allows a branch in one worktree only, and the primary checkout
   holds `main`. Create no branch in the primary checkout, which is shared and stays on `main`.
   `mise run land` refuses `main` and a detached `HEAD`, pushes the branch and opens the pull request.
   A maintainer may instead push the worktree's commits straight to `main` (`git fetch origin && git
   rebase origin/main && git push origin HEAD:main`): the repository ruleset lets the admin role
-  bypass the pull request. Nothing is pushed from the primary checkout, which stays on a clean `main`.
+  bypass the pull request. Nothing else is pushed from the primary checkout, which stays on a clean `main`.
 - Never use `git worktree add ../sphericon-<name>` or any other sibling directory.
 - The directory name feeds the checkout's database and origin (`sphericon_<dir>`,
   `<dir>.sphericon.localhost`), so keep `<name>` short and unique.

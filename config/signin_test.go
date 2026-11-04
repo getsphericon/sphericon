@@ -9,7 +9,7 @@ import (
 )
 
 func TestConfigLoadSigninProviderIsEnabledByBothVariables(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", "client-id")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET", "client-secret")
 
@@ -20,7 +20,7 @@ func TestConfigLoadSigninProviderIsEnabledByBothVariables(t *testing.T) {
 }
 
 func TestConfigLoadSigninEachProviderReadsItsOwnVariables(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GITHUB_CLIENT_ID", "gh-id")
 	t.Setenv("SPHERICON_SIGNIN_GITHUB_CLIENT_SECRET", "gh-secret")
 
@@ -31,7 +31,7 @@ func TestConfigLoadSigninEachProviderReadsItsOwnVariables(t *testing.T) {
 }
 
 func TestConfigLoadSigninGitHubWithoutItsSecretStopsTheStartAndNamesIt(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GITHUB_CLIENT_ID", "gh-id")
 	// An empty value counts as unset, so a developer's .env would fill it in: a blank one is
 	// trimmed to empty by the provider check and still wins over the file.
@@ -43,7 +43,7 @@ func TestConfigLoadSigninGitHubWithoutItsSecretStopsTheStartAndNamesIt(t *testin
 }
 
 func TestConfigLoadSigninProviderIsOffWithNeitherVariable(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", " ")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET", " ")
 
@@ -54,7 +54,7 @@ func TestConfigLoadSigninProviderIsOffWithNeitherVariable(t *testing.T) {
 }
 
 func TestConfigLoadSigninProviderWithoutItsSecretStopsTheStartAndNamesIt(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", "client-id")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET", " ")
 
@@ -64,7 +64,7 @@ func TestConfigLoadSigninProviderWithoutItsSecretStopsTheStartAndNamesIt(t *test
 }
 
 func TestConfigLoadSigninProviderWithoutItsIDStopsTheStartAndNamesIt(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_ID", " ")
 	t.Setenv("SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET", "client-secret")
 

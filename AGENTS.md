@@ -157,6 +157,12 @@ The rest of this file is for maintainers and the agents they run: how work lands
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory. Auto memory is off for this project (`autoMemoryEnabled: false` in
   `.claude/settings.json`), so what an agent needs to know is written down in a Markdown file.
+- Everything written in this repository is in English: docs, comments, commits.
+- Never create `CLAUDE.md`: `AGENTS.md` (with the `AGENTS.md` of a directory) is the only agent guide.
+- An environment variable the app reads, or that its tooling sets, starts with `SPHERICON_`, so that it
+  never collides with another program's: `SPHERICON_DATABASE_URL`, not `DATABASE_URL`. A name a standard
+  or a tool defines keeps it: `PORT`, `PG*`, `NODE_ENV`, `DO_NOT_TRACK`, `OTEL_*`, `CADDY_ADMIN`, and the
+  `<DAEMON>_PORT` mise exports for each daemon.
 - **A maintainer may push straight to `main`; a pull request is the default for anything sizeable.**
   The repository ruleset lets the admin role bypass the pull request and the status checks, so a
   small, low-risk change (a doc line, a typo, a config tweak, a one-file fix whose covering
@@ -221,7 +227,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. A worktree works on its own branch, which a maintainer pushes to `main` directly or `mise run land` opens as a pull request; no branch is created in the primary checkout. See `docs/agents/worktrees.md`.
+Every change is made in a worktree under `.claude/worktrees/<name>`, on a branch of its own; the primary checkout stays on a clean `main` and no branch is created there. The one exception is a small visual fix that has to be seen at once in the app running from the primary checkout: it is made there, committed on `main` and landed with `git fetch origin && git rebase origin/main && git push origin main`. A doc line or a typo is not such a fix. A worktree is never a sibling directory; its branch is pushed to `main` by a maintainer or opened as a pull request by `mise run land`. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 

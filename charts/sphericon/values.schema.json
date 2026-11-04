@@ -4,7 +4,7 @@
   "properties": {
     "existingSecret": {
       "type": "string",
-      "description": "Existing Secret with DATABASE_URL, SPHERICON_JWT_SECRET and SPHERICON_ENCRYPTION_KEY, as environment variables (required unless secretFiles.secretName is set)"
+      "description": "Existing Secret with SPHERICON_DATABASE_URL, SPHERICON_JWT_SECRET and SPHERICON_ENCRYPTION_KEY, as environment variables (required unless secretFiles.secretName is set)"
     },
     "secretFiles": {
       "type": "object",
@@ -18,7 +18,7 @@
           "type": "array",
           "items": {
             "enum": [
-              "DATABASE_URL",
+              "SPHERICON_DATABASE_URL",
               "SPHERICON_JWT_SECRET",
               "SPHERICON_ENCRYPTION_KEY",
               "SPHERICON_SMTP_PASS",

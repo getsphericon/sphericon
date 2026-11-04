@@ -48,8 +48,8 @@ jobs:
       # through the script.
       - name: Check the pull request body
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-          BASE: ${{ github.event.pull_request.base.sha }}
+          SPHERICON_PR_BODY: ${{ github.event.pull_request.body }}
+          SPHERICON_BASE: ${{ github.event.pull_request.base.sha }}
         run: mise run check:pr-body
 
   # The repository squashes a pull request with its title, and release-please reads that title, so it
@@ -74,5 +74,5 @@ jobs:
       # through the script.
       - name: Check the pull request title
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          SPHERICON_PR_TITLE: ${{ github.event.pull_request.title }}
         run: mise run check:pr-title

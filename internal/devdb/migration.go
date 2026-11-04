@@ -38,7 +38,7 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 		sql.Register("postgres", stdlib.GetDefaultDriver())
 	}
 	if diffURL == "" {
-		return errors.New("DIFF_DB_URL is not set (the diff database migrations are generated against)")
+		return errors.New("SPHERICON_DIFF_DATABASE_URL is not set (the diff database migrations are generated against)")
 	}
 	if err := applyMigrations(ctx, dir, diffURL); err != nil {
 		return err
@@ -107,7 +107,7 @@ func applyMigrations(ctx context.Context, dir, dsn string) (err error) {
 		}
 	}()
 	if err := diffDB.PingContext(ctx); err != nil {
-		return fmt.Errorf("the diff database (DIFF_DB_URL) is not reachable, run `mise run db:up` to create it: %w", err)
+		return fmt.Errorf("the diff database (SPHERICON_DIFF_DATABASE_URL) is not reachable, run `mise run db:up` to create it: %w", err)
 	}
 	// raw sql: emptying a scratch database is a schema command, not a table operation.
 	if _, err := diffDB.ExecContext(ctx, "DROP SCHEMA IF EXISTS "+normalSchema+" CASCADE; DROP SCHEMA public CASCADE; "+

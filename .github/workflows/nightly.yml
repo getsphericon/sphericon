@@ -40,7 +40,7 @@ jobs:
       - name: Run tests with coverage
         run: mise run test:cover
         env:
-          TEST_EMAIL_RENDERER: goja
+          SPHERICON_TEST_EMAIL_RENDERER: goja
 
   # The whole Go suite under the race detector: slow (the JavaScript runtime that renders email
   # documents is several times slower with it), so it runs here and not on a pull request.
@@ -101,7 +101,7 @@ jobs:
   # Native fuzzing of the parsers that take outside input; a crash is saved under testdata/fuzz.
   fuzz:
     runs-on: ubuntu-latest
-    # Every Fuzz target runs FUZZTIME in turn: twelve targets of three minutes, with their builds.
+    # Every Fuzz target runs SPHERICON_FUZZTIME in turn: twelve targets of three minutes, with their builds.
     timeout-minutes: 50
 
     steps:
@@ -116,7 +116,7 @@ jobs:
       - name: Fuzz the parsers
         run: mise run test:fuzz
         env:
-          FUZZTIME: 3m
+          SPHERICON_FUZZTIME: 3m
 
   # govulncheck. A new advisory can fail this with no change on our side, which
   # is why it runs here and not on a pull request.

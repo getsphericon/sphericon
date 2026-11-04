@@ -185,8 +185,8 @@ The local stack is a set of [mise daemons](https://mise.jdx.dev) (`[daemons]` in
    mise run setup
    ```
 
-   No `.env` is required: `.mise.toml` supplies the dev defaults, including `DATABASE_URL`
-   (`mise run db:up` starts the Postgres behind it). Do **not** set `DATABASE_URL` in `.env` (real env vars win
+   No `.env` is required: `.mise.toml` supplies the dev defaults, including `SPHERICON_DATABASE_URL`
+   (`mise run db:up` starts the Postgres behind it). Do **not** set `SPHERICON_DATABASE_URL` in `.env` (real env vars win
    over it). Personal overrides go in the gitignored `.env` (read by the app) or
    `.mise.local.toml` (read by mise).
 

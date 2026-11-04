@@ -67,5 +67,5 @@ func TestGenerateMigrationFindsNothingToGenerateFromTheCommittedMigrations(t *te
 func TestGenerateMigrationNeedsADiffDatabase(t *testing.T) {
 	err := devdb.GenerateMigration(t.Context(), t.TempDir(), "", "next")
 
-	require.ErrorContains(t, err, "DIFF_DB_URL is not set")
+	require.ErrorContains(t, err, "SPHERICON_DIFF_DATABASE_URL is not set")
 }

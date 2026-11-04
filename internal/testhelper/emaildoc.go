@@ -14,7 +14,7 @@ import (
 // RendererEnv set to "goja" makes Renderer the real one: the nightly suite runs the save paths
 // through the editor's own export, which a pull request leaves to internal/emaildoc and
 // internal/emailrender.
-const RendererEnv = "TEST_EMAIL_RENDERER"
+const RendererEnv = "SPHERICON_TEST_EMAIL_RENDERER"
 
 var (
 	fakeRenderer = sync.OnceValue(func() *emaildoc.Renderer {

@@ -114,10 +114,10 @@ export default defineConfig({
         // The primary checkout is sphericon.localhost, a linked worktree <dir>.sphericon.localhost.
         allowedHosts: ['.sphericon.localhost'],
         // HMR runs through Caddy's HTTPS origin, so the client connects over wss to the
-        // stack's host and Caddy port (APP_HOST / CADDY_PORT, set in .mise.toml).
+        // stack's host and Caddy port (SPHERICON_APP_HOST / CADDY_PORT, set in .mise.toml).
         hmr: {
           protocol: 'wss',
-          host: process.env.APP_HOST ?? 'sphericon.localhost',
+          host: process.env.SPHERICON_APP_HOST ?? 'sphericon.localhost',
           clientPort: Number(process.env.CADDY_PORT ?? 443),
         },
       },
