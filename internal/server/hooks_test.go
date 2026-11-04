@@ -21,6 +21,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
@@ -68,13 +69,10 @@ func failureBody(id, destination string, hard bool) string {
 	return `{"id":"` + id + `","destination":"` + destination + `","kind":"bounce","hard":` + strconv.FormatBool(hard) + `,"sending_domain":"Codebasics.dev"}`
 }
 
-// applySuppression plays the suppression consumer over everything published so far.
+// applySuppression works the suppression jobs everything published so far inserted.
 func applySuppression(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	envelopes := env.OutboxEnvelopes(t, deliveryNames...)
-	for i := range envelopes {
-		require.NoError(t, events.Suppress(t.Context(), env.DB, envelopes[i]))
-	}
+	testhelper.WorkEventJobs(t, env, jobs.NewSuppressEventWorker(env.DB))
 }
 
 func suppressed(t *testing.T, env *testhelper.TestEnv, email string) bool {

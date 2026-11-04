@@ -54,7 +54,8 @@ func chainOf(ctx context.Context) chain {
 }
 
 // Handling is ctx for handling env: what is published in it is caused by env and shares its
-// correlation id. The router does it for every handler (correlationMiddleware).
+// correlation id. The router does it for every handler (correlationMiddleware), and JobChain for
+// every event consumer's job.
 func Handling(ctx context.Context, env Envelope) context.Context {
 	correlation := env.CorrelationID
 	if correlation == "" {
@@ -126,8 +127,17 @@ func (*JobChain) InsertMany(ctx context.Context, params []*rivertype.JobInsertPa
 	return doInner(ctx)
 }
 
-// Work runs the job in the chain its metadata recorded, if any.
+// Work runs the job in the chain its metadata recorded, if any. An event consumer's job (one of
+// QueueEvents) runs instead in the context of handling its envelope (Handling): what it publishes
+// is caused by the event it handles. The metadata of such a job records the chain its publisher
+// ran in, one link up.
 func (*JobChain) Work(ctx context.Context, job *rivertype.JobRow, doInner func(context.Context) error) error {
+	if job.Queue == QueueEvents {
+		var env Envelope
+		if err := json.Unmarshal(job.EncodedArgs, &env); err == nil && env.ID != "" {
+			return doInner(Handling(ctx, env))
+		}
+	}
 	var c chain
 	if err := json.Unmarshal(job.Metadata, &c); err != nil || c.Correlation == "" {
 		return doInner(ctx)

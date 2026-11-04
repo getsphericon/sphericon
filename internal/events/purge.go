@@ -27,6 +27,11 @@ type QueuePurger interface {
 	// PurgeOutbox deletes the Workspace's outbox envelopes and dead letters that name the Contact,
 	// by id or by one of its destinations, an address or a phone number (matched case-insensitively).
 	PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error
+	// PurgeEventJobs deletes the Workspace's event consumer jobs (QueueEvents) whose envelope names
+	// the Contact by id or by one of its destinations, an address (matched case-insensitively) or a
+	// phone number, in any state but running: queued, retrying and discarded ones alike. A running
+	// (or locked) job is left to finish: its worker re-checks that what it refers to still exists.
+	PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
 	// A running job, or one a fetch holds locked to start it, is left to finish: its
 	// worker re-checks that what it refers to still exists.
@@ -135,6 +140,25 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[])"+
 			" OR b.body->'data'->>'phone' = any(@purge_addresses::text[]))",
 			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
+}
+
+func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
+	id := ""
+	if contactID != 0 {
+		id = strconv.FormatInt(contactID, 10)
+	}
+	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event at
+	// data, which names the Contact as contactId, the address as email and the phone as phone.
+	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Queues(QueueEvents).
+		// raw sql: a field of the args matched against a value; river's delete filters stop at a
+		// job's own columns.
+		Where("args->>'workspaceId' = @purge_workspace::text",
+			river.NamedArgs{"purge_workspace": strconv.FormatInt(workspaceID, 10)}).
+		// raw sql: the event's fields inside the args, the address case-insensitively.
+		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
+			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
+			" OR args->'data'->>'phone' = any(@purge_event_addresses::text[]))",
+			river.NamedArgs{"purge_event_contact": id, "purge_event_addresses": lowerAll(destinations)}))
 }
 
 // deleteJobs deletes the jobs params selects through river, on the purge's transaction, a batch

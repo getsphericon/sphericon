@@ -35,7 +35,7 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 
 	scrape := metricstest.ScrapeMetrics(t)
 	assert.Zero(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": events.GroupAutomations}), "caught up")
-	for _, g := range []string{events.GroupRules, events.GroupWebhooks, events.GroupSuppression} {
+	for _, g := range []string{events.GroupRules, events.GroupWebhooks, events.GroupOrders} {
 		assert.GreaterOrEqual(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": g}), 120.0, g)
 	}
 }

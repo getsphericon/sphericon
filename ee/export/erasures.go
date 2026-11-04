@@ -22,8 +22,8 @@ const ConsumerName = events.GroupExport
 // writes one Erasures row per `contact.erased` message, deduplicated by the envelope id so
 // at-least-once redelivery writes one row, and ignores every other event. Unlicensed, it
 // consumes and discards: an instance without the `export` feature stores nothing (ADR 0045).
-func Consumer(client *ent.Client, lic *licensekey.License) events.Consumer {
-	return events.Consumer{
+func Consumer(client *ent.Client, lic *licensekey.License) events.Subscriber {
+	return events.Subscriber{
 		Name: ConsumerName,
 		Handle: func(ctx context.Context, env events.Envelope) error {
 			if env.Name != events.NameContactErased || !lic.Has(licensekey.FeatureExport) {

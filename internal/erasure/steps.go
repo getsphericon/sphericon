@@ -90,6 +90,12 @@ func purgeOutbox(ctx context.Context, s *ent.Scoped, t *Target, purger events.Pu
 	return purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 }
 
+// purgeEventJobs deletes the queued event consumer jobs whose envelope names the subject; the
+// bus inserted them, and the purge shares Erasure's transaction.
+func purgeEventJobs(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
+	return purger.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+}
+
 // purgeWebhookDeliveries deletes the queued webhook deliveries whose payload names the
 // subject; the event envelope's owner knows that payload shape.
 func purgeWebhookDeliveries(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {

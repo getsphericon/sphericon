@@ -44,7 +44,7 @@ type Edition struct {
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *export.Streams
 	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
-	Consumers []events.Consumer
+	Consumers []events.Subscriber
 	// Staff is the domain of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
 	Staff *staff.Module
@@ -67,7 +67,7 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, staffSess
 		client:    client,
 		Audit:     auditLog,
 		Export:    export.New(lic),
-		Consumers: []events.Consumer{audit.Consumer(client, lic), export.Consumer(client, lic)},
+		Consumers: []events.Subscriber{audit.Consumer(client, lic), export.Consumer(client, lic)},
 		Staff:     staff.NewModule(client, lic, auditLog, staffCfg),
 	}
 	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}

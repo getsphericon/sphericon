@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -30,7 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
-// RegisterSubscribers wires the four consumers onto one router; a published hard
+// RegisterSubscribers wires the outbox consumers onto one router; a published hard
 // bounce reaches every one of them. It runs on a database of its own (the router
 // reads the committed outbox), dropped with the test.
 func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
@@ -70,10 +69,8 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.Eventually(t, func() bool {
 		persisted, err := client.Event.Query().Where(event.SubjectID(dest)).Exist(ctx)
 		assert.NoError(t, err)
-		suppressed, err := client.Suppression.Query().Where(suppression.Destination(dest)).Exist(ctx)
-		assert.NoError(t, err)
-		return persisted && suppressed && queued(ctx, t, reader, jobkind.EvaluateTrigger.Kind) >= 1 && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
-	}, 15*time.Second, 50*time.Millisecond, "the Event is stored, and suppression, automations and webhooks all see it")
+		return persisted && queued(ctx, t, reader, jobkind.EvaluateTrigger.Kind) >= 1 && queued(ctx, t, reader, jobkind.DeliverWebhook.Kind) >= 1
+	}, 15*time.Second, 50*time.Millisecond, "the Event is stored, and automations and webhooks see it")
 	// Delivery is at-least-once: a serialization failure while acking redelivers the
 	// message, so a consumer may see it more than once, never a different event.
 	deliveries, err := reader.JobList(ctx, river.NewJobListParams().Kinds(jobkind.DeliverWebhook.Kind).First(100))

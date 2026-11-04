@@ -45,6 +45,8 @@ type Bus struct {
 	logger watermill.LoggerAdapter
 	hooks  []ent.Hook
 	jobs   JobQueue
+	// consumers are the consumers every Publish inserts jobs for (UseConsumers).
+	consumers []Consumer
 }
 
 // New builds a Bus over the application's database pool.
@@ -101,7 +103,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 		return fmt.Errorf("outbox publisher: %w", err)
 	}
 
-	pub := &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs}
+	pub := &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers}
 	if err := fn(txClient, pub); err != nil {
 		_ = sqlTx.Rollback()
 		return err
@@ -168,13 +170,17 @@ type txPublisher struct {
 	client *ent.Client
 	// jobs is the bus's job queue (nil when it was given none); a purge of the queue runs on tx.
 	jobs JobQueue
+	// consumers are the bus's consumers, whose jobs Publish inserts on tx.
+	consumers []Consumer
 	// committed runs once tx has committed, in order.
 	committed []func()
 }
 
 // Publish stamps the envelope of ev and, for an event that is an Event (not Unprojected),
 // writes its row in the transaction. An event whose row already exists is a repeat, and is
-// not published again: no consumer sees it twice.
+// not published again: no consumer sees it twice. Otherwise it inserts, in the transaction, the
+// job of every consumer that wants the event. An error leaves the caller to roll back, so no
+// state commits without its event.
 func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	data, err := json.Marshal(ev)
 	if err != nil {
@@ -212,6 +218,9 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 			return nil // a repeat: published when it first arrived
 		}
 		p.committed = append(p.committed, func() { recordProviderOutcome(context.WithoutCancel(ctx), ev) })
+	}
+	if err := p.queueConsumers(ctx, env, ev); err != nil {
+		return fmt.Errorf("queue the consumers of %q: %w", env.Name, err)
 	}
 	msg := Message(env)
 	injectTrace(ctx, msg)

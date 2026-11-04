@@ -99,7 +99,6 @@ const (
 	GroupAutomations = "automations"
 	GroupRules       = "rules"
 	GroupWebhooks    = "webhooks"
-	GroupSuppression = "suppression"
 	// GroupOrders reads the order Events into Orders (ADR 0064).
 	GroupOrders = "orders"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
@@ -113,7 +112,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression, GroupOrders}
+	return []string{GroupAutomations, GroupRules, GroupWebhooks, GroupOrders}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -161,13 +160,12 @@ func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool)
 // then extra, the consumers owned outside core (the Enterprise audit subscriber, ee/), each its
 // own group named like its handler. RegisterSubscribers runs them on the router, and
 // ReplayDeadLetters runs one group's dead letters through its handler.
-func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer) ConsumerHandlers {
+func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Subscriber) ConsumerHandlers {
 	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
 	hs = append(hs, ConsumerHandlers{
 		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
 		{GroupRules, "evaluate_rules", RulesConsumer(rules)},
 		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
-		{GroupSuppression, "update_suppression", suppressionConsumer(client)},
 		{GroupOrders, "record_orders", ordersConsumer(client, orders)},
 	}...)
 	for _, c := range extra {
@@ -176,33 +174,21 @@ func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispat
 	return hs
 }
 
-// Consumer is a bus subscriber registered from outside the events package. Name is
+// Subscriber is an outbox subscriber registered from outside the events package. Name is
 // both its router handler name and its consumer group.
-type Consumer struct {
+type Subscriber struct {
 	Name   string
 	Handle func(ctx context.Context, env Envelope) error
 }
 
-// Handler adapts the consumer to a watermill handler that decodes the envelope.
-func (c Consumer) Handler() message.NoPublishHandlerFunc {
+// Handler adapts the subscriber to a watermill handler that decodes the envelope.
+func (c Subscriber) Handler() message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		env, err := EnvelopeOf(msg)
 		if err != nil {
 			return err
 		}
 		return c.Handle(msg.Context(), env)
-	}
-}
-
-// suppressionConsumer adds the event's address to the workspace suppression list
-// when the action implies it (hard bounce, complaint).
-func suppressionConsumer(client *ent.Client) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		return Suppress(msg.Context(), client, env)
 	}
 }
 

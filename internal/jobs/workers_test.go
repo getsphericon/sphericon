@@ -637,14 +637,18 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: 424242})))
 }
 
-// failingQueue is a job queue that cannot take the job.
+// failingQueue is a job queue that cannot take a job.
 type failingQueue struct {
-	events.JobQueue // only InsertTx is called
+	events.JobQueue // only the inserts are called
 
 	err error
 }
 
 func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return nil, q.err
+}
+
+func (q failingQueue) InsertManyTx(context.Context, *sql.Tx, []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
 	return nil, q.err
 }
 

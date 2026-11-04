@@ -180,6 +180,7 @@ func (m *Module) steps() []step {
 		cancelAutomationWork,
 		cancelRuleWork,
 		purgeOutbox,
+		purgeEventJobs,
 		purgeWebhookDeliveries,
 		eraseShortLinks,
 		eraseTelegram,

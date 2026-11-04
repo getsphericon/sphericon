@@ -435,6 +435,8 @@ var editionPackage = do.Package(
 			return nil, err
 		}
 		bus.UseJobs(inserter)
+		// The consumers of the domain events: a publish inserts a job for each that wants it.
+		bus.UseConsumers(jobs.EventConsumers()...)
 		return bus, nil
 	}),
 	// The consume side: the router with the consumers registered (the outbox tables come from
