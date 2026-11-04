@@ -2370,6 +2370,7 @@ export default interface Resources {
       "emailHint": "Sends to this address will be skipped",
       "emailLabel": "Email address",
       "empty": "No suppressed addresses",
+      "erasedNumber": "Erased number",
       "lift": "Lift",
       "liftConfirmDescription": "The address will receive mail again. The suppression stays in the list of lifted ones.",
       "liftConfirmTitle": "Lift this suppression?",

@@ -184,19 +184,27 @@ func query(s *ent.Scoped, lifted bool) *ent.SuppressionQuery {
 
 // Remove lifts an active Suppression of the scoped Workspace by id: the row stays with its
 // lift time and the destination can receive mail again. A missing or already lifted one is
-// ErrNotFound.
+// ErrNotFound. On sms a number suppressed again after its Contact's Erasure also has the
+// Suppression the Erasure keyed by its hash (EraseContact), which refuses the number as much:
+// lifting the number's lifts that twin too, so the number can be texted again.
 func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	n, err := s.Suppression().Update().
-		Where(entsuppression.ID(id), entsuppression.LiftedAtIsNil()).
-		SetLiftedAt(time.Now()).
-		Save(ctx)
+	row, err := s.Suppression().Query().Where(entsuppression.ID(id), entsuppression.LiftedAtIsNil()).Only(ctx)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
 	if err != nil {
 		return err
 	}
-	if n == 0 {
-		return ErrNotFound
+	lifted := entsuppression.ID(row.ID)
+	if row.Channel == entsuppression.ChannelSms && e164.MatchString(row.Destination) {
+		lifted = entsuppression.Or(lifted, entsuppression.And(
+			entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
 	}
-	return nil
+	_, err = s.Suppression().Update().
+		Where(lifted, entsuppression.LiftedAtIsNil()).
+		SetLiftedAt(time.Now()).
+		Save(ctx)
+	return err
 }
 
 // EraseContact is the Suppression part of the Contact's Erasure: its lifted rows are

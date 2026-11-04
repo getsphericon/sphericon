@@ -40,6 +40,7 @@ import { usePaginationText } from '../../hooks/usePaginationText.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { can } from '../../utils/permissions.ts'
+import { isErasedNumber } from '../../utils/phone.ts'
 
 const REASON_COLORS: Record<SiteSuppressionReason, string> = {
   bounce: 'orange',
@@ -136,7 +137,18 @@ function SuppressionsTable({
           idAccessor="id"
           fetching={fetching}
           columns={[
-            { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
+            {
+              accessor: 'destination',
+              title: t(($) => $.suppressions.emailColumn),
+              render: (record) =>
+                record.channel === 'sms' && isErasedNumber(record.destination) ? (
+                  <Text size="sm" c="dimmed" fs="italic">
+                    {t(($) => $.suppressions.erasedNumber)}
+                  </Text>
+                ) : (
+                  record.destination
+                ),
+            },
             {
               accessor: 'reason',
               title: t(($) => $.suppressions.reasonColumn),
