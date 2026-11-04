@@ -182,7 +182,9 @@ type telegramEdit struct {
 // editTelegram validates an Update of a Telegram Integration and connects its bot as the edit asks,
 // before the save commits: a new token must be of the same bot (getMe), and an Integration that
 // holds the webhook after the edit registers it again when the token changed or it was just
-// enabled, keeping the pending updates.
+// enabled, keeping the pending updates. The same token saved again changes nothing, unless Telegram
+// refused it at a send: the Owner saves it once the bot works again, and it is checked anew and the
+// hold goes.
 func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in UpdateInput) (telegramEdit, error) {
 	params, _ := in.Params.Get()
 	if name := in.Preset.Over(row.Preset); (in.Preset.Changes() && (name == nil || *name != TelegramPreset)) || len(params) > 0 {
@@ -193,7 +195,8 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 		return telegramEdit{}, err
 	}
 	next := stored
-	if cfg, ok := in.Config.Get(); ok {
+	cfg, configGiven := in.Config.Get()
+	if configGiven {
 		if cfg.Telegram == nil {
 			return telegramEdit{}, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
 		}
@@ -208,8 +211,9 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 	was := holdsWebhook(row.Enabled, row.DiscardedAt)
 	will := holdsWebhook(*in.Enabled.Over(&row.Enabled), row.DiscardedAt)
 	connect := will && (tokenChanged || !was)
+	recheck := configGiven && row.ProviderRefusedAt != nil
 
-	if tokenChanged || connect {
+	if tokenChanged || connect || recheck {
 		info, err := m.identify(ctx, next.Token)
 		if err != nil {
 			return telegramEdit{}, err
@@ -225,7 +229,8 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 		}
 	}
 	out := telegramEdit{connected: connect, release: was && !will}
-	if next != stored {
+	// A config sealed anew is what lifts the hold (applyEdit), so a re-checked one is stored again.
+	if next != stored || recheck {
 		raw, err := json.Marshal(next)
 		if err != nil {
 			return telegramEdit{}, err
