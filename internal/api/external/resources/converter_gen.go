@@ -38,6 +38,7 @@ import (
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
+	reputation "github.com/getsphericon/sphericon/internal/reputation"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
@@ -1114,6 +1115,13 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 	}
 	return externalapiProviderLimitWarning
 }
+func (c *ConverterImpl) RateToTriple(source reputation.Rate) external.RateTriple {
+	var externalapiRateTriple external.RateTriple
+	externalapiRateTriple.Numerator = count(source.Numerator)
+	externalapiRateTriple.Denominator = count(source.Denominator)
+	externalapiRateTriple.Rate = nilFloat64(source.Rate)
+	return externalapiRateTriple
+}
 func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) external.RuleActionStatus {
 	var externalapiRuleActionStatus external.RuleActionStatus
 	switch source {
@@ -1301,14 +1309,38 @@ func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) ex
 	externalapiSendCap.SentLast24h = count(source.Sent24h)
 	return externalapiSendCap
 }
-func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[external.SendingDomainRatesResource]) *external.SendingDomainRatesListOK {
+func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[reputation.DomainRates], context int32) *external.SendingDomainRatesListOK {
 	var externalapiSendingDomainRatesListOK external.SendingDomainRatesListOK
-	externalapiSendingDomainRatesListOK.Items = source.Items
+	externalapiSendingDomainRatesListOK.Items = make([]external.SendingDomainRatesResource, len(source.Items))
+	for i := 0; i < len(source.Items); i++ {
+		externalapiSendingDomainRatesListOK.Items[i] = c.SendingDomainRatesToResource(source.Items[i], context)
+	}
 	externalapiSendingDomainRatesListOK.Page = count(source.Page)
 	externalapiSendingDomainRatesListOK.PageSize = count(source.PageSize)
 	externalapiSendingDomainRatesListOK.TotalItems = count(source.TotalItems)
 	externalapiSendingDomainRatesListOK.TotalPages = count(source.TotalPages)
 	return &externalapiSendingDomainRatesListOK
+}
+func (c *ConverterImpl) SendingDomainRatesToResource(source reputation.DomainRates, context int32) external.SendingDomainRatesResource {
+	var externalapiSendingDomainRatesResource external.SendingDomainRatesResource
+	var pInt64 *int64
+	if source.Domain != nil {
+		pInt64 = &source.Domain.ID
+	}
+	if pInt64 != nil {
+		externalapiSendingDomainRatesResource.SendingDomainId = external.EntityId(*pInt64)
+	}
+	var pString *string
+	if source.Domain != nil {
+		pString = &source.Domain.Domain
+	}
+	if pString != nil {
+		externalapiSendingDomainRatesResource.Domain = *pString
+	}
+	externalapiSendingDomainRatesResource.WindowDays = windowDaysOf(context)
+	externalapiSendingDomainRatesResource.ComplaintRate = c.RateToTriple(source.Complaint)
+	externalapiSendingDomainRatesResource.BounceRate = c.RateToTriple(source.Bounce)
+	return externalapiSendingDomainRatesResource
 }
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
 	var externalapiSendingDomainResource external.SendingDomainResource

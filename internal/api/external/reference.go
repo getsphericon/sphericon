@@ -7,7 +7,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
@@ -40,25 +39,5 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 	if err != nil {
 		return nil, err
 	}
-	items := make([]externalapi.SendingDomainRatesResource, len(rates))
-	for i, r := range rates {
-		items[i] = externalapi.SendingDomainRatesResource{
-			SendingDomainId: externalapi.EntityId(r.Domain.ID),
-			Domain:          r.Domain.Domain,
-			WindowDays:      days,
-			ComplaintRate:   rateTriple(r.Complaint),
-			BounceRate:      rateTriple(r.Bounce),
-		}
-	}
-	return mapper.SendingDomainRatesListPage(pagination.Whole(items)), nil
-}
-
-func rateTriple(r reputation.Rate) externalapi.RateTriple {
-	out := externalapi.RateTriple{Numerator: narrow.Int32(r.Numerator), Denominator: narrow.Int32(r.Denominator)}
-	if r.Rate == nil {
-		out.Rate = externalapi.NilFloat64{Null: true}
-	} else {
-		out.Rate = externalapi.NewNilFloat64(*r.Rate)
-	}
-	return out
+	return mapper.SendingDomainRatesListPage(pagination.Whole(rates), days), nil
 }

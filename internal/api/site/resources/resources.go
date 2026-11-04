@@ -68,6 +68,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
+	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -406,6 +407,11 @@ type Converter interface {
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
 	PasskeysToResources(source []*ent.Passkey) []siteapi.SitePasskey
+	// A Linked identity's display name is the provider registry's (ADR 0048), not a column.
+	// goverter:map Provider DisplayName | providerDisplayName
+	IdentityToResource(source *ent.UserIdentity) siteapi.SiteLinkedIdentity
+	// goverter:useEmptyOnNil:slice
+	IdentitiesToResources(source []*ent.UserIdentity) []siteapi.SiteLinkedIdentity
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	// goverter:useEmptyOnNil:slice
 	SuppressionsToResources(source []*ent.Suppression) []siteapi.SiteSuppressionResource
@@ -470,6 +476,10 @@ type Converter interface {
 	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
 	// goverter:useEmptyOnNil:slice
 	InvitationsToResources(source []*ent.Invitation) siteapi.SiteInvitationsListOKApplicationJSON
+	// What the public accept page shows of a pending invite: the Workspace it joins is the
+	// loaded edge.
+	// goverter:map Edges.Workspace.Name WorkspaceName
+	InvitationToLookupResult(source *ent.Invitation) *siteapi.SiteInvitationLookupResult
 
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
@@ -504,6 +514,11 @@ type Converter interface {
 	// cannot see: the handler attaches it.
 	// goverter:ignore OnlyOwner
 	DeletedWorkspaceToResource(source *ent.Workspace) siteapi.SiteDeletedWorkspaceResource
+	// goverter:map DomainJoinEnabled Enabled
+	DomainJoinToResource(source *ent.Workspace) *siteapi.SiteDomainJoinResource
+	// The Workspace a User who just proved the address lands in.
+	// goverter:map PublicID LandingWorkspaceId
+	VerifyEmailResultToResource(source *ent.Workspace) siteapi.SiteVerifyEmailResult
 
 	// goverter:map CreatedAt Since
 	HoldToResource(source *ent.Hold) siteapi.SiteWorkspaceHold
@@ -754,6 +769,9 @@ func (m ExportMapper) OutboundMessage(r *ent.OutboundMessage) json.Marshaler {
 func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshaler {
 	return new(m.BroadcastRecipientToExport(r))
 }
+
+// providerDisplayName is what a sign-in provider is called to a person.
+func providerDisplayName(provider string) string { return signin.DisplayName(provider) }
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }

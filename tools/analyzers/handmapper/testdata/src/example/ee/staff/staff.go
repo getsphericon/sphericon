@@ -3,6 +3,7 @@
 package staff
 
 import (
+	"example/ent"
 	"example/gen/site"
 	"example/internal/automations"
 )
@@ -24,4 +25,14 @@ func (m *Module) create(name string) automations.CreateInput {
 // A function outside the handler types belongs to the module.
 func defaults() automations.CreateInput {
 	return automations.CreateInput{Name: "default"}
+}
+
+// A handler maps an entity's fields into a resource by hand: a finding.
+func (h *ServiceHandlers) lookup(inv *ent.Invitation) any {
+	return site.InvitationLookup{Email: inv.Email} // want `rule 1: site.InvitationLookup is built by hand from the fields of ent.Invitation`
+}
+
+// The domain module of the package is not a handler.
+func (m *Module) lookup(inv *ent.Invitation) any {
+	return site.InvitationLookup{Email: inv.Email}
 }

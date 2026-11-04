@@ -87,7 +87,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	}
 	return &siteapi.SiteVerifyEmailResultHeaders{
 		SetCookie: cookie.String(),
-		Response:  siteapi.SiteVerifyEmailResult{LandingWorkspaceId: siteapi.WorkspaceId(landing.PublicID)},
+		Response:  mapper.VerifyEmailResultToResource(landing),
 	}, nil
 }
 

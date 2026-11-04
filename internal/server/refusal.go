@@ -8,12 +8,12 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/server/refusals"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -27,6 +27,10 @@ import (
 // link 400, incomplete 428 and an unknown reference (a pending sign-up that is gone, a foreign
 // cursor) 400. The bodies are the problem models of typespec/common, which every contract shares,
 // so the site's generated types encode them for every surface.
+
+// mapper maps what a refusal names to the problem models' members (the goverter converter of
+// internal/server/refusals).
+var mapper = &refusals.ConverterImpl{}
 
 // refusal is a problem a refused request is answered with: its status and its encoded body.
 type refusal struct {
@@ -154,12 +158,10 @@ func problemBody(status int, detail string) *siteapi.ProblemDetails {
 func deletionBody(status int, e *accounts.DeletionRefusedError) *siteapi.SiteDeleteUserProblemDetails {
 	base := fieldBody(status, e.Reason.Field(), e.Reason.Message())
 	p := &siteapi.SiteDeleteUserProblemDetails{
-		Status: base.Status,
-		Title:  base.Title,
-		Detail: base.Detail,
-		Workspaces: lo.Map(e.Workspaces, func(w *ent.Workspace, _ int) siteapi.SiteSoleOwnedWorkspace {
-			return siteapi.SiteSoleOwnedWorkspace{ID: siteapi.WorkspaceId(w.PublicID), Name: w.Name}
-		}),
+		Status:     base.Status,
+		Title:      base.Title,
+		Detail:     base.Detail,
+		Workspaces: mapper.SoleOwnedWorkspaces(e.Workspaces),
 	}
 	if errs, ok := base.Errors.Get(); ok {
 		p.Errors = siteapi.NewOptSiteDeleteUserProblemDetailsErrors(siteapi.SiteDeleteUserProblemDetailsErrors(errs))
@@ -177,7 +179,7 @@ func inUseBody(e *inuse.Error) *siteapi.InUseProblemDetails {
 		Title:  base.Title,
 		Detail: base.Detail,
 		UsedBy: lo.Map(e.Users, func(u inuse.User, _ int) siteapi.UsedBy {
-			by := siteapi.UsedBy{Kind: siteapi.UsedByKind(u.Kind), ID: siteapi.EntityId(u.ID), Name: u.Name}
+			by := siteapi.UsedBy{Kind: mapper.UsedByKind(u.Kind), ID: siteapi.EntityId(u.ID), Name: u.Name}
 			if u.Count > 0 {
 				by.Count = siteapi.NewOptInt32(narrow.Int32(u.Count))
 			}

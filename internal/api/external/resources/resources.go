@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
@@ -129,6 +130,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend eventAction
 // goverter:extend broadcastContent
 // goverter:extend nilFloat32
+// goverter:extend nilFloat64
 // goverter:extend emailContentChannel
 // goverter:extend telegramContentChannel
 // goverter:extend smsContentChannel
@@ -418,9 +420,18 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
 	PresetsListPage(source pagination.Page[externalapi.PresetResource]) *externalapi.PresetsListOK
+	// The window is the one the request named, which the rates do not carry.
+	// goverter:context windowDays
 	// goverter:useEmptyOnNil:slice
-	// goverter:skipCopySameType
-	SendingDomainRatesListPage(source pagination.Page[externalapi.SendingDomainRatesResource]) *externalapi.SendingDomainRatesListOK
+	SendingDomainRatesListPage(source pagination.Page[reputation.DomainRates], windowDays int32) *externalapi.SendingDomainRatesListOK
+	// goverter:context windowDays
+	// goverter:map Domain.ID SendingDomainId
+	// goverter:map Domain.Domain Domain
+	// goverter:map Complaint ComplaintRate
+	// goverter:map Bounce BounceRate
+	// goverter:map WindowDays | windowDaysOf
+	SendingDomainRatesToResource(source reputation.DomainRates, windowDays int32) externalapi.SendingDomainRatesResource
+	RateToTriple(source reputation.Rate) externalapi.RateTriple
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -580,6 +591,16 @@ func optNilInt32(v *int) externalapi.OptNilInt32 {
 func nilFloat32(v *float32) externalapi.NilFloat32 {
 	return convert.Nil[externalapi.NilFloat32](v)
 }
+
+// nilFloat64 is a ratio that is undefined (null) when its denominator is zero.
+func nilFloat64(v *float64) externalapi.NilFloat64 {
+	return convert.Nil[externalapi.NilFloat64](v)
+}
+
+// windowDaysOf is the trailing window, in days, the request named for the rates.
+//
+// goverter:context windowDays
+func windowDaysOf(windowDays int32) int32 { return windowDays }
 
 func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 	return convert.OptObject[externalapi.OptNilJsonObject](convert.RawObject[externalapi.JsonObject](m))
