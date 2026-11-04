@@ -110,7 +110,7 @@ func TestARepeatOfTheSameOrderIdChangesNothing(t *testing.T) {
 	s.completed("A-1", "10.00", "USD")
 	s.completed("A-1", "99.00", "USD")
 	env.WorkOrderJobs(t)
-	env.WorkOrderJobs(t) // at-least-once delivery: the whole outbox again
+	env.WorkOrderJobs(t) // river retries a job: every orders job again
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 1000, got.Current.Total)
@@ -210,7 +210,7 @@ func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 725, got.Current.Total)
-	assert.Equal(t, 0, env.OutboxCount(t, "contact.created", map[string]any{"email": ""}), "no Contact is created")
+	assert.Equal(t, 0, env.QueuedCount(t, "contact.created", map[string]any{"email": ""}), "no Contact is created")
 	guest := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("G-1")).OnlyX(t.Context())
 	assert.Nil(t, guest.ContactID)
 }

@@ -30,7 +30,7 @@ func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), &click)
 	}))
-	sent := env.OutboxEnvelopes(t, events.NameEmailClicked)
+	sent := env.QueuedEnvelopes(t, events.NameEmailClicked)
 	env.BackdateEvent(t, sent[len(sent)-1], at)
 }
 

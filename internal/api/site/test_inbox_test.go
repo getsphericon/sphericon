@@ -197,9 +197,9 @@ func TestTheOutboundMessageOfACapturedSendIsStampedDeliveredOnceAndNothingBounce
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
 	assert.Nil(t, row.ComplainedAt)
-	assert.Equal(t, 1, env.OutboxCount(t, "email.delivered", map[string]any{"outboundMessageId": sent.ID}))
-	assert.Zero(t, env.OutboxCount(t, "email.bounced", map[string]any{"outboundMessageId": sent.ID}))
-	assert.Zero(t, env.OutboxCount(t, "email.complained", map[string]any{"outboundMessageId": sent.ID}))
+	assert.Equal(t, 1, env.QueuedCount(t, "email.delivered", map[string]any{"outboundMessageId": sent.ID}))
+	assert.Zero(t, env.QueuedCount(t, "email.bounced", map[string]any{"outboundMessageId": sent.ID}))
+	assert.Zero(t, env.QueuedCount(t, "email.complained", map[string]any{"outboundMessageId": sent.ID}))
 }
 
 func TestABroadcastThroughTheTestInboxWithoutAVerifiedDomainIsCaptured(t *testing.T) {

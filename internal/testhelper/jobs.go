@@ -103,8 +103,16 @@ func (env *TestEnv) enqueueIn(t *testing.T, args river.JobArgs, state rivertype.
 // JobsOf returns the args of the queued jobs of kind, oldest first.
 func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 	t.Helper()
-	res, err := env.riverClient(t).JobList(t.Context(), river.NewJobListParams().Kinds(kind).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
+	return listArgs(t, env.riverClient(t), river.NewJobListParams().Kinds(kind))
+}
+
+// listArgs is the args of the jobs params selects, oldest first. It fails the test when the read
+// reaches its bound, so a test never asserts on part of the queue.
+func listArgs(t *testing.T, rc *river.Client[*sql.Tx], params *river.JobListParams) []map[string]any {
+	t.Helper()
+	res, err := rc.JobList(t.Context(), params.OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
 	require.NoError(t, err)
+	require.Less(t, len(res.Jobs), maxQueuedJobs, "the test queued more jobs than a read returns")
 	out := make([]map[string]any, 0, len(res.Jobs))
 	for _, job := range res.Jobs {
 		var args map[string]any

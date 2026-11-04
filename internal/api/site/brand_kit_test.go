@@ -110,7 +110,7 @@ func TestSiteBrandKitSaveIsAudited(t *testing.T) {
 	changed.TextColor = "#000000"
 	saveBrandKit(t, c, fixtures.VandelayPublicID, changed)
 
-	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) *events.AuditEntry { return e.(*events.AuditEntry) })
+	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) *events.AuditEntry { return e.(*events.AuditEntry) })
 	actions := lo.Map(entries, func(entry *events.AuditEntry, _ int) string { return entry.Action })
 	updates := lo.Filter(entries, func(entry *events.AuditEntry, _ int) bool { return entry.Action == "brand_kit.update" })
 	assert.Contains(t, actions, "brand_kit.create")

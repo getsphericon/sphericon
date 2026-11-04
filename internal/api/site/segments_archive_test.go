@@ -196,7 +196,7 @@ func TestSiteSegmentArchiveIsAudited(t *testing.T) {
 	_, err = unarchiveSegment(c, fixtures.SegmentRetiredID)
 	require.NoError(t, err)
 
-	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
+	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		entry, ok := ev.(*events.AuditEntry)
 		require.True(t, ok)
 		return entry

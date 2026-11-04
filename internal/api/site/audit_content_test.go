@@ -40,7 +40,7 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 
 	byAction := map[string]*events.AuditEntry{}
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
 		e := ev.(*events.AuditEntry)
 		byAction[e.Action] = e
 	}
@@ -76,7 +76,7 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 
-	contactEntries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	contactEntries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e := ev.(*events.AuditEntry)
 		return e, e.TargetType == "contact"
 	})

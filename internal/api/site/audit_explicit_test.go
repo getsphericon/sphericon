@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// entriesNamed delivers the outbox to the EE subscriber and returns the entries of
+// entriesNamed works the audit jobs and returns the entries of
 // one action as the Workspace's owner sees them, newest first.
 func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.SiteAuditEntryResource {
 	t.Helper()
@@ -302,7 +302,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 
 	var seen []string
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
 		seen = append(seen, ev.(*events.AuditEntry).Action)
 	}
 	slices.Sort(seen)

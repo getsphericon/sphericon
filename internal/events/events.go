@@ -17,6 +17,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -284,6 +285,11 @@ var registry = map[string]func() DomainEvent{
 	NameSmsClicked:            func() DomainEvent { return &SmsClicked{} },
 	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
+}
+
+// Names are the bus types of every event Decode knows, sorted.
+func Names() []string {
+	return slices.Sorted(maps.Keys(registry))
 }
 
 // Decode reconstructs the typed event from an envelope.

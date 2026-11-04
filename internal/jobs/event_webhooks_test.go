@@ -14,6 +14,26 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// Every live event of every type the bus knows is handed to the webhooks consumer, which finds
+// the endpoints that want it; loaded history is not. Tests read what a request published from the
+// queued event jobs (testhelper.QueuedEnvelopes), so a webhooks filter narrower than this would
+// let an assertion that nothing was published pass on nothing.
+func TestEveryLiveEventIsHandedToTheWebhooksConsumer(t *testing.T) {
+	webhooks, ok := lo.Find(jobs.EventConsumers(), func(c events.Consumer) bool {
+		return c.Job(events.Envelope{}).Kind() == jobs.WebhookEventArgs{}.Kind()
+	})
+	require.True(t, ok, "the webhooks consumer is registered")
+
+	for _, name := range events.Names() {
+		env := events.Envelope{ID: "evt", Name: name, WorkspaceID: fixtures.AcmeID, Data: []byte(`{"action":"` + name + `"}`)}
+		ev, err := events.Decode(env)
+		require.NoError(t, err, name)
+		assert.True(t, webhooks.Wants(env, ev), name)
+	}
+	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase", Backfill: true}
+	assert.False(t, webhooks.Wants(events.Envelope{Name: events.NameCollected}, history), "loaded history is never delivered")
+}
+
 // deliveryTo is the queued delivery to the endpoint, failing the test when there is none.
 func deliveryTo(t *testing.T, env *testhelper.TestEnv, endpointID int64) jobs.DeliverWebhookArgs {
 	t.Helper()

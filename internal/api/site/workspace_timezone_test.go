@@ -46,7 +46,7 @@ func TestAnOwnerSetsTheTimezoneAndItIsRecordedInTheAuditLog(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), list[0].Timezone)
 
-	published := env.OutboxEvents(t, events.NameAuditEntry)
+	published := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, published, 1)
 	entry := published[0].(*events.AuditEntry)
 	diff, err := json.Marshal(entry.Diff)
@@ -65,7 +65,7 @@ func TestSettingTheSameTimezoneAgainRecordsNothing(t *testing.T) {
 	setTimezone(t, owner, fixtures.AcmePublicID, "Asia/Tokyo")
 	setTimezone(t, owner, fixtures.AcmePublicID, "Asia/Tokyo")
 
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1)
+	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)
 }
 
 func TestAMemberCannotSetTheTimezone(t *testing.T) {
@@ -76,7 +76,7 @@ func TestAMemberCannotSetTheTimezone(t *testing.T) {
 
 	assert.IsType(t, &siteapi.SiteWorkspacesSetTimezoneForbidden{}, member)
 	assert.IsType(t, &siteapi.SiteWorkspacesSetTimezoneNotFound{}, outsider)
-	assert.Empty(t, env.OutboxEvents(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
 func TestAnAdminSetsTheTimezone(t *testing.T) {
@@ -101,5 +101,5 @@ func TestAnUnknownTimezoneIsRefusedAndTheZoneStays(t *testing.T) {
 	list, err := owner.SiteWorkspacesList(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.TimeZoneName("UTC"), list[0].Timezone)
-	assert.Empty(t, env.OutboxEvents(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
