@@ -256,9 +256,9 @@ type Invoker interface {
 	//
 	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
 	// as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
-	// brand. The evidence is kept in the immutable `marketing.confirmed` event. A number already confirmed
-	// keeps its confirmation unless the new one is stronger, so the answer is the confirmation that
-	// stands. It does not lift an opt-out: only the person can, by texting START.
+	// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
+	// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
+	// does not lift an opt-out: only the person can, by texting START.
 	//
 	// POST /confirmations
 	ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (ConfirmationsCreateRes, error)
@@ -5678,9 +5678,9 @@ func (c *Client) sendCapturedMessagesList(ctx context.Context, params CapturedMe
 //
 // Record consent a phone number gave outside sphericon (a form of your own, a verification service),
 // as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
-// brand. The evidence is kept in the immutable `marketing.confirmed` event. A number already confirmed
-// keeps its confirmation unless the new one is stronger, so the answer is the confirmation that
-// stands. It does not lift an opt-out: only the person can, by texting START.
+// brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
+// its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
+// does not lift an opt-out: only the person can, by texting START.
 //
 // POST /confirmations
 func (c *Client) ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (ConfirmationsCreateRes, error) {

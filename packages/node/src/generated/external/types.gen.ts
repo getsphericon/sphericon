@@ -1420,7 +1420,7 @@ export const ConsentChannel = {
 export type ConsentChannel = typeof ConsentChannel[keyof typeof ConsentChannel];
 
 /**
- * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
  */
 export type ConsentEvidence = {
   /**

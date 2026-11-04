@@ -33,7 +33,8 @@ func smsConsent(destination string) *externalapi.CreateConfirmationInput {
 }
 
 // A number is not texted until an API client records the consent it collected; the evidence lands
-// in marketing.confirmed, and the number becomes eligible on sms (ADR 0077).
+// in sms.confirmed, never in email's marketing.confirmed, and the number becomes eligible on sms
+// (ADR 0077).
 func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
@@ -50,11 +51,12 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 	assert.Equal(t, "Acme", created.Brand.Value)
 	after := smsDecision(t, env, fixtures.ContactTexterPhone)
 	assert.True(t, after.Eligible)
-	evidence := env.OutboxCount(t, events.NameMarketingConfirmed, map[string]any{
-		"channel": "sms", "phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "provenance": "imported",
+	evidence := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "provenance": "imported",
 		"wording": "Yes, text me offers from Acme. Reply STOP to opt out.", "source": "checkout form", "brand": "Acme",
 	})
 	assert.Equal(t, 1, evidence)
+	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
 }
 
 // A weaker provenance never replaces a stronger one: an import over a START keeps the START and
@@ -70,7 +72,7 @@ func TestAnImportedSMSConfirmationLeavesAStrongerOneStanding(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceKeyword, standing.Provenance)
 	assert.False(t, standing.Wording.Set, "the START carries no wording")
-	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil))
+	assert.Equal(t, 0, env.OutboxCount(t, events.NameSmsConfirmed, nil))
 }
 
 // A stronger provenance replaces a weaker one with its own evidence.
@@ -85,7 +87,7 @@ func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, standing.Provenance)
 	assert.Equal(t, "checkout form", standing.Source.Value)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameMarketingConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination}))
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination}))
 }
 
 func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
@@ -189,5 +191,6 @@ func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	}, statuses)
 	assert.True(t, smsDecision(t, env, "+14155550830").Eligible)
 	assert.Equal(t, eligibility.ReasonUnconfirmed, smsDecision(t, env, "+14155550831").Reason)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameMarketingConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"}))
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"}))
+	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
 }

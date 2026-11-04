@@ -16,7 +16,7 @@ import (
 // the number in E.164): no text of the Workspace goes to it, whichever sender, Broadcast or
 // Automation (ADR 0077). Like an opt-out of everything on email it deletes the number's SMS
 // Confirmation, so stale consent never reactivates: only a new Confirmation (the START that lifts
-// the opt-out) makes the number reachable again; the marketing.confirmed Event stays as proof. It
+// the opt-out) makes the number reachable again; the sms.confirmed Event stays as proof. It
 // is idempotent: a number already opted out changes nothing. Run it inside the transaction s is
 // bound to.
 func StopSMS(ctx context.Context, s *ent.Scoped, number string) error {

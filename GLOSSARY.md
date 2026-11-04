@@ -147,7 +147,7 @@ _Avoid_: Backup, dump, contact export (that is the bulk list export)
 
 **Retention**:
 How long an Event is kept before it is deleted. Events split by purpose: **evidentiary** Events
-(consent proof such as `marketing.confirmed`, hard bounces and complaints, unsubscribes)
+(consent proof such as `marketing.confirmed` and `sms.confirmed`, hard bounces and complaints, unsubscribes)
 are the audit and dispute record and are never deleted by age; **analytical** Events (opens, clicks,
 deliveries, customer-tracked actions) are deleted once older than the instance's retention window,
 so segment conditions cannot look back past it.
@@ -307,8 +307,10 @@ separate facts, never one field.
 **Confirmation** (confirmed opt-in):
 The **positive** mirror of an Unsubscribe: a per-(workspace, channel, destination) consent fact,
 recorded as a derived destination-keyed row (the fast eligibility gate) written alongside an
-immutable `marketing.confirmed` **Event** (the source of truth — GDPR Art. 7 "demonstrate
-consent" proof, and a bus signal that can trigger a welcome Automation). It exists so double
+immutable **Event** of its Channel (the source of truth — GDPR Art. 7 "demonstrate
+consent" proof, and a bus signal that can trigger a welcome Automation): `marketing.confirmed`
+on email, `sms.confirmed` on SMS, so a trigger on one Channel's consent never starts what was
+written for another's. It exists so double
 opt-in can be modeled **without** reintroducing a subscription status: the truth is an event, not
 a mutable flag. Required on SMS and WhatsApp always, and on email only when the workspace's
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds

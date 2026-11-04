@@ -8,6 +8,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -45,6 +46,10 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
 	assert.True(t, eligible.Eligible)
+	assert.Equal(t, 1, env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "source": "phone call",
+	}))
+	assert.Equal(t, 0, env.OutboxCount(t, events.NameMarketingConfirmed, nil), "marketing.confirmed is email's")
 
 	stopped, ok := optedOut.(*siteapi.SiteSmsConsent)
 	require.Truef(t, ok, "got %T", optedOut)

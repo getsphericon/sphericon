@@ -5862,7 +5862,7 @@ func (s *ConsentChannel) UnmarshalText(data []byte) error {
 }
 
 // The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable
-// `marketing.confirmed` Event to answer a proof request.
+// `sms.confirmed` Event to answer a proof request.
 // Ref: #/components/schemas/ConsentEvidence
 type ConsentEvidence struct {
 	// The consent wording the person was shown and agreed to.

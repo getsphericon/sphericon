@@ -438,7 +438,7 @@ type environment struct {
 	// the prune job, which runs every 10 minutes, may delete it (ADR 0019).
 	OutboxFloorDays int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
 	// The age, in days, past which analytical Events are deleted by a daily job; `0` disables it
-	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `email.complained`,
+	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `sms.confirmed`, `email.complained`,
 	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age.
 	EventsRetentionDays int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
 	// The age, in days, past which an Unverified User with no Membership is deleted by a daily job,

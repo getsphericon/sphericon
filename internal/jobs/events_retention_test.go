@@ -33,6 +33,7 @@ var (
 	// Fixture Events 500 days old that are evidentiary and must stay.
 	evidentiary = []int64{
 		fixtures.EventOldConfirmedID,
+		fixtures.EventOldSmsConfirmedID,
 		fixtures.EventOldComplainedID,
 		fixtures.EventOldUnsubscribedID,
 		fixtures.EventOldHardBounceID,

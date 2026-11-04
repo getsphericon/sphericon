@@ -9,9 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
@@ -20,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // queueingClient is the jobs client the consumers hand an Event to, queueing into this test's
@@ -119,4 +123,70 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	assert.Contains(t, aliceTags, "rule-clicked")
 	assert.NotEmpty(t, tagged.CausedBy, "the Action's Tag carries its Rule")
 	assert.Len(t, evaluationsAfter, 1, "the Action's own contact.tagged queues no evaluation")
+}
+
+// triggerRouter plays the router and a worker for the Automations: deliver hands every Event
+// published since its last call to the Automations consumer, runs the trigger evaluations that
+// queued, and returns their actions.
+type triggerRouter struct {
+	env                 *testhelper.TestEnv
+	client              *jobs.Client
+	consumed, evaluated int
+}
+
+func (r *triggerRouter) deliver(t *testing.T) []string {
+	t.Helper()
+	envelopes := r.env.OutboxEnvelopes(t)
+	for i := r.consumed; i < len(envelopes); i++ {
+		require.NoError(t, events.AutomationsConsumer(r.client)(events.Message(envelopes[i])))
+	}
+	r.consumed = len(envelopes)
+	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, r.env, jobs.EvaluateTriggerArgs{}.Kind())
+	actions := make([]string, 0, len(triggers)-r.evaluated)
+	for _, args := range triggers[r.evaluated:] {
+		require.NoError(t, jobs.NewEvaluateTriggerWorker(r.env.DB, r.env.Bus).Work(t.Context(), job(args)))
+		actions = append(actions, args.Action)
+	}
+	r.evaluated = len(triggers)
+	return actions
+}
+
+// marketing.confirmed is email's consent alone: an Automation triggered on it (a welcome email
+// after double opt-in) does not enroll a Contact whose phone's SMS consent is recorded, which is
+// sms.confirmed, and does enroll it once its address confirms (ADR 0077). A trigger is an action
+// with no property filter, so sharing the action would enroll every phone that consented. Fixture:
+// the Jobs greeting Automation, its live version's Trigger turned to marketing.confirmed, and the
+// Texter, whose phone and address have no Confirmation.
+func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameMarketingConfirmed).ExecX(ctx)
+	router := &triggerRouter{env: env, client: queueingClient(t, env)}
+	runs := func() []*ent.AutomationRun {
+		t.Helper()
+		return env.DB.AutomationRun.Query().
+			Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactTexterID)).
+			AllX(ctx)
+	}
+
+	res, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(ctx, &externalapi.CreateConfirmationInput{
+		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
+		Wording: "Text me offers", Source: "checkout form", Brand: "Acme",
+	})
+	require.NoError(t, err)
+	require.IsType(t, new(externalapi.ConfirmationResource), res)
+	onSMS := router.deliver(t)
+	afterSMS := runs()
+	require.NoError(t, consent.RecordConfirmation(ctx, env.Bus, tracking.ConfirmTarget{
+		Destination: fixtures.ContactTexterEmail, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactTexterID,
+	}, "203.0.113.10"))
+	onEmail := router.deliver(t)
+	afterEmail := runs()
+
+	assert.Equal(t, []string{events.NameSmsConfirmed}, onSMS, "the SMS consent is an Event of the Contact")
+	assert.Empty(t, afterSMS, "an SMS Confirmation starts no welcome email")
+	assert.Equal(t, []string{events.NameMarketingConfirmed}, onEmail)
+	require.Len(t, afterEmail, 1, "the address's confirmation does")
+	assert.Equal(t, events.NameMarketingConfirmed, *afterEmail[0].EventAction)
 }

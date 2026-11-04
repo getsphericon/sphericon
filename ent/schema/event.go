@@ -16,7 +16,7 @@ import (
 // hard bounces). A bounce with no bounceKind counts as soft. It is the
 // single source of truth for both the partial index below and the retention
 // delete (internal/events.PruneEvents), so the delete can always use the index.
-const ExpirableEventPredicate = `action NOT IN ('marketing.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')`
+const ExpirableEventPredicate = `action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')`
 
 type Event struct {
 	ent.Schema

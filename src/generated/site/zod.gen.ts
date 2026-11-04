@@ -171,7 +171,7 @@ export const zConfirmationProvenance = z.enum([
 ]);
 
 /**
- * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request
+ * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
  */
 export const zConsentEvidence = z.object({
   wording: z.string().min(1).max(2000),

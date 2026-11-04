@@ -14941,7 +14941,7 @@
             "description": "The brand the person agreed to hear from"
           }
         },
-        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request"
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",

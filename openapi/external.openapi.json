@@ -4481,7 +4481,7 @@
     "/confirmations": {
       "post": {
         "operationId": "Confirmations_create",
-        "description": "Record consent a phone number gave outside sphericon (a form of your own, a verification\nservice), as an `imported` confirmation with its evidence: the wording shown, where it was\ncollected and the brand. The evidence is kept in the immutable `marketing.confirmed` event.\nA number already confirmed keeps its confirmation unless the new one is stronger, so the\nanswer is the confirmation that stands. It does not lift an opt-out: only the person can, by\ntexting START.",
+        "description": "Record consent a phone number gave outside sphericon (a form of your own, a verification\nservice), as an `imported` confirmation with its evidence: the wording shown, where it was\ncollected and the brand. The evidence is kept in the immutable `sms.confirmed` event.\nA number already confirmed keeps its confirmation unless the new one is stronger, so the\nanswer is the confirmation that stands. It does not lift an opt-out: only the person can, by\ntexting START.",
         "parameters": [],
         "responses": {
           "201": {
@@ -15949,7 +15949,7 @@
             "description": "The brand the person agreed to hear from"
           }
         },
-        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request"
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request"
       },
       "ContactBatchItemResult": {
         "type": "object",

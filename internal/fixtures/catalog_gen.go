@@ -862,9 +862,11 @@ const (
 	// EventGothamSignupID is from fixtures/events.
 	EventGothamSignupID = 9308
 	// EventGothamSmsConfirmedOnThe6thAction is from fixtures/events.
-	EventGothamSmsConfirmedOnThe6thAction = "marketing.confirmed"
+	EventGothamSmsConfirmedOnThe6thAction = "sms.confirmed"
 	// EventGothamSmsConfirmedOnThe6thID is from fixtures/events.
 	EventGothamSmsConfirmedOnThe6thID = 9330
+	// EventGothamSmsConfirmedOnThe6thPhone is from fixtures/events.
+	EventGothamSmsConfirmedOnThe6thPhone = "+12125550930"
 	// EventGothamSubscribedAtMidnightOnThe8thAction is from fixtures/events.
 	EventGothamSubscribedAtMidnightOnThe8thAction = "marketing.confirmed"
 	// EventGothamSubscribedAtMidnightOnThe8thEmail is from fixtures/events.
@@ -985,6 +987,12 @@ const (
 	EventOldHardBounceEmail = "old306@example.com"
 	// EventOldHardBounceID is from fixtures/events.
 	EventOldHardBounceID = 306
+	// EventOldSmsConfirmedAction is from fixtures/events.
+	EventOldSmsConfirmedAction = "sms.confirmed"
+	// EventOldSmsConfirmedID is from fixtures/events.
+	EventOldSmsConfirmedID = 311
+	// EventOldSmsConfirmedPhone is from fixtures/events.
+	EventOldSmsConfirmedPhone = "+14155550311"
 	// EventOldUnsubscribedAction is from fixtures/events.
 	EventOldUnsubscribedAction = "email.unsubscribed"
 	// EventOldUnsubscribedEmail is from fixtures/events.

@@ -6,6 +6,12 @@ status: accepted
 
 > **Amended by #962:** on Telegram any `/start`, bare or with a Start token, lifts the Channel-wide
 > opt-out (see "A reversal made in the Channel lifts it").
+>
+> **Amended by #1037:** an SMS Confirmation, `imported` or `keyword`, is recorded with an immutable
+> `sms.confirmed` Event, never `marketing.confirmed`, which stays email's. An Automation trigger is
+> an action with no property filter, so a welcome email's Automation on `marketing.confirmed` would
+> otherwise enroll every Contact whose phone consented. `sms.confirmed` is consent proof, kept
+> whatever its age (ADR 0019).
 
 Send-eligibility (ADR 0013) has four layers keyed by (Channel, Destination): Suppression, an
 `everything` Unsubscribe, a source Unsubscribe, and a Confirmation that only a Workspace requiring
@@ -21,7 +27,7 @@ GDPR, WhatsApp policy), and that providers report both a person's choice and a d
   Binding is the opt-in: it exists only because the person started the bot or allowed
   notifications. On mobile push the external push service holds it (ADR 0074).
 - **How an SMS or WhatsApp Confirmation is recorded.** Through the API or an import, as `imported`,
-  carrying the consent wording, its source and the brand in the `marketing.confirmed` Event, from the
+  carrying the consent wording, its source and the brand in the `sms.confirmed` Event, from the
   customer's server; or as `keyword`, from a START the person sends, which an On-site form prefills
   with a Start token (ADR 0088). sphericon runs no SMS double opt-in of its own: a customer who needs a code uses their own
   app or a verification service and reports the result.

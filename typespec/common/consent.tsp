@@ -8,7 +8,7 @@ enum ConfirmationProvenance {
   grandfathered,
 }
 
-/** The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `marketing.confirmed` Event to answer a proof request */
+/** The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request */
 model ConsentEvidence {
   /** The consent wording the person was shown and agreed to */
   @minLength(1)

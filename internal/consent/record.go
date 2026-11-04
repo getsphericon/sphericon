@@ -29,7 +29,7 @@ func Stronger(a, b confirmation.Provenance) bool {
 
 // Evidence is the evidence of consent collected outside sphericon (ADR 0077): the wording the
 // person was shown, where it was collected and the brand they agreed to hear from. It is kept in
-// the immutable marketing.confirmed Event and projected on the Confirmation.
+// the immutable sms.confirmed Event and projected on the Confirmation.
 type Evidence struct {
 	Wording, Source, Brand string
 }
@@ -48,9 +48,9 @@ type grant struct {
 }
 
 // recordIn writes g as the Confirmation of its (Channel, Destination) unless one as strong or
-// stronger stands, and publishes marketing.confirmed when it writes, in the transaction s and pub
-// are bound to. A weaker or equal one leaves everything as it was and publishes nothing, so a
-// repeated request is a no-op. It returns the Confirmation that stands.
+// stronger stands, and publishes its Channel's proof (grant.proof) when it writes, in the
+// transaction s and pub are bound to. A weaker or equal one leaves everything as it was and
+// publishes nothing, so a repeated request is a no-op. It returns the Confirmation that stands.
 func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant) (*ent.Confirmation, error) {
 	standing, err := s.Confirmation().Query().Where(
 		confirmation.ChannelEQ(g.channel),
@@ -76,25 +76,42 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 	if g.contactID != 0 {
 		create.SetContactID(g.contactID)
 	}
-	e := &events.MarketingConfirmed{
-		WorkspaceID: s.WorkspaceID(), ContactID: g.contactID, Channel: string(g.channel),
-		Provenance: string(g.provenance), IP: g.ip,
-	}
-	if g.channel == confirmation.ChannelEmail {
-		e.Email = g.destination
-	} else {
-		e.Phone = g.destination
-	}
 	if ev := g.evidence; ev != nil {
 		create.SetWording(ev.Wording).SetSource(ev.Source).SetBrand(ev.Brand)
-		e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
+	}
+	proof, err := g.proof(s.WorkspaceID())
+	if err != nil {
+		return nil, err
 	}
 	created, err := create.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("record confirmation: %w", err)
 	}
-	if err := pub.Publish(ctx, e); err != nil {
+	if err := pub.Publish(ctx, proof); err != nil {
 		return nil, err
 	}
 	return created, nil
+}
+
+// proof is the immutable Event of g, its Channel's own: marketing.confirmed for an email address,
+// sms.confirmed for a phone number. An Automation trigger is an action with no property filter, so
+// one Channel's consent never starts what another's was meant to (a welcome email).
+func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
+	switch g.channel {
+	case confirmation.ChannelEmail:
+		return &events.MarketingConfirmed{
+			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
+			Provenance: string(g.provenance), IP: g.ip,
+		}, nil
+	case confirmation.ChannelSms:
+		e := &events.SmsConfirmed{
+			WorkspaceID: workspaceID, ContactID: g.contactID, Phone: g.destination, Provenance: string(g.provenance),
+		}
+		if ev := g.evidence; ev != nil {
+			e.Wording, e.Source, e.Brand = ev.Wording, ev.Source, ev.Brand
+		}
+		return e, nil
+	default:
+		return nil, fmt.Errorf("record confirmation: no consent Event on channel %q", g.channel)
+	}
 }

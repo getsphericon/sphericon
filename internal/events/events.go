@@ -82,6 +82,9 @@ const (
 	// NameSmsSent is a text the SMS provider accepted for a Contact (ADR 0079): handed to the
 	// provider, not delivered; a delivery report says that.
 	NameSmsSent = "sms.sent"
+	// NameSmsConfirmed is a phone number's SMS Confirmation (ADR 0077), the proof of its consent;
+	// marketing.confirmed is email's alone.
+	NameSmsConfirmed = "sms.confirmed"
 )
 
 // reservedPrefixes are the namespaces of the actions only the system records: delivery
@@ -253,6 +256,7 @@ var registry = map[string]func() DomainEvent{
 	NameEmailBounced:          func() DomainEvent { return &EmailDelivery{} },
 	NameEmailComplained:       func() DomainEvent { return &EmailDelivery{} },
 	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
+	NameSmsConfirmed:          func() DomainEvent { return &SmsConfirmed{} },
 	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
 	NameContactTagged:         func() DomainEvent { return &ContactTagChange{} },
 	NameContactUntagged:       func() DomainEvent { return &ContactTagChange{} },
@@ -483,45 +487,64 @@ func (e *EmailDelivery) Project() Projection {
 	}
 }
 
-// MarketingConfirmed is emitted when a destination confirms its subscription
-// (double opt-in on email, ADR 0013; consent recorded with its evidence or a START on sms,
-// ADR 0077). It is the immutable source of truth for the confirmation — the derived
-// Confirmation row is the read-model — and carries the GDPR Art. 7 proof: when, how
-// (provenance), the confirming IP of a double opt-in, and the evidence of consent collected
-// outside sphericon (the wording shown, its source, the brand). Publishing it also lets a
-// welcome automation trigger on "marketing.confirmed".
+// MarketingConfirmed is emitted when an email address confirms its subscription
+// (double opt-in, ADR 0013). It is the immutable source of truth for the
+// confirmation — the derived Confirmation row is the read-model — and carries the
+// GDPR Art. 7 proof: when, how (provenance), and the confirming IP. Publishing it
+// also lets a welcome automation trigger on "marketing.confirmed". It is email's
+// alone: an SMS Confirmation publishes SmsConfirmed, since a trigger is an action with
+// no property filter and a welcome email's Automation must not enroll a phone's consent.
 type MarketingConfirmed struct {
-	WorkspaceID int64 `json:"workspaceId"`
-	ContactID   int64 `json:"contactId,omitempty"`
-	// Channel is the Channel confirmed on: email or sms.
-	Channel string `json:"channel"`
-	// Email is the confirmed address on email; Phone the confirmed number on sms.
-	Email      string `json:"email,omitempty"`
-	Phone      string `json:"phone,omitempty"`
-	Provenance string `json:"provenance"`   // double_opt_in|keyword|imported|grandfathered
-	IP         string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
-	// The evidence of an imported Confirmation (ADR 0077); empty on any other.
-	Wording string `json:"wording,omitempty"`
-	Source  string `json:"source,omitempty"`
-	Brand   string `json:"brand,omitempty"`
+	WorkspaceID int64  `json:"workspaceId"`
+	ContactID   int64  `json:"contactId,omitempty"`
+	Email       string `json:"email"`
+	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered
+	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
 }
 
 func (*MarketingConfirmed) EventName() string  { return NameMarketingConfirmed }
 func (*MarketingConfirmed) EventVersion() int  { return 1 }
 func (e *MarketingConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *MarketingConfirmed) Project() Projection {
-	props := map[string]any{"channel": e.Channel}
-	for k, v := range map[string]string{
-		"provenance": e.Provenance, "ip": e.IP, "wording": e.Wording, "source": e.Source, "brand": e.Brand,
-	} {
+	props := map[string]any{}
+	if e.Provenance != "" {
+		props["provenance"] = e.Provenance
+	}
+	if e.IP != "" {
+		props["ip"] = e.IP
+	}
+	return Projection{Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
+}
+
+// SmsConfirmed is emitted when a phone number's SMS Confirmation is recorded (ADR 0077): consent
+// the Workspace collected outside sphericon, relayed with its evidence (imported), or a START the
+// person texted (keyword). As marketing.confirmed is on email, it is the immutable proof the
+// Confirmation row is derived from, never deleted by age (ADR 0019): when, how (provenance), and
+// for an imported one the wording the person was shown, its source and the brand.
+type SmsConfirmed struct {
+	WorkspaceID int64 `json:"workspaceId"`
+	// ContactID is the Contact whose phone the number is, 0 when no Contact has it.
+	ContactID int64 `json:"contactId,omitempty"`
+	// Phone is the confirmed number in E.164.
+	Phone      string `json:"phone"`
+	Provenance string `json:"provenance"` // keyword|imported
+	// The evidence of an imported Confirmation; empty on a keyword one.
+	Wording string `json:"wording,omitempty"`
+	Source  string `json:"source,omitempty"`
+	Brand   string `json:"brand,omitempty"`
+}
+
+func (*SmsConfirmed) EventName() string  { return NameSmsConfirmed }
+func (*SmsConfirmed) EventVersion() int  { return 1 }
+func (e *SmsConfirmed) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsConfirmed) Project() Projection {
+	props := map[string]any{}
+	for k, v := range map[string]string{"provenance": e.Provenance, "wording": e.Wording, "source": e.Source, "brand": e.Brand} {
 		if v != "" {
 			props[k] = v
 		}
 	}
-	return Projection{
-		Subject: e.Email, Action: NameMarketingConfirmed, Email: e.Email, Phone: e.Phone, Properties: props,
-		ContactID: e.ContactID,
-	}
+	return Projection{Action: NameSmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
 }
 
 // CollectedEvent wraps a customer's own event ingested via the collect or external

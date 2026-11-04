@@ -39,8 +39,8 @@ var anonymousKeep = []string{"sendingDomain", "bounceKind"}
 
 // anonymized reports whether an Event action is a reserved system action that
 // Erasure keeps as an anonymous row. Every other action is customer-tracked and is
-// deleted; marketing.confirmed is deleted too, as consent proof for a person who is
-// gone (ADR 0021), and so is telegram.received, the person's own words. The other telegram.*
+// deleted; marketing.confirmed and sms.confirmed are deleted too, as consent proof for a person
+// who is gone (ADR 0021), and so is telegram.received, the person's own words. The other telegram.*
 // System events are anonymized like email's, bound and unbound included: they say a Contact's
 // chat came and went, and with the Contact and the Destination dropped they are counts. sms.sent
 // is anonymized like email.sent.
