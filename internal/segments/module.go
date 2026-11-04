@@ -6,14 +6,12 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -26,6 +24,8 @@ var (
 	ErrInvalidCondition = validation.Refuse("segments: invalid condition", i18n.ErrorsSegmentConditionInvalid)
 	// ErrNotFound: no such Segment in this Workspace.
 	ErrNotFound = validation.NotFound("segments: segment not found", i18n.ErrorsSegmentNotFound)
+	// ErrArchived: the Segment is archived, so it is read-only until it is unarchived (ADR 0100).
+	ErrArchived = validation.Conflict("segments: segment archived", i18n.ErrorsSegmentArchived)
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted
@@ -97,10 +97,18 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 }
 
 // Update validates a changed condition exactly as Create does, then applies the change, under the
-// Workspace's lock as Create.
+// Workspace's lock as Create. An archived Segment is ErrArchived: it is read-only until it is
+// unarchived (ADR 0100), and Archive takes the same lock, so the check holds for the write.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
 	var seg *ent.Segment
 	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+		current, err := ts.Segment().Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		if current.ArchivedAt != nil {
+			return ErrArchived
+		}
 		if cond, ok := in.Condition.Get(); ok {
 			if err := s.Validate(ctx, ts, cond); err != nil {
 				return err
@@ -109,7 +117,6 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 		q := ts.Segment().UpdateOneID(id)
 		patch.ApplySet(in.Name, q.SetName)
 		patch.ApplySet(in.Condition, q.SetCondition)
-		var err error
 		seg, err = q.Save(ctx)
 		return err
 	})
@@ -176,7 +183,7 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Segment], error) {
 	rows := func() *ent.SegmentQuery {
 		if archived {
-			return ws.Segment().QueryDiscarded()
+			return ws.Segment().QueryArchived()
 		}
 		return ws.Segment().Query()
 	}
@@ -187,11 +194,13 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 		})
 }
 
-// Archive discards a Segment (ADR 0049), unless a draft Broadcast uses it: then it returns an
-// *inuse.Error naming those Broadcasts. A Broadcast past draft holds a copy of the Segment's
-// Condition (ADR 0065) and keeps its reference only as provenance, so it does not block. A missing
-// Segment is ErrNotFound; archiving an archived one changes nothing. It returns the Segment. The
-// check and the archive hold the Workspace's lock (ADR 0099), so no work becomes live between them.
+// Archive puts a Segment aside (ADR 0100): it leaves the lists and new work, and Unarchive brings
+// it back. Only Live use would refuse it (ADR 0099), and none needs a Segment: a draft Broadcast
+// is not Live use (scheduling it is then refused), and a Broadcast past draft holds a copy of the
+// Condition (ADR 0065) and keeps its reference only as provenance. A missing Segment is
+// ErrNotFound; archiving an archived one changes nothing. It returns the Segment. The archive
+// holds the Workspace's lock (ADR 0099), so a draft being scheduled meanwhile either took its copy
+// first or finds the Segment archived.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
 	err := s.bus.WithinWorkspaceLockTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		seg, err := ts.Segment().Get(ctx, id)
@@ -201,20 +210,10 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Se
 		if err != nil {
 			return err
 		}
-		if seg.DiscardedAt != nil {
+		if seg.ArchivedAt != nil {
 			return nil
 		}
-		live, err := ts.Broadcast().Query().
-			Where(broadcast.SegmentID(id), broadcast.StatusEQ(broadcast.StatusDraft)).
-			Order(ent.Asc(broadcast.FieldID)).
-			All(ctx)
-		if err != nil {
-			return err
-		}
-		if len(live) > 0 {
-			return &inuse.Error{What: inuse.SubjectSegment, Users: inuse.Broadcasts(live)}
-		}
-		return ts.Segment().Discard(ctx, id)
+		return ts.Segment().Archive(ctx, id)
 	})
 	if err != nil {
 		return nil, err
@@ -222,10 +221,10 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Se
 	return s.Get(ctx, ws, id)
 }
 
-// Unarchive brings an archived Segment back to the lists and returns it. Restoring one that is not
+// Unarchive brings an archived Segment back to the lists and returns it. Unarchiving one that is not
 // archived changes nothing; a missing Segment is ErrNotFound.
 func (s *Module) Unarchive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
-	err := ws.Segment().Restore(ctx, id)
+	err := ws.Segment().Unarchive(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}

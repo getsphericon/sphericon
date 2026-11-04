@@ -193,6 +193,9 @@ var (
 	ErrNotDraft = validation.Refuse("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
+	// ErrSegmentArchived: a draft leaving draft names an archived Segment, which takes no part in
+	// new work (ADR 0100); the refusal names it.
+	ErrSegmentArchived = validation.Refuse("broadcasts: segment archived", i18n.ErrorsBroadcastSegmentArchived)
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
 	ErrIntegrationNotFound = validation.Refuse("broadcasts: integration not found", i18n.ErrorsBroadcastIntegrationNotFound)
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the

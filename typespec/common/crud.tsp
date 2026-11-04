@@ -19,13 +19,16 @@ namespace Sphericon;
  * `WriteConflict` is the extra error a write may raise on a uniqueness clash;
  * it defaults to `never` (no 409). Resources with a unique key (contacts,
  * integrations) instantiate `WorkspaceCrudUnique`, which supplies ConflictProblem.
+ * `UpdateConflict` is the error an update alone may raise besides it: an archived resource is
+ * read-only until it is unarchived (ADR 0100).
  */
 interface WorkspaceCrudKept<
   Resource extends {},
   CreateInput,
   UpdateInput,
   WriteConflict = never,
-  ListFilter extends {} = {}
+  ListFilter extends {} = {},
+  UpdateConflict = never
 > {
   /** List resources for the site UI */
   @listsResource(Resource)
@@ -69,13 +72,15 @@ interface WorkspaceCrudKept<
     | BadRequestProblem
     | NotFoundProblem
     | WriteConflict
+    | UpdateConflict
     | UnprocessableEntityProblem;
 }
 
 /**
- * Workspace-scoped CRUD of a resource that is archived instead of deleted (ADR 0049): no
+ * Workspace-scoped CRUD of a resource that is archived instead of deleted (ADR 0100): no
  * delete, an `archived` list filter, and `archive` / `unarchive` operations. Archive is
- * refused with 409 while live work uses the resource.
+ * refused with 409 while live work uses the resource, and an update of an archived resource
+ * with 409 until it is unarchived.
  */
 interface WorkspaceCrudArchivable<
   Resource extends {},
@@ -88,7 +93,8 @@ interface WorkspaceCrudArchivable<
       CreateInput,
       UpdateInput,
       WriteConflict,
-      ArchivedFilter
+      ArchivedFilter,
+      ConflictProblem
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
@@ -166,7 +172,8 @@ interface WorkspaceCrudUnique<
  * (bearer-token auth) and 403 (a token without the scope the operation declares,
  * ADR 0061). `ReadScope` gates list and get, `WriteScope` create and update.
  * `WriteConflict` defaults to `never` (no 409); resources with a unique key use
- * `ExternalCrudUnique`.
+ * `ExternalCrudUnique`. `UpdateConflict` is the error an update alone may raise besides it: an
+ * archived resource is read-only until it is unarchived (ADR 0100).
  */
 interface ExternalCrudKept<
   Resource extends {},
@@ -175,7 +182,8 @@ interface ExternalCrudKept<
   ReadScope extends valueof ApiTokenScope,
   WriteScope extends valueof ApiTokenScope,
   WriteConflict = never,
-  ListFilter extends {} = {}
+  ListFilter extends {} = {},
+  UpdateConflict = never
 > {
   /** List resources with pagination */
   @listsResource(Resource)
@@ -233,11 +241,13 @@ interface ExternalCrudKept<
     | TooManyRequestsProblem
     | NotFoundProblem
     | WriteConflict
+    | UpdateConflict
     | UnprocessableEntityProblem;
 }
 
-/** Flat external CRUD of a resource that is archived instead of deleted (ADR 0049).
- * Archiving and restoring need `WriteScope`. */
+/** Flat external CRUD of a resource that is archived instead of deleted (ADR 0100).
+ * Archiving and restoring need `WriteScope`; an update of an archived resource is refused with
+ * 409 until it is unarchived. */
 interface ExternalCrudArchivable<
   Resource extends {},
   CreateInput,
@@ -253,7 +263,8 @@ interface ExternalCrudArchivable<
       ReadScope,
       WriteScope,
       WriteConflict,
-      ArchivedFilter
+      ArchivedFilter,
+      ConflictProblem
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")

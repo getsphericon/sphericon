@@ -851,9 +851,9 @@ var SegmentAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the Segment to its value.
 func (e *Segment) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at": derefAudit(e.DiscardedAt),
-		"name":         e.Name,
-		"condition":    derefAudit(e.Condition),
+		"archived_at": derefAudit(e.ArchivedAt),
+		"name":        e.Name,
+		"condition":   derefAudit(e.Condition),
 	}
 }
 

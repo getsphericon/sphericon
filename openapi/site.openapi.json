@@ -11482,6 +11482,16 @@
               }
             }
           },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response",
             "content": {
@@ -14851,8 +14861,8 @@
           "segment.create",
           "segment.update",
           "segment.delete",
-          "segment.discard",
-          "segment.restore",
+          "segment.archive",
+          "segment.unarchive",
           "sending_domain.create",
           "sending_domain.update",
           "sending_domain.delete",

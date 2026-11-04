@@ -245,7 +245,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),
 	purgeStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithDiscarded, broadcast.IDIn),
 	purgeStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithDiscarded, automation.IDIn),
-	purgeStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithDiscarded, segment.IDIn),
+	purgeStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, segment.IDIn),
 	stepOf((*ent.Scoped).EmailTemplate, emailtemplate.IDIn),
 	stepOf((*ent.Scoped).BrandKit, brandkit.IDIn),
 	stepOf((*ent.Scoped).Contact, contact.IDIn),

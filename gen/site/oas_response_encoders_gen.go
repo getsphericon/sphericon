@@ -8568,6 +8568,18 @@ func encodeSiteSegmentsUpdateResponse(response SiteSegmentsUpdateRes, w http.Res
 
 		return nil
 
+	case *SiteSegmentsUpdateConflict:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSegmentsUpdateUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)

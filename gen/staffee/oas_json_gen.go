@@ -175,10 +175,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionSegmentUpdate
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
 	case AuditActionSendingDomainUpdate:

@@ -41,7 +41,6 @@ type Subject string
 
 // The rows a removal can be refused for; the text reads "<subject> is in use by ...".
 const (
-	SubjectSegment       Subject = "segment"
 	SubjectTag           Subject = "tag"
 	SubjectIntegration   Subject = "integration"
 	SubjectSendingDomain Subject = "sending domain"

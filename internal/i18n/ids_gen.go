@@ -112,6 +112,7 @@ var (
 	ErrorsBroadcastNotFound                     = ID{key: "errors.broadcast_not_found"}
 	ErrorsBroadcastNotScheduled                 = ID{key: "errors.broadcast_not_scheduled"}
 	ErrorsBroadcastNotSendable                  = ID{key: "errors.broadcast_not_sendable"}
+	ErrorsBroadcastSegmentArchived              = ID{key: "errors.broadcast_segment_archived"}
 	ErrorsBroadcastSegmentNotFound              = ID{key: "errors.broadcast_segment_not_found"}
 	ErrorsBroadcastTextBlank                    = ID{key: "errors.broadcast_text_blank"}
 	ErrorsBroadcastTextTooLong                  = ID{key: "errors.broadcast_text_too_long"}
@@ -268,6 +269,7 @@ var (
 	ErrorsSecondFactorRequired                  = ID{key: "errors.second_factor_required"}
 	ErrorsSecondFactorResetNothing              = ID{key: "errors.second_factor_reset_nothing"}
 	ErrorsSecondFactorResetSelf                 = ID{key: "errors.second_factor_reset_self"}
+	ErrorsSegmentArchived                       = ID{key: "errors.segment_archived"}
 	ErrorsSegmentConditionInvalid               = ID{key: "errors.segment_condition_invalid"}
 	ErrorsSegmentInvalid                        = ID{key: "errors.segment_invalid"}
 	ErrorsSegmentNotFound                       = ID{key: "errors.segment_not_found"}

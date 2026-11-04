@@ -184,7 +184,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSegmentResource{}, d4)
 	archived, err := env.DB.Segment.Get(ctx, fixtures.SegmentBlackFridayID)
 	require.NoError(t, err)
-	assert.NotNil(t, archived.DiscardedAt)
+	assert.NotNil(t, archived.ArchivedAt)
 }
 
 func TestSiteTemplatesErrorBranches(t *testing.T) {

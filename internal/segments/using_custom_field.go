@@ -16,7 +16,7 @@ import (
 // the field retyped. Archived ones count, as for a Tag: restoring one must not bring back a
 // Condition that no longer compiles.
 func UnfitForCustomFieldType(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]*ent.Segment, error) {
-	all, err := s.Segment().QueryWithDiscarded().Order(ent.Asc(segment.FieldID)).All(ctx)
+	all, err := s.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

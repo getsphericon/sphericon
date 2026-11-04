@@ -258,9 +258,9 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "segment.delete":
 		return nil
-	case "segment.discard":
+	case "segment.archive":
 		return nil
-	case "segment.restore":
+	case "segment.unarchive":
 		return nil
 	case "sending_domain.create":
 		return nil
@@ -11170,6 +11170,14 @@ func (s *SiteSegmentsUnarchiveNotFound) Validate() error {
 }
 
 func (s *SiteSegmentsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSegmentsUpdateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

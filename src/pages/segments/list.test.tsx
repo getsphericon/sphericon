@@ -131,6 +131,7 @@ test('the archived control opens the archived view through the URL', async () =>
   )
 })
 
+// An archived segment is read-only until it is restored: its menu offers no Edit.
 test('the archived view lists archived segments and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []
@@ -152,6 +153,8 @@ test('the archived view lists archived segments and restores one', async () => {
   await expect.poll(() => flags).toEqual(['true'])
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Restore' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Edit' })).not.toBeInTheDocument()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()
 
   await expect.poll(() => restored).toEqual(['1'])

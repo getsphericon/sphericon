@@ -37,7 +37,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
-# Used only by a failed broadcast (id 103): history, so it does not block a delete (ADR 0049).
+# Used only by a failed broadcast (id 103): history, so it does not block an archive (ADR 0100).
 - id: 104 # fixture: SegmentRetired
   name: Retired audience
   workspace_id: 1
@@ -50,11 +50,11 @@
   workspace_id: 1
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
-# Archived (ADR 0049): discarded, but the sent broadcast 107 still points at it.
+# Archived (ADR 0100), and the sent broadcast 107 still points at it.
 - id: 106 # fixture: SegmentArchived
   name: Archived audience
   workspace_id: 1
-  discarded_at: '{{daysAgo 5}}'
+  archived_at: '{{daysAgo 5}}'
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 5}}'
 # The Segment of origin of the scheduled Broadcast 109, edited since: the Broadcast keeps the

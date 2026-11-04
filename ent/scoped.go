@@ -30067,43 +30067,40 @@ type SegmentScoped struct{ s *Scoped }
 // Segment returns the Segment entities of the Workspace.
 func (s *Scoped) Segment() *SegmentScoped { return &SegmentScoped{s: s} }
 
-// Query returns a Segment query already confined to the Workspace, hiding discarded rows
-// (a list query; QueryWithDiscarded sees them too).
+// Query returns a Segment query already confined to the Workspace, hiding archived rows
+// (a list query; QueryWithArchived sees them too).
 func (t *SegmentScoped) Query() *SegmentQuery {
-	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws), segment.DiscardedAtIsNil())
+	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil())
 }
 
-// QueryWithDiscarded returns a Segment query confined to the Workspace that also sees discarded rows.
-func (t *SegmentScoped) QueryWithDiscarded() *SegmentQuery {
+// QueryWithArchived returns a Segment query confined to the Workspace that also sees archived rows.
+func (t *SegmentScoped) QueryWithArchived() *SegmentQuery {
 	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws))
 }
 
-// QueryDiscarded returns a Segment query confined to the Workspace that sees only discarded rows.
-func (t *SegmentScoped) QueryDiscarded() *SegmentQuery {
-	return t.QueryWithDiscarded().Where(segment.DiscardedAtNotNil())
+// QueryArchived returns a Segment query confined to the Workspace that sees only archived rows
+// (the archived view).
+func (t *SegmentScoped) QueryArchived() *SegmentQuery {
+	return t.QueryWithArchived().Where(segment.ArchivedAtNotNil())
 }
 
-// Get returns the Segment with the id, discarded or not; a row of another Workspace is not found.
+// Get returns the Segment with the id, archived or not; a row of another Workspace is not found.
 func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
-	return t.QueryWithDiscarded().Where(segment.ID(id)).Only(ctx)
+	return t.QueryWithArchived().Where(segment.ID(id)).Only(ctx)
 }
 
-// Discard stamps discarded_at on the kept Segment with the id (ps fence it further); a row of
-// another Workspace, an already discarded row or one a predicate excludes is not found.
-func (t *SegmentScoped) Discard(ctx context.Context, id int64, ps ...predicate.Segment) error {
-	return t.setDiscarded(ctx, id, true, ps)
+// Archive stamps archived_at on the kept Segment with the id (ps fence it further); a row of
+// another Workspace, an already archived row or one a predicate excludes is not found.
+func (t *SegmentScoped) Archive(ctx context.Context, id int64, ps ...predicate.Segment) error {
+	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil()}, ps...)
+	return t.setArchived(ctx, id, where, "archive", func(u *SegmentUpdateOne) { u.SetArchivedAt(time.Now()) })
 }
 
-// Undiscard clears discarded_at on the discarded Segment with the id; a row that is not
-// discarded is not found.
-func (t *SegmentScoped) Undiscard(ctx context.Context, id int64) error {
-	return t.setDiscarded(ctx, id, false, nil)
-}
-
-// Restore is Undiscard that leaves a kept Segment as it is: only a row that does not exist in the
-// Workspace is not found.
-func (t *SegmentScoped) Restore(ctx context.Context, id int64) error {
-	err := t.Undiscard(ctx, id)
+// Unarchive clears archived_at on the Segment with the id. Unarchiving a kept row changes
+// nothing; only a row that does not exist in the Workspace is not found.
+func (t *SegmentScoped) Unarchive(ctx context.Context, id int64) error {
+	where := []predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtNotNil()}
+	err := t.setArchived(ctx, id, where, "unarchive", func(u *SegmentUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -30111,27 +30108,13 @@ func (t *SegmentScoped) Restore(ctx context.Context, id int64) error {
 	return err
 }
 
-func (t *SegmentScoped) setDiscarded(ctx context.Context, id int64, discard bool, ps []predicate.Segment) error {
-	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws)}, ps...)
-	if discard {
-		where = append(where, segment.DiscardedAtIsNil())
-	} else {
-		where = append(where, segment.DiscardedAtNotNil())
-	}
+func (t *SegmentScoped) setArchived(ctx context.Context, id int64, where []predicate.Segment, verb string, set func(*SegmentUpdateOne)) error {
 	write := func(c *Client) (*Segment, error) {
 		u := c.Segment.UpdateOneID(id).Where(where...)
-		if discard {
-			u.SetDiscardedAt(time.Now())
-		} else {
-			u.ClearDiscardedAt()
-		}
+		set(u)
 		return u.Save(ctx)
 	}
 	if t.s.auditing() {
-		verb := "restore"
-		if discard {
-			verb = "discard"
-		}
 		return t.s.audited(ctx, func(ts *Scoped) error {
 			before, err := ts.c.Segment.Query().Where(where...).Only(ctx)
 			if err != nil {
@@ -30262,15 +30245,15 @@ func (x *SegmentScopedCreate) SetNillableUpdatedAt(v *time.Time) *SegmentScopedC
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedCreate) SetDiscardedAt(v time.Time) *SegmentScopedCreate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedCreate) SetArchivedAt(v time.Time) *SegmentScopedCreate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedCreate) SetNillableDiscardedAt(v *time.Time) *SegmentScopedCreate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedCreate) SetNillableArchivedAt(v *time.Time) *SegmentScopedCreate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
@@ -30401,21 +30384,21 @@ func (u *SegmentScopedUpsert) UpdateUpdatedAt() *SegmentScopedUpsert {
 	return u
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (u *SegmentScopedUpsert) SetDiscardedAt(v time.Time) *SegmentScopedUpsert {
-	u.u.Set(segment.FieldDiscardedAt, v)
+// SetArchivedAt sets the "archived_at" field.
+func (u *SegmentScopedUpsert) SetArchivedAt(v time.Time) *SegmentScopedUpsert {
+	u.u.Set(segment.FieldArchivedAt, v)
 	return u
 }
 
-// UpdateDiscardedAt sets the "discarded_at" field to the value that was provided on create.
-func (u *SegmentScopedUpsert) UpdateDiscardedAt() *SegmentScopedUpsert {
-	u.u.SetExcluded(segment.FieldDiscardedAt)
+// UpdateArchivedAt sets the "archived_at" field to the value that was provided on create.
+func (u *SegmentScopedUpsert) UpdateArchivedAt() *SegmentScopedUpsert {
+	u.u.SetExcluded(segment.FieldArchivedAt)
 	return u
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (u *SegmentScopedUpsert) ClearDiscardedAt() *SegmentScopedUpsert {
-	u.u.SetNull(segment.FieldDiscardedAt)
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (u *SegmentScopedUpsert) ClearArchivedAt() *SegmentScopedUpsert {
+	u.u.SetNull(segment.FieldArchivedAt)
 	return u
 }
 
@@ -30633,21 +30616,21 @@ func (x *SegmentScopedUpdateOne) SetUpdatedAt(v time.Time) *SegmentScopedUpdateO
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedUpdateOne) SetDiscardedAt(v time.Time) *SegmentScopedUpdateOne {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedUpdateOne) SetArchivedAt(v time.Time) *SegmentScopedUpdateOne {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableDiscardedAt(v *time.Time) *SegmentScopedUpdateOne {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedUpdateOne) SetNillableArchivedAt(v *time.Time) *SegmentScopedUpdateOne {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *SegmentScopedUpdateOne) ClearDiscardedAt() *SegmentScopedUpdateOne {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *SegmentScopedUpdateOne) ClearArchivedAt() *SegmentScopedUpdateOne {
+	x.b.ClearArchivedAt()
 	return x
 }
 
@@ -30759,21 +30742,21 @@ func (x *SegmentScopedUpdate) SetUpdatedAt(v time.Time) *SegmentScopedUpdate {
 	return x
 }
 
-// SetDiscardedAt sets the "discarded_at" field.
-func (x *SegmentScopedUpdate) SetDiscardedAt(v time.Time) *SegmentScopedUpdate {
-	x.b.SetDiscardedAt(v)
+// SetArchivedAt sets the "archived_at" field.
+func (x *SegmentScopedUpdate) SetArchivedAt(v time.Time) *SegmentScopedUpdate {
+	x.b.SetArchivedAt(v)
 	return x
 }
 
-// SetNillableDiscardedAt sets the "discarded_at" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableDiscardedAt(v *time.Time) *SegmentScopedUpdate {
-	x.b.SetNillableDiscardedAt(v)
+// SetNillableArchivedAt sets the "archived_at" field if the given value is not nil.
+func (x *SegmentScopedUpdate) SetNillableArchivedAt(v *time.Time) *SegmentScopedUpdate {
+	x.b.SetNillableArchivedAt(v)
 	return x
 }
 
-// ClearDiscardedAt clears the value of the "discarded_at" field.
-func (x *SegmentScopedUpdate) ClearDiscardedAt() *SegmentScopedUpdate {
-	x.b.ClearDiscardedAt()
+// ClearArchivedAt clears the value of the "archived_at" field.
+func (x *SegmentScopedUpdate) ClearArchivedAt() *SegmentScopedUpdate {
+	x.b.ClearArchivedAt()
 	return x
 }
 

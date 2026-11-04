@@ -708,10 +708,10 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionSegmentUpdate
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
 	case AuditActionSendingDomainUpdate:
@@ -39422,6 +39422,44 @@ func (s *SegmentsUpdateBadRequest) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SegmentsUpdateBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SegmentsUpdateConflict as json.
+func (s *SegmentsUpdateConflict) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SegmentsUpdateConflict from json.
+func (s *SegmentsUpdateConflict) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SegmentsUpdateConflict to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SegmentsUpdateConflict(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SegmentsUpdateConflict) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SegmentsUpdateConflict) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

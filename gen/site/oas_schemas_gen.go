@@ -428,8 +428,8 @@ const (
 	AuditActionSegmentCreate               AuditAction = "segment.create"
 	AuditActionSegmentUpdate               AuditAction = "segment.update"
 	AuditActionSegmentDelete               AuditAction = "segment.delete"
-	AuditActionSegmentDiscard              AuditAction = "segment.discard"
-	AuditActionSegmentRestore              AuditAction = "segment.restore"
+	AuditActionSegmentArchive              AuditAction = "segment.archive"
+	AuditActionSegmentUnarchive            AuditAction = "segment.unarchive"
 	AuditActionSendingDomainCreate         AuditAction = "sending_domain.create"
 	AuditActionSendingDomainUpdate         AuditAction = "sending_domain.update"
 	AuditActionSendingDomainDelete         AuditAction = "sending_domain.delete"
@@ -522,8 +522,8 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionSegmentCreate,
 		AuditActionSegmentUpdate,
 		AuditActionSegmentDelete,
-		AuditActionSegmentDiscard,
-		AuditActionSegmentRestore,
+		AuditActionSegmentArchive,
+		AuditActionSegmentUnarchive,
 		AuditActionSendingDomainCreate,
 		AuditActionSendingDomainUpdate,
 		AuditActionSendingDomainDelete,
@@ -690,9 +690,9 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActionSegmentDelete:
 		return []byte(s), nil
-	case AuditActionSegmentDiscard:
+	case AuditActionSegmentArchive:
 		return []byte(s), nil
-	case AuditActionSegmentRestore:
+	case AuditActionSegmentUnarchive:
 		return []byte(s), nil
 	case AuditActionSendingDomainCreate:
 		return []byte(s), nil
@@ -949,11 +949,11 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	case AuditActionSegmentDelete:
 		*s = AuditActionSegmentDelete
 		return nil
-	case AuditActionSegmentDiscard:
-		*s = AuditActionSegmentDiscard
+	case AuditActionSegmentArchive:
+		*s = AuditActionSegmentArchive
 		return nil
-	case AuditActionSegmentRestore:
-		*s = AuditActionSegmentRestore
+	case AuditActionSegmentUnarchive:
+		*s = AuditActionSegmentUnarchive
 		return nil
 	case AuditActionSendingDomainCreate:
 		*s = AuditActionSendingDomainCreate
@@ -25433,6 +25433,10 @@ func (*SiteSegmentsUnarchiveNotFound) siteSegmentsUnarchiveRes() {}
 type SiteSegmentsUpdateBadRequest ProblemDetails
 
 func (*SiteSegmentsUpdateBadRequest) siteSegmentsUpdateRes() {}
+
+type SiteSegmentsUpdateConflict ProblemDetails
+
+func (*SiteSegmentsUpdateConflict) siteSegmentsUpdateRes() {}
 
 type SiteSegmentsUpdateNotFound ProblemDetails
 

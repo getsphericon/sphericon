@@ -182,8 +182,6 @@ type Converter interface {
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// goverter:useEmptyOnNil:slice
 	ApiTokensToInfos(source []*ent.ApiToken) []externalapi.ApiTokenInfo
-	// The contract names the discarded state \"archived\" (ADR 0049).
-	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []externalapi.SegmentResource

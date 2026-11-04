@@ -225,10 +225,10 @@ enum AuditAction {
   segmentDelete: "segment.delete",
 
   /** Archived a segment */
-  segmentDiscard: "segment.discard",
+  segmentArchive: "segment.archive",
 
-  /** Restored a segment */
-  segmentRestore: "segment.restore",
+  /** Unarchived a segment */
+  segmentUnarchive: "segment.unarchive",
 
   /** Created a sending domain */
   sendingDomainCreate: "sending_domain.create",

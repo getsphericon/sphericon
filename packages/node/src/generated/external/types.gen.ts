@@ -157,8 +157,8 @@ export const AuditAction = {
   SEGMENT_CREATE: 'segment.create',
   SEGMENT_UPDATE: 'segment.update',
   SEGMENT_DELETE: 'segment.delete',
-  SEGMENT_DISCARD: 'segment.discard',
-  SEGMENT_RESTORE: 'segment.restore',
+  SEGMENT_ARCHIVE: 'segment.archive',
+  SEGMENT_UNARCHIVE: 'segment.unarchive',
   SENDING_DOMAIN_CREATE: 'sending_domain.create',
   SENDING_DOMAIN_UPDATE: 'sending_domain.update',
   SENDING_DOMAIN_DELETE: 'sending_domain.delete',
@@ -9956,6 +9956,10 @@ export type SegmentsUpdateErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
