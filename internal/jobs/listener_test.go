@@ -41,9 +41,10 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	entClient := appdb.NewEntClient(pool)
 	bus := events.New(pool)
 	mail := &testhelper.CapturingSender{}
-	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), entClient,
-		outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local")), cipher, bus, mail, nil, nil,
-		registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{})
+	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
+		Ent: entClient, Bus: bus, Outbound: outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local")),
+		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
+	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })

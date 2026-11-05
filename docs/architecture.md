@@ -14,7 +14,8 @@ coding standards in `CODING_STANDARDS.md`.
   (`app.NewCommandApp`) and the test harness (`testhelper.Setup`) all build from it, the harness
   replacing only the seams `Container` names (`do.Override`) and setting the rest through the
   config. A new dependency is a provider there, never a constructor call in a handler, the
-  server package or the harness. No domain module or handler sees the container: `samber/do` is
+  server package, the job client (`jobs.NewClient` takes its modules in `jobs.Deps`) or the
+  harness. No domain module or handler sees the container: `samber/do` is
   imported by `internal/app`, the harness and `internal/cleanup` (its shutdown report) only
   (easement fails an import of it in the core, a surface or `ee/`; `internal/cleanup` carries
   the one suppression).
