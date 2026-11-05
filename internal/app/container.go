@@ -492,15 +492,28 @@ var jobsPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*jobsClient, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		bus := do.MustInvoke[*events.Bus](i)
-		sys := do.MustInvoke[SystemSender](i)
 		edition := do.MustInvoke[*ee.Edition](i)
-		inst := do.MustInvoke[*instance.Module](i)
 		pool := do.MustInvoke[*riverPool](i)
-		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
-			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
-			jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
+		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
+			Ent:             do.MustInvoke[*ent.Client](i),
+			Bus:             do.MustInvoke[*events.Bus](i),
+			Outbound:        do.MustInvoke[*outbound.Module](i),
+			Cipher:          do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:    do.MustInvoke[SystemSender](i).EmailSender,
+			Catalog:         do.MustInvoke[*messaging.Catalog](i),
+			Rules:           do.MustInvoke[*rules.Module](i),
+			Accounts:        do.MustInvoke[*accounts.Accounts](i),
+			Orders:          do.MustInvoke[*orders.Module](i),
+			Deletion:        do.MustInvoke[*workspacedeletion.Module](i),
+			SendingDomains:  do.MustInvoke[*domainverify.Module](i),
+			JoinDomains:     do.MustInvoke[*joindomains.Module](i),
+			TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
+			Machine:         do.MustInvoke[*machine.Detector](i),
+			Clock:           do.MustInvoke[Clock](i),
+			AppURL:          cfg.AppURL,
+			OutboundAllow:   cfg.OutboundAllow,
+			Retention:       jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), do.MustInvoke[*instance.Module](i).Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
 		if err != nil {
 			return nil, err
 		}

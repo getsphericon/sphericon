@@ -18,8 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
@@ -30,8 +28,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -74,68 +70,90 @@ type Retention struct {
 	CapturedMessages time.Duration
 }
 
-// NewClient builds the river client with all workers registered. Workers carry
-// their own dependencies (ent client, sender resolver, secrets cipher, the
-// platform system sender). appURL is the public origin used to build the links
-// in account emails (reset/verify/change). outboundAllow is the Instance's internal allowlist for
-// webhook deliveries (ADR 0039). The instance-wide Event prunes
-// run on entClient, the raw client; retention carries the prune settings. ext plugs in the
+// Deps are the services the workers drive, each the one the composition root built for the rest of
+// the Instance: a worker builds no module of its own. A test leaves nil what the workers it runs do
+// not reach.
+type Deps struct {
+	// Ent is the raw client of the job entry points (ADR 0017), which scope to a loaded row's
+	// Workspace, and of the instance-wide prunes.
+	Ent      *ent.Client
+	Bus      *events.Bus
+	Outbound *outbound.Module
+	Cipher   *secrets.Cipher
+	// SystemSender is the platform's own sender of the account mails.
+	SystemSender messaging.EmailSender
+	Catalog      *messaging.Catalog
+	Rules        *rules.Module
+	Accounts     *accounts.Accounts
+	Orders       *orders.Module
+	Deletion     *workspacedeletion.Module
+	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
+	// (ADR 0010, ADR 0071); verified is a live property.
+	SendingDomains  *domainverify.Module
+	JoinDomains     *joindomains.Module
+	TrackingDomains *trackingdomains.Module
+	Machine         *machine.Detector
+	// Clock is the Instance's clock; nil is time.Now.
+	Clock func() time.Time
+	// AppURL is the public origin of the links in account emails (reset, verify, change).
+	AppURL string
+	// OutboundAllow is the Instance's internal allowlist for webhook deliveries (ADR 0039).
+	OutboundAllow webhook.Allowlist
+	Retention     Retention
+}
+
+// NewClient builds the river client with every worker registered over deps. ext plugs in the
 // Enterprise Edition's workers and periodic jobs. driver is river's database/sql driver over the
 // job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
 // connection that tells the client of a new job, a cancellation or a paused queue at once, and
 // built with riverdatabasesql.New (tests on one transaction) the client only polls.
-func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomains.Module, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*Client, error) {
+	entClient, mod, bus, cipher, systemSender, appURL := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender, deps.AppURL
+	now := deps.Clock
+	if now == nil {
+		now = time.Now
+	}
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
 	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
-	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, time.Now))
-	ruleMod := rules.New(cipher, bus)
-	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})
-	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, ruleMod, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
-	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
-	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now, bus, systemSender))
+	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
+	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus)})
+	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now))
+	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now))
+	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhookDeliveryTimeout, deps.OutboundAllow), now, bus, systemSender))
 	river.AddWorker(workers, NewWelcomeWorker(systemSender))
 	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
-	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
-	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
-	// DNS; verified is a live property re-validated by the periodic job below.
-	domains := domainverify.New(entClient, lookup, notifyOwners)
-	river.AddWorker(workers, NewVerifySendingDomainWorker(domains))
-	river.AddWorker(workers, NewRecheckSendingDomainsWorker(domains))
-	// Join domains stay verified only while their TXT record is published.
-	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, notifyOwners)
-	river.AddWorker(workers, NewVerifyJoinDomainWorker(joinDomains))
-	river.AddWorker(workers, NewRecheckJoinDomainsWorker(joinDomains))
-	// Tracking domains (ADR 0071): the verified hosts are re-checked so one that stops answering is
-	// demoted and a retired one whose CNAME left goes.
-	river.AddWorker(workers, NewVerifyTrackingDomainWorker(tracking))
-	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(tracking))
+	river.AddWorker(workers, NewVerifySendingDomainWorker(deps.SendingDomains))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
+	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
+	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
+	river.AddWorker(workers, NewVerifyTrackingDomainWorker(deps.TrackingDomains))
+	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(deps.TrackingDomains))
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
-	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, catalog))
+	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, deps.Catalog))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient))
-	river.AddWorker(workers, NewRefreshPrivateRelayWorker(ranges))
-	river.AddWorker(workers, NewPruneEventsWorker(entClient, retention.Events))
-	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, retention.CapturedMessages))
-	acc := accounts.New(entClient, bus, credentials.NewHasher(), consentrecords.New(entClient, bus, signupitems.New(entClient, bus, time.Now)))
-	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(acc, retention.UnverifiedUsers))
-	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, time.Now))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(acc, time.Now))
-	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, time.Now))
-	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
+	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
+	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events))
+	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Accounts, deps.Retention.UnverifiedUsers))
+	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Accounts, now))
+	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
+	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion, now))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
 	c := &Client{}
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
-	river.AddWorker(workers, NewOrderEventWorker(entClient, orders.New(acc)))
+	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
 	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
 	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
 	dispatcher := NewWebhookDispatcher(clientInserter{c})
