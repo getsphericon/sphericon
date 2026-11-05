@@ -189,3 +189,29 @@
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Quahog (workspace 92): the versions of RuleQuahogHook.
+# The call with an empty body.
+- id: 7650 # fixture: RuleQuahogHookVersion
+  rule_id: 7650
+  version: 1
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer hunter2" }}"}],"body":"{}","secret":"{{ encrypt "dGVzdC1zZWNyZXQ=" }}"},{"type":"apply_tag","tag":"after-hook"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+# The Contact and the Event in the body.
+- id: 7651 # fixture: RuleQuahogHookEventVersion
+  rule_id: 7650
+  version: 2
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer hunter2" }}"}],"body":"{\"email\":\"{{ "{{ email }}" }}\",\"event\":\"{{ "{{ event.action }}" }}\",\"plan\":\"{{ "{{ event.properties.plan }}" }}\",\"missing\":\"[{{ "{{ event.properties.nope }}" }}]\"}","secret":"{{ encrypt "dGVzdC1zZWNyZXQ=" }}"},{"type":"apply_tag","tag":"after-hook"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'
+# Valid as saved, invalid once the property is not a number.
+- id: 7652 # fixture: RuleQuahogHookNumberVersion
+  rule_id: 7650
+  version: 3
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer hunter2" }}"}],"body":"{\"n\":{{ "{{ event.properties.n | default: 0 }}" }}}","secret":"{{ encrypt "dGVzdC1zZWNyZXQ=" }}"},{"type":"apply_tag","tag":"after-hook"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 2}}'

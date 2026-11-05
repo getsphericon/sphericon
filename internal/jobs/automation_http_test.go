@@ -20,19 +20,17 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // hookReceiver is a third party's endpoint: it records every call and answers as told.
 type hookReceiver struct {
 	srv   *httptest.Server
+	addr  *url.URL
 	allow webhook.Allowlist
 
 	mu         sync.Mutex
@@ -72,9 +70,34 @@ func newHookReceiver(t *testing.T) *hookReceiver {
 	t.Cleanup(r.srv.Close)
 	u, err := url.Parse(r.srv.URL)
 	require.NoError(t, err)
+	r.addr = u
 	r.allow, err = webhook.ParseAllowlist(u.Host)
 	require.NoError(t, err)
 	return r
+}
+
+// fixtureHookHost is the host the Quahog Rule and Automations call (fixtures/rule_versions.yml,
+// fixtures/automation_versions.yml): http://hooks.quahog.test/notify.
+const fixtureHookHost = "hooks.quahog.test"
+
+// routed is client with the calls to the fixture hook host sent to the receiver: the request is
+// the one the code made, only its address is the receiver's, and client's address checks judge
+// that address. A .test host resolves nowhere, so a call it does not route fails.
+func (r *hookReceiver) routed(client webhook.Doer) webhook.Doer {
+	return routingDoer{to: r.addr, next: client}
+}
+
+type routingDoer struct {
+	to   *url.URL
+	next webhook.Doer
+}
+
+func (d routingDoer) Do(req *http.Request) (*http.Response, error) {
+	if req.URL.Host == fixtureHookHost {
+		req = req.Clone(req.Context())
+		req.URL.Scheme, req.URL.Host, req.Host = d.to.Scheme, d.to.Host, ""
+	}
+	return d.next.Do(req)
 }
 
 func (r *hookReceiver) respond(status int, answer, retryAfter string) {
@@ -89,8 +112,8 @@ func (r *hookReceiver) received() []hookCall {
 	return append([]hookCall(nil), r.calls...)
 }
 
-// httpStepHarness walks a Contact into the NotifySlack fixture Automation, whose steps
-// are an HTTP step to the receiver and a tag step after it.
+// httpStepHarness works the HTTP step of Quinn's Enrollment in one of the Quahog HTTP
+// Automations, whose steps are an HTTP step to the receiver and a tag step after it.
 type httpStepHarness struct {
 	*riverEnv
 
@@ -98,52 +121,13 @@ type httpStepHarness struct {
 	clock time.Time
 }
 
-func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness {
+func newHTTPStepHarness(t *testing.T) *httpStepHarness {
 	t.Helper()
-	e := newRiverEnv(t)
-	h := &httpStepHarness{riverEnv: e, rcv: newHookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
-	// The fixture step keeps its sealed header and secret: an empty value means "as stored".
-	step := automationsteps.Step{
-		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: h.rcv.srv.URL, Body: body,
-		Headers: []httpcall.Header{{Name: "Authorization"}}, ClearSecret: !signed,
-	}
-	steps := []automationsteps.Step{step, {Type: automationsteps.ApplyTag, Tag: "notified"}}
-	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer(), e.OutboundModule())
-	acme := e.DB.Scoped(fixtures.AcmeID)
-	_, err := mod.Update(context.Background(), acme, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
-	require.NoError(t, err)
-	// The edit is a draft until it is published (ADR 0065); Enrollments begin on the live version.
-	_, err = mod.Publish(context.Background(), acme, fixtures.AutomationNotifySlackID)
-	require.NoError(t, err)
-	return h
+	return &httpStepHarness{riverEnv: newRiverEnv(t), rcv: newHookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 }
 
-// enroll enrolls the Contact and runs the step that reaches the HTTP step, which parks
-// the Enrollment on a job of its own.
-func (h *httpStepHarness) enroll(t *testing.T, contactID int64) (runID int64) {
-	t.Helper()
-	runID, enrolled, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), fixtures.AutomationNotifySlackID, contactID)
-	require.NoError(t, err)
-	require.True(t, enrolled)
-	h.reachHTTPStep(t, runID)
-	return runID
-}
-
-// enrollOn enrolls the Contact on the stored Event (its trigger, http_demo), as the trigger job
-// does, and runs the step that reaches the HTTP step.
-func (h *httpStepHarness) enrollOn(t *testing.T, contactID int64, ev automations.Event) (runID int64) {
-	t.Helper()
-	ctx := context.Background()
-	acme := h.DB.Scoped(fixtures.AcmeID)
-	origin, err := automations.OriginOf(ctx, acme, ev)
-	require.NoError(t, err)
-	runID, enrolled, err := automations.EnrollOnTrigger(ctx, acme, h.Publisher(), fixtures.AutomationNotifySlackID, contactID, origin)
-	require.NoError(t, err)
-	require.True(t, enrolled)
-	h.reachHTTPStep(t, runID)
-	return runID
-}
-
+// reachHTTPStep queues the step job of the Enrollment and runs it, which parks the Enrollment on
+// the HTTP step's job of its own.
 func (h *httpStepHarness) reachHTTPStep(t *testing.T, runID int64) {
 	t.Helper()
 	queueStep(t, h.TestEnv, runID)
@@ -156,7 +140,7 @@ func (h *httpStepHarness) stepper() *stepping.Module {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	return jobs.NewRunHTTPStepWorker(h.DB, h.cipher, h.stepper(), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
+	return jobs.NewRunHTTPStepWorker(h.DB, h.cipher, h.stepper(), h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
@@ -181,14 +165,14 @@ type automationrunView struct {
 }
 
 func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"email":"{{ email }}"}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookSignedID)
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 
 	calls := h.rcv.received()
 	require.Len(t, calls, 1)
-	assert.JSONEq(t, `{"email":"`+fixtures.ContactAliceEmail+`"}`, calls[0].body)
+	assert.JSONEq(t, `{"email":"`+fixtures.ContactQuahogQuinnEmail+`"}`, calls[0].body)
 	assert.Equal(t, "Bearer slack-demo-token", calls[0].header.Get("Authorization"))
 	wh, err := standardwebhooks.NewWebhook(webhookSecret)
 	require.NoError(t, err)
@@ -203,10 +187,10 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 // An HTTP step renders the Event that started the Enrollment as a Rule's http Action does (#752):
 // `event.action` and `event.properties`, JSON-escaped, and a property the Event lacks empty.
 func TestHTTPStepRendersTheTriggeringEventsProperties(t *testing.T) {
-	h := newHTTPStepHarness(t,
-		`{"action":"{{ event.action }}","amount":"{{ event.properties.amount }}","plan":"{{ event.properties.plan }}","missing":"{{ event.properties.missing }}"}`,
-		false)
-	runID := h.enrollOn(t, fixtures.ContactPaymentFailedID, storedEventOf(t, h.TestEnv, fixtures.EventHTTPDemoID))
+	// The Enrollment began on an http_demo Event; the body puts in its action, amount and plan and a
+	// property it lacks.
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookEventID)
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 
@@ -216,8 +200,8 @@ func TestHTTPStepRendersTheTriggeringEventsProperties(t *testing.T) {
 }
 
 func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, false)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookUnsignedID)
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 
@@ -228,8 +212,8 @@ func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {
 }
 
 func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	w := h.worker(h.rcv.allow)
 	require.NoError(t, h.attempt(w, runID, 1))
 
@@ -244,8 +228,8 @@ func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T)
 }
 
 func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.rcv.respond(http.StatusServiceUnavailable, strings.Repeat("x", 3000), "")
 	w := h.worker(h.rcv.allow)
 
@@ -270,8 +254,8 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 }
 
 func TestHTTPStepAnsweredWithAClientErrorFailsAtOnce(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.rcv.respond(http.StatusNotFound, "gone", "")
 
 	err := h.attempt(h.worker(h.rcv.allow), runID, 1)
@@ -284,8 +268,8 @@ func TestHTTPStepAnsweredWithAClientErrorFailsAtOnce(t *testing.T) {
 }
 
 func TestHTTPStepToABlockedAddressFailsAtOnce(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 
 	err := h.attempt(h.worker(webhook.Allowlist{}), runID, 1)
 
@@ -300,8 +284,8 @@ func TestHTTPStepToABlockedAddressFailsAtOnce(t *testing.T) {
 
 func TestHTTPStepWhoseBodyIsNotJSONFailsAtOnce(t *testing.T) {
 	// Valid with no Contact at save time, not once a first name is put in unquoted.
-	h := newHTTPStepHarness(t, `{"n": {{ first_name | default: 1 }}}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookNumberID)
 
 	err := h.attempt(h.worker(h.rcv.allow), runID, 1)
 
@@ -314,8 +298,8 @@ func TestHTTPStepWhoseBodyIsNotJSONFailsAtOnce(t *testing.T) {
 }
 
 func TestHTTPStepRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.rcv.respond(http.StatusTooManyRequests, "slow down", "120")
 
 	// Even the last attempt is not failed by a 429: it snoozes.
@@ -328,8 +312,8 @@ func TestHTTPStepRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 }
 
 func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.rcv.respond(http.StatusTooManyRequests, "", "")
 	w := h.worker(h.rcv.allow)
 	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
@@ -348,9 +332,9 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 }
 
 func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
-	h.DB.Contact.DeleteOneID(fixtures.ContactAliceID).ExecX(context.Background())
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
+	h.DB.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).ExecX(context.Background())
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 	assert.Empty(t, h.rcv.received())
@@ -359,9 +343,8 @@ func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 }
 
 func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID, _, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
-	require.NoError(t, err)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 
 	// The RunStep job parks the Enrollment on the HTTP job, queued apart from the Webhook
 	// deliveries, so a slow receiver can only hold its own workers.
@@ -380,9 +363,9 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 }
 
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
-	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), h.Publisher(), runID, time.Now()))
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
+	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.QuahogID), h.Publisher(), runID, time.Now()))
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 
@@ -396,10 +379,11 @@ func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 // A step job delivered again while its HTTP step is still in flight finds the Enrollment where it
 // was (an HTTP step makes no move): the call is queued once, so the receiver is not called twice.
 func TestAStepJobExecutedTwiceOnAnHTTPStepQueuesTheCallOnce(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
+	h.reachHTTPStep(t, runID)
 
-	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.AcmeID), runID, 0))
+	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.QuahogID), runID, 0))
 
 	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepping.RunHTTPStepArgs{}.Kind()))
 }

@@ -370,3 +370,26 @@
   password_hash: '{{argonHash "password"}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Vehement's owner, admin and member, each holding a Personal token or a Connection there. None has
+# accepted anything, so putting the fixture terms in effect gates them.
+- id: 7600 # fixture: VehementOwnerVal
+  name: Val
+  email: val@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7601 # fixture: VehementAdminAda
+  name: Ada
+  email: ada@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7602 # fixture: VehementMemberMel
+  name: Mel
+  email: mel@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

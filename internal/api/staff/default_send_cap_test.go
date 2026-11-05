@@ -2,6 +2,7 @@ package staff_test
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,6 +48,14 @@ func auditPage(t *testing.T, c *staffapi.Client, params staffapi.StaffInstanceLi
 	return page
 }
 
+// fixtureLog is the Instance audit log of the fixtures (fixtures/instance_audit_entries.yml),
+// oldest first: a default Send cap set, raised and cleared.
+var fixtureLog = []string{
+	`instance.default_send_cap_change {"default_send_cap":{"to":100}}`,
+	`instance.default_send_cap_change {"default_send_cap":{"from":100,"to":200}}`,
+	`instance.default_send_cap_change {"default_send_cap":{"from":200}}`,
+}
+
 // diffs are the entries' actions and diffs as JSON, oldest first.
 func diffs(t *testing.T, items []staffapi.StaffInstanceAuditEntryResource) []string {
 	t.Helper()
@@ -84,11 +93,11 @@ func TestAStaffMemberSetsChangesAndClearsTheDefaultSendCap(t *testing.T) {
 
 	log := auditPage(t, c, staffapi.StaffInstanceListAuditEntriesParams{})
 	recorded := diffs(t, log.Items)
-	assert.Equal(t, []string{
+	assert.Equal(t, slices.Concat(fixtureLog, []string{
 		`instance.default_send_cap_change {"default_send_cap":{"to":500}}`,
 		`instance.default_send_cap_change {"default_send_cap":{"from":500,"to":2000}}`,
 		`instance.default_send_cap_change {"default_send_cap":{"from":2000}}`,
-	}, recorded, "each change records the old and the new value, absent where there is none")
+	}), recorded, "each change records the old and the new value, absent where there is none")
 	for _, e := range log.Items {
 		assert.Equal(t, staffapi.EntityId(fixtures.StaffEnrolledID), e.Actor.ID, "the signed-in Staff member is the actor")
 		assert.Equal(t, staffapi.EmailAddress(fixtures.StaffEnrolledEmail), e.Actor.Email)
@@ -110,17 +119,14 @@ func TestSettingTheSameDefaultSendCapAndClearingNoneChangeNothing(t *testing.T) 
 
 	log := auditPage(t, c, staffapi.StaffInstanceListAuditEntriesParams{})
 	recorded := diffs(t, log.Items)
-	assert.Equal(t, []string{
+	assert.Equal(t, slices.Concat(fixtureLog, []string{
 		`instance.default_send_cap_change {"default_send_cap":{"to":500}}`,
-	}, recorded, "only the real change is recorded")
+	}), recorded, "only the real change is recorded")
 }
 
 func TestTheInstanceAuditLogIsReadPageByPageNewestFirst(t *testing.T) {
 	h := newLicensedHarness(t)
 	c := h.console(t)
-	for _, perDay := range []int32{100, 200, 300} {
-		setDefaultSendCap(t, c, perDay)
-	}
 
 	first := auditPage(t, c, staffapi.StaffInstanceListAuditEntriesParams{Limit: staffapi.NewOptInt32(2)})
 	require.True(t, first.NextCursor.IsSet())
@@ -130,11 +136,7 @@ func TestTheInstanceAuditLogIsReadPageByPageNewestFirst(t *testing.T) {
 	assert.False(t, last.NextCursor.IsSet(), "the last page has no cursor")
 
 	recorded := diffs(t, append(first.Items, last.Items...))
-	assert.Equal(t, []string{
-		`instance.default_send_cap_change {"default_send_cap":{"to":100}}`,
-		`instance.default_send_cap_change {"default_send_cap":{"from":100,"to":200}}`,
-		`instance.default_send_cap_change {"default_send_cap":{"from":200,"to":300}}`,
-	}, recorded)
+	assert.Equal(t, fixtureLog, recorded)
 
 	bad, err := c.StaffInstanceListAuditEntries(t.Context(), staffapi.StaffInstanceListAuditEntriesParams{Cursor: staffapi.NewOptString("nope")})
 	require.NoError(t, err)
@@ -164,7 +166,7 @@ func TestASelfHostedInstanceHasNoDefaultSendCap(t *testing.T) {
 			assert.IsType(t, &staffapi.StaffInstanceSetDefaultSendCapNotFound{}, set)
 			assert.IsType(t, &staffapi.StaffInstanceClearDefaultSendCapNotFound{}, cleared)
 			assert.False(t, state.DefaultSendCap.IsSet())
-			assert.Empty(t, log.Items)
+			assert.Equal(t, fixtureLog, diffs(t, log.Items), "the refused calls record nothing")
 		})
 	}
 }

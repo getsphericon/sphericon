@@ -317,3 +317,19 @@
   collect_key: omck_test_virtucon_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Vehement: the Personal tokens and the Connections (ADR 0061) the token and OAuth tests use, of
+# its owner, admin and member, kept off Acme so its token lists and Connections stay as they are.
+- id: 91 # fixture: Vehement
+  name: Vehement
+  public_id: VhmntW91
+  collect_key: omck_test_vehement_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Quahog: the receiver tests of the HTTP Actions and steps (internal/jobs). Its Rule and
+# Automations call http://hooks.quahog.test/notify, a host the tests route to their receiver.
+- id: 92 # fixture: Quahog
+  name: Quahog
+  public_id: QuahgW92
+  collect_key: omck_test_quahog_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -74,12 +74,12 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 // A failed Enrollment is an operational failure, not something the Contact did: it records no
 // System event of its end.
 func TestAFailedEnrollmentRecordsNoEnd(t *testing.T) {
-	h := newHTTPStepHarness(t, `{"ok":true}`, true)
-	runID := h.enroll(t, fixtures.ContactAliceID)
+	h := newHTTPStepHarness(t)
+	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.rcv.respond(http.StatusNotFound, "gone", "")
 
 	require.Error(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
-	recorded := enrollmentEvents(t, h.TestEnv, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
+	recorded := enrollmentEvents(t, h.TestEnv, fixtures.AutomationQuahogHookID, fixtures.ContactQuahogQuinnID)
 
-	assert.Equal(t, map[string]int{events.NameAutomationEnrolled: 1}, recorded)
+	assert.Empty(t, recorded, "the fixture Enrollment's failure publishes no System event")
 }

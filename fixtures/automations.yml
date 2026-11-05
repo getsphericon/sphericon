@@ -628,3 +628,42 @@
   workspace_id: 76
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Quahog (workspace 92): an HTTP step to the receiver (the Authorization header sealed, signed
+# unless the name says otherwise), then a tag step. They differ in the body. Inactive, so no Event
+# enrolls anyone; each has one Enrollment in automation_runs.yml, standing on the HTTP step.
+- id: 7650 # fixture: AutomationQuahogHookSigned
+  name: Hook with the email
+  status: inactive
+  live_version_id: 7650
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7651 # fixture: AutomationQuahogHookEvent
+  name: Hook with the Event
+  status: inactive
+  live_version_id: 7651
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7652 # fixture: AutomationQuahogHookUnsigned
+  name: Hook unsigned
+  status: inactive
+  live_version_id: 7652
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7653 # fixture: AutomationQuahogHook
+  name: Hook
+  status: inactive
+  live_version_id: 7653
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7654 # fixture: AutomationQuahogHookNumber
+  name: Hook with a number
+  status: inactive
+  live_version_id: 7654
+  workspace_id: 92
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'

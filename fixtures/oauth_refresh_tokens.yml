@@ -1,0 +1,16 @@
+# The unused refresh tokens of the fixture Connections (api_tokens.yml), of the fixture OAuth
+# client (id 1). Stored as a SHA-256; the plaintext is lifted into <Name>Token.
+- id: 7610 # fixture: VehementOwnerRefresh
+  token_hash: '{{secretHash "vehement-owner-refresh-token"}}'
+  client_id: 1
+  api_token_id: 7610
+  expires_at: '{{daysAhead 30}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7612 # fixture: VehementMemberRefresh
+  token_hash: '{{secretHash "vehement-member-refresh-token"}}'
+  client_id: 1
+  api_token_id: 7612
+  expires_at: '{{daysAhead 30}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

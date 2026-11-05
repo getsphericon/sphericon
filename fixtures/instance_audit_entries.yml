@@ -1,0 +1,21 @@
+# The Instance audit log (ADR 0070): StaffEnrolled set the default Send cap to 100, raised it to
+# 200 and cleared it, so the log agrees with the fixture Instance, which has no default. A test's
+# own changes come after these ids, so they list first (newest first).
+- id: 7600
+  staff_member_id: 1
+  action: instance.default_send_cap_change
+  diff: '{"default_send_cap":{"to":100}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7601
+  staff_member_id: 1
+  action: instance.default_send_cap_change
+  diff: '{"default_send_cap":{"from":100,"to":200}}'
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 7602
+  staff_member_id: 1
+  action: instance.default_send_cap_change
+  diff: '{"default_send_cap":{"from":200}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

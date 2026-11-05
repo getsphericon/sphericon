@@ -439,6 +439,36 @@ const (
 	AutomationPaymentRecoveryName = "Payment recovery"
 	// AutomationPaymentRecoveryVersionID is from fixtures/automation_versions.
 	AutomationPaymentRecoveryVersionID = 108
+	// AutomationQuahogHookEventID is from fixtures/automations.
+	AutomationQuahogHookEventID = 7651
+	// AutomationQuahogHookEventName is from fixtures/automations.
+	AutomationQuahogHookEventName = "Hook with the Event"
+	// AutomationQuahogHookEventVersionID is from fixtures/automation_versions.
+	AutomationQuahogHookEventVersionID = 7651
+	// AutomationQuahogHookID is from fixtures/automations.
+	AutomationQuahogHookID = 7653
+	// AutomationQuahogHookName is from fixtures/automations.
+	AutomationQuahogHookName = "Hook"
+	// AutomationQuahogHookNumberID is from fixtures/automations.
+	AutomationQuahogHookNumberID = 7654
+	// AutomationQuahogHookNumberName is from fixtures/automations.
+	AutomationQuahogHookNumberName = "Hook with a number"
+	// AutomationQuahogHookNumberVersionID is from fixtures/automation_versions.
+	AutomationQuahogHookNumberVersionID = 7654
+	// AutomationQuahogHookSignedID is from fixtures/automations.
+	AutomationQuahogHookSignedID = 7650
+	// AutomationQuahogHookSignedName is from fixtures/automations.
+	AutomationQuahogHookSignedName = "Hook with the email"
+	// AutomationQuahogHookSignedVersionID is from fixtures/automation_versions.
+	AutomationQuahogHookSignedVersionID = 7650
+	// AutomationQuahogHookUnsignedID is from fixtures/automations.
+	AutomationQuahogHookUnsignedID = 7652
+	// AutomationQuahogHookUnsignedName is from fixtures/automations.
+	AutomationQuahogHookUnsignedName = "Hook unsigned"
+	// AutomationQuahogHookUnsignedVersionID is from fixtures/automation_versions.
+	AutomationQuahogHookUnsignedVersionID = 7652
+	// AutomationQuahogHookVersionID is from fixtures/automation_versions.
+	AutomationQuahogHookVersionID = 7653
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
@@ -541,6 +571,16 @@ const (
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunQuahogHookEventID is from fixtures/automation_runs.
+	AutomationRunQuahogHookEventID = 7651
+	// AutomationRunQuahogHookID is from fixtures/automation_runs.
+	AutomationRunQuahogHookID = 7653
+	// AutomationRunQuahogHookNumberID is from fixtures/automation_runs.
+	AutomationRunQuahogHookNumberID = 7654
+	// AutomationRunQuahogHookSignedID is from fixtures/automation_runs.
+	AutomationRunQuahogHookSignedID = 7650
+	// AutomationRunQuahogHookUnsignedID is from fixtures/automation_runs.
+	AutomationRunQuahogHookUnsignedID = 7652
 	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
 	AutomationRunRecoveryActiveID = 7500
 	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
@@ -1155,6 +1195,10 @@ const (
 	ContactPinewoodReaderEmail = "reader@pinewood.test"
 	// ContactPinewoodReaderID is from fixtures/contacts.
 	ContactPinewoodReaderID = 7420
+	// ContactQuahogQuinnEmail is from fixtures/contacts.
+	ContactQuahogQuinnEmail = "quinn@quahog.test"
+	// ContactQuahogQuinnID is from fixtures/contacts.
+	ContactQuahogQuinnID = 7650
 	// ContactSoukBuyerEmail is from fixtures/contacts.
 	ContactSoukBuyerEmail = "buyer@souk.test"
 	// ContactSoukBuyerID is from fixtures/contacts.
@@ -1205,6 +1249,10 @@ const (
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
 	ContactUnsubscribedEverythingID = 121
+	// ContactVehementVicEmail is from fixtures/contacts.
+	ContactVehementVicEmail = "vic@vehement.test"
+	// ContactVehementVicID is from fixtures/contacts.
+	ContactVehementVicID = 7600
 	// ContractTokenID is from fixtures/api_tokens.
 	ContractTokenID = 103
 	// ContractTokenName is from fixtures/api_tokens.
@@ -2727,6 +2775,14 @@ const (
 	PruGoogleIdentityProvider = "google"
 	// PruGoogleIdentitySubject is from fixtures/user_identities.
 	PruGoogleIdentitySubject = "google-subject-of-pru"
+	// QuahogCollectKey is from fixtures/workspaces.
+	QuahogCollectKey = "omck_test_quahog_collect_key"
+	// QuahogID is from fixtures/workspaces.
+	QuahogID = 92
+	// QuahogName is from fixtures/workspaces.
+	QuahogName = "Quahog"
+	// QuahogPublicID is from fixtures/workspaces.
+	QuahogPublicID = "QuahgW92"
 	// RevenueOwnerRitaEmail is from fixtures/users.
 	RevenueOwnerRitaEmail = "rita@revenue.test"
 	// RevenueOwnerRitaID is from fixtures/users.
@@ -2829,6 +2885,22 @@ const (
 	RuleFiringPendingAction = "rule_click"
 	// RuleFiringPendingID is from fixtures/rule_firings.
 	RuleFiringPendingID = 101
+	// RuleFiringQuahogHookEventPendingAction is from fixtures/rule_firings.
+	RuleFiringQuahogHookEventPendingAction = "rule_http"
+	// RuleFiringQuahogHookEventPendingID is from fixtures/rule_firings.
+	RuleFiringQuahogHookEventPendingID = 7652
+	// RuleFiringQuahogHookNumberPendingAction is from fixtures/rule_firings.
+	RuleFiringQuahogHookNumberPendingAction = "rule_http"
+	// RuleFiringQuahogHookNumberPendingID is from fixtures/rule_firings.
+	RuleFiringQuahogHookNumberPendingID = 7653
+	// RuleFiringQuahogHookPendingAction is from fixtures/rule_firings.
+	RuleFiringQuahogHookPendingAction = "rule_http"
+	// RuleFiringQuahogHookPendingID is from fixtures/rule_firings.
+	RuleFiringQuahogHookPendingID = 7651
+	// RuleFiringQuahogHookToRunAction is from fixtures/rule_firings.
+	RuleFiringQuahogHookToRunAction = "rule_http"
+	// RuleFiringQuahogHookToRunID is from fixtures/rule_firings.
+	RuleFiringQuahogHookToRunID = 7650
 	// RuleFiringTwoHTTPPendingAction is from fixtures/rule_firings.
 	RuleFiringTwoHTTPPendingAction = "execute_http"
 	// RuleFiringTwoHTTPPendingID is from fixtures/rule_firings.
@@ -2865,6 +2937,16 @@ const (
 	RulePromotersID = 130
 	// RulePromotersName is from fixtures/rules.
 	RulePromotersName = "Tag a promoter"
+	// RuleQuahogHookEventVersionID is from fixtures/rule_versions.
+	RuleQuahogHookEventVersionID = 7651
+	// RuleQuahogHookID is from fixtures/rules.
+	RuleQuahogHookID = 7650
+	// RuleQuahogHookName is from fixtures/rules.
+	RuleQuahogHookName = "Call the hook"
+	// RuleQuahogHookNumberVersionID is from fixtures/rule_versions.
+	RuleQuahogHookNumberVersionID = 7652
+	// RuleQuahogHookVersionID is from fixtures/rule_versions.
+	RuleQuahogHookVersionID = 7650
 	// RuleSecondRevisitID is from fixtures/rules.
 	RuleSecondRevisitID = 111
 	// RuleSecondRevisitName is from fixtures/rules.
@@ -3533,8 +3615,24 @@ const (
 	UmbrellaOwnerRitaPassword = "password"
 	// UmbrellaPublicID is from fixtures/workspaces.
 	UmbrellaPublicID = "UmbrlWs4"
+	// UmbrellaRitaConnectionID is from fixtures/api_tokens.
+	UmbrellaRitaConnectionID = 7613
+	// UmbrellaRitaConnectionName is from fixtures/api_tokens.
+	UmbrellaRitaConnectionName = "Fixture Connector"
+	// UmbrellaRitaConnectionPrefix is from fixtures/api_tokens.
+	UmbrellaRitaConnectionPrefix = "umbritaconn1"
+	// UmbrellaRitaConnectionSecret is from fixtures/api_tokens.
+	UmbrellaRitaConnectionSecret = "umbrella-rita-connection-secret-00000000"
 	// UmbrellaRitaMembershipID is from fixtures/memberships.
 	UmbrellaRitaMembershipID = 10
+	// UmbrellaRitaPersonalTokenID is from fixtures/api_tokens.
+	UmbrellaRitaPersonalTokenID = 7602
+	// UmbrellaRitaPersonalTokenName is from fixtures/api_tokens.
+	UmbrellaRitaPersonalTokenName = "import script"
+	// UmbrellaRitaPersonalTokenPrefix is from fixtures/api_tokens.
+	UmbrellaRitaPersonalTokenPrefix = "umbritapers1"
+	// UmbrellaRitaPersonalTokenSecret is from fixtures/api_tokens.
+	UmbrellaRitaPersonalTokenSecret = "umbrella-rita-personal-secret-0000000000"
 	// UmbrellaSamMembershipID is from fixtures/memberships.
 	UmbrellaSamMembershipID = 12
 	// UnsubscribeAutomationLeoDestination is from fixtures/unsubscribes.
@@ -3593,6 +3691,92 @@ const (
 	VandelayOwnerCosmoPassword = "password"
 	// VandelayPublicID is from fixtures/workspaces.
 	VandelayPublicID = "VandlWs7"
+	// VehementAdminAdaEmail is from fixtures/users.
+	VehementAdminAdaEmail = "ada@vehement.test"
+	// VehementAdminAdaID is from fixtures/users.
+	VehementAdminAdaID = 7601
+	// VehementAdminAdaName is from fixtures/users.
+	VehementAdminAdaName = "Ada"
+	// VehementAdminAdaPassword is from fixtures/users.
+	VehementAdminAdaPassword = "password"
+	// VehementAdminConnectionID is from fixtures/api_tokens.
+	VehementAdminConnectionID = 7611
+	// VehementAdminConnectionName is from fixtures/api_tokens.
+	VehementAdminConnectionName = "Fixture Connector"
+	// VehementAdminConnectionPrefix is from fixtures/api_tokens.
+	VehementAdminConnectionPrefix = "vehadaconn01"
+	// VehementAdminConnectionSecret is from fixtures/api_tokens.
+	VehementAdminConnectionSecret = "vehement-admin-connection-secret-0000000"
+	// VehementAdminMembershipID is from fixtures/memberships.
+	VehementAdminMembershipID = 7601
+	// VehementAdminPersonalTokenID is from fixtures/api_tokens.
+	VehementAdminPersonalTokenID = 7601
+	// VehementAdminPersonalTokenName is from fixtures/api_tokens.
+	VehementAdminPersonalTokenName = "admin script"
+	// VehementAdminPersonalTokenPrefix is from fixtures/api_tokens.
+	VehementAdminPersonalTokenPrefix = "vehadapers01"
+	// VehementAdminPersonalTokenSecret is from fixtures/api_tokens.
+	VehementAdminPersonalTokenSecret = "vehement-admin-personal-secret-000000000"
+	// VehementCollectKey is from fixtures/workspaces.
+	VehementCollectKey = "omck_test_vehement_collect_key"
+	// VehementID is from fixtures/workspaces.
+	VehementID = 91
+	// VehementMemberConnectionID is from fixtures/api_tokens.
+	VehementMemberConnectionID = 7612
+	// VehementMemberConnectionName is from fixtures/api_tokens.
+	VehementMemberConnectionName = "Fixture Connector"
+	// VehementMemberConnectionPrefix is from fixtures/api_tokens.
+	VehementMemberConnectionPrefix = "vehmelconn01"
+	// VehementMemberConnectionSecret is from fixtures/api_tokens.
+	VehementMemberConnectionSecret = "vehement-member-connection-secret-000000"
+	// VehementMemberMelEmail is from fixtures/users.
+	VehementMemberMelEmail = "mel@vehement.test"
+	// VehementMemberMelID is from fixtures/users.
+	VehementMemberMelID = 7602
+	// VehementMemberMelName is from fixtures/users.
+	VehementMemberMelName = "Mel"
+	// VehementMemberMelPassword is from fixtures/users.
+	VehementMemberMelPassword = "password"
+	// VehementMemberMembershipID is from fixtures/memberships.
+	VehementMemberMembershipID = 7602
+	// VehementMemberPersonalTokenID is from fixtures/api_tokens.
+	VehementMemberPersonalTokenID = 7600
+	// VehementMemberPersonalTokenName is from fixtures/api_tokens.
+	VehementMemberPersonalTokenName = "import script"
+	// VehementMemberPersonalTokenPrefix is from fixtures/api_tokens.
+	VehementMemberPersonalTokenPrefix = "vehmelpers01"
+	// VehementMemberPersonalTokenSecret is from fixtures/api_tokens.
+	VehementMemberPersonalTokenSecret = "vehement-member-personal-secret-00000000"
+	// VehementMemberRefreshID is from fixtures/oauth_refresh_tokens.
+	VehementMemberRefreshID = 7612
+	// VehementMemberRefreshToken is from fixtures/oauth_refresh_tokens.
+	VehementMemberRefreshToken = "vehement-member-refresh-token"
+	// VehementName is from fixtures/workspaces.
+	VehementName = "Vehement"
+	// VehementOwnerConnectionID is from fixtures/api_tokens.
+	VehementOwnerConnectionID = 7610
+	// VehementOwnerConnectionName is from fixtures/api_tokens.
+	VehementOwnerConnectionName = "Fixture Connector"
+	// VehementOwnerConnectionPrefix is from fixtures/api_tokens.
+	VehementOwnerConnectionPrefix = "vehvalconn01"
+	// VehementOwnerConnectionSecret is from fixtures/api_tokens.
+	VehementOwnerConnectionSecret = "vehement-owner-connection-secret-0000000"
+	// VehementOwnerMembershipID is from fixtures/memberships.
+	VehementOwnerMembershipID = 7600
+	// VehementOwnerRefreshID is from fixtures/oauth_refresh_tokens.
+	VehementOwnerRefreshID = 7610
+	// VehementOwnerRefreshToken is from fixtures/oauth_refresh_tokens.
+	VehementOwnerRefreshToken = "vehement-owner-refresh-token"
+	// VehementOwnerValEmail is from fixtures/users.
+	VehementOwnerValEmail = "val@vehement.test"
+	// VehementOwnerValID is from fixtures/users.
+	VehementOwnerValID = 7600
+	// VehementOwnerValName is from fixtures/users.
+	VehementOwnerValName = "Val"
+	// VehementOwnerValPassword is from fixtures/users.
+	VehementOwnerValPassword = "password"
+	// VehementPublicID is from fixtures/workspaces.
+	VehementPublicID = "VhmntW91"
 	// VirtuconCoOwnerVicEmail is from fixtures/users.
 	VirtuconCoOwnerVicEmail = "vic@virtucon.test"
 	// VirtuconCoOwnerVicID is from fixtures/users.
