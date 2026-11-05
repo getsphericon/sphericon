@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
@@ -20,20 +22,12 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 		p := serviceapi.ServiceUsageListBadRequest(badPeriodProblem())
 		return &p, nil
 	}
-	page, err := usage.List(ctx, h.module.ent, period, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.module.UsageList(ctx, period, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]int64, len(page.Items))
-	for i, w := range page.Items {
-		ids[i] = w.WorkspaceID
-	}
-	publicIDs, err := h.module.publicIDs(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return serviceMapper.UsageListPage(pagination.Map(page, func(w usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource {
-		return usageResource(w, publicIDs[w.WorkspaceID])
+	return serviceMapper.UsageListPage(pagination.Map(page, func(e UsageEntry) serviceapi.WorkspaceUsageResource {
+		return usageResource(e.Usage, e.WorkspaceID)
 	})), nil
 }
 
@@ -77,6 +71,32 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 	}
 	res := usageResource(got, id)
 	return &res, nil
+}
+
+// UsageEntry is one Workspace's stored figures for a Usage period, under the Workspace's id.
+type UsageEntry struct {
+	// WorkspaceID is the Workspace's id (ADR 0043), the address the service responses name.
+	WorkspaceID string
+	Usage       usage.WorkspaceUsage
+}
+
+// UsageList is a page of every Workspace's stored figures for a Usage period, each under its
+// Workspace's id. It reads tenant metadata through the raw client and never recounts.
+func (m *Module) UsageList(ctx context.Context, period time.Time, p pagination.Params) (pagination.Page[UsageEntry], error) {
+	if err := m.licensed(); err != nil {
+		return pagination.Page[UsageEntry]{}, err
+	}
+	page, err := usage.List(ctx, m.ent, period, p)
+	if err != nil {
+		return pagination.Page[UsageEntry]{}, err
+	}
+	publicIDs, err := m.publicIDs(ctx, lo.Map(page.Items, func(w usage.WorkspaceUsage, _ int) int64 { return w.WorkspaceID }))
+	if err != nil {
+		return pagination.Page[UsageEntry]{}, err
+	}
+	return pagination.Map(page, func(w usage.WorkspaceUsage) UsageEntry {
+		return UsageEntry{WorkspaceID: publicIDs[w.WorkspaceID], Usage: w}
+	}), nil
 }
 
 // WorkspaceUsage reads one Workspace's stored figures for a period, scoped over the one

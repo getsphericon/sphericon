@@ -3,7 +3,6 @@ package staff
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -15,17 +14,9 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]int64, len(page.Items))
-	for i, e := range page.Items {
-		ids[i] = e.WorkspaceID
-	}
-	publicIDs, err := h.module.publicIDs(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange {
-		item := serviceMapper.TrackingHostChangeToResource(e)
-		item.WorkspaceId = serviceapi.WorkspaceId(publicIDs[e.WorkspaceID])
+	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e HostChange) serviceapi.ServiceTrackingHostChange {
+		item := serviceMapper.TrackingHostChangeToResource(e.Change)
+		item.WorkspaceId = serviceapi.WorkspaceId(e.WorkspaceID)
 		return item
 	})), nil
 }
