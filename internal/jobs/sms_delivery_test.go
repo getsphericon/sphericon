@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -74,13 +73,11 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 }
 
 // An Automation whose Trigger is sms.undelivered enrolls the Contact whose text Twilio could not
-// deliver, and its steps see the error code. Fixture: the Jobs greeting Automation, its live
-// version's Trigger turned to sms.undelivered.
+// deliver, and its steps see the error code. Fixture: the Automation the fixtures trigger on
+// sms.undelivered.
 func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameSmsUndelivered).ExecX(ctx)
 	account := env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	id := smsBroadcast(t, env, account, "Sale today")
@@ -95,7 +92,7 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactTexterID)).
+		Where(automationrun.AutomationID(fixtures.AutomationOnSmsUndeliveredID), automationrun.ContactID(fixtures.ContactTexterID)).
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameSmsUndelivered, *run.EventAction)

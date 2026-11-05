@@ -731,21 +731,18 @@ func TestBroadcastWorkers(t *testing.T) {
 func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	mod := newMod(e.TestEnv, resolvingTo(e.sender))
-	ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	require.NotEmpty(t, ids)
+	ids := []int64{e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)}
 
 	failing := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(erroringSender{})))
 	// Not the last attempt: the error surfaces for retry, row stays pending.
-	err = failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
+	err := failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastSendingID}))
 	require.Error(t, err)
 	var snooze *river.JobSnoozeError
 	assert.NotErrorAs(t, err, &snooze, "a failure spends an attempt: it is not a snooze")
 	assert.True(t, stillPending(ctx, e.DB, ids[0]))
 
 	// Last attempt: the row is marked failed so the broadcast can finalize.
-	last := job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID})
+	last := job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastSendingID})
 	last.Attempt = last.MaxAttempts
 	require.Error(t, failing.Work(ctx, last))
 	assert.False(t, stillPending(ctx, e.DB, ids[0]), "the last attempt fails the recipient so the broadcast can finalize")
@@ -772,20 +769,17 @@ func (s takeoverSender) Send(ctx context.Context, _ messaging.EmailMessage) (mes
 func TestSendRecipientWorkerSnoozesInsteadOfGivingUpOnALiveClaim(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	mod := newMod(e.TestEnv, resolvingTo(e.sender))
-	ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	require.NotEmpty(t, ids)
+	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 
 	worker := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(takeoverSender{db: e.DB})))
-	last := job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID})
+	last := job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID})
 	last.Attempt = last.MaxAttempts
 
 	var snooze *river.JobSnoozeError
 	require.ErrorAs(t, worker.Work(ctx, last), &snooze)
 
-	assert.True(t, stillPending(ctx, e.DB, ids[0]), "nothing is failed while the claim is live")
-	assert.Equal(t, broadcast.StatusSending, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
+	assert.True(t, stillPending(ctx, e.DB, id), "nothing is failed while the claim is live")
+	assert.Equal(t, broadcast.StatusSending, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).Status)
 }
 
 // A recipient whose send another attempt is making waits that attempt out: the job snoozes,

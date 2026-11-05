@@ -131,15 +131,16 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
-	created := createSMTP(t, c, "To edit", false)
+	// The relay logs in to smtp.example.com:587 as mailer with smtpSecret.
+	id := entityIDString(fixtures.IntegrationAcmeSmtpLoginID)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
-	before, err := scoped.Integration().Get(ctx, int64(created.ID))
+	before, err := scoped.Integration().Get(ctx, fixtures.IntegrationAcmeSmtpLoginID)
 	require.NoError(t, err)
 
 	renamed, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
 		Name: externalapi.NewOptString("Renamed"), Enabled: externalapi.NewOptBool(false),
 		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(externalapi.MaxPerSecond(5)),
-	}, externalapi.IntegrationsUpdateParams{ID: created.ID})
+	}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
 	res, ok := renamed.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "got %T", renamed)
@@ -161,7 +162,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	edited, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
 		Config:       externalapi.NewOptIntegrationConfigInput(cfg),
 		MaxPerSecond: externalapi.OptNilMaxPerSecond{Null: true, Set: true},
-	}, externalapi.IntegrationsUpdateParams{ID: created.ID})
+	}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
 	res, ok = edited.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "got %T", edited)
@@ -176,7 +177,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	// Pointing the Integration at another host without the password is refused: the stored
 	// secret is never sent to a destination it was not saved for.
 	moved, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
-		externalapi.IntegrationsUpdateParams{ID: created.ID})
+		externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, moved)
 
@@ -185,7 +186,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 		Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 	})}
 	mismatch, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
-		externalapi.IntegrationsUpdateParams{ID: created.ID})
+		externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, mismatch)
 }

@@ -17,7 +17,7 @@ import (
 // An Invitation that sets up an account asks the Sign-up items as the sign-up form does (ADR
 // 0062); one accepted by an existing User asks nothing, since consent follows the User.
 
-const inviteeAddress = "newcomer@example.com"
+const inviteeAddress = fixtures.InvitationAcmeNewcomerEmail
 
 func setUpAccountAnswering(t *testing.T, env *testhelper.TestEnv, token string, answers ...siteapi.SiteSignupItemAnswer) siteapi.SitePublicInvitationsAcceptRes {
 	t.Helper()
@@ -28,7 +28,7 @@ func setUpAccountAnswering(t *testing.T, env *testhelper.TestEnv, token string, 
 
 func TestAnInvitationForANewAccountWithoutARequiredAcceptanceIsRefusedWithAFieldNamingIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, inviteeAddress)
+	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
 	res := setUpAccountAnswering(t, env, token, newsUnticked)
@@ -46,7 +46,7 @@ func TestAnInvitationForANewAccountWithoutARequiredAcceptanceIsRefusedWithAField
 
 func TestAnInvitationForANewAccountWithTheAnswersCreatesTheMemberAndRecordsThemAsMadeOnTheInvitation(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, inviteeAddress)
+	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
 	res := setUpAccountAnswering(t, env, token, termsTicked, newsUnticked)
@@ -66,7 +66,7 @@ func TestAnInvitationForANewAccountWithTheAnswersCreatesTheMemberAndRecordsThemA
 
 func TestAnInvitationForANewAccountAnsweringAStaleVersionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, inviteeAddress)
+	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
 	res := setUpAccountAnswering(t, env, token, itemAnswer(fixtures.ServiceTermsKey, fixtures.ServiceTermsStaleLabel, true))
@@ -81,7 +81,7 @@ func TestAnInvitationForANewAccountAnsweringAStaleVersionIsRefused(t *testing.T)
 func TestAnInvitationThatCompletesAnUnverifiedUserAsksTheSignupItems(t *testing.T) {
 	env := testhelper.Setup(t)
 	signUpLink(t, env, "Squatter", inviteeAddress)
-	token := inviteToAcme(t, env, inviteeAddress)
+	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
 	refused := setUpAccountAnswering(t, env, token)
@@ -100,7 +100,7 @@ func TestAnInvitationThatCompletesAnUnverifiedUserAsksTheSignupItems(t *testing.
 // the acceptance gate first (TestAGatedUserCannotAcceptAnInvitation).
 func TestAnExistingUserAcceptsAnInvitationWithoutBeingAskedTheSignupItems(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 	withSignupItems(t, env)
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
 	acceptPending(t, oscar, termsAccepted)

@@ -53,6 +53,14 @@ const (
 	AutomationArchivedName = "Old referral nudge"
 	// AutomationArchivedVersionID is from fixtures/automation_versions.
 	AutomationArchivedVersionID = 107
+	// AutomationEmporiumClicksID is from fixtures/automations.
+	AutomationEmporiumClicksID = 7201
+	// AutomationEmporiumClicksName is from fixtures/automations.
+	AutomationEmporiumClicksName = "Emporium clicks"
+	// AutomationEmporiumRevenueID is from fixtures/automations.
+	AutomationEmporiumRevenueID = 7200
+	// AutomationEmporiumRevenueName is from fixtures/automations.
+	AutomationEmporiumRevenueName = "Emporium revenue"
 	// AutomationGlobexID is from fixtures/automations.
 	AutomationGlobexID = 900
 	// AutomationGlobexName is from fixtures/automations.
@@ -123,6 +131,66 @@ const (
 	AutomationJobsGreetingName = "Jobs greeting"
 	// AutomationJobsGreetingVersionID is from fixtures/automation_versions.
 	AutomationJobsGreetingVersionID = 5560
+	// AutomationJobsSMSBetweenEmailsID is from fixtures/automations.
+	AutomationJobsSMSBetweenEmailsID = 7520
+	// AutomationJobsSMSBetweenEmailsName is from fixtures/automations.
+	AutomationJobsSMSBetweenEmailsName = "Jobs sms between emails"
+	// AutomationJobsSMSBetweenEmailsVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSBetweenEmailsVersionID = 7520
+	// AutomationJobsSMSCartID is from fixtures/automations.
+	AutomationJobsSMSCartID = 7523
+	// AutomationJobsSMSCartName is from fixtures/automations.
+	AutomationJobsSMSCartName = "Jobs sms cart"
+	// AutomationJobsSMSCartUntrackedID is from fixtures/automations.
+	AutomationJobsSMSCartUntrackedID = 7524
+	// AutomationJobsSMSCartUntrackedName is from fixtures/automations.
+	AutomationJobsSMSCartUntrackedName = "Jobs sms cart untracked"
+	// AutomationJobsSMSCartUntrackedVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSCartUntrackedVersionID = 7524
+	// AutomationJobsSMSCartVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSCartVersionID = 7523
+	// AutomationJobsSMSFirstSecondID is from fixtures/automations.
+	AutomationJobsSMSFirstSecondID = 7522
+	// AutomationJobsSMSFirstSecondName is from fixtures/automations.
+	AutomationJobsSMSFirstSecondName = "Jobs sms first second"
+	// AutomationJobsSMSFirstSecondVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSFirstSecondVersionID = 7522
+	// AutomationJobsSMSHelloAgainID is from fixtures/automations.
+	AutomationJobsSMSHelloAgainID = 7516
+	// AutomationJobsSMSHelloAgainName is from fixtures/automations.
+	AutomationJobsSMSHelloAgainName = "Jobs sms hello again"
+	// AutomationJobsSMSHelloAgainVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSHelloAgainVersionID = 7516
+	// AutomationJobsSMSHelloID is from fixtures/automations.
+	AutomationJobsSMSHelloID = 7515
+	// AutomationJobsSMSHelloName is from fixtures/automations.
+	AutomationJobsSMSHelloName = "Jobs sms hello"
+	// AutomationJobsSMSHelloThenTagID is from fixtures/automations.
+	AutomationJobsSMSHelloThenTagID = 7517
+	// AutomationJobsSMSHelloThenTagName is from fixtures/automations.
+	AutomationJobsSMSHelloThenTagName = "Jobs sms hello then tag"
+	// AutomationJobsSMSHelloThenTagVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSHelloThenTagVersionID = 7517
+	// AutomationJobsSMSHelloVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSHelloVersionID = 7515
+	// AutomationJobsSMSHiThenTagID is from fixtures/automations.
+	AutomationJobsSMSHiThenTagID = 7519
+	// AutomationJobsSMSHiThenTagName is from fixtures/automations.
+	AutomationJobsSMSHiThenTagName = "Jobs sms hi then tag"
+	// AutomationJobsSMSHiThenTagVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSHiThenTagVersionID = 7519
+	// AutomationJobsSMSRenderedID is from fixtures/automations.
+	AutomationJobsSMSRenderedID = 7518
+	// AutomationJobsSMSRenderedName is from fixtures/automations.
+	AutomationJobsSMSRenderedName = "Jobs sms rendered"
+	// AutomationJobsSMSRenderedVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSRenderedVersionID = 7518
+	// AutomationJobsSMSStopLinkID is from fixtures/automations.
+	AutomationJobsSMSStopLinkID = 7521
+	// AutomationJobsSMSStopLinkName is from fixtures/automations.
+	AutomationJobsSMSStopLinkName = "Jobs sms stop link"
+	// AutomationJobsSMSStopLinkVersionID is from fixtures/automation_versions.
+	AutomationJobsSMSStopLinkVersionID = 7521
 	// AutomationJobsSingleEmailID is from fixtures/automations.
 	AutomationJobsSingleEmailID = 5561
 	// AutomationJobsSingleEmailName is from fixtures/automations.
@@ -141,6 +209,96 @@ const (
 	AutomationJobsTagWithExitName = "Jobs tag with exit"
 	// AutomationJobsTagWithExitVersionID is from fixtures/automation_versions.
 	AutomationJobsTagWithExitVersionID = 5567
+	// AutomationJobsTelegramBetweenEmailsID is from fixtures/automations.
+	AutomationJobsTelegramBetweenEmailsID = 7503
+	// AutomationJobsTelegramBetweenEmailsName is from fixtures/automations.
+	AutomationJobsTelegramBetweenEmailsName = "Jobs telegram between emails"
+	// AutomationJobsTelegramBetweenEmailsVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramBetweenEmailsVersionID = 7503
+	// AutomationJobsTelegramEscapedID is from fixtures/automations.
+	AutomationJobsTelegramEscapedID = 7502
+	// AutomationJobsTelegramEscapedName is from fixtures/automations.
+	AutomationJobsTelegramEscapedName = "Jobs telegram escaped"
+	// AutomationJobsTelegramEscapedVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramEscapedVersionID = 7502
+	// AutomationJobsTelegramHelloAgainID is from fixtures/automations.
+	AutomationJobsTelegramHelloAgainID = 7501
+	// AutomationJobsTelegramHelloAgainName is from fixtures/automations.
+	AutomationJobsTelegramHelloAgainName = "Jobs telegram hello again"
+	// AutomationJobsTelegramHelloAgainVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramHelloAgainVersionID = 7501
+	// AutomationJobsTelegramHelloID is from fixtures/automations.
+	AutomationJobsTelegramHelloID = 7500
+	// AutomationJobsTelegramHelloName is from fixtures/automations.
+	AutomationJobsTelegramHelloName = "Jobs telegram hello"
+	// AutomationJobsTelegramHelloVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramHelloVersionID = 7500
+	// AutomationJobsTelegramLinkAndButtonID is from fixtures/automations.
+	AutomationJobsTelegramLinkAndButtonID = 7511
+	// AutomationJobsTelegramLinkAndButtonName is from fixtures/automations.
+	AutomationJobsTelegramLinkAndButtonName = "Jobs telegram link and button"
+	// AutomationJobsTelegramLinkAndButtonVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramLinkAndButtonVersionID = 7511
+	// AutomationJobsTelegramNoTagID is from fixtures/automations.
+	AutomationJobsTelegramNoTagID = 7510
+	// AutomationJobsTelegramNoTagName is from fixtures/automations.
+	AutomationJobsTelegramNoTagName = "Jobs telegram no tag"
+	// AutomationJobsTelegramNoTagVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramNoTagVersionID = 7510
+	// AutomationJobsTelegramOfferAndStopID is from fixtures/automations.
+	AutomationJobsTelegramOfferAndStopID = 7513
+	// AutomationJobsTelegramOfferAndStopName is from fixtures/automations.
+	AutomationJobsTelegramOfferAndStopName = "Jobs telegram offer and stop"
+	// AutomationJobsTelegramOfferAndStopVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramOfferAndStopVersionID = 7513
+	// AutomationJobsTelegramOfferID is from fixtures/automations.
+	AutomationJobsTelegramOfferID = 7514
+	// AutomationJobsTelegramOfferName is from fixtures/automations.
+	AutomationJobsTelegramOfferName = "Jobs telegram offer"
+	// AutomationJobsTelegramOfferVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramOfferVersionID = 7514
+	// AutomationJobsTelegramPhotoID is from fixtures/automations.
+	AutomationJobsTelegramPhotoID = 7504
+	// AutomationJobsTelegramPhotoName is from fixtures/automations.
+	AutomationJobsTelegramPhotoName = "Jobs telegram photo"
+	// AutomationJobsTelegramPhotoVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramPhotoVersionID = 7504
+	// AutomationJobsTelegramPreviewOffID is from fixtures/automations.
+	AutomationJobsTelegramPreviewOffID = 7505
+	// AutomationJobsTelegramPreviewOffName is from fixtures/automations.
+	AutomationJobsTelegramPreviewOffName = "Jobs telegram preview off"
+	// AutomationJobsTelegramPreviewOffVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramPreviewOffVersionID = 7505
+	// AutomationJobsTelegramSameURLID is from fixtures/automations.
+	AutomationJobsTelegramSameURLID = 7512
+	// AutomationJobsTelegramSameURLName is from fixtures/automations.
+	AutomationJobsTelegramSameURLName = "Jobs telegram same url"
+	// AutomationJobsTelegramSameURLVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramSameURLVersionID = 7512
+	// AutomationJobsTelegramStartTagID is from fixtures/automations.
+	AutomationJobsTelegramStartTagID = 7508
+	// AutomationJobsTelegramStartTagJoinID is from fixtures/automations.
+	AutomationJobsTelegramStartTagJoinID = 7509
+	// AutomationJobsTelegramStartTagJoinName is from fixtures/automations.
+	AutomationJobsTelegramStartTagJoinName = "Jobs telegram start tag join"
+	// AutomationJobsTelegramStartTagJoinVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramStartTagJoinVersionID = 7509
+	// AutomationJobsTelegramStartTagName is from fixtures/automations.
+	AutomationJobsTelegramStartTagName = "Jobs telegram start tag"
+	// AutomationJobsTelegramStartTagVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramStartTagVersionID = 7508
+	// AutomationJobsTelegramUnsubscribeLinkID is from fixtures/automations.
+	AutomationJobsTelegramUnsubscribeLinkID = 7506
+	// AutomationJobsTelegramUnsubscribeLinkName is from fixtures/automations.
+	AutomationJobsTelegramUnsubscribeLinkName = "Jobs telegram unsubscribe link"
+	// AutomationJobsTelegramUnsubscribeLinkVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramUnsubscribeLinkVersionID = 7506
+	// AutomationJobsTelegramWelcomeBackID is from fixtures/automations.
+	AutomationJobsTelegramWelcomeBackID = 7507
+	// AutomationJobsTelegramWelcomeBackName is from fixtures/automations.
+	AutomationJobsTelegramWelcomeBackName = "Jobs telegram welcome back"
+	// AutomationJobsTelegramWelcomeBackVersionID is from fixtures/automation_versions.
+	AutomationJobsTelegramWelcomeBackVersionID = 7507
 	// AutomationJobsUndecodableVersionID is from fixtures/automation_versions.
 	AutomationJobsUndecodableVersionID = 5563
 	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
@@ -151,18 +309,122 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationMeridianArchivedDraftVersionID is from fixtures/automation_versions.
+	AutomationMeridianArchivedDraftVersionID = 7409
+	// AutomationMeridianArchivedID is from fixtures/automations.
+	AutomationMeridianArchivedID = 7405
+	// AutomationMeridianArchivedName is from fixtures/automations.
+	AutomationMeridianArchivedName = "Meridian archived"
+	// AutomationMeridianArchivedVersionID is from fixtures/automation_versions.
+	AutomationMeridianArchivedVersionID = 7408
+	// AutomationMeridianDraftOnlyDraftVersionID is from fixtures/automation_versions.
+	AutomationMeridianDraftOnlyDraftVersionID = 7403
+	// AutomationMeridianDraftOnlyID is from fixtures/automations.
+	AutomationMeridianDraftOnlyID = 7402
+	// AutomationMeridianDraftOnlyName is from fixtures/automations.
+	AutomationMeridianDraftOnlyName = "Meridian draft only"
+	// AutomationMeridianDraftOnlyVersionID is from fixtures/automation_versions.
+	AutomationMeridianDraftOnlyVersionID = 7402
+	// AutomationMeridianEmptyID is from fixtures/automations.
+	AutomationMeridianEmptyID = 7407
+	// AutomationMeridianEmptyName is from fixtures/automations.
+	AutomationMeridianEmptyName = "Meridian empty"
+	// AutomationMeridianEmptyVersionID is from fixtures/automation_versions.
+	AutomationMeridianEmptyVersionID = 7411
+	// AutomationMeridianEnrolledID is from fixtures/automations.
+	AutomationMeridianEnrolledID = 7406
+	// AutomationMeridianEnrolledName is from fixtures/automations.
+	AutomationMeridianEnrolledName = "Meridian enrolled"
+	// AutomationMeridianEnrolledVersionID is from fixtures/automation_versions.
+	AutomationMeridianEnrolledVersionID = 7410
+	// AutomationMeridianInactiveDraftVersionID is from fixtures/automation_versions.
+	AutomationMeridianInactiveDraftVersionID = 7407
+	// AutomationMeridianInactiveID is from fixtures/automations.
+	AutomationMeridianInactiveID = 7404
+	// AutomationMeridianInactiveName is from fixtures/automations.
+	AutomationMeridianInactiveName = "Meridian inactive"
+	// AutomationMeridianInactiveVersionID is from fixtures/automation_versions.
+	AutomationMeridianInactiveVersionID = 7406
+	// AutomationMeridianNoEmailDraftVersionID is from fixtures/automation_versions.
+	AutomationMeridianNoEmailDraftVersionID = 7405
+	// AutomationMeridianNoEmailID is from fixtures/automations.
+	AutomationMeridianNoEmailID = 7403
+	// AutomationMeridianNoEmailName is from fixtures/automations.
+	AutomationMeridianNoEmailName = "Meridian HTTP and Tags"
+	// AutomationMeridianNoEmailVersionID is from fixtures/automation_versions.
+	AutomationMeridianNoEmailVersionID = 7404
+	// AutomationMeridianStoppedID is from fixtures/automations.
+	AutomationMeridianStoppedID = 7408
+	// AutomationMeridianStoppedName is from fixtures/automations.
+	AutomationMeridianStoppedName = "Meridian stopped relay"
+	// AutomationMeridianStoppedVersionID is from fixtures/automation_versions.
+	AutomationMeridianStoppedVersionID = 7412
+	// AutomationMeridianViaRelayID is from fixtures/automations.
+	AutomationMeridianViaRelayID = 7401
+	// AutomationMeridianViaRelayName is from fixtures/automations.
+	AutomationMeridianViaRelayName = "Meridian relay welcome"
+	// AutomationMeridianViaRelayVersionID is from fixtures/automation_versions.
+	AutomationMeridianViaRelayVersionID = 7401
+	// AutomationMeridianWelcomeID is from fixtures/automations.
+	AutomationMeridianWelcomeID = 7400
+	// AutomationMeridianWelcomeName is from fixtures/automations.
+	AutomationMeridianWelcomeName = "Meridian welcome"
+	// AutomationMeridianWelcomeVersionID is from fixtures/automation_versions.
+	AutomationMeridianWelcomeVersionID = 7400
 	// AutomationNotifySlackID is from fixtures/automations.
 	AutomationNotifySlackID = 105
 	// AutomationNotifySlackName is from fixtures/automations.
 	AutomationNotifySlackName = "Notify Slack on signup"
 	// AutomationNotifySlackVersionID is from fixtures/automation_versions.
 	AutomationNotifySlackVersionID = 105
+	// AutomationOnContactTaggedID is from fixtures/automations.
+	AutomationOnContactTaggedID = 7420
+	// AutomationOnContactTaggedName is from fixtures/automations.
+	AutomationOnContactTaggedName = "On contact tagged"
+	// AutomationOnContactTaggedVersionID is from fixtures/automation_versions.
+	AutomationOnContactTaggedVersionID = 7420
+	// AutomationOnMarketingConfirmedID is from fixtures/automations.
+	AutomationOnMarketingConfirmedID = 7421
+	// AutomationOnMarketingConfirmedName is from fixtures/automations.
+	AutomationOnMarketingConfirmedName = "On marketing confirmed"
+	// AutomationOnMarketingConfirmedVersionID is from fixtures/automation_versions.
+	AutomationOnMarketingConfirmedVersionID = 7421
 	// AutomationOnOpenID is from fixtures/automations.
 	AutomationOnOpenID = 5570
 	// AutomationOnOpenName is from fixtures/automations.
 	AutomationOnOpenName = "On open"
 	// AutomationOnOpenVersionID is from fixtures/automation_versions.
 	AutomationOnOpenVersionID = 5570
+	// AutomationOnSmsClickedID is from fixtures/automations.
+	AutomationOnSmsClickedID = 7423
+	// AutomationOnSmsClickedName is from fixtures/automations.
+	AutomationOnSmsClickedName = "On text link clicked"
+	// AutomationOnSmsClickedVersionID is from fixtures/automation_versions.
+	AutomationOnSmsClickedVersionID = 7423
+	// AutomationOnSmsReceivedID is from fixtures/automations.
+	AutomationOnSmsReceivedID = 7422
+	// AutomationOnSmsReceivedName is from fixtures/automations.
+	AutomationOnSmsReceivedName = "On text received"
+	// AutomationOnSmsReceivedVersionID is from fixtures/automation_versions.
+	AutomationOnSmsReceivedVersionID = 7422
+	// AutomationOnSmsUndeliveredID is from fixtures/automations.
+	AutomationOnSmsUndeliveredID = 7424
+	// AutomationOnSmsUndeliveredName is from fixtures/automations.
+	AutomationOnSmsUndeliveredName = "On text undelivered"
+	// AutomationOnSmsUndeliveredVersionID is from fixtures/automation_versions.
+	AutomationOnSmsUndeliveredVersionID = 7424
+	// AutomationOnTelegramClickedID is from fixtures/automations.
+	AutomationOnTelegramClickedID = 7426
+	// AutomationOnTelegramClickedName is from fixtures/automations.
+	AutomationOnTelegramClickedName = "On Telegram button clicked"
+	// AutomationOnTelegramClickedVersionID is from fixtures/automation_versions.
+	AutomationOnTelegramClickedVersionID = 7426
+	// AutomationOnTelegramReceivedID is from fixtures/automations.
+	AutomationOnTelegramReceivedID = 7425
+	// AutomationOnTelegramReceivedName is from fixtures/automations.
+	AutomationOnTelegramReceivedName = "On Telegram message"
+	// AutomationOnTelegramReceivedVersionID is from fixtures/automation_versions.
+	AutomationOnTelegramReceivedVersionID = 7425
 	// AutomationOnboardingDripID is from fixtures/automations.
 	AutomationOnboardingDripID = 106
 	// AutomationOnboardingDripName is from fixtures/automations.
@@ -203,14 +465,84 @@ const (
 	AutomationRunJobsNoEmailID = 5560
 	// AutomationRunJobsPendingID is from fixtures/automation_runs.
 	AutomationRunJobsPendingID = 5561
+	// AutomationRunJobsSMSBetweenEmailsBobID is from fixtures/automation_runs.
+	AutomationRunJobsSMSBetweenEmailsBobID = 7523
+	// AutomationRunJobsSMSCartConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSCartConfirmedID = 7526
+	// AutomationRunJobsSMSCartUntrackedConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSCartUntrackedConfirmedID = 7527
+	// AutomationRunJobsSMSFirstSecondConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSFirstSecondConfirmedID = 7525
+	// AutomationRunJobsSMSHelloAgainConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHelloAgainConfirmedID = 7517
+	// AutomationRunJobsSMSHelloConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHelloConfirmedID = 7516
+	// AutomationRunJobsSMSHelloThenTagConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHelloThenTagConfirmedID = 7518
+	// AutomationRunJobsSMSHiThenTagBobID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHiThenTagBobID = 7520
+	// AutomationRunJobsSMSHiThenTagOptedOutID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHiThenTagOptedOutID = 7522
+	// AutomationRunJobsSMSHiThenTagTexterID is from fixtures/automation_runs.
+	AutomationRunJobsSMSHiThenTagTexterID = 7521
+	// AutomationRunJobsSMSRenderedConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSRenderedConfirmedID = 7519
+	// AutomationRunJobsSMSStopLinkConfirmedID is from fixtures/automation_runs.
+	AutomationRunJobsSMSStopLinkConfirmedID = 7524
+	// AutomationRunJobsSingleEmailLiamID is from fixtures/automation_runs.
+	AutomationRunJobsSingleEmailLiamID = 7550
+	// AutomationRunJobsSystemTagAliceID is from fixtures/automation_runs.
+	AutomationRunJobsSystemTagAliceID = 7551
+	// AutomationRunJobsTelegramBetweenEmailsBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramBetweenEmailsBobID = 7504
+	// AutomationRunJobsTelegramEscapedBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramEscapedBobID = 7503
+	// AutomationRunJobsTelegramHelloAgainBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramHelloAgainBobID = 7502
+	// AutomationRunJobsTelegramHelloBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramHelloBobID = 7501
+	// AutomationRunJobsTelegramLinkAndButtonBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramLinkAndButtonBobID = 7512
+	// AutomationRunJobsTelegramNoTagBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramNoTagBobID = 7511
+	// AutomationRunJobsTelegramOfferAndStopBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramOfferAndStopBobID = 7514
+	// AutomationRunJobsTelegramOfferLiamID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramOfferLiamID = 7515
+	// AutomationRunJobsTelegramPhotoBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramPhotoBobID = 7505
+	// AutomationRunJobsTelegramPreviewOffBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramPreviewOffBobID = 7506
+	// AutomationRunJobsTelegramSameURLBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramSameURLBobID = 7513
+	// AutomationRunJobsTelegramStartTagBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramStartTagBobID = 7509
+	// AutomationRunJobsTelegramStartTagJoinBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramStartTagJoinBobID = 7510
+	// AutomationRunJobsTelegramUnsubscribeLinkBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramUnsubscribeLinkBobID = 7507
+	// AutomationRunJobsTelegramWelcomeBackBobID is from fixtures/automation_runs.
+	AutomationRunJobsTelegramWelcomeBackBobID = 7508
 	// AutomationRunJobsUndecodableID is from fixtures/automation_runs.
 	AutomationRunJobsUndecodableID = 5565
 	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
 	AutomationRunJobsUnknownStepID = 5566
+	// AutomationRunMeridianArchivedFailedID is from fixtures/automation_runs.
+	AutomationRunMeridianArchivedFailedID = 7404
+	// AutomationRunMeridianEnrolledID is from fixtures/automation_runs.
+	AutomationRunMeridianEnrolledID = 7400
+	// AutomationRunMeridianFailedID is from fixtures/automation_runs.
+	AutomationRunMeridianFailedID = 7401
+	// AutomationRunMeridianFailedLongAgoID is from fixtures/automation_runs.
+	AutomationRunMeridianFailedLongAgoID = 7403
+	// AutomationRunMeridianFailedSecondID is from fixtures/automation_runs.
+	AutomationRunMeridianFailedSecondID = 7402
 	// AutomationRunOnboardingOnVersion1ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
+	AutomationRunRecoveryActiveID = 7500
 	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
 	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
@@ -219,6 +551,10 @@ const (
 	AutomationRunWelcomeCompletedSecondID = 1001
 	// AutomationRunWelcomeCompletedThirdID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedThirdID = 1002
+	// AutomationRunWelcomeWaitingID is from fixtures/automation_runs.
+	AutomationRunWelcomeWaitingID = 1005
+	// AutomationRunWelcomeWaitingLaterID is from fixtures/automation_runs.
+	AutomationRunWelcomeWaitingLaterID = 1006
 	// AutomationTagOnEngagementID is from fixtures/automations.
 	AutomationTagOnEngagementID = 104
 	// AutomationTagOnEngagementName is from fixtures/automations.
@@ -249,6 +585,22 @@ const (
 	AviatoName = "Aviato"
 	// AviatoPublicID is from fixtures/workspaces.
 	AviatoPublicID = "AviatW11"
+	// BabelCollectKey is from fixtures/workspaces.
+	BabelCollectKey = "omck_test_babel_collect_key"
+	// BabelID is from fixtures/workspaces.
+	BabelID = 84
+	// BabelName is from fixtures/workspaces.
+	BabelName = "Babel"
+	// BabelPublicID is from fixtures/workspaces.
+	BabelPublicID = "BabelW84"
+	// BazaarCollectKey is from fixtures/workspaces.
+	BazaarCollectKey = "omck_test_bazaar_collect_key"
+	// BazaarID is from fixtures/workspaces.
+	BazaarID = 75
+	// BazaarName is from fixtures/workspaces.
+	BazaarName = "Bazaar"
+	// BazaarPublicID is from fixtures/workspaces.
+	BazaarPublicID = "BazarW75"
 	// BindingEmmaPhoneDestination is from fixtures/bindings.
 	BindingEmmaPhoneDestination = "70002"
 	// BindingEmmaPhoneID is from fixtures/bindings.
@@ -263,6 +615,10 @@ const (
 	BindingLiamDestination = "70001"
 	// BindingLiamID is from fixtures/bindings.
 	BindingLiamID = 1
+	// BluthAuditEntryAction is from fixtures/audit_entries.
+	BluthAuditEntryAction = "workspace.update"
+	// BluthAuditEntryID is from fixtures/audit_entries.
+	BluthAuditEntryID = 7100
 	// BluthCollectKey is from fixtures/workspaces.
 	BluthCollectKey = "omck_test_bluth_collect_key"
 	// BluthDanMembershipID is from fixtures/memberships.
@@ -305,6 +661,12 @@ const (
 	BroadcastAuthoredName = "Product update announcement"
 	// BroadcastAuthoredSubject is from fixtures/broadcasts.
 	BroadcastAuthoredSubject = "What is new at CodeBasics"
+	// BroadcastBazaarID is from fixtures/broadcasts.
+	BroadcastBazaarID = 7200
+	// BroadcastBazaarName is from fixtures/broadcasts.
+	BroadcastBazaarName = "Bazaar sale"
+	// BroadcastBazaarSubject is from fixtures/broadcasts.
+	BroadcastBazaarSubject = "Bazaar sale"
 	// BroadcastCaptonLaterID is from fixtures/broadcasts.
 	BroadcastCaptonLaterID = 21101
 	// BroadcastCaptonLaterName is from fixtures/broadcasts.
@@ -335,6 +697,12 @@ const (
 	BroadcastDraftName = "Summer sale teaser"
 	// BroadcastDraftSubject is from fixtures/broadcasts.
 	BroadcastDraftSubject = "A summer treat is coming 🌞"
+	// BroadcastEmporiumID is from fixtures/broadcasts.
+	BroadcastEmporiumID = 7201
+	// BroadcastEmporiumName is from fixtures/broadcasts.
+	BroadcastEmporiumName = "Emporium sale"
+	// BroadcastEmporiumSubject is from fixtures/broadcasts.
+	BroadcastEmporiumSubject = "Emporium sale"
 	// BroadcastEmptyAudienceID is from fixtures/broadcasts.
 	BroadcastEmptyAudienceID = 104
 	// BroadcastEmptyAudienceName is from fixtures/broadcasts.
@@ -383,6 +751,52 @@ const (
 	BroadcastInitechSendingSubject = "Initech launch"
 	// BroadcastInitechSubject is from fixtures/broadcasts.
 	BroadcastInitechSubject = "Initech news"
+	// BroadcastMercadoID is from fixtures/broadcasts.
+	BroadcastMercadoID = 7202
+	// BroadcastMercadoName is from fixtures/broadcasts.
+	BroadcastMercadoName = "Mercado sale"
+	// BroadcastMercadoSubject is from fixtures/broadcasts.
+	BroadcastMercadoSubject = "Mercado sale"
+	// BroadcastMeridianFailedFromMailID is from fixtures/broadcasts.
+	BroadcastMeridianFailedFromMailID = 7404
+	// BroadcastMeridianFailedFromMailName is from fixtures/broadcasts.
+	BroadcastMeridianFailedFromMailName = "Meridian failed send"
+	// BroadcastMeridianFailedFromMailSubject is from fixtures/broadcasts.
+	BroadcastMeridianFailedFromMailSubject = "Meridian failed send"
+	// BroadcastMeridianFromNewsID is from fixtures/broadcasts.
+	BroadcastMeridianFromNewsID = 7403
+	// BroadcastMeridianFromNewsName is from fixtures/broadcasts.
+	BroadcastMeridianFromNewsName = "Meridian newsletter"
+	// BroadcastMeridianFromNewsSubject is from fixtures/broadcasts.
+	BroadcastMeridianFromNewsSubject = "Meridian newsletter"
+	// BroadcastMeridianNamedID is from fixtures/broadcasts.
+	BroadcastMeridianNamedID = 7402
+	// BroadcastMeridianNamedName is from fixtures/broadcasts.
+	BroadcastMeridianNamedName = "Meridian relayed"
+	// BroadcastMeridianNamedSubject is from fixtures/broadcasts.
+	BroadcastMeridianNamedSubject = "Meridian relayed"
+	// BroadcastMeridianScheduledID is from fixtures/broadcasts.
+	BroadcastMeridianScheduledID = 7400
+	// BroadcastMeridianScheduledName is from fixtures/broadcasts.
+	BroadcastMeridianScheduledName = "Meridian launch"
+	// BroadcastMeridianScheduledSubject is from fixtures/broadcasts.
+	BroadcastMeridianScheduledSubject = "Meridian launch"
+	// BroadcastMeridianSendingID is from fixtures/broadcasts.
+	BroadcastMeridianSendingID = 7401
+	// BroadcastMeridianSendingName is from fixtures/broadcasts.
+	BroadcastMeridianSendingName = "Meridian digest"
+	// BroadcastMeridianSendingSubject is from fixtures/broadcasts.
+	BroadcastMeridianSendingSubject = "Meridian digest"
+	// BroadcastMeridianTelegramID is from fixtures/broadcasts.
+	BroadcastMeridianTelegramID = 7406
+	// BroadcastMeridianTelegramName is from fixtures/broadcasts.
+	BroadcastMeridianTelegramName = "Meridian on Telegram"
+	// BroadcastMeridianViaRelayID is from fixtures/broadcasts.
+	BroadcastMeridianViaRelayID = 7405
+	// BroadcastMeridianViaRelayName is from fixtures/broadcasts.
+	BroadcastMeridianViaRelayName = "Meridian via relay"
+	// BroadcastMeridianViaRelaySubject is from fixtures/broadcasts.
+	BroadcastMeridianViaRelaySubject = "Meridian via relay"
 	// BroadcastProSegmentID is from fixtures/broadcasts.
 	BroadcastProSegmentID = 105
 	// BroadcastProSegmentName is from fixtures/broadcasts.
@@ -461,10 +875,36 @@ const (
 	BroadcastSentViaArchivedIntegrationName = "Spring digest"
 	// BroadcastSentViaArchivedIntegrationSubject is from fixtures/broadcasts.
 	BroadcastSentViaArchivedIntegrationSubject = "Your spring digest"
+	// BroadcastSmsBlankDraftID is from fixtures/broadcasts.
+	BroadcastSmsBlankDraftID = 7341
+	// BroadcastSmsBlankDraftName is from fixtures/broadcasts.
+	BroadcastSmsBlankDraftName = "Flash sale (not written yet)"
+	// BroadcastSmsDraftID is from fixtures/broadcasts.
+	BroadcastSmsDraftID = 7340
+	// BroadcastSmsDraftName is from fixtures/broadcasts.
+	BroadcastSmsDraftName = "Flash sale"
+	// BroadcastSoukID is from fixtures/broadcasts.
+	BroadcastSoukID = 7203
+	// BroadcastSoukName is from fixtures/broadcasts.
+	BroadcastSoukName = "Souk sale"
+	// BroadcastSoukSubject is from fixtures/broadcasts.
+	BroadcastSoukSubject = "Souk sale"
 	// BroadcastTelegramDraftID is from fixtures/broadcasts.
 	BroadcastTelegramDraftID = 112
 	// BroadcastTelegramDraftName is from fixtures/broadcasts.
 	BroadcastTelegramDraftName = "Telegram course news"
+	// BroadcastTelegramInviteID is from fixtures/broadcasts.
+	BroadcastTelegramInviteID = 7411
+	// BroadcastTelegramInviteName is from fixtures/broadcasts.
+	BroadcastTelegramInviteName = "Join us on Telegram"
+	// BroadcastTelegramInviteSubject is from fixtures/broadcasts.
+	BroadcastTelegramInviteSubject = "Join us on Telegram"
+	// BroadcastWithoutTelegramID is from fixtures/broadcasts.
+	BroadcastWithoutTelegramID = 7410
+	// BroadcastWithoutTelegramName is from fixtures/broadcasts.
+	BroadcastWithoutTelegramName = "News for email readers"
+	// BroadcastWithoutTelegramSubject is from fixtures/broadcasts.
+	BroadcastWithoutTelegramSubject = "News by email"
 	// CaptonCleoMembershipID is from fixtures/memberships.
 	CaptonCleoMembershipID = 5710
 	// CaptonCollectKey is from fixtures/workspaces.
@@ -533,6 +973,14 @@ const (
 	ConfirmationSmsKeywordDestination = "+14155550820"
 	// ConfirmationSmsKeywordID is from fixtures/confirmations.
 	ConfirmationSmsKeywordID = 2
+	// ConfirmationTexterConfirmedDestination is from fixtures/confirmations.
+	ConfirmationTexterConfirmedDestination = "+13125557504"
+	// ConfirmationTexterConfirmedID is from fixtures/confirmations.
+	ConfirmationTexterConfirmedID = 7500
+	// ConfirmationTexterOptedOutDestination is from fixtures/confirmations.
+	ConfirmationTexterOptedOutDestination = "+13125557505"
+	// ConfirmationTexterOptedOutID is from fixtures/confirmations.
+	ConfirmationTexterOptedOutID = 7501
 	// ConfirmationTyrellSmsDestination is from fixtures/confirmations.
 	ConfirmationTyrellSmsDestination = "+14155551515"
 	// ConfirmationTyrellSmsID is from fixtures/confirmations.
@@ -557,6 +1005,66 @@ const (
 	ContactCarolEmail = "carol@example.com"
 	// ContactCarolID is from fixtures/contacts.
 	ContactCarolID = 3
+	// ContactClickerAutomationEmail is from fixtures/contacts.
+	ContactClickerAutomationEmail = "automation@emporium.test"
+	// ContactClickerAutomationID is from fixtures/contacts.
+	ContactClickerAutomationID = 7211
+	// ContactClickerBroadcastEmail is from fixtures/contacts.
+	ContactClickerBroadcastEmail = "broadcast@emporium.test"
+	// ContactClickerBroadcastID is from fixtures/contacts.
+	ContactClickerBroadcastID = 7210
+	// ContactClickerEmailAfterSmsEmail is from fixtures/contacts.
+	ContactClickerEmailAfterSmsEmail = "email-after-sms@emporium.test"
+	// ContactClickerEmailAfterSmsID is from fixtures/contacts.
+	ContactClickerEmailAfterSmsID = 7223
+	// ContactClickerEmailAfterTelegramEmail is from fixtures/contacts.
+	ContactClickerEmailAfterTelegramEmail = "email-after-tg@emporium.test"
+	// ContactClickerEmailAfterTelegramID is from fixtures/contacts.
+	ContactClickerEmailAfterTelegramID = 7220
+	// ContactClickerLaterWinsEmail is from fixtures/contacts.
+	ContactClickerLaterWinsEmail = "later@emporium.test"
+	// ContactClickerLaterWinsID is from fixtures/contacts.
+	ContactClickerLaterWinsID = 7212
+	// ContactClickerNoneEmail is from fixtures/contacts.
+	ContactClickerNoneEmail = "none@emporium.test"
+	// ContactClickerNoneID is from fixtures/contacts.
+	ContactClickerNoneID = 7217
+	// ContactClickerOutsideWindowEmail is from fixtures/contacts.
+	ContactClickerOutsideWindowEmail = "outside@emporium.test"
+	// ContactClickerOutsideWindowID is from fixtures/contacts.
+	ContactClickerOutsideWindowID = 7215
+	// ContactClickerPrunedEmail is from fixtures/contacts.
+	ContactClickerPrunedEmail = "pruned@emporium.test"
+	// ContactClickerPrunedID is from fixtures/contacts.
+	ContactClickerPrunedID = 7218
+	// ContactClickerSameTimeEmail is from fixtures/contacts.
+	ContactClickerSameTimeEmail = "sametime@emporium.test"
+	// ContactClickerSameTimeID is from fixtures/contacts.
+	ContactClickerSameTimeID = 7213
+	// ContactClickerSmsAfterEmailEmail is from fixtures/contacts.
+	ContactClickerSmsAfterEmailEmail = "sms-after-email@emporium.test"
+	// ContactClickerSmsAfterEmailID is from fixtures/contacts.
+	ContactClickerSmsAfterEmailID = 7222
+	// ContactClickerSmsMachineEmail is from fixtures/contacts.
+	ContactClickerSmsMachineEmail = "sms-machine@emporium.test"
+	// ContactClickerSmsMachineID is from fixtures/contacts.
+	ContactClickerSmsMachineID = 7224
+	// ContactClickerSoftwareEmail is from fixtures/contacts.
+	ContactClickerSoftwareEmail = "software@emporium.test"
+	// ContactClickerSoftwareID is from fixtures/contacts.
+	ContactClickerSoftwareID = 7214
+	// ContactClickerTelegramAfterEmailEmail is from fixtures/contacts.
+	ContactClickerTelegramAfterEmailEmail = "tg-after-email@emporium.test"
+	// ContactClickerTelegramAfterEmailID is from fixtures/contacts.
+	ContactClickerTelegramAfterEmailID = 7219
+	// ContactClickerTelegramMachineEmail is from fixtures/contacts.
+	ContactClickerTelegramMachineEmail = "tg-machine@emporium.test"
+	// ContactClickerTelegramMachineID is from fixtures/contacts.
+	ContactClickerTelegramMachineID = 7221
+	// ContactClickerWindowChangeEmail is from fixtures/contacts.
+	ContactClickerWindowChangeEmail = "window@emporium.test"
+	// ContactClickerWindowChangeID is from fixtures/contacts.
+	ContactClickerWindowChangeID = 7216
 	// ContactComplainedEmail is from fixtures/contacts.
 	ContactComplainedEmail = "mia.data@codebasics.dev"
 	// ContactComplainedID is from fixtures/contacts.
@@ -593,6 +1101,14 @@ const (
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
 	ContactHoldDemoID = 130
+	// ContactHostileMalloryEmail is from fixtures/contacts.
+	ContactHostileMalloryEmail = "mallory@babel.test"
+	// ContactHostileMalloryID is from fixtures/contacts.
+	ContactHostileMalloryID = 7410
+	// ContactHostileQuotesEmail is from fixtures/contacts.
+	ContactHostileQuotesEmail = "quotes@babel.test"
+	// ContactHostileQuotesID is from fixtures/contacts.
+	ContactHostileQuotesID = 7411
 	// ContactJobsNoEmailID is from fixtures/contacts.
 	ContactJobsNoEmailID = 5560
 	// ContactLiamEmail is from fixtures/contacts.
@@ -603,6 +1119,22 @@ const (
 	ContactLiftedEmail = "lifted@codebasics.dev"
 	// ContactLiftedID is from fixtures/contacts.
 	ContactLiftedID = 131
+	// ContactMeridianEnrolledEmail is from fixtures/contacts.
+	ContactMeridianEnrolledEmail = "enrolled@meridian.test"
+	// ContactMeridianEnrolledID is from fixtures/contacts.
+	ContactMeridianEnrolledID = 7400
+	// ContactMeridianFailedEmail is from fixtures/contacts.
+	ContactMeridianFailedEmail = "failed@meridian.test"
+	// ContactMeridianFailedID is from fixtures/contacts.
+	ContactMeridianFailedID = 7401
+	// ContactMeridianFailedLongAgoEmail is from fixtures/contacts.
+	ContactMeridianFailedLongAgoEmail = "failed-long-ago@meridian.test"
+	// ContactMeridianFailedLongAgoID is from fixtures/contacts.
+	ContactMeridianFailedLongAgoID = 7403
+	// ContactMeridianFailedSecondEmail is from fixtures/contacts.
+	ContactMeridianFailedSecondEmail = "failed-second@meridian.test"
+	// ContactMeridianFailedSecondID is from fixtures/contacts.
+	ContactMeridianFailedSecondID = 7402
 	// ContactNoahEmail is from fixtures/contacts.
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.
@@ -619,6 +1151,34 @@ const (
 	ContactPaymentFailedEmail = "payment.failed@codebasics.dev"
 	// ContactPaymentFailedID is from fixtures/contacts.
 	ContactPaymentFailedID = 133
+	// ContactPinewoodReaderEmail is from fixtures/contacts.
+	ContactPinewoodReaderEmail = "reader@pinewood.test"
+	// ContactPinewoodReaderID is from fixtures/contacts.
+	ContactPinewoodReaderID = 7420
+	// ContactSoukBuyerEmail is from fixtures/contacts.
+	ContactSoukBuyerEmail = "buyer@souk.test"
+	// ContactSoukBuyerID is from fixtures/contacts.
+	ContactSoukBuyerID = 7200
+	// ContactStarkAliasedEmail is from fixtures/contacts.
+	ContactStarkAliasedEmail = "keeps.alias@stark.test"
+	// ContactStarkAliasedID is from fixtures/contacts.
+	ContactStarkAliasedID = 7502
+	// ContactStarkAliasedPhone is from fixtures/contacts.
+	ContactStarkAliasedPhone = "+14155557502"
+	// ContactStarkFullEmail is from fixtures/contacts.
+	ContactStarkFullEmail = "clear.me@stark.test"
+	// ContactStarkFullID is from fixtures/contacts.
+	ContactStarkFullID = 7500
+	// ContactStarkFullPhone is from fixtures/contacts.
+	ContactStarkFullPhone = "+14155557500"
+	// ContactStarkManualEmail is from fixtures/contacts.
+	ContactStarkManualEmail = "same-person@stark.test"
+	// ContactStarkManualID is from fixtures/contacts.
+	ContactStarkManualID = 7503
+	// ContactStarkPhoneOnlyID is from fixtures/contacts.
+	ContactStarkPhoneOnlyID = 7501
+	// ContactStarkPhoneOnlyPhone is from fixtures/contacts.
+	ContactStarkPhoneOnlyPhone = "+14155557501"
 	// ContactTelegramBystanderEmail is from fixtures/contacts.
 	ContactTelegramBystanderEmail = "amelia.sql@codebasics.dev"
 	// ContactTelegramBystanderID is from fixtures/contacts.
@@ -627,10 +1187,18 @@ const (
 	ContactTelegramErasableEmail = "mason.sql@codebasics.dev"
 	// ContactTelegramErasableID is from fixtures/contacts.
 	ContactTelegramErasableID = 106
+	// ContactTexterConfirmedID is from fixtures/contacts.
+	ContactTexterConfirmedID = 7504
+	// ContactTexterConfirmedPhone is from fixtures/contacts.
+	ContactTexterConfirmedPhone = "+13125557504"
 	// ContactTexterEmail is from fixtures/contacts.
 	ContactTexterEmail = "texter@example.com"
 	// ContactTexterID is from fixtures/contacts.
 	ContactTexterID = 810
+	// ContactTexterOptedOutID is from fixtures/contacts.
+	ContactTexterOptedOutID = 7505
+	// ContactTexterOptedOutPhone is from fixtures/contacts.
+	ContactTexterOptedOutPhone = "+13125557505"
 	// ContactTexterPhone is from fixtures/contacts.
 	ContactTexterPhone = "+14155550810"
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
@@ -727,6 +1295,14 @@ const (
 	DunderPreviewTargetID = 5550
 	// DunderPublicID is from fixtures/workspaces.
 	DunderPublicID = "DundrW60"
+	// EmporiumCollectKey is from fixtures/workspaces.
+	EmporiumCollectKey = "omck_test_emporium_collect_key"
+	// EmporiumID is from fixtures/workspaces.
+	EmporiumID = 76
+	// EmporiumName is from fixtures/workspaces.
+	EmporiumName = "Emporium"
+	// EmporiumPublicID is from fixtures/workspaces.
+	EmporiumPublicID = "EmporW76"
 	// EventAnonymousFirstAction is from fixtures/events.
 	EventAnonymousFirstAction = "page_view"
 	// EventAnonymousFirstID is from fixtures/events.
@@ -763,6 +1339,14 @@ const (
 	EventBystanderSentEmail = "ben@initech.test"
 	// EventBystanderSentID is from fixtures/events.
 	EventBystanderSentID = 971
+	// EventClickerBroadcastClickAction is from fixtures/events.
+	EventClickerBroadcastClickAction = "email.clicked"
+	// EventClickerBroadcastClickEmail is from fixtures/events.
+	EventClickerBroadcastClickEmail = "broadcast@emporium.test"
+	// EventClickerBroadcastClickID is from fixtures/events.
+	EventClickerBroadcastClickID = 7210
+	// EventClickerBroadcastClickURL is from fixtures/events.
+	EventClickerBroadcastClickURL = "https://shop.test/"
 	// EventComplainedKeptSubjectAction is from fixtures/events.
 	EventComplainedKeptSubjectAction = "email.complained"
 	// EventComplainedKeptSubjectEmail is from fixtures/events.
@@ -1063,6 +1647,14 @@ const (
 	EventRuleVipLiamAction = "rule_vip"
 	// EventRuleVipLiamID is from fixtures/events.
 	EventRuleVipLiamID = 9101
+	// EventSoukClickAction is from fixtures/events.
+	EventSoukClickAction = "email.clicked"
+	// EventSoukClickEmail is from fixtures/events.
+	EventSoukClickEmail = "buyer@souk.test"
+	// EventSoukClickID is from fixtures/events.
+	EventSoukClickID = 7200
+	// EventSoukClickURL is from fixtures/events.
+	EventSoukClickURL = "https://shop.test/"
 	// EventTelegramBystanderReceivedAction is from fixtures/events.
 	EventTelegramBystanderReceivedAction = "telegram.received"
 	// EventTelegramBystanderReceivedEmail is from fixtures/events.
@@ -1381,6 +1973,14 @@ const (
 	IntegrationAcmeSmsName = "Acme Twilio"
 	// IntegrationAcmeSmsProvider is from fixtures/integrations.
 	IntegrationAcmeSmsProvider = "twilio"
+	// IntegrationAcmeSmtpLoginID is from fixtures/integrations.
+	IntegrationAcmeSmtpLoginID = 7300
+	// IntegrationAcmeSmtpLoginIngestKey is from fixtures/integrations.
+	IntegrationAcmeSmtpLoginIngestKey = "omik_test_integrationacmesmtplogin"
+	// IntegrationAcmeSmtpLoginName is from fixtures/integrations.
+	IntegrationAcmeSmtpLoginName = "Relay with a login"
+	// IntegrationAcmeSmtpLoginProvider is from fixtures/integrations.
+	IntegrationAcmeSmtpLoginProvider = "smtp"
 	// IntegrationAcmeTelegramID is from fixtures/integrations.
 	IntegrationAcmeTelegramID = 9
 	// IntegrationAcmeTelegramIngestKey is from fixtures/integrations.
@@ -1421,6 +2021,110 @@ const (
 	IntegrationGlobexTelegramName = "Globex bot"
 	// IntegrationGlobexTelegramProvider is from fixtures/integrations.
 	IntegrationGlobexTelegramProvider = "telegram"
+	// IntegrationMeridianArchivedID is from fixtures/integrations.
+	IntegrationMeridianArchivedID = 7406
+	// IntegrationMeridianArchivedIngestKey is from fixtures/integrations.
+	IntegrationMeridianArchivedIngestKey = "omik_test_integrationmeridianarchived"
+	// IntegrationMeridianArchivedName is from fixtures/integrations.
+	IntegrationMeridianArchivedName = "Relay of an archived Automation"
+	// IntegrationMeridianArchivedProvider is from fixtures/integrations.
+	IntegrationMeridianArchivedProvider = "smtp"
+	// IntegrationMeridianDefaultID is from fixtures/integrations.
+	IntegrationMeridianDefaultID = 7400
+	// IntegrationMeridianDefaultIngestKey is from fixtures/integrations.
+	IntegrationMeridianDefaultIngestKey = "omik_test_integrationmeridiandefault"
+	// IntegrationMeridianDefaultName is from fixtures/integrations.
+	IntegrationMeridianDefaultName = "Meridian SMTP"
+	// IntegrationMeridianDefaultProvider is from fixtures/integrations.
+	IntegrationMeridianDefaultProvider = "smtp"
+	// IntegrationMeridianDisabledID is from fixtures/integrations.
+	IntegrationMeridianDisabledID = 7409
+	// IntegrationMeridianDisabledIngestKey is from fixtures/integrations.
+	IntegrationMeridianDisabledIngestKey = "omik_test_integrationmeridiandisabled"
+	// IntegrationMeridianDisabledName is from fixtures/integrations.
+	IntegrationMeridianDisabledName = "Disabled relay"
+	// IntegrationMeridianDisabledProvider is from fixtures/integrations.
+	IntegrationMeridianDisabledProvider = "smtp"
+	// IntegrationMeridianDraftOnlyID is from fixtures/integrations.
+	IntegrationMeridianDraftOnlyID = 7403
+	// IntegrationMeridianDraftOnlyIngestKey is from fixtures/integrations.
+	IntegrationMeridianDraftOnlyIngestKey = "omik_test_integrationmeridiandraftonly"
+	// IntegrationMeridianDraftOnlyName is from fixtures/integrations.
+	IntegrationMeridianDraftOnlyName = "Relay of a draft"
+	// IntegrationMeridianDraftOnlyProvider is from fixtures/integrations.
+	IntegrationMeridianDraftOnlyProvider = "smtp"
+	// IntegrationMeridianEnrolledID is from fixtures/integrations.
+	IntegrationMeridianEnrolledID = 7407
+	// IntegrationMeridianEnrolledIngestKey is from fixtures/integrations.
+	IntegrationMeridianEnrolledIngestKey = "omik_test_integrationmeridianenrolled"
+	// IntegrationMeridianEnrolledName is from fixtures/integrations.
+	IntegrationMeridianEnrolledName = "Relay of an Enrollment"
+	// IntegrationMeridianEnrolledProvider is from fixtures/integrations.
+	IntegrationMeridianEnrolledProvider = "smtp"
+	// IntegrationMeridianInactiveID is from fixtures/integrations.
+	IntegrationMeridianInactiveID = 7405
+	// IntegrationMeridianInactiveIngestKey is from fixtures/integrations.
+	IntegrationMeridianInactiveIngestKey = "omik_test_integrationmeridianinactive"
+	// IntegrationMeridianInactiveName is from fixtures/integrations.
+	IntegrationMeridianInactiveName = "Relay of an inactive Automation"
+	// IntegrationMeridianInactiveProvider is from fixtures/integrations.
+	IntegrationMeridianInactiveProvider = "smtp"
+	// IntegrationMeridianNamedID is from fixtures/integrations.
+	IntegrationMeridianNamedID = 7408
+	// IntegrationMeridianNamedIngestKey is from fixtures/integrations.
+	IntegrationMeridianNamedIngestKey = "omik_test_integrationmeridiannamed"
+	// IntegrationMeridianNamedName is from fixtures/integrations.
+	IntegrationMeridianNamedName = "Relay a Broadcast names"
+	// IntegrationMeridianNamedProvider is from fixtures/integrations.
+	IntegrationMeridianNamedProvider = "smtp"
+	// IntegrationMeridianNoEmailID is from fixtures/integrations.
+	IntegrationMeridianNoEmailID = 7404
+	// IntegrationMeridianNoEmailIngestKey is from fixtures/integrations.
+	IntegrationMeridianNoEmailIngestKey = "omik_test_integrationmeridiannoemail"
+	// IntegrationMeridianNoEmailName is from fixtures/integrations.
+	IntegrationMeridianNoEmailName = "Relay of HTTP and Tag steps"
+	// IntegrationMeridianNoEmailProvider is from fixtures/integrations.
+	IntegrationMeridianNoEmailProvider = "smtp"
+	// IntegrationMeridianRelayID is from fixtures/integrations.
+	IntegrationMeridianRelayID = 7401
+	// IntegrationMeridianRelayIngestKey is from fixtures/integrations.
+	IntegrationMeridianRelayIngestKey = "omik_test_integrationmeridianrelay"
+	// IntegrationMeridianRelayName is from fixtures/integrations.
+	IntegrationMeridianRelayName = "Meridian relay"
+	// IntegrationMeridianRelayProvider is from fixtures/integrations.
+	IntegrationMeridianRelayProvider = "smtp"
+	// IntegrationMeridianStoppedID is from fixtures/integrations.
+	IntegrationMeridianStoppedID = 7410
+	// IntegrationMeridianStoppedIngestKey is from fixtures/integrations.
+	IntegrationMeridianStoppedIngestKey = "omik_test_integrationmeridianstopped"
+	// IntegrationMeridianStoppedName is from fixtures/integrations.
+	IntegrationMeridianStoppedName = "Stopped relay"
+	// IntegrationMeridianStoppedProvider is from fixtures/integrations.
+	IntegrationMeridianStoppedProvider = "smtp"
+	// IntegrationMeridianTelegramID is from fixtures/integrations.
+	IntegrationMeridianTelegramID = 7402
+	// IntegrationMeridianTelegramIngestKey is from fixtures/integrations.
+	IntegrationMeridianTelegramIngestKey = "omik_test_integrationmeridiantelegram"
+	// IntegrationMeridianTelegramName is from fixtures/integrations.
+	IntegrationMeridianTelegramName = "Meridian bot"
+	// IntegrationMeridianTelegramProvider is from fixtures/integrations.
+	IntegrationMeridianTelegramProvider = "telegram"
+	// IntegrationPinewoodInboxID is from fixtures/integrations.
+	IntegrationPinewoodInboxID = 7420
+	// IntegrationPinewoodInboxIngestKey is from fixtures/integrations.
+	IntegrationPinewoodInboxIngestKey = "omik_test_integrationpinewoodinbox"
+	// IntegrationPinewoodInboxName is from fixtures/integrations.
+	IntegrationPinewoodInboxName = "Test inbox"
+	// IntegrationPinewoodInboxProvider is from fixtures/integrations.
+	IntegrationPinewoodInboxProvider = "inbox"
+	// IntegrationSabreTelegramID is from fixtures/integrations.
+	IntegrationSabreTelegramID = 7301
+	// IntegrationSabreTelegramIngestKey is from fixtures/integrations.
+	IntegrationSabreTelegramIngestKey = "omik_test_integrationsabretelegram"
+	// IntegrationSabreTelegramName is from fixtures/integrations.
+	IntegrationSabreTelegramName = "Sabre bot"
+	// IntegrationSabreTelegramProvider is from fixtures/integrations.
+	IntegrationSabreTelegramProvider = "telegram"
 	// IntegrationUmbrellaDefaultID is from fixtures/integrations.
 	IntegrationUmbrellaDefaultID = 910
 	// IntegrationUmbrellaDefaultIngestKey is from fixtures/integrations.
@@ -1441,28 +2145,116 @@ const (
 	InvitationAcmeAliceMemberEmail = "alice@acme.test"
 	// InvitationAcmeAliceMemberID is from fixtures/invitations.
 	InvitationAcmeAliceMemberID = 904
+	// InvitationAcmeAliceMemberToken is from fixtures/invitations.
+	InvitationAcmeAliceMemberToken = "inv_fixture_token_acme_alice_member"
+	// InvitationAcmeColleagueEmail is from fixtures/invitations.
+	InvitationAcmeColleagueEmail = "colleague@acme.com"
+	// InvitationAcmeColleagueID is from fixtures/invitations.
+	InvitationAcmeColleagueID = 7317
+	// InvitationAcmeColleagueToken is from fixtures/invitations.
+	InvitationAcmeColleagueToken = "inv_fixture_token_acme_colleague"
+	// InvitationAcmeElsewhereEmail is from fixtures/invitations.
+	InvitationAcmeElsewhereEmail = "invited@example.com"
+	// InvitationAcmeElsewhereID is from fixtures/invitations.
+	InvitationAcmeElsewhereID = 7315
+	// InvitationAcmeElsewhereToken is from fixtures/invitations.
+	InvitationAcmeElsewhereToken = "inv_fixture_token_acme_elsewhere"
 	// InvitationAcmeJohnAdminEmail is from fixtures/invitations.
 	InvitationAcmeJohnAdminEmail = "info@getsphericon.com"
 	// InvitationAcmeJohnAdminID is from fixtures/invitations.
 	InvitationAcmeJohnAdminID = 905
+	// InvitationAcmeJohnAdminToken is from fixtures/invitations.
+	InvitationAcmeJohnAdminToken = "inv_fixture_token_acme_john_admin"
 	// InvitationAcmeMaryAdminEmail is from fixtures/invitations.
 	InvitationAcmeMaryAdminEmail = "mary@acme.test"
 	// InvitationAcmeMaryAdminID is from fixtures/invitations.
 	InvitationAcmeMaryAdminID = 903
+	// InvitationAcmeMaryAdminToken is from fixtures/invitations.
+	InvitationAcmeMaryAdminToken = "inv_fixture_token_acme_mary_admin"
+	// InvitationAcmeNewcomerEmail is from fixtures/invitations.
+	InvitationAcmeNewcomerEmail = "newcomer@example.com"
+	// InvitationAcmeNewcomerID is from fixtures/invitations.
+	InvitationAcmeNewcomerID = 7311
+	// InvitationAcmeNewcomerToken is from fixtures/invitations.
+	InvitationAcmeNewcomerToken = "inv_fixture_token_acme_newcomer"
+	// InvitationAcmeNinaEmail is from fixtures/invitations.
+	InvitationAcmeNinaEmail = "nina@gmail.com"
+	// InvitationAcmeNinaID is from fixtures/invitations.
+	InvitationAcmeNinaID = 7314
+	// InvitationAcmeNinaToken is from fixtures/invitations.
+	InvitationAcmeNinaToken = "inv_fixture_token_acme_nina"
+	// InvitationAcmeOscarEmail is from fixtures/invitations.
+	InvitationAcmeOscarEmail = "oscar@nowhere.test"
+	// InvitationAcmeOscarID is from fixtures/invitations.
+	InvitationAcmeOscarID = 7310
+	// InvitationAcmeOscarToken is from fixtures/invitations.
+	InvitationAcmeOscarToken = "inv_fixture_token_acme_oscar"
+	// InvitationAcmePendingEmail is from fixtures/invitations.
+	InvitationAcmePendingEmail = "invited@acme.test"
+	// InvitationAcmePendingID is from fixtures/invitations.
+	InvitationAcmePendingID = 1
+	// InvitationAcmePendingToken is from fixtures/invitations.
+	InvitationAcmePendingToken = "inv_fixture_token_acme"
+	// InvitationAcmeSurveyEmail is from fixtures/invitations.
+	InvitationAcmeSurveyEmail = "newcomer@survey.example"
+	// InvitationAcmeSurveyID is from fixtures/invitations.
+	InvitationAcmeSurveyID = 7316
+	// InvitationAcmeSurveyToken is from fixtures/invitations.
+	InvitationAcmeSurveyToken = "inv_fixture_token_acme_survey"
+	// InvitationAcmeVictimEmail is from fixtures/invitations.
+	InvitationAcmeVictimEmail = "victim@example.com"
+	// InvitationAcmeVictimGmailEmail is from fixtures/invitations.
+	InvitationAcmeVictimGmailEmail = "victim@gmail.com"
+	// InvitationAcmeVictimGmailID is from fixtures/invitations.
+	InvitationAcmeVictimGmailID = 7313
+	// InvitationAcmeVictimGmailToken is from fixtures/invitations.
+	InvitationAcmeVictimGmailToken = "inv_fixture_token_acme_victim_gmail"
+	// InvitationAcmeVictimID is from fixtures/invitations.
+	InvitationAcmeVictimID = 7312
+	// InvitationAcmeVictimToken is from fixtures/invitations.
+	InvitationAcmeVictimToken = "inv_fixture_token_acme_victim"
+	// InvitationGlobexColleagueEmail is from fixtures/invitations.
+	InvitationGlobexColleagueEmail = "colleague@acme.com"
+	// InvitationGlobexColleagueID is from fixtures/invitations.
+	InvitationGlobexColleagueID = 7318
+	// InvitationGlobexColleagueToken is from fixtures/invitations.
+	InvitationGlobexColleagueToken = "inv_fixture_token_globex_colleague"
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
 	InvitationGlobexID = 900
+	// InvitationGlobexToken is from fixtures/invitations.
+	InvitationGlobexToken = "inv_fixture_token_globex"
 	// InvitationSentByAliceEmail is from fixtures/invitations.
 	InvitationSentByAliceEmail = "invited-by-alice@acme.test"
 	// InvitationSentByAliceID is from fixtures/invitations.
 	InvitationSentByAliceID = 902
+	// InvitationSentByAliceToken is from fixtures/invitations.
+	InvitationSentByAliceToken = "inv_fixture_token_sent_by_alice"
 	// InvitationStaleUnverifiedEmail is from fixtures/invitations.
 	InvitationStaleUnverifiedEmail = "stale@unverified.test"
 	// InvitationStaleUnverifiedID is from fixtures/invitations.
 	InvitationStaleUnverifiedID = 901
+	// InvitationStaleUnverifiedToken is from fixtures/invitations.
+	InvitationStaleUnverifiedToken = "inv_fixture_token_stale_unverified"
+	// JoinDomainAcmeHandedOverDomain is from fixtures/join_domains.
+	JoinDomainAcmeHandedOverDomain = "handed-over.test"
+	// JoinDomainAcmeHandedOverID is from fixtures/join_domains.
+	JoinDomainAcmeHandedOverID = 7322
+	// JoinDomainAcmeHeldDomain is from fixtures/join_domains.
+	JoinDomainAcmeHeldDomain = "held.test"
+	// JoinDomainAcmeHeldID is from fixtures/join_domains.
+	JoinDomainAcmeHeldID = 7320
 	// JoinDomainGlobexDomain is from fixtures/join_domains.
 	JoinDomainGlobexDomain = "globex.test"
+	// JoinDomainGlobexHandedOverDomain is from fixtures/join_domains.
+	JoinDomainGlobexHandedOverDomain = "handed-over.test"
+	// JoinDomainGlobexHandedOverID is from fixtures/join_domains.
+	JoinDomainGlobexHandedOverID = 7323
+	// JoinDomainGlobexHeldClaimDomain is from fixtures/join_domains.
+	JoinDomainGlobexHeldClaimDomain = "held.test"
+	// JoinDomainGlobexHeldClaimID is from fixtures/join_domains.
+	JoinDomainGlobexHeldClaimID = 7321
 	// JoinDomainGlobexID is from fixtures/join_domains.
 	JoinDomainGlobexID = 900
 	// JoinDomainHooliDomain is from fixtures/join_domains.
@@ -1573,6 +2365,32 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "password"
+	// MercadoCollectKey is from fixtures/workspaces.
+	MercadoCollectKey = "omck_test_mercado_collect_key"
+	// MercadoID is from fixtures/workspaces.
+	MercadoID = 77
+	// MercadoName is from fixtures/workspaces.
+	MercadoName = "Mercado"
+	// MercadoPublicID is from fixtures/workspaces.
+	MercadoPublicID = "MercdW77"
+	// MeridianCollectKey is from fixtures/workspaces.
+	MeridianCollectKey = "omck_test_meridian_collect_key"
+	// MeridianID is from fixtures/workspaces.
+	MeridianID = 83
+	// MeridianMonaMembershipID is from fixtures/memberships.
+	MeridianMonaMembershipID = 7400
+	// MeridianName is from fixtures/workspaces.
+	MeridianName = "Meridian"
+	// MeridianOwnerMonaEmail is from fixtures/users.
+	MeridianOwnerMonaEmail = "mona@meridian.test"
+	// MeridianOwnerMonaID is from fixtures/users.
+	MeridianOwnerMonaID = 7400
+	// MeridianOwnerMonaName is from fixtures/users.
+	MeridianOwnerMonaName = "Mona"
+	// MeridianOwnerMonaPassword is from fixtures/users.
+	MeridianOwnerMonaPassword = "password"
+	// MeridianPublicID is from fixtures/workspaces.
+	MeridianPublicID = "MonrcW83"
 	// MeterCollectKey is from fixtures/workspaces.
 	MeterCollectKey = "omck_test_meter_collect_key"
 	// MeterID is from fixtures/workspaces.
@@ -1581,6 +2399,42 @@ const (
 	MeterName = "Meter"
 	// MeterPublicID is from fixtures/workspaces.
 	MeterPublicID = "MeterW80"
+	// MonarchCollectKey is from fixtures/workspaces.
+	MonarchCollectKey = "omck_test_monarch_collect_key"
+	// MonarchID is from fixtures/workspaces.
+	MonarchID = 73
+	// MonarchMinaMembershipID is from fixtures/memberships.
+	MonarchMinaMembershipID = 7102
+	// MonarchName is from fixtures/workspaces.
+	MonarchName = "Monarch"
+	// MonarchOwnerMinaEmail is from fixtures/users.
+	MonarchOwnerMinaEmail = "mina@monarch.test"
+	// MonarchOwnerMinaID is from fixtures/users.
+	MonarchOwnerMinaID = 7102
+	// MonarchOwnerMinaName is from fixtures/users.
+	MonarchOwnerMinaName = "Mina"
+	// MonarchOwnerMinaPassword is from fixtures/users.
+	MonarchOwnerMinaPassword = "password"
+	// MonarchPublicID is from fixtures/workspaces.
+	MonarchPublicID = "MonarW73"
+	// NakatomiCollectKey is from fixtures/workspaces.
+	NakatomiCollectKey = "omck_test_nakatomi_collect_key"
+	// NakatomiHollyMembershipID is from fixtures/memberships.
+	NakatomiHollyMembershipID = 7100
+	// NakatomiID is from fixtures/workspaces.
+	NakatomiID = 71
+	// NakatomiName is from fixtures/workspaces.
+	NakatomiName = "Nakatomi"
+	// NakatomiOwnerHollyEmail is from fixtures/users.
+	NakatomiOwnerHollyEmail = "holly@nakatomi.test"
+	// NakatomiOwnerHollyID is from fixtures/users.
+	NakatomiOwnerHollyID = 7100
+	// NakatomiOwnerHollyName is from fixtures/users.
+	NakatomiOwnerHollyName = "Holly"
+	// NakatomiOwnerHollyPassword is from fixtures/users.
+	NakatomiOwnerHollyPassword = "password"
+	// NakatomiPublicID is from fixtures/workspaces.
+	NakatomiPublicID = "NakatW71"
 	// OperatorNewsCurrentID is from fixtures/legal_document_versions.
 	OperatorNewsCurrentID = 3
 	// OperatorNewsCurrentLabel is from fixtures/legal_document_versions.
@@ -1655,6 +2509,10 @@ const (
 	OutboundMessageErasableTransactionalDestination = "erin@initech.test"
 	// OutboundMessageErasableTransactionalID is from fixtures/outbound_messages.
 	OutboundMessageErasableTransactionalID = 301
+	// OutboundMessageGlobexAutomationCapturedDestination is from fixtures/outbound_messages.
+	OutboundMessageGlobexAutomationCapturedDestination = "reader@globex.test"
+	// OutboundMessageGlobexAutomationCapturedID is from fixtures/outbound_messages.
+	OutboundMessageGlobexAutomationCapturedID = 7300
 	// OutboundMessageGlobexDestination is from fixtures/outbound_messages.
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
@@ -1695,6 +2553,10 @@ const (
 	OutboundMessageWelcomeID = 100
 	// OutboundMessageWelcomeSubject is from fixtures/outbound_messages.
 	OutboundMessageWelcomeSubject = "Welcome to Hexlet"
+	// OutboundTexterSmsDestination is from fixtures/outbound_messages.
+	OutboundTexterSmsDestination = "+14155550810"
+	// OutboundTexterSmsID is from fixtures/outbound_messages.
+	OutboundTexterSmsID = 7500
 	// OutsiderOscarEmail is from fixtures/users.
 	OutsiderOscarEmail = "oscar@nowhere.test"
 	// OutsiderOscarID is from fixtures/users.
@@ -1817,10 +2679,24 @@ const (
 	PiedPiperName = "Pied Piper"
 	// PiedPiperPublicID is from fixtures/workspaces.
 	PiedPiperPublicID = "PiperW10"
+	// PinewoodCollectKey is from fixtures/workspaces.
+	PinewoodCollectKey = "omck_test_pinewood_collect_key"
+	// PinewoodID is from fixtures/workspaces.
+	PinewoodID = 85
+	// PinewoodName is from fixtures/workspaces.
+	PinewoodName = "Pinewood"
+	// PinewoodPublicID is from fixtures/workspaces.
+	PinewoodPublicID = "PinewW85"
 	// PrivateRelayRangeID is from fixtures/private_relay_ranges.
 	PrivateRelayRangeID = 1
 	// PrivateRelayRangeV6ID is from fixtures/private_relay_ranges.
 	PrivateRelayRangeV6ID = 2
+	// ProductionTokenID is from fixtures/api_tokens.
+	ProductionTokenID = 100
+	// ProductionTokenName is from fixtures/api_tokens.
+	ProductionTokenName = "Production API key"
+	// ProductionTokenPrefix is from fixtures/api_tokens.
+	ProductionTokenPrefix = "cb_live_prod01"
 	// ProviderLimiterAcmeID is from fixtures/provider_limiters.
 	ProviderLimiterAcmeID = 1
 	// ProviderLimiterGlobexID is from fixtures/provider_limiters.
@@ -1851,6 +2727,14 @@ const (
 	PruGoogleIdentityProvider = "google"
 	// PruGoogleIdentitySubject is from fixtures/user_identities.
 	PruGoogleIdentitySubject = "google-subject-of-pru"
+	// RevenueOwnerRitaEmail is from fixtures/users.
+	RevenueOwnerRitaEmail = "rita@revenue.test"
+	// RevenueOwnerRitaID is from fixtures/users.
+	RevenueOwnerRitaID = 7200
+	// RevenueOwnerRitaName is from fixtures/users.
+	RevenueOwnerRitaName = "Rita"
+	// RevenueOwnerRitaPassword is from fixtures/users.
+	RevenueOwnerRitaPassword = "password"
 	// RevokedTokenID is from fixtures/api_tokens.
 	RevokedTokenID = 101
 	// RevokedTokenName is from fixtures/api_tokens.
@@ -1883,6 +2767,12 @@ const (
 	RuleEnrollWaitFirstID = 109
 	// RuleEnrollWaitFirstName is from fixtures/rules.
 	RuleEnrollWaitFirstName = "Enroll in the wait-first automation"
+	// RuleEnrollmentCompletedID is from fixtures/rules.
+	RuleEnrollmentCompletedID = 7400
+	// RuleEnrollmentCompletedName is from fixtures/rules.
+	RuleEnrollmentCompletedName = "Tag a Contact who completed an Automation"
+	// RuleEnrollmentCompletedVersionID is from fixtures/rule_versions.
+	RuleEnrollmentCompletedVersionID = 7400
 	// RuleFailThenTagID is from fixtures/rules.
 	RuleFailThenTagID = 104
 	// RuleFailThenTagName is from fixtures/rules.
@@ -1895,6 +2785,22 @@ const (
 	RuleFiringDoneAction = "rule_click"
 	// RuleFiringDoneID is from fixtures/rule_firings.
 	RuleFiringDoneID = 100
+	// RuleFiringEnrollDraftPendingAction is from fixtures/rule_firings.
+	RuleFiringEnrollDraftPendingAction = "rule_enroll_draft"
+	// RuleFiringEnrollDraftPendingID is from fixtures/rule_firings.
+	RuleFiringEnrollDraftPendingID = 7504
+	// RuleFiringEnrollGreetingCarolAction is from fixtures/rule_firings.
+	RuleFiringEnrollGreetingCarolAction = "rule_enroll"
+	// RuleFiringEnrollGreetingCarolID is from fixtures/rule_firings.
+	RuleFiringEnrollGreetingCarolID = 7503
+	// RuleFiringEnrollGreetingPendingAction is from fixtures/rule_firings.
+	RuleFiringEnrollGreetingPendingAction = "rule_enroll"
+	// RuleFiringEnrollGreetingPendingID is from fixtures/rule_firings.
+	RuleFiringEnrollGreetingPendingID = 7502
+	// RuleFiringEnrollSingleEmailPendingAction is from fixtures/rule_firings.
+	RuleFiringEnrollSingleEmailPendingAction = "rule_enroll_single"
+	// RuleFiringEnrollSingleEmailPendingID is from fixtures/rule_firings.
+	RuleFiringEnrollSingleEmailPendingID = 7505
 	// RuleFiringErasableAction is from fixtures/rule_firings.
 	RuleFiringErasableAction = "rule_initech"
 	// RuleFiringErasableID is from fixtures/rule_firings.
@@ -1903,6 +2809,10 @@ const (
 	RuleFiringExpiredAction = "rule_vip"
 	// RuleFiringExpiredID is from fixtures/rule_firings.
 	RuleFiringExpiredID = 102
+	// RuleFiringFailThenTagPendingAction is from fixtures/rule_firings.
+	RuleFiringFailThenTagPendingAction = "rule_fail"
+	// RuleFiringFailThenTagPendingID is from fixtures/rule_firings.
+	RuleFiringFailThenTagPendingID = 7501
 	// RuleFiringGlobexAction is from fixtures/rule_firings.
 	RuleFiringGlobexAction = "rule_click"
 	// RuleFiringGlobexID is from fixtures/rule_firings.
@@ -1911,6 +2821,10 @@ const (
 	RuleFiringHTTPPendingAction = "execute_http"
 	// RuleFiringHTTPPendingID is from fixtures/rule_firings.
 	RuleFiringHTTPPendingID = 140
+	// RuleFiringMultiPendingAction is from fixtures/rule_firings.
+	RuleFiringMultiPendingAction = "rule_multi_a"
+	// RuleFiringMultiPendingID is from fixtures/rule_firings.
+	RuleFiringMultiPendingID = 7500
 	// RuleFiringPendingAction is from fixtures/rule_firings.
 	RuleFiringPendingAction = "rule_click"
 	// RuleFiringPendingID is from fixtures/rule_firings.
@@ -1943,6 +2857,10 @@ const (
 	RuleMultiTriggerID = 103
 	// RuleMultiTriggerName is from fixtures/rules.
 	RuleMultiTriggerName = "Either of two events"
+	// RuleNoActionsID is from fixtures/rules.
+	RuleNoActionsID = 7300
+	// RuleNoActionsName is from fixtures/rules.
+	RuleNoActionsName = "Draft with no actions"
 	// RulePromotersID is from fixtures/rules.
 	RulePromotersID = 130
 	// RulePromotersName is from fixtures/rules.
@@ -1967,6 +2885,24 @@ const (
 	RuleVipOnlyID = 101
 	// RuleVipOnlyName is from fixtures/rules.
 	RuleVipOnlyName = "Tag a vip who did it"
+	// SabreCollectKey is from fixtures/workspaces.
+	SabreCollectKey = "omck_test_sabre_collect_key"
+	// SabreID is from fixtures/workspaces.
+	SabreID = 79
+	// SabreName is from fixtures/workspaces.
+	SabreName = "Sabre"
+	// SabreOwnerSueEmail is from fixtures/users.
+	SabreOwnerSueEmail = "sue@sabre.test"
+	// SabreOwnerSueID is from fixtures/users.
+	SabreOwnerSueID = 7300
+	// SabreOwnerSueName is from fixtures/users.
+	SabreOwnerSueName = "Sue"
+	// SabreOwnerSuePassword is from fixtures/users.
+	SabreOwnerSuePassword = "password"
+	// SabrePublicID is from fixtures/workspaces.
+	SabrePublicID = "SabreW79"
+	// SabreSueMembershipID is from fixtures/memberships.
+	SabreSueMembershipID = 7300
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.
@@ -2031,6 +2967,18 @@ const (
 	SegmentRetiredID = 104
 	// SegmentRetiredName is from fixtures/segments.
 	SegmentRetiredName = "Retired audience"
+	// SegmentTyrellTextableID is from fixtures/segments.
+	SegmentTyrellTextableID = 7500
+	// SegmentTyrellTextableName is from fixtures/segments.
+	SegmentTyrellTextableName = "Can be texted"
+	// SegmentTyrellUntextableID is from fixtures/segments.
+	SegmentTyrellUntextableID = 7501
+	// SegmentTyrellUntextableName is from fixtures/segments.
+	SegmentTyrellUntextableName = "Cannot be texted"
+	// SegmentWithoutTelegramID is from fixtures/segments.
+	SegmentWithoutTelegramID = 7400
+	// SegmentWithoutTelegramName is from fixtures/segments.
+	SegmentWithoutTelegramName = "Not on Telegram"
 	// SendCapLimiterAcmeID is from fixtures/send_cap_limiters.
 	SendCapLimiterAcmeID = 1
 	// SendCapLimiterGlobexID is from fixtures/send_cap_limiters.
@@ -2039,6 +2987,10 @@ const (
 	SendingDomainArchivedDomain = "old.acme.com"
 	// SendingDomainArchivedID is from fixtures/sending_domains.
 	SendingDomainArchivedID = 4
+	// SendingDomainBluthDomain is from fixtures/sending_domains.
+	SendingDomainBluthDomain = "mail.bluth.test"
+	// SendingDomainBluthID is from fixtures/sending_domains.
+	SendingDomainBluthID = 7101
 	// SendingDomainCodebasicsDomain is from fixtures/sending_domains.
 	SendingDomainCodebasicsDomain = "codebasics.dev"
 	// SendingDomainCodebasicsID is from fixtures/sending_domains.
@@ -2063,6 +3015,34 @@ const (
 	SendingDomainLostDomain = "lost.acme.com"
 	// SendingDomainLostID is from fixtures/sending_domains.
 	SendingDomainLostID = 6
+	// SendingDomainMeridianArchivedDomain is from fixtures/sending_domains.
+	SendingDomainMeridianArchivedDomain = "old.meridian.test"
+	// SendingDomainMeridianArchivedID is from fixtures/sending_domains.
+	SendingDomainMeridianArchivedID = 7404
+	// SendingDomainMeridianDomain is from fixtures/sending_domains.
+	SendingDomainMeridianDomain = "meridian.test"
+	// SendingDomainMeridianID is from fixtures/sending_domains.
+	SendingDomainMeridianID = 7400
+	// SendingDomainMeridianKeptDomain is from fixtures/sending_domains.
+	SendingDomainMeridianKeptDomain = "kept.meridian.test"
+	// SendingDomainMeridianKeptID is from fixtures/sending_domains.
+	SendingDomainMeridianKeptID = 7405
+	// SendingDomainMeridianMailDomain is from fixtures/sending_domains.
+	SendingDomainMeridianMailDomain = "mail.meridian.test"
+	// SendingDomainMeridianMailID is from fixtures/sending_domains.
+	SendingDomainMeridianMailID = 7403
+	// SendingDomainMeridianNewsDomain is from fixtures/sending_domains.
+	SendingDomainMeridianNewsDomain = "news.meridian.test"
+	// SendingDomainMeridianNewsID is from fixtures/sending_domains.
+	SendingDomainMeridianNewsID = 7402
+	// SendingDomainMeridianRelayDomain is from fixtures/sending_domains.
+	SendingDomainMeridianRelayDomain = "relay.meridian.test"
+	// SendingDomainMeridianRelayID is from fixtures/sending_domains.
+	SendingDomainMeridianRelayID = 7401
+	// SendingDomainMonarchDomain is from fixtures/sending_domains.
+	SendingDomainMonarchDomain = "mail.monarch.test"
+	// SendingDomainMonarchID is from fixtures/sending_domains.
+	SendingDomainMonarchID = 7100
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.
@@ -2091,6 +3071,14 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// ServiceCredentialDomainsReaderID is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderID = 7101
+	// ServiceCredentialDomainsReaderName is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderName = "service-edge"
+	// ServiceCredentialDomainsReaderPrefix is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderPrefix = "svcdomns7101"
+	// ServiceCredentialDomainsReaderSecret is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderSecret = "service-domains-reader-secret-0000000000"
 	// ServiceCredentialExpiredID is from fixtures/service_credentials.
 	ServiceCredentialExpiredID = 5
 	// ServiceCredentialExpiredName is from fixtures/service_credentials.
@@ -2099,6 +3087,14 @@ const (
 	ServiceCredentialExpiredPrefix = "svcexpired05"
 	// ServiceCredentialExpiredSecret is from fixtures/service_credentials.
 	ServiceCredentialExpiredSecret = "service-expired-secret-00000000000000000"
+	// ServiceCredentialHoldsOnlyID is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyID = 7102
+	// ServiceCredentialHoldsOnlyName is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyName = "service-c"
+	// ServiceCredentialHoldsOnlyPrefix is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyPrefix = "svcholds7102"
+	// ServiceCredentialHoldsOnlySecret is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlySecret = "service-holds-only-secret-00000000000000"
 	// ServiceCredentialPrimaryID is from fixtures/service_credentials.
 	ServiceCredentialPrimaryID = 1
 	// ServiceCredentialPrimaryName is from fixtures/service_credentials.
@@ -2131,6 +3127,14 @@ const (
 	ServiceCredentialSecondPrefix = "svcsecond002"
 	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
 	ServiceCredentialSecondSecret = "service-second-secret-000000000000000000"
+	// ServiceCredentialUsersReaderID is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderID = 7100
+	// ServiceCredentialUsersReaderName is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderName = "control-plane"
+	// ServiceCredentialUsersReaderPrefix is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderPrefix = "svcusers7100"
+	// ServiceCredentialUsersReaderSecret is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderSecret = "service-users-reader-secret-000000000000"
 	// ServiceTermsCurrentID is from fixtures/legal_document_versions.
 	ServiceTermsCurrentID = 2
 	// ServiceTermsCurrentLabel is from fixtures/legal_document_versions.
@@ -2143,6 +3147,24 @@ const (
 	ServiceTermsStaleID = 1
 	// ServiceTermsStaleLabel is from fixtures/legal_document_versions.
 	ServiceTermsStaleLabel = "2026-01"
+	// SiriusCollectKey is from fixtures/workspaces.
+	SiriusCollectKey = "omck_test_sirius_collect_key"
+	// SiriusID is from fixtures/workspaces.
+	SiriusID = 72
+	// SiriusName is from fixtures/workspaces.
+	SiriusName = "Sirius"
+	// SiriusOrionMembershipID is from fixtures/memberships.
+	SiriusOrionMembershipID = 7101
+	// SiriusOwnerOrionEmail is from fixtures/users.
+	SiriusOwnerOrionEmail = "orion@sirius.test"
+	// SiriusOwnerOrionID is from fixtures/users.
+	SiriusOwnerOrionID = 7101
+	// SiriusOwnerOrionName is from fixtures/users.
+	SiriusOwnerOrionName = "Orion"
+	// SiriusOwnerOrionPassword is from fixtures/users.
+	SiriusOwnerOrionPassword = "password"
+	// SiriusPublicID is from fixtures/workspaces.
+	SiriusPublicID = "SiriuW72"
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.
@@ -2151,6 +3173,14 @@ const (
 	SoleOwnerDoraName = "Dora"
 	// SoleOwnerDoraPassword is from fixtures/users.
 	SoleOwnerDoraPassword = "password"
+	// SoukCollectKey is from fixtures/workspaces.
+	SoukCollectKey = "omck_test_souk_collect_key"
+	// SoukID is from fixtures/workspaces.
+	SoukID = 78
+	// SoukName is from fixtures/workspaces.
+	SoukName = "Souk"
+	// SoukPublicID is from fixtures/workspaces.
+	SoukPublicID = "SoukWs78"
 	// SoylentCollectKey is from fixtures/workspaces.
 	SoylentCollectKey = "omck_test_soylent_collect_key"
 	// SoylentID is from fixtures/workspaces.
@@ -2213,16 +3243,40 @@ const (
 	StaleUnverifiedUserID = 15
 	// StaleUnverifiedUserName is from fixtures/users.
 	StaleUnverifiedUserName = "Stale"
+	// StarkCollectKey is from fixtures/workspaces.
+	StarkCollectKey = "omck_test_stark_collect_key"
+	// StarkID is from fixtures/workspaces.
+	StarkID = 87
+	// StarkName is from fixtures/workspaces.
+	StarkName = "Stark"
+	// StarkPublicID is from fixtures/workspaces.
+	StarkPublicID = "StarkW87"
 	// StartTokenAcmeLapsedID is from fixtures/start_tokens.
 	StartTokenAcmeLapsedID = 3
+	// StartTokenAcmeLapsedToken is from fixtures/start_tokens.
+	StartTokenAcmeLapsedToken = "fixture-start-token-lapsed"
 	// StartTokenAcmeOpenID is from fixtures/start_tokens.
 	StartTokenAcmeOpenID = 2
+	// StartTokenAcmeOpenToken is from fixtures/start_tokens.
+	StartTokenAcmeOpenToken = "fixture-start-token-open"
 	// StartTokenAcmeUsedID is from fixtures/start_tokens.
 	StartTokenAcmeUsedID = 1
 	// StartTokenAcmeUsedOpenID is from fixtures/start_tokens.
 	StartTokenAcmeUsedOpenID = 4
+	// StartTokenAcmeUsedOpenToken is from fixtures/start_tokens.
+	StartTokenAcmeUsedOpenToken = "fixture-start-token-used-open"
+	// StartTokenAcmeUsedToken is from fixtures/start_tokens.
+	StartTokenAcmeUsedToken = "fixture-start-token-acme"
+	// StartTokenEmmaPhoneOpenID is from fixtures/start_tokens.
+	StartTokenEmmaPhoneOpenID = 7200
+	// StartTokenEmmaPhoneOpenToken is from fixtures/start_tokens.
+	StartTokenEmmaPhoneOpenToken = "fixture-start-token-emma-phone"
+	// StartTokenEmmaPhoneOpenVisitorID is from fixtures/start_tokens.
+	StartTokenEmmaPhoneOpenVisitorID = "101"
 	// StartTokenGlobexUsedID is from fixtures/start_tokens.
 	StartTokenGlobexUsedID = 900
+	// StartTokenGlobexUsedToken is from fixtures/start_tokens.
+	StartTokenGlobexUsedToken = "fixture-start-token-globex"
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.
@@ -2329,6 +3383,12 @@ const (
 	TemplateAuthoredName = "Product update"
 	// TemplateAuthoredSubject is from fixtures/email_templates.
 	TemplateAuthoredSubject = "What is new at CodeBasics"
+	// TemplateBrokenSubjectID is from fixtures/email_templates.
+	TemplateBrokenSubjectID = 7400
+	// TemplateBrokenSubjectName is from fixtures/email_templates.
+	TemplateBrokenSubjectName = "Broken receipt"
+	// TemplateBrokenSubjectSubject is from fixtures/email_templates.
+	TemplateBrokenSubjectSubject = "{% if %}broken"
 	// TemplateGlobexID is from fixtures/email_templates.
 	TemplateGlobexID = 900
 	// TemplateGlobexName is from fixtures/email_templates.
@@ -2493,6 +3553,14 @@ const (
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.
 	UnsubscribeGlobexID = 900
+	// UnsubscribeTexterConfirmedBroadcastsDestination is from fixtures/unsubscribes.
+	UnsubscribeTexterConfirmedBroadcastsDestination = "+13125557504"
+	// UnsubscribeTexterConfirmedBroadcastsID is from fixtures/unsubscribes.
+	UnsubscribeTexterConfirmedBroadcastsID = 7501
+	// UnsubscribeTexterOptedOutDestination is from fixtures/unsubscribes.
+	UnsubscribeTexterOptedOutDestination = "+13125557505"
+	// UnsubscribeTexterOptedOutID is from fixtures/unsubscribes.
+	UnsubscribeTexterOptedOutID = 7500
 	// UnsubscribeTyrellTransactionalDestination is from fixtures/unsubscribes.
 	UnsubscribeTyrellTransactionalDestination = "txn-both@tyrell.test"
 	// UnsubscribeTyrellTransactionalID is from fixtures/unsubscribes.
@@ -2525,6 +3593,34 @@ const (
 	VandelayOwnerCosmoPassword = "password"
 	// VandelayPublicID is from fixtures/workspaces.
 	VandelayPublicID = "VandlWs7"
+	// VirtuconCoOwnerVicEmail is from fixtures/users.
+	VirtuconCoOwnerVicEmail = "vic@virtucon.test"
+	// VirtuconCoOwnerVicID is from fixtures/users.
+	VirtuconCoOwnerVicID = 7104
+	// VirtuconCoOwnerVicName is from fixtures/users.
+	VirtuconCoOwnerVicName = "Vic"
+	// VirtuconCoOwnerVicPassword is from fixtures/users.
+	VirtuconCoOwnerVicPassword = "password"
+	// VirtuconCollectKey is from fixtures/workspaces.
+	VirtuconCollectKey = "omck_test_virtucon_collect_key"
+	// VirtuconID is from fixtures/workspaces.
+	VirtuconID = 74
+	// VirtuconName is from fixtures/workspaces.
+	VirtuconName = "Virtucon"
+	// VirtuconOwnerVeraEmail is from fixtures/users.
+	VirtuconOwnerVeraEmail = "vera@virtucon.test"
+	// VirtuconOwnerVeraID is from fixtures/users.
+	VirtuconOwnerVeraID = 7103
+	// VirtuconOwnerVeraName is from fixtures/users.
+	VirtuconOwnerVeraName = "Vera"
+	// VirtuconOwnerVeraPassword is from fixtures/users.
+	VirtuconOwnerVeraPassword = "password"
+	// VirtuconPublicID is from fixtures/workspaces.
+	VirtuconPublicID = "VirtcW74"
+	// VirtuconVeraMembershipID is from fixtures/memberships.
+	VirtuconVeraMembershipID = 7103
+	// VirtuconVicMembershipID is from fixtures/memberships.
+	VirtuconVicMembershipID = 7104
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
 	// VisitorAnonymousVisitorID is from fixtures/visitors.
@@ -2537,6 +3633,10 @@ const (
 	VisitorGlobexID = 900
 	// VisitorGlobexVisitorID is from fixtures/visitors.
 	VisitorGlobexVisitorID = "vis-globex-1"
+	// VisitorStarkVanishedID is from fixtures/visitors.
+	VisitorStarkVanishedID = 7500
+	// VisitorStarkVanishedVisitorID is from fixtures/visitors.
+	VisitorStarkVanishedVisitorID = "dev-gone"
 	// WayneCollectKey is from fixtures/workspaces.
 	WayneCollectKey = "omck_test_wayne_collect_key"
 	// WayneID is from fixtures/workspaces.

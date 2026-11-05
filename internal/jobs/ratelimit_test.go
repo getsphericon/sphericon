@@ -184,13 +184,8 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		fs := &fakeSender{}
 		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"), outbound.WithSendCaps(true))
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
-
-		res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
-			Kind: outboundmessage.KindTransactional, Key: "tx:1", Destination: "a@example.com",
-			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
-		})
-		require.NoError(t, err)
-		require.Equal(t, outbound.Sent, res.Outcome, "the day's one token goes to Transactional")
+		// The day's one token went to another send just now.
+		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
 
 		require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
@@ -206,7 +201,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
 		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
-		assert.Len(t, fs.sent, 1, "the step has not sent")
+		assert.Empty(t, fs.sent, "the step has not sent")
 	})
 }
 

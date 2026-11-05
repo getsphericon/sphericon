@@ -8,9 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -47,14 +45,11 @@ func onlyEnvelope(t *testing.T, env *testhelper.TestEnv, name string) events.Env
 }
 
 // An Automation whose Trigger is contact.tagged enrolls a Contact a Tag is applied to (#897), and
-// its steps see which Tag it was. Fixture: the Jobs greeting Automation, its live version's
-// Trigger turned to contact.tagged.
+// its steps see which Tag it was. Fixture: the Automation the fixtures trigger on contact.tagged.
 func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameContactTagged).ExecX(ctx)
 
 	_, err := tags.New(env.Bus).Apply(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
@@ -65,7 +60,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).
+		Where(automationrun.AutomationID(fixtures.AutomationOnContactTaggedID), automationrun.ContactID(fixtures.ContactLiamID)).
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameContactTagged, *run.EventAction)
@@ -73,16 +68,12 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 }
 
 // A Rule triggered by automation.completed fires when an Enrollment completes, and what its Action
-// then records (the Tag it applies) fires no Rule: Rules never chain (ADR 0054). Fixture: the
-// Tag-clicked Rule, which applies rule-clicked, its Trigger turned to automation.completed.
+// then records (the Tag it applies) fires no Rule: Rules never chain (ADR 0054). Fixture: the Rule
+// triggered by automation.completed, which applies completed-an-automation.
 func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	env.DB.RuleVersionTrigger.Update().
-		Where(ruleversiontrigger.VersionID(fixtures.RuleTagClickedLiveVersionID)).
-		SetAction(events.NameAutomationCompleted).
-		ExecX(ctx)
 	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
@@ -103,8 +94,8 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	evaluationsAfter := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
 
-	assert.EqualValues(t, fixtures.RuleTagClickedID, fired[0].RuleID)
-	assert.Contains(t, aliceTags, "rule-clicked")
+	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, fired[0].RuleID)
+	assert.Contains(t, aliceTags, "completed-an-automation")
 	assert.NotEmpty(t, tagged.CausedBy, "the Action's Tag carries its Rule")
 	assert.Len(t, evaluationsAfter, 1, "the Action's own contact.tagged queues no evaluation")
 }
@@ -138,18 +129,16 @@ func (r *triggerRouter) deliver(t *testing.T) []string {
 // after double opt-in) does not enroll a Contact whose phone's SMS consent is recorded, which is
 // sms.confirmed, and does enroll it once its address confirms (ADR 0077). A trigger is an action
 // with no property filter, so sharing the action would enroll every phone that consented. Fixture:
-// the Jobs greeting Automation, its live version's Trigger turned to marketing.confirmed, and the
-// Texter, whose phone and address have no Confirmation.
+// the Automation the fixtures trigger on marketing.confirmed, and the Texter, whose phone and
+// address have no Confirmation.
 func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameMarketingConfirmed).ExecX(ctx)
 	router := &triggerRouter{env: env}
 	runs := func() []*ent.AutomationRun {
 		t.Helper()
 		return env.DB.AutomationRun.Query().
-			Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactTexterID)).
+			Where(automationrun.AutomationID(fixtures.AutomationOnMarketingConfirmedID), automationrun.ContactID(fixtures.ContactTexterID)).
 			AllX(ctx)
 	}
 

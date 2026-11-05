@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -26,29 +26,14 @@ func inbound(sms testhelper.TwilioAccount, sid, from, body string) url.Values {
 	}
 }
 
-// textingContact creates, through the External API, a Contact with no email whose phone was
-// written in the local format of the US.
-func textingContact(t *testing.T, env *testhelper.TestEnv) *externalapi.ContactResource {
-	t.Helper()
-	res, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(t.Context(), &externalapi.CreateContactInput{
-		Phone:   externalapi.NewOptNilString("(415) 555-0177"),
-		Country: externalapi.NewOptNilCountryCode("US"),
-	})
-	require.NoError(t, err)
-	c, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "create the Contact: got %T", res)
-	return c
-}
-
 func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	c := textingContact(t, env)
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
-		inbound(sms, "SM0001", "+14155550177", "Is the sale still on?"))
+		inbound(sms, "SM0001", fixtures.ContactTexterPhone, "Is the sale still on?"))
 	redelivered := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
-		inbound(sms, "SM0001", "+14155550177", "Is the sale still on?"))
+		inbound(sms, "SM0001", fixtures.ContactTexterPhone, "Is the sale still on?"))
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	require.Equal(t, http.StatusOK, redelivered.Code, redelivered.Body.String())
@@ -57,24 +42,24 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 	key := fmt.Sprintf("sms:%d:SM0001", sms.Integration.ID)
 	assert.Equal(t, key, got[0].Envelope.DedupKey)
 	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
-		"contactId": c.ID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
+		"contactId": fixtures.ContactTexterID, "integrationId": sms.Integration.ID, "text": "Is the sale still on?",
 	})
 	assert.Equal(t, 1, received)
 }
 
-// A sender Twilio names in a local format is read with the country Twilio says it is in.
+// A sender Twilio names in a local format is read with the country Twilio says it is in: ContactTexter's
+// number, written as a US one.
 func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	c := textingContact(t, env)
-	form := inbound(sms, "SM0004", "(415) 555-0177", "See you at 5")
+	form := inbound(sms, "SM0004", "(415) 555-0810", "See you at 5")
 	form.Set("FromCountry", "US")
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, form)
 
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	received := env.QueuedCount(t, events.NameSmsReceived, map[string]any{
-		"contactId": c.ID, "phone": "+14155550177", "text": "See you at 5",
+		"contactId": fixtures.ContactTexterID, "phone": fixtures.ContactTexterPhone, "text": "See you at 5",
 	})
 	assert.Equal(t, 1, received)
 }

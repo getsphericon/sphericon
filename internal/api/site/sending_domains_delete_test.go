@@ -27,7 +27,13 @@ func listSendingDomains(t *testing.T, c *siteapi.Client) []int64 {
 
 func deleteSendingDomain(t *testing.T, c *siteapi.Client, id int64) siteapi.SiteSendingDomainsDeleteRes {
 	t.Helper()
-	res, err := c.SiteSendingDomainsDelete(context.Background(), siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+	return deleteSendingDomainOf(t, c, fixtures.AcmePublicID, id)
+}
+
+// deleteSendingDomainOf deletes the Sending domain id of the Workspace as c.
+func deleteSendingDomainOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteSendingDomainsDeleteRes {
+	t.Helper()
+	res, err := c.SiteSendingDomainsDelete(t.Context(), siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
 	require.NoError(t, err)
 	return res
 }

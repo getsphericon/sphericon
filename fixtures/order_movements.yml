@@ -1,4 +1,5 @@
-# The Movements of the fixture Orders (ADR 0064), 200 days ago: older than any revenue window.
+# The Movements of the fixture Orders (ADR 0064). Acme's and Globex's are 200 days ago: older than any
+# revenue window.
 - id: 1 # fixture: OrderMovementAcme
   order_id: 1
   kind: completed
@@ -63,3 +64,73 @@
   workspace_id: 61
   created_at: '2026-03-12 16:00:00+00'
   updated_at: '2026-03-12 16:00:00+00'
+
+# The Movements of the revenue tenants' Orders (orders.yml), dated relative to now.
+# Bazaar: B-1 completed for 20.00 and refunded 5.00 two days later; B-2 completed for 30.00 EUR.
+- id: 7200
+  order_id: 7200
+  kind: completed
+  amount: 2000
+  occurred_at: '{{daysAgo 3}}'
+  workspace_id: 75
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7201
+  order_id: 7200
+  kind: refunded
+  amount: -500
+  refund_id: bazaar-refund-1
+  occurred_at: '{{daysAgo 1}}'
+  workspace_id: 75
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7202
+  order_id: 7201
+  kind: completed
+  amount: 3000
+  occurred_at: '{{daysAgo 3}}'
+  workspace_id: 75
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+# Emporium: A-1 completed for 40.00 and cancelled the next day; A-2 completed for 10.00.
+- id: 7203
+  order_id: 7202
+  kind: completed
+  amount: 4000
+  occurred_at: '{{daysAgo 3}}'
+  workspace_id: 76
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7204
+  order_id: 7202
+  kind: cancelled
+  amount: -4000
+  occurred_at: '{{daysAgo 2}}'
+  workspace_id: 76
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 7205
+  order_id: 7203
+  kind: completed
+  amount: 1000
+  occurred_at: '{{daysAgo 3}}'
+  workspace_id: 76
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+# Mercado: B-1 completed for 20.00; U-1, credited to no message, for 7.25 a week earlier.
+- id: 7206
+  order_id: 7204
+  kind: completed
+  amount: 2000
+  occurred_at: '{{daysAgo 3}}'
+  workspace_id: 77
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7207
+  order_id: 7205
+  kind: completed
+  amount: 725
+  occurred_at: '{{daysAgo 10}}'
+  workspace_id: 77
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 10}}'

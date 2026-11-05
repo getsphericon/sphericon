@@ -44,3 +44,13 @@
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 1}}'
+# An open Start token of Emma's phone (Visitor 101, whose chat is BindingEmmaPhone): the tracker
+# issues one to a Visitor, and erasing Emma removes it with the Binding.
+- id: 7200 # fixture: StartTokenEmmaPhoneOpen
+  integration_id: 9
+  visitor_id: 101
+  token_hash: '{{ secretHash "fixture-start-token-emma-phone" }}'
+  expires_at: '{{daysAhead 20}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

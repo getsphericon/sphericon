@@ -35,7 +35,8 @@ func TestAnAutomationStepThroughTheTestInboxIsSentAndCapturedWithoutAVerifiedDom
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, chosen)
 	liam := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
-	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, liam.ID)
+	runID := int64(fixtures.AutomationRunJobsSingleEmailLiamID)
+	queueStep(t, env, runID)
 
 	env.RunQueuedSteps(t, stepping.New(env.Bus, env.OutboundModule(), noFence))
 

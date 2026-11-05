@@ -145,6 +145,26 @@
   workspace_id: 8
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The verified domains of Monarch (suspended) and Bluth (in its deletion window), whose traffic
+# over the freeze limit the abuse detector must skip (day 2 in events.yml).
+- id: 7100 # fixture: SendingDomainMonarch
+  domain: mail.monarch.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "monarch-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=monarch'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 73
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7101 # fixture: SendingDomainBluth
+  domain: mail.bluth.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "bluth-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=bluth'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 12
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 
 # Umbrella (workspace 4) sends from a verified domain; its Tracking domains are in
 # fixtures/tracking_domains.yml (ADR 0071).
@@ -204,3 +224,66 @@
   workspace_id: 20
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
+
+# Meridian (workspace 83): the domains of the From of its default, its Relay and its stopped relay,
+# the two From domains of its own Broadcasts and an archived one. None had a DMARC record found:
+# mail.meridian.test is verified and checked but its DMARC never looked up, news.meridian.test is
+# looked up but unverified, the archived one is verified and looked up.
+- id: 7400 # fixture: SendingDomainMeridian
+  domain: meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=meridiantest'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7401 # fixture: SendingDomainMeridianRelay
+  domain: relay.meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "relay.meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=relaymeridiantest'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7402 # fixture: SendingDomainMeridianNews
+  domain: news.meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "news.meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=newsmeridiantest'
+  last_checked_at: '{{daysAgo 1}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7403 # fixture: SendingDomainMeridianMail
+  domain: mail.meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "mail.meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=mailmeridiantest'
+  verified_at: '2026-01-01 00:00:00'
+  last_checked_at: '{{daysAgo 1}}'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7404 # fixture: SendingDomainMeridianArchived
+  domain: old.meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "old.meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=oldmeridiantest'
+  verified_at: '2026-01-01 00:00:00'
+  last_checked_at: '{{daysAgo 1}}'
+  dmarc_checked_at: '{{daysAgo 1}}'
+  discarded_at: '{{daysAgo 1}}'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7405 # fixture: SendingDomainMeridianKept
+  domain: kept.meridian.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "kept.meridian.test-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=keptmeridiantest'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -120,13 +120,13 @@ func TestAHoldPastItsExpiryIsIgnoredAtOnceWithNoCleanup(t *testing.T) {
 
 func TestASecondHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
 	h := newHarness(t)
-	h.setHold(t, "first", time.Hour)
-	h.setHold(t, "second", time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeSecondLapsedID, h.clock.now().Add(time.Hour))
 
-	h.clearHold(t, "first")
+	h.clearHold(t, fixtures.HoldAcmeLapsedKey)
 	h.requireHeld(t, "still@example.com")
 
-	h.clearHold(t, "second")
+	h.clearHold(t, fixtures.HoldAcmeSecondLapsedKey)
 	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "free@example.com"))
 }
 
@@ -168,7 +168,7 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 // beside the Staff holds while the Workspace is deleted, and restoring lifts it alone.
 func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
-	h.setHoldResult(t, "k1", time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
 	discardedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
 	h.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
@@ -176,12 +176,12 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	require.Len(t, items, 2)
 	assert.Equal(t, holds.KeyPendingDeletion, items[0].Key)
 	assert.Equal(t, holds.ReasonPendingDeletion, items[0].ReasonCode)
-	assert.Equal(t, "k1", items[1].Key)
+	assert.Equal(t, fixtures.HoldAcmeLapsedKey, items[1].Key)
 
 	h.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
 	items = h.listHolds(t)
 	require.Len(t, items, 1)
-	assert.Equal(t, "k1", items[0].Key)
+	assert.Equal(t, fixtures.HoldAcmeLapsedKey, items[0].Key)
 }
 
 func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {

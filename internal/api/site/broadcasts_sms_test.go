@@ -199,18 +199,15 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, strings.Repeat("a", 1600), nil)
+	draft := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastSmsDraftID)}
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1601))},
 		siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	fits, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))},
-		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+	fits, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))}, draft)
 	require.NoError(t, err)
-	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))},
-		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))}, draft)
 	require.NoError(t, err)
 
 	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
@@ -256,27 +253,24 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 
 func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.AcmeTwilio(t)
+	env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	schedule := func(text string) siteapi.SiteBroadcastsScheduleRes {
-		b := createSMSBroadcast(t, c, account, text, nil)
+	schedule := func(id int64) siteapi.SiteBroadcastsScheduleRes {
 		res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
-			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 		require.NoError(t, err)
 		return res
 	}
 
-	blank := schedule("  ")
+	blank := schedule(fixtures.BroadcastSmsBlankDraftID)
 	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, blank)
-	written := schedule("Hello")
+	written := schedule(fixtures.BroadcastSmsDraftID)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, written)
 }
 
 func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	made := createSMSBroadcast(t, c, account, "Hello", nil)
 
 	res, err := c.SiteBroadcastsList(t.Context(), siteapi.SiteBroadcastsListParams{
 		WorkspaceId: fixtures.AcmePublicID, Channel: siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelSMS),
@@ -286,5 +280,5 @@ func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
 	list, ok := res.(*siteapi.SiteBroadcastsListOK)
 	require.Truef(t, ok, "got %T", res)
 	ids := lo.Map(list.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.EntityId { return b.ID })
-	assert.Equal(t, []siteapi.EntityId{made.ID}, ids)
+	assert.ElementsMatch(t, []siteapi.EntityId{idStr(fixtures.BroadcastSmsDraftID), idStr(fixtures.BroadcastSmsBlankDraftID)}, ids)
 }

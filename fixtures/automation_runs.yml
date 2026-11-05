@@ -57,7 +57,7 @@
     updated_at: '{{daysAgo 13}}',
   }
 - {
-    id: 1005,
+    id: 1005, # fixture: AutomationRunWelcomeWaiting
     automation_id: 100,
     version_id: 100,
     contact_id: 104,
@@ -69,7 +69,7 @@
     updated_at: '{{hoursAgo 5}}',
   }
 - {
-    id: 1006,
+    id: 1006, # fixture: AutomationRunWelcomeWaitingLater
     automation_id: 100,
     version_id: 100,
     contact_id: 106,
@@ -1164,3 +1164,382 @@
   began_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Payment recovery (108): Isabella's active Enrollment, begun a day ago, which its exit and goal
+# Events end (internal/automations).
+- id: 7500 # fixture: AutomationRunRecoveryActive
+  automation_id: 108
+  version_id: 108
+  contact_id: 107
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Enrollments of the job tests (internal/jobs) in the email Automations, not yet stepped: Liam in the
+# single email, Alice in the system tag.
+- id: 7550 # fixture: AutomationRunJobsSingleEmailLiam
+  automation_id: 5561
+  version_id: 5561
+  contact_id: 100
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7551 # fixture: AutomationRunJobsSystemTagAlice
+  automation_id: 5565
+  version_id: 5565
+  contact_id: 1
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# The SMS and Telegram Automations of the job tests (internal/jobs), through Acme's Twilio account
+# (IntegrationAcmeSms) and bot (IntegrationAcmeTelegram). Inactive, so no Event enrolls anyone and
+# no Integration counts them as users; each test queues the step of its Enrollment, which an
+# inactive Automation still runs. Triggers are unique to them.
+- id: 7501 # fixture: AutomationRunJobsTelegramHelloBob
+  automation_id: 7500
+  version_id: 7500
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7502 # fixture: AutomationRunJobsTelegramHelloAgainBob
+  automation_id: 7501
+  version_id: 7501
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7503 # fixture: AutomationRunJobsTelegramEscapedBob
+  automation_id: 7502
+  version_id: 7502
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7504 # fixture: AutomationRunJobsTelegramBetweenEmailsBob
+  automation_id: 7503
+  version_id: 7503
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7505 # fixture: AutomationRunJobsTelegramPhotoBob
+  automation_id: 7504
+  version_id: 7504
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7506 # fixture: AutomationRunJobsTelegramPreviewOffBob
+  automation_id: 7505
+  version_id: 7505
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7507 # fixture: AutomationRunJobsTelegramUnsubscribeLinkBob
+  automation_id: 7506
+  version_id: 7506
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7508 # fixture: AutomationRunJobsTelegramWelcomeBackBob
+  automation_id: 7507
+  version_id: 7507
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7509 # fixture: AutomationRunJobsTelegramStartTagBob
+  automation_id: 7508
+  version_id: 7508
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7510 # fixture: AutomationRunJobsTelegramStartTagJoinBob
+  automation_id: 7509
+  version_id: 7509
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7511 # fixture: AutomationRunJobsTelegramNoTagBob
+  automation_id: 7510
+  version_id: 7510
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7512 # fixture: AutomationRunJobsTelegramLinkAndButtonBob
+  automation_id: 7511
+  version_id: 7511
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7513 # fixture: AutomationRunJobsTelegramSameURLBob
+  automation_id: 7512
+  version_id: 7512
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7514 # fixture: AutomationRunJobsTelegramOfferAndStopBob
+  automation_id: 7513
+  version_id: 7513
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7515 # fixture: AutomationRunJobsTelegramOfferLiam
+  automation_id: 7514
+  version_id: 7514
+  contact_id: 100
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7516 # fixture: AutomationRunJobsSMSHelloConfirmed
+  automation_id: 7515
+  version_id: 7515
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7517 # fixture: AutomationRunJobsSMSHelloAgainConfirmed
+  automation_id: 7516
+  version_id: 7516
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7518 # fixture: AutomationRunJobsSMSHelloThenTagConfirmed
+  automation_id: 7517
+  version_id: 7517
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7519 # fixture: AutomationRunJobsSMSRenderedConfirmed
+  automation_id: 7518
+  version_id: 7518
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7520 # fixture: AutomationRunJobsSMSHiThenTagBob
+  automation_id: 7519
+  version_id: 7519
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7521 # fixture: AutomationRunJobsSMSHiThenTagTexter
+  automation_id: 7519
+  version_id: 7519
+  contact_id: 810
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7522 # fixture: AutomationRunJobsSMSHiThenTagOptedOut
+  automation_id: 7519
+  version_id: 7519
+  contact_id: 7505
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7523 # fixture: AutomationRunJobsSMSBetweenEmailsBob
+  automation_id: 7520
+  version_id: 7520
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7524 # fixture: AutomationRunJobsSMSStopLinkConfirmed
+  automation_id: 7521
+  version_id: 7521
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7525 # fixture: AutomationRunJobsSMSFirstSecondConfirmed
+  automation_id: 7522
+  version_id: 7522
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7526 # fixture: AutomationRunJobsSMSCartConfirmed
+  automation_id: 7523
+  version_id: 7523
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7527 # fixture: AutomationRunJobsSMSCartUntrackedConfirmed
+  automation_id: 7524
+  version_id: 7524
+  contact_id: 7504
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Meridian (workspace 83): the unfinished Enrollment its inactive Automation still sends through.
+- {
+    id: 7400, # fixture: AutomationRunMeridianEnrolled
+    automation_id: 7406,
+    version_id: 7410,
+    contact_id: 7400,
+    workspace_id: 83,
+    status: active,
+    current_step: 0,
+    resume_at: '{{daysAhead 1}}',
+    began_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+# Failed this week (two) and eight days ago (one) in the welcome; this week in the archived one.
+- {
+    id: 7401, # fixture: AutomationRunMeridianFailed
+    automation_id: 7400,
+    version_id: 7400,
+    contact_id: 7401,
+    workspace_id: 83,
+    status: failed,
+    current_step: 0,
+    began_at: '{{daysAgo 9}}',
+    ended_at: '{{hoursAgo 1}}',
+    created_at: '{{daysAgo 9}}',
+    updated_at: '{{hoursAgo 1}}',
+  }
+- {
+    id: 7402, # fixture: AutomationRunMeridianFailedSecond
+    automation_id: 7400,
+    version_id: 7400,
+    contact_id: 7402,
+    workspace_id: 83,
+    status: failed,
+    current_step: 0,
+    began_at: '{{daysAgo 9}}',
+    ended_at: '{{hoursAgo 2}}',
+    created_at: '{{daysAgo 9}}',
+    updated_at: '{{hoursAgo 2}}',
+  }
+- {
+    id: 7403, # fixture: AutomationRunMeridianFailedLongAgo
+    automation_id: 7400,
+    version_id: 7400,
+    contact_id: 7403,
+    workspace_id: 83,
+    status: failed,
+    current_step: 0,
+    began_at: '{{daysAgo 9}}',
+    ended_at: '{{daysAgo 8}}',
+    created_at: '{{daysAgo 9}}',
+    updated_at: '{{daysAgo 8}}',
+  }
+- {
+    id: 7404, # fixture: AutomationRunMeridianArchivedFailed
+    automation_id: 7405,
+    version_id: 7408,
+    contact_id: 7401,
+    workspace_id: 83,
+    status: failed,
+    current_step: 0,
+    began_at: '{{daysAgo 9}}',
+    ended_at: '{{hoursAgo 1}}',
+    created_at: '{{daysAgo 9}}',
+    updated_at: '{{hoursAgo 1}}',
+  }

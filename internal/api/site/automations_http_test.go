@@ -145,12 +145,8 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 		assert.IsType(t, new(siteapi.SiteAutomationResource), res, trigger)
 	}
 
-	made, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "Plain", TriggerEvent: "signup"}, params)
-	require.NoError(t, err)
-	created, ok := made.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", made)
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("email.bounced")},
-		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteAutomationsUpdateUnprocessableEntity), updated)
 }

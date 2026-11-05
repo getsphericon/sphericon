@@ -99,7 +99,8 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Twelfth tenant (Bluth) - in its 30-day deletion window since 5 days ago (ADR 0043); Dan is
-# its only Owner, which does not block his own User deletion.
+# its only Owner, which does not block his own User deletion. Its Sending domain has traffic over
+# the freeze limit (day 2 in events.yml) that the abuse detector never judges.
 - id: 12 # fixture: Bluth
   name: Bluth
   public_id: BluthW12
@@ -200,5 +201,119 @@
   name: Capton
   public_id: CaptnW63
   collect_key: omck_test_capton_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Stark: the Contacts the contacts and visitors module tests change (every attribute set, a phone
+# alone, an email with a phone, a source), kept off Acme so its audiences and counts stay as they are.
+- id: 87 # fixture: Stark
+  name: Stark
+  public_id: StarkW87
+  collect_key: omck_test_stark_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Sabre: its one Integration is a Telegram bot (IntegrationSabreTelegram), so its Setup checklist
+# still asks for an email provider.
+- id: 79 # fixture: Sabre
+  name: Sabre
+  public_id: SabreW79
+  collect_key: omck_test_sabre_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Meridian: the Live use that blocks removing an Integration or a Sending domain (ADR 0049, ADR 0099)
+# and what of it asks for attention (#939). Its live work is a few named rows (Broadcasts,
+# Automations and one Enrollment), each the user of one Integration or From domain, so a test moves
+# the one row it is about instead of every row.
+- id: 83 # fixture: Meridian
+  name: Meridian
+  public_id: MonrcW83
+  collect_key: omck_test_meridian_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Babel: Contacts whose own text is hostile (ADR 0016): an instruction to an agent, and quotes that
+# would break out of the JSON an HTTP step builds. No other Contact sits beside them.
+- id: 84 # fixture: Babel
+  name: Babel
+  public_id: BabelW84
+  collect_key: omck_test_babel_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Pinewood: sends its marketing through its default, a Test inbox (ADR 0058), to its one Contact.
+- id: 85 # fixture: Pinewood
+  name: Pinewood
+  public_id: PinewW85
+  collect_key: omck_test_pinewood_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Revenue of messages (ADR 0064), Reporting currency USD, each tenant for one report so its
+# workspace-wide figures hold only its own Orders (orders.yml, order_movements.yml). Bazaar: a
+# Broadcast's Orders, one refunded later.
+- id: 75 # fixture: Bazaar
+  name: Bazaar
+  public_id: BazarW75
+  collect_key: omck_test_bazaar_collect_key
+  reporting_currency: USD
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Emporium: an Automation's Orders, one cancelled; and the click histories of the attribution
+# tests (events.yml), on a Broadcast and an Automation of their own.
+- id: 76 # fixture: Emporium
+  name: Emporium
+  public_id: EmporW76
+  collect_key: omck_test_emporium_collect_key
+  reporting_currency: USD
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Mercado: an Order credited to a Broadcast and one credited to no message, for the overview.
+- id: 77 # fixture: Mercado
+  name: Mercado
+  public_id: MercdW77
+  collect_key: omck_test_mercado_collect_key
+  reporting_currency: USD
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Souk: no Order and no Reporting currency yet; its Contact clicked its Broadcast four days ago.
+- id: 78 # fixture: Souk
+  name: Souk
+  public_id: SoukWs78
+  collect_key: omck_test_souk_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Suspended tenants (ADR 0026), one per actor kind the console and the owner notice tell apart,
+# each with one verified Owner. Nakatomi was frozen by the system and Sirius by the command line,
+# both for "complaint rate". Monarch was suspended by a Staff member for a chargeback and has
+# traffic over the freeze limit (day 2 in events.yml), which the abuse detector must still skip.
+- id: 71 # fixture: Nakatomi
+  name: Nakatomi
+  public_id: NakatW71
+  collect_key: omck_test_nakatomi_collect_key
+  suspended_at: '{{daysAgo 1}}'
+  suspended_by_kind: system
+  suspension_reason: complaint rate
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 72 # fixture: Sirius
+  name: Sirius
+  public_id: SiriuW72
+  collect_key: omck_test_sirius_collect_key
+  suspended_at: '{{daysAgo 1}}'
+  suspended_by_kind: cli
+  suspension_reason: complaint rate
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 73 # fixture: Monarch
+  name: Monarch
+  public_id: MonarW73
+  collect_key: omck_test_monarch_collect_key
+  suspended_at: '{{daysAgo 1}}'
+  suspended_by_kind: staff
+  suspended_by_id: op-7
+  suspension_reason: chargeback
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Virtucon: two Owners who have not verified their email yet (Workspace feed tests).
+- id: 74 # fixture: Virtucon
+  name: Virtucon
+  public_id: VirtcW74
+  collect_key: omck_test_virtucon_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

@@ -22,12 +22,10 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
-	tmpl := variablesTemplate(env.DB)
-	tmpl = env.DB.EmailTemplate.UpdateOne(tmpl).SetSubject("{% if %}broken").SaveX(ctx)
 
 	send := func() externalapi.EmailsSendRes {
 		res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
-			TemplateId: templateID(tmpl), Destination: "render@example.com",
+			TemplateId: fixtures.TemplateBrokenSubjectID, Destination: "render@example.com",
 		}, externalapi.EmailsSendParams{IdempotencyKey: externalapi.NewOptString("render-1")})
 		require.NoError(t, err)
 		return res

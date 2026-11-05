@@ -33,17 +33,13 @@ func TestAnUpsertNeverOverwritesAnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
+	stark := env.DB.Scoped(fixtures.StarkID)
 
-	stored, err := m.Create(ctx, acme, contact.SourceManual, contacts.CreateInput{
-		Email: new("keeps.alias@example.com"), Phone: new("+14155550113")})
+	res, err := m.Upsert(ctx, stark, contact.SourceAPI, contacts.UpsertInput{Email: new(fixtures.ContactStarkAliasedEmail), Phone: new("+14155550114")})
 	require.NoError(t, err)
 
-	res, err := m.Upsert(ctx, acme, contact.SourceAPI, contacts.UpsertInput{Email: new("keeps.alias@example.com"), Phone: new("+14155550114")})
-	require.NoError(t, err)
-
-	assert.Equal(t, stored.ID, res.Contact.ID)
-	assert.Equal(t, "+14155550113", lo.FromPtr(res.Contact.Phone), "an alias key fills only a Contact that has none")
+	assert.EqualValues(t, fixtures.ContactStarkAliasedID, res.Contact.ID)
+	assert.Equal(t, fixtures.ContactStarkAliasedPhone, lo.FromPtr(res.Contact.Phone), "an alias key fills only a Contact that has none")
 }
 
 func TestTheBrowsersGuessesFillOnlyAnEmptyAttributeAndLoseToATrait(t *testing.T) {

@@ -21,6 +21,15 @@ func subscribedAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analytics.W
 	return report
 }
 
+// subscribedByDay is the report's points by their date.
+func subscribedByDay(report *analytics.SubscribedPeople) map[string]analytics.SubscribedPoint {
+	days := map[string]analytics.SubscribedPoint{}
+	for _, p := range report.Series {
+		days[p.Date] = p
+	}
+	return days
+}
+
 // Fixtures (Gotham, America/New_York), the window being 4-10 March 2026. Subscribed is the
 // marketing.confirmed Event, unsubscribed the email.unsubscribed Event, each on the Report day of
 // its occurred_at: 6 March one confirmed,
@@ -50,13 +59,13 @@ func TestSubscribedAndUnsubscribedAreCountedPerReportDay(t *testing.T) {
 
 func TestAZoneChangeMovesSubscriptionsToOtherDays(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
-	report := subscribedAt(t, env, fixtures.GothamID, analytics.Window7Days, time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC))
+	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
+	inNewYork := subscribedByDay(subscribedAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
 
-	byDay := map[string]analytics.SubscribedPoint{}
-	for _, p := range report.Series {
-		byDay[p.Date] = p
-	}
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	byDay := subscribedByDay(subscribedAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
+
+	assert.Equal(t, 1, inNewYork["2026-03-07"].Subscribed, "23:59 EST on the 7th")
 	assert.Equal(t, 0, byDay["2026-03-07"].Subscribed, "23:59 EST on the 7th is the 8th in UTC")
 	assert.Equal(t, 2, byDay["2026-03-08"].Subscribed)
 	assert.Equal(t, 2, byDay["2026-03-09"].Subscribed)

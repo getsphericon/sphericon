@@ -68,21 +68,16 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
-	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
-		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `1000`, "currency": `"JPY"`}),
-	}})
-	require.NoError(t, err)
-	require.IsType(t, &externalapi.EventsCreateNoContent{}, res)
-	env.WorkOrderJobs(t)
 
-	res, err = c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
-		orderEvent("Order Refunded", map[string]string{"order_id": `"A-1"`, "total": `10.5`}),
+	// fixture-order-1 is Alice's Order OrderAcme, in USD.
+	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+		orderEvent("Order Refunded", map[string]string{"order_id": `"fixture-order-1"`, "total": `10.555`}),
 	}})
 
 	require.NoError(t, err)
 	refused, ok := res.(*externalapi.EventsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
-	assert.Contains(t, refused.Detail.Or(""), "total has more than 0 decimal places")
+	assert.Contains(t, refused.Detail.Or(""), "total has more than 2 decimal places, which USD allows")
 }
 
 func TestAChangeWithoutACurrencyBeforeItsOrderIsCheckedAsANumber(t *testing.T) {

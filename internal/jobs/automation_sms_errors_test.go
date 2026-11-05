@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -83,9 +82,8 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
+	queueStep(t, env, runID)
 	mod := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
 	env.Twilio.RefuseSends(twiliotest.AccountNotActive)
 	require.True(t, env.RunNextStep(t, mod))
@@ -102,7 +100,7 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 	env.RunQueuedSteps(t, mod)
 
 	delivered := env.Twilio.Messages()
-	assert.Equal(t, []string{fixtures.ContactTexterPhone}, recipientsOf(delivered))
+	assert.Equal(t, []string{fixtures.ContactTexterConfirmedPhone}, recipientsOf(delivered))
 }
 
 // saveTwilioKey saves the Integration with key, as an Owner fixing its credentials does.
@@ -146,10 +144,9 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			account := env.AcmeTwilio(t)
-			automationID := smsAutomation(t, env, smsStep(account, "Hello"))
-			confirmSMS(t, env, fixtures.ContactTexterPhone)
-			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+			env.AcmeTwilio(t)
+			runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
+			queueStep(t, env, runID)
 			mod := stepperWith(env, env.OutboundModule())
 			env.Twilio.RefuseNextSend(refusal)
 			before := time.Now()
@@ -169,7 +166,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			done := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
 			inbox := env.Twilio.Messages()
-			assert.Equal(t, []string{fixtures.ContactTexterPhone}, recipientsOf(inbox), "the text went once, after the backoff")
+			assert.Equal(t, []string{fixtures.ContactTexterConfirmedPhone}, recipientsOf(inbox), "the text went once, after the backoff")
 			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Equal(t, 1, sent)
 		})
@@ -190,13 +187,9 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			account := env.AcmeTwilio(t)
-			automationID := smsAutomation(t, env,
-				smsStep(account, "Hello"),
-				automationsteps.Step{Type: automationsteps.ApplyTag, Tag: "texted"},
-			)
-			confirmSMS(t, env, fixtures.ContactTexterPhone)
-			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+			env.AcmeTwilio(t)
+			runID := int64(fixtures.AutomationRunJobsSMSHelloThenTagConfirmedID)
+			queueStep(t, env, runID)
 			env.Twilio.RefuseNextSend(tc.refusal)
 
 			runSteps(t, env)
@@ -228,9 +221,8 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
-	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
+	queueStep(t, env, runID)
 	env.Twilio.RefuseNextSend(twiliotest.FromNotCapable)
 
 	runSteps(t, env)
@@ -252,18 +244,17 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 func TestANumberTwilioSaysIsNoMobileNumberIsSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Hello"), smsStep(account, "Again"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	env.AcmeTwilio(t)
+	runID := int64(fixtures.AutomationRunJobsSMSHelloAgainConfirmedID)
+	queueStep(t, env, runID)
 	env.Twilio.RefuseNextSend(twiliotest.NotMobile)
 
 	runSteps(t, env)
 
 	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).OnlyX(ctx)
-	assert.Equal(t, fixtures.ContactTexterPhone, suppressed.Destination)
+	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, suppressed.Destination)
 	assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
-	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(suppressed.ContactID))
+	assert.Equal(t, int64(fixtures.ContactTexterConfirmedID), lo.FromPtr(suppressed.ContactID))
 	msgs := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).
 		Order(outboundmessage.ByID()).AllX(ctx)
 	skipped := lo.Map(msgs, func(m *ent.OutboundMessage, _ int) string { return string(m.Status) + ": " + lo.FromPtr(m.Reason) })

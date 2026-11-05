@@ -28,15 +28,15 @@ func inviteToAcme(t *testing.T, env *testhelper.TestEnv, email string) string {
 
 func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	signUpLink(t, env, "Squatter", "victim@example.com")
-	token := inviteToAcme(t, env, "victim@example.com")
+	signUpLink(t, env, "Squatter", fixtures.InvitationAcmeVictimEmail)
+	token := fixtures.InvitationAcmeVictimToken
 
 	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(),
 		siteapi.SitePublicInvitationsLookupParams{Token: token})
 	require.NoError(t, err)
 	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
 	require.Truef(t, ok, "got %T", lookup)
-	assert.Equal(t, "victim@example.com", string(found.Email))
+	assert.Equal(t, fixtures.InvitationAcmeVictimEmail, string(found.Email))
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
@@ -54,8 +54,8 @@ func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 // invites it, the invitee accepts. The attacker ends with no way in.
 func TestPreHijackingAnAttackerWhoSignedUpWithTheInviteesAddressGainsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	signUpLink(t, env, "Attacker", "victim@example.com")
-	token := inviteToAcme(t, env, "victim@example.com")
+	signUpLink(t, env, "Attacker", fixtures.InvitationAcmeVictimEmail)
+	token := fixtures.InvitationAcmeVictimToken
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1")},
@@ -64,12 +64,12 @@ func TestPreHijackingAnAttackerWhoSignedUpWithTheInviteesAddressGainsNothing(t *
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	// Whatever the attacker tries as a password, there is none of theirs.
-	attacker := postLogin(t, env, "victim@example.com", "attacker-password-1")
+	attacker := postLogin(t, env, fixtures.InvitationAcmeVictimEmail, "attacker-password-1")
 	assert.Equal(t, http.StatusUnauthorized, attacker.Code)
 	assert.Nil(t, sessionCookie(attacker.Result()))
 
 	// The invitee signs in with the password they set and holds the Membership.
-	rec := postLogin(t, env, "victim@example.com", "victim-password-1")
+	rec := postLogin(t, env, fixtures.InvitationAcmeVictimEmail, "victim-password-1")
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	cookie := sessionCookie(rec.Result())
 	require.NotNil(t, cookie)
@@ -89,13 +89,13 @@ func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *
 		"new address": func(*testing.T, *testhelper.TestEnv) {},
 		"unverified address": func(t *testing.T, env *testhelper.TestEnv) {
 			t.Helper()
-			signUpLink(t, env, "Squatter", "invitee@example.com")
+			signUpLink(t, env, "Squatter", fixtures.InvitationAcmeNewcomerEmail)
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			prepare(t, env)
-			token := inviteToAcme(t, env, "invitee@example.com")
+			token := fixtures.InvitationAcmeNewcomerToken
 
 			res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 				&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Invitee"), Password: siteapi.NewOptString("invitee-password-1")},

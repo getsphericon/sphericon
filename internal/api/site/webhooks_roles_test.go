@@ -19,11 +19,7 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
-		&siteapi.CreateWebhookInput{URL: "https://example.com/hook"},
-		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	id := created.(*siteapi.SiteWebhookEndpointResource).ID
+	id := siteapi.EntityId(fixtures.WebhookCodebasicsID)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
@@ -58,13 +54,13 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksDeleteForbidden), deleted)
 
-	// The refused calls changed nothing: the owner still sees the one endpoint, unchanged.
+	// The refused calls changed nothing: the owner still sees the endpoint, unchanged.
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	read, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	endpoint, ok := read.(*siteapi.SiteWebhookEndpointResource)
 	require.True(t, ok, "got %T", read)
-	assert.Equal(t, "https://example.com/hook", endpoint.URL)
+	assert.Equal(t, fixtures.WebhookCodebasicsURL, endpoint.URL)
 
 	// An admin manages them.
 	adminList, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})

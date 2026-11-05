@@ -35,15 +35,12 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
-	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	created, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("same-person@example.com")})
-	require.NoError(t, err)
-	again, err := m.Upsert(context.Background(), acme, contact.SourceTracker, contacts.UpsertInput{Email: new("same-person@example.com"), FirstName: patch.Set("Sam")})
+	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.StarkID), contact.SourceTracker, contacts.UpsertInput{Email: new(fixtures.ContactStarkManualEmail), FirstName: patch.Set("Sam")})
 	require.NoError(t, err)
 
 	assert.False(t, again.Created)
-	assert.Equal(t, created.ID, again.Contact.ID)
+	assert.EqualValues(t, fixtures.ContactStarkManualID, again.Contact.ID)
 	assert.Equal(t, contact.SourceManual, lo.FromPtr(again.Contact.Source))
 }
 

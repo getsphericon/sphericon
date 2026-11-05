@@ -24,7 +24,7 @@ import (
 // Users feed.
 func controlPlane(t *testing.T, h *harness) *serviceapi.Client {
 	t.Helper()
-	return h.env.ServiceClient(t, h.env.IssueServiceCredential(t, "control-plane", serviceapi.ServiceScopeUsersRead))
+	return h.env.ServiceClient(t, usersOnly)
 }
 
 func userPage(t *testing.T, c *serviceapi.Client, cursor string, limit int32) *serviceapi.ServiceUserFeedPage {

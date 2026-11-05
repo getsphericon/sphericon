@@ -217,12 +217,8 @@ func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	created, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{Name: "Empty", TriggerEvents: []string{"a"}},
-		siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	res := created.(*siteapi.SiteRuleResource)
 
-	out, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
+	out, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
 
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteRulesPublishUnprocessableEntity{}, out)

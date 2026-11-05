@@ -77,6 +77,10 @@ func (s *secondFactorEnv) start(t *testing.T, session string) enrollmentRes {
 // johnPassword is the body proving John's password.
 var johnPassword = `{"currentPassword":"` + fixtures.OwnerJohnPassword + `"}`
 
+// samPassword is the body proving Sam's password; Sam has an active Second factor
+// (fixtures.SecondFactorSamTotpSecret) and an unused Recovery code.
+var samPassword = `{"currentPassword":"` + fixtures.SecondFactorSamPassword + `"}`
+
 // confirmBody is a confirmation request with John's password and code.
 func confirmBody(code string) string {
 	return `{"currentPassword":"` + fixtures.OwnerJohnPassword + `","code":"` + code + `"}`
@@ -182,59 +186,61 @@ func (s *secondFactorEnv) regenerate(t *testing.T, session, password string) (st
 
 func TestAnActiveSecondFactorCannotBeReplacedByStartingAgain(t *testing.T) {
 	s := newSecondFactorEnv(t)
-	_, _, session := s.enroll(t, s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil))
+	session := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
-	status, _ := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment", session, johnPassword, nil)
+	status, _ := s.send(t, http.MethodPost, "/site/me/second-factor/enrollment", session, samPassword, nil)
 	assert.Equal(t, http.StatusConflict, status)
 	assert.True(t, s.status(t, session).Enabled)
 }
 
 func TestRegeneratingRecoveryCodesInvalidatesThePreviousSet(t *testing.T) {
 	s := newSecondFactorEnv(t)
-	_, first, session := s.enroll(t, s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil))
-	other := s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
+	session := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
+	other := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
+	first := fixtures.SecondFactorSamRecoveryCode
 
 	status, _, fresh := s.regenerate(t, session, "wrong-password")
 	assert.Equal(t, http.StatusForbidden, status, "the password is required")
 	assert.Empty(t, fresh)
 
-	status, second, fresh := s.regenerate(t, session, fixtures.OwnerJohnPassword)
+	status, second, fresh := s.regenerate(t, session, fixtures.SecondFactorSamPassword)
 	require.Equal(t, http.StatusOK, status)
 	assert.Len(t, second, 10)
-	assert.NotContains(t, second, first[0])
+	assert.NotContains(t, second, first)
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, s.env, other), "other sessions end")
 	require.NotEmpty(t, fresh)
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, s.env, fresh), "the acting session continues")
 	session = fresh
 
-	status, _ = s.disable(t, session, fixtures.OwnerJohnPassword, first[0])
+	status, _ = s.disable(t, session, fixtures.SecondFactorSamPassword, first)
 	assert.Equal(t, http.StatusUnprocessableEntity, status, "a code of the previous set")
-	status, _ = s.disable(t, session, fixtures.OwnerJohnPassword, second[0])
+	status, _ = s.disable(t, session, fixtures.SecondFactorSamPassword, second[0])
 	assert.Equal(t, http.StatusNoContent, status, "a code of the new set")
 }
 
 func TestDisableRequiresThePasswordAndACurrentCode(t *testing.T) {
 	s := newSecondFactorEnv(t)
-	secret, _, session := s.enroll(t, s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil))
-	other := s.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
+	secret := fixtures.SecondFactorSamTotpSecret
+	session := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
+	other := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
 	s.clock.t = s.clock.t.Add(30 * time.Second)
 	status, fresh := s.disable(t, session, "wrong-password", s.code(t, secret))
 	assert.Equal(t, http.StatusForbidden, status, "a wrong password")
 	assert.Empty(t, fresh)
-	status, _ = s.disable(t, session, fixtures.OwnerJohnPassword, wrong(s.code(t, secret)))
+	status, _ = s.disable(t, session, fixtures.SecondFactorSamPassword, wrong(s.code(t, secret)))
 	assert.Equal(t, http.StatusUnprocessableEntity, status, "a wrong code")
 	assert.True(t, s.status(t, session).Enabled)
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, s.env, other), "a refused disable ends nothing")
 
-	status, fresh = s.disable(t, session, fixtures.OwnerJohnPassword, s.code(t, secret))
+	status, fresh = s.disable(t, session, fixtures.SecondFactorSamPassword, s.code(t, secret))
 	require.Equal(t, http.StatusNoContent, status)
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, s.env, other), "other sessions end")
 	require.NotEmpty(t, fresh)
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, s.env, fresh), "the acting session continues")
 	assert.Equal(t, factorStatus{}, s.status(t, fresh))
 
-	status, _ = s.disable(t, fresh, fixtures.OwnerJohnPassword, s.code(t, secret))
+	status, _ = s.disable(t, fresh, fixtures.SecondFactorSamPassword, s.code(t, secret))
 	assert.Equal(t, http.StatusConflict, status, "nothing left to disable")
 }
 

@@ -194,12 +194,7 @@ func TestATelegramBroadcastReachesAContactThroughItsVisitorsBinding(t *testing.T
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	b, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Create(ctx, s, broadcasts.CreateInput{
-		Name:          new("Fixture bot"),
-		Content:       broadcasts.TelegramContentInput{Text: new("Hi")},
-		IntegrationID: new(int64(fixtures.IntegrationAcmeTelegramID)),
-	})
-	require.NoError(t, err)
+	b := env.DB.Broadcast.UpdateOneID(fixtures.BroadcastTelegramDraftID).SetIntegrationID(fixtures.IntegrationAcmeTelegramID).SaveX(ctx)
 
 	size, err := broadcasts.AudienceSize(ctx, s, b)
 

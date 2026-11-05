@@ -2,6 +2,7 @@ package events_test
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -22,39 +23,35 @@ func say(updateID, from int64, text string) string {
 		updateID, updateID, from, from, text)
 }
 
-// botWithBob connects a bot and binds Telegram user 4001 to Bob on it through a start link.
-func botWithBob(t *testing.T, env *testhelper.TestEnv, botID int64) testhelper.TelegramBot {
-	t.Helper()
-	bot := env.ConnectTelegram(t, botID, fmt.Sprintf("received_%d_bot", botID))
-	env.BindTelegram(t, bot, fixtures.ContactBobID, 4001, 1000)
-	return bot
-}
+// liamsChat is the Telegram user whose private chat with Acme's fixture bot is bound to Liam
+// (BindingLiam).
+var liamsChat = lo.Must(strconv.ParseInt(fixtures.BindingLiamDestination, 10, 64))
 
 func TestAMessageFromABoundContactIsRecordedAsReceived(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7301)
+	bot := env.AcmeTelegram(t)
 
-	posted := env.PostTelegramUpdate(t, bot, say(1, 4001, "Where is my order?"))
-	redelivered := env.PostTelegramUpdate(t, bot, say(1, 4001, "Where is my order?"))
+	posted := env.PostTelegramUpdate(t, bot, say(1, liamsChat, "Where is my order?"))
+	redelivered := env.PostTelegramUpdate(t, bot, say(1, liamsChat, "Where is my order?"))
 
 	assert.Equal(t, 200, posted.Code)
 	assert.Equal(t, 200, redelivered.Code)
 	keys := lo.Map(env.QueuedEnvelopes(t, events.NameTelegramReceived), func(e events.Envelope, _ int) string { return e.DedupKey })
 	assert.Equal(t, []string{fmt.Sprintf("telegram:%d:1", bot.Integration.ID)}, keys,
 		"a redelivered update carries the same key, so the Event is stored and published once")
-	asBob := map[string]any{
-		"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID, "text": "Where is my order?",
+	asLiam := map[string]any{
+		"contactId": fixtures.ContactLiamID, "integrationId": bot.Integration.ID, "text": "Where is my order?",
 	}
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, asBob))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, asLiam))
 }
 
 func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7302)
+	bot := env.AcmeTelegram(t)
 	// "é" is two bytes: 600 of them are 1200 bytes, and the cut falls between two characters.
 	long := strings.Repeat("é", 600)
 
-	env.PostTelegramUpdate(t, bot, say(2, 4001, long))
+	env.PostTelegramUpdate(t, bot, say(2, liamsChat, long))
 
 	got := env.QueuedMessages(t, events.NameTelegramReceived)
 	require.Len(t, got, 1)
@@ -63,7 +60,7 @@ func TestAReceivedTextIsCutAtOneKiB(t *testing.T) {
 
 func TestAMessageFromAnUnknownSenderRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7303)
+	bot := env.AcmeTelegram(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
 
 	posted := env.PostTelegramUpdate(t, bot, say(3, 9999, "hello?"))
@@ -75,30 +72,30 @@ func TestAMessageFromAnUnknownSenderRecordsNothing(t *testing.T) {
 
 func TestAMessageOnAnotherBotIsNotTheBoundContactsWords(t *testing.T) {
 	env := testhelper.Setup(t)
-	botWithBob(t, env, 7304)
-	other := env.AcmeTelegram(t)
+	env.AcmeTelegram(t)
+	other := env.ConnectTelegram(t, 7304, "received_7304_bot")
 
-	env.PostTelegramUpdate(t, other, say(4, 4001, "hi"))
+	env.PostTelegramUpdate(t, other, say(4, liamsChat, "hi"))
 
 	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
 }
 
 func TestACommandWithItsOwnMeaningIsNotReceived(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7306)
+	bot := env.AcmeTelegram(t)
 
-	env.PostTelegramUpdate(t, bot, say(5, 4001, "/start"))
-	env.PostTelegramUpdate(t, bot, say(6, 4001, "/start@received_7306_bot abc"))
-	env.PostTelegramUpdate(t, bot, say(7, 4001, "/STOP"))
+	env.PostTelegramUpdate(t, bot, say(5, liamsChat, "/start"))
+	env.PostTelegramUpdate(t, bot, say(6, liamsChat, "/start@"+testhelper.AcmeTelegramUsername+" abc"))
+	env.PostTelegramUpdate(t, bot, say(7, liamsChat, "/STOP"))
 
 	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
 }
 
 func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7307)
+	bot := env.AcmeTelegram(t)
 
-	env.PostTelegramUpdate(t, bot, say(8, 4001, "/help me"))
+	env.PostTelegramUpdate(t, bot, say(8, liamsChat, "/help me"))
 
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramReceived, map[string]any{"text": "/help me"}))
 }
@@ -107,8 +104,8 @@ func TestAnotherCommandIsReceivedLikeAnyText(t *testing.T) {
 // Automations it triggers and is delivered to the endpoints subscribed to it.
 func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := botWithBob(t, env, 7308)
-	env.PostTelegramUpdate(t, bot, say(9, 4001, "yes please"))
+	bot := env.AcmeTelegram(t)
+	env.PostTelegramUpdate(t, bot, say(9, liamsChat, "yes please"))
 	envelopes := env.QueuedEnvelopes(t, events.NameTelegramReceived)
 	require.Len(t, envelopes, 1)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameTelegramReceived}).ExecX(t.Context())
@@ -120,7 +117,7 @@ func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 		return args["action"] == events.NameTelegramReceived
 	})
 	require.Len(t, triggers, 1)
-	assert.EqualValues(t, fixtures.ContactBobID, triggers[0]["contact_id"])
+	assert.EqualValues(t, fixtures.ContactLiamID, triggers[0]["contact_id"])
 	delivered, ok := lo.Find(env.QueuedDeliveries(t), func(d jobs.DeliverWebhookArgs) bool { return d.EndpointID == fixtures.WebhookCodebasicsID })
 	require.True(t, ok, "the subscribed endpoint gets a delivery")
 	assert.Equal(t, events.NameTelegramReceived, delivered.EventName)

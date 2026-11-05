@@ -53,7 +53,7 @@ func TestAWorkspaceCreatorIsRecordedAsTheCreator(t *testing.T) {
 
 func TestAnAcceptedInvitationIsRecordedAsTheMembershipsSource(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 
 	res := acceptInvitation(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), token, &siteapi.SiteAcceptInvitationInput{})
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)

@@ -44,8 +44,8 @@ func TestATelegramStepReachesTheContactAfterIdentifyOfTheVisitorThatStartedTheBo
 	env.MakeDefaultTelegram(t, bot)
 	visitorChat(t, env, bot, "dev-step", 555031)
 	identifyAs(t, env, "dev-step", fixtures.ContactBobEmail)
-	automationID := telegramAutomation(t, env, telegramStep(bot, "Welcome back"))
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	runID := int64(fixtures.AutomationRunJobsTelegramWelcomeBackBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -63,8 +63,8 @@ func TestAVisitorBindingWithNoContactReachesNobody(t *testing.T) {
 	env.MakeDefaultTelegram(t, bot)
 	visitorChat(t, env, bot, "dev-nobody", 555032)
 	require.Nil(t, env.DB.Binding.Query().Where(binding.Destination("555032")).OnlyX(t.Context()).ContactID)
-	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	runID := int64(fixtures.AutomationRunJobsTelegramHelloBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -80,9 +80,8 @@ func TestTheStartTagInATelegramTextIsAPersonalLinkOfTheDefaultBot(t *testing.T) 
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
-	automationID := telegramAutomation(t, env, telegramStep(bot, "Another chat: {{ telegram_start_url }}"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555033, 555033)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramStartTagBobID)
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
 	runSteps(t, env)
@@ -105,9 +104,8 @@ func TestTheStartTagInATelegramTextIsAPersonalLinkOfTheDefaultBot(t *testing.T) 
 func TestTheStartTagInATelegramTextIsEmptyWithoutADefaultBotAndUntaggedTextIssuesNoToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	tagged := telegramAutomation(t, env, telegramStep(bot, "Join: [{{ telegram_start_url }}]"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555035, 555035)
-	enrollVia(t, env, tagged, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramStartTagJoinBobID)
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
 	runSteps(t, env)
@@ -118,8 +116,7 @@ func TestTheStartTagInATelegramTextIsEmptyWithoutADefaultBotAndUntaggedTextIssue
 	assert.Equal(t, before, env.DB.StartToken.Query().CountX(t.Context()))
 
 	env.MakeDefaultTelegram(t, bot)
-	plain := telegramAutomation(t, env, telegramStep(bot, "No tag here"))
-	enrollVia(t, env, plain, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramNoTagBobID)
 
 	runSteps(t, env)
 

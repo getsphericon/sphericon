@@ -17,6 +17,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// runFiring runs the Actions of the fixture Firing, as the Actions job does, and returns it as they
+// left it.
+func runFiring(t *testing.T, env *testhelper.TestEnv, firingID int64) *ent.RuleFiring {
+	t.Helper()
+	ctx := context.Background()
+	require.NoError(t, rules.New(env.Cipher, env.Bus).RunActions(ctx, env.DB.Scoped(fixtures.AcmeID), firingID, ruleRunners(env)))
+	return env.DB.RuleFiring.GetX(ctx, firingID)
+}
+
 // fireAndRun hands the Event to the Rule module, then runs the Actions of the one Firing it wrote,
 // as the evaluation job and the Actions job do, with no queue between them.
 func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, sourceID string) *ent.RuleFiring {
@@ -52,7 +61,7 @@ func resultsOf(t *testing.T, f *ent.RuleFiring) []rules.Result {
 func TestRuleActionAppliesATag(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-apply")
+	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 
 	assert.Equal(t, []string{"rule-clicked"}, tagsOf(t, env, fixtures.ContactBobID))
 	assert.Equal(t, []rules.Result{{Type: rules.ActionApplyTag, Status: rules.Succeeded}}, resultsOf(t, f))
@@ -63,7 +72,7 @@ func TestRuleActionsRunInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// RuleMultiTrigger applies rule-multi, then removes vip: Alice starts with vip and newsletter.
-	f := fireAndRun(t, env, fixtures.ContactAliceID, "rule_multi_a", "evt-order")
+	f := runFiring(t, env, fixtures.RuleFiringMultiPendingID)
 
 	assert.Equal(t, []string{"newsletter", "rule-multi"}, tagsOf(t, env, fixtures.ContactAliceID))
 	assert.Equal(t, []rules.Result{
@@ -75,7 +84,7 @@ func TestRuleActionsRunInOrder(t *testing.T) {
 func TestOneFailedRuleActionDoesNotStopTheNext(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_fail", "evt-fail")
+	f := runFiring(t, env, fixtures.RuleFiringFailThenTagPendingID)
 
 	assert.Equal(t, []string{"rule-after-failure"}, tagsOf(t, env, fixtures.ContactBobID))
 	results := resultsOf(t, f)
@@ -90,7 +99,7 @@ func TestRunningAFinishedFiringAgainChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_click", "evt-again")
+	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 	env.DB.Tag.Delete().Where(tag.Name("rule-clicked")).ExecX(ctx)
 
 	err := rules.New(env.Cipher, env.Bus).RunActions(ctx, s, f.ID, ruleRunners(env))

@@ -108,8 +108,8 @@ func TestSiteBroadcastUpdateCannotChangeTheChannel(t *testing.T) {
 	assert.Equal(t, before.Subject, after.Subject)
 }
 
-// The list filters by Channel: email lists the email Broadcasts, telegram the Telegram one, and
-// together they are all of them.
+// The list filters by Channel: email lists the email Broadcasts, telegram the Telegram one, sms
+// the SMS ones, and together they are all of them.
 func TestSiteBroadcastsListFiltersByChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -126,9 +126,12 @@ func TestSiteBroadcastsListFiltersByChannel(t *testing.T) {
 	everyList := list(siteapi.OptBroadcastChannel{})
 	emailList := list(siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelEmail))
 	telegramList := list(siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelTelegram))
+	smsList := list(siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelSMS))
 	channels := lo.Uniq(lo.Map(emailList.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.BroadcastChannel { return b.Channel }))
 
 	assert.Equal(t, []siteapi.BroadcastChannel{siteapi.BroadcastChannelEmail}, channels)
 	assert.Equal(t, []string{fixtures.BroadcastTelegramDraftName}, lo.Map(telegramList.Items, func(b siteapi.SiteBroadcastResource, _ int) string { return b.Name }))
-	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems)
+	assert.ElementsMatch(t, []string{fixtures.BroadcastSmsDraftName, fixtures.BroadcastSmsBlankDraftName},
+		lo.Map(smsList.Items, func(b siteapi.SiteBroadcastResource, _ int) string { return b.Name }))
+	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems+smsList.TotalItems)
 }

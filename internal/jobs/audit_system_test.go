@@ -15,7 +15,7 @@ import (
 // actor (ADR 0022); the Contact edge itself is not an audited field change.
 func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
+	queueStep(t, env, fixtures.AutomationRunJobsSystemTagAliceID)
 
 	require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(&fakeSender{}))))
 

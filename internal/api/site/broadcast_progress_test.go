@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -24,20 +23,20 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	id := int64(fixtures.BroadcastDraftID)
-	params := siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)}
-	get := func() siteapi.SiteBroadcastResource {
-		got, err := c.SiteBroadcastsGet(ctx, params)
+	id := int64(fixtures.BroadcastSendingID)
+	getOf := func(id int64) siteapi.SiteBroadcastResource {
+		got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 		require.NoError(t, err)
 		res, ok := got.(*siteapi.SiteBroadcastResource)
 		require.Truef(t, ok, "got %T", got)
 		return *res
 	}
+	get := func() siteapi.SiteBroadcastResource { return getOf(id) }
 
-	assert.False(t, get().Progress.IsSet(), "a draft has no progress")
+	assert.False(t, getOf(fixtures.BroadcastDraftID).Progress.IsSet(), "a draft has no progress")
 
 	eta := time.Now().Add(90 * time.Minute).Truncate(time.Microsecond)
-	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetLastScheduledAt(eta).Exec(ctx))
+	require.NoError(t, s.Broadcast().UpdateOneID(id).SetLastScheduledAt(eta).Exec(ctx))
 	// Bob's recipient is decided by its Outbound message (ADR 0015); the other two are pending.
 	decided := env.PlaceRecipient(ctx, id, fixtures.ContactBobID)
 	env.PlaceRecipient(ctx, id, fixtures.ContactAliceID)

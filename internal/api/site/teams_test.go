@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -88,22 +87,15 @@ func TestSiteInvitationAcceptNewUser(t *testing.T) {
 
 func TestSiteInvitationAcceptExistingUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
 	// An account exists but is not yet a member.
 	existing, err := env.DB.User.Query().Where(entuser.Email(fixtures.OutsiderOscarEmail)).Only(ctx)
 	require.NoError(t, err)
 
-	res, err := c.SiteInvitationsCreate(ctx,
-		&siteapi.SiteCreateInvitationInput{Email: fixtures.OutsiderOscarEmail, Role: siteapi.SiteInvitableRoleAdmin},
-		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	created := res.(*siteapi.SiteCreateInvitationResponse)
-	token := created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
-
 	// The invitee's own session, no name/password: the account is Verified.
-	accept, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
+	accept, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{},
+		siteapi.SitePublicInvitationsAcceptParams{Token: fixtures.InvitationAcmeOscarToken})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, accept)
 

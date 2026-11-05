@@ -21,7 +21,7 @@ func smtpInput(host, password string) siteapi.IntegrationConfigInput {
 			Kind:     siteapi.SmtpConfigInputKindSMTP,
 			Host:     host,
 			Port:     587,
-			Username: siteapi.NewOptNilString("smtp-user"),
+			Username: siteapi.NewOptNilString("mailer"),
 			Password: siteapi.NewOptNilString(password),
 			From:     "noreply@acme.test",
 		}),
@@ -112,7 +112,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	smtpOut, ok := res.Config.OneOf.GetSiteSmtpConfig()
 	require.Truef(t, ok, "config is smtp")
 	assert.Equal(t, "smtp.example.com", smtpOut.Host)
-	assert.Equal(t, "smtp-user", smtpOut.Username.Or(""))
+	assert.Equal(t, "mailer", smtpOut.Username.Or(""))
 
 	// Stored config must be ciphertext, never the plaintext password.
 	rowID := int64(res.ID)
@@ -148,17 +148,10 @@ func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
-		Name:   "SMTP",
-		Config: smtpInput("smtp.example.com", "pw"),
-	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	res := created.(*siteapi.SiteIntegrationResource)
-
-	// Swapping the config to a different provider kind is rejected.
+	// Swapping an SMTP relay's config to a different provider kind is rejected.
 	got, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA", "secret")),
-	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeGenericAID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, got)
 }
@@ -169,26 +162,17 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
-		Name:      "First",
-		IsDefault: siteapi.NewOptBool(true),
-		Config:    smtpInput("smtp1.example.com", "pw"),
-	}, params)
-	require.NoError(t, err)
-	firstID := first.(*siteapi.SiteIntegrationResource).ID
-
-	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params:    sesTopicParams,
-		Name:      "Second",
+		Name:      "New default",
 		IsDefault: siteapi.NewOptBool(true),
 		Config:    sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, params)
 	require.NoError(t, err)
-	secondRes := second.(*siteapi.SiteIntegrationResource)
-	assert.True(t, secondRes.IsDefault)
+	assert.True(t, created.(*siteapi.SiteIntegrationResource).IsDefault)
 
-	// Promoting the second default must have demoted the first.
-	gotFirst, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: firstID})
+	// Creating a new default must have demoted the old one.
+	gotFirst, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeDefaultID})
 	require.NoError(t, err)
 	assert.False(t, gotFirst.(*siteapi.SiteIntegrationResource).IsDefault, "only one default per channel")
 
@@ -204,35 +188,18 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
-		Name:      "First",
-		IsDefault: siteapi.NewOptBool(true),
-		Config:    smtpInput("smtp1.example.com", "pw"),
-	}, params)
-	require.NoError(t, err)
-	firstID := first.(*siteapi.SiteIntegrationResource).ID
-
-	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
-		Params: sesTopicParams,
-		Name:   "Second",
-		Config: sesInput("eu-west-1", "AKIA1234", "secret"),
-	}, params)
-	require.NoError(t, err)
-	secondID := second.(*siteapi.SiteIntegrationResource).ID
-
-	// Promote the second to default via update; this must demote the first in the
+	// Promote a relay to default via update; this must demote the old default in the
 	// same transaction (see promote path in SiteIntegrationsUpdate).
 	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		IsDefault: siteapi.NewOptBool(true),
-	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: secondID})
+	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeGenericAID})
 	require.NoError(t, err)
 	assert.True(t, updated.(*siteapi.SiteIntegrationResource).IsDefault)
 
-	gotFirst, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: firstID})
+	gotFirst, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeDefaultID})
 	require.NoError(t, err)
-	assert.False(t, gotFirst.(*siteapi.SiteIntegrationResource).IsDefault, "promoting the second demotes the first")
+	assert.False(t, gotFirst.(*siteapi.SiteIntegrationResource).IsDefault, "promoting a relay demotes the old default")
 
 	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().
 		Where(integration.ChannelEQ(integration.ChannelEmail), integration.IsDefault(true)).
@@ -250,20 +217,10 @@ func TestSiteIntegrationsScopedToWorkspace(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteIntegrationsListNotFound{}, res)
 }
 
-func createSMTP(t *testing.T, c *siteapi.Client, host, password string) siteapi.EntityId {
-	t.Helper()
-	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
-		Name:   "Primary SMTP",
-		Config: smtpInput(host, password),
-	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	return created.(*siteapi.SiteIntegrationResource).ID
-}
-
 func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	id := createSMTP(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "smtp.example.com", "s3cret-pass")
+	id := siteapi.EntityId(fixtures.IntegrationAcmeSmtpLoginID)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	created, err := member.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
@@ -299,8 +256,8 @@ func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	id := createSMTP(t, c, "smtp.example.com", "s3cret-pass")
-	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
+	// The relay logs in to smtp.example.com:587 as mailer with a stored password.
+	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSmtpLoginID}
 
 	// Same host, port and username: the blank password keeps the stored one.
 	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{

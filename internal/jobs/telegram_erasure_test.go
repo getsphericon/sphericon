@@ -87,13 +87,9 @@ func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.
 func TestErasingAContactRemovesTheBindingsAndStartTokensOfItsVisitors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	s := env.DB.Scoped(fixtures.AcmeID)
 	const emmaID, emmaPhone = 101, 101
-	// test writes: a Start token owned by a Visitor; only the tracker issues one, and that is #976's seam.
-	_, err := s.StartToken().Create().SetIntegrationID(9).SetVisitorID(emmaPhone).SetTokenHash("visitor-token-hash").
-		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
-	require.NoError(t, err)
 	require.NotZero(t, env.DB.Binding.Query().Where(binding.VisitorID(emmaPhone)).CountX(ctx))
+	require.True(t, env.DB.StartToken.Query().Where(starttoken.ID(fixtures.StartTokenEmmaPhoneOpenID)).ExistX(ctx))
 
 	eraseContact(t, env, emmaID)
 

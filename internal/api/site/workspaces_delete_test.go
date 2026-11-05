@@ -114,17 +114,13 @@ func TestADeletedWorkspaceOfItsOnlyOwnerSaysSo(t *testing.T) {
 func TestDeletingOneWorkspaceLeavesTheOthers(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	created, err := john.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "Side project"})
-	require.NoError(t, err)
-	side, ok := created.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", created)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, john, string(side.ID), "Side project"))
+	dora := env.SiteActor(t, fixtures.SoleOwnerDoraEmail)
+	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, dora, fixtures.AviatoPublicID, fixtures.AviatoName))
 
-	list, err := john.SiteWorkspacesList(ctx)
+	list, err := dora.SiteWorkspacesList(ctx)
 	require.NoError(t, err)
 	require.Len(t, list, 1)
-	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), list[0].ID)
+	assert.Equal(t, siteapi.WorkspaceId(fixtures.PiedPiperPublicID), list[0].ID)
 }
 
 func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {

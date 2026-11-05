@@ -26,6 +26,38 @@
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 1}}'
 
+# held.test: Acme holds it verified and Globex claims it, pending; neither record is published,
+# so a test publishes what the scenario needs (a verify keeps or moves the domain).
+- id: 7320 # fixture: JoinDomainAcmeHeld
+  domain: held.test
+  token: 'sphericon-join=acme-held-token'
+  verified_at: '{{daysAgo 30}}'
+  last_checked_at: '{{daysAgo 1}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7321 # fixture: JoinDomainGlobexHeldClaim
+  domain: held.test
+  token: 'sphericon-join=globex-held-token'
+  workspace_id: 2
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+# handed-over.test moved from Acme to Globex: Globex holds it verified, Acme keeps a pending claim.
+- id: 7322 # fixture: JoinDomainAcmeHandedOver
+  domain: handed-over.test
+  token: 'sphericon-join=acme-handed-over-token'
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7323 # fixture: JoinDomainGlobexHandedOver
+  domain: handed-over.test
+  token: 'sphericon-join=globex-handed-over-token'
+  verified_at: '{{daysAgo 3}}'
+  last_checked_at: '{{daysAgo 1}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 3}}'
+
 # --- Globex (workspace 2) foreign row, pending — DO NOT change ---
 - id: 900 # fixture: JoinDomainGlobex
   domain: globex.test

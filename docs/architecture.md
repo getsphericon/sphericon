@@ -53,8 +53,8 @@ coding standards in `CODING_STANDARDS.md`.
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
     Handlers and security handler in `ee/api/staff` (`service.go`) over the module `ee/staff`; every operation names its scopes in
-    `ServiceOperationScopes`, generated from the `@requiresServiceScopes(#[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails `tsp compile`; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
-    `env.IssueServiceCredential`.
+    `ServiceOperationScopes`, generated from the `@requiresServiceScopes(#[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails `tsp compile`; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`
+    with a fixture credential (`testhelper.ServiceCredentialValue`).
 - **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
   second steps and for `Prove` (the password check behind second-factor and profile actions):
   address normalization, the throttle consulted first (ADR 0025), the decoy hash, the verification

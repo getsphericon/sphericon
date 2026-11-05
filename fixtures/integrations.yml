@@ -175,6 +175,21 @@
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
 
+# An SMTP relay of Acme that logs in with a username and a password, so an edit can keep or
+# drop the stored password: host smtp.example.com, port 587, username mailer, password
+# hunter2-smtp-secret.
+- id: 7300 # fixture: IntegrationAcmeSmtpLogin
+  ingest_key: omik_test_integrationacmesmtplogin
+  name: Relay with a login
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.example.com\",\"port\":587,\"username\":\"mailer\",\"password\":\"hunter2-smtp-secret\",\"from\":\"sender@acme.test\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+
 # An Acme Integration per built-in provider Preset: an SMTP relay whose provider reports
 # bounces and complaints to the Integration's hook.
 - id: 20 # fixture: IntegrationAcmePostmark
@@ -304,5 +319,176 @@
   enabled: true
   is_default: false
   workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Sabre's (workspace 79) only Integration, a Telegram bot the fake Bot API does not know: only
+# what never calls Telegram uses it.
+- id: 7301 # fixture: IntegrationSabreTelegram
+  ingest_key: omik_test_integrationsabretelegram
+  name: Sabre bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7003:AAfixturetokensabrebot0000000000000\",\"bot_id\":7003,\"username\":\"sabre_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-sabre-webhook-secret\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 79
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Meridian (workspace 83): each Integration has one user of its Live use, or none. The default sends
+# from meridian.test, on probation and in its provider's sandbox (warnings, not holds); the Relay from
+# relay.meridian.test; the stopped one from kept.meridian.test; the others from a domain Meridian never
+# added.
+- id: 7400 # fixture: IntegrationMeridianDefault
+  ingest_key: omik_test_integrationmeridiandefault
+  name: Meridian SMTP
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@meridian.test\"}" }}'
+  enabled: true
+  is_default: true
+  provider_enforcement: probation
+  provider_sandbox: true
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7401 # fixture: IntegrationMeridianRelay
+  ingest_key: omik_test_integrationmeridianrelay
+  name: Meridian relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@relay.meridian.test\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7402 # fixture: IntegrationMeridianTelegram
+  ingest_key: omik_test_integrationmeridiantelegram
+  name: Meridian bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7402:fixture-token-meridian\",\"botId\":7402,\"username\":\"meridian_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-meridian-webhook-secret\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Named only by the steps of a draft, of HTTP and Tag steps, of an inactive and of an archived
+# Automation: none of them sends through it. Their provider stopped them, which holds no live send.
+- id: 7403 # fixture: IntegrationMeridianDraftOnly
+  ingest_key: omik_test_integrationmeridiandraftonly
+  name: Relay of a draft
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  provider_enforcement: shutdown
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7404 # fixture: IntegrationMeridianNoEmail
+  ingest_key: omik_test_integrationmeridiannoemail
+  name: Relay of HTTP and Tag steps
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  provider_enforcement: shutdown
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7405 # fixture: IntegrationMeridianInactive
+  ingest_key: omik_test_integrationmeridianinactive
+  name: Relay of an inactive Automation
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  provider_enforcement: shutdown
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7406 # fixture: IntegrationMeridianArchived
+  ingest_key: omik_test_integrationmeridianarchived
+  name: Relay of an archived Automation
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  provider_enforcement: shutdown
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Named by the live version of an inactive Automation an unfinished Enrollment stands on.
+- id: 7407 # fixture: IntegrationMeridianEnrolled
+  ingest_key: omik_test_integrationmeridianenrolled
+  name: Relay of an Enrollment
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Named by a scheduled Broadcast alone.
+- id: 7408 # fixture: IntegrationMeridianNamed
+  ingest_key: omik_test_integrationmeridiannamed
+  name: Relay a Broadcast names
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Disabled and named by nothing.
+- id: 7409 # fixture: IntegrationMeridianDisabled
+  ingest_key: omik_test_integrationmeridiandisabled
+  name: Disabled relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
+  enabled: false
+  is_default: false
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Stopped by its provider, and named by an active Automation: that Automation cannot send.
+- id: 7410 # fixture: IntegrationMeridianStopped
+  ingest_key: omik_test_integrationmeridianstopped
+  name: Stopped relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@kept.meridian.test\"}" }}'
+  enabled: true
+  is_default: false
+  provider_enforcement: shutdown
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Pinewood's default is its Test inbox, with the 200 a day it reports.
+- id: 7420 # fixture: IntegrationPinewoodInbox
+  ingest_key: omik_test_integrationpinewoodinbox
+  name: Test inbox
+  channel: email
+  provider: inbox
+  config_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: true
+  provider_max_per_day: 200
+  provider_quota_checked_at: '2026-01-01 00:00:00'
+  workspace_id: 85
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

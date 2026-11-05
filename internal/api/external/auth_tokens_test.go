@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -55,7 +56,6 @@ func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
 func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_ = env.ScopedBearerFor(t, fixtures.GlobexID, "contacts:read")
 
 	res, err := env.ExternalAnchor(t).AuthTokensList(ctx)
 	require.NoError(t, err)
@@ -138,18 +138,16 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalAnchor(t)
+	victim := entityIDString(fixtures.ContractTokenID)
 
-	bearer := env.ScopedBearer(t, "contacts:read")
-	victim, err := env.DB.ApiToken.Query().Where(apitoken.WorkspaceID(fixtures.AcmeID), apitoken.Name("actor-token")).Only(ctx)
-	require.NoError(t, err)
-
-	res, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(victim.ID)})
+	res, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensDeleteNoContent{}, res)
 
-	revoked, err := env.DB.ApiToken.Get(ctx, victim.ID)
+	revoked, err := env.DB.ApiToken.Get(ctx, fixtures.ContractTokenID)
 	require.NoError(t, err)
 	assert.NotNil(t, revoked.RevokedAt, "delete revokes rather than removes")
+	bearer := credentials.TokenValue(fixtures.ContractTokenPrefix, fixtures.ContractTokenSecret)
 	after, err := env.ExternalWithToken(t, bearer).ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, after, "a revoked token no longer authenticates")
@@ -158,7 +156,7 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, missing)
 
-	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(victim.ID)})
+	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensDeleteForbidden{}, denied)
 }
@@ -166,15 +164,12 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_ = env.ScopedBearerFor(t, fixtures.GlobexID, "contacts:read")
-	foreign, err := env.DB.ApiToken.Query().Where(apitoken.WorkspaceID(fixtures.GlobexID)).First(ctx)
-	require.NoError(t, err)
 
-	res, err := env.ExternalAnchor(t).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(foreign.ID)})
+	res, err := env.ExternalAnchor(t).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(fixtures.TokenGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, res)
 
-	still, err := env.DB.ApiToken.Get(ctx, foreign.ID)
+	still, err := env.DB.ApiToken.Get(ctx, fixtures.TokenGlobexID)
 	require.NoError(t, err)
 	assert.Nil(t, still.RevokedAt)
 }
@@ -250,10 +245,7 @@ func TestExternalAuthTokensDeleteTwiceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalAnchor(t)
-	env.ScopedBearer(t, "contacts:read")
-	victim, err := env.DB.ApiToken.Query().Where(apitoken.WorkspaceID(fixtures.AcmeID), apitoken.Name("actor-token")).Only(ctx)
-	require.NoError(t, err)
-	id := entityIDString(victim.ID)
+	id := entityIDString(fixtures.ContractTokenID)
 
 	first, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: id})
 	require.NoError(t, err)

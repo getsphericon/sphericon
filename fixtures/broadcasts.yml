@@ -72,6 +72,31 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 
+# Drafts to the Contacts with no Telegram chat: a plain email, and one that invites them with a link
+# to start the Workspace's bot (the telegram_start_url tag).
+- id: 7410 # fixture: BroadcastWithoutTelegram
+  name: News for email readers
+  subject: News by email
+  from_name: CodeBasics
+  from_email: hello@codebasics.dev
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: draft
+  segment_id: 7400
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7411 # fixture: BroadcastTelegramInvite
+  name: Join us on Telegram
+  subject: Join us on Telegram
+  from_name: CodeBasics
+  from_email: hello@codebasics.dev
+  body: '{{`<p><a href="{{ telegram_start_url }}">Join us on Telegram</a></p>`}}'
+  status: draft
+  segment_id: 7400
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 # --- Sent campaigns (drive analytics) ---
 - id: 200 # fixture: BroadcastSent
   name: Python crash course is here
@@ -233,6 +258,27 @@
   channel: telegram
   text: 'The SQL course is live'
   buttons: '[]'
+  status: draft
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
+# SMS drafts through Acme's Twilio account (integration 8): one with a text, one whose text is
+# blank, which a schedule refuses.
+- id: 7340 # fixture: BroadcastSmsDraft
+  name: Flash sale
+  channel: sms
+  text: 'Hello'
+  integration_id: 8
+  status: draft
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7341 # fixture: BroadcastSmsBlankDraft
+  name: Flash sale (not written yet)
+  channel: sms
+  text: '  '
+  integration_id: 8
   status: draft
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
@@ -471,3 +517,130 @@
   workspace_id: 63
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Meridian (workspace 83): its live Broadcasts, each the user of one Integration or From domain. Three
+# keep the reason they were held for: the one from an unverified domain is held, the sending one is
+# held for a Workspace-level reason (the layout's), and the failed one is a failure, not a hold.
+# Scheduled and sending with no From and no Integration: they go through the default, from its From.
+- id: 7400 # fixture: BroadcastMeridianScheduled
+  name: Meridian launch
+  subject: Meridian launch
+  body: '<p>Meridian news.</p>'
+  status: scheduled
+  scheduled_at: '{{daysAhead 3}}'
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7401 # fixture: BroadcastMeridianSending
+  name: Meridian digest
+  subject: Meridian digest
+  body: '<p>Meridian news.</p>'
+  status: sending
+  hold_reason: workspace_suspended
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7402 # fixture: BroadcastMeridianNamed
+  name: Meridian relayed
+  subject: Meridian relayed
+  body: '<p>Meridian news.</p>'
+  status: scheduled
+  scheduled_at: '{{daysAhead 3}}'
+  integration_id: 7408
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+# From an address of its own: the scheduled one uses news.meridian.test, the failed one nothing.
+- id: 7403 # fixture: BroadcastMeridianFromNews
+  name: Meridian newsletter
+  subject: Meridian newsletter
+  body: '<p>Meridian news.</p>'
+  status: scheduled
+  from_email: hello@news.meridian.test
+  scheduled_at: '{{daysAhead 3}}'
+  integration_id: 7401
+  hold_reason: unverified_domain
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7404 # fixture: BroadcastMeridianFailedFromMail
+  name: Meridian failed send
+  subject: Meridian failed send
+  body: '<p>Meridian news.</p>'
+  status: failed
+  from_email: hello@mail.meridian.test
+  failed_at: '{{daysAgo 1}}'
+  integration_id: 7401
+  hold_reason: no_integration
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+# No From of its own, through the Relay: it sends from the Relay's From.
+- id: 7405 # fixture: BroadcastMeridianViaRelay
+  name: Meridian via relay
+  subject: Meridian via relay
+  body: '<p>Meridian news.</p>'
+  status: scheduled
+  scheduled_at: '{{daysAhead 3}}'
+  integration_id: 7401
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+# Scheduled on Telegram with no Integration: it goes through the Telegram default only.
+- id: 7406 # fixture: BroadcastMeridianTelegram
+  name: Meridian on Telegram
+  channel: telegram
+  text: 'Meridian news'
+  buttons: '[]'
+  status: scheduled
+  scheduled_at: '{{daysAhead 3}}'
+  workspace_id: 83
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+
+# The Broadcasts of the revenue tenants: Bazaar's and Mercado's earned the Orders of orders.yml,
+# Emporium's and Souk's are what the clicks of events.yml carry.
+- id: 7200 # fixture: BroadcastBazaar
+  name: Bazaar sale
+  subject: Bazaar sale
+  from_name: Bazaar
+  from_email: hello@bazaar.test
+  body: '<p>Sale.</p>'
+  status: sent
+  sent_at: '{{daysAgo 6}}'
+  workspace_id: 75
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 6}}'
+- id: 7201 # fixture: BroadcastEmporium
+  name: Emporium sale
+  subject: Emporium sale
+  from_name: Emporium
+  from_email: hello@emporium.test
+  body: '<p>Sale.</p>'
+  status: sent
+  sent_at: '{{daysAgo 40}}'
+  workspace_id: 76
+  created_at: '{{daysAgo 41}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 7202 # fixture: BroadcastMercado
+  name: Mercado sale
+  subject: Mercado sale
+  from_name: Mercado
+  from_email: hello@mercado.test
+  body: '<p>Sale.</p>'
+  status: sent
+  sent_at: '{{daysAgo 6}}'
+  workspace_id: 77
+  created_at: '{{daysAgo 7}}'
+  updated_at: '{{daysAgo 6}}'
+- id: 7203 # fixture: BroadcastSouk
+  name: Souk sale
+  subject: Souk sale
+  from_name: Souk
+  from_email: hello@souk.test
+  body: '<p>Sale.</p>'
+  status: sent
+  sent_at: '{{daysAgo 5}}'
+  workspace_id: 78
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 5}}'

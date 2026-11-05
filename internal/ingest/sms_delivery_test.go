@@ -11,12 +11,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,27 +22,17 @@ import (
 // sms.undelivered. A message moves only forward: its first final report stays, and a report of
 // another message, or of a status on the way, changes nothing.
 
-// sentText texts ContactTexter, whose phone is confirmed, through the connected account, and returns
-// the text as Twilio received it and its Outbound message.
+// sentText is the text to ContactTexter Twilio accepted through Acme's account (OutboundTexterSms),
+// as Twilio received it, and its Outbound message.
 func sentText(t *testing.T, env *testhelper.TestEnv) (testhelper.TwilioAccount, twiliotest.Message, *ent.OutboundMessage) {
 	t.Helper()
 	account := env.AcmeTwilio(t)
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
-		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
-		Wording: "Text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",
-	})
-	require.NoError(t, err)
-	c := env.DB.Contact.GetX(t.Context(), fixtures.ContactTexterID)
-	id := int64(account.Integration.ID)
-	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outbound.Request{
-		Kind: outboundmessage.KindBroadcast, Key: "sms:delivery", Destination: *c.Phone, Contact: c,
-		Source: eligibility.SourceBroadcasts, Content: outbound.SMSContent{Text: "Hello"}, IntegrationID: &id,
-	})
-	require.NoError(t, err)
-	require.Equal(t, outbound.Sent, res.Outcome)
-	sent := env.Twilio.Messages()
-	require.Len(t, sent, 1)
-	return account, sent[0], env.DB.OutboundMessage.Query().Where(outboundmessage.ProviderMessageID(sent[0].SID)).OnlyX(t.Context())
+	msg := env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundTexterSmsID)
+	text := twiliotest.Message{
+		Account: account.Account.SID, SID: lo.FromPtr(msg.ProviderMessageID), To: msg.Destination,
+		From: testhelper.TwilioNumber, StatusCallback: account.Integration.HookUrl,
+	}
+	return account, text, msg
 }
 
 // report posts a status callback of the message and requires the hook to take it.

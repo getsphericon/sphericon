@@ -9,23 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// sendingWithPending puts the draft Broadcast into sending with n pending recipients
-// and no scheduled job ahead, so the ETA falls back to the Integration's rate.
+// sendingWithPending places n of the parked recipients on the sending Broadcast, which has none of
+// its own and no scheduled job ahead, so the ETA falls back to the Integration's rate.
 func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcastsFixture {
 	t.Helper()
 	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
-	id := int64(fixtures.BroadcastDraftID)
-	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).Exec(ctx))
+	id := int64(fixtures.BroadcastSendingID)
 	contacts := []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID}
 	for _, c := range contacts[:n] {
 		env.PlaceRecipient(ctx, id, c)
@@ -154,24 +149,17 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 	}
 }
 
-// Transactional sends spend the Send cap too (ADR 0067), so a bucket they emptied pushes every
-// remaining recipient a full 24h/cap further out.
-func TestProgressCountsTheSendCapSpentByTransactionalSends(t *testing.T) {
+// The estimate reads the Send cap's bucket as it stands (ADR 0067): a bucket other sends (the
+// Transactional ones too) emptied just now pushes every remaining recipient a full 24h/cap further out.
+func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(2).ExecX(ctx)
-	for _, key := range []string{"tx:1", "tx:2"} {
-		res, err := env.OutboundModule().Send(ctx, s, outbound.Request{
-			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
-		})
-		require.NoError(t, err)
-		require.Equal(t, outbound.Sent, res.Outcome)
-	}
-
 	now := time.Now()
+	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(now).ExecX(ctx)
+
 	detail, err := detailOf(env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), now)
 	require.NoError(t, err)
 	p := detail.Progress

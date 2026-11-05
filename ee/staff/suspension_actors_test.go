@@ -49,50 +49,40 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 	assert.Len(t, suspensions, 2)
 }
 
-// suspendAs suspends Acme through the core mechanism as a non-Staff member actor, which the
-// console must then render and the owner be told about.
-func (h *harness) suspendAs(t *testing.T, by suspension.Actor) {
-	t.Helper()
-	_, err := suspension.SuspendWorkspace(t.Context(), h.env.Bus, fixtures.AcmeID, by, "complaint rate")
-	require.NoError(t, err)
-}
-
 func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 	for name, tc := range map[string]struct {
-		by   suspension.Actor
-		kind staffeeapi.StaffSuspensionActorKind
+		publicID string
+		kind     staffeeapi.StaffSuspensionActorKind
 	}{
-		"system": {suspension.System, staffeeapi.StaffSuspensionActorKindSystem},
-		"cli":    {suspension.CLI, staffeeapi.StaffSuspensionActorKindCli},
+		"system": {fixtures.NakatomiPublicID, staffeeapi.StaffSuspensionActorKindSystem},
+		"cli":    {fixtures.SiriusPublicID, staffeeapi.StaffSuspensionActorKindCli},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
 			c, _ := h.staffSession(t)
-			h.suspendAs(t, tc.by)
 
-			acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
+			ws, ok := h.getWorkspace(t, c, tc.publicID).(*staffeeapi.StaffWorkspaceDetailResource)
 			require.True(t, ok)
-			require.True(t, acme.Suspension.Set)
-			assert.Equal(t, tc.kind, acme.Suspension.Value.Actor.Kind)
-			assert.False(t, acme.Suspension.Value.Actor.ID.IsSet() && !acme.Suspension.Value.Actor.ID.IsNull(), "no actor id")
-			assert.Equal(t, "complaint rate", acme.Suspension.Value.Reason.Value)
+			require.True(t, ws.Suspension.Set)
+			assert.Equal(t, tc.kind, ws.Suspension.Value.Actor.Kind)
+			assert.False(t, ws.Suspension.Value.Actor.ID.IsSet() && !ws.Suspension.Value.Actor.ID.IsNull(), "no actor id")
+			assert.Equal(t, "complaint rate", ws.Suspension.Value.Reason.Value)
 		})
 	}
 }
 
 func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 	for name, tc := range map[string]struct {
-		by  suspension.Actor
+		id  int64
 		key i18n.ID
 	}{
-		"system": {suspension.System, i18n.EmailWorkspaceSuspendedActorSystem},
-		"cli":    {suspension.CLI, i18n.EmailWorkspaceSuspendedActorStaff},
+		"system": {fixtures.NakatomiID, i18n.EmailWorkspaceSuspendedActorSystem},
+		"cli":    {fixtures.SiriusID, i18n.EmailWorkspaceSuspendedActorStaff},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
-			h.suspendAs(t, tc.by)
 
-			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, accounts.OwnerNotifier(h.env.DB, h.env.SystemMail), "", fixtures.AcmeID))
+			require.NoError(t, suspension.NotifyOwners(t.Context(), h.env.DB, accounts.OwnerNotifier(h.env.DB, h.env.SystemMail), "", tc.id))
 
 			msgs := h.env.SystemMail.Messages()
 			require.Len(t, msgs, 1)

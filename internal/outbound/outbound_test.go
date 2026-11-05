@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -241,8 +240,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedByKind(workspace.SuspendedByKindSystem).
-		SetSuspensionReason("complaint rate").ExecX(ctx)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:held", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
@@ -347,13 +345,16 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	assert.Equal(t, outbound.Sent, res.Outcome, "the same Request goes out once the account sends again")
 }
 
+// Fixtures: Meridian's default is on probation and in its provider's sandbox; the send is from
+// Meridian's verified domain.
 func TestProviderOnProbationStillSends(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementProbation).SetProviderSandbox(true).ExecX(ctx)
+	req := withEmail(transactional("tx:probation", "a@example.com"), func(c *outbound.EmailContent) {
+		c.FromEmail = "hello@" + fixtures.SendingDomainMeridianDomain
+	})
 
-	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:probation", "a@example.com"))
+	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.MeridianID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome, "probation and the sandbox are warnings, not holds")
 }
@@ -380,20 +381,18 @@ func TestProviderErrorIsRetryableAndReleasesTheClaim(t *testing.T) {
 func TestLiveClaimBlocksAndStaleClaimIsTakenOver(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	// Fixture 106: a pending claim abandoned a day ago (a crashed attempt).
+	// The fixture stale claim: a pending claim abandoned a day ago (a crashed attempt).
 	const key = "transactional:fixture-stale-claim"
 	req := transactional(key, "lease.demo@codebasics.dev")
 
 	// The same claim, just taken by another attempt (within the lease), blocks us.
-	env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(key)).
-		SetClaimedAt(time.Now()).ExecX(ctx)
+	env.ClaimOutbound(ctx, fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, time.Now())
 	_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.ErrorIs(t, err, outbound.ErrInProgress)
 	assert.Empty(t, env.CustomerMail.Messages(), "never two concurrent sends")
 
 	// Abandoned long ago, it is adopted.
-	env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(key)).
-		SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
+	env.ClaimOutbound(ctx, fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, time.Now().Add(-time.Hour))
 	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome)

@@ -42,7 +42,7 @@ func TestSigninTheSecondSignInOfTheSamePersonKeepsTheSurveyDue(t *testing.T) {
 
 func TestSigninANewPersonWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
 	env, fake := surveySigninEnv(t)
-	token := inviteAdminToAcme(t, env, newcomer.Email)
+	token := fixtures.InvitationAcmeNinaToken
 
 	signInToAccept(t, fake, env.NewRedirectBrowser(t), newcomer, token)
 

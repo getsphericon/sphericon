@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -72,104 +71,91 @@ func TestSiteTagDeleteUnusedTag(t *testing.T) {
 }
 
 // The default Integration is used by a scheduled or sending Broadcast that names none, and by an
-// active Automation that sends email; once only sent or failed Broadcasts and no such Automation
-// remain, it is archived.
+// active Automation that sends email; once only sent Broadcasts and no such Automation remain, it is
+// archived.
 func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
+	meridian := env.DB.Scoped(fixtures.MeridianID)
 	del := func() siteapi.SiteIntegrationsDeleteRes {
-		got, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
-		require.NoError(t, err)
-		return got
+		return deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID)
 	}
 
 	refused, ok := del().(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	users := usedBy(refused)
-	assert.Contains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastScheduledName)
-	assert.Contains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastSendingName)
-	assert.Contains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationWelcomeSeriesName)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{
+		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianScheduledName, fixtures.BroadcastMeridianSendingName},
+		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName},
+	}, usedBy(refused))
 	assert.EqualValues(t, http.StatusConflict, refused.Status.Or(0))
 
-	// Only history uses it now: finished Broadcasts, and no active Automation.
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
-	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
-	require.NoError(t, err)
-	finishEnrollments(t, acme)
+	// Only history uses it now: the Broadcasts are sent and the Automation is inactive.
+	sendMeridianBroadcasts(t, meridian)
+	require.NoError(t, meridian.Automation().UpdateOneID(fixtures.AutomationMeridianWelcomeID).SetStatus(automation.StatusInactive).Exec(ctx))
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
+}
+
+// sendMeridianBroadcasts finishes the scheduled and the sending Broadcast of Meridian's default: they
+// become history.
+func sendMeridianBroadcasts(t *testing.T, s *ent.Scoped) {
+	t.Helper()
+	for _, id := range []int64{fixtures.BroadcastMeridianScheduledID, fixtures.BroadcastMeridianSendingID} {
+		require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Exec(t.Context()))
+	}
 }
 
 // An Integration that is not the default is used only by a Broadcast that names it.
 func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	params := siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeSesID)}
+	meridian := env.DB.Scoped(fixtures.MeridianID)
 
-	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetIntegrationID(fixtures.IntegrationAcmeSesID).Save(ctx)
-	require.NoError(t, err)
-	got, err := c.SiteIntegrationsDelete(ctx, params)
-	require.NoError(t, err)
-	refused, ok := got.(*siteapi.InUseProblemDetails)
+	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianNamedName}}, usedBy(refused))
 
-	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
+	_, err := meridian.Broadcast().UpdateOneID(fixtures.BroadcastMeridianNamedID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	got, err = c.SiteIntegrationsDelete(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, got)
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID))
 }
 
 // A Sending domain is used through the domain of a From address, not an id: a scheduled Broadcast
-// from news.acme.com blocks that domain, and a failed one from mail.acme.com does not block this.
+// from news.meridian.test blocks that domain, and a failed one from mail.meridian.test does not block
+// this.
 func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	del := func(id int64) siteapi.SiteSendingDomainsDeleteRes {
-		return deleteSendingDomain(t, c, id)
-	}
-	_, err := acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).SetFromEmail("hello@" + fixtures.SendingDomainUnverifiedDomain).Save(ctx)
-	require.NoError(t, err)
-	_, err = acme.Broadcast().UpdateOneID(fixtures.BroadcastFailedID).SetFromEmail("hello@" + fixtures.SendingDomainVerifiedDomain).Save(ctx)
-	require.NoError(t, err)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := del(fixtures.SendingDomainUnverifiedID).(*siteapi.InUseProblemDetails)
+	refused, ok := deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianNewsID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledName}}, usedBy(refused))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianFromNewsName}}, usedBy(refused))
 
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del(fixtures.SendingDomainVerifiedID))
+	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianMailID))
 }
 
 // A Broadcast with no From and an active Automation send from the default Integration's configured
-// From (hello@codebasics.dev), so that domain is refused until nothing live sends from it.
+// From (hello@meridian.test), so that domain is refused until nothing live sends from it.
 func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
+	meridian := env.DB.Scoped(fixtures.MeridianID)
 	del := func() siteapi.SiteSendingDomainsDeleteRes {
-		return deleteSendingDomain(t, c, fixtures.SendingDomainCodebasicsID)
+		return deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID)
 	}
 
 	refused, ok := del().(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	users := usedBy(refused)
-	assert.ElementsMatch(t, []string{fixtures.BroadcastScheduledName, fixtures.BroadcastSendingName}, users[siteapi.UsedByKindBroadcast])
-	assert.Contains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationWelcomeSeriesName)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{
+		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianScheduledName, fixtures.BroadcastMeridianSendingName},
+		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName},
+	}, usedBy(refused))
 
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
-	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
-	require.NoError(t, err)
-	finishEnrollments(t, acme)
+	sendMeridianBroadcasts(t, meridian)
+	require.NoError(t, meridian.Automation().UpdateOneID(fixtures.AutomationMeridianWelcomeID).SetStatus(automation.StatusInactive).Exec(ctx))
 	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del())
 }
 
@@ -216,55 +202,30 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 }
 
 // A draft's email does not establish a dependency, nor does the live version of an inactive or
-// archived Automation no Enrollment stands on any more.
+// archived Automation no Enrollment stands on any more. Each Automation sends its email steps
+// through an Integration of its own, which nothing else uses.
 func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) {
-	// Each email Step names the Integration it sends through (ADR 0081).
-	mailgunEmail := fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmeMailgunID)
 	for _, tc := range []struct {
-		name     string
-		steps    string
-		status   automation.Status
-		archived *time.Time
+		name        string
+		integration int64
 	}{
-		{name: "draft only", steps: `[{"type":"wait","seconds":60}]`, status: automation.StatusActive},
-		{name: "HTTP and Tags send no email", steps: `[{"type":"http","body":"email"},{"type":"apply_tag","tag":"email"}]`, status: automation.StatusActive},
-		{name: "inactive", steps: mailgunEmail, status: automation.StatusInactive},
-		{name: "archived", steps: mailgunEmail, status: automation.StatusActive, archived: new(time.Now())},
+		{name: "draft only", integration: fixtures.IntegrationMeridianDraftOnlyID},
+		{name: "HTTP and Tags send no email", integration: fixtures.IntegrationMeridianNoEmailID},
+		{name: "inactive", integration: fixtures.IntegrationMeridianInactiveID},
+		{name: "archived", integration: fixtures.IntegrationMeridianArchivedID},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			s := env.DB.Scoped(fixtures.AcmeID)
+			s := env.DB.Scoped(fixtures.MeridianID)
 			ctx := t.Context()
-			stopMailgunSender(t, s)
-			err := s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
-				SetSteps(tc.steps).Exec(ctx)
-			require.NoError(t, err)
-			err = s.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesDraftVersionID).
-				SetSteps(mailgunEmail).Exec(ctx)
-			require.NoError(t, err)
-			err = s.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
-				SetStatus(tc.status).SetNillableArchivedAt(tc.archived).Exec(ctx)
-			require.NoError(t, err)
-			// An Enrollment still standing on the version keeps it sending
-			// (TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn).
-			finishEnrollments(t, s)
 
-			require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID))
+			require.NoError(t, env.Integrations.Delete(ctx, s, tc.integration))
 
-			deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
+			deleted, err := env.Integrations.Get(ctx, s, tc.integration)
 			require.NoError(t, err)
 			assert.NotNil(t, deleted.DiscardedAt)
 		})
 	}
-}
-
-// stopMailgunSender stops the fixture Automation whose second email step sends through the
-// Mailgun Integration, for a test about who else uses it.
-func stopMailgunSender(t *testing.T, s *ent.Scoped) {
-	t.Helper()
-	err := s.Automation().UpdateOneID(fixtures.AutomationJobsEmailsThenTagID).
-		SetStatus(automation.StatusInactive).Exec(t.Context())
-	require.NoError(t, err)
 }
 
 // A Broadcast that names no Integration sends through its own Channel's default, never another
@@ -272,22 +233,15 @@ func stopMailgunSender(t *testing.T, s *ent.Scoped) {
 // user of the email default.
 func TestSiteTelegramBroadcastUsesTheTelegramDefaultOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	err := acme.Integration().UpdateOneID(fixtures.IntegrationAcmeTelegramID).SetIsDefault(true).Exec(ctx)
-	require.NoError(t, err)
-	err = acme.Broadcast().UpdateOneID(fixtures.BroadcastTelegramDraftID).
-		SetStatus(broadcast.StatusScheduled).SetScheduledAt(time.Now().Add(time.Hour)).Exec(ctx)
-	require.NoError(t, err)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := deleteIntegration(t, c, fixtures.IntegrationAcmeTelegramID).(*siteapi.InUseProblemDetails)
+	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianTelegramID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastTelegramDraftName}}, usedBy(refused))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianTelegramName}}, usedBy(refused))
 
-	refused, ok = deleteIntegration(t, c, fixtures.IntegrationAcmeDefaultID).(*siteapi.InUseProblemDetails)
+	refused, ok = deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok, "the email default is still used by the email Broadcasts")
-	assert.NotContains(t, usedBy(refused)[siteapi.UsedByKindBroadcast], fixtures.BroadcastTelegramDraftName)
+	assert.NotContains(t, usedBy(refused)[siteapi.UsedByKindBroadcast], fixtures.BroadcastMeridianTelegramName)
 }
 
 // A send with no From of its own goes out with the From of the Integration it goes through, so a
@@ -295,64 +249,35 @@ func TestSiteTelegramBroadcastUsesTheTelegramDefaultOnly(t *testing.T) {
 // domain, not the default's (ADR 0099).
 func TestSiteSendingDomainIsUsedThroughTheFromOfTheIntegrationASendGoesThrough(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	sealed, err := env.Cipher.Encrypt([]byte(`{"host":"smtp.postmarkapp.example","port":587,"from":"hello@` + fixtures.SendingDomainUnverifiedDomain + `"}`))
-	require.NoError(t, err)
-	err = acme.Integration().UpdateOneID(fixtures.IntegrationAcmePostmarkID).SetConfigEncrypted(sealed).Exec(ctx)
-	require.NoError(t, err)
-	err = acme.Broadcast().UpdateOneID(fixtures.BroadcastScheduledID).
-		ClearFromEmail().SetIntegrationID(fixtures.IntegrationAcmePostmarkID).Exec(ctx)
-	require.NoError(t, err)
-	err = acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
-		SetSteps(fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmePostmarkID)).Exec(ctx)
-	require.NoError(t, err)
-	finishEnrollments(t, acme) // the Automation uses the domain through its live version alone
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := deleteSendingDomain(t, c, fixtures.SendingDomainUnverifiedID).(*siteapi.InUseProblemDetails)
+	refused, ok := deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianRelayID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{
-		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastScheduledName},
-		siteapi.UsedByKindAutomation: {fixtures.AutomationWelcomeSeriesName},
+		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianViaRelayName},
+		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianViaRelayName},
 	}, usedBy(refused))
 
-	refused, ok = deleteSendingDomain(t, c, fixtures.SendingDomainCodebasicsID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok, "the default's domain is still used by the Sending Broadcast")
+	refused, ok = deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID).(*siteapi.InUseProblemDetails)
+	require.True(t, ok, "the default's domain is still used by the Broadcasts through the default")
 	users := usedBy(refused)
-	assert.NotContains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastScheduledName)
-	assert.NotContains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationWelcomeSeriesName)
+	assert.NotContains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastMeridianViaRelayName)
+	assert.NotContains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationMeridianViaRelayName)
 }
 
 // An Automation deactivated while Enrollments still stand on a version keeps sending through that
 // version's Integrations, so it uses them until the Enrollments finish (ADR 0099).
 func TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	stopMailgunSender(t, acme)
-	err := acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
-		SetSteps(fmt.Sprintf(`[{"type":"email","integrationId":%d,"subject":"Hello"}]`, fixtures.IntegrationAcmeMailgunID)).Exec(ctx)
-	require.NoError(t, err)
-	err = acme.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
-		SetStatus(automation.StatusInactive).Exec(ctx)
-	require.NoError(t, err)
+	meridian := env.DB.Scoped(fixtures.MeridianID)
 
-	refused, ok := deleteIntegration(t, c, fixtures.IntegrationAcmeMailgunID).(*siteapi.InUseProblemDetails)
+	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID).(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationWelcomeSeriesName}}, usedBy(refused))
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianEnrolledName}}, usedBy(refused))
 
-	finishEnrollments(t, acme)
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, fixtures.IntegrationAcmeMailgunID))
-}
-
-// finishEnrollments completes the Workspace's unfinished Enrollments: no version sends any more
-// for want of an Enrollment standing on it.
-func finishEnrollments(t *testing.T, s *ent.Scoped) {
-	t.Helper()
-	err := s.AutomationRun().Update().
-		Where(automationrun.StatusEQ(automationrun.StatusActive)).
-		SetStatus(automationrun.StatusCompleted).SetEndedAt(time.Now()).Exec(t.Context())
-	require.NoError(t, err)
+	require.NoError(t, meridian.AutomationRun().UpdateOneID(fixtures.AutomationRunMeridianEnrolledID).
+		SetStatus(automationrun.StatusCompleted).SetEndedAt(time.Now()).Exec(ctx))
+	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID))
 }

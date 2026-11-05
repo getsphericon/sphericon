@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
@@ -84,11 +83,9 @@ func follow(t *testing.T, env *testhelper.TestEnv, path, userAgent string) *http
 func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecordAClick(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	step := telegramStep(bot, `Read <a href="`+textLink+`">the offer</a> now`)
-	step.Buttons = []telegramrender.Button{{Label: "Open", URL: buttonLink}}
-	automationID := telegramAutomation(t, env, step)
+	automationID := int64(fixtures.AutomationJobsTelegramLinkAndButtonID)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 701001, 701001)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramLinkAndButtonBobID)
 	runSteps(t, env)
 
 	text, buttons := shortPaths(t, env, "701001")
@@ -115,11 +112,8 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	step := telegramStep(bot, `<a href="`+buttonLink+`">one</a> and <a href="`+buttonLink+`">two</a>`)
-	step.Buttons = []telegramrender.Button{{Label: "Open", URL: buttonLink}}
-	automationID := telegramAutomation(t, env, step)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 702001, 702001)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramSameURLBobID)
 	runSteps(t, env)
 
 	text, buttons := shortPaths(t, env, "702001")
@@ -132,9 +126,8 @@ func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
 func TestTheUnsubscribeLinkOfATelegramMessageIsNotTracked(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	automationID := telegramAutomation(t, env, telegramStep(bot, `<a href="`+textLink+`">offer</a> <a href="{{ unsubscribe_url }}">stop</a>`))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 703001, 703001)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramOfferAndStopBobID)
 	runSteps(t, env)
 
 	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
@@ -190,16 +183,13 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 }
 
 // telegram.clicked is a Trigger like email.clicked: a person's click enrolls the Contact, and a hit
-// by software starts nothing (ADR 0053, 0083). Fixture: the Jobs greeting Automation, its live
-// version's Trigger turned to telegram.clicked.
+// by software starts nothing (ADR 0053, 0083). Fixture: the Automation the fixtures trigger on
+// telegram.clicked.
 func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameTelegramClicked).ExecX(ctx)
-	bot := env.AcmeTelegram(t)
-	sender := telegramAutomation(t, env, telegramStep(bot, `<a href="`+textLink+`">offer</a>`))
-	enrollVia(t, env, sender, fixtures.ContactLiamID)
+	env.AcmeTelegram(t)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramOfferLiamID)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env, "70001") // Liam's fixture chat
 	consume := func() []jobs.EvaluateTriggerArgs {
@@ -216,7 +206,7 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).Only(ctx)
+		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramClickedID), automationrun.ContactID(fixtures.ContactLiamID)).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameTelegramClicked, *run.EventAction)
 	assert.Equal(t, textLink, run.EventProperties["url"])

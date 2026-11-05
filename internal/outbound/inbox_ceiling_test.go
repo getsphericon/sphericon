@@ -19,32 +19,26 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
-// globexInboxModule sends Globex's marketing through its Test inbox: the real provider keeping
-// Captured messages, with the 200 a day the Integration row reports, on a clock the test moves.
-// opts add to the module's options.
-func globexInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts ...outbound.Option) *outbound.Module {
+// pinewoodInboxModule sends Pinewood's marketing through its default, its Test inbox: the real
+// provider keeping Captured messages, with the 200 a day the Integration row reports, on a clock the
+// test moves. opts add to the module's options.
+func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts ...outbound.Option) *outbound.Module {
 	t.Helper()
-	s := env.DB.Scoped(fixtures.GlobexID)
+	s := env.DB.Scoped(fixtures.PinewoodID)
 	built, err := inbox.Descriptor().Build(nil, messaging.Deps{
-		Capturer: capturedmessages.New(inbox.PerDay).Capturer(s, fixtures.IntegrationGlobexInboxID),
+		Capturer: capturedmessages.New(inbox.PerDay).Capturer(s, fixtures.IntegrationPinewoodInboxID),
 	})
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexInboxID).SetIsDefault(true).ExecX(context.Background())
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetIsDefault(false).ExecX(context.Background())
 	return outbound.New(env.Bus, env.Holds, senders{sender: sender}, tracking.New("test-secret", "http://local"),
 		append([]outbound.Option{outbound.WithClock(c.now)}, opts...)...)
 }
 
-// sendToReader sends a marketing message to Globex's mailable Contact.
+// sendToReader sends a marketing message to Pinewood's Contact.
 func sendToReader(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key string) outbound.Result {
 	t.Helper()
-	ctx := context.Background()
-	reader := env.DB.Contact.GetX(ctx, fixtures.ContactGlobexReaderID)
-	req := marketing(t, env, key, fixtures.ContactAliceID)
-	req.Contact, req.Destination = reader, *reader.Email
-	res, err := m.Send(ctx, env.DB.Scoped(fixtures.GlobexID), req)
+	res, err := m.Send(t.Context(), env.DB.Scoped(fixtures.PinewoodID), marketing(t, env, key, fixtures.ContactPinewoodReaderID))
 	require.NoError(t, err)
 	return res
 }
@@ -55,8 +49,8 @@ func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := startClock()
-	m := globexInboxModule(t, env, c)
-	s := env.DB.Scoped(fixtures.GlobexID)
+	m := pinewoodInboxModule(t, env, c)
+	s := env.DB.Scoped(fixtures.PinewoodID)
 	sendTo := func(key string) outbound.Result { return sendToReader(t, env, m, key) }
 
 	for i := range inbox.PerDay {
@@ -70,7 +64,7 @@ func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing
 
 	c.elapse(res.Wait)
 	assert.Equal(t, outbound.Sent, sendTo("bc:201").Outcome, "sent later with the same key")
-	kept := s.CapturedMessage().Query().Where(capturedmessage.IntegrationID(fixtures.IntegrationGlobexInboxID)).CountX(ctx)
+	kept := s.CapturedMessage().Query().Where(capturedmessage.IntegrationID(fixtures.IntegrationPinewoodInboxID)).CountX(ctx)
 	assert.GreaterOrEqual(t, kept, inbox.PerDay, "every accepted message was captured")
 }
 
@@ -79,8 +73,8 @@ func TestTestInboxHonoursALowerUserLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := startClock()
-	m := globexInboxModule(t, env, c)
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexInboxID).SetMaxPerDay(2).ExecX(ctx)
+	m := pinewoodInboxModule(t, env, c)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationPinewoodInboxID).SetMaxPerDay(2).ExecX(ctx)
 	sendTo := func(key string) outbound.Result { return sendToReader(t, env, m, key) }
 
 	require.Equal(t, outbound.Sent, sendTo("lo:1").Outcome)

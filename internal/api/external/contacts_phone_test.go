@@ -46,10 +46,7 @@ func TestExternalContactsUpdateReadsALocalPhoneWithTheStoredCountry(t *testing.T
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write")
-	id := entityIDString(fixtures.ContactAliceID)
-	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Country: externalapi.NewOptNilCountryCode("US")},
-		externalapi.ContactsUpdateParams{ID: id})
-	require.NoError(t, err)
+	id := entityIDString(fixtures.ContactLiamID) // stored with the country US
 
 	res, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{Phone: externalapi.NewOptNilString("(415) 555-0101")},
 		externalapi.ContactsUpdateParams{ID: id})
@@ -137,18 +134,15 @@ func TestExternalContactsBatchUpsertResolvesAPhoneInAnotherFormat(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write")
-	created, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{Phone: externalapi.NewOptNilString("+14155550104")})
-	require.NoError(t, err)
-	first, ok := created.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", created)
 
+	// ContactTexter's phone, +14155550810, written as a US local number.
 	res, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
-		Phone:   externalapi.NewOptNilString("(415) 555-0104"),
+		Phone:   externalapi.NewOptNilString("(415) 555-0810"),
 		Country: externalapi.NewOptNilCountryCode("US"),
 	}}})
 	require.NoError(t, err)
 	got, ok := res.(*externalapi.UpsertContactsResult)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ContactBatchStatusUpdated, got.Results[0].Status)
-	assert.Equal(t, first.ID, got.Results[0].ContactId.Value)
+	assert.Equal(t, entityIDString(fixtures.ContactTexterID), got.Results[0].ContactId.Value)
 }

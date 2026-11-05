@@ -199,3 +199,70 @@
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+- id: 7300 # fixture: SabreSueMembership
+  user_id: 7300
+  workspace_id: 79
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7400 # fixture: MeridianMonaMembership
+  user_id: 7400
+  workspace_id: 83
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Rita owns the four revenue tenants.
+- id: 7200
+  user_id: 7200
+  workspace_id: 75
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7201
+  user_id: 7200
+  workspace_id: 76
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7202
+  user_id: 7200
+  workspace_id: 77
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7203
+  user_id: 7200
+  workspace_id: 78
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7100 # fixture: NakatomiHollyMembership
+  user_id: 7100
+  workspace_id: 71
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7101 # fixture: SiriusOrionMembership
+  user_id: 7101
+  workspace_id: 72
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7102 # fixture: MonarchMinaMembership
+  user_id: 7102
+  workspace_id: 73
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7103 # fixture: VirtuconVeraMembership
+  user_id: 7103
+  workspace_id: 74
+  role: owner
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7104 # fixture: VirtuconVicMembership
+  user_id: 7104
+  workspace_id: 74
+  role: owner
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

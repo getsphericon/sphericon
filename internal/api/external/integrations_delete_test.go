@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/samber/lo"
@@ -112,24 +111,18 @@ func TestExternalIntegrationDeleteIsRefusedWhileAnAutomationNamesIt(t *testing.T
 	assert.Empty(t, automationUsers(users, fixtures.AutomationJobsGreetingID), "its steps send through the default")
 }
 
-// An Automation whose every email step names another Integration no longer counts as a user of the
-// default one.
+// An Automation whose every email step names another Integration is no user of the default one.
+// Fixtures: Meridian's welcome names no Integration; its relay welcome names its relay in every step.
 func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
-	ctx := context.Background()
-	deleteDefault := func() []externalapi.UsedBy {
-		out, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
-		require.NoError(t, err)
-		return usersOfRefusal(t, out)
-	}
-	require.Len(t, automationUsers(deleteDefault(), fixtures.AutomationJobsGreetingID), 1, "naming none, it uses the default")
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.MeridianID, "integrations:read", "integrations:write"))
 
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).
-		SetSteps(fmt.Sprintf(`[{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%[1]d},{"type":"wait","seconds":60},{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%[1]d}]`, fixtures.IntegrationAcmeMailgunID)).
-		ExecX(ctx)
+	out, err := c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationMeridianDefaultID)})
+	require.NoError(t, err)
+	users := usersOfRefusal(t, out)
 
-	assert.Empty(t, automationUsers(deleteDefault(), fixtures.AutomationJobsGreetingID))
+	assert.Len(t, automationUsers(users, fixtures.AutomationMeridianWelcomeID), 1, "naming none, it uses the default")
+	assert.Empty(t, automationUsers(users, fixtures.AutomationMeridianViaRelayID))
 }
 
 func TestExternalIntegrationsDeleteNeedsTheWriteScope(t *testing.T) {

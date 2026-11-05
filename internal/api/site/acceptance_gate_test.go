@@ -236,7 +236,7 @@ func TestAGatedSoleOwnerDeletesTheirWorkspacesThenTheirAccount(t *testing.T) {
 
 func TestAGatedUserCannotAcceptAnInvitation(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
 	refused := send(t, env, fixtures.OutsiderOscarEmail, http.MethodPost, "/site/invitations/"+token+"/accept", "{}")

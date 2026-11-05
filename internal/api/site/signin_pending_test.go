@@ -209,7 +209,7 @@ func TestAKnownLinkedIdentitySignsInWithoutTheItems(t *testing.T) {
 
 func TestAnInvitationSignupWaitsForTheItemsAndAcceptsTheInvitationOnSubmit(t *testing.T) {
 	env, fake := signinEnv(t)
-	invite := inviteAdminToAcme(t, env, newcomer.Email)
+	invite := fixtures.InvitationAcmeNinaToken
 	withSignupItems(t, env)
 	b := env.NewRedirectBrowser(t)
 	token := pendingToken(t, signInToAccept(t, fake, b, newcomer, invite))

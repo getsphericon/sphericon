@@ -27,23 +27,20 @@ func TestCollectIdentifyWithALocalPhoneResolvesTheContactStoredInE164(t *testing
 		require.NoError(t, err)
 		require.IsType(t, &collectapi.CollectOkResponse{}, res)
 	}
-	identify(collectapi.CollectIdentifyInput{VisitorId: "dev-phone-1", Phone: collectapi.NewOptNilString("+1 415 555 0106")})
-	stored, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.Phone("+14155550106")).Only(ctx)
-	require.NoError(t, err)
-
+	// ContactTexter's phone, +14155550810, written as a US local number.
 	identify(collectapi.CollectIdentifyInput{
 		VisitorId: "dev-phone-2",
-		Phone:     collectapi.NewOptNilString("(415) 555-0106"),
+		Phone:     collectapi.NewOptNilString("(415) 555-0810"),
 		Traits:    collectapi.NewOptNilJsonObject(collectapi.JsonObject{"country": jx.Raw(`"US"`)}),
 	})
 
-	n, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.PhoneContains("5550106")).Count(ctx)
+	n, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.PhoneContains("5550810")).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "one number in two formats is one Contact")
 	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-phone-2")).Only(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, v.ContactID)
-	assert.Equal(t, stored.ID, *v.ContactID)
+	assert.Equal(t, int64(fixtures.ContactTexterID), *v.ContactID)
 }
 
 func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFinds(t *testing.T) {

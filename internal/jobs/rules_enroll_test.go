@@ -21,7 +21,7 @@ import (
 func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	f := fireAndRun(t, env, fixtures.ContactBobID, "rule_enroll", "evt-enroll")
+	f := runFiring(t, env, fixtures.RuleFiringEnrollGreetingPendingID)
 
 	assert.Equal(t, []rules.Result{{Type: rules.ActionEnroll, Status: rules.Succeeded}}, resultsOf(t, f))
 	run, err := env.DB.AutomationRun.Query().
@@ -35,8 +35,8 @@ func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Automation().Archive(context.Background(), fixtures.AutomationJobsSingleEmailID))
 
-	draft := fireAndRun(t, env, fixtures.ContactBobID, "rule_enroll_draft", "evt-draft")
-	archived := fireAndRun(t, env, fixtures.ContactBobID, "rule_enroll_single", "evt-archived")
+	draft := runFiring(t, env, fixtures.RuleFiringEnrollDraftPendingID)
+	archived := runFiring(t, env, fixtures.RuleFiringEnrollSingleEmailPendingID)
 
 	for _, f := range []*ent.RuleFiring{draft, archived} {
 		res := resultsOf(t, f)
@@ -79,7 +79,7 @@ func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 	before := greeting()
 
 	// Carol was enrolled in the greeting before: it is once ever, even though that run is over.
-	f := fireAndRun(t, env, fixtures.ContactCarolID, "rule_enroll", "evt-enrolled")
+	f := runFiring(t, env, fixtures.RuleFiringEnrollGreetingCarolID)
 
 	res := resultsOf(t, f)
 	require.Len(t, res, 1)

@@ -1,7 +1,6 @@
 package site_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -9,8 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/dnstest"
@@ -70,46 +67,37 @@ func TestWhatStopsMailComesBeforeWhatFailedAndEveryMemberSeesIt(t *testing.T) {
 	assert.True(t, disabled)
 }
 
+// Fixtures: Meridian's scheduled Broadcast from news.meridian.test is held for that unverified domain,
+// its sending one for a Workspace-level reason, and its failed one keeps the reason it was held for.
 func TestAHeldBroadcastSaysWhyButAWorkspaceLevelHoldIsLeftToTheLayout(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	hold := func(id int64, reason holdreason.Reason) {
-		t.Helper()
-		require.NoError(t, acme.Broadcast().UpdateOneID(id).SetHoldReason(reason).Exec(t.Context()))
-	}
-	hold(fixtures.BroadcastScheduledID, holdreason.UnverifiedDomain)
-	hold(fixtures.BroadcastSendingID, holdreason.WorkspaceSuspended)
-	hold(fixtures.BroadcastFailedID, holdreason.NoIntegration)
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastScheduledID)
+	held, ok := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastMeridianFromNewsID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
 	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, held.HoldReason.Value)
-	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastSendingID)
+	_, suspended := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastMeridianSendingID)
 	assert.False(t, suspended, "a suspension is the layout's banner")
-	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastFailedID)
+	_, failed := itemAbout(items, siteapi.SiteAttentionKindBroadcastHeld, fixtures.BroadcastMeridianFailedFromMailID)
 	assert.False(t, failed, "a failed Broadcast keeps its reason but is no longer held")
 }
 
+// Fixtures: Meridian's stopped relay was stopped by its provider; its default is on probation and in
+// its provider's sandbox.
 func TestTheProviderStandingOfAnIntegrationIsAnItem(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
-	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeGenericAID).
-		SetProviderEnforcement(integration.ProviderEnforcementProbation).SetProviderSandbox(true).Exec(t.Context()))
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	stopped, ok := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderStopped, fixtures.IntegrationAcmeDefaultID)
+	stopped, ok := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderStopped, fixtures.IntegrationMeridianStoppedID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, stopped.Severity)
-	probation, ok := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderProbation, fixtures.IntegrationAcmeGenericAID)
+	probation, ok := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderProbation, fixtures.IntegrationMeridianDefaultID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, probation.Severity)
-	_, sandbox := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderSandbox, fixtures.IntegrationAcmeGenericAID)
+	_, sandbox := itemAbout(items, siteapi.SiteAttentionKindIntegrationProviderSandbox, fixtures.IntegrationMeridianDefaultID)
 	assert.True(t, sandbox)
 }
 
@@ -156,37 +144,26 @@ func TestASpentSendCapIsAnItem(t *testing.T) {
 	assert.False(t, capped.Subject.Set, "the Send cap is the Workspace's own")
 }
 
+// Fixtures: two Enrollments of Meridian's welcome failed within the last hours, a third eight days ago.
 func TestTheRunsOfAnAutomationThatFailedThisWeekAreOneItemWithTheirCount(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	now := time.Now()
-	fail := func(id int64, at time.Time) {
-		t.Helper()
-		require.NoError(t, acme.AutomationRun().UpdateOneID(id).SetStatus(automationrun.StatusFailed).SetEndedAt(at).Exec(t.Context()))
-	}
-	fail(fixtures.AutomationRunWelcomeCompletedID, now)
-	fail(fixtures.AutomationRunWelcomeCompletedSecondID, now)
-	fail(fixtures.AutomationRunWelcomeCompletedThirdID, now.AddDate(0, 0, -8))
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	failed, ok := itemAbout(items, siteapi.SiteAttentionKindEnrollmentsFailed, fixtures.AutomationWelcomeSeriesID)
+	failed, ok := itemAbout(items, siteapi.SiteAttentionKindEnrollmentsFailed, fixtures.AutomationMeridianWelcomeID)
 	require.True(t, ok)
 	assert.EqualValues(t, 2, failed.Count, "the run of eight days ago is no longer an item")
 	assert.Equal(t, siteapi.SiteAttentionSeverityNotice, failed.Severity)
 }
 
 // What asks for attention leaves archived rows out (ADR 0099), as it does an archived Broadcast.
+// Fixtures: an Enrollment of Meridian's archived Automation failed within the last hour.
 func TestTheFailedRunsOfAnArchivedAutomationAreNoItem(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.AutomationRun().UpdateOneID(fixtures.AutomationRunWelcomeCompletedID).
-		SetStatus(automationrun.StatusFailed).SetEndedAt(time.Now()).Exec(t.Context()))
-	require.NoError(t, acme.Automation().Archive(t.Context(), fixtures.AutomationWelcomeSeriesID))
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	_, failed := itemAbout(items, siteapi.SiteAttentionKindEnrollmentsFailed, fixtures.AutomationWelcomeSeriesID)
+	_, failed := itemAbout(items, siteapi.SiteAttentionKindEnrollmentsFailed, fixtures.AutomationMeridianArchivedID)
 	assert.False(t, failed)
 }
 
@@ -275,19 +252,13 @@ func TestAVerifiedDomainWithoutADMARCRecordIsANoticeUntilOneIsPublished(t *testi
 // Only a verified, kept domain whose DMARC was looked up is judged: a domain whose DMARC lookup
 // never ran or never succeeded (a DKIM check alone says nothing of DMARC), an unverified one (a
 // lost verification is an item of its own) and an archived one are not notices.
-// Fixtures: Acme's domains without dmarc_found_at are unverified, never checked or archived.
+// Fixtures: none of Meridian's domains had a DMARC record found. mail.meridian.test is verified and its
+// DKIM checked, but its DMARC never looked up; news.meridian.test is looked up but unverified; the
+// archived old.meridian.test is verified and looked up.
 func TestOnlyALookedUpVerifiedKeptDomainIsJudgedBulkReady(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := t.Context()
-	now := time.Now()
-	// mail.acme.com is verified and its DKIM checked, but its DMARC never looked up; news.acme.com
-	// is looked up but unverified; the archived old.acme.com is verified and looked up. None has a
-	// DMARC record found.
-	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).ClearDmarcCheckedAt().ClearDmarcFoundAt().Exec(ctx))
-	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainUnverifiedID).SetLastCheckedAt(now).SetDmarcCheckedAt(now).Exec(ctx))
-	require.NoError(t, env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainArchivedID).SetLastCheckedAt(now).SetDmarcCheckedAt(now).Exec(ctx))
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
 	got := kinds(items)
 	assert.NotContains(t, got, siteapi.SiteAttentionKindSendingDomainNotBulkReady)
@@ -413,27 +384,24 @@ func cannotSendOf(items []siteapi.SiteAttentionItem, id int64) (siteapi.SiteAtte
 	return itemAbout(items, siteapi.SiteAttentionKindAutomationCannotSend, id)
 }
 
-// Fixtures: the Hold demo is active and its live version is one email step on the Workspace
-// default; this test adds a second email step through Integration A, then archives A: one held
+// Fixtures: the Jobs emails-then-tag Automation is active; its first email step goes through the
+// Workspace default, its second through the Mailgun relay. This test archives the relay: one held
 // step is enough.
 func TestAnActiveAutomationWithAStepWhoseIntegrationIsArchivedCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.NoError(t, acme.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps(fmt.Sprintf(`[{"type":"email","subject":"Hi","body":"<p>Hi</p>"},{"type":"email","subject":"Hi","body":"<p>Hi</p>","integrationId":%d}]`, fixtures.IntegrationAcmeGenericAID)).
-		Exec(t.Context()))
-	_, before := cannotSendOf(attentionOf(t, member, fixtures.AcmePublicID), fixtures.AutomationHoldDemoID)
-	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeGenericAID).
+	_, before := cannotSendOf(attentionOf(t, member, fixtures.AcmePublicID), fixtures.AutomationJobsEmailsThenTagID)
+	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeMailgunID).
 		SetDiscardedAt(time.Now()).Exec(t.Context()))
 
 	items := attentionOf(t, member, fixtures.AcmePublicID)
 
 	assert.False(t, before, "it sends while its Integration is kept")
-	held, ok := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	held, ok := cannotSendOf(items, fixtures.AutomationJobsEmailsThenTagID)
 	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, held.Severity)
-	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.AutomationHoldDemoID, Name: fixtures.AutomationHoldDemoName}, held.Subject.Value)
+	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.AutomationJobsEmailsThenTagID, Name: fixtures.AutomationJobsEmailsThenTagName}, held.Subject.Value)
 	assert.Equal(t, siteapi.HoldReasonNoIntegration, held.HoldReason.Value)
 	assert.False(t, held.Since.Set, "no moment is stored for when a route started holding")
 	_, welcome := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
@@ -469,44 +437,32 @@ func TestAnActiveAutomationWhoseProviderStoppedTheAccountCannotSend(t *testing.T
 	assert.Equal(t, siteapi.HoldReasonProviderStopped, held.HoldReason.Value)
 }
 
-// The default is stopped in every case, so each Automation left out is left out for what it is.
+// Fixtures: the provider stopped the Integration each of Meridian's Automations below sends through,
+// so each Automation left out is left out for what it is.
 func TestOnlyAnActiveAutomationThatSendsEmailInAWorkspaceThatSendsIsAnItem(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	member := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
-	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationWelcomeSeriesID).
-		SetStatus(automation.StatusInactive).Exec(t.Context()))
-	require.NoError(t, acme.Automation().UpdateOneID(fixtures.AutomationHoldDemoID).
-		SetStatus(automation.StatusInactive).SetArchivedAt(time.Now()).Exec(t.Context()))
 
-	items := attentionOf(t, member, fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	_, paused := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
+	_, paused := cannotSendOf(items, fixtures.AutomationMeridianInactiveID)
 	assert.False(t, paused, "a paused Automation sends nothing")
-	_, archived := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	_, archived := cannotSendOf(items, fixtures.AutomationMeridianArchivedID)
 	assert.False(t, archived, "an archived Automation sends nothing")
-	_, tags := cannotSendOf(items, fixtures.AutomationTagOnEngagementID)
+	_, tags := cannotSendOf(items, fixtures.AutomationMeridianNoEmailID)
 	assert.False(t, tags, "an Automation with no email step sends through no Integration")
-	_, payment := cannotSendOf(items, fixtures.AutomationPaymentRecoveryID)
-	assert.True(t, payment, "an active one with an email step is still an item")
+	_, stopped := cannotSendOf(items, fixtures.AutomationMeridianStoppedID)
+	assert.True(t, stopped, "an active one with an email step is still an item")
 }
 
-// Fixtures: the Welcome series has a live version and a draft, both with email steps; this test
-// leaves the email steps to the draft alone, with the default stopped.
+// Fixtures: Meridian's draft-only Automation has a live version with a wait step and a draft with an
+// email step through an Integration its provider stopped.
 func TestAnEmailStepOnlyInTheDraftMakesNoItem(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
-	require.NoError(t, acme.AutomationVersion().UpdateOneID(fixtures.AutomationWelcomeSeriesVersionID).
-		SetSteps(`[{"type":"apply_tag","tag":"welcomed"}]`).Exec(t.Context()))
 
-	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	items := attentionOf(t, env.SiteActor(t, fixtures.MeridianOwnerMonaEmail), fixtures.MeridianPublicID)
 
-	_, welcome := cannotSendOf(items, fixtures.AutomationWelcomeSeriesID)
-	assert.False(t, welcome, "a draft sends nothing until it is published")
+	_, draft := cannotSendOf(items, fixtures.AutomationMeridianDraftOnlyID)
+	assert.False(t, draft, "a draft sends nothing until it is published")
 }
 
 // The default is stopped too, so the suspension is what leaves the item out.

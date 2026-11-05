@@ -51,14 +51,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
-		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+14155550110"),
-		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"), Country: new("DE"),
-		CustomFields: map[string]any{"plan": "pro"},
-	})
-	require.NoError(t, err)
-
-	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), full.ID, contacts.UpdateInput{
+	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID, contacts.UpdateInput{
 		SubjectID: patch.Clear[string](), Email: patch.Clear[string](), Phone: patch.Clear[string](),
 		FirstName: patch.Clear[string](), LastName: patch.Clear[string](), TimeZone: patch.Clear[string](),
 		Country: patch.Clear[string](), CustomFields: patch.Clear[map[string]any](),
@@ -73,7 +66,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	assert.Nil(t, cleared.Country)
 	assert.Empty(t, cleared.CustomFields)
 
-	stored, err := env.DB.Contact.Get(ctx, full.ID)
+	stored, err := env.DB.Contact.Get(ctx, fixtures.ContactStarkFullID)
 	require.NoError(t, err)
 	assert.Nil(t, stored.Email, "clearing is persisted")
 }
@@ -143,21 +136,18 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550111")})
-	require.NoError(t, err)
-
-	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
-		Phone: new("+14155550111"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
+	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.StarkID), contact.SourceManual, contacts.UpsertInput{
+		Phone: new(fixtures.ContactStarkPhoneOnlyPhone), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
 		CustomFields: map[string]any{"tier": "gold"},
 	})
 	require.NoError(t, err)
 	assert.False(t, res.Created)
-	assert.Equal(t, bare.ID, res.Contact.ID)
+	assert.EqualValues(t, fixtures.ContactStarkPhoneOnlyID, res.Contact.ID)
 	assert.Equal(t, "filled.in@example.com", lo.FromPtr(res.Contact.Email), "missing keys are filled")
 	assert.Equal(t, "sub-9", lo.FromPtr(res.Contact.SubjectID))
 	assert.Equal(t, "gold", res.Contact.CustomFields["tier"])
 
-	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{Phone: new("+14155550111"), CustomFields: map[string]any{"visits": float64(1)}})
+	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.StarkID), contact.SourceManual, contacts.UpsertInput{Phone: new(fixtures.ContactStarkPhoneOnlyPhone), CustomFields: map[string]any{"visits": float64(1)}})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"tier": "gold", "visits": float64(1)}, again.Contact.CustomFields, "custom fields merge")
 }
@@ -175,23 +165,17 @@ func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 
 func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("resolve-subject")})
-	require.NoError(t, err)
-	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550112")})
-	require.NoError(t, err)
-
-	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" user:export-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
 	require.NoError(t, err)
 	require.NotNil(t, got)
-	assert.Equal(t, bySubject.ID, got.ID, "subject_id wins over email")
+	assert.EqualValues(t, fixtures.ContactExportSubjectID, got.ID, "subject_id wins over email")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new("+14155550112"))
+	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new(fixtures.ContactTexterPhone))
 	require.NoError(t, err)
 	require.NotNil(t, got)
-	assert.Equal(t, byPhone.ID, got.ID, "falls through to the next key")
+	assert.EqualValues(t, fixtures.ContactTexterID, got.ID, "falls through to the next key")
 
 	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.GlobexID), nil, lo.ToPtr(fixtures.ContactAliceEmail), nil)
 	require.NoError(t, err)

@@ -55,10 +55,12 @@ func TestNewPeopleOfAWindowLeavesOutContactsBeforeIt(t *testing.T) {
 func TestAZoneChangeMovesNewPeopleToOtherDays(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Date(2026, 3, 10, 12, 0, 0, 0, time.UTC)
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	inNewYork := byDay(newPeopleAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
 
+	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
 	days := byDay(newPeopleAt(t, env, fixtures.GothamID, analytics.Window7Days, now))
 
+	assert.Equal(t, analytics.NewPeoplePoint{Date: "2026-03-07", Manual: 1}, inNewYork["2026-03-07"], "23:59 EST on the 7th")
 	assert.Equal(t, analytics.NewPeoplePoint{Date: "2026-03-07"}, days["2026-03-07"])
 	assert.Equal(t, analytics.NewPeoplePoint{Date: "2026-03-08", Manual: 1, API: 2}, days["2026-03-08"])
 	assert.Equal(t, analytics.NewPeoplePoint{Date: "2026-03-09", Tracker: 1, Unknown: 1}, days["2026-03-09"])

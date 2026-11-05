@@ -180,6 +180,25 @@
   workspace_id: 2
   created_at: '{{hoursAgo 1}}'
   updated_at: '{{hoursAgo 1}}'
+# A send of Globex's Automation that its Test inbox (integration 902) captured: a captured message is
+# stamped delivered, and the Automation's report counts it as captured too. It was sent long before
+# any analytics window, so Globex's rates and usage stay those of its other rows.
+- id: 7300 # fixture: OutboundMessageGlobexAutomationCaptured
+  kind: automation
+  idempotency_key: 'automation:captured:7300'
+  channel: email
+  destination: reader@globex.test
+  contact_id: 901
+  automation_id: 900
+  status: sent
+  integration_id: 902
+  captured: true
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  delivered_at: '{{daysAgo 400}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
 
 # Initech (workspace 3): two sends to ContactErasable (a broadcast and a transactional)
 # and one to ContactBystander.
@@ -4816,3 +4835,21 @@
   workspace_id: 20
   created_at: '{{hoursAgo 159}}'
   updated_at: '{{hoursAgo 159}}'
+
+# Acme: a text to ContactTexter that Twilio accepted through IntegrationAcmeSms, and no delivery report
+# yet: the delivery report tests (internal/ingest) report on it.
+- id: 7500 # fixture: OutboundTexterSms
+  kind: broadcast
+  idempotency_key: 'sms:delivery'
+  channel: sms
+  destination: '+14155550810'
+  contact_id: 810
+  sending_source: broadcasts
+  status: sent
+  provider_message_id: 'SM00000000000000000000000000007500'
+  sent_at: '2026-02-01 00:00:00'
+  claimed_at: '2026-02-01 00:00:00'
+  integration_id: 8
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'

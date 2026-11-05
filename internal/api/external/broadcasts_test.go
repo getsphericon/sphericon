@@ -74,13 +74,8 @@ func TestExternalBroadcastsUpdateClearsANullAndKeepsAnAbsentField(t *testing.T) 
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
-	params := externalapi.BroadcastsUpdateParams{ID: draftBroadcast}
-
-	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		Content:   testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromName: externalapi.NewOptNilString("Acme")}),
-		SegmentId: externalapi.NewOptNilEntityId(proSegment),
-	}, params)
-	require.NoError(t, err)
+	// The draft has a Segment and a From name.
+	params := externalapi.BroadcastsUpdateParams{ID: entityIDString(fixtures.BroadcastProSegmentID)}
 
 	var none externalapi.OptNilString
 	none.SetToNull()

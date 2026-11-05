@@ -44,13 +44,14 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	fs := &fakeSender{}
 	mod := heldMod(env, clock, resolvingTo(fs))
 
-	ids, err := planAudience(ctx, env.DB, mod, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(ids), 2)
+	ids := []int64{
+		env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID),
+		env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID),
+	}
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
 	setHold(t, env, clock.t.Add(time.Hour))
-	err = deliverRecipient(ctx, env.DB, mod, ids[1])
+	err := deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonStaff, held.Reason)

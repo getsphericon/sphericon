@@ -73,12 +73,13 @@ func TestPrunesNothingWithoutTheRetentionLicense(t *testing.T) {
 
 func TestPruneSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetRetentionDays(7).SetDiscardedAt(febFirst).ExecX(t.Context())
-	before := countEntries(t, env, fixtures.AcmeID)
+	env.DB.Workspace.UpdateOneID(fixtures.BluthID).SetRetentionDays(7).ExecX(t.Context())
+	before := countEntries(t, env, fixtures.BluthID)
+	require.Positive(t, before, "BluthAuditEntry is older than the window")
 
 	n, err := retention.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureRetention), febFirst)
 
 	require.NoError(t, err)
 	assert.Zero(t, n)
-	assert.Equal(t, before, countEntries(t, env, fixtures.AcmeID))
+	assert.Equal(t, before, countEntries(t, env, fixtures.BluthID))
 }

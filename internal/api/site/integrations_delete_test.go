@@ -29,7 +29,13 @@ func integrationIDs(items []siteapi.SiteIntegrationResource) []int64 {
 
 func deleteIntegration(t *testing.T, c *siteapi.Client, id int64) siteapi.SiteIntegrationsDeleteRes {
 	t.Helper()
-	got, err := c.SiteIntegrationsDelete(context.Background(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+	return deleteIntegrationOf(t, c, fixtures.AcmePublicID, id)
+}
+
+// deleteIntegrationOf deletes the Integration id of the Workspace as c.
+func deleteIntegrationOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteIntegrationsDeleteRes {
+	t.Helper()
+	got, err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
 	require.NoError(t, err)
 	return got
 }
@@ -164,31 +170,24 @@ func TestSiteIntegrationsDeleteNeedsAnOwnerOrAdmin(t *testing.T) {
 }
 
 // A stored empty definition means no Steps to Publish and Needs attention. Removal must make
-// the same decision: this Automation does not need its otherwise disabled Integration.
+// the same decision: this Automation does not need the disabled Integration nothing names.
 func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	s := env.DB.Scoped(fixtures.AcmeID)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	stopMailgunSender(t, s)
-	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps("").Exec(ctx)
-	require.NoError(t, err)
-	err = s.Integration().UpdateOneID(fixtures.IntegrationAcmeMailgunID).
-		SetEnabled(false).Exec(ctx)
-	require.NoError(t, err)
+	s := env.DB.Scoped(fixtures.MeridianID)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
 	published, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationHoldDemoID),
+		WorkspaceId: fixtures.MeridianPublicID, ID: idStr(fixtures.AutomationMeridianEmptyID),
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteAutomationResource{}, published)
-	items := attentionOf(t, c, fixtures.AcmePublicID)
-	_, needsAttention := cannotSendOf(items, fixtures.AutomationHoldDemoID)
+	items := attentionOf(t, c, fixtures.MeridianPublicID)
+	_, needsAttention := cannotSendOf(items, fixtures.AutomationMeridianEmptyID)
 	assert.False(t, needsAttention, "no Step sends through the disabled Integration")
 
-	require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID), "an empty stored definition must not disagree with Publish")
-	deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationMeridianDisabledID), "an empty stored definition must not disagree with Publish")
+	deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationMeridianDisabledID)
 	require.NoError(t, err)
 	assert.NotNil(t, deleted.DiscardedAt)
 }

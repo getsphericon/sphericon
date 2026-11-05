@@ -126,23 +126,22 @@ func tagAction(tag string) []rules.Action {
 	return []rules.Action{{Type: rules.ActionApplyTag, Tag: tag}}
 }
 
-// A Rule's draft names its Tag even before it is published (spec #767, "In use").
+// A Rule's draft names its Tag even before it is published (spec #767, "In use"): the Rule never
+// published names rule-inactive, and still does once it is.
 func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	r, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "uses unused", TriggerEvents: []string{"x"}, Actions: tagAction("unused")})
+
+	drafted, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID)
+	require.NoError(t, err)
+	published, err := rules.UsingTag(ctx, acme(env), "rule-inactive")
 	require.NoError(t, err)
 
-	drafted, err := rules.UsingTag(ctx, acme(env), "unused")
-	require.NoError(t, err)
-	_, err = m.Publish(ctx, acme(env), r.ID)
-	require.NoError(t, err)
-	published, err := rules.UsingTag(ctx, acme(env), "unused")
-	require.NoError(t, err)
-
-	assert.Equal(t, []int64{r.ID}, lo.Map(drafted, func(r *ent.Rule, _ int) int64 { return r.ID }))
-	assert.Equal(t, []int64{r.ID}, lo.Map(published, func(r *ent.Rule, _ int) int64 { return r.ID }))
+	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(drafted, func(r *ent.Rule, _ int) int64 { return r.ID }))
+	assert.Equal(t, []int64{fixtures.RuleInactiveID}, lo.Map(published, func(r *ent.Rule, _ int) int64 { return r.ID }))
 }
 
 func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {

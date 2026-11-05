@@ -192,24 +192,21 @@ func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	// The fixture Users are verified; Initech's owners start unverified here.
-	for _, id := range []int64{fixtures.InitechOwnerOlgaID, fixtures.InitechCoOwnerOwenID} {
-		require.NoError(t, h.env.FeedDB.User.UpdateOneID(id).ClearEmailVerifiedAt().Exec(t.Context()))
-	}
+	// Neither of Virtucon's two owners has verified their email yet.
 	_, saved := feedFrom(t, c, "")
 
 	verifiedAt := time.Now().UTC().Truncate(time.Second)
-	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.InitechOwnerOlgaID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
+	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.VirtuconOwnerVeraID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
 	got, saved := feedFrom(t, c, saved)
-	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
-	olga, foundOlga := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == 5 })
-	owen, foundOwen := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == 6 })
-	require.True(t, foundOlga)
-	require.True(t, foundOwen)
-	at, verified := olga.EmailVerifiedAt.Get()
+	require.Equal(t, []string{fixtures.VirtuconPublicID}, feedIDs(got))
+	vera, foundVera := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == fixtures.VirtuconOwnerVeraID })
+	vic, foundVic := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == fixtures.VirtuconCoOwnerVicID })
+	require.True(t, foundVera)
+	require.True(t, foundVic)
+	at, verified := vera.EmailVerifiedAt.Get()
 	require.True(t, verified)
 	assert.WithinDuration(t, verifiedAt, time.Time(at), time.Second)
-	assert.False(t, owen.EmailVerifiedAt.IsSet() && !owen.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
+	assert.False(t, vic.EmailVerifiedAt.IsSet() && !vic.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
 
 	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
 	got, saved = feedFrom(t, c, saved)

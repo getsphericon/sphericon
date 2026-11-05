@@ -270,3 +270,361 @@
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
+
+# The SMS and Telegram Automations of the job tests (internal/jobs), through Acme's Twilio account
+# (IntegrationAcmeSms) and bot (IntegrationAcmeTelegram). Inactive, so no Event enrolls anyone and
+# no Integration counts them as users; each test queues the step of its Enrollment, which an
+# inactive Automation still runs. Triggers are unique to them.
+# One Telegram step.
+- id: 7500 # fixture: AutomationJobsTelegramHello
+  name: Jobs telegram hello
+  status: inactive
+  live_version_id: 7500
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Two Telegram steps.
+- id: 7501 # fixture: AutomationJobsTelegramHelloAgain
+  name: Jobs telegram hello again
+  status: inactive
+  live_version_id: 7501
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A merge tag, markup Telegram keeps and markup it drops.
+- id: 7502 # fixture: AutomationJobsTelegramEscaped
+  name: Jobs telegram escaped
+  status: inactive
+  live_version_id: 7502
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# An email, a Telegram step, an email.
+- id: 7503 # fixture: AutomationJobsTelegramBetweenEmails
+  name: Jobs telegram between emails
+  status: inactive
+  live_version_id: 7503
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# An image with a caption and two link buttons.
+- id: 7504 # fixture: AutomationJobsTelegramPhoto
+  name: Jobs telegram photo
+  status: inactive
+  live_version_id: 7504
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The link preview turned off, then the same text with it on.
+- id: 7505 # fixture: AutomationJobsTelegramPreviewOff
+  name: Jobs telegram preview off
+  status: inactive
+  live_version_id: 7505
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The unsubscribe link.
+- id: 7506 # fixture: AutomationJobsTelegramUnsubscribeLink
+  name: Jobs telegram unsubscribe link
+  status: inactive
+  live_version_id: 7506
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A plain text.
+- id: 7507 # fixture: AutomationJobsTelegramWelcomeBack
+  name: Jobs telegram welcome back
+  status: inactive
+  live_version_id: 7507
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The start tag of the default bot.
+- id: 7508 # fixture: AutomationJobsTelegramStartTag
+  name: Jobs telegram start tag
+  status: inactive
+  live_version_id: 7508
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The start tag in brackets.
+- id: 7509 # fixture: AutomationJobsTelegramStartTagJoin
+  name: Jobs telegram start tag join
+  status: inactive
+  live_version_id: 7509
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A text with no start tag.
+- id: 7510 # fixture: AutomationJobsTelegramNoTag
+  name: Jobs telegram no tag
+  status: inactive
+  live_version_id: 7510
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A link in the text and a link button.
+- id: 7511 # fixture: AutomationJobsTelegramLinkAndButton
+  name: Jobs telegram link and button
+  status: inactive
+  live_version_id: 7511
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# One URL twice in the text and on a button.
+- id: 7512 # fixture: AutomationJobsTelegramSameURL
+  name: Jobs telegram same url
+  status: inactive
+  live_version_id: 7512
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A tracked link and the unsubscribe link.
+- id: 7513 # fixture: AutomationJobsTelegramOfferAndStop
+  name: Jobs telegram offer and stop
+  status: inactive
+  live_version_id: 7513
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A tracked link.
+- id: 7514 # fixture: AutomationJobsTelegramOffer
+  name: Jobs telegram offer
+  status: inactive
+  live_version_id: 7514
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# One SMS step.
+- id: 7515 # fixture: AutomationJobsSMSHello
+  name: Jobs sms hello
+  status: inactive
+  live_version_id: 7515
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Two SMS steps.
+- id: 7516 # fixture: AutomationJobsSMSHelloAgain
+  name: Jobs sms hello again
+  status: inactive
+  live_version_id: 7516
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# An SMS step, then a tag.
+- id: 7517 # fixture: AutomationJobsSMSHelloThenTag
+  name: Jobs sms hello then tag
+  status: inactive
+  live_version_id: 7517
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A merge tag and markup that stays as written.
+- id: 7518 # fixture: AutomationJobsSMSRendered
+  name: Jobs sms rendered
+  status: inactive
+  live_version_id: 7518
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# An SMS step, then a tag: a Contact it cannot text walks past it.
+- id: 7519 # fixture: AutomationJobsSMSHiThenTag
+  name: Jobs sms hi then tag
+  status: inactive
+  live_version_id: 7519
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# An email, an SMS step, an email.
+- id: 7520 # fixture: AutomationJobsSMSBetweenEmails
+  name: Jobs sms between emails
+  status: inactive
+  live_version_id: 7520
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The unsubscribe link.
+- id: 7521 # fixture: AutomationJobsSMSStopLink
+  name: Jobs sms stop link
+  status: inactive
+  live_version_id: 7521
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Two texts.
+- id: 7522 # fixture: AutomationJobsSMSFirstSecond
+  name: Jobs sms first second
+  status: inactive
+  live_version_id: 7522
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# A tracked link.
+- id: 7523 # fixture: AutomationJobsSMSCart
+  name: Jobs sms cart
+  status: inactive
+  live_version_id: 7523
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# The same link with link tracking off.
+- id: 7524 # fixture: AutomationJobsSMSCartUntracked
+  name: Jobs sms cart untracked
+  status: inactive
+  live_version_id: 7524
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Meridian (workspace 83): Automations whose Triggers nothing else records. Steps in automation_versions.yml.
+# Active, one email step through the default.
+- id: 7400 # fixture: AutomationMeridianWelcome
+  name: Meridian welcome
+  status: active
+  live_version_id: 7400
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Active, one email step through the Relay.
+- id: 7401 # fixture: AutomationMeridianViaRelay
+  name: Meridian relay welcome
+  status: active
+  live_version_id: 7401
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Their email steps through an Integration of their own send nothing: only the draft has one; the
+# live version has HTTP and Tag steps; the Automation is inactive; or it is archived.
+- id: 7402 # fixture: AutomationMeridianDraftOnly
+  name: Meridian draft only
+  status: active
+  live_version_id: 7402
+  draft_version_id: 7403
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7403 # fixture: AutomationMeridianNoEmail
+  name: Meridian HTTP and Tags
+  status: active
+  live_version_id: 7404
+  draft_version_id: 7405
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7404 # fixture: AutomationMeridianInactive
+  name: Meridian inactive
+  status: inactive
+  live_version_id: 7406
+  draft_version_id: 7407
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7405 # fixture: AutomationMeridianArchived
+  name: Meridian archived
+  status: active
+  archived_at: '{{daysAgo 1}}'
+  live_version_id: 7408
+  draft_version_id: 7409
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Inactive, and an unfinished Enrollment stands on its live version.
+- id: 7406 # fixture: AutomationMeridianEnrolled
+  name: Meridian enrolled
+  status: inactive
+  live_version_id: 7410
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Active with a stored empty definition: no Steps.
+- id: 7407 # fixture: AutomationMeridianEmpty
+  name: Meridian empty
+  status: active
+  live_version_id: 7411
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Active, with an email step through the stopped relay: it cannot send.
+- id: 7408 # fixture: AutomationMeridianStopped
+  name: Meridian stopped relay
+  status: active
+  live_version_id: 7412
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# The automations of the system-event Trigger tests (internal/jobs): each starts when its Event is
+# recorded, wherever a test records it and works the Trigger evaluations, and parks its Contact on
+# one wait step, which sends nothing.
+# Starts when a Tag is applied to a Contact (contact.tagged).
+- id: 7420 # fixture: AutomationOnContactTagged
+  name: On contact tagged
+  status: active
+  live_version_id: 7420
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a Contact's address confirms (marketing.confirmed).
+- id: 7421 # fixture: AutomationOnMarketingConfirmed
+  name: On marketing confirmed
+  status: active
+  live_version_id: 7421
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a Contact texts in (sms.received).
+- id: 7422 # fixture: AutomationOnSmsReceived
+  name: On text received
+  status: active
+  live_version_id: 7422
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a Contact clicks a link in a text (sms.clicked).
+- id: 7423 # fixture: AutomationOnSmsClicked
+  name: On text link clicked
+  status: active
+  live_version_id: 7423
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a text to a Contact is not delivered (sms.undelivered).
+- id: 7424 # fixture: AutomationOnSmsUndelivered
+  name: On text undelivered
+  status: active
+  live_version_id: 7424
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a Contact writes to the Workspace's bot (telegram.received).
+- id: 7425 # fixture: AutomationOnTelegramReceived
+  name: On Telegram message
+  status: active
+  live_version_id: 7425
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+# Starts when a Contact clicks a link the bot sent (telegram.clicked).
+- id: 7426 # fixture: AutomationOnTelegramClicked
+  name: On Telegram button clicked
+  status: active
+  live_version_id: 7426
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Emporium (workspace 76): the Automation its Orders are credited to, and the one its clicks carry.
+- id: 7200 # fixture: AutomationEmporiumRevenue
+  name: Emporium revenue
+  status: inactive
+  live_version_id: 7200
+  workspace_id: 76
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7201 # fixture: AutomationEmporiumClicks
+  name: Emporium clicks
+  status: inactive
+  live_version_id: 7201
+  workspace_id: 76
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

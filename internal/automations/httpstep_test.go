@@ -24,16 +24,13 @@ func httpStep(url string) automationsteps.Step {
 	return automationsteps.Step{Type: automationsteps.HTTP, URL: url, Body: slackBody}
 }
 
+// Fixtures: Babel's Contact with quotes in both names, the last one an attempt to add a key.
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	_, err := acme.Contact().UpdateOneID(fixtures.ContactAliceID).
-		SetFirstName(`Al"ice`).SetLastName(`\","admin":true,"x":"`).Save(ctx)
-	require.NoError(t, err)
 
-	res, err := m.DryRun(ctx, acme, fixtures.ContactAliceID, slackBody)
+	res, err := m.DryRun(ctx, env.DB.Scoped(fixtures.BabelID), fixtures.ContactHostileQuotesID, slackBody)
 	require.NoError(t, err)
 	require.Empty(t, res.ErrorKind)
 

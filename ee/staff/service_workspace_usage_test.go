@@ -64,11 +64,10 @@ func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 
 func TestAServiceReadsOneWorkspacesClosedPeriodAsFinalSnapshots(t *testing.T) {
 	h := newHarness(t)
-	h.env.RefreshUsage(t, time.Date(2027, time.February, 3, 0, 0, 0, 0, time.UTC))
 
-	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.NewOptString("2027-01"))
+	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.NewOptString("2025-12")) // AcmeUsageSnapshot
 
-	assert.Equal(t, "2027-01", got.Period)
+	assert.Equal(t, "2025-12", got.Period)
 	require.NotEmpty(t, got.Figures)
 	for _, f := range got.Figures {
 		assert.True(t, f.Final, string(f.Metric))
@@ -85,11 +84,10 @@ func TestReadingTheUsageOfAnUnknownWorkspaceIsNotFound(t *testing.T) {
 
 func TestReadingOneWorkspacesUsageNeedsTheReadUsageScope(t *testing.T) {
 	h := newHarness(t)
-	noUsage := h.env.IssueServiceCredential(t, "service-d", serviceapi.ServiceScopeHoldsWrite)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/service/workspaces/1/usage", nil)
-	req.Header.Set("Authorization", "Bearer "+noUsage)
+	req.Header.Set("Authorization", "Bearer "+holdsOnly)
 	h.env.Internal.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 

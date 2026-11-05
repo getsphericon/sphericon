@@ -29,11 +29,11 @@ func inboxInput() siteapi.IntegrationConfigInput {
 	}
 }
 
-func createInbox(t *testing.T, c *siteapi.Client) siteapi.SiteIntegrationsCreateRes {
+func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId) siteapi.SiteIntegrationsCreateRes {
 	t.Helper()
 	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name: "Test inbox", Config: inboxInput(),
-	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspace})
 	require.NoError(t, err)
 	return res
 }
@@ -62,7 +62,7 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out := createInbox(t, c)
+	out := createInbox(t, c, fixtures.AcmePublicID)
 
 	created, ok := out.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "got %T", out)
@@ -84,21 +84,20 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 
 func TestSiteTestInboxCanBeChosenAsTheDefaultLikeAnyIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	created := createInbox(t, c).(*siteapi.SiteIntegrationResource)
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	makeDefault(t, c, fixtures.AcmePublicID, int64(created.ID))
+	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 
-	row := env.DB.Integration.GetX(t.Context(), int64(created.ID))
+	row := env.DB.Integration.GetX(t.Context(), fixtures.IntegrationGlobexInboxID)
 	assert.True(t, row.IsDefault)
 }
 
 func TestSiteSecondTestInboxIsRefusedNamingTheRule(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, c))
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	out := createInbox(t, c)
+	// Globex keeps a Test inbox already.
+	out := createInbox(t, jane, fixtures.GlobexPublicID)
 
 	refused, ok := out.(*siteapi.SiteIntegrationsCreateConflict)
 	require.Truef(t, ok, "got %T", out)
@@ -107,11 +106,13 @@ func TestSiteSecondTestInboxIsRefusedNamingTheRule(t *testing.T) {
 
 func TestSiteDeletingATestInboxFreesThePlaceForAnother(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	first := createInbox(t, c).(*siteapi.SiteIntegrationResource)
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, int64(first.ID)))
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	deleted, err := jane.SiteIntegrationsDelete(t.Context(),
+		siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleted)
 
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, c), "the deleted one frees the place")
+	assert.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, jane, fixtures.GlobexPublicID), "the deleted one frees the place")
 }
 
 func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *testing.T) {
@@ -249,7 +250,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	inbox := createInbox(t, c).(*siteapi.SiteIntegrationResource)
+	inbox := createInbox(t, c, fixtures.AcmePublicID).(*siteapi.SiteIntegrationResource)
 	makeDefault(t, c, fixtures.AcmePublicID, int64(inbox.ID))
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(ctx)
 	env.SuppressDestination(ctx, "blocked@example.com")

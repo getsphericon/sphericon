@@ -142,9 +142,8 @@ func TestTheLibraryAuthAndAvatarRoutesAreGone(t *testing.T) {
 
 func TestSiteLoginRefusesAUserWithoutAPassword(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.User.UpdateOneID(fixtures.OwnerJaneID).SetPasswordHash("").Exec(t.Context()))
 
-	rec := postLogin(t, env, fixtures.OwnerJaneEmail, "")
+	rec := postLogin(t, env, fixtures.ProviderOnlyPiaEmail, "")
 	assert.Equal(t, http.StatusUnauthorized, rec.Code, "even with an empty password")
 	assert.Nil(t, sessionCookie(rec.Result()))
 }
