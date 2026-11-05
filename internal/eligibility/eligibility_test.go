@@ -2,6 +2,7 @@ package eligibility_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -138,20 +139,11 @@ func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason, "negatives dominate the confirmation")
 }
 
-// The batch Predicate folds case in SQL: a mixed-case contact email matches a
-// lower-cased suppression destination and is excluded from the query.
-func TestPredicateFoldsCaseAndExcludes(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	assert.False(t, inAudience(t, env, fixtures.TyrellID, fixtures.TyrellMatrixMixedCaseID, eligibility.SourceBroadcasts),
-		"suppressed contact excluded despite case difference")
-}
-
-// Stored destinations are lower-cased; a mixed-case address must still match.
+// Stored destinations are lower-cased; an address typed in another case and padded still matches.
 func TestCheckFoldsCase(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.TyrellID, "  "+fixtures.TyrellMatrixMixedCaseEmail+"  ", eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.TyrellID, "  "+strings.ToUpper(fixtures.TyrellMatrixSuppressedEmail)+"  ", eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible, "input is normalized before lookup")
 }
 

@@ -85,6 +85,6 @@ func TestTheCurrentNumberIsTheContactsThatAreNotGloballyOptedOut(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, overview.Contacts.Active, report.Current)
-	assert.Equal(t, 4, overview.Contacts.Unsubscribed, "Tyrell holds four globally opted-out Contacts")
+	assert.Equal(t, 3, overview.Contacts.Unsubscribed, "Tyrell holds three globally opted-out Contacts")
 	assert.Positive(t, report.Current)
 }

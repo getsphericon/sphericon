@@ -29,7 +29,7 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 		return nil
 	}
 	var contactID int64
-	c, err := tx.Scoped.Contact().Query().Where(contact.EmailEqualFold(address)).Only(ctx)
+	c, err := tx.Scoped.Contact().Query().Where(contact.EmailEQ(address)).Only(ctx)
 	switch {
 	case err == nil:
 		contactID = c.ID

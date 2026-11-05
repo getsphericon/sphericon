@@ -1511,10 +1511,6 @@ const (
 	LumonMatrixConfirmedSuppressedEmail = "confirmed-suppressed@lumon.test"
 	// LumonMatrixConfirmedSuppressedID is from fixtures/contacts.
 	LumonMatrixConfirmedSuppressedID = 5526
-	// LumonMatrixMixedCaseEmail is from fixtures/contacts.
-	LumonMatrixMixedCaseEmail = "Mixed.Case@lumon.test"
-	// LumonMatrixMixedCaseID is from fixtures/contacts.
-	LumonMatrixMixedCaseID = 5527
 	// LumonMatrixSuppressedEmail is from fixtures/contacts.
 	LumonMatrixSuppressedEmail = "suppressed@lumon.test"
 	// LumonMatrixSuppressedID is from fixtures/contacts.
@@ -2247,10 +2243,6 @@ const (
 	SuppressionLumonConfirmedSuppressedDestination = "confirmed-suppressed@lumon.test"
 	// SuppressionLumonConfirmedSuppressedID is from fixtures/suppressions.
 	SuppressionLumonConfirmedSuppressedID = 5504
-	// SuppressionLumonMixedCaseDestination is from fixtures/suppressions.
-	SuppressionLumonMixedCaseDestination = "mixed.case@lumon.test"
-	// SuppressionLumonMixedCaseID is from fixtures/suppressions.
-	SuppressionLumonMixedCaseID = 5505
 	// SuppressionLumonSuppressedDestination is from fixtures/suppressions.
 	SuppressionLumonSuppressedDestination = "suppressed@lumon.test"
 	// SuppressionLumonSuppressedID is from fixtures/suppressions.
@@ -2259,10 +2251,6 @@ const (
 	SuppressionTyrellConfirmedSuppressedDestination = "confirmed-suppressed@tyrell.test"
 	// SuppressionTyrellConfirmedSuppressedID is from fixtures/suppressions.
 	SuppressionTyrellConfirmedSuppressedID = 5501
-	// SuppressionTyrellMixedCaseDestination is from fixtures/suppressions.
-	SuppressionTyrellMixedCaseDestination = "mixed.case@tyrell.test"
-	// SuppressionTyrellMixedCaseID is from fixtures/suppressions.
-	SuppressionTyrellMixedCaseID = 5502
 	// SuppressionTyrellNoContactDestination is from fixtures/suppressions.
 	SuppressionTyrellNoContactDestination = "nocontact@tyrell.test"
 	// SuppressionTyrellNoContactID is from fixtures/suppressions.
@@ -2433,10 +2421,6 @@ const (
 	TyrellMatrixConfirmedSuppressedEmail = "confirmed-suppressed@tyrell.test"
 	// TyrellMatrixConfirmedSuppressedID is from fixtures/contacts.
 	TyrellMatrixConfirmedSuppressedID = 5516
-	// TyrellMatrixMixedCaseEmail is from fixtures/contacts.
-	TyrellMatrixMixedCaseEmail = "Mixed.Case@tyrell.test"
-	// TyrellMatrixMixedCaseID is from fixtures/contacts.
-	TyrellMatrixMixedCaseID = 5517
 	// TyrellMatrixSuppressedEmail is from fixtures/contacts.
 	TyrellMatrixSuppressedEmail = "suppressed@tyrell.test"
 	// TyrellMatrixSuppressedID is from fixtures/contacts.

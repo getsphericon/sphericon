@@ -43,7 +43,7 @@ func TestGloballyOptedOut(t *testing.T) {
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []string{
 		fixtures.TyrellMatrixSuppressedEmail, fixtures.TyrellMatrixUnsubEverythingEmail,
-		fixtures.TyrellMatrixConfirmedSuppressedEmail, fixtures.TyrellMatrixMixedCaseEmail,
+		fixtures.TyrellMatrixConfirmedSuppressedEmail,
 	}, emails)
 }
 

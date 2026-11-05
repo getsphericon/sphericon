@@ -15,8 +15,11 @@ type Contact struct {
 }
 
 func (Contact) Annotations() []schema.Annotation {
+	table := TableWithEnumChecks("contacts", Contact{}.Fields())
+	name, expr := LowerEmailCheck("contacts")
+	table.Checks[name] = expr
 	return []schema.Annotation{
-		TableWithEnumChecks("contacts", Contact{}.Fields()),
+		table,
 		Audited{Action: "contact", NamesOnly: true},
 	}
 }

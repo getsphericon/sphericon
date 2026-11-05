@@ -3150,6 +3150,7 @@ func init() {
 		Table: "contacts",
 	}
 	ContactsTable.Annotation.Checks = map[string]string{
+		"contacts_email_lower":  "email = lower(email)",
 		"contacts_source_check": "source IN ('manual', 'api', 'tracker')",
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable

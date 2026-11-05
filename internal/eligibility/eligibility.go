@@ -22,9 +22,9 @@
 // respects Suppression. Whether the workspace requires confirmed opt-in is read
 // inside the rule, so no caller can forget the confirmation gate.
 //
-// Stored destinations are normalized (lower-cased + trimmed) on write, but
-// contact.email is not, so the Contact-side comparison folds case in SQL while
-// Check normalizes its input with suppression.NormalizeDestination.
+// Stored destinations and contact.email are both lower-cased on write (contact.email by
+// internal/emailcase, held by the contacts_email_lower CHECK), so the Contact-side comparison
+// is a plain equality, while Check normalizes its input with suppression.NormalizeDestination.
 package eligibility
 
 import (
@@ -246,16 +246,13 @@ type ref struct {
 	destination func(*sql.Builder)
 }
 
-// contactRef correlates to the outer contacts row, folding case on the
-// (un-normalized) contact email. Writers defer column rendering to build time so
-// the outer selector's dialect is applied — eager string formatting would emit
-// mis-quoted identifiers.
+// contactRef correlates to the outer contacts row and its (lower-cased) email. Writers defer
+// column rendering to build time so the outer selector's dialect is applied — eager string
+// formatting would emit mis-quoted identifiers.
 func contactRef(s *sql.Selector) ref {
 	return ref{
-		workspace: func(b *sql.Builder) { b.WriteString(s.C(contact.FieldWorkspaceID)) },
-		destination: func(b *sql.Builder) {
-			b.WriteString("lower(").WriteString(s.C(contact.FieldEmail)).WriteString(")")
-		},
+		workspace:   func(b *sql.Builder) { b.WriteString(s.C(contact.FieldWorkspaceID)) },
+		destination: func(b *sql.Builder) { b.WriteString(s.C(contact.FieldEmail)) },
 	}
 }
 
