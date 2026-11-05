@@ -185,8 +185,12 @@ run = "go run ./cmd/server genkey"
 description = "Open the pull request for the work of this worktree: rebase onto origin/main, the title and body checks, push the branch, gh pr create. `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>] [<issue>...]`; a branch with a clean tree"
 run = "node mise/scripts/land.ts"
 
+# worktrees:prune, worktrees:rm and worktrees:gc drop databases on the one shared Postgres, prune the
+# daemon state and may empty the Go build cache, so they take turns under one lock, whichever checkout
+# runs them (the daily sweep db:up starts in the background included; prune holds it for the gc it runs).
 ["worktrees:prune"]
 description = "Remove clean worktrees whose branch is already on main (merged, squashed ones too), then run worktrees:gc; dry run unless --apply"
+lock = "sphericon-worktrees"
 usage = 'flag "--apply" help="actually remove, instead of listing"'
 run = '''
 git fetch -q --prune origin
@@ -210,6 +214,7 @@ mise run worktrees:gc ${usage_apply:+--apply}
 
 ["worktrees:rm"]
 description = "Remove one worktree together with its databases (the dev, test, e2e and diff ones and the test workers' clones) and its daemons; run it from the primary checkout, not from inside the worktree"
+lock = "sphericon-worktrees"
 usage = '''
 arg "<path>" help="the worktree's directory"
 flag "--force" help="remove it although it has uncommitted changes"
@@ -268,6 +273,7 @@ mise daemons prune --yes
 
 ["worktrees:gc"]
 description = "Drop the databases of deleted worktrees from the shared Postgres and the daemon state they left (mise daemons prune), and empty the Go build cache once it outgrows SPHERICON_GO_CACHE_LIMIT_GB (default 40); idempotent, dry run unless --apply"
+lock = "sphericon-worktrees"
 usage = 'flag "--apply" help="actually drop and prune, instead of listing"'
 quiet = true
 run = '''

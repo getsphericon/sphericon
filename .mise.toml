@@ -1,3 +1,6 @@
+# A task's `lock` (mise/tasks.toml) needs this version or newer.
+min_version = "2026.11.0"
+
 [tools]
 air = "latest"
 ast-grep = "latest"
