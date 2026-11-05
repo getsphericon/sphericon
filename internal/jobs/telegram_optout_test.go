@@ -156,7 +156,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 func TestAStopGivenToOneBotSilencesTheWorkspacesOtherBots(t *testing.T) {
 	env := testhelper.Setup(t)
 	botA := boundBob(t, env, 7405)
-	botB := env.ConnectTelegram(t, 7406, "optout_7406_bot")
+	botB := env.AcmeTelegram(t)
 	env.BindTelegram(t, botB, fixtures.ContactBobID, optOutUser, 901)
 	automationID := telegramAutomation(t, env, telegramStep(botB, "From B"))
 	env.PostTelegramUpdate(t, botA, said(1, optOutUser, "STOP"))

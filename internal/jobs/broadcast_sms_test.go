@@ -47,7 +47,7 @@ func smsBroadcast(t *testing.T, env *testhelper.TestEnv, account testhelper.Twil
 func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
 	confirmSMS(t, env, alicePhone)
@@ -80,7 +80,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetPhone(bobPhone).ExecX(ctx)
 	for _, number := range []string{fixtures.ContactTexterPhone, fixtures.ContactExportSubjectPhone, alicePhone, bobPhone} {
@@ -121,7 +121,7 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 func TestAnSMSBroadcastPacesAtTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
 	for _, number := range []string{fixtures.ContactTexterPhone, fixtures.ContactExportSubjectPhone, alicePhone} {
 		confirmSMS(t, env, number)

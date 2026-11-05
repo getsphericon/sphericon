@@ -273,7 +273,7 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	bot := env.ConnectTelegram(t, 7800, "acme_audience_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
 		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
@@ -281,18 +281,18 @@ func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *
 	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).
 		SetBody(`<p><a href="{{ telegram_start_url }}">Join us on Telegram</a></p>`).ClearDoc().ClearEditorVersion().
 		ExecX(ctx)
-	before := env.DB.StartToken.Query().CountX(ctx)
+	before := env.DB.StartToken.Query().IDsX(ctx)
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastProSegmentID))
 
 	sent := env.CustomerMail.Messages()
 	require.NotEmpty(t, sent)
-	assert.Equal(t, before+len(sent), env.DB.StartToken.Query().CountX(ctx), "one token per email sent")
-	issuedTo := env.DB.StartToken.Query().Where(starttoken.IntegrationID(int64(bot.Integration.ID))).AllX(ctx)
-	require.Len(t, issuedTo, len(sent))
+	issuedTo := env.DB.StartToken.Query().Where(starttoken.IDNotIn(before...)).AllX(ctx)
+	require.Len(t, issuedTo, len(sent), "one token per email sent")
 	for _, tok := range issuedTo {
+		assert.Equal(t, int64(bot.Integration.ID), tok.IntegrationID, "issued for the default bot")
 		require.NotNil(t, tok.ContactID)
-		assert.NotContains(t, []int64{fixtures.ContactLiamID, 101}, *tok.ContactID, "no start link for a Contact that has Telegram")
+		assert.NotContains(t, []int64{fixtures.ContactLiamID, fixtures.ContactEmmaID}, *tok.ContactID, "no start link for a Contact that has Telegram")
 	}
 }
 

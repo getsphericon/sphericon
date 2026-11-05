@@ -52,7 +52,7 @@ func smsShortPaths(t *testing.T, env *testhelper.TestEnv) []string {
 func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	id := smsBroadcast(t, env, account, "Sale: "+smsOffer+" or your cart "+smsCart+". Stop: {{ unsubscribe_url }}")
 
@@ -107,7 +107,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 func TestAnSMSBroadcastWithLinkTrackingOffGoesOutAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	text := "Sale: " + smsOffer + " or " + smsCart
 	b, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Create(ctx, env.DB.Scoped(fixtures.AcmeID), broadcasts.CreateInput{
@@ -128,7 +128,7 @@ func TestAnSMSBroadcastWithLinkTrackingOffGoesOutAsWritten(t *testing.T) {
 func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id := smsBroadcast(t, env, account, "Hi {{ first_name }}, see "+smsOffer)
 	b := env.DB.Broadcast.GetX(ctx, id)
@@ -163,7 +163,7 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	ctx := t.Context()
 	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
 	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameSmsClicked).ExecX(ctx)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	sender := smsAutomation(t, env, smsStep(account, "Your cart: "+smsCart))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	enrollVia(t, env, sender, fixtures.ContactTexterID)
@@ -196,7 +196,7 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 
 func TestAnSMSStepWithLinkTrackingOffSendsItsLinksAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	step := smsStep(account, "Your cart: "+smsCart)
 	step.LinkTracking = new(false)
 	automationID := smsAutomation(t, env, step)

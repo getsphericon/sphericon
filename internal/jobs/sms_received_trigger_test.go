@@ -24,7 +24,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	ctx := t.Context()
 	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
 	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameSmsReceived).ExecX(ctx)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	res, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString("+14155550188"),
 	})

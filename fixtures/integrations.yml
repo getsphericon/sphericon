@@ -261,16 +261,16 @@
 
 # Acme's Twilio account on the `sms` Channel, sending from a number with the Auth Token: the Send
 # route never routes another Channel's send through it, named or not (ADR 0079). Its callbacks are
-# signed with the Auth Token in its params. The account is not in the fake Twilio, so only what
-# never calls Twilio uses it.
+# signed with the Auth Token in its params, which is also the secret it calls Twilio with.
+# `env.AcmeTwilio` adds the account and its number to the fake Twilio.
 - id: 8 # fixture: IntegrationAcmeSms
   ingest_key: omik_test_integrationacmesms
   name: Acme Twilio
   channel: sms
   provider: twilio
-  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000000001\",\"secret\":\"fixtureacmetwiliosecret\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
+  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000000001\",\"secret\":\"fixtureacmetwilioauthtoken000001\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
   preset: twilio
-  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixture-acme-twilio-auth-token\"}" }}'
+  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixtureacmetwilioauthtoken000001\"}" }}'
   enabled: true
   is_default: false
   workspace_id: 1
@@ -278,14 +278,14 @@
   updated_at: '{{daysAgo 15}}'
 
 # Telegram bots (ADR 0074): a kept one of Acme and one of Globex, neither the default of its
-# Channel (a test that connects a bot through the API makes its own the default). The bots are
-# not in the fake Bot API, so only what never calls Telegram uses them.
+# Channel. `env.AcmeTelegram` adds Acme's bot to the fake Bot API; Globex's is not in it, so only
+# what never calls Telegram uses that one.
 - id: 9 # fixture: IntegrationAcmeTelegram
   ingest_key: omik_test_integrationacmetelegram
   name: Acme bot
   channel: telegram
   provider: telegram
-  config_encrypted: '{{ encrypt "{\"token\":\"7001:fixture-token-acme\",\"botId\":7001,\"username\":\"acme_fixture_bot\"}" }}'
+  config_encrypted: '{{ encrypt "{\"token\":\"7001:AAfixturetokenacmebot00000000000000\",\"bot_id\":7001,\"username\":\"acme_fixture_bot\"}" }}'
   preset: telegram
   params_encrypted: '{{ encrypt "{\"secret\":\"fixture-acme-webhook-secret\"}" }}'
   enabled: true
@@ -298,7 +298,7 @@
   name: Globex bot
   channel: telegram
   provider: telegram
-  config_encrypted: '{{ encrypt "{\"token\":\"7002:fixture-token-globex\",\"botId\":7002,\"username\":\"globex_fixture_bot\"}" }}'
+  config_encrypted: '{{ encrypt "{\"token\":\"7002:AAfixturetokenglobexbot000000000000\",\"bot_id\":7002,\"username\":\"globex_fixture_bot\"}" }}'
   preset: telegram
   params_encrypted: '{{ encrypt "{\"secret\":\"fixture-globex-webhook-secret\"}" }}'
   enabled: true

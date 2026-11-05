@@ -37,13 +37,13 @@ func identify(t *testing.T, env *testhelper.TestEnv, visitorID, email string) {
 // then makes the chat the Contact's and records telegram.bound once, however often it repeats.
 func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7600, "acme_tracker_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 
 	link := startLink(t, env, "dev-tg")
 	env.StartTelegram(t, bot, 1, 6001, link.URL)
 
-	assert.Contains(t, link.URL, "https://t.me/acme_tracker_bot?start=")
+	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 	vis := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-tg")).OnlyX(t.Context())
 	owned := env.DB.Binding.Query().Where(binding.Destination("6001")).OnlyX(t.Context())
 	require.NotNil(t, owned.VisitorID)
@@ -64,13 +64,13 @@ func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *test
 	chats, ok := res.(*siteapi.SiteTelegramListBindingsOKApplicationJSON)
 	require.Truef(t, ok, "got %T", res)
 	require.Len(t, *chats, 1, "the Contact is reached through its Visitor")
-	assert.Equal(t, "acme_tracker_bot", (*chats)[0].BotUsername.Or(""))
+	assert.Equal(t, testhelper.AcmeTelegramUsername, (*chats)[0].BotUsername.Or(""))
 }
 
 // A Visitor's chat is announced to the next Contact the Visitor resolves to as well.
 func TestAVisitorBindingIsAnnouncedToAnotherContactItIsIdentifiedAs(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7601, "acme_shared_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 2, 6002, startLink(t, env, "dev-shared").URL)
 
@@ -96,7 +96,7 @@ func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
 // telegram.received is recorded for it.
 func TestAMessageFromAChatBoundThroughAnIdentifiedVisitorIsTheContactsMessage(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7602, "acme_received_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
 
@@ -114,7 +114,7 @@ func TestAMessageFromAChatBoundThroughAnIdentifiedVisitorIsTheContactsMessage(t 
 // was identified as: telegram.unbound is recorded for it.
 func TestAVisitorsChatMovingAwayIsAnnouncedAsUnboundToItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7603, "acme_moved_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 6, 6004, startLink(t, env, "dev-from").URL)
 	identify(t, env, "dev-from", "from.person@example.com")
@@ -129,7 +129,7 @@ func TestAVisitorsChatMovingAwayIsAnnouncedAsUnboundToItsContact(t *testing.T) {
 // with a link issued for that Contact itself, loses and gains nothing: no telegram.unbound.
 func TestAChatStartedAgainAsTheContactItsVisitorBecameIsNotUnbound(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7604, "acme_same_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 8, 6005, startLink(t, env, "dev-same").URL)
 	identify(t, env, "dev-same", "same.person@example.com")

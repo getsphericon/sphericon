@@ -22,7 +22,7 @@ import (
 )
 
 // The Auth Token of Acme's SMS Integration, spelled the way the fixture does.
-const twilioAuthToken = "fixture-acme-twilio-auth-token"
+const twilioAuthToken = testhelper.AcmeTwilioAuthToken
 
 // twilioStatusBody is a status callback of a message Twilio could not deliver.
 const twilioStatusBody = "ErrorCode=30003&MessageSid=SM1342fe1b2c904d1ab04f0fc7a58abca9&MessageStatus=undelivered" +
@@ -93,7 +93,7 @@ func TestATwilioCallbackOfAConnectedAccountIsTakenAndAForgedOneRefusedAndLogged(
 	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
 	t.Cleanup(func() { slog.SetDefault(prev) })
 	env := setupHooks(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	status := url.Values{
 		"MessageSid": {"SM0123"}, "MessageStatus": {"delivered"}, "To": {"+14155552671"},
 		"From": {testhelper.TwilioNumber}, "AccountSid": {sms.Account.SID},

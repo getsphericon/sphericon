@@ -561,6 +561,10 @@ const (
 	ContactComplainedEmail = "mia.data@codebasics.dev"
 	// ContactComplainedID is from fixtures/contacts.
 	ContactComplainedID = 109
+	// ContactEmmaEmail is from fixtures/contacts.
+	ContactEmmaEmail = "emma.sql@codebasics.dev"
+	// ContactEmmaID is from fixtures/contacts.
+	ContactEmmaID = 101
 	// ContactErasableEmail is from fixtures/contacts.
 	ContactErasableEmail = "erin@initech.test"
 	// ContactErasableID is from fixtures/contacts.

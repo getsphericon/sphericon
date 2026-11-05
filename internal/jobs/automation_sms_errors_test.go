@@ -43,7 +43,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			account := env.ConnectTwilio(t)
+			account := env.ConnectTwilio(t) // revoking an API key needs an account connected with one
 			automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 			confirmSMS(t, env, fixtures.ContactTexterPhone)
 			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -82,7 +82,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -146,7 +146,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			account := env.ConnectTwilio(t)
+			account := env.AcmeTwilio(t)
 			automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 			confirmSMS(t, env, fixtures.ContactTexterPhone)
 			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -190,7 +190,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			account := env.ConnectTwilio(t)
+			account := env.AcmeTwilio(t)
 			automationID := smsAutomation(t, env,
 				smsStep(account, "Hello"),
 				automationsteps.Step{Type: automationsteps.ApplyTag, Tag: "texted"},
@@ -222,7 +222,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, account.Key.SID, account.Key.Secret, "Acme Shop")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
@@ -252,7 +252,7 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 func TestANumberTwilioSaysIsNoMobileNumberIsSuppressed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Hello"), smsStep(account, "Again"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)

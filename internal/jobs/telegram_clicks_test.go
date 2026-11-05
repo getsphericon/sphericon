@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -42,9 +43,9 @@ var (
 
 // shortPaths are the `/c/<token>` paths of the links of the only message the bot got: the hrefs of
 // its text first, then its buttons' URLs.
-func shortPaths(t *testing.T, env *testhelper.TestEnv) (text, buttons []string) {
+func shortPaths(t *testing.T, env *testhelper.TestEnv, chatID string) (text, buttons []string) {
 	t.Helper()
-	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
+	sends := lo.Filter(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) bool { return r.String("chat_id") == chatID })
 	require.Len(t, sends, 1)
 	path := func(url string) string {
 		m := shortOf.FindStringSubmatch(strings.ReplaceAll(url, "&amp;", "&"))
@@ -82,7 +83,7 @@ func follow(t *testing.T, env *testhelper.TestEnv, path, userAgent string) *http
 
 func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecordAClick(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7701, "acme_clicks_bot")
+	bot := env.AcmeTelegram(t)
 	step := telegramStep(bot, `Read <a href="`+textLink+`">the offer</a> now`)
 	step.Buttons = []telegramrender.Button{{Label: "Open", URL: buttonLink}}
 	automationID := telegramAutomation(t, env, step)
@@ -90,7 +91,7 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 	enrollVia(t, env, automationID, fixtures.ContactBobID)
 	runSteps(t, env)
 
-	text, buttons := shortPaths(t, env)
+	text, buttons := shortPaths(t, env, "701001")
 	require.Len(t, text, 1)
 	require.Len(t, buttons, 1)
 	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
@@ -113,7 +114,7 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 
 func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7702, "acme_same_bot")
+	bot := env.AcmeTelegram(t)
 	step := telegramStep(bot, `<a href="`+buttonLink+`">one</a> and <a href="`+buttonLink+`">two</a>`)
 	step.Buttons = []telegramrender.Button{{Label: "Open", URL: buttonLink}}
 	automationID := telegramAutomation(t, env, step)
@@ -121,7 +122,7 @@ func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
 	enrollVia(t, env, automationID, fixtures.ContactBobID)
 	runSteps(t, env)
 
-	text, buttons := shortPaths(t, env)
+	text, buttons := shortPaths(t, env, "702001")
 
 	assert.Equal(t, []string{text[0], text[0]}, text)
 	assert.Equal(t, text[:1], buttons, "the text and the button share the token")
@@ -130,7 +131,7 @@ func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
 
 func TestTheUnsubscribeLinkOfATelegramMessageIsNotTracked(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7703, "acme_unsub_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, `<a href="`+textLink+`">offer</a> <a href="{{ unsubscribe_url }}">stop</a>`))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 703001, 703001)
 	enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -156,16 +157,15 @@ func TestAnUnknownShortLinkIsNotFoundAndRecordsNothing(t *testing.T) {
 func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAndTheFigure(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7704, "acme_broadcast_clicks_bot")
-	env.BindTelegram(t, bot, fixtures.ContactBobID, 704001, 704001)
+	bot := env.AcmeTelegram(t)
 	id := telegramBroadcastOf(t, env, bot, broadcasts.TelegramContentInput{
 		Text:    new(`<a href="` + textLink + `">offer</a>`),
 		Buttons: &[]telegramrender.Button{{Label: "Open", URL: buttonLink}},
 	})
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
-	text, buttons := shortPaths(t, env)
+	text, buttons := shortPaths(t, env, "70001") // Liam's fixture chat
 	clicked := func() bool {
-		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx).ClickedAt != nil
+		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLiamID)).OnlyX(ctx).ClickedAt != nil
 	}
 
 	resp := follow(t, env, text[0], telegramUA)
@@ -197,12 +197,11 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	ctx := t.Context()
 	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
 	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameTelegramClicked).ExecX(ctx)
-	bot := env.ConnectTelegram(t, 7705, "acme_click_trigger_bot")
+	bot := env.AcmeTelegram(t)
 	sender := telegramAutomation(t, env, telegramStep(bot, `<a href="`+textLink+`">offer</a>`))
-	env.BindTelegram(t, bot, fixtures.ContactLiamID, 705001, 705001)
 	enrollVia(t, env, sender, fixtures.ContactLiamID)
 	runSteps(t, env)
-	text, _ := shortPaths(t, env)
+	text, _ := shortPaths(t, env, "70001") // Liam's fixture chat
 	consume := func() []jobs.EvaluateTriggerArgs {
 		envelopes := env.QueuedEnvelopes(t, events.NameTelegramClicked)
 		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])

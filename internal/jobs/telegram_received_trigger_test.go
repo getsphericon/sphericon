@@ -22,7 +22,7 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	ctx := t.Context()
 	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
 	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameTelegramReceived).ExecX(ctx)
-	bot := env.ConnectTelegram(t, 7401, "trigger_bot")
+	bot := env.AcmeTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactLiamID, 4101, 1000)
 
 	env.PostTelegramUpdate(t, bot, `{"update_id":1,"message":{"message_id":1,"date":1767225600,"chat":{"id":4101,"type":"private"},"from":{"id":4101,"is_bot":false},"text":"hi"}}`)

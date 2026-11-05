@@ -5,7 +5,8 @@
 // the ones it posts.
 //
 // The harness (testhelper.Setup) starts one per test and points SPHERICON_TWILIO_API_URL at it, as
-// env.Twilio. Every SID and secret it hands out is random, made when the test runs.
+// env.Twilio. Every SID and secret it hands out is random, made when the test runs, except an
+// account a test adds by its own SID and Auth Token (AddAccountOf).
 package twiliotest
 
 import (
@@ -172,6 +173,17 @@ func (s *Server) AddAccount() Account {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	a := Account{SID: sid("AC"), AuthToken: strings.TrimPrefix(sid("x"), "x")}
+	s.accounts[a.SID] = a
+	return a
+}
+
+// AddAccountOf adds an account with the SID and Auth Token the test names, such as the ones a
+// fixture Integration stores.
+func (s *Server) AddAccountOf(accountSID, authToken string) Account {
+	s.serving()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	a := Account{SID: accountSID, AuthToken: authToken}
 	s.accounts[a.SID] = a
 	return a
 }

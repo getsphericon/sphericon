@@ -43,7 +43,7 @@ func workLate(t *testing.T, env *testhelper.TestEnv, args ingest.LateNoticeArgs)
 func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -74,7 +74,7 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 // times, each reading queueing the next, the last queueing none.
 func TestADeliveryReportOfNoTextIsReadAgainABoundedNumberOfTimes(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	enrollVia(t, env, automationID, fixtures.ContactTexterID)

@@ -67,7 +67,7 @@ func smsConfirmationOf(t *testing.T, env *testhelper.TestEnv, number string) *en
 
 func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	c := textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 	before := textable(t, env, knownNumber)
@@ -93,7 +93,7 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 
 func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -111,7 +111,7 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 
 func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 
@@ -129,7 +129,7 @@ func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 
 func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	textingContact(t, env)
 
 	for range 2 {
@@ -144,7 +144,7 @@ func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
 
 func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesOut(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	c := textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -184,7 +184,7 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 
 func TestNeitherSTOPNorSTARTIsAnswered(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	textingContact(t, env)
 
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -204,7 +204,7 @@ func TestNeitherSTOPNorSTARTIsAnswered(t *testing.T) {
 // as an API client's Confirmation of a number no Contact has is: it creates no Contact.
 func TestASTARTFromANumberNoContactHasLiftsItsStop(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0109", "+14155550199", "STOP"))

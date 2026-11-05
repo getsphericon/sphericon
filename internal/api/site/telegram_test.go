@@ -39,7 +39,7 @@ func TestContactBindingsAreItsOwnAndItsVisitors(t *testing.T) {
 
 func TestTheSiteIssuesAStartLinkForAContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7200, "acme_site_bot")
+	bot := env.AcmeTelegram(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	id := bot.Integration.ID
 
@@ -50,5 +50,5 @@ func TestTheSiteIssuesAStartLinkForAContact(t *testing.T) {
 	require.NoError(t, err)
 	link, ok := res.(*siteapi.TelegramStartLinkResource)
 	require.Truef(t, ok, "got %T", res)
-	assert.Contains(t, link.URL, "https://t.me/acme_site_bot?start=")
+	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 }

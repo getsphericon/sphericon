@@ -94,7 +94,7 @@ func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
-	id := int64(env.ConnectTwilio(t).Integration.ID)
+	id := int64(env.AcmeTwilio(t).Integration.ID)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
 		Steps: &[]automationsteps.Step{smsVia(&id, "Hi")},
 	})

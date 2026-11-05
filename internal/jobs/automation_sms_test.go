@@ -66,7 +66,7 @@ func confirmSMS(t *testing.T, env *testhelper.TestEnv, number string) {
 
 func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Hi {{ first_name }} & co, your cart <is> waiting"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -147,7 +147,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			account := env.ConnectTwilio(t)
+			account := env.AcmeTwilio(t)
 			automationID := smsAutomation(t, env,
 				smsStep(account, "Hi"),
 				automationsteps.Step{Type: automationsteps.ApplyTag, Tag: "reminded"},
@@ -173,7 +173,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env,
 		automationsteps.Step{Type: automationsteps.Email, Subject: "First", Body: "<p>one</p>"},
 		smsStep(account, "Text"),
@@ -200,7 +200,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Stop: {{ unsubscribe_url }}"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -227,7 +227,7 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 // the page speaks of text messages and not of emails.
 func TestTheSMSUnsubscribeLinkTellsThePageItIsAText(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "Stop: {{ unsubscribe_url }}"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -251,7 +251,7 @@ func TestTheSMSUnsubscribeLinkTellsThePageItIsAText(t *testing.T) {
 func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	automationID := smsAutomation(t, env, smsStep(account, "First"), smsStep(account, "Second"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
