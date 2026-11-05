@@ -1076,12 +1076,27 @@ func (b *ApiTokenScopedCreateBulk) raw(ctx context.Context) (*ApiTokenCreateBulk
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("ApiToken: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.ApiToken.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ApiTokenScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().MembershipIDs()...)
+		}
+		if err := b.s.verifyMembership(ctx, ids); err != nil {
+			return fmt.Errorf("membership: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the ApiToken entities.
@@ -1986,12 +2001,18 @@ func (b *AuditEntryScopedCreateBulk) raw(ctx context.Context) (*AuditEntryCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("AuditEntry: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.AuditEntry.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *AuditEntryScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the AuditEntry entities.
@@ -2614,12 +2635,54 @@ func (b *AutomationScopedCreateBulk) raw(ctx context.Context) (*AutomationCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Automation: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Automation.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *AutomationScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VersionsIDs()...)
+		}
+		if err := b.s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("versions: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().LiveVersionIDs()...)
+		}
+		if err := b.s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("live_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().DraftVersionIDs()...)
+		}
+		if err := b.s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("draft_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().RunsIDs()...)
+		}
+		if err := b.s.verifyAutomationRun(ctx, ids); err != nil {
+			return fmt.Errorf("runs: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Automation entities.
@@ -3755,12 +3818,45 @@ func (b *AutomationRunScopedCreateBulk) raw(ctx context.Context) (*AutomationRun
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("AutomationRun: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.AutomationRun.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *AutomationRunScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VersionIDs()...)
+		}
+		if err := b.s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the AutomationRun entities.
@@ -4800,12 +4896,36 @@ func (b *AutomationVersionScopedCreateBulk) raw(ctx context.Context) (*Automatio
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("AutomationVersion: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.AutomationVersion.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *AutomationVersionScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().RunsIDs()...)
+		}
+		if err := b.s.verifyAutomationRun(ctx, ids); err != nil {
+			return fmt.Errorf("runs: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the AutomationVersion entities.
@@ -5596,12 +5716,45 @@ func (b *BindingScopedCreateBulk) raw(ctx context.Context) (*BindingCreateBulk, 
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Binding: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Binding.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *BindingScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VisitorIDs()...)
+		}
+		if err := b.s.verifyVisitor(ctx, ids); err != nil {
+			return fmt.Errorf("visitor: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Binding entities.
@@ -6392,12 +6545,18 @@ func (b *BrandKitScopedCreateBulk) raw(ctx context.Context) (*BrandKitCreateBulk
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("BrandKit: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.BrandKit.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *BrandKitScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the BrandKit entities.
@@ -7644,12 +7803,45 @@ func (b *BroadcastScopedCreateBulk) raw(ctx context.Context) (*BroadcastCreateBu
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Broadcast: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Broadcast.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *BroadcastScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().RecipientsIDs()...)
+		}
+		if err := b.s.verifyBroadcastRecipient(ctx, ids); err != nil {
+			return fmt.Errorf("recipients: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().SegmentIDs()...)
+		}
+		if err := b.s.verifySegment(ctx, ids); err != nil {
+			return fmt.Errorf("segment: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Broadcast entities.
@@ -9504,12 +9696,36 @@ func (b *BroadcastRecipientScopedCreateBulk) raw(ctx context.Context) (*Broadcas
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("BroadcastRecipient: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.BroadcastRecipient.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *BroadcastRecipientScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastIDs()...)
+		}
+		if err := b.s.verifyBroadcast(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the BroadcastRecipient entities.
@@ -10285,12 +10501,36 @@ func (b *CapturedMessageScopedCreateBulk) raw(ctx context.Context) (*CapturedMes
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("CapturedMessage: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.CapturedMessage.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *CapturedMessageScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().OutboundMessageIDs()...)
+		}
+		if err := b.s.verifyOutboundMessage(ctx, ids); err != nil {
+			return fmt.Errorf("outbound_message: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the CapturedMessage entities.
@@ -10865,12 +11105,27 @@ func (b *ConfirmationScopedCreateBulk) raw(ctx context.Context) (*ConfirmationCr
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Confirmation: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Confirmation.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ConfirmationScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Confirmation entities.
@@ -11913,12 +12168,72 @@ func (b *ContactScopedCreateBulk) raw(ctx context.Context) (*ContactCreateBulk, 
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Contact: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Contact.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ContactScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VisitorsIDs()...)
+		}
+		if err := b.s.verifyVisitor(ctx, ids); err != nil {
+			return fmt.Errorf("visitors: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BindingsIDs()...)
+		}
+		if err := b.s.verifyBinding(ctx, ids); err != nil {
+			return fmt.Errorf("bindings: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().StartTokensIDs()...)
+		}
+		if err := b.s.verifyStartToken(ctx, ids); err != nil {
+			return fmt.Errorf("start_tokens: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().TagsIDs()...)
+		}
+		if err := b.s.verifyTag(ctx, ids); err != nil {
+			return fmt.Errorf("tags: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().EventsIDs()...)
+		}
+		if err := b.s.verifyEvent(ctx, ids); err != nil {
+			return fmt.Errorf("events: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().OrdersIDs()...)
+		}
+		if err := b.s.verifyOrder(ctx, ids); err != nil {
+			return fmt.Errorf("orders: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Contact entities.
@@ -13528,12 +13843,18 @@ func (b *CustomFieldScopedCreateBulk) raw(ctx context.Context) (*CustomFieldCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("CustomField: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.CustomField.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *CustomFieldScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the CustomField entities.
@@ -14243,12 +14564,18 @@ func (b *EmailTemplateScopedCreateBulk) raw(ctx context.Context) (*EmailTemplate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("EmailTemplate: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.EmailTemplate.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *EmailTemplateScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the EmailTemplate entities.
@@ -15039,12 +15366,18 @@ func (b *ErasureScopedCreateBulk) raw(ctx context.Context) (*ErasureCreateBulk, 
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Erasure: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Erasure.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ErasureScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Erasure entities.
@@ -15631,12 +15964,27 @@ func (b *EventScopedCreateBulk) raw(ctx context.Context) (*EventCreateBulk, erro
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Event: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Event.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *EventScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Event entities.
@@ -16736,12 +17084,18 @@ func (b *HeldOrderEventScopedCreateBulk) raw(ctx context.Context) (*HeldOrderEve
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("HeldOrderEvent: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.HeldOrderEvent.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *HeldOrderEventScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the HeldOrderEvent entities.
@@ -17238,12 +17592,18 @@ func (b *HoldScopedCreateBulk) raw(ctx context.Context) (*HoldCreateBulk, error)
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Hold: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Hold.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *HoldScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Hold entities.
@@ -18296,12 +18656,54 @@ func (b *IntegrationScopedCreateBulk) raw(ctx context.Context) (*IntegrationCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Integration: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Integration.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *IntegrationScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ProviderLimiterIDs()...)
+		}
+		if err := b.s.verifyProviderLimiter(ctx, ids); err != nil {
+			return fmt.Errorf("provider_limiter: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().CapturedMessagesIDs()...)
+		}
+		if err := b.s.verifyCapturedMessage(ctx, ids); err != nil {
+			return fmt.Errorf("captured_messages: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BindingsIDs()...)
+		}
+		if err := b.s.verifyBinding(ctx, ids); err != nil {
+			return fmt.Errorf("bindings: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().StartTokensIDs()...)
+		}
+		if err := b.s.verifyStartToken(ctx, ids); err != nil {
+			return fmt.Errorf("start_tokens: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Integration entities.
@@ -20094,12 +20496,18 @@ func (b *InvitationScopedCreateBulk) raw(ctx context.Context) (*InvitationCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Invitation: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Invitation.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *InvitationScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Invitation entities.
@@ -20950,12 +21358,18 @@ func (b *JoinDomainScopedCreateBulk) raw(ctx context.Context) (*JoinDomainCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("JoinDomain: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.JoinDomain.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *JoinDomainScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the JoinDomain entities.
@@ -21713,12 +22127,27 @@ func (b *MembershipScopedCreateBulk) raw(ctx context.Context) (*MembershipCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Membership: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Membership.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *MembershipScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ConnectionsIDs()...)
+		}
+		if err := b.s.verifyApiToken(ctx, ids); err != nil {
+			return fmt.Errorf("connections: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Membership entities.
@@ -22560,12 +22989,54 @@ func (b *OrderScopedCreateBulk) raw(ctx context.Context) (*OrderCreateBulk, erro
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Order: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Order.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *OrderScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastIDs()...)
+		}
+		if err := b.s.verifyBroadcast(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().MovementsIDs()...)
+		}
+		if err := b.s.verifyOrderMovement(ctx, ids); err != nil {
+			return fmt.Errorf("movements: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Order entities.
@@ -23188,12 +23659,27 @@ func (b *OrderMovementScopedCreateBulk) raw(ctx context.Context) (*OrderMovement
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("OrderMovement: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.OrderMovement.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *OrderMovementScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().OrderIDs()...)
+		}
+		if err := b.s.verifyOrder(ctx, ids); err != nil {
+			return fmt.Errorf("order: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the OrderMovement entities.
@@ -24023,12 +24509,90 @@ func (b *OutboundMessageScopedCreateBulk) raw(ctx context.Context) (*OutboundMes
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("OutboundMessage: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.OutboundMessage.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *OutboundMessageScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().TrackedLinksIDs()...)
+		}
+		if err := b.s.verifyTrackedLink(ctx, ids); err != nil {
+			return fmt.Errorf("tracked_links: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastIDs()...)
+		}
+		if err := b.s.verifyBroadcast(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationIDs()...)
+		}
+		if err := b.s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BroadcastRecipientIDs()...)
+		}
+		if err := b.s.verifyBroadcastRecipient(ctx, ids); err != nil {
+			return fmt.Errorf("broadcast_recipient: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().AutomationRunIDs()...)
+		}
+		if err := b.s.verifyAutomationRun(ctx, ids); err != nil {
+			return fmt.Errorf("automation_run: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().TemplateIDs()...)
+		}
+		if err := b.s.verifyEmailTemplate(ctx, ids); err != nil {
+			return fmt.Errorf("template: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the OutboundMessage entities.
@@ -26055,12 +26619,27 @@ func (b *ProviderLimiterScopedCreateBulk) raw(ctx context.Context) (*ProviderLim
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("ProviderLimiter: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.ProviderLimiter.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *ProviderLimiterScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the ProviderLimiter entities.
@@ -26810,12 +27389,54 @@ func (b *RuleScopedCreateBulk) raw(ctx context.Context) (*RuleCreateBulk, error)
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Rule: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Rule.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *RuleScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VersionsIDs()...)
+		}
+		if err := b.s.verifyRuleVersion(ctx, ids); err != nil {
+			return fmt.Errorf("versions: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().LiveVersionIDs()...)
+		}
+		if err := b.s.verifyRuleVersion(ctx, ids); err != nil {
+			return fmt.Errorf("live_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().DraftVersionIDs()...)
+		}
+		if err := b.s.verifyRuleVersion(ctx, ids); err != nil {
+			return fmt.Errorf("draft_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().FiringsIDs()...)
+		}
+		if err := b.s.verifyRuleFiring(ctx, ids); err != nil {
+			return fmt.Errorf("firings: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Rule entities.
@@ -27885,12 +28506,45 @@ func (b *RuleFiringScopedCreateBulk) raw(ctx context.Context) (*RuleFiringCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("RuleFiring: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.RuleFiring.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *RuleFiringScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().RuleIDs()...)
+		}
+		if err := b.s.verifyRule(ctx, ids); err != nil {
+			return fmt.Errorf("rule: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VersionIDs()...)
+		}
+		if err := b.s.verifyRuleVersion(ctx, ids); err != nil {
+			return fmt.Errorf("version: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the RuleFiring entities.
@@ -28771,12 +29425,45 @@ func (b *RuleVersionScopedCreateBulk) raw(ctx context.Context) (*RuleVersionCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("RuleVersion: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.RuleVersion.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *RuleVersionScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().RuleIDs()...)
+		}
+		if err := b.s.verifyRule(ctx, ids); err != nil {
+			return fmt.Errorf("rule: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().TriggersIDs()...)
+		}
+		if err := b.s.verifyRuleVersionTrigger(ctx, ids); err != nil {
+			return fmt.Errorf("triggers: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().FiringsIDs()...)
+		}
+		if err := b.s.verifyRuleFiring(ctx, ids); err != nil {
+			return fmt.Errorf("firings: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the RuleVersion entities.
@@ -29491,12 +30178,27 @@ func (b *RuleVersionTriggerScopedCreateBulk) raw(ctx context.Context) (*RuleVers
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("RuleVersionTrigger: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.RuleVersionTrigger.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *RuleVersionTriggerScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VersionIDs()...)
+		}
+		if err := b.s.verifyRuleVersion(ctx, ids); err != nil {
+			return fmt.Errorf("version: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the RuleVersionTrigger entities.
@@ -30131,12 +30833,18 @@ func (b *SegmentScopedCreateBulk) raw(ctx context.Context) (*SegmentCreateBulk, 
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Segment: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Segment.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *SegmentScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Segment entities.
@@ -30801,12 +31509,18 @@ func (b *SendCapLimiterScopedCreateBulk) raw(ctx context.Context) (*SendCapLimit
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("SendCapLimiter: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.SendCapLimiter.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *SendCapLimiterScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the SendCapLimiter entities.
@@ -31478,12 +32192,18 @@ func (b *SendingDomainScopedCreateBulk) raw(ctx context.Context) (*SendingDomain
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("SendingDomain: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.SendingDomain.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *SendingDomainScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the SendingDomain entities.
@@ -32541,12 +33261,45 @@ func (b *StartTokenScopedCreateBulk) raw(ctx context.Context) (*StartTokenCreate
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("StartToken: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.StartToken.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *StartTokenScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().IntegrationIDs()...)
+		}
+		if err := b.s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().VisitorIDs()...)
+		}
+		if err := b.s.verifyVisitor(ctx, ids); err != nil {
+			return fmt.Errorf("visitor: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the StartToken entities.
@@ -33091,12 +33844,27 @@ func (b *SuppressionScopedCreateBulk) raw(ctx context.Context) (*SuppressionCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Suppression: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Suppression.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *SuppressionScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Suppression entities.
@@ -33812,12 +34580,27 @@ func (b *TagScopedCreateBulk) raw(ctx context.Context) (*TagCreateBulk, error) {
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Tag: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Tag.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *TagScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactsIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contacts: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Tag entities.
@@ -34461,12 +35244,27 @@ func (b *TrackedLinkScopedCreateBulk) raw(ctx context.Context) (*TrackedLinkCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("TrackedLink: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.TrackedLink.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *TrackedLinkScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().OutboundMessageIDs()...)
+		}
+		if err := b.s.verifyOutboundMessage(ctx, ids); err != nil {
+			return fmt.Errorf("outbound_message: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the TrackedLink entities.
@@ -34999,12 +35797,18 @@ func (b *TrackingDomainScopedCreateBulk) raw(ctx context.Context) (*TrackingDoma
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("TrackingDomain: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.TrackingDomain.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *TrackingDomainScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the TrackingDomain entities.
@@ -35858,12 +36662,27 @@ func (b *UnsubscribeScopedCreateBulk) raw(ctx context.Context) (*UnsubscribeCrea
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Unsubscribe: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Unsubscribe.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *UnsubscribeScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Unsubscribe entities.
@@ -36555,12 +37374,18 @@ func (b *UsageScopedCreateBulk) raw(ctx context.Context) (*UsageCreateBulk, erro
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Usage: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Usage.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *UsageScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Usage entities.
@@ -37183,12 +38008,45 @@ func (b *VisitorScopedCreateBulk) raw(ctx context.Context) (*VisitorCreateBulk, 
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("Visitor: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.Visitor.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *VisitorScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().BindingsIDs()...)
+		}
+		if err := b.s.verifyBinding(ctx, ids); err != nil {
+			return fmt.Errorf("bindings: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().StartTokensIDs()...)
+		}
+		if err := b.s.verifyStartToken(ctx, ids); err != nil {
+			return fmt.Errorf("start_tokens: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().ContactIDs()...)
+		}
+		if err := b.s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the Visitor entities.
@@ -38027,12 +38885,18 @@ func (b *WebhookEndpointScopedCreateBulk) raw(ctx context.Context) (*WebhookEndp
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("WebhookEndpoint: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.WebhookEndpoint.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *WebhookEndpointScopedCreateBulk) check(ctx context.Context) error {
+	return nil
 }
 
 // Save verifies every builder's references, then creates the WebhookEndpoint entities.

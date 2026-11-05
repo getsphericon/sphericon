@@ -1,7 +1,13 @@
 package scopedclient_test
 
 import (
+	"context"
+	"fmt"
+	"strings"
 	"testing"
+
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
@@ -258,6 +264,28 @@ func TestScopedCreateBulk(t *testing.T) {
 		for _, r := range rows {
 			assert.Equal(t, acme, r.WorkspaceID)
 		}
+	})
+
+	t.Run("verifies each reference once per batch, not once per row", func(t *testing.T) {
+		var checks int
+		counting := ent.NewClient(ent.Driver(dialect.DebugWithContext(
+			entsql.OpenDB(dialect.Postgres, env.SQLDB),
+			func(_ context.Context, v ...any) {
+				if strings.Contains(fmt.Sprint(v...), "COUNT(") {
+					checks++
+				}
+			},
+		)))
+		cbr := counting.Scoped(acme).BroadcastRecipient()
+		contacts := []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID}
+		builders := make([]*ent.BroadcastRecipientScopedCreate, len(contacts))
+		for i, id := range contacts {
+			// test writes: the scoped wrapper is the subject
+			builders[i] = cbr.Create().SetBroadcastID(fixtures.BroadcastAuthoredID).SetContactID(id)
+		}
+		// test writes: the scoped wrapper is the subject
+		require.NoError(t, cbr.CreateBulk(builders...).Exec(ctx))
+		assert.Equal(t, 2, checks, "one check for the broadcast reference and one for the contacts")
 	})
 
 	t.Run("a builder of another scope is refused", func(t *testing.T) {

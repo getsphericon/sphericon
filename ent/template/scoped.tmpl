@@ -371,12 +371,42 @@ func (b *{{ $N }}ScopedCreateBulk) raw(ctx context.Context) (*{{ $N }}CreateBulk
 		if x.s.ws != b.s.ws {
 			return nil, fmt.Errorf("{{ $N }}: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		if err := x.check(ctx); err != nil {
-			return nil, err
-		}
 		builders[i] = x.b
 	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
 	return b.s.c.{{ $N }}.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *{{ $N }}ScopedCreateBulk) check(ctx context.Context) error {
+	{{- range $e := scopedEdges $n }}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().{{ $e.StructField }}IDs()...)
+		}
+		if err := b.s.verify{{ $e.Type.Name }}(ctx, ids); err != nil {
+			return fmt.Errorf("{{ $e.Name }}: %w", err)
+		}
+	}
+	{{- end }}
+	{{- range $r := scopedFieldRefs $ $n }}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			if v, ok := x.b.Mutation().{{ $r.Field.MutationGet }}(); ok {
+				ids = append(ids, v)
+			}
+		}
+		if err := b.s.verify{{ $r.Target.Name }}(ctx, ids); err != nil {
+			return fmt.Errorf("{{ $r.Field.Name }}: %w", err)
+		}
+	}
+	{{- end }}
+	return nil
 }
 
 // Save verifies every builder's references, then creates the {{ $N }} entities.
