@@ -16,10 +16,10 @@ import (
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
@@ -51,7 +51,7 @@ type Handlers struct {
 var _ staffeeapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *staffeeapi.ProblemDetailsStatusCode {
 	return problem.Staffee(ctx, err)
 }

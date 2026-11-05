@@ -10,6 +10,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -21,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -129,7 +129,7 @@ func NewHandlers(d Deps) *Handlers {
 var _ externalapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *externalapi.ProblemDetailsStatusCode {
 	return problem.External(ctx, err)
 }

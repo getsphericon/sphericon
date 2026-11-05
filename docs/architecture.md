@@ -102,6 +102,10 @@ coding standards in `CODING_STANDARDS.md`.
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
   `*TokenAuth` (scopes + the Workspace's `*ent.Scoped`) in context — query through
   `auth.TokenScoped(ctx)` (see "Workspace scoping" below).
+- The answer of every refusal and failure on every surface (ADR 0103) is decided once in
+  `internal/api/problem`, beside the security handlers: it is the surfaces' shared code, imported by
+  the surfaces, `internal/server` and `ee/api` only. A core package returns its refusal and never
+  imports it (easement component `api-problem`).
 
 ## Workspace scoping: the generated scoped client
 

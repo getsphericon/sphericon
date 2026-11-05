@@ -10,10 +10,10 @@ import (
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -132,7 +132,7 @@ func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *col
 var _ collectapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *collectapi.ProblemDetailsStatusCode {
 	return problem.Collect(ctx, err)
 }

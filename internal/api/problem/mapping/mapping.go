@@ -1,4 +1,4 @@
-// Package mapping holds the goverter converter of the problem package (internal/problem).
+// Package mapping holds the goverter converter of the problem package (internal/api/problem).
 package mapping
 
 import (

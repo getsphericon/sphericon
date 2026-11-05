@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/auditapi"
@@ -38,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -265,7 +265,7 @@ func NewHandlers(d Deps) *Handlers {
 var _ siteapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *siteapi.ProblemDetailsStatusCode {
 	return problem.Site(ctx, err)
 }

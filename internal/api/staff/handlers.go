@@ -12,11 +12,11 @@ import (
 	"net/http"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/staff/resources"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
@@ -66,7 +66,7 @@ type Handlers struct {
 var _ staffapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *staffapi.ProblemDetailsStatusCode {
 	return problem.Staff(ctx, err)
 }

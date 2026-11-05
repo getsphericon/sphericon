@@ -30,6 +30,7 @@ import (
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/clientip"
@@ -38,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/server/spa"
 	"github.com/getsphericon/sphericon/internal/signupitems"
@@ -263,7 +263,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limi
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
-// ProblemErrorHandler renders, as the contract's Problem (internal/problem), what fails in an
+// ProblemErrorHandler renders, as the contract's Problem (internal/api/problem), what fails in an
 // ogen server before or around a handler (a request it cannot decode), and the refusals of /mcp's
 // own token check. A handler's own error goes through its surface's NewError instead, which
 // answers through the same problem.Of.

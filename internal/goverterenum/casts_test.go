@@ -13,12 +13,12 @@ import (
 )
 
 // The packages that map enums between ent, the modules and the contracts: each surface's
-// converters, the handlers that call them, internal/server, and internal/problem with its
+// converters, the handlers that call them, internal/server, and internal/api/problem with its
 // converter, which render the refusals with the contracts' problem types.
 var apiPackages = []string{
 	"github.com/getsphericon/sphericon/internal/server",
-	"github.com/getsphericon/sphericon/internal/problem",
-	"github.com/getsphericon/sphericon/internal/problem/mapping",
+	"github.com/getsphericon/sphericon/internal/api/problem",
+	"github.com/getsphericon/sphericon/internal/api/problem/mapping",
 	"github.com/getsphericon/sphericon/internal/api/collect",
 	"github.com/getsphericon/sphericon/internal/api/site/resources",
 	"github.com/getsphericon/sphericon/internal/api/external/resources",

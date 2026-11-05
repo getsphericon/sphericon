@@ -29,6 +29,12 @@ components:
   api-staff: { in: internal/api/staff }
   # The security handlers every surface shares.
   api-auth: { in: internal/api/auth }
+  # The answer of every refusal on every surface (ADR 0103): shared surface code like the security
+  # handlers, so it sits among the drivers and the core never reaches it.
+  api-problem:
+    in: internal/api/problem
+    allow_importers: [api-site, api-external, api-collect, api-staff, ee-api, wiring]
+    because: the Problem mapping is the surfaces' own code (it imports every surface's generated package); a core package returns its refusal and never decides the answer
 
   # The wiring: the places that may build the whole program, and so may reach the Enterprise Edition.
   wiring:
@@ -126,28 +132,33 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 rules:
   api-site:
     <<: *no-raw-client
-    may_depend_on: [api-auth, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw]
     forbid_external: *no-container
-    because: a surface depends on the shared auth handlers and the core, never on another surface
+    because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
     <<: *no-raw-client
-    may_depend_on: [api-auth, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw]
     forbid_external: *no-container
-    because: a surface depends on the shared auth handlers and the core, never on another surface
+    because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
     <<: *no-raw-client
-    may_depend_on: [api-auth, core, core-raw]
+    may_depend_on: [api-auth, api-problem, core, core-raw]
     forbid_external: *no-container
-    because: a surface depends on the shared auth handlers and the core, never on another surface
+    because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
     <<: *no-raw-client
-    may_depend_on: [core, core-raw]
+    may_depend_on: [api-problem, core, core-raw]
     forbid_external: *no-container
-    because: the Staff surface depends on the core (its session check is the Staff member module's), never on another surface
+    because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
     may_depend_on: [core, core-raw]
     forbid_external: *no-container
     because: the security handlers sit below every surface
+  api-problem:
+    <<: *no-raw-client
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
+    because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
     may_depend_on: [core-raw]
     forbid_symbol:
@@ -162,7 +173,7 @@ rules:
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   ee-api:
     <<: *no-raw-client
-    may_depend_on: [core, core-raw, ee]
+    may_depend_on: [api-problem, core, core-raw, ee]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
@@ -175,7 +186,18 @@ rules:
     because: the Enterprise Edition builds on the core and never on a surface's handlers; the Edition (ee-edition) builds its own surfaces
   wiring:
     may_depend_on:
-      [core, core-raw, ee, ee-edition, api-site, api-external, api-collect, api-staff, api-auth]
+      [
+        core,
+        core-raw,
+        ee,
+        ee-edition,
+        api-site,
+        api-external,
+        api-collect,
+        api-staff,
+        api-auth,
+        api-problem,
+      ]
     because: wiring is where the program is assembled
 
   web-generated:

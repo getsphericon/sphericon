@@ -104,7 +104,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
-  the module's error, and `internal/problem` (the surface's `NewError`) answers a module's sentinel refusal
+  the module's error, and `internal/api/problem` (the surface's `NewError`) answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
@@ -123,9 +123,10 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (`siteapi`, `externalapi`, `collectapi`, `staffapi`, `staffeeapi`, `serviceapi`) and no
   `problem.Error`: every operation answers a refusal with the contract's one `Problem` (its
   `default` response), the handler returns the module's sentinel as its error, and the surface's
-  `NewError` answers it through `internal/problem`. The rule's `ignores` are the files that keep an
-  answer no refusal kind gives as a `problem.Error` (the 402 of a missing Enterprise license, the
-  410 of an expired confirmation link). A single answer kept by hand in a covered file carries
+  `NewError` answers it through `internal/api/problem`, which the rule does not cover: it is where
+  the problems are written. Its other `ignores` are the files that keep an answer no refusal kind
+  gives as a `problem.Error` (the 402 of a missing Enterprise license, the 410 of an expired
+  confirmation link). A single answer kept by hand in a covered file carries
   `// ast-grep-ignore: no-hand-written-problem-in-handlers` under a comment that says why. A batch
   that reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares

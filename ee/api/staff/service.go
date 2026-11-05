@@ -10,8 +10,8 @@ import (
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
@@ -116,7 +116,7 @@ type ServiceHandlers struct {
 var _ serviceapi.Handler = (*ServiceHandlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*ServiceHandlers) NewError(ctx context.Context, err error) *serviceapi.ProblemDetailsStatusCode {
 	return problem.Service(ctx, err)
 }

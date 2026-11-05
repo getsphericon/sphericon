@@ -2,7 +2,7 @@ package external
 
 import (
 	"context"
-	"github.com/getsphericon/sphericon/internal/problem"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"net/http"
 	"time"
 

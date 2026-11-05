@@ -16,7 +16,7 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
-ent + inuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/problem/mapping/converter_gen.go  (rendered by internal/problem)
+ent + inuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 gen/service request bodies  ──goverter──▶ ee/api/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
@@ -67,7 +67,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   converter's file does not import (it sees the package through ent's export data, without its
   constants), so the method is what makes the check happen. `TestAPIConvertsNoEnumByCast`
   (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter or handler package or
-  in `internal/problem` (the refusals), generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
+  in `internal/api/problem` (the refusals), generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
   `convert.PtrVia` (request) and the enum method.
 
 - **An error is the `default` response, never a status of its own.** Every operation of a
@@ -77,7 +77,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   deletion). ogen runs with `convenient_errors: on` (`ogen.yml`), so it reduces that response to one
   error type per surface (`*ProblemDetailsStatusCode`): a handler returns `(*T, error)` (or `error`
   when it answers no body), the Handler's `NewError` turns the error into the problem through
-  `internal/problem` (`problem.Site`, `problem.External`, …), and a client returns the success type
+  `internal/api/problem` (`problem.Site`, `problem.External`, …), and a client returns the success type
   or that error (`testhelper.SiteRefusal` and its kin read it in a test). An operation without the
   `default` response fails the generation (and `check:openapi`, rule `operation-declares-problem`);
   a status code listed beside it would bring a per-operation sum type back.
