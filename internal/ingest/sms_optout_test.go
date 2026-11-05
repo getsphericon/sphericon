@@ -24,7 +24,8 @@ import (
 // Channel-wide opt-out on sms, from a Contact's number or any other; START or UNSTOP lifts it and
 // records a Confirmation with provenance keyword. Neither is a reply, and sphericon answers neither.
 
-const knownNumber = "+14155550177"
+// knownNumber is the number of ContactTexter, which has neither a Confirmation nor an opt-out.
+const knownNumber = fixtures.ContactTexterPhone
 
 // confirmNumber records the Confirmation an API client asserts for the number.
 func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
@@ -68,7 +69,6 @@ func smsConfirmationOf(t *testing.T, env *testhelper.TestEnv, number string) *en
 func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	c := textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 	before := textable(t, env, knownNumber)
 	require.True(t, before.Eligible)
@@ -84,7 +84,7 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	require.NotNil(t, stop)
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
 	assert.Equal(t, unsubscribe.ViaKeyword, lo.FromPtr(stop.Via))
-	assert.Equal(t, int64(c.ID), lo.FromPtr(stop.ContactID))
+	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
 	consent := smsConfirmationOf(t, env, knownNumber)
 	assert.Nil(t, consent, "the stop drops the consent it ends")
 	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
@@ -112,7 +112,6 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -130,7 +129,6 @@ func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	textingContact(t, env)
 
 	for range 2 {
 		posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -145,7 +143,6 @@ func TestARedeliveredSTOPRecordsOneOptOut(t *testing.T) {
 func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	c := textingContact(t, env)
 	confirmNumber(t, env, knownNumber)
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0105", knownNumber, "STOP"))
@@ -162,9 +159,9 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	consent := smsConfirmationOf(t, env, knownNumber)
 	require.NotNil(t, consent)
 	assert.Equal(t, confirmation.ProvenanceKeyword, consent.Provenance)
-	assert.Equal(t, int64(c.ID), lo.FromPtr(consent.ContactID))
+	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(consent.ContactID))
 	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
-		"provenance": "keyword", "contactId": c.ID,
+		"provenance": "keyword", "contactId": fixtures.ContactTexterID,
 	})
 	assert.Equal(t, 1, smsConfirmed)
 	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
@@ -172,7 +169,7 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
 	assert.Zero(t, replies, "a START is no reply")
 
-	contact := env.DB.Contact.GetX(t.Context(), int64(c.ID))
+	contact := env.DB.Contact.GetX(t.Context(), int64(fixtures.ContactTexterID))
 	id := int64(sms.Integration.ID)
 	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outbound.Request{
 		Kind: outboundmessage.KindBroadcast, Key: "sms:after-start", Destination: knownNumber, Contact: contact,
@@ -185,7 +182,6 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 func TestNeitherSTOPNorSTARTIsAnswered(t *testing.T) {
 	env := testhelper.Setup(t)
 	sms := env.AcmeTwilio(t)
-	textingContact(t, env)
 
 	stopped := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
 		inbound(sms, "SM0107", knownNumber, "STOP"))

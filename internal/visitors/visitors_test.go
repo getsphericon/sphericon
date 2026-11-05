@@ -126,11 +126,8 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 func TestCollectTreatsAVanishedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	require.NoError(t, visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-gone", Email: new("gone@example.com")}))
-	_, err := env.DB.Contact.Delete().Where(contact.Email("gone@example.com")).Exec(ctx)
-	require.NoError(t, err)
 
-	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{{VisitorID: "dev-gone", Action: "login"}}))
+	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}))
 	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Zero(t, got[0].ContactID)

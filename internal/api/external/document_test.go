@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -95,11 +96,7 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 	assert.Nil(t, row.EditorVersion)
 
 	// A body written over a document clears it.
-	authored, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
-		Name: "Authored", Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
-	})
-	require.NoError(t, err)
-	id := authored.(*externalapi.TemplateResource).ID
+	id := entityIDString(fixtures.TemplateAuthoredID)
 	cleared, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{Body: externalapi.NewOptString("<p>Plain</p>")},
 		externalapi.TemplatesUpdateParams{ID: id})
 	require.NoError(t, err)
@@ -170,26 +167,29 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	assert.Equal(t, testhelper.ExternalEmailOf(res).Body, *row.Body)
 	assert.NotEmpty(t, row.Doc)
 
+	// The edits go to a draft written in the editor.
+	authored := externalapi.BroadcastsUpdateParams{ID: entityIDString(fixtures.BroadcastAuthoredID)}
+	stored := *env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Body
 	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badHeadingDoc())}),
-	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
+	}, authored)
 	require.NoError(t, err)
 	r, ok := refused.(*externalapi.BroadcastsUpdateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", refused)
 	assert.Contains(t, r.Detail.Or(""), "level")
-	assert.Equal(t, testhelper.ExternalEmailOf(res).Body, *env.DB.Broadcast.GetX(ctx, int64(res.ID)).Body, "nothing is stored")
+	assert.Equal(t, stored, *env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Body, "nothing is stored")
 
 	both, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x"))}),
-	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
+	}, authored)
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, both)
 
 	cleared, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>Plain</p>")})},
-		externalapi.BroadcastsUpdateParams{ID: res.ID})
+		authored)
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.BroadcastResource{}, cleared)
-	assert.Empty(t, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Doc)
+	assert.Empty(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastAuthoredID).Doc)
 }
 
 // An external read-then-write keeps an email step's document: the step carries it on read, and

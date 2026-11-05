@@ -120,13 +120,6 @@ func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 	m := segments.New(env.Bus)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.TyrellID)
-	create := func(op string) int64 {
-		t.Helper()
-		def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"` + op + `"}]}`
-		s, err := m.Create(ctx, ws, segments.CreateInput{Name: "SMS " + op, Condition: new(def)})
-		require.NoError(t, err)
-		return s.ID
-	}
 	listed := func(id int64) (int, []int64) {
 		t.Helper()
 		count, err := m.Count(ctx, ws, id)
@@ -142,12 +135,10 @@ func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 	all, err := ws.Contact().Query().Count(ctx)
 	require.NoError(t, err)
 
-	textable, untextable := create("has"), create("doesNotHave")
-
-	count, ids := listed(textable)
+	count, ids := listed(fixtures.SegmentTyrellTextableID)
 	assert.Equal(t, 1, count)
 	assert.Equal(t, []int64{fixtures.TyrellMatrixConfirmedID}, ids)
-	count, ids = listed(untextable)
+	count, ids = listed(fixtures.SegmentTyrellUntextableID)
 	assert.Equal(t, all-1, count)
 	assert.Contains(t, ids, int64(fixtures.TyrellMatrixCleanID), "a phone without a Confirmation")
 	assert.Contains(t, ids, int64(fixtures.TyrellMatrixUnsubEverythingID), "a confirmed phone that opted out")

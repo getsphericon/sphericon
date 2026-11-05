@@ -126,24 +126,25 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
 
-	ids, err := planAudience(ctx, env.DB, mod, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(ids), 2)
+	ids := []int64{
+		env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID),
+		env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactCarolID),
+	}
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
-	err = deliverRecipient(ctx, env.DB, mod, ids[1])
+	err := deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonSuspended, held.Reason)
 	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
-	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason)
+	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).HoldReason)
 	assert.Len(t, fs.sent, 1)
 
 	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]))
 	assert.False(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
-	assert.Nil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason, "the hold clears when a send goes through")
+	assert.Nil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).HoldReason, "the hold clears when a send goes through")
 }
 
 // An unsubscribe that lands after planning but before the send still wins: the
@@ -155,14 +156,12 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
 
-	ids, err := planAudience(ctx, env.DB, mod, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
-	c := env.DB.Contact.GetX(ctx, rec.ContactID)
+	id := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
+	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	env.UnsubscribeFromBroadcasts(ctx, suppression.NormalizeDestination(*c.Email))
 
-	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
-	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(ids[0])).OnlyX(ctx).Status)
+	require.NoError(t, deliverRecipient(ctx, env.DB, mod, id))
+	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(id)).OnlyX(ctx).Status)
 	for _, m := range fs.sent {
 		assert.NotEqual(t, *c.Email, m.To, "an unsubscribed destination is never sent to")
 	}
@@ -249,12 +248,9 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
-		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
-		ExecX(ctx)
 
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastProSegmentID))
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs)), fixtures.BroadcastWithoutTelegramID))
 
 	got := make([]string, len(fs.sent))
 	for i, m := range fs.sent {
@@ -275,15 +271,9 @@ func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *
 	ctx := context.Background()
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
-	env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).
-		SetCondition(`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"doesNotHave"}]}`).
-		ExecX(ctx)
-	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).
-		SetBody(`<p><a href="{{ telegram_start_url }}">Join us on Telegram</a></p>`).ClearDoc().ClearEditorVersion().
-		ExecX(ctx)
 	before := env.DB.StartToken.Query().IDsX(ctx)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastProSegmentID))
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastTelegramInviteID))
 
 	sent := env.CustomerMail.Messages()
 	require.NotEmpty(t, sent)

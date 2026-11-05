@@ -22,6 +22,74 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 
+# Firings whose Actions the job tests (internal/jobs) run, one per Rule and Contact.
+# Of RuleMultiTrigger for Alice (vip and newsletter): apply rule-multi, then remove vip.
+- id: 7500 # fixture: RuleFiringMultiPending
+  rule_id: 103
+  version_id: 103
+  contact_id: 1
+  action: rule_multi_a
+  source_id: 'fixture:rule-firing-7500'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Of RuleFailThenTag for Bob: an Action that fails, then a tag.
+- id: 7501 # fixture: RuleFiringFailThenTagPending
+  rule_id: 104
+  version_id: 104
+  contact_id: 2
+  action: rule_fail
+  source_id: 'fixture:rule-firing-7501'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Of RuleEnrollGreeting for Bob, never enrolled in the greeting.
+- id: 7502 # fixture: RuleFiringEnrollGreetingPending
+  rule_id: 106
+  version_id: 106
+  contact_id: 2
+  action: rule_enroll
+  source_id: 'fixture:rule-firing-7502'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Of RuleEnrollGreeting for Carol, enrolled in the greeting before.
+- id: 7503 # fixture: RuleFiringEnrollGreetingCarol
+  rule_id: 106
+  version_id: 106
+  contact_id: 3
+  action: rule_enroll
+  source_id: 'fixture:rule-firing-7503'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Of RuleEnrollInactiveAutomation for Bob.
+- id: 7504 # fixture: RuleFiringEnrollDraftPending
+  rule_id: 107
+  version_id: 107
+  contact_id: 2
+  action: rule_enroll_draft
+  source_id: 'fixture:rule-firing-7504'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# Of RuleEnrollSingleEmail for Bob.
+- id: 7505 # fixture: RuleFiringEnrollSingleEmailPending
+  rule_id: 108
+  version_id: 108
+  contact_id: 2
+  action: rule_enroll_single
+  source_id: 'fixture:rule-firing-7505'
+  results: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
 # Globex (workspace 2) foreign row.
 - id: 900 # fixture: RuleFiringGlobex
   rule_id: 900

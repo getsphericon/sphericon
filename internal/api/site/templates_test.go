@@ -58,17 +58,11 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Preview me",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi")}),
-	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	b := created.(*siteapi.SiteBroadcastResource)
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	out, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{
 		Email: siteapi.NewOptEmailAddress("qa@test.dev"),
-	}, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+	}, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, out)
 }

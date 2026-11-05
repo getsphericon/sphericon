@@ -250,7 +250,7 @@ func TestSigninATakeoverWithANameNoUserMayHaveKeepsTheRegisteredName(t *testing.
 func TestSigninATakenOverSignUpKeepsThePendingInvitation(t *testing.T) {
 	env, fake := signinEnv(t)
 	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
-	token := inviteToAcme(t, env, "victim@gmail.com")
+	token := fixtures.InvitationAcmeVictimGmailToken // to victim@gmail.com
 	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
 	signInWith(t, fake, b, victim, "")
@@ -297,17 +297,17 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 	})
 	t.Run("an accepted invitation of a new address", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		token := inviteToAcme(t, env, "newbie@example.com")
+		token := fixtures.InvitationAcmeNewcomerToken
 		res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
 			siteapi.SitePublicInvitationsAcceptParams{Token: token})
 		require.NoError(t, err)
 		require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
-		assert.NotNil(t, userByEmail(t, env, "newbie@example.com").EmailProvenAt)
+		assert.NotNil(t, userByEmail(t, env, fixtures.InvitationAcmeNewcomerEmail).EmailProvenAt)
 	})
 	t.Run("an accepted invitation of a Verified User", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+		token := fixtures.InvitationAcmeOscarToken
 		res, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(t.Context(),
 			&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
 		require.NoError(t, err)

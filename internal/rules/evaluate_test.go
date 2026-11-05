@@ -153,34 +153,29 @@ func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {
 	assert.Empty(t, fired)
 }
 
+// "rule_url whose url contains pricing" (RuleUrlPricing): any property key is a leaf of the
+// Condition, so it fires only for an Event whose url carries the word, not for another url, another
+// key, a url that is not text or an Event with no properties.
 func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := rules.New(env.Cipher, env.Bus)
-	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}`
-	r, err := m.Create(ctx, s, rules.CreateInput{
-		Name: "Pricing clicks", TriggerEvents: []string{"props_click"}, Condition: &cond,
-		Actions: []rules.Action{{Type: rules.ActionApplyTag, Tag: "pricing"}},
-	})
-	require.NoError(t, err, "any property key is valid on save")
-	_, err = m.Publish(ctx, s, r.ID)
-	require.NoError(t, err)
 
 	fire := func(sourceID string, props map[string]any) int {
 		fired, err := m.Evaluate(ctx, s, rules.Event{
-			ContactID: fixtures.ContactAliceID, Action: "props_click", SourceID: sourceID,
+			ContactID: fixtures.ContactAliceID, Action: "rule_url", SourceID: sourceID,
 			RecordedAt: time.Now().Add(time.Minute), Properties: props,
 		})
 		require.NoError(t, err)
 		return len(fired)
 	}
 
-	assert.Equal(t, 1, fire("p-hit", map[string]any{"url": "https://x.test/pricing"}))
 	assert.Equal(t, 0, fire("p-miss", map[string]any{"url": "https://x.test/docs"}))
 	assert.Equal(t, 0, fire("p-missing", map[string]any{"other": "pricing"}))
 	assert.Equal(t, 0, fire("p-type", map[string]any{"url": 7}))
 	assert.Equal(t, 0, fire("p-none", nil))
+	assert.Equal(t, 1, fire("p-hit", map[string]any{"url": "https://x.test/pricing"}))
 }
 
 // "nps_submitted with score >= 9" (RulePromoters): a number leaf on the Event's property fires for

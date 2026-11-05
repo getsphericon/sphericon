@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -148,18 +147,6 @@ func TestARemovedMemberRejoinsByConfirmingAnotherAddressOnTheDomainButNotByLoggi
 	assert.Len(t, acmeMembersNamed(acmeMembers(t, owner), "again@acme.com"), 1, "the accepted trade-off: a new proof rejoins")
 }
 
-// inviteTo invites email to a Workspace as its Owner and returns the link token.
-func inviteTo(t *testing.T, owner *siteapi.Client, ws siteapi.WorkspaceId, email string, role siteapi.SiteInvitableRole) string {
-	t.Helper()
-	res, err := owner.SiteInvitationsCreate(t.Context(),
-		&siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: role},
-		siteapi.SiteInvitationsCreateParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
-	require.Truef(t, ok, "got %T", res)
-	return created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
-}
-
 func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
@@ -172,7 +159,7 @@ func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 func TestAnInvitationToAnotherWorkspaceThatProvesANewAddressAlsoJoinsTheDomainWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
-	token := inviteTo(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, colleague.Email, siteapi.SiteInvitableRoleMember)
+	token := fixtures.InvitationGlobexColleagueToken
 
 	acceptAnonymously(t, env, token)
 
@@ -183,7 +170,7 @@ func TestAnInvitationForAnAlreadyProvenAddressTriggersNoDomainJoin(t *testing.T)
 	env := testhelper.Setup(t)
 	person := signUp(t, env, colleague.Email)
 	enableAcmeJoin(t, env)
-	token := inviteTo(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, colleague.Email, siteapi.SiteInvitableRoleMember)
+	token := fixtures.InvitationGlobexColleagueToken
 
 	res, err := person.client.SitePublicInvitationsAccept(t.Context(), &siteapi.SiteAcceptInvitationInput{},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
@@ -196,7 +183,7 @@ func TestAnInvitationForAnAlreadyProvenAddressTriggersNoDomainJoin(t *testing.T)
 func TestAnAdminInvitationToTheDomainWorkspaceKeepsTheAdminRoleOfAFirstProof(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
-	token := inviteTo(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, colleague.Email, siteapi.SiteInvitableRoleAdmin)
+	token := fixtures.InvitationAcmeColleagueToken
 
 	acceptAnonymously(t, env, token)
 
@@ -208,7 +195,7 @@ func TestAnAdminInvitationToTheDomainWorkspaceKeepsTheAdminRoleOfAFirstProof(t *
 
 func TestAnAdminInvitationRaisesADomainJoinedMember(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteTo(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, colleague.Email, siteapi.SiteInvitableRoleAdmin)
+	token := fixtures.InvitationAcmeColleagueToken
 	enableAcmeJoin(t, env)
 	person := signUp(t, env, colleague.Email)
 	requireDomainJoined(t, env, colleague.Email)

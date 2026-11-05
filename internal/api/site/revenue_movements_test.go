@@ -41,7 +41,13 @@ func orderProps(id, total string, extra ...string) map[string]string {
 // byDay reads the revenue of the last 7 days as {date: amount} for the days that moved.
 func byDay(t *testing.T, env *testhelper.TestEnv) (total int64, days map[string]int64) {
 	t.Helper()
-	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange7d))
+	return byDayOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
+}
+
+// byDayOf is byDay of the Workspace with the public id ws, read by c.
+func byDayOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) (total int64, days map[string]int64) {
+	t.Helper()
+	got := revenueOf(t, c, ws, siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange7d))
 	days = map[string]int64{}
 	for _, p := range got.Series {
 		if p.Amount != 0 {

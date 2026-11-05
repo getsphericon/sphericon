@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -195,19 +194,16 @@ func TestARemovedJoinDomainAdmitsNobodyAndKeepsItsMembers(t *testing.T) {
 // A domain that moved to another Workspace is no longer the old one's: its record was gone,
 // the other Workspace proved it, and the next person joins the new holder only.
 func TestADomainHandedOverJoinsItsNewHolderOnly(t *testing.T) {
-	zone := dnstest.NewZone(t)
-	env := testhelper.Setup(t, testhelper.WithTXTLookup(zone.LookupTXT))
+	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
-	globex := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setGlobexJoin(t, globex))
-	added := mustAddJoinDomain(t, globex, fixtures.GlobexPublicID, fixtures.JoinDomainVerifiedDomain)
-	zone.PublishTXT(t, added.Record.Host, added.Record.Value)
-	require.IsType(t, &siteapi.SiteJoinDomainResource{}, verifyJoinDomain(t, globex, fixtures.GlobexPublicID, added.ID))
+	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setGlobexJoin(t, env.SiteActor(t, fixtures.OwnerJaneEmail)))
+	// handed-over.test moved to Globex: Acme keeps only a pending claim of it.
+	address := "newbie@" + fixtures.JoinDomainGlobexHandedOverDomain
 
-	joiner := signUp(t, env, "newbie@acme.com")
+	joiner := signUp(t, env, address)
 
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.GlobexPublicID), joiner.landing)
-	assert.Empty(t, acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), "newbie@acme.com"))
+	assert.Empty(t, acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), address))
 }
 
 func setGlobexJoin(t *testing.T, c *siteapi.Client) siteapi.SiteDomainJoinSetRes {

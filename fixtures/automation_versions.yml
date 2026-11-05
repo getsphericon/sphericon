@@ -1,6 +1,6 @@
 # The definition of each Automation (ADR 0049, ADR 0065), one version per row: its Trigger and its
-# steps, each send step with the Integration it names (integrationId; none here but 5568: the
-# Workspace default). Id = the Automation's id for version 1. The Automation points at its live version and its draft in automations.yml, by the
+# steps, each send step with the Integration it names (integrationId; none but 5568 and Meridian's:
+# the Workspace default). Id = the Automation's id for version 1. The Automation points at its live version and its draft in automations.yml, by the
 # rules of the migration that moved the definition here. The linear JSON step list
 # ({"type":"email"|"wait", ...}); HTML bodies are kept attribute-free for clean JSON. Onboarding
 # drip (106) has two versions, with Enrollments on both.
@@ -349,3 +349,389 @@
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
+
+# The SMS and Telegram Automations of the job tests (internal/jobs), through Acme's Twilio account
+# (IntegrationAcmeSms) and bot (IntegrationAcmeTelegram). Inactive, so no Event enrolls anyone and
+# no Integration counts them as users; each test queues the step of its Enrollment, which an
+# inactive Automation still runs. Triggers are unique to them.
+- id: 7500 # fixture: AutomationJobsTelegramHelloVersion
+  automation_id: 7500
+  trigger_event: job_telegram_hello
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Hello"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7501 # fixture: AutomationJobsTelegramHelloAgainVersion
+  automation_id: 7501
+  trigger_event: job_telegram_hello_again
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Hello"},{"type":"telegram","integrationId":9,"text":"Again"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7502 # fixture: AutomationJobsTelegramEscapedVersion
+  automation_id: 7502
+  trigger_event: job_telegram_escaped
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Hi {{ "{{ first_name }}" }}, <b>welcome</b><script>x()</script>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7503 # fixture: AutomationJobsTelegramBetweenEmailsVersion
+  automation_id: 7503
+  trigger_event: job_telegram_between_emails
+  version: 1
+  steps: '[{"type":"email","subject":"First","body":"<p>one</p>"},{"type":"telegram","integrationId":9,"text":"Telegram"},{"type":"email","subject":"Last","body":"<p>two</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7504 # fixture: AutomationJobsTelegramPhotoVersion
+  automation_id: 7504
+  trigger_event: job_telegram_photo
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Look <b>here</b>","imageUrl":"https://cdn.example.com/a.png","buttons":[{"label":"Open","url":"https://example.com/a"},{"label":"More","url":"https://example.com/b"}]}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7505 # fixture: AutomationJobsTelegramPreviewOffVersion
+  automation_id: 7505
+  trigger_event: job_telegram_preview_off
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"See https://example.com","linkPreview":false},{"type":"telegram","integrationId":9,"text":"See https://example.com"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7506 # fixture: AutomationJobsTelegramUnsubscribeLinkVersion
+  automation_id: 7506
+  trigger_event: job_telegram_unsubscribe_link
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"<a href=\"{{ "{{ unsubscribe_url }}" }}\">stop</a>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7507 # fixture: AutomationJobsTelegramWelcomeBackVersion
+  automation_id: 7507
+  trigger_event: job_telegram_welcome_back
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Welcome back"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7508 # fixture: AutomationJobsTelegramStartTagVersion
+  automation_id: 7508
+  trigger_event: job_telegram_start_tag
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Another chat: {{ "{{ telegram_start_url }}" }}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7509 # fixture: AutomationJobsTelegramStartTagJoinVersion
+  automation_id: 7509
+  trigger_event: job_telegram_start_tag_join
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Join: [{{ "{{ telegram_start_url }}" }}]"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7510 # fixture: AutomationJobsTelegramNoTagVersion
+  automation_id: 7510
+  trigger_event: job_telegram_no_tag
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"No tag here"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7511 # fixture: AutomationJobsTelegramLinkAndButtonVersion
+  automation_id: 7511
+  trigger_event: job_telegram_link_and_button
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"Read <a href=\"https://shop.test/offer?a=1&b=2\">the offer</a> now","buttons":[{"label":"Open","url":"https://shop.test/button"}]}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7512 # fixture: AutomationJobsTelegramSameURLVersion
+  automation_id: 7512
+  trigger_event: job_telegram_same_url
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/button\">one</a> and <a href=\"https://shop.test/button\">two</a>","buttons":[{"label":"Open","url":"https://shop.test/button"}]}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7513 # fixture: AutomationJobsTelegramOfferAndStopVersion
+  automation_id: 7513
+  trigger_event: job_telegram_offer_and_stop
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/offer?a=1&b=2\">offer</a> <a href=\"{{ "{{ unsubscribe_url }}" }}\">stop</a>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7514 # fixture: AutomationJobsTelegramOfferVersion
+  automation_id: 7514
+  trigger_event: job_telegram_offer
+  version: 1
+  steps: '[{"type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/offer?a=1&b=2\">offer</a>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7515 # fixture: AutomationJobsSMSHelloVersion
+  automation_id: 7515
+  trigger_event: job_sms_hello
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Hello"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7516 # fixture: AutomationJobsSMSHelloAgainVersion
+  automation_id: 7516
+  trigger_event: job_sms_hello_again
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Hello"},{"type":"sms","integrationId":8,"text":"Again"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7517 # fixture: AutomationJobsSMSHelloThenTagVersion
+  automation_id: 7517
+  trigger_event: job_sms_hello_then_tag
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Hello"},{"type":"apply_tag","tag":"texted"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7518 # fixture: AutomationJobsSMSRenderedVersion
+  automation_id: 7518
+  trigger_event: job_sms_rendered
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Hi {{ "{{ first_name }}" }} & co, your cart <is> waiting"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7519 # fixture: AutomationJobsSMSHiThenTagVersion
+  automation_id: 7519
+  trigger_event: job_sms_hi_then_tag
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Hi"},{"type":"apply_tag","tag":"reminded"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7520 # fixture: AutomationJobsSMSBetweenEmailsVersion
+  automation_id: 7520
+  trigger_event: job_sms_between_emails
+  version: 1
+  steps: '[{"type":"email","subject":"First","body":"<p>one</p>"},{"type":"sms","integrationId":8,"text":"Text"},{"type":"email","subject":"Last","body":"<p>two</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7521 # fixture: AutomationJobsSMSStopLinkVersion
+  automation_id: 7521
+  trigger_event: job_sms_stop_link
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Stop: {{ "{{ unsubscribe_url }}" }}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7522 # fixture: AutomationJobsSMSFirstSecondVersion
+  automation_id: 7522
+  trigger_event: job_sms_first_second
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"First"},{"type":"sms","integrationId":8,"text":"Second"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7523 # fixture: AutomationJobsSMSCartVersion
+  automation_id: 7523
+  trigger_event: job_sms_cart
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Your cart: https://shop.test/cart"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7524 # fixture: AutomationJobsSMSCartUntrackedVersion
+  automation_id: 7524
+  trigger_event: job_sms_cart_untracked
+  version: 1
+  steps: '[{"type":"sms","integrationId":8,"text":"Your cart: https://shop.test/cart","linkTracking":false}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Meridian (workspace 83): the versions of its Automations.
+- id: 7400 # fixture: AutomationMeridianWelcomeVersion
+  automation_id: 7400
+  trigger_event: meridian_welcome
+  version: 1
+  steps: '[{"type":"email","subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7401 # fixture: AutomationMeridianViaRelayVersion
+  automation_id: 7401
+  trigger_event: meridian_relay
+  version: 1
+  steps: '[{"type":"email","integrationId":7401,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7402 # fixture: AutomationMeridianDraftOnlyVersion
+  automation_id: 7402
+  trigger_event: meridian_draft_only
+  version: 1
+  steps: '[{"type":"wait","seconds":60}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7403 # fixture: AutomationMeridianDraftOnlyDraftVersion
+  automation_id: 7402
+  trigger_event: meridian_draft_only
+  version: 2
+  steps: '[{"type":"email","integrationId":7403,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7404 # fixture: AutomationMeridianNoEmailVersion
+  automation_id: 7403
+  trigger_event: meridian_no_email
+  version: 1
+  steps: '[{"type":"http","body":"email"},{"type":"apply_tag","tag":"email"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7405 # fixture: AutomationMeridianNoEmailDraftVersion
+  automation_id: 7403
+  trigger_event: meridian_no_email
+  version: 2
+  steps: '[{"type":"email","integrationId":7404,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7406 # fixture: AutomationMeridianInactiveVersion
+  automation_id: 7404
+  trigger_event: meridian_inactive
+  version: 1
+  steps: '[{"type":"email","integrationId":7405,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7407 # fixture: AutomationMeridianInactiveDraftVersion
+  automation_id: 7404
+  trigger_event: meridian_inactive
+  version: 2
+  steps: '[{"type":"email","integrationId":7405,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7408 # fixture: AutomationMeridianArchivedVersion
+  automation_id: 7405
+  trigger_event: meridian_archived
+  version: 1
+  steps: '[{"type":"email","integrationId":7406,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7409 # fixture: AutomationMeridianArchivedDraftVersion
+  automation_id: 7405
+  trigger_event: meridian_archived
+  version: 2
+  steps: '[{"type":"email","integrationId":7406,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7410 # fixture: AutomationMeridianEnrolledVersion
+  automation_id: 7406
+  trigger_event: meridian_enrolled
+  version: 1
+  steps: '[{"type":"email","integrationId":7407,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7411 # fixture: AutomationMeridianEmptyVersion
+  automation_id: 7407
+  trigger_event: meridian_empty
+  version: 1
+  steps: ''
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7412 # fixture: AutomationMeridianStoppedVersion
+  automation_id: 7408
+  trigger_event: meridian_stopped
+  version: 1
+  steps: '[{"type":"email","integrationId":7410,"subject":"Hello","body":"<p>Hello</p>"}]'
+  workspace_id: 83
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# The versions of the system-event Trigger automations: one wait step each.
+- id: 7420 # fixture: AutomationOnContactTaggedVersion
+  automation_id: 7420
+  trigger_event: contact.tagged
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7421 # fixture: AutomationOnMarketingConfirmedVersion
+  automation_id: 7421
+  trigger_event: marketing.confirmed
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7422 # fixture: AutomationOnSmsReceivedVersion
+  automation_id: 7422
+  trigger_event: sms.received
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7423 # fixture: AutomationOnSmsClickedVersion
+  automation_id: 7423
+  trigger_event: sms.clicked
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7424 # fixture: AutomationOnSmsUndeliveredVersion
+  automation_id: 7424
+  trigger_event: sms.undelivered
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7425 # fixture: AutomationOnTelegramReceivedVersion
+  automation_id: 7425
+  trigger_event: telegram.received
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 7426 # fixture: AutomationOnTelegramClickedVersion
+  automation_id: 7426
+  trigger_event: telegram.clicked
+  version: 1
+  steps: '[{"type":"wait","seconds":3600}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 7200
+  automation_id: 7200
+  trigger_event: emporium_revenue_trigger
+  version: 1
+  steps: '[{"type":"wait","seconds":86400}]'
+  workspace_id: 76
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7201
+  automation_id: 7201
+  trigger_event: emporium_clicks_trigger
+  version: 1
+  steps: '[{"type":"wait","seconds":86400}]'
+  workspace_id: 76
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

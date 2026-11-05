@@ -42,12 +42,14 @@ func TestOpensLandInTheHourOfTheWorkspaceZoneAndMachineOpensAreLeftOut(t *testin
 func TestAZoneChangeMovesTheSameOpensToAnotherHourAndDay(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
+	inNewYork := opensByHourAt(t, env, fixtures.GothamID, analytics.Window30Days, now)
 
 	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
-	r := opensByHourAt(t, env, fixtures.GothamID, analytics.Window30Days, now)
+	inUTC := opensByHourAt(t, env, fixtures.GothamID, analytics.Window30Days, now)
 
-	assert.Equal(t, 2, opens(r, 3, 2), "Wednesday 02:00 in UTC")
-	assert.Zero(t, opens(r, 2, 22))
+	assert.Equal(t, 2, opens(inNewYork, 2, 22), "Tuesday 22:00 in New York")
+	assert.Equal(t, 2, opens(inUTC, 3, 2), "Wednesday 02:00 in UTC")
+	assert.Zero(t, opens(inUTC, 2, 22))
 }
 
 func TestAWindowWithoutOpensHasNoTotal(t *testing.T) {

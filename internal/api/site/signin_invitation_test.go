@@ -58,7 +58,7 @@ func pendingInvitations(t *testing.T, env *testhelper.TestEnv, email string) int
 
 func TestSigninAnInvitationIsAcceptedWithTheMatchingProviderEmailWithTheInvitedRole(t *testing.T) {
 	env, fake := signinEnv(t)
-	token := inviteAdminToAcme(t, env, newcomer.Email)
+	token := fixtures.InvitationAcmeNinaToken
 	b := env.NewRedirectBrowser(t)
 
 	resp := signInToAccept(t, fake, b, newcomer, token)
@@ -86,7 +86,7 @@ func TestSigninAnInvitationMatchesTheAddressWhateverItsCase(t *testing.T) {
 
 func TestSigninAnInvitationOfAVerifiedUserIsAcceptedThroughTheirProvider(t *testing.T) {
 	env, fake := signinEnv(t)
-	token := inviteAdminToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 	oscar := testhelper.SigninIdentity{Subject: "google-subject-of-oscar", Email: fixtures.OutsiderOscarEmail, EmailVerified: true, HostedDomain: "nowhere.test"}
 	b := env.NewRedirectBrowser(t)
 
@@ -99,7 +99,7 @@ func TestSigninAnInvitationOfAVerifiedUserIsAcceptedThroughTheirProvider(t *test
 
 func TestSigninAnInvitationForAnotherAddressIsRefusedAndCreatesNothing(t *testing.T) {
 	env, fake := signinEnv(t)
-	token := inviteAdminToAcme(t, env, "invited@example.com")
+	token := fixtures.InvitationAcmeElsewhereToken
 	b := env.NewRedirectBrowser(t)
 
 	resp := signInToAccept(t, fake, b, newcomer, token)
@@ -111,13 +111,13 @@ func TestSigninAnInvitationForAnotherAddressIsRefusedAndCreatesNothing(t *testin
 	assert.Equal(t, string(signin.ReasonInvitationEmailMismatch), u.Query().Get("error"))
 	assert.NotEqual(t, http.StatusOK, meStatus(t, b), "no session")
 	assert.Zero(t, usersWithEmail(t, env, newcomer.Email), "no User is created")
-	assert.Zero(t, usersWithEmail(t, env, "invited@example.com"))
-	assert.Equal(t, 1, pendingInvitations(t, env, "invited@example.com"), "the Invitation stays pending")
+	assert.Zero(t, usersWithEmail(t, env, fixtures.InvitationAcmeElsewhereEmail))
+	assert.Equal(t, 1, pendingInvitations(t, env, fixtures.InvitationAcmeElsewhereEmail), "the Invitation stays pending")
 }
 
 func TestSigninAnInvitationIsRefusedForALinkedIdentityOfAnotherAccount(t *testing.T) {
 	env, fake := signinEnv(t)
-	token := inviteAdminToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 	mary := testhelper.SigninIdentity{Subject: fixtures.MaryGoogleIdentitySubject, Email: fixtures.OutsiderOscarEmail, EmailVerified: true, HostedDomain: "nowhere.test"}
 	b := env.NewRedirectBrowser(t)
 
@@ -134,7 +134,7 @@ func TestSigninAnInvitationIsRefusedForALinkedIdentityOfAnotherAccount(t *testin
 
 func TestSigninAnUnprovenEmailCannotAcceptAnInvitation(t *testing.T) {
 	env, fake := signinEnv(t)
-	token := inviteAdminToAcme(t, env, newcomer.Email)
+	token := fixtures.InvitationAcmeNinaToken
 	unverified := newcomer
 	unverified.EmailVerified = false
 

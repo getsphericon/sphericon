@@ -311,3 +311,62 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Sabre's owner, who reads its Setup checklist through the Site API.
+- id: 7300 # fixture: SabreOwnerSue
+  name: Sue
+  email: sue@sabre.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Meridian's owner, who removes its Integrations and Sending domains through the Site API.
+- id: 7400 # fixture: MeridianOwnerMona
+  name: Mona
+  email: mona@meridian.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# The owner of the revenue tenants (Bazaar, Emporium, Mercado, Souk), who reads their reports.
+- id: 7200 # fixture: RevenueOwnerRita
+  name: Rita
+  email: rita@revenue.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# The Owners of the suspended tenants Nakatomi, Sirius and Monarch (one each).
+- id: 7100 # fixture: NakatomiOwnerHolly
+  name: Holly
+  email: holly@nakatomi.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7101 # fixture: SiriusOwnerOrion
+  name: Orion
+  email: orion@sirius.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7102 # fixture: MonarchOwnerMina
+  name: Mina
+  email: mina@monarch.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Virtucon's two Owners, neither verified yet; registered a day ago, so the prune job leaves them.
+- id: 7103 # fixture: VirtuconOwnerVera
+  name: Vera
+  email: vera@virtucon.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7104 # fixture: VirtuconCoOwnerVic
+  name: Vic
+  email: vic@virtucon.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

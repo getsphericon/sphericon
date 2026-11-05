@@ -1,7 +1,9 @@
 package site_test
 
 import (
+	"cmp"
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,11 +21,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	ctx := context.Background()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
-		Name: "Primary SMTP", Config: smtpInput("smtp.acme.test", "pw"),
-	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
-	require.NoError(t, err)
-	row := created.(*siteapi.SiteIntegrationResource)
+	id := siteapi.EntityId(fixtures.IntegrationAcmeGenericAID)
 	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
 	require.NoError(t, err)
 
@@ -32,8 +30,10 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		require.NoError(t, err)
 		list, ok := res.(*siteapi.SiteIntegrationsListOKApplicationJSON)
 		require.Truef(t, ok, "got %T", res)
-		require.Len(t, *list, total, "the Workspace's integrations, the new one among them")
-		assert.Equal(t, row.ID, (*list)[total-1].ID, "ordered by id")
+		require.Len(t, *list, total, "the Workspace's integrations")
+		assert.True(t, slices.IsSortedFunc(*list, func(a, b siteapi.SiteIntegrationResource) int {
+			return cmp.Compare(a.ID, b.ID)
+		}), "ordered by id")
 
 		nf, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: foreign})
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("get", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: foreign, ID: row.ID})
+		r1, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: foreign, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsGetNotFound{}, r1)
 		r3, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: acme, ID: idStr(99999)})
@@ -72,45 +72,45 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 
 	t.Run("update", func(t *testing.T) {
 		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}
-		r1, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: row.ID})
+		r1, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r1)
 		r3, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r3)
 		r4, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
-			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
+			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r4)
 		r5, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
-			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
+			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r5, "an invalid config is rejected")
 
-		stored, err := env.DB.Integration.Get(ctx, int64(row.ID))
+		stored, err := env.DB.Integration.Get(ctx, int64(id))
 		require.NoError(t, err)
-		assert.Equal(t, "Primary SMTP", stored.Name, "rejected updates changed nothing")
+		assert.Equal(t, fixtures.IntegrationAcmeGenericAName, stored.Name, "rejected updates changed nothing")
 
 		// Enabled toggles and demoting a non-default keep working.
 		r6, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 			Enabled: siteapi.NewOptBool(false), IsDefault: siteapi.NewOptBool(false),
-		}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
+		}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
 		assert.False(t, r6.(*siteapi.SiteIntegrationResource).Enabled)
 	})
 
 	t.Run("archive", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: foreign, ID: row.ID})
+		r1, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: foreign, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r1)
 		r3, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r3)
 
-		r4, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: row.ID})
+		r4, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, r4)
-		archived, err := env.DB.Integration.Query().Where(integration.ID(int64(row.ID)), integration.DiscardedAtNotNil()).Exist(ctx)
+		archived, err := env.DB.Integration.Query().Where(integration.ID(int64(id)), integration.DiscardedAtNotNil()).Exist(ctx)
 		require.NoError(t, err)
 		assert.True(t, archived, "archived, not removed")
 	})

@@ -7,13 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -67,19 +64,6 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 func TestTheAutomationReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
-	contact := env.DB.Contact.GetX(t.Context(), fixtures.ContactGlobexReaderID)
-	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.GlobexID), outbound.Request{
-		Kind:        outboundmessage.KindAutomation,
-		Key:         "automation:captured:1",
-		Destination: *contact.Email,
-		Contact:     contact,
-		Source:      eligibility.AutomationSource(fixtures.AutomationGlobexID),
-		Content:     outbound.EmailContent{Subject: "Welcome", Body: "<p>Hi</p>"},
-		Ref:         outbound.Ref{AutomationID: fixtures.AutomationGlobexID},
-	})
-	require.NoError(t, err)
-	require.Equal(t, outbound.Sent, res.Outcome)
 
 	out, err := jane.SiteAutomationReportsGet(t.Context(), siteapi.SiteAutomationReportsGetParams{
 		WorkspaceId: fixtures.GlobexPublicID, AutomationId: siteapi.EntityId(fixtures.AutomationGlobexID),

@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -189,25 +187,17 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 // Integration.
 func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-	acme := env.DB.Scoped(fixtures.AcmeID)
+	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
+	meridian := env.DB.Scoped(fixtures.MeridianID)
 	del := func() siteapi.SiteIntegrationsDeleteRes {
-		got, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeDefaultID)})
-		require.NoError(t, err)
-		return got
+		return deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID)
 	}
-	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
+	sendMeridianBroadcasts(t, meridian)
 	refused, ok := del().(*siteapi.InUseProblemDetails)
 	require.True(t, ok)
-	names := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name })
-	require.Contains(t, names, fixtures.AutomationWelcomeSeriesName)
+	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName}}, usedBy(refused))
 
-	for _, id := range acme.Automation().Query().Where(automation.StatusEQ(automation.StatusActive)).IDsX(ctx) {
-		require.NoError(t, acme.Automation().Archive(ctx, id))
-	}
-	finishEnrollments(t, acme)
+	require.NoError(t, meridian.Automation().Archive(t.Context(), fixtures.AutomationMeridianWelcomeID))
 
 	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
 }

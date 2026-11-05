@@ -159,7 +159,7 @@ func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
 // the recipient can opt out (which exits the enrollment: see the endpoint test).
 func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	env := testhelper.Setup(t)
-	enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactLiamID)
+	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
 	mod := outbound.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
@@ -242,7 +242,8 @@ func TestAStepJobExecutedTwiceMovesTheEnrollmentOnce(t *testing.T) {
 func TestATagStepJobExecutedTwiceQueuesTheNextStepOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	runID := enrollVia(t, env, fixtures.AutomationJobsSystemTagID, fixtures.ContactAliceID)
+	runID := int64(fixtures.AutomationRunJobsSystemTagAliceID)
+	queueStep(t, env, runID)
 	mod := stepperOf(env, resolvingTo(&fakeSender{}))
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
@@ -258,7 +259,8 @@ func TestATagStepJobExecutedTwiceQueuesTheNextStepOnce(t *testing.T) {
 func TestAStepOfAnEnrollmentErasedWithItsContactEndsQuietly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	runID := enrollVia(t, env, fixtures.AutomationJobsSingleEmailID, fixtures.ContactLiamID)
+	runID := int64(fixtures.AutomationRunJobsSingleEmailLiamID)
+	queueStep(t, env, runID)
 	env.DB.Contact.DeleteOneID(fixtures.ContactLiamID).ExecX(ctx)
 	fs := &fakeSender{}
 

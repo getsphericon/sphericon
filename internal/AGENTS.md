@@ -104,7 +104,9 @@ the cost from the stored hash) and `secretHash` (API token and Service credentia
 SHA-256) template funcs. The generator lifts the quoted literal into `<Name>Password` /
 `<Name>Secret`, so `fixtures.OwnerJohnPassword`, `fixtures.AnchorTokenSecret` etc. can
 authenticate as that identity; the full token is
-`credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)`. Use them
+`credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)`. An
+Invitation's link token (`inviteHash`, its `token_hash`) is lifted into `<Name>Token`, so a test
+accepts a fixture Invitation with `fixtures.InvitationAcmeOscarToken` instead of inviting. Use them
 only on annotated anchor rows, not dev tokens. The test values are plain constants in the
 generated file; `.betterleaks.toml` exempts their throwaway passwords from the generic rules.
 

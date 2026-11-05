@@ -216,8 +216,7 @@ func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
 
 	// A claim ten minutes old is stale under the default five-minute lease but live
 	// under an hour-long one.
-	env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(staleClaimKey)).
-		SetClaimedAt(time.Now().Add(-10 * time.Minute)).ExecX(ctx)
+	env.ClaimOutbound(ctx, fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, time.Now().Add(-10*time.Minute))
 	_, err := newModule(env, outbound.WithLease(time.Hour)).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.ErrorIs(t, err, outbound.ErrInProgress)
 	assert.Empty(t, env.CustomerMail.Messages())

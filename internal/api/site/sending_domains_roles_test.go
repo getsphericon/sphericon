@@ -19,11 +19,7 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteSendingDomainsCreate(ctx,
-		&siteapi.CreateSendingDomainInput{Domain: "roles.acme.test"},
-		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	id := created.(*siteapi.SiteSendingDomainResource).ID
+	id := siteapi.EntityId(fixtures.SendingDomainUnverifiedID)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 

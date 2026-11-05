@@ -202,8 +202,8 @@ func TestSendsWithoutASendCapSpendNothingFromIt(t *testing.T) {
 func TestTestInboxSendsCountAgainstTheSendCap(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := globexInboxModule(t, env, c, outbound.WithSendCaps(true))
-	capped(t, env, fixtures.GlobexID, new(2))
+	m := pinewoodInboxModule(t, env, c, outbound.WithSendCaps(true))
+	capped(t, env, fixtures.PinewoodID, new(2))
 
 	require.Equal(t, outbound.Sent, sendToReader(t, env, m, "bc:1").Outcome)
 	require.Equal(t, outbound.Sent, sendToReader(t, env, m, "bc:2").Outcome)

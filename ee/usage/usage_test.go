@@ -226,17 +226,16 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 }
 
 func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
-	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(month(7)).ExecX(t.Context())
+	env := testhelper.Setup(t) // Bluth has been in its deletion window for 5 days
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(6).Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), time.Now()))
 
-	page, err := usage.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 25})
+	page, err := usage.List(t.Context(), env.DB, month(1), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
 	ids := make([]int64, 0, len(page.Items))
 	for _, w := range page.Items {
 		ids = append(ids, w.WorkspaceID)
 	}
-	assert.NotEmpty(t, ids, "live Workspaces are still measured")
-	assert.NotContains(t, ids, fixtures.AcmeID)
+	assert.Contains(t, ids, int64(fixtures.AcmeID), "live Workspaces are still measured")
+	assert.NotContains(t, ids, int64(fixtures.BluthID))
 }

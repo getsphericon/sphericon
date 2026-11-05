@@ -54,6 +54,7 @@ const (
 	warnDay       = 36 // Vandelay: 7.5% complaints, in the warning tier
 	warnAgainDay  = 34 // the same traffic once more, 48 hours later
 	noDeliveryDay = 39 // Vandelay: 40 sent and 25% complaints, but no delivery notices
+	unjudgedDay   = 2  // Monarch, suspended, and Bluth, in its deletion window: both over the freeze limit
 )
 
 var limits = abuse.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBounceBP: 1000, FreezeComplaintBP: 1000, FreezeBounceBP: 2000}
@@ -254,14 +255,12 @@ func TestAFailedFreezeNoticeLeavesTheFreezeInPlace(t *testing.T) {
 
 func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.StaffMember("op-7"), "chargeback")
-	require.NoError(t, err)
 
-	summary, err := detector(t, env).Run(t.Context(), at(overDay))
+	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)
-	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
+	ws := env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID)
 	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "chargeback", *ws.SuspensionReason)
 	assert.Empty(t, env.SystemMail.Messages())
@@ -360,12 +359,11 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 
 func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(at(overDay)).ExecX(t.Context())
 
-	summary, err := detector(t, env).Run(t.Context(), at(overDay))
+	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)
-	assert.False(t, suspended(t, env, fixtures.VandelayID))
+	assert.False(t, suspended(t, env, fixtures.BluthID))
 	assert.Empty(t, env.SystemMail.Messages())
 }

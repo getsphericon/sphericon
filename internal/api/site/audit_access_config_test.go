@@ -106,13 +106,7 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "to-revoke", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
-		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	resp, ok := created.(*siteapi.SiteCreateTokenResponse)
-	require.True(t, ok)
-
-	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: resp.Resource.ID})
+	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 
@@ -122,7 +116,7 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	})
 	require.NotEmpty(t, updates, "revocation emits api_token.update")
 	revoke := updates[len(updates)-1]
-	assert.Equal(t, "to-revoke", revoke.TargetName)
+	assert.Equal(t, fixtures.ProductionTokenName, revoke.TargetName)
 	assert.Contains(t, revoke.Diff, "revoked_at")
 	assert.NotContains(t, revoke.Diff, "secret_hash")
 }

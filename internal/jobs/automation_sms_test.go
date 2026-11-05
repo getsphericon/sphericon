@@ -67,28 +67,28 @@ func confirmSMS(t *testing.T, env *testhelper.TestEnv, number string) {
 func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Hi {{ first_name }} & co, your cart <is> waiting"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	automationID := int64(fixtures.AutomationJobsSMSRenderedID)
+	runID := int64(fixtures.AutomationRunJobsSMSRenderedConfirmedID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, account.Account.SID, sent[0].Account)
-	assert.Equal(t, fixtures.ContactTexterPhone, sent[0].To)
+	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, sent[0].To)
 	assert.Equal(t, testhelper.TwilioNumber, sent[0].From)
-	assert.Equal(t, "Hi Tess & co, your cart <is> waiting", sent[0].Body, "plain text: nothing is escaped")
+	assert.Equal(t, "Hi Tessa & co, your cart <is> waiting", sent[0].Body, "plain text: nothing is escaped")
 	assert.Equal(t, account.Integration.HookUrl, sent[0].StatusCallback, "every send asks for its delivery reports at the hook")
 	run := env.DB.AutomationRun.GetX(t.Context(), runID)
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
-	assert.Equal(t, fixtures.ContactTexterPhone, msg.Destination)
+	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, msg.Destination)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID), "Twilio's SID is the provider reference")
 	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{
-		"contactId": fixtures.ContactTexterID, "automationId": automationID, "destination": fixtures.ContactTexterPhone,
+		"contactId": fixtures.ContactTexterConfirmedID, "automationId": automationID, "destination": fixtures.ContactTexterConfirmedPhone,
 		"integrationId": account.Integration.ID, "outboundMessageId": msg.ID,
 	})
 	assert.Equal(t, 1, smsSent)
@@ -119,41 +119,24 @@ func TestAnSMSStepThroughAMessagingServiceSendsFromTheService(t *testing.T) {
 	assert.Equal(t, row.HookUrl, sent[0].StatusCallback)
 }
 
-// nothingToPrepare leaves the fixtures as they are.
-func nothingToPrepare(*testing.T, *testhelper.TestEnv) {}
-
+// An SMS step then a tag step (AutomationJobsSMSHiThenTag): a Contact with no phone (Bob), one whose
+// phone has no Confirmation (ContactTexter) and one that opted out of every SMS
+// (ContactTexterOptedOut) each have an Enrollment there.
 func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 	cases := map[string]struct {
-		contact int64
-		prepare func(t *testing.T, env *testhelper.TestEnv)
-		reason  string
+		run    int64
+		reason string
 	}{
-		"no phone": {contact: fixtures.ContactBobID, reason: eligibility.ReasonNoDestination, prepare: nothingToPrepare},
-		"no Confirmation": {
-			contact: fixtures.ContactTexterID, reason: eligibility.ReasonUnconfirmed, prepare: nothingToPrepare,
-		},
-		"an SMS opt-out": {
-			contact: fixtures.ContactTexterID, reason: eligibility.ReasonUnsubscribedEverything,
-			prepare: func(t *testing.T, env *testhelper.TestEnv) {
-				t.Helper()
-				confirmSMS(t, env, fixtures.ContactTexterPhone)
-				_, err := env.ExternalScoped(t, "contacts:write").UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
-					Channel: externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS), Destination: fixtures.ContactTexterPhone,
-				})
-				require.NoError(t, err)
-			},
-		},
+		"no phone":        {run: fixtures.AutomationRunJobsSMSHiThenTagBobID, reason: eligibility.ReasonNoDestination},
+		"no Confirmation": {run: fixtures.AutomationRunJobsSMSHiThenTagTexterID, reason: eligibility.ReasonUnconfirmed},
+		"an SMS opt-out":  {run: fixtures.AutomationRunJobsSMSHiThenTagOptedOutID, reason: eligibility.ReasonUnsubscribedEverything},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			account := env.AcmeTwilio(t)
-			automationID := smsAutomation(t, env,
-				smsStep(account, "Hi"),
-				automationsteps.Step{Type: automationsteps.ApplyTag, Tag: "reminded"},
-			)
-			tc.prepare(t, env)
-			runID := enrollVia(t, env, automationID, tc.contact)
+			env.AcmeTwilio(t)
+			runID := tc.run
+			queueStep(t, env, runID)
 
 			runSteps(t, env)
 
@@ -173,13 +156,9 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env,
-		automationsteps.Step{Type: automationsteps.Email, Subject: "First", Body: "<p>one</p>"},
-		smsStep(account, "Text"),
-		automationsteps.Step{Type: automationsteps.Email, Subject: "Last", Body: "<p>two</p>"},
-	)
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.AcmeTwilio(t)
+	runID := int64(fixtures.AutomationRunJobsSMSBetweenEmailsBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -200,10 +179,8 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Stop: {{ unsubscribe_url }}"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	env.AcmeTwilio(t)
+	queueStep(t, env, fixtures.AutomationRunJobsSMSStopLinkConfirmedID)
 	runSteps(t, env)
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)
@@ -214,11 +191,12 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
-	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
+	// The number's opt-out of SMS Broadcasts (UnsubscribeTexterConfirmedBroadcasts) stays beside it.
+	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactTexterConfirmedPhone),
+		unsubscribe.SendingSource(eligibility.SourceEverything)).OnlyX(ctx)
 	assert.Equal(t, unsubscribe.ChannelSms, optOut.Channel)
-	assert.Equal(t, eligibility.SourceEverything, optOut.SendingSource)
 	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
-	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
+	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterConfirmedPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
 }
@@ -227,10 +205,8 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 // the page speaks of text messages and not of emails.
 func TestTheSMSUnsubscribeLinkTellsThePageItIsAText(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Stop: {{ unsubscribe_url }}"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	env.AcmeTwilio(t)
+	queueStep(t, env, fixtures.AutomationRunJobsSMSStopLinkConfirmedID)
 	runSteps(t, env)
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)
@@ -252,16 +228,15 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "First"), smsStep(account, "Second"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	runID := int64(fixtures.AutomationRunJobsSMSFirstSecondConfirmedID)
+	queueStep(t, env, runID)
 	stepper := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
 	require.True(t, env.RunNextStep(t, stepper))
 	first := env.Twilio.Messages()
 	require.Len(t, first, 1)
 
 	stopped := env.PostTwilioCallback(t, account.Integration.HookUrl, account.Account.AuthToken, url.Values{
-		"MessageSid": {"SM0201"}, "AccountSid": {account.Account.SID}, "From": {fixtures.ContactTexterPhone},
+		"MessageSid": {"SM0201"}, "AccountSid": {account.Account.SID}, "From": {fixtures.ContactTexterConfirmedPhone},
 		"To": {testhelper.TwilioNumber}, "Body": {"STOP"}, "NumMedia": {"0"}, "SmsStatus": {"received"},
 	})
 	require.Equal(t, http.StatusOK, stopped.Code, stopped.Body.String())

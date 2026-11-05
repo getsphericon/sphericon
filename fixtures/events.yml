@@ -4448,7 +4448,8 @@
 # Abuse detector traffic (ADR 0026, ee/abuse tests): one scenario per day offset, so a test runs the
 # detector at `now - days` and sees only its own scenario in the trailing 24 hours. Rows are one
 # hour before the scenario's day. Volumes are small: the tests judge with a volume floor of 20
-# sent. Ids 30000 and up. ee/abuse/detector_test.go names the day of each scenario.
+# sent. Ids 30000 and up (day 2: 7100 and up). ee/abuse/detector_test.go names the day of each
+# scenario.
 
 # day 3, over the freeze limit (Vandelay 15% complaints; Kramerica, exempt, 50%)
 # {{range $i := seq 30000 30039}}
@@ -4955,6 +4956,63 @@
   workspace_id: 8
   occurred_at: '{{hoursAhead 2}}'
   created_at: '{{hoursAhead 2}}'
+# {{end}}
+
+# day 2, over the freeze limit but never judged: Monarch (suspended) and Bluth (in its deletion
+# window), each 20 sent, 20 delivered and 3 complaints (15%)
+# {{range $i := seq 7100 7119}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7120 7122}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7123 7142}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7143 7162}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7163 7165}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7166 7185}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
 # {{end}}
 
 # Events of the segment scenarios (#555). Events attach by contact_id (ADR 0002).
@@ -5533,3 +5591,280 @@
   occurred_at: '{{daysAgo 3}}'
   created_at: '{{daysAgo 3}}'
 # {{end}}
+
+# Souk (workspace 78): its Contact's click on its Broadcast, four days ago, credits the first Order
+# a test sends. Emporium (workspace 76): the click histories of the attribution tests, one
+# Contact each (contacts.yml); of two clicks at one time the later id was stored later. The
+# 31-day-old click was stored then, so a prune with a 30-day retention takes it.
+- id: 7200 # fixture: EventSoukClick
+  contact_id: 7200
+  email: buyer@souk.test
+  action: email.clicked
+  properties: '{"broadcastId":7203,"url":"https://shop.test/"}'
+  broadcast_id: 7203
+  url: 'https://shop.test/'
+  workspace_id: 78
+  occurred_at: '{{daysAgo 4}}'
+  created_at: '{{daysAgo 4}}'
+- id: 7210 # fixture: EventClickerBroadcastClick
+  contact_id: 7210
+  email: broadcast@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7211
+  contact_id: 7211
+  email: automation@emporium.test
+  action: email.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7212
+  contact_id: 7212
+  email: later@emporium.test
+  action: email.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7213
+  contact_id: 7212
+  email: later@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 7214
+  contact_id: 7212
+  email: later@emporium.test
+  action: email.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 4}}'
+  created_at: '{{daysAgo 4}}'
+- id: 7215
+  contact_id: 7213
+  email: sametime@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7216
+  contact_id: 7213
+  email: sametime@emporium.test
+  action: email.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7217
+  contact_id: 7214
+  email: software@emporium.test
+  action: email.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7218
+  contact_id: 7214
+  email: software@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/","machine":true}'
+  machine: true
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 7219
+  contact_id: 7214
+  email: software@emporium.test
+  action: email.clicked
+  properties: '{"url":"https://shop.test/"}'
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7220
+  contact_id: 7215
+  email: outside@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 6}}'
+  created_at: '{{daysAgo 6}}'
+- id: 7221
+  contact_id: 7215
+  email: outside@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAhead 1}}'
+  created_at: '{{daysAhead 1}}'
+- id: 7222
+  contact_id: 7216
+  email: window@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 4}}'
+  created_at: '{{daysAgo 4}}'
+- id: 7223
+  contact_id: 7218
+  email: pruned@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 31}}'
+  created_at: '{{daysAgo 31}}'
+- id: 7224
+  contact_id: 7219
+  email: tg-after-email@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7225
+  contact_id: 7219
+  email: tg-after-email@emporium.test
+  action: telegram.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7226
+  contact_id: 7220
+  email: email-after-tg@emporium.test
+  action: telegram.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7227
+  contact_id: 7220
+  email: email-after-tg@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7228
+  contact_id: 7221
+  email: tg-machine@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7229
+  contact_id: 7221
+  email: tg-machine@emporium.test
+  action: telegram.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/","machine":true}'
+  machine: true
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7230
+  contact_id: 7222
+  email: sms-after-email@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7231
+  contact_id: 7222
+  email: sms-after-email@emporium.test
+  action: sms.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7232
+  contact_id: 7223
+  email: email-after-sms@emporium.test
+  action: sms.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7233
+  contact_id: 7223
+  email: email-after-sms@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 7234
+  contact_id: 7224
+  email: sms-machine@emporium.test
+  action: email.clicked
+  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  broadcast_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 7235
+  contact_id: 7224
+  email: sms-machine@emporium.test
+  action: sms.clicked
+  properties: '{"automationId":7201,"url":"https://shop.test/","machine":true}'
+  machine: true
+  automation_id: 7201
+  url: 'https://shop.test/'
+  workspace_id: 76
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'

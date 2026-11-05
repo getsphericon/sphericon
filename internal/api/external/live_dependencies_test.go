@@ -18,7 +18,7 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write", "integrations:write", "sending_domains:write")
 
-	tag, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(1)})
+	tag, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagVipID)})
 	require.NoError(t, err)
 	refused, ok := tag.(*externalapi.InUseProblemDetails)
 	require.Truef(t, ok, "got %T", tag)
@@ -31,15 +31,15 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 		externalapi.UsedByKindRule:       {fixtures.RuleVipOnlyName, fixtures.RuleMultiTriggerName},
 	}, names)
 
-	integration, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(1)})
+	integration, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeDefaultID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.InUseProblemDetails{}, integration)
 
-	domain, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: externalapi.EntityId(3)})
+	domain, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: externalapi.EntityId(fixtures.SendingDomainCodebasicsID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.InUseProblemDetails{}, domain)
 
-	free, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(3)})
+	free, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagUnusedID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.TagsDeleteNoContent{}, free)
 }

@@ -106,11 +106,13 @@ func TestALongerPeriodTakesInBothPeriodsOfAShorterOne(t *testing.T) {
 
 func TestAZoneChangeMovesResultsToOtherDays(t *testing.T) {
 	env := testhelper.Setup(t)
+	inNewYork := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
+
 	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.GothamID).SetTimezone("UTC").Exec(context.Background()))
+	inUTC := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
 
-	results := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
-
-	assert.Equal(t, automations.ResultCounts{Entered: 4, Completed: 2, GoalReached: 1, Exited: 1, Failed: 1}, results.Current.ResultCounts,
+	assert.Equal(t, 1, inNewYork.Current.Completed, "in New York the completion at 03:59Z on 11 March is on 10 March")
+	assert.Equal(t, automations.ResultCounts{Entered: 4, Completed: 2, GoalReached: 1, Exited: 1, Failed: 1}, inUTC.Current.ResultCounts,
 		"in UTC the completion at 03:59 on 11 March belongs to the current period")
 }
 

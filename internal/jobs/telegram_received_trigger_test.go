@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -15,13 +14,10 @@ import (
 )
 
 // An Automation whose Trigger is telegram.received enrolls the Contact whose message the bot read,
-// and its steps see the words. Fixture: the Jobs greeting Automation, its live version's Trigger
-// turned to telegram.received.
+// and its steps see the words. Fixture: the Automation the fixtures trigger on telegram.received.
 func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameTelegramReceived).ExecX(ctx)
 	bot := env.AcmeTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactLiamID, 4101, 1000)
 
@@ -33,7 +29,7 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).
+		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramReceivedID), automationrun.ContactID(fixtures.ContactLiamID)).
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameTelegramReceived, *run.EventAction)

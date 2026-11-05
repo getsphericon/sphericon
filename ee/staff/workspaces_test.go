@@ -314,26 +314,27 @@ func (h *harness) acmeHolds(t *testing.T, c *staffeeapi.Client) []staffeeapi.Sta
 func TestTheWorkspaceDetailListsItsActiveHolds(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.setHold(t, "k1", time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
 
 	holds := h.acmeHolds(t, c)
 
 	require.Len(t, holds, 1)
-	assert.Equal(t, "k1", holds[0].Key)
+	assert.Equal(t, fixtures.HoldAcmeLapsedKey, holds[0].Key)
 	assert.Equal(t, "review", holds[0].ReasonCode)
 	assert.Equal(t, "Sending is paused for now.", holds[0].Message)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, holds[0].SetBy)
 	assert.WithinDuration(t, h.clock.now().Add(time.Hour), time.Time(holds[0].ExpiresAt), time.Second)
-	assert.WithinDuration(t, h.clock.now(), time.Time(holds[0].CreatedAt), time.Minute)
+	stored := h.env.DB.Hold.GetX(t.Context(), fixtures.HoldAcmeLapsedID)
+	assert.WithinDuration(t, stored.CreatedAt, time.Time(holds[0].CreatedAt), time.Second)
 }
 
 func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.setHold(t, "k1", time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
 	h.clock.t = h.clock.t.Add(2 * time.Hour)
 
-	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed hold and the expired one are not active")
+	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed holds and the expired one are not active")
 	globex, ok := h.getWorkspace(t, c, fixtures.GlobexPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, globex.Holds)
@@ -342,19 +343,15 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	discardedAt := time.Now().UTC().Truncate(time.Second)
-	before := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{})
-	h.env.FeedDB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
+	discardedAt := h.env.DB.Workspace.GetX(t.Context(), fixtures.BluthID).DiscardedAt
+	require.NotNil(t, discardedAt)
 
-	all := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{})
+	searched := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Search: staffeeapi.NewOptString(fixtures.BluthPublicID)})
 	deleted := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewDeleted)})
 
-	assert.NotContains(t, names(all.Items), "Globex")
-	assert.Equal(t, before.TotalItems-1, all.TotalItems)
-	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
-	globex, found := lo.Find(deleted.Items, func(w staffeeapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
-	require.True(t, found)
-	got, ok := globex.DiscardedAt.Get()
+	assert.Empty(t, searched.Items, "the default list hides Bluth even when searched for")
+	require.Equal(t, []string{fixtures.BluthName}, names(deleted.Items))
+	got, ok := deleted.Items[0].DiscardedAt.Get()
 	require.True(t, ok)
-	assert.WithinDuration(t, discardedAt, time.Time(got), time.Second)
+	assert.WithinDuration(t, *discardedAt, time.Time(got), time.Second)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,10 +53,9 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send")
-	create := func(text string, integrationID *int64) externalapi.EntityId {
-		in := &externalapi.CreateBroadcastInput{Name: "News", Content: testhelper.ExternalTelegram(text)}
-		if integrationID != nil {
-			in.IntegrationId = externalapi.NewOptNilEntityId(entityIDString(*integrationID))
+	create := func(text string, integrationID int64) externalapi.EntityId {
+		in := &externalapi.CreateBroadcastInput{
+			Name: "News", Content: testhelper.ExternalTelegram(text), IntegrationId: externalapi.NewOptNilEntityId(entityIDString(integrationID)),
 		}
 		res, err := c.BroadcastsCreate(ctx, in)
 		require.NoError(t, err)
@@ -71,9 +71,9 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 	}
 	botID := int64(bot.Integration.ID)
 
-	noDefault := schedule(create("Hello", nil))
-	tooLong := schedule(create(strings.Repeat("a", 4097), &botID))
-	atTheLimit := schedule(create(strings.Repeat("a", 4096), &botID))
+	noDefault := schedule(entityIDString(fixtures.BroadcastTelegramDraftID))
+	tooLong := schedule(create(strings.Repeat("a", 4097), botID))
+	atTheLimit := schedule(create(strings.Repeat("a", 4096), botID))
 
 	assert.IsType(t, &externalapi.BroadcastsScheduleConflict{}, noDefault, "the Channel has no default Integration to send through")
 	assert.IsType(t, &externalapi.BroadcastsScheduleUnprocessableEntity{}, tooLong)
@@ -83,17 +83,10 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 func TestExternalTelegramBroadcastHasNoTestSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, authorScopes...)
-	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name: "News", Content: testhelper.ExternalTelegram("Hello"),
-		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(int64(bot.Integration.ID))),
-	})
-	require.NoError(t, err)
-	b, ok := res.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", res)
 
-	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: b.ID})
+	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
+		externalapi.BroadcastsTestSendParams{ID: entityIDString(fixtures.BroadcastTelegramDraftID)})
 	require.NoError(t, err)
 
 	refused, ok := out.(*externalapi.BroadcastsTestSendUnprocessableEntity)

@@ -43,7 +43,7 @@ func TestSigningUpATakenAddressWithABadNameIsAnsweredAsANewOne(t *testing.T) {
 
 func TestAcceptingAnInvitationWithATooLongNameIsRefusedByTheContract(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, "newuser@example.com")
+	token := fixtures.InvitationAcmeNewcomerToken
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName(siteapi.UserName(strings.Repeat("a", 101))), Password: siteapi.NewOptString(formPassword)},
@@ -51,12 +51,12 @@ func TestAcceptingAnInvitationWithATooLongNameIsRefusedByTheContract(t *testing.
 
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptBadRequest{}, res)
-	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "newuser@example.com", formPassword), "no account was made")
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.InvitationAcmeNewcomerEmail, formPassword), "no account was made")
 }
 
 func TestAcceptingAnInvitationWithAnInvisibleNameIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, "newuser@example.com")
+	token := fixtures.InvitationAcmeNewcomerToken
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("\u200b\u200d"), Password: siteapi.NewOptString(formPassword)},
@@ -65,7 +65,7 @@ func TestAcceptingAnInvitationWithAnInvisibleNameIsRefused(t *testing.T) {
 	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
-	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "newuser@example.com", formPassword), "no account was made")
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.InvitationAcmeNewcomerEmail, formPassword), "no account was made")
 }
 
 func TestRenamingToANameWithABidiOverrideIsRefusedAndKeepsTheOldOne(t *testing.T) {
@@ -129,7 +129,7 @@ func TestTheLinkInAnotherBrowserRefusesAShortPasswordAndStaysValid(t *testing.T)
 
 func TestAcceptingAnInvitationWithAShortPasswordIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, "newcomer@example.com")
+	token := fixtures.InvitationAcmeNewcomerToken
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("1")},

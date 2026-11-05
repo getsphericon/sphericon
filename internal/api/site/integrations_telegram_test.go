@@ -264,7 +264,7 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 
 func TestSiteTelegramHookChecksTheSecret(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, acmeBotID, acmeBotUsername)
+	bot := env.AcmeTelegram(t)
 	update := `{"update_id":10000,"message":{"message_id":1,"date":1767225600,"chat":{"id":42,"type":"private"},"from":{"id":42,"is_bot":false,"first_name":"Alice"},"text":"hello"}}`
 
 	impostor := bot
@@ -280,10 +280,10 @@ func TestSiteTelegramPresetIsFixed(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	row, _ := connectedTelegram(t, env, c)
+	id := siteapi.EntityId(fixtures.IntegrationAcmeTelegramID)
 
 	t.Run("a Telegram integration takes no other Preset", func(t *testing.T) {
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Preset: siteapi.NewOptNilString("generic")})
+		res := updateTelegram(t, c, id, &siteapi.UpdateIntegrationInput{Preset: siteapi.NewOptNilString("generic")})
 
 		assert.Contains(t, problemOf(t, res), "preset")
 	})

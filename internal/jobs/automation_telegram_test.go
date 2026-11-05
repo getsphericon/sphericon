@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -63,9 +62,10 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName("<i>Bob</i> & co").ExecX(t.Context())
-	automationID := telegramAutomation(t, env, telegramStep(bot, "Hi {{ first_name }}, <b>welcome</b><script>x()</script>"))
+	automationID := int64(fixtures.AutomationJobsTelegramEscapedID)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555001, 555001)
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	runID := int64(fixtures.AutomationRunJobsTelegramEscapedBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -88,10 +88,10 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555011, 555011)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555012, 555012)
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	runID := int64(fixtures.AutomationRunJobsTelegramHelloBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -105,13 +105,9 @@ func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) 
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoBinding(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.AcmeTelegram(t)
-	automationID := telegramAutomation(t, env,
-		automationsteps.Step{Type: automationsteps.Email, Subject: "First", Body: "<p>one</p>"},
-		telegramStep(bot, "Telegram"),
-		automationsteps.Step{Type: automationsteps.Email, Subject: "Last", Body: "<p>two</p>"},
-	)
-	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
+	env.AcmeTelegram(t)
+	runID := int64(fixtures.AutomationRunJobsTelegramBetweenEmailsBobID)
+	queueStep(t, env, runID)
 
 	runSteps(t, env)
 
@@ -147,12 +143,8 @@ func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
 func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	step := telegramStep(bot, "Look <b>here</b>")
-	step.ImageURL = "https://cdn.example.com/a.png"
-	step.Buttons = []telegramrender.Button{{Label: "Open", URL: "https://example.com/a"}, {Label: "More", URL: "https://example.com/b"}}
-	automationID := telegramAutomation(t, env, step)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555031, 555031)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramPhotoBobID)
 
 	runSteps(t, env)
 
@@ -170,11 +162,8 @@ func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.
 func TestTurningTheLinkPreviewOffSetsTheOption(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
-	off := telegramStep(bot, "See https://example.com")
-	off.LinkPreview = new(false)
-	automationID := telegramAutomation(t, env, off, telegramStep(bot, "See https://example.com"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555041, 555041)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramPreviewOffBobID)
 
 	runSteps(t, env)
 
@@ -208,9 +197,9 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 		return env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelEmail), unsubscribe.ContactID(fixtures.ContactBobID)).CountX(ctx)
 	}
 	emailBefore := emailOptOuts()
-	automationID := telegramAutomation(t, env, telegramStep(bot, `<a href="{{ unsubscribe_url }}">stop</a>`))
+	automationID := int64(fixtures.AutomationJobsTelegramUnsubscribeLinkID)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555061, 555061)
-	enrollVia(t, env, automationID, fixtures.ContactBobID)
+	queueStep(t, env, fixtures.AutomationRunJobsTelegramUnsubscribeLinkBobID)
 	runSteps(t, env)
 	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
 	require.Len(t, sends, 1)

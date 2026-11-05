@@ -79,10 +79,10 @@ func TestAuditReadIsOwnerAndAdminOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	assert.IsType(t, &siteapi.SiteAuditListForbidden{}, auditList(t, mary, fixtures.AcmePublicID), "a member is refused")
+	alice := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	promoteMary(t, env)
-	assert.IsType(t, &siteapi.SiteAuditEntryList{}, auditList(t, mary, fixtures.AcmePublicID), "an admin reads")
+	assert.IsType(t, &siteapi.SiteAuditListForbidden{}, auditList(t, mary, fixtures.AcmePublicID), "a member is refused")
+	assert.IsType(t, &siteapi.SiteAuditEntryList{}, auditList(t, alice, fixtures.AcmePublicID), "an admin reads")
 
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
 	assert.IsType(t, &siteapi.SiteAuditListNotFound{}, auditList(t, oscar, fixtures.AcmePublicID), "a stranger finds no workspace")
@@ -90,16 +90,13 @@ func TestAuditReadIsOwnerAndAdminOnly(t *testing.T) {
 
 func TestAuditIsTenantIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
-	promoteMary(t, env)
 
 	acme := auditPage(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
-	for _, e := range acme.Items {
-		assert.NotEqual(t, int64(fixtures.GlobexAuditEntryID), int64(e.ID), "Acme never sees Globex's entry")
-	}
-	require.Len(t, acme.Items, 2)
+	require.Len(t, acme.Items, 1, "Acme never sees Globex's entries")
+	assert.EqualValues(t, fixtures.AcmeAuditEntryID, acme.Items[0].ID)
 
 	globex := auditPage(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
-	require.Len(t, globex.Items, 5, "Globex sees only its own fixture entries, not Acme's role change")
+	require.Len(t, globex.Items, 5, "Globex sees only its own fixture entries, not Acme's")
 	assert.EqualValues(t, fixtures.GlobexAuditEntryID, globex.Items[len(globex.Items)-1].ID, "oldest last")
 
 	cross := auditList(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.GlobexPublicID)

@@ -107,12 +107,7 @@ func TestSiteTokensRename(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteTokensCreate(ctx,
-		&siteapi.SiteCreateTokenInput{Name: "CI", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
-		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	minted := created.(*siteapi.SiteCreateTokenResponse)
-	params := siteapi.SiteTokensUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: minted.Resource.ID}
+	params := siteapi.SiteTokensUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID}
 
 	renamed, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "  Deploys "}, params)
 	require.NoError(t, err)
@@ -124,9 +119,8 @@ func TestSiteTokensRename(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensUpdateUnprocessableEntity{}, blank)
 
-	_, err = c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: minted.Resource.ID})
-	require.NoError(t, err)
-	revoked, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "late"}, params)
+	revoked, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "late"},
+		siteapi.SiteTokensUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.RevokedTokenID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensUpdateNotFound{}, revoked, "a revoked token cannot be renamed")
 

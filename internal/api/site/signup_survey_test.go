@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-const surveyEmail = "newcomer@survey.example"
+const surveyEmail = fixtures.InvitationAcmeSurveyEmail
 
 // surveyOn is an Instance that asks the Sign-up survey (the switch and the `staff` license the
 // test license carries) and has no email verification gate, so a Sign-up is a whole sign-up.
@@ -172,7 +172,7 @@ func TestAUserWhoVerifiesTheirAddressOwesTheSurveyToo(t *testing.T) {
 
 func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
-	token := inviteToAcme(t, env, surveyEmail)
+	token := fixtures.InvitationAcmeSurveyToken
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
@@ -262,7 +262,7 @@ func TestDeletingTheUserRemovesTheirSurveyAnswers(t *testing.T) {
 func TestAnUnverifiedUserWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
 	env := testhelper.Setup(t)
 	signUpLink(t, env, "Newcomer", surveyEmail)
-	token := inviteToAcme(t, env, surveyEmail)
+	token := fixtures.InvitationAcmeSurveyToken
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},

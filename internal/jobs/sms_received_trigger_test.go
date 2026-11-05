@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -17,13 +16,11 @@ import (
 )
 
 // An Automation whose Trigger is sms.received enrolls the Contact whose text reached the Twilio
-// number, a Contact known by its phone alone, and its steps see the words. Fixture: the Jobs
-// greeting Automation, its live version's Trigger turned to sms.received.
+// number, a Contact known by its phone alone, and its steps see the words. Fixture: the Automation
+// the fixtures trigger on sms.received.
 func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameSmsReceived).ExecX(ctx)
 	sms := env.AcmeTwilio(t)
 	res, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Phone: externalapi.NewOptNilString("+14155550188"),
@@ -43,7 +40,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(int64(texter.ID))).
+		Where(automationrun.AutomationID(fixtures.AutomationOnSmsReceivedID), automationrun.ContactID(int64(texter.ID))).
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameSmsReceived, *run.EventAction)

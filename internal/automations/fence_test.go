@@ -3,7 +3,6 @@ package automations_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,20 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func enrolled(t *testing.T, env *testhelper.TestEnv) int64 {
-	t.Helper()
-	runID, ok, err := automations.Enroll(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
-	require.NoError(t, err)
-	require.True(t, ok)
-	return runID
-}
-
 func TestFenceRunsTheEffectOnAnActiveEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
-	runID := enrolled(t, env)
 	ran := false
 
-	err := automations.FenceOn(env.DB)(context.Background(), env.DB.Scoped(fixtures.AcmeID), runID, func(context.Context) error {
+	err := automations.FenceOn(env.DB)(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunJobsPendingID, func(context.Context) error {
 		ran = true
 		return nil
 	})
@@ -38,11 +28,9 @@ func TestFenceRunsTheEffectOnAnActiveEnrollment(t *testing.T) {
 func TestFenceRunsNothingOnAnExitedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	runID := enrolled(t, env)
-	require.NoError(t, automations.ExitRun(context.Background(), s, env.Publisher(), runID, time.Now()))
 	ran := false
 
-	err := automations.FenceOn(env.DB)(context.Background(), s, runID, func(context.Context) error {
+	err := automations.FenceOn(env.DB)(context.Background(), s, fixtures.AutomationRunJobsExitedOnEmailID, func(context.Context) error {
 		ran = true
 		return nil
 	})

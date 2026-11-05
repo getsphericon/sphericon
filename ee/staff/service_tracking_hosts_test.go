@@ -55,7 +55,7 @@ func hostStates(entries []serviceapi.ServiceTrackingHostChange) map[string]servi
 
 func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 	t.Helper()
-	return h.env.ServiceClient(t, h.env.IssueServiceCredential(t, "service-edge", serviceapi.ServiceScopeDomainsRead))
+	return h.env.ServiceClient(t, domainsOnly)
 }
 
 // setTracking moves a fixture Tracking domain to state through ent, the way the recheck job does.

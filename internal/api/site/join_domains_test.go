@@ -49,6 +49,14 @@ func mustAddJoinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, 
 	return res
 }
 
+// joinDomain is the Join domain id of Workspace ws as its list shows it, with the record to publish.
+func joinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteJoinDomainResource {
+	t.Helper()
+	found, ok := lo.Find(listJoinDomains(t, c, ws), func(d siteapi.SiteJoinDomainResource) bool { return d.ID == siteapi.EntityId(id) })
+	require.Truef(t, ok, "Join domain %d is listed", id)
+	return found
+}
+
 func verifyJoinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id siteapi.EntityId) siteapi.SiteJoinDomainsVerifyRes {
 	t.Helper()
 	res, err := c.SiteJoinDomainsVerify(context.Background(), siteapi.SiteJoinDomainsVerifyParams{WorkspaceId: ws, ID: id})
@@ -134,7 +142,7 @@ func TestJoinDomainsVerifyNeedsTheRecordToBePublished(t *testing.T) {
 	env, zone := joinDomainsEnv(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	claim := mustAddJoinDomain(t, owner, ws, "verify-me.test")
+	claim := joinDomain(t, owner, ws, fixtures.JoinDomainPendingID)
 
 	missing := verifyJoinDomain(t, owner, ws, claim.ID)
 	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyUnprocessableEntity{}, missing)
@@ -170,10 +178,9 @@ func TestJoinDomainsAnotherWorkspacesVerifiedDomainIsRefusedWhileItsRecordIsPubl
 	env, zone := joinDomainsEnv(t)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	acme := mustAddJoinDomain(t, john, fixtures.AcmePublicID, "held.test")
+	acme := joinDomain(t, john, fixtures.AcmePublicID, fixtures.JoinDomainAcmeHeldID)
 	zone.PublishTXT(t, acme.Record.Host, acme.Record.Value)
-	require.IsType(t, &siteapi.SiteJoinDomainResource{}, verifyJoinDomain(t, john, fixtures.AcmePublicID, acme.ID))
-	globex := mustAddJoinDomain(t, jane, fixtures.GlobexPublicID, "held.test")
+	globex := joinDomain(t, jane, fixtures.GlobexPublicID, fixtures.JoinDomainGlobexHeldClaimID)
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 
 	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
@@ -191,11 +198,9 @@ func TestJoinDomainsDomainMovesWhenTheHoldersRecordIsGone(t *testing.T) {
 	env, zone := joinDomainsEnv(t)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	acme := mustAddJoinDomain(t, john, fixtures.AcmePublicID, "changed-hands.test")
-	zone.PublishTXT(t, acme.Record.Host, acme.Record.Value)
-	require.IsType(t, &siteapi.SiteJoinDomainResource{}, verifyJoinDomain(t, john, fixtures.AcmePublicID, acme.ID))
-	globex := mustAddJoinDomain(t, jane, fixtures.GlobexPublicID, "changed-hands.test")
-	zone.WithdrawTXT(acme.Record.Host)
+	// Acme holds held.test, but its record is not published.
+	acme := joinDomain(t, john, fixtures.AcmePublicID, fixtures.JoinDomainAcmeHeldID)
+	globex := joinDomain(t, jane, fixtures.GlobexPublicID, fixtures.JoinDomainGlobexHeldClaimID)
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 
 	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
@@ -218,18 +223,14 @@ func TestJoinDomainsDomainMovesWhenTheHoldersRecordIsGone(t *testing.T) {
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1, "the previous Owners are told, and only they")
 	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
-	assert.Contains(t, msgs[0].Subject, "changed-hands.test")
+	assert.Contains(t, msgs[0].Subject, fixtures.JoinDomainAcmeHeldDomain)
 }
 
 func TestJoinDomainsAMailFailureDoesNotUndoTheMove(t *testing.T) {
 	env, zone := joinDomainsEnv(t)
-	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	acme := mustAddJoinDomain(t, john, fixtures.AcmePublicID, "mail-down.test")
-	zone.PublishTXT(t, acme.Record.Host, acme.Record.Value)
-	require.IsType(t, &siteapi.SiteJoinDomainResource{}, verifyJoinDomain(t, john, fixtures.AcmePublicID, acme.ID))
-	globex := mustAddJoinDomain(t, jane, fixtures.GlobexPublicID, "mail-down.test")
-	zone.WithdrawTXT(acme.Record.Host)
+	// Acme holds held.test, but its record is not published.
+	globex := joinDomain(t, jane, fixtures.GlobexPublicID, fixtures.JoinDomainGlobexHeldClaimID)
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
@@ -245,7 +246,7 @@ func TestJoinDomainsRemoveDeletesOnlyTheClaim(t *testing.T) {
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	claim := mustAddJoinDomain(t, owner, ws, "remove-me.test")
+	claim := joinDomain(t, owner, ws, fixtures.JoinDomainPendingID)
 	members := env.DB.Scoped(fixtures.AcmeID).Membership().Query().CountX(ctx)
 
 	res, err := owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: claim.ID})

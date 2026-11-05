@@ -34,9 +34,9 @@ func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
-	h.setHold(t, "review", time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
 
-	assert.True(t, h.clearHold(t, "review"))
+	assert.True(t, h.clearHold(t, fixtures.HoldAcmeLapsedKey))
 
 	held, ok := h.sendOnAPI(t, "still-held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "the suspension still refuses sends")

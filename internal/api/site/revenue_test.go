@@ -56,7 +56,13 @@ func (s shop) send(in externalapi.EventInput) {
 
 func revenue(t *testing.T, c *siteapi.Client, rng siteapi.OptSiteAnalyticsRevenueRange) *siteapi.SiteAnalyticsRevenue {
 	t.Helper()
-	res, err := c.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.AcmePublicID, Range: rng})
+	return revenueOf(t, c, fixtures.AcmePublicID, rng)
+}
+
+// revenueOf is the revenue overview of the Workspace with the public id ws.
+func revenueOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, rng siteapi.OptSiteAnalyticsRevenueRange) *siteapi.SiteAnalyticsRevenue {
+	t.Helper()
+	res, err := c.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: ws, Range: rng})
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteAnalyticsRevenue)
 	require.Truef(t, ok, "got %T", res)

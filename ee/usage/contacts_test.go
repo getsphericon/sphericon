@@ -168,12 +168,12 @@ func TestContactsPeakOfABulkImportIsTheNumberReachedEvenWhenSomeAreDeleted(t *te
 func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 	now := time.Date(2027, time.March, 10, 12, 0, 0, 0, time.UTC)
 	env, _, _ := contactsEnv(t, now)
-	s := env.DB.Scoped(fixtures.AcmeID)
+	s := env.DB.Scoped(fixtures.BluthID)
 	before, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now).ExecX(t.Context())
 
-	addContact(t, env, "late@acme.test")
+	// test writes: the contacts-peak hook fires on this Contact write
+	require.NoError(t, s.Contact().Create().SetEmail("late@bluth.test").Exec(t.Context()))
 
 	after, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)

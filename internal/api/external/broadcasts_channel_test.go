@@ -54,7 +54,7 @@ func TestExternalBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 }
 
 // The API's list filters by Channel: email lists the email Broadcasts, telegram the Telegram one,
-// and together they are all of them.
+// sms the SMS ones, and together they are all of them.
 func TestExternalBroadcastsListFiltersByChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
@@ -71,9 +71,12 @@ func TestExternalBroadcastsListFiltersByChannel(t *testing.T) {
 	everyList := list(externalapi.OptBroadcastChannel{})
 	emailList := list(externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail))
 	telegramList := list(externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelTelegram))
+	smsList := list(externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelSMS))
 	channels := lo.Uniq(lo.Map(emailList.Items, func(b externalapi.BroadcastResource, _ int) externalapi.BroadcastChannel { return b.Channel }))
 
 	assert.Equal(t, []externalapi.BroadcastChannel{externalapi.BroadcastChannelEmail}, channels)
 	assert.Equal(t, []string{fixtures.BroadcastTelegramDraftName}, lo.Map(telegramList.Items, func(b externalapi.BroadcastResource, _ int) string { return b.Name }))
-	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems)
+	assert.ElementsMatch(t, []string{fixtures.BroadcastSmsDraftName, fixtures.BroadcastSmsBlankDraftName},
+		lo.Map(smsList.Items, func(b externalapi.BroadcastResource, _ int) string { return b.Name }))
+	assert.Equal(t, everyList.TotalItems, emailList.TotalItems+telegramList.TotalItems+smsList.TotalItems)
 }

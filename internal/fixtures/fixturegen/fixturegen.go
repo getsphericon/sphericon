@@ -182,6 +182,7 @@ func annotatedRows(raw []byte) (map[string]*yaml.Node, error) {
 var credentialColumns = []struct{ column, suffix string }{
 	{"password_hash", "Password"},
 	{"secret_hash", "Secret"},
+	{"token_hash", "Token"},
 	{"second_factor_secret_encrypted", "TotpSecret"},
 	{"totp_secret_encrypted", "TotpSecret"},
 	{"code_hash", "Code"},
@@ -190,8 +191,9 @@ var credentialColumns = []struct{ column, suffix string }{
 }
 
 // credentialCall matches a quoted-string hashing or sealing call:
-// {{argonHash "plaintext"}}, {{encrypt "secret"}}, {{recoveryCodeHash "code"}}, {{passkeyCredentialID "id"}}, {{passkeyPublicKey "key"}}.
-var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|secretHash|encrypt|recoveryCodeHash|passkeyCredentialID|passkeyPublicKey)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
+// {{argonHash "plaintext"}}, {{encrypt "secret"}}, {{recoveryCodeHash "code"}}, {{inviteHash "token"}},
+// {{passkeyCredentialID "id"}}, {{passkeyPublicKey "key"}}.
+var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|secretHash|encrypt|recoveryCodeHash|inviteHash|passkeyCredentialID|passkeyPublicKey)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
 
 // annotationName extracts the fixture name from a line or line comment.
 func annotationName(text string) (string, bool) {

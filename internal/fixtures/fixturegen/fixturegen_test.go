@@ -45,6 +45,7 @@ func TestGenerateExtractsPlaintextOfCredentialTemplateCalls(t *testing.T) {
 		"users.yml": "- id: 1 # fixture: Owner\n  email: o@example.com\n  password_hash: '{{argonHash \"owner-pw\"}}'\n",
 		"tokens.yml": "- id: 1 # fixture: Tok\n  prefix: abc\n  secret_hash: '{{ secretHash \"tok-secret\" }}'\n" +
 			"- id: 2 # fixture: Static\n  prefix: def\n  secret_hash: $2a$12$staticstatichash\n",
+		"invitations.yml": "- id: 1 # fixture: Invite\n  email: i@example.com\n  token_hash: '{{ inviteHash \"inv-token\" }}'\n",
 	})
 
 	src, err := fixturegen.Generate(dir)
@@ -53,6 +54,7 @@ func TestGenerateExtractsPlaintextOfCredentialTemplateCalls(t *testing.T) {
 	out := string(src)
 	require.Contains(t, out, `OwnerPassword = "owner-pw"`)
 	require.Contains(t, out, `TokSecret = "tok-secret"`)
+	require.Contains(t, out, `InviteToken = "inv-token"`)
 	require.NotContains(t, out, "StaticSecret")
 	require.NotContains(t, out, "staticstatichash")
 }

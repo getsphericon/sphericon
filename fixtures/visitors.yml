@@ -114,3 +114,13 @@
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 3}}'
   last_seen_at: '{{daysAgo 3}}'
+
+# Stark (workspace 87): a device whose Contact is gone (its contact_id names no row), so what it
+# collects is anonymous.
+- id: 7500 # fixture: VisitorStarkVanished
+  visitor_id: dev-gone
+  contact_id: 999999
+  workspace_id: 87
+  last_seen_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

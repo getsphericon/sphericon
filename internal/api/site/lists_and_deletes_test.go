@@ -99,11 +99,7 @@ func TestSiteInvitationsDelete(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := owner.SiteInvitationsCreate(ctx,
-		&siteapi.SiteCreateInvitationInput{Email: "revoke-me@acme.test", Role: siteapi.SiteInvitableRoleMember},
-		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	id := created.(*siteapi.SiteCreateInvitationResponse).Resource.ID
+	id := siteapi.EntityId(fixtures.InvitationAcmePendingID)
 	params := siteapi.SiteInvitationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
 	// A plain member may not revoke.

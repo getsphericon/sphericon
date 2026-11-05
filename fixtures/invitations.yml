@@ -2,7 +2,7 @@
 # only their SHA-256 hash is stored (see internal/accounts.HashInviteToken).
 #
 # id 1: valid pending invite. raw token = "inv_fixture_token_acme"
-- id: 1
+- id: 1 # fixture: InvitationAcmePending
   workspace_id: 1
   email: invited@acme.test
   role: member
@@ -84,6 +84,93 @@
   role: admin
   token_hash: '{{ inviteHash "inv_fixture_token_acme_john_admin" }}'
   invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Pending invitations a test accepts, each to an address no other test invites (the raw token
+# is the catalog's <Name>Token): Oscar, a Verified User with no Membership, as admin; new
+# addresses as member, and Nina's Google address as admin; addresses a test first signs up
+# unverified (victim@example.com, victim@gmail.com, the survey address).
+- id: 7310 # fixture: InvitationAcmeOscar
+  workspace_id: 1
+  email: oscar@nowhere.test
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_oscar" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7311 # fixture: InvitationAcmeNewcomer
+  workspace_id: 1
+  email: newcomer@example.com
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_newcomer" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7312 # fixture: InvitationAcmeVictim
+  workspace_id: 1
+  email: victim@example.com
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_victim" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7313 # fixture: InvitationAcmeVictimGmail
+  workspace_id: 1
+  email: victim@gmail.com
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_victim_gmail" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7314 # fixture: InvitationAcmeNina
+  workspace_id: 1
+  email: nina@gmail.com
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_nina" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7315 # fixture: InvitationAcmeElsewhere
+  workspace_id: 1
+  email: invited@example.com
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_elsewhere" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7316 # fixture: InvitationAcmeSurvey
+  workspace_id: 1
+  email: newcomer@survey.example
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_survey" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# The colleague on Acme's join domain acme.com, invited to Acme as admin and to Globex as member.
+- id: 7317 # fixture: InvitationAcmeColleague
+  workspace_id: 1
+  email: colleague@acme.com
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_colleague" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7318 # fixture: InvitationGlobexColleague
+  workspace_id: 2
+  email: colleague@acme.com
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_globex_colleague" }}'
+  invited_by: 2
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'

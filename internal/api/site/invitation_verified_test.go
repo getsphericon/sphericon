@@ -32,7 +32,7 @@ func isMemberOfAcme(t *testing.T, env *testhelper.TestEnv, email string) bool {
 
 func TestAnInvitationForAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 
 	res := acceptInvitation(t, env.SiteAnonymous(t), token, &siteapi.SiteAcceptInvitationInput{})
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnauthorized{}, res)
@@ -41,7 +41,7 @@ func TestAnInvitationForAVerifiedUserNeedsTheirSession(t *testing.T) {
 
 func TestAnInvitationForAVerifiedUserRefusesAnotherUsersSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 
 	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{})
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptForbidden{}, res)
@@ -51,7 +51,7 @@ func TestAnInvitationForAVerifiedUserRefusesAnotherUsersSession(t *testing.T) {
 
 func TestAnInvitationForAVerifiedUserAcceptsTheirSessionAndReadsNoPassword(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, fixtures.OutsiderOscarEmail)
+	token := fixtures.InvitationAcmeOscarToken
 	before, err := env.DB.User.Query().Where(user.Email(fixtures.OutsiderOscarEmail)).Only(t.Context())
 	require.NoError(t, err)
 
@@ -69,20 +69,20 @@ func TestAnInvitationForAVerifiedUserAcceptsTheirSessionAndReadsNoPassword(t *te
 
 func TestAnInvitationForAnUnverifiedAddressNeedsNoSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	signUpLink(t, env, "Squatter", "victim@example.com")
-	token := inviteToAcme(t, env, "victim@example.com")
+	signUpLink(t, env, "Squatter", fixtures.InvitationAcmeVictimEmail)
+	token := fixtures.InvitationAcmeVictimToken
 
 	// A signed-in stranger does not get in the way of the invitee's own accept.
 	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1"),
 	})
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
-	assert.True(t, isMemberOfAcme(t, env, "victim@example.com"))
+	assert.True(t, isMemberOfAcme(t, env, fixtures.InvitationAcmeVictimEmail))
 }
 
 func TestAStaleSessionDoesNotBlockAnInvitationForAnUnverifiedAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := inviteToAcme(t, env, "newcomer@example.com")
+	token := fixtures.InvitationAcmeNewcomerToken
 
 	res := acceptInvitation(t, env.SiteWithToken(t, "stale-garbage"), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("newcomer-password-1"),

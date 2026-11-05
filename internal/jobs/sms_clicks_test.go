@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
@@ -157,16 +156,13 @@ func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(
 
 // sms.clicked is a Trigger like email.clicked: a person's click on an SMS step's link enrolls the
 // Contact with the click's URL, and a preview fetch starts nothing (ADR 0053, 0083). Fixture: the
-// Jobs greeting Automation, its live version's Trigger turned to sms.clicked.
+// Automation the fixtures trigger on sms.clicked.
 func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	greeting := env.DB.Automation.Query().Where(automation.ID(fixtures.AutomationJobsGreetingID)).OnlyX(ctx)
-	env.DB.AutomationVersion.UpdateOneID(*greeting.LiveVersionID).SetTriggerEvent(events.NameSmsClicked).ExecX(ctx)
-	account := env.AcmeTwilio(t)
-	sender := smsAutomation(t, env, smsStep(account, "Your cart: "+smsCart))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	enrollVia(t, env, sender, fixtures.ContactTexterID)
+	env.AcmeTwilio(t)
+	sender := int64(fixtures.AutomationJobsSMSCartID)
+	queueStep(t, env, fixtures.AutomationRunJobsSMSCartConfirmedID)
 	runSteps(t, env)
 	paths := smsShortPaths(t, env)
 	require.Len(t, paths, 1)
@@ -185,7 +181,7 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactTexterID)).Only(ctx)
+		Where(automationrun.AutomationID(fixtures.AutomationOnSmsClickedID), automationrun.ContactID(fixtures.ContactTexterConfirmedID)).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameSmsClicked, *run.EventAction)
 	assert.Equal(t, smsCart, run.EventProperties["url"])
@@ -196,12 +192,8 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 
 func TestAnSMSStepWithLinkTrackingOffSendsItsLinksAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.AcmeTwilio(t)
-	step := smsStep(account, "Your cart: "+smsCart)
-	step.LinkTracking = new(false)
-	automationID := smsAutomation(t, env, step)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	env.AcmeTwilio(t)
+	queueStep(t, env, fixtures.AutomationRunJobsSMSCartUntrackedConfirmedID)
 
 	runSteps(t, env)
 

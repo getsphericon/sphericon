@@ -44,11 +44,10 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
+	queueStep(t, env, runID)
 	runSteps(t, env)
-	text := textOf(t, env, fixtures.ContactTexterPhone)
+	text := textOf(t, env, fixtures.ContactTexterConfirmedPhone)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	// The send's transaction has not recorded the SID yet when the report comes.
 	env.DB.OutboundMessage.UpdateOneID(msg.ID).ClearProviderMessageID().ExecX(ctx)
@@ -66,7 +65,7 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 	assert.Empty(t, deferred[0].Notice.Destination, "the job holds no number")
 	settled := env.DB.OutboundMessage.GetX(ctx, msg.ID)
 	assert.NotNil(t, settled.DeliveredAt, "the report stamps the text once it is there")
-	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{"contactId": fixtures.ContactTexterID})
+	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{"contactId": fixtures.ContactTexterConfirmedID})
 	assert.Equal(t, 1, delivered)
 }
 
@@ -75,11 +74,9 @@ func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *tes
 func TestADeliveryReportOfNoTextIsReadAgainABoundedNumberOfTimes(t *testing.T) {
 	env := testhelper.Setup(t)
 	account := env.AcmeTwilio(t)
-	automationID := smsAutomation(t, env, smsStep(account, "Hello"))
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	enrollVia(t, env, automationID, fixtures.ContactTexterID)
+	queueStep(t, env, fixtures.AutomationRunJobsSMSHelloConfirmedID)
 	runSteps(t, env)
-	stranger := textOf(t, env, fixtures.ContactTexterPhone)
+	stranger := textOf(t, env, fixtures.ContactTexterConfirmedPhone)
 	stranger.SID = "SM00000000000000000000000000000000"
 	reportStatus(t, env, account, stranger, "delivered", "")
 	atTheHook := lateNotices(t, env)
