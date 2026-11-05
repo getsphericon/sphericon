@@ -5,11 +5,10 @@ package jobs_test
 
 import (
 	"context"
-	"sync"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"sync"
 )
 
 // Ensure, that SendersMock does implement outbound.Senders.
