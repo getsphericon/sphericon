@@ -4448,7 +4448,8 @@
 # Abuse detector traffic (ADR 0026, ee/abuse tests): one scenario per day offset, so a test runs the
 # detector at `now - days` and sees only its own scenario in the trailing 24 hours. Rows are one
 # hour before the scenario's day. Volumes are small: the tests judge with a volume floor of 20
-# sent. Ids 30000 and up. ee/abuse/detector_test.go names the day of each scenario.
+# sent. Ids 30000 and up (day 2: 7100 and up). ee/abuse/detector_test.go names the day of each
+# scenario.
 
 # day 3, over the freeze limit (Vandelay 15% complaints; Kramerica, exempt, 50%)
 # {{range $i := seq 30000 30039}}
@@ -4955,6 +4956,63 @@
   workspace_id: 8
   occurred_at: '{{hoursAhead 2}}'
   created_at: '{{hoursAhead 2}}'
+# {{end}}
+
+# day 2, over the freeze limit but never judged: Monarch (suspended) and Bluth (in its deletion
+# window), each 20 sent, 20 delivered and 3 complaints (15%)
+# {{range $i := seq 7100 7119}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7120 7122}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7123 7142}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.monarch.test"}'
+  workspace_id: 73
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7143 7162}}
+- id: '{{$i}}'
+  email: 'sent-{{$i}}@example.com'
+  action: email.sent
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7163 7165}}
+- id: '{{$i}}'
+  email: 'complained-{{$i}}@example.com'
+  action: email.complained
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
+# {{end}}
+# {{range $i := seq 7166 7185}}
+- id: '{{$i}}'
+  email: 'delivered-{{$i}}@example.com'
+  action: email.delivered
+  properties: '{"sendingDomain":"mail.bluth.test"}'
+  workspace_id: 12
+  occurred_at: '{{hoursAgo 49}}'
+  created_at: '{{hoursAgo 49}}'
 # {{end}}
 
 # Events of the segment scenarios (#555). Events attach by contact_id (ADR 0002).

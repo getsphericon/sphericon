@@ -34,6 +34,10 @@ var (
 	readOnly = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialReadOnlyPrefix, fixtures.ServiceCredentialReadOnlySecret)
 	revoked  = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialRevokedPrefix, fixtures.ServiceCredentialRevokedSecret)
 	expired  = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialExpiredPrefix, fixtures.ServiceCredentialExpiredSecret)
+	// usersOnly, domainsOnly and holdsOnly each carry one scope only.
+	usersOnly   = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialUsersReaderPrefix, fixtures.ServiceCredentialUsersReaderSecret)
+	domainsOnly = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialDomainsReaderPrefix, fixtures.ServiceCredentialDomainsReaderSecret)
+	holdsOnly   = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialHoldsOnlyPrefix, fixtures.ServiceCredentialHoldsOnlySecret)
 )
 
 // identity reads the credential's own identity, failing unless it is answered.
@@ -141,16 +145,13 @@ func TestAnUnknownMalformedRevokedOrExpiredCredentialIsRefused(t *testing.T) {
 
 func TestACredentialExpiresWhenTheClockPassesItsExpiry(t *testing.T) {
 	h := newHarness(t)
-	in := time.Hour
-	issued, err := h.env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{
-		Name: "service-c", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}, ExpiresAt: new(h.clock.now().Add(in)),
-	})
-	require.NoError(t, err)
+	expiresAt := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialSecondID).ExpiresAt
+	require.NotNil(t, expiresAt)
 
-	assert.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, issued.Value).Code)
+	assert.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, second).Code)
 
-	h.clock.t = h.clock.t.Add(in + time.Second)
-	assert.Equal(t, http.StatusUnauthorized, getIdentity(t, h.env.Internal, issued.Value).Code)
+	h.clock.t = expiresAt.Add(time.Second)
+	assert.Equal(t, http.StatusUnauthorized, getIdentity(t, h.env.Internal, second).Code)
 }
 
 func TestTwoActiveCredentialsOfOneServiceWorkAtOnce(t *testing.T) {

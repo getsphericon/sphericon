@@ -1,5 +1,5 @@
-# Staff holds (ADR 0009). Both rows are lapsed, so no fixture Workspace is frozen: a
-# test that wants a freeze sets a hold through the service endpoints (or the scoped client).
+# Staff holds (ADR 0009). Every row is lapsed, so no fixture Workspace is frozen: a test
+# that wants a freeze moves the expiry of a lapsed hold with env.ExtendHold (internal/AGENTS.md).
 - id: 1 # fixture: HoldAcmeLapsed
   key: lapsed
   reason_code: review

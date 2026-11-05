@@ -7,7 +7,6 @@ import (
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/staff"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/credentials"
 )
@@ -17,7 +16,7 @@ const serviceBase = "http://local/service"
 // ServiceClient returns a service-endpoints client presenting value as its bearer
 // credential, served by the internal listener's handler (env.Internal), the only place
 // the service endpoints exist. Build the value of a fixture credential with
-// ServiceCredentialValue, or issue one with IssueServiceCredential.
+// ServiceCredentialValue.
 func (env *TestEnv) ServiceClient(t *testing.T, value string) *serviceapi.Client {
 	t.Helper()
 	require.NotNil(t, env.Internal, "the instance serves no service endpoints (no staff license)")
@@ -36,16 +35,6 @@ func (env *TestEnv) serviceClientOn(t *testing.T, transport ht.Client, value str
 	c, err := serviceapi.NewClient(serviceBase, serviceBearer{value}, serviceapi.WithClient(transport))
 	require.NoError(t, err)
 	return c
-}
-
-// IssueServiceCredential issues a Service credential through the same module the
-// command line uses and returns the value to present: the issuing helper of the tests.
-// The credential belongs to the service called name and carries exactly scopes.
-func (env *TestEnv) IssueServiceCredential(t *testing.T, name string, scopes ...serviceapi.ServiceScope) string {
-	t.Helper()
-	issued, err := env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{Name: name, Scopes: scopes})
-	require.NoError(t, err)
-	return issued.Value
 }
 
 // ServiceCredentialValue is the value a service presents for a fixture credential, from

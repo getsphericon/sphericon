@@ -199,3 +199,33 @@
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+- id: 7100 # fixture: NakatomiHollyMembership
+  user_id: 7100
+  workspace_id: 71
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7101 # fixture: SiriusOrionMembership
+  user_id: 7101
+  workspace_id: 72
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7102 # fixture: MonarchMinaMembership
+  user_id: 7102
+  workspace_id: 73
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7103 # fixture: VirtuconVeraMembership
+  user_id: 7103
+  workspace_id: 74
+  role: owner
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7104 # fixture: VirtuconVicMembership
+  user_id: 7104
+  workspace_id: 74
+  role: owner
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

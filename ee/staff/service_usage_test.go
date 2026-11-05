@@ -57,15 +57,16 @@ func TestAServiceReadsLiveUsageOfTheCurrentPeriodByDefault(t *testing.T) {
 
 func TestAServiceReadsAClosedPeriodAsFinalSnapshots(t *testing.T) {
 	h := newHarness(t)
-	h.env.RefreshUsage(t, time.Date(2027, time.February, 3, 0, 0, 0, 0, time.UTC))
 
 	page := readUsage(t, h.env.ServiceClient(t, primary), serviceapi.ServiceUsageListParams{
-		Period: serviceapi.NewOptString("2027-01"),
+		Period: serviceapi.NewOptString("2025-12"), // AcmeUsageSnapshot
 	})
 
 	require.NotEmpty(t, page.Items)
-	assert.True(t, usageOf(t, page, fixtures.AcmePublicID, serviceapi.UsageMetricEmailsSent).Final)
-	assert.Equal(t, "2027-01", page.Items[0].Period)
+	sent := usageOf(t, page, fixtures.AcmePublicID, serviceapi.UsageMetricEmailsSent)
+	assert.True(t, sent.Final)
+	assert.EqualValues(t, 7, sent.Value)
+	assert.Equal(t, "2025-12", page.Items[0].Period)
 }
 
 func TestTheUsageReadIsPageable(t *testing.T) {
@@ -83,11 +84,10 @@ func TestTheUsageReadIsPageable(t *testing.T) {
 
 func TestTheUsageReadNeedsTheReadUsageScope(t *testing.T) {
 	h := newHarness(t)
-	noUsage := h.env.IssueServiceCredential(t, "service-c", serviceapi.ServiceScopeHoldsWrite)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/service/usage", nil)
-	req.Header.Set("Authorization", "Bearer "+noUsage)
+	req.Header.Set("Authorization", "Bearer "+holdsOnly)
 	h.env.Internal.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 

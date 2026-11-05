@@ -145,6 +145,26 @@
   workspace_id: 8
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The verified domains of Monarch (suspended) and Bluth (in its deletion window), whose traffic
+# over the freeze limit the abuse detector must skip (day 2 in events.yml).
+- id: 7100 # fixture: SendingDomainMonarch
+  domain: mail.monarch.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "monarch-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=monarch'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 73
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7101 # fixture: SendingDomainBluth
+  domain: mail.bluth.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "bluth-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=bluth'
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 12
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 
 # Umbrella (workspace 4) sends from a verified domain; its Tracking domains are in
 # fixtures/tracking_domains.yml (ADR 0071).

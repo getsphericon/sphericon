@@ -237,3 +237,19 @@
   workspace_id: 20
   created_at: '{{hoursAgo 1900}}'
   updated_at: '{{hoursAgo 1900}}'
+# Bluth (in its deletion window): one entry as old as Acme's, which the retention prune leaves
+# while the Workspace is deleted.
+- id: 7100 # fixture: BluthAuditEntry
+  workspace_id: 12
+  entry_key: fixture-bluth-entry
+  occurred_at: '2026-01-01 00:00:00'
+  actor_kind: user
+  actor_id: '21'
+  actor_name: Dan
+  action: workspace.update
+  target_type: workspace
+  target_id: '12'
+  target_name: Bluth
+  diff: '{"name":{"from":"Bluth Company","to":"Bluth"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

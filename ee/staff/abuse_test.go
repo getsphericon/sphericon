@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -97,14 +96,12 @@ func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 func TestTheListSurfacesWarnedAndSystemFrozenWorkspaces(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	_, err := suspension.SuspendWorkspace(t.Context(), h.env.Bus, fixtures.VandelayID, suspension.System, "complaint rate")
-	require.NoError(t, err)
 	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
 
 	frozen := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewSystemFrozen)})
 	warned := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewWarned)})
 
-	assert.Equal(t, []string{"Vandelay"}, names(frozen.Items), "Hooli was suspended by a StaffMember, not the system")
+	assert.Equal(t, []string{fixtures.NakatomiName}, names(frozen.Items), "Hooli and Monarch were suspended by a StaffMember and Sirius from the command line, not by the system")
 	assert.Equal(t, []string{"Globex"}, names(warned.Items))
 	assert.True(t, warned.Items[0].Warned)
 }

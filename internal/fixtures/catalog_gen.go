@@ -263,6 +263,10 @@ const (
 	BindingLiamDestination = "70001"
 	// BindingLiamID is from fixtures/bindings.
 	BindingLiamID = 1
+	// BluthAuditEntryAction is from fixtures/audit_entries.
+	BluthAuditEntryAction = "workspace.update"
+	// BluthAuditEntryID is from fixtures/audit_entries.
+	BluthAuditEntryID = 7100
 	// BluthCollectKey is from fixtures/workspaces.
 	BluthCollectKey = "omck_test_bluth_collect_key"
 	// BluthDanMembershipID is from fixtures/memberships.
@@ -1581,6 +1585,42 @@ const (
 	MeterName = "Meter"
 	// MeterPublicID is from fixtures/workspaces.
 	MeterPublicID = "MeterW80"
+	// MonarchCollectKey is from fixtures/workspaces.
+	MonarchCollectKey = "omck_test_monarch_collect_key"
+	// MonarchID is from fixtures/workspaces.
+	MonarchID = 73
+	// MonarchMinaMembershipID is from fixtures/memberships.
+	MonarchMinaMembershipID = 7102
+	// MonarchName is from fixtures/workspaces.
+	MonarchName = "Monarch"
+	// MonarchOwnerMinaEmail is from fixtures/users.
+	MonarchOwnerMinaEmail = "mina@monarch.test"
+	// MonarchOwnerMinaID is from fixtures/users.
+	MonarchOwnerMinaID = 7102
+	// MonarchOwnerMinaName is from fixtures/users.
+	MonarchOwnerMinaName = "Mina"
+	// MonarchOwnerMinaPassword is from fixtures/users.
+	MonarchOwnerMinaPassword = "password"
+	// MonarchPublicID is from fixtures/workspaces.
+	MonarchPublicID = "MonarW73"
+	// NakatomiCollectKey is from fixtures/workspaces.
+	NakatomiCollectKey = "omck_test_nakatomi_collect_key"
+	// NakatomiHollyMembershipID is from fixtures/memberships.
+	NakatomiHollyMembershipID = 7100
+	// NakatomiID is from fixtures/workspaces.
+	NakatomiID = 71
+	// NakatomiName is from fixtures/workspaces.
+	NakatomiName = "Nakatomi"
+	// NakatomiOwnerHollyEmail is from fixtures/users.
+	NakatomiOwnerHollyEmail = "holly@nakatomi.test"
+	// NakatomiOwnerHollyID is from fixtures/users.
+	NakatomiOwnerHollyID = 7100
+	// NakatomiOwnerHollyName is from fixtures/users.
+	NakatomiOwnerHollyName = "Holly"
+	// NakatomiOwnerHollyPassword is from fixtures/users.
+	NakatomiOwnerHollyPassword = "password"
+	// NakatomiPublicID is from fixtures/workspaces.
+	NakatomiPublicID = "NakatW71"
 	// OperatorNewsCurrentID is from fixtures/legal_document_versions.
 	OperatorNewsCurrentID = 3
 	// OperatorNewsCurrentLabel is from fixtures/legal_document_versions.
@@ -2039,6 +2079,10 @@ const (
 	SendingDomainArchivedDomain = "old.acme.com"
 	// SendingDomainArchivedID is from fixtures/sending_domains.
 	SendingDomainArchivedID = 4
+	// SendingDomainBluthDomain is from fixtures/sending_domains.
+	SendingDomainBluthDomain = "mail.bluth.test"
+	// SendingDomainBluthID is from fixtures/sending_domains.
+	SendingDomainBluthID = 7101
 	// SendingDomainCodebasicsDomain is from fixtures/sending_domains.
 	SendingDomainCodebasicsDomain = "codebasics.dev"
 	// SendingDomainCodebasicsID is from fixtures/sending_domains.
@@ -2063,6 +2107,10 @@ const (
 	SendingDomainLostDomain = "lost.acme.com"
 	// SendingDomainLostID is from fixtures/sending_domains.
 	SendingDomainLostID = 6
+	// SendingDomainMonarchDomain is from fixtures/sending_domains.
+	SendingDomainMonarchDomain = "mail.monarch.test"
+	// SendingDomainMonarchID is from fixtures/sending_domains.
+	SendingDomainMonarchID = 7100
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.
@@ -2091,6 +2139,14 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// ServiceCredentialDomainsReaderID is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderID = 7101
+	// ServiceCredentialDomainsReaderName is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderName = "service-edge"
+	// ServiceCredentialDomainsReaderPrefix is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderPrefix = "svcdomns7101"
+	// ServiceCredentialDomainsReaderSecret is from fixtures/service_credentials.
+	ServiceCredentialDomainsReaderSecret = "service-domains-reader-secret-0000000000"
 	// ServiceCredentialExpiredID is from fixtures/service_credentials.
 	ServiceCredentialExpiredID = 5
 	// ServiceCredentialExpiredName is from fixtures/service_credentials.
@@ -2099,6 +2155,14 @@ const (
 	ServiceCredentialExpiredPrefix = "svcexpired05"
 	// ServiceCredentialExpiredSecret is from fixtures/service_credentials.
 	ServiceCredentialExpiredSecret = "service-expired-secret-00000000000000000"
+	// ServiceCredentialHoldsOnlyID is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyID = 7102
+	// ServiceCredentialHoldsOnlyName is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyName = "service-c"
+	// ServiceCredentialHoldsOnlyPrefix is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlyPrefix = "svcholds7102"
+	// ServiceCredentialHoldsOnlySecret is from fixtures/service_credentials.
+	ServiceCredentialHoldsOnlySecret = "service-holds-only-secret-00000000000000"
 	// ServiceCredentialPrimaryID is from fixtures/service_credentials.
 	ServiceCredentialPrimaryID = 1
 	// ServiceCredentialPrimaryName is from fixtures/service_credentials.
@@ -2131,6 +2195,14 @@ const (
 	ServiceCredentialSecondPrefix = "svcsecond002"
 	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
 	ServiceCredentialSecondSecret = "service-second-secret-000000000000000000"
+	// ServiceCredentialUsersReaderID is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderID = 7100
+	// ServiceCredentialUsersReaderName is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderName = "control-plane"
+	// ServiceCredentialUsersReaderPrefix is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderPrefix = "svcusers7100"
+	// ServiceCredentialUsersReaderSecret is from fixtures/service_credentials.
+	ServiceCredentialUsersReaderSecret = "service-users-reader-secret-000000000000"
 	// ServiceTermsCurrentID is from fixtures/legal_document_versions.
 	ServiceTermsCurrentID = 2
 	// ServiceTermsCurrentLabel is from fixtures/legal_document_versions.
@@ -2143,6 +2215,24 @@ const (
 	ServiceTermsStaleID = 1
 	// ServiceTermsStaleLabel is from fixtures/legal_document_versions.
 	ServiceTermsStaleLabel = "2026-01"
+	// SiriusCollectKey is from fixtures/workspaces.
+	SiriusCollectKey = "omck_test_sirius_collect_key"
+	// SiriusID is from fixtures/workspaces.
+	SiriusID = 72
+	// SiriusName is from fixtures/workspaces.
+	SiriusName = "Sirius"
+	// SiriusOrionMembershipID is from fixtures/memberships.
+	SiriusOrionMembershipID = 7101
+	// SiriusOwnerOrionEmail is from fixtures/users.
+	SiriusOwnerOrionEmail = "orion@sirius.test"
+	// SiriusOwnerOrionID is from fixtures/users.
+	SiriusOwnerOrionID = 7101
+	// SiriusOwnerOrionName is from fixtures/users.
+	SiriusOwnerOrionName = "Orion"
+	// SiriusOwnerOrionPassword is from fixtures/users.
+	SiriusOwnerOrionPassword = "password"
+	// SiriusPublicID is from fixtures/workspaces.
+	SiriusPublicID = "SiriuW72"
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.
@@ -2525,6 +2615,34 @@ const (
 	VandelayOwnerCosmoPassword = "password"
 	// VandelayPublicID is from fixtures/workspaces.
 	VandelayPublicID = "VandlWs7"
+	// VirtuconCoOwnerVicEmail is from fixtures/users.
+	VirtuconCoOwnerVicEmail = "vic@virtucon.test"
+	// VirtuconCoOwnerVicID is from fixtures/users.
+	VirtuconCoOwnerVicID = 7104
+	// VirtuconCoOwnerVicName is from fixtures/users.
+	VirtuconCoOwnerVicName = "Vic"
+	// VirtuconCoOwnerVicPassword is from fixtures/users.
+	VirtuconCoOwnerVicPassword = "password"
+	// VirtuconCollectKey is from fixtures/workspaces.
+	VirtuconCollectKey = "omck_test_virtucon_collect_key"
+	// VirtuconID is from fixtures/workspaces.
+	VirtuconID = 74
+	// VirtuconName is from fixtures/workspaces.
+	VirtuconName = "Virtucon"
+	// VirtuconOwnerVeraEmail is from fixtures/users.
+	VirtuconOwnerVeraEmail = "vera@virtucon.test"
+	// VirtuconOwnerVeraID is from fixtures/users.
+	VirtuconOwnerVeraID = 7103
+	// VirtuconOwnerVeraName is from fixtures/users.
+	VirtuconOwnerVeraName = "Vera"
+	// VirtuconOwnerVeraPassword is from fixtures/users.
+	VirtuconOwnerVeraPassword = "password"
+	// VirtuconPublicID is from fixtures/workspaces.
+	VirtuconPublicID = "VirtcW74"
+	// VirtuconVeraMembershipID is from fixtures/memberships.
+	VirtuconVeraMembershipID = 7103
+	// VirtuconVicMembershipID is from fixtures/memberships.
+	VirtuconVicMembershipID = 7104
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
 	// VisitorAnonymousVisitorID is from fixtures/visitors.
