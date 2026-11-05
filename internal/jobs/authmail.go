@@ -124,10 +124,3 @@ func buildIdentityLinkedMail(appURL string, args mailjobs.AuthMailArgs) (messagi
 		i18n.T(i18n.EmailAuthFooter, nil))
 	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailIdentityLinkedSubject, nil), Text: body}, nil
 }
-
-// Enqueue queues one job of args. It is the one enqueue method the modules that queue
-// platform mail use (mailjobs.Enqueuer).
-func (c *Client) Enqueue(ctx context.Context, args river.JobArgs) error {
-	_, err := c.river.Insert(ctx, args, nil)
-	return err
-}

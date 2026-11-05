@@ -110,7 +110,9 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
 
-	require.NoError(t, client.Enqueue(ctx, mailjobs.Welcome(contactEmail, "Policy")))
+	queue, err := jobs.NewQueue(pool, nil)
+	require.NoError(t, err)
+	require.NoError(t, queue.Enqueue(ctx, mailjobs.Welcome(contactEmail, "Policy")))
 	require.Eventually(t, func() bool {
 		msgs := env.SystemMail.Messages()
 		for i := range msgs {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
@@ -24,10 +23,10 @@ type ServiceSurface struct {
 }
 
 // NewServiceSurface builds the surface over the module that issues and checks credentials
-// and the bus its writes are audited through.
-func NewServiceSurface(m *Module, bus *events.Bus) *ServiceSurface {
+// and audits its writes.
+func NewServiceSurface(m *Module) *ServiceSurface {
 	return &ServiceSurface{
-		handlers: &ServiceHandlers{module: m, bus: bus},
+		handlers: &ServiceHandlers{module: m},
 		security: NewServiceSecurity(m, ServiceOperationScopes),
 	}
 }
@@ -109,7 +108,6 @@ func covers(have []string, need []serviceapi.ServiceScope) bool {
 // ServiceHandlers implements serviceapi.Handler.
 type ServiceHandlers struct {
 	module *Module
-	bus    *events.Bus
 }
 
 var _ serviceapi.Handler = (*ServiceHandlers)(nil)

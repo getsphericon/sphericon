@@ -23,8 +23,11 @@ import (
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise
@@ -38,8 +41,8 @@ type Config struct {
 	// Abuse are the abuse detector's limits (ADR 0026); the console shows rates under
 	// the same volume floor the detector judges by. Zero is abuse.DefaultLimits.
 	Abuse abuse.Limits
-	// SupportEmail is the support contact an owner is given with a suspension notice
-	// (SPHERICON_SUPPORT_EMAIL).
+	// SupportEmail is the support contact an owner is given with the abuse detector's
+	// warning (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
 	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
@@ -52,18 +55,20 @@ type Config struct {
 // Module is the domain of the console's Enterprise sections and of the service endpoints.
 type Module struct {
 	ent      *ent.Client
+	bus      *events.Bus
+	suspend  *suspension.Suspender
+	rates    *reputation.Module
 	lic      *licensekey.License
 	audit    *audit.Log
 	now      func() time.Time
 	watch    *abuse.Watch
-	support  string
 	holdMax  time.Duration
 	survey   *signupsurvey.Reader
 	sendCaps providerlimit.SendCaps
 }
 
 // NewModule builds the module over the raw client.
-func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log, cfg Config) *Module {
+func NewModule(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *audit.Log, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		now = time.Now
@@ -73,7 +78,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 		holdMax = DefaultHoldMaxExpiry
 	}
 	return &Module{
-		ent: client, lic: lic, audit: auditLog, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
+		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), holdMax: holdMax, survey: signupsurvey.NewReader(client),
 		sendCaps: cfg.SendCaps,
 	}
 }

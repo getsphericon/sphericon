@@ -27,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -467,7 +466,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 			tb:      t,
 			ent:     client,
 			sender:  systemMail,
-			domains: domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), accounts.OwnerNotifier(client, systemMail)),
+			domains: do.MustInvoke[*domainverify.Module](i),
 			cipher:  do.MustInvoke[*secrets.Cipher](i),
 			catalog: do.MustInvoke[*messaging.Catalog](i),
 			appURL:  cfg.AppURL,

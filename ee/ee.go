@@ -29,8 +29,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
+	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // Edition is the Enterprise surface of one running instance.
@@ -48,8 +50,30 @@ type Edition struct {
 	Staff *staff.Module
 
 	staffSessions *staffmembers.Sessions
+	notify        ownernotice.Notify
+	suspend       *suspension.Suspender
 	abuseCfg      abuse.Config
 	now           func() time.Time
+}
+
+// Deps are the core services the Edition is built over, each the one the composition root
+// built for the rest of the instance.
+type Deps struct {
+	// Client is the raw ent client of the cross-Workspace reads and writes.
+	Client *ent.Client
+	// Bus is the domain-event bus every write of the Edition goes through. It is built
+	// before the Edition and takes the Edition's ent hooks from Hooks.
+	Bus *events.Bus
+	// License is the runtime license key; nil is the plain core.
+	License *licensekey.License
+	// StaffSessions are the core Staff member's sessions, nil while its sign-in is off.
+	StaffSessions *staffmembers.Sessions
+	// Notify tells a Workspace's owners through the platform's (system) sender, nil for none.
+	Notify ownernotice.Notify
+	// Suspender suspends a Workspace and tells its owners (ADR 0007).
+	Suspender *suspension.Suspender
+	// Reputation computes a Workspace's rates, which the console shows.
+	Reputation *reputation.Module
 }
 
 // EventConsumers are the Edition's consumers of the domain events (ADR 0101): the Audit log's and
@@ -60,18 +84,19 @@ func EventConsumers() []events.Consumer {
 	return []events.Consumer{audit.EventConsumer(), export.EventConsumer()}
 }
 
-// New builds the Edition for a license. The Enterprise sections of the Staff console take the core Staff
-// member's sessions (staffSessions, nil while its sign-in is off), so the `staff` feature
-// refuses to start without them. The Audit log records its export through bus, which is
-// built before the Edition and takes the Edition's ent hooks from Hooks.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, staffSessions *staffmembers.Sessions, staffCfg staff.Config) (*Edition, error) {
-	auditLog := audit.NewLog(lic, bus)
+// New builds the Edition over deps. The Enterprise sections of the Staff console take the core
+// Staff member's sessions, so the `staff` feature refuses to start without them.
+func New(deps Deps, staffCfg staff.Config) (*Edition, error) {
+	lic, staffSessions := deps.License, deps.StaffSessions
+	auditLog := audit.NewLog(lic, deps.Bus)
 	e := &Edition{
-		lic:    lic,
-		client: client,
-		Audit:  auditLog,
-		Export: export.New(lic),
-		Staff:  staff.NewModule(client, lic, auditLog, staffCfg),
+		lic:     lic,
+		client:  deps.Client,
+		notify:  deps.Notify,
+		suspend: deps.Suspender,
+		Audit:   auditLog,
+		Export:  export.New(lic),
+		Staff:   staff.NewModule(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
 	}
 	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
@@ -104,28 +129,25 @@ func Hooks(lic *licensekey.License, now func() time.Time) []entgo.Hook {
 // StaffSections is the Enterprise part of the /staff API (ADR 0026, ADR 0063) for the
 // composition root to mount behind the core one, or nil without the `staff` license, in
 // which case its routes answer 404.
-//
-// The surface suspends Workspaces through the core mechanism, so it takes the event bus
-// and the system (platform) sender that tells the owner.
-func (e *Edition) StaffSections(bus *events.Bus, sender messaging.EmailSender) interface {
+func (e *Edition) StaffSections() interface {
 	Server(opts ...staffeeapi.ServerOption) (http.Handler, error)
 } {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewSurface(e.Staff, e.staffSessions, bus, sender)
+	return staff.NewSurface(e.Staff, e.staffSessions)
 }
 
 // Service is the service endpoints of the Staff surface (ADR 0026) for the
 // composition root to mount on the internal listener, or nil without the `staff`
 // license, in which case no listener is bound and nothing is served.
-func (e *Edition) Service(bus *events.Bus) interface {
+func (e *Edition) Service() interface {
 	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
 } {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewServiceSurface(e.Staff, bus)
+	return staff.NewServiceSurface(e.Staff)
 }
 
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
@@ -146,10 +168,10 @@ func (e *Edition) StaffLicensed() bool { return e.lic.Has(licensekey.FeatureStaf
 func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() }
 
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
-// a Workspace's standing. It suspends through the core mechanism, so it takes the event
-// bus, and tells owners through the system (platform) sender. Unlicensed it does nothing.
-func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.Detector {
-	return abuse.New(e.client, e.lic, bus, sender, e.abuseCfg)
+// a Workspace's standing. It suspends through the core Suspender and tells owners through
+// the system (platform) sender. Unlicensed it does nothing.
+func (e *Edition) Abuse() *abuse.Detector {
+	return abuse.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
@@ -173,8 +195,8 @@ func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
 // which removes nothing without the retention license, the usage job (ADR 0009) and the
 // abuse detector (ADR 0026), which do nothing without the staff license.
-func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Extension {
-	detector := e.Abuse(bus, sender)
+func (e *Edition) Jobs() jobs.Extension {
+	detector := e.Abuse()
 	return jobs.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))

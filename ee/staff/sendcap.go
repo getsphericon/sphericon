@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
@@ -27,7 +26,7 @@ func (m *Module) SentLast24h(ctx context.Context, w *ent.Workspace) (int, error)
 // with nil, as the Staff member, through the same core mechanism as suspension, audited with the
 // old and the new value. It reports whether the value changed. providerlimit.ErrNoSendCaps on an
 // Instance without Send caps; an ent not-found error for an unknown Workspace.
-func (m *Module) SetSendCap(ctx context.Context, bus *events.Bus, publicID string, by *ent.StaffMember, perDay *int) (*ent.Workspace, bool, error) {
+func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffMember, perDay *int) (*ent.Workspace, bool, error) {
 	if err := m.licensed(); err != nil {
 		return nil, false, err
 	}
@@ -38,7 +37,7 @@ func (m *Module) SetSendCap(ctx context.Context, bus *events.Bus, publicID strin
 	if err != nil {
 		return nil, false, err
 	}
-	changed, err := suspension.SetSendCap(ctx, bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), perDay)
+	changed, err := suspension.SetSendCap(ctx, m.bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), perDay)
 	if err != nil {
 		return nil, false, err
 	}

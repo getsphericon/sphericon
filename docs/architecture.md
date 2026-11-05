@@ -8,7 +8,9 @@ coding standards in `CODING_STANDARDS.md`.
 - **DI**: `samber/do` container, the one composition root. `internal/app/container.go`
   `Container(cfg)` registers every singleton (the clock, the pools, the ent client, the senders,
   the domain modules, the surfaces' `Deps`, the handlers) as a lazy provider in a `do.Package`;
-  a provider takes what it needs with `do.MustInvoke`. The server (`app.New`), the commands
+  a provider takes what it needs with `do.MustInvoke` while it builds and keeps no injector for a
+  later lookup (a deferred lookup hides a cycle from the container, fails once the order of
+  building changes and undoes the shutdown order). The server (`app.New`), the commands
   (`app.NewCommandApp`) and the test harness (`testhelper.Setup`) all build from it, the harness
   replacing only the seams `Container` names (`do.Override`) and setting the rest through the
   config. A new dependency is a provider there, never a constructor call in a handler, the
@@ -291,8 +293,11 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
 - **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a
   Workspace": `Owners`, `OwnersOf`, `LockOwners`, `OwnerMembership`, `IsOwner`, and the one notice to
   them (`NotifyOwners`, the `Notify` seam, `OwnerNotifier`); `internal/suspension` owns "suspended"
-  (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). Call
-  them; do not test `suspended_at` or the owner Role, or mail Owners, anywhere else.
+  (`Is`, `Suspended`, `NotSuspended`, `BySystem`) and the suspension notice (`NotifyOwners`). A
+  Workspace is suspended through the container's one `suspension.Suspender`, which also tells its
+  Owners (the command line, the Staff console and the abuse detector), and Owners are told through
+  its one `ownernotice.Notify`. Call them; do not test `suspended_at` or the owner Role, or mail
+  Owners, anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
   with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); each domain module returns it from

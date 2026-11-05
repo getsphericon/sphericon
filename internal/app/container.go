@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -62,6 +63,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -78,6 +80,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -99,10 +102,15 @@ import (
 // The seams below are the services a test harness replaces with do.Override or
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
 // already built): Clock, Version, Database, SystemSender, Enqueuer, SigninOptions,
-// IntegrationOptions, OAuthFetcher, and the plain types *licensekey.License, *credentials.Hasher,
-// *messaging.Catalog, outbound.Senders, sending.TXTLookup, machine.Source, *preset.Registry,
-// *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other difference from
-// production is configuration.
+// IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
+// *credentials.Hasher, *messaging.Catalog, outbound.Senders, sending.TXTLookup, machine.Source,
+// *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
+// difference from production is configuration.
+//
+// A provider takes what it needs with do.MustInvoke while it builds and keeps no injector: a
+// lookup made later adds an edge the container did not see at build time, and a cycle of such
+// edges both fails the lookup and undoes the shutdown order. Two services that need each other
+// are a design to change, not a lookup to defer.
 func Container(cfg *config.Config) *do.RootScope {
 	injector := do.New(
 		storagePackage,
@@ -148,8 +156,9 @@ type SystemSender struct {
 }
 
 // Enqueuer is the enqueue side of the job queue the domain modules and the /site handlers
-// queue work through: the river client in production, a test adapter that works each job at
-// once through its real worker in tests.
+// queue work through: an insert-only jobs.Queue in production, which needs none of what the
+// workers drive, and a test adapter that works each job at once through its real worker in
+// tests.
 type Enqueuer interface {
 	mailjobs.Enqueuer
 	integrations.QuotaEnqueuer
@@ -194,7 +203,7 @@ func (p *riverPool) Shutdown() {
 	cleanup.Close(p, "the job queue pool")
 }
 
-// jobsClient is the river-backed async job queue (workers + enqueue API).
+// jobsClient is the river client that works the jobs; work is queued through the Enqueuer.
 type jobsClient struct {
 	*jobs.Client
 }
@@ -312,6 +321,11 @@ var messagingPackage = do.Package(
 		}
 		return SystemSender{EmailSender: sender}, nil
 	}),
+	// How a Workspace's owners are told something: by mail through the platform's own sender,
+	// never the Workspace's Integration, which a hold may freeze.
+	do.Lazy(func(i do.Injector) (ownernotice.Notify, error) {
+		return accounts.OwnerNotifier(do.MustInvoke[*ent.Client](i), do.MustInvoke[SystemSender](i).EmailSender), nil
+	}),
 	// The DKIM DNS resolver of Sending domain and Join domain verification (ADR 0010): published
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
 	// server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records. The e2e suite's
@@ -370,7 +384,15 @@ var editionPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*ee.Edition, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		members := do.MustInvoke[*staffmembers.Module](i)
-		return ee.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*licensekey.License](i), members.Sessions(), staff.Config{
+		return ee.New(ee.Deps{
+			Client:        do.MustInvoke[*ent.Client](i),
+			Bus:           do.MustInvoke[*events.Bus](i),
+			License:       do.MustInvoke[*licensekey.License](i),
+			StaffSessions: members.Sessions(),
+			Notify:        do.MustInvoke[ownernotice.Notify](i),
+			Suspender:     do.MustInvoke[*suspension.Suspender](i),
+			Reputation:    do.MustInvoke[*reputation.Module](i),
+		}, staff.Config{
 			Abuse:         abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail:  cfg.SupportEmail,
 			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
@@ -382,6 +404,12 @@ var editionPackage = do.Package(
 	// module for the send path and every read of a hold shown to a Workspace.
 	do.Lazy(func(i do.Injector) (*holds.Holds, error) {
 		return do.MustInvoke[*ee.Edition](i).Holds(), nil
+	}),
+	// The one sequence that suspends a Workspace and tells its owners (ADR 0007): the command
+	// line, the Staff console and the abuse detector all suspend through it.
+	do.Lazy(func(i do.Injector) (*suspension.Suspender, error) {
+		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[ownernotice.Notify](i),
+			do.MustInvoke[*config.Config](i).SupportEmail), nil
 	}),
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
 		return orders.New(do.MustInvoke[*accounts.Accounts](i)), nil
@@ -452,8 +480,7 @@ var jobsPackage = do.Package(
 				Secret: cfg.JWTSecret,
 			}
 		}
-		notify := accounts.OwnerNotifier(client, do.MustInvoke[SystemSender](i).EmailSender)
-		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), notify, trackingdomains.Config{
+		return trackingdomains.New(client, do.MustInvoke[*events.Bus](i), do.MustInvoke[ownernotice.Notify](i), trackingdomains.Config{
 			Checker:  checker,
 			OwnHosts: []string{urlHost(cfg.AppURL), urlHost(cfg.TrackerURL)},
 			Now:      do.MustInvoke[Clock](i),
@@ -473,16 +500,22 @@ var jobsPackage = do.Package(
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
 			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
 			jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			edition.Jobs(bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
+			edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
 		if err != nil {
 			return nil, err
 		}
 		return &jobsClient{Client: jc}, nil
 	}),
-	// The river client implements every enqueue seam: the platform mails, the Integration quota
-	// refresh and Sending domain verification.
+	// The Sending domain checks a person waits for (the Verify button, ADR 0010).
+	do.Lazy(func(i do.Injector) (*domainverify.Module, error) {
+		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[ownernotice.Notify](i)), nil
+	}),
+	// The enqueue side implements every enqueue seam: the platform mails, the Integration quota
+	// refresh and Sending domain verification. It inserts over the main pool, like the bus, and
+	// works nothing, so what queues work never depends on the job client or on what its workers
+	// drive.
 	do.Lazy(func(i do.Injector) (Enqueuer, error) {
-		return do.MustInvoke[*jobsClient](i).Client, nil
+		return jobs.NewQueue(do.MustInvoke[Database](i).DB, do.MustInvoke[*domainverify.Module](i))
 	}),
 )
 
@@ -518,11 +551,11 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*outbound.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		opts := []outbound.Option{
-			outbound.WithStartLinks(lazyStartLinks{i}),
+			outbound.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
 			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
-			outbound.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), lazyHookURLs{i}),
+			outbound.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
 		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outbound.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
@@ -559,7 +592,7 @@ var accountsPackage = do.Package(
 		if err != nil {
 			return nil, err
 		}
-		lapsedAt, _ := do.MustInvoke[*ee.Edition](i).LicenseLapsedAt()
+		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
 		host := instance.HostOf(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
 		return instance.New(do.MustInvoke[*ent.Client](i), instance.EnvironmentOf(cfg), host, do.MustInvoke[Clock](i),
 			instance.WithReleaseSource(source), instance.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
@@ -604,9 +637,8 @@ var audiencePackage = do.Package(
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i), do.MustInvoke[*messaging.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
-		client := do.MustInvoke[*ent.Client](i)
-		notify := accounts.OwnerNotifier(client, do.MustInvoke[SystemSender](i).EmailSender)
-		return joindomains.New(client, do.MustInvoke[*events.Bus](i), do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[Clock](i), notify), nil
+		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[Clock](i),
+			do.MustInvoke[ownernotice.Notify](i)), nil
 	}),
 )
 
@@ -722,7 +754,7 @@ var surfacesPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*staffHandler, error) {
 		edition := do.MustInvoke[*ee.Edition](i)
-		sections := edition.StaffSections(do.MustInvoke[*events.Bus](i), do.MustInvoke[SystemSender](i).EmailSender)
+		sections := edition.StaffSections()
 		members := do.MustInvoke[*staffmembers.Module](i)
 		var jobsUI http.Handler
 		// The job queue's UI is built only where a Staff member can sign in to reach it.
@@ -756,7 +788,7 @@ var surfacesPackage = do.Package(
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
 	// Staff surface (with the `staff` license) and the edge's TLS ask (always).
 	do.Lazy(func(i do.Injector) (InternalHandler, error) {
-		surface := do.MustInvoke[*ee.Edition](i).Service(do.MustInvoke[*events.Bus](i))
+		surface := do.MustInvoke[*ee.Edition](i).Service()
 		h, err := server.NewInternal(do.MustInvoke[*config.Config](i), do.MustInvoke[*ent.Client](i), do.MustInvoke[*ratelimit.Limiter](i), surface)
 		if err != nil {
 			return InternalHandler{}, err
@@ -893,20 +925,4 @@ func urlHost(origin string) string {
 		return ""
 	}
 	return strings.ToLower(u.Hostname())
-}
-
-// lazyHookURLs resolves the Integrations module when an SMS is sent, not when Outbound is built:
-// the Integrations module needs the Enqueuer, which needs Outbound.
-type lazyHookURLs struct{ i do.Injector }
-
-func (l lazyHookURLs) HookURL(row *ent.Integration) string {
-	return do.MustInvoke[*integrations.Module](l.i).HookURL(row)
-}
-
-// lazyStartLinks resolves the bindings module when a start link is issued, not when Outbound is
-// built: bindings reaches the Integrations module, which needs the Enqueuer, which needs Outbound.
-type lazyStartLinks struct{ i do.Injector }
-
-func (l lazyStartLinks) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID int64, integrationID *int64) (bindings.StartLink, error) {
-	return do.MustInvoke[*bindings.Module](l.i).IssueStartLink(ctx, s, contactID, integrationID)
 }

@@ -9,9 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -27,8 +25,8 @@ type Surface struct {
 }
 
 // NewSurface builds the surface.
-func NewSurface(m *Module, s *staffmembers.Sessions, bus *events.Bus, sender messaging.EmailSender) *Surface {
-	return &Surface{handlers: &Handlers{module: m, bus: bus, sender: sender}, security: &SecurityHandler{sessions: s}}
+func NewSurface(m *Module, s *staffmembers.Sessions) *Surface {
+	return &Surface{handlers: &Handlers{module: m}, security: &SecurityHandler{sessions: s}}
 }
 
 // Server builds the ogen server under the /staff prefix. opts carry what the
@@ -41,8 +39,6 @@ func (s *Surface) Server(opts ...staffeeapi.ServerOption) (http.Handler, error) 
 // Handlers implements staffeeapi.Handler.
 type Handlers struct {
 	module *Module
-	bus    *events.Bus
-	sender messaging.EmailSender // the system (platform) sender that tells a suspended Workspace's owner
 }
 
 var _ staffeeapi.Handler = (*Handlers)(nil)
@@ -140,7 +136,7 @@ func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staff
 // setSendCap is the change both Send cap operations make. found is false for an unknown
 // Workspace; on an Instance with no Send caps the module's refusal is the error (404 as well).
 func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (change *staffeeapi.StaffSendCapChange, found bool, err error) {
-	w, changed, err := h.module.SetSendCap(ctx, h.bus, string(wsID), staffmembers.Current(ctx), perDay)
+	w, changed, err := h.module.SetSendCap(ctx, string(wsID), staffmembers.Current(ctx), perDay)
 	if ent.IsNotFound(err) {
 		return nil, false, nil
 	}
@@ -186,7 +182,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (staffeeapi.StaffWorkspacesSuspendRes, error) {
 	id := string(params.WorkspaceId)
-	w, changed, err := h.module.SuspendWorkspace(ctx, h.bus, h.sender, id, staffmembers.Current(ctx), req.Reason)
+	w, changed, err := h.module.SuspendWorkspace(ctx, id, staffmembers.Current(ctx), req.Reason)
 	if errors.Is(err, ErrReasonRequired) {
 		p := staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{
 			Status: staffeeapi.NewOptInt32(http.StatusUnprocessableEntity),
@@ -208,7 +204,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (staffeeapi.StaffWorkspacesUnsuspendRes, error) {
 	id := string(params.WorkspaceId)
-	w, changed, err := h.module.UnsuspendWorkspace(ctx, h.bus, id, staffmembers.Current(ctx))
+	w, changed, err := h.module.UnsuspendWorkspace(ctx, id, staffmembers.Current(ctx))
 	if ent.IsNotFound(err) {
 		p := staffeeapi.StaffWorkspacesUnsuspendNotFound(notFoundProblem())
 		return &p, nil
@@ -248,7 +244,7 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeap
 
 func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
 	id := string(wsID)
-	w, changed, err = h.module.SetAbuseExempt(ctx, h.bus, id, staffmembers.Current(ctx), exempt)
+	w, changed, err = h.module.SetAbuseExempt(ctx, id, staffmembers.Current(ctx), exempt)
 	if ent.IsNotFound(err) {
 		return nil, false, true, nil
 	}
