@@ -1488,6 +1488,72 @@ url = "https://github.com/jdx/hk/releases/download/v2.11.1/hk-x86_64-pc-windows-
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
+[[tools."http:mattpocock-skills"]]
+version = "1.3.2"
+backend = "http:mattpocock-skills"
+specifiers = ["latest"]
+
+[tools."http:mattpocock-skills"."platforms.linux-arm64"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.linux-arm64-musl"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.linux-x64"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.linux-x64-musl"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.macos-arm64"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.macos-x64"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[tools."http:mattpocock-skills"."platforms.windows-x64"]
+checksum = "sha256:74c155a89776b00c5a0d9bd196cc8b8208d45890bf0665f0619b4fafdf74c7bc"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v1.3.2.tar.gz"
+
+[[tools."http:samber-golang-skills"]]
+version = "2.0.0"
+backend = "http:samber-golang-skills"
+specifiers = ["latest"]
+
+[tools."http:samber-golang-skills"."platforms.linux-arm64"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.linux-arm64-musl"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.linux-x64"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.linux-x64-musl"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.macos-arm64"]
+checksum = "blake3:346c437d950ddf431803a6feab2de000861465d164df2476f9b58c8db10241bf"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.macos-x64"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[tools."http:samber-golang-skills"."platforms.windows-x64"]
+checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
 [[tools.jactionlint]]
 version = "2.4.0"
 backend = "github:jdx/jactionlint"

@@ -95,9 +95,10 @@ cover.out
 mise.local.toml
 .mise-skills.json
 .mise-packslip/
-.claude/skills/hk-configure
-.claude/skills/hk-debug
-.claude/skills/pitchfork
+
+# Agent skills copied by `mise run skills` and linked by mise and pnpm; .claude/skills is a link.
+.agents/
+.claude/skills
 
 # Claude Code local state (agent worktrees, personal settings)
 .claude/worktrees/

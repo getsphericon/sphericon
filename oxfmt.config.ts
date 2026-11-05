@@ -25,7 +25,6 @@ export default defineConfig({
     'gen',
     'ent',
     'pnpm-lock.yaml',
-    'skills-lock.json',
     '.mise/locks',
     '.agents',
     '.claude',

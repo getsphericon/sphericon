@@ -7,8 +7,60 @@
 # --- setup & dev stack ----------------------------------------------------------
 
 [install]
-description = "Install frontend and Go dependencies"
+description = "Install the agent skills, frontend and Go dependencies"
+depends = ["skills"]
 run = ["pnpm install", "go mod download"]
+
+["skills"]
+# The skills are copied, not linked: mise prunes the links into its installs that it did not make.
+# A skill dropped from the list, or from its release, is removed on the next run (.copied lists
+# what the previous one copied). The older layout made .claude/skills a directory of links; it is
+# replaced by a link to .agents/skills. Then mise links its tools' skills next to the copies.
+# A worktree that has not run it has no .claude/skills, and Claude Code loads the primary
+# checkout's skills there instead.
+description = "Copy the agent skills of the releases locked in mise.lock into .agents/skills"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+matt="$(mise where http:mattpocock-skills)/skills"
+samber="$(mise where http:samber-golang-skills)/skills"
+skills=(
+  "$matt/engineering/ask-matt" "$matt/engineering/code-review" "$matt/engineering/codebase-design"
+  "$matt/engineering/diagnosing-bugs" "$matt/engineering/domain-modeling"
+  "$matt/engineering/grill-with-docs" "$matt/engineering/implement" "$matt/engineering/implement-spec"
+  "$matt/engineering/improve-codebase-architecture" "$matt/engineering/pr"
+  "$matt/engineering/prototype" "$matt/engineering/research" "$matt/engineering/retro"
+  "$matt/engineering/setup-matt-pocock-skills" "$matt/engineering/tdd" "$matt/engineering/to-spec"
+  "$matt/engineering/to-tickets" "$matt/engineering/triage" "$matt/engineering/wayfinder"
+  "$matt/engineering/wizard"
+  "$matt/productivity/grill-me" "$matt/productivity/grilling" "$matt/productivity/handoff"
+  "$matt/productivity/teach" "$matt/productivity/to-questionnaire" "$matt/productivity/wait-what"
+  "$matt/productivity/writing-for-agents"
+  "$matt/in-progress/claude-handoff" "$matt/in-progress/loop-me"
+  "$samber/golang-samber-do"
+)
+dest=.agents/skills
+mkdir -p "$dest"
+if [ -f "$dest/.copied" ]; then
+  while read -r name; do rm -rf "${dest:?}/$name"; done < "$dest/.copied"
+fi
+: > "$dest/.copied"
+for src in "${skills[@]}"; do
+  name="$(basename "$src")"
+  rm -rf "${dest:?}/$name"
+  cp -R "$src" "$dest/$name"
+  echo "$name" >> "$dest/.copied"
+done
+if [ -d .claude/skills ] && [ ! -L .claude/skills ]; then
+  if [ -n "$(find .claude/skills -mindepth 1 -maxdepth 1 ! -type l ! -name .gitignore ! -name .mise-skills.json)" ]; then
+    echo ".claude/skills holds more than links; move its contents into .agents/skills" >&2
+    exit 1
+  fi
+  rm -r .claude/skills
+fi
+[ -L .claude/skills ] || ln -s ../.agents/skills .claude/skills
+mise skills sync --quiet
+"""
 
 [setup]
 description = "Install deps, start Postgres, create this checkout's DBs, migrate and seed, drop the databases of deleted worktrees"
@@ -396,8 +448,8 @@ run = "pnpm exec vitest --merge-reports=.vitest/blob --coverage"
 # --- dependency updates ----------------------------------------------------------
 
 [update]
-description = "Update npm, Go and skills dependencies"
-depends = ["update:npm", "update:go", "update:skills"]
+description = "Update npm and Go dependencies"
+depends = ["update:npm", "update:go"]
 
 ["update:npm"]
 # openapi-ts stays on its pinned next channel: stable still needs the TypeScript package, which breaks under TS7.
@@ -406,18 +458,13 @@ run = "pnpm exec ncu -u --reject @hey-api/openapi-ts && pnpm update"
 ["update:go"]
 run = "go get -u ./... && go mod tidy"
 
-["update:skills"]
-# No -y: in a terminal skills asks whether to remove the skills their upstream deleted, and it
-# only warns in a run without a TTY. -p picks the project scope so nothing else is asked.
-description = "Update the vendored skills; in a terminal it offers to remove the ones their upstream deleted"
-run = "npx skills@latest update -p"
-
 # Named like a personal global `upgrade` task a developer may have, so that inside the repository
 # `mise run upgrade` resolves to this one. --no-global: a bare `mise upgrade` also upgrades every
-# tool of ~/.config/mise/config.toml, which is part of any project's toolset.
+# tool of ~/.config/mise/config.toml, which is part of any project's toolset. The agent skills
+# are releases among those tools, so they are recopied after.
 [upgrade]
-description = "Upgrade the mise tools of .mise.toml (and mise.lock), not the global ones"
-run = "mise upgrade --no-global"
+description = "Upgrade the mise tools of .mise.toml (and mise.lock), not the global ones, and recopy the agent skills"
+run = ["mise upgrade --no-global", { task = "skills" }]
 
 # --- code generation (TypeSpec -> OpenAPI -> Go + TS) -----------------------------
 

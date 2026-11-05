@@ -32,6 +32,22 @@ shellcheck = "latest"
 "go:github.com/scip-code/scip-go/cmd/scip-go" = "latest"
 "npm:@sourcegraph/scip-typescript" = "latest"
 
+# Agent skills: tagged releases of the skill repositories, locked in mise.lock and copied into
+# .agents/skills by `mise run skills`. mise links only the skills of tools that publish a packslip
+# manifest, which these repositories do not. The tags API lists the newest first and mise takes the
+# last version as the latest, so the expression reverses them.
+[tools."http:mattpocock-skills"]
+version = "latest"
+url = "https://github.com/mattpocock/skills/archive/refs/tags/v{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/mattpocock/skills/tags"
+version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v")), trimPrefix(#.name, "v")))'
+
+[tools."http:samber-golang-skills"]
+version = "latest"
+url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/samber/cc-skills-golang/tags"
+version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v")), trimPrefix(#.name, "v")))'
+
 # schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
 # primary asset and the ent adapter is extracted into the same install directory, so both are on
 # PATH. The patterns are per platform because mise resolves a templated pattern for the host, which
@@ -211,9 +227,12 @@ ready_cmd = "nc -z 127.0.0.1 $CADDY_PORT"
 depends = ["frontend", "backend", "demo"]
 proxy = false
 
-# Resources shipped by packslip tools (hk, pitchfork, ...): agent skills are linked
-# into .claude/skills and kept in sync with the pinned tool versions.
+# Resources shipped by packslip tools (hk, pitchfork, ...): agent skills are linked into
+# .agents/skills, next to the ones `mise run skills` copies, and kept in sync with the pinned tool
+# versions. .claude/skills is a link to it, so Claude Code reads both. In a linked worktree mise
+# does not hide its links from git; .gitignore covers .agents/ there.
 [settings.skills]
+dir = ".agents/skills"
 auto_sync = true
 prune = true
 
