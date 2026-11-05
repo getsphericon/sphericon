@@ -28,10 +28,12 @@ func TestEveryLiveEventIsHandedToTheWebhooksConsumer(t *testing.T) {
 		env := events.Envelope{ID: "evt", Name: name, WorkspaceID: fixtures.AcmeID, Data: []byte(`{"action":"` + name + `"}`)}
 		ev, err := events.Decode(env)
 		require.NoError(t, err, name)
-		assert.True(t, webhooks.Wants(env, ev), name)
+		wanted := webhooks.Wants(env, ev)
+		assert.True(t, wanted, name)
 	}
 	history := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, Action: "purchase", Backfill: true}
-	assert.False(t, webhooks.Wants(events.Envelope{Name: events.NameCollected}, history), "loaded history is never delivered")
+	historyWanted := webhooks.Wants(events.Envelope{Name: events.NameCollected}, history)
+	assert.False(t, historyWanted, "loaded history is never delivered")
 }
 
 // deliveryTo is the queued delivery to the endpoint, failing the test when there is none.
@@ -115,7 +117,8 @@ func TestABackfilledEventReachesNoWebhook(t *testing.T) {
 	env := testhelper.Setup(t)
 	history := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase", Backfill: true}
 	publishEvent(t, env, history)
-	assert.Empty(t, env.EventJobs(t, jobs.WebhookEventArgs{}.Kind()))
+	historyJobs := env.EventJobs(t, jobs.WebhookEventArgs{}.Kind())
+	assert.Empty(t, historyJobs)
 
 	live := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase"}
 	publishEvent(t, env, live)
@@ -149,6 +152,7 @@ func TestAnAuditEntryReachesOnlyTheEndpointThatSelectsItWithTheStaffMasked(t *te
 	}
 	require.NoError(t, json.Unmarshal(d.Body, &entry))
 	assert.Equal(t, events.Actor{Kind: events.ActorStaff, Name: events.StaffLabel}, entry.Data.Actor)
-	assert.NotContains(t, string(d.Body), "op-42")
-	assert.NotContains(t, string(d.Body), "Jane Staff")
+	body := string(d.Body)
+	assert.NotContains(t, body, "op-42")
+	assert.NotContains(t, body, "Jane Staff")
 }

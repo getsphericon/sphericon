@@ -1,7 +1,7 @@
 // Package export is the Enterprise side of the Export streams (ADR 0045): the `export`
 // license gate core asks before it serves a stream. The paging, the cursor and the row
 // encoding are core (internal/exportstream); the streams that need Enterprise state
-// (the Erasures tombstone subscriber, its prune job) live here.
+// (the Erasures tombstone consumer, its prune job) live here.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package export

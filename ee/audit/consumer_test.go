@@ -41,21 +41,25 @@ func entries(t *testing.T, env *testhelper.TestEnv) int {
 func TestAnAuditedChangeIsStoredOnceThroughItsJob(t *testing.T) {
 	env := testhelper.Setup(t)
 	recordEntry(t, env)
-	require.Len(t, env.EventJobs(t, audit.EntryEventArgs{}.Kind()), 1)
+	queued := env.EventJobs(t, audit.EntryEventArgs{}.Kind())
+	require.Len(t, queued, 1)
 
 	env.WorkEditionJobs(t)
 	env.WorkEditionJobs(t)
 
-	assert.Equal(t, 1, entries(t, env))
+	stored := entries(t, env)
+	assert.Equal(t, 1, stored)
 }
 
 // Without the audit license the job is worked and stores nothing.
 func TestAnUnlicensedInstanceStoresNoAuditEntry(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	recordEntry(t, env)
-	require.Len(t, env.EventJobs(t, audit.EntryEventArgs{}.Kind()), 1, "the job is queued whatever the license")
+	queued := env.EventJobs(t, audit.EntryEventArgs{}.Kind())
+	require.Len(t, queued, 1, "the job is queued whatever the license")
 
 	env.WorkEditionJobs(t)
 
-	assert.Zero(t, entries(t, env))
+	stored := entries(t, env)
+	assert.Zero(t, stored)
 }

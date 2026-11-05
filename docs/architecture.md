@@ -148,12 +148,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
      token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
-  4. jobs and event subscribers, right after the row that names the Workspace is loaded
+  4. jobs and event consumers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
      contact and scopes from its Workspace; `events.Suppress`, and the webhooks
-     consumer, which builds the scope it hands to `Dispatch` from the event envelope: the
-     bus subscriber is the raw-client entry, an envelope carries only a Workspace id; and the
-     orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
+     consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
+     event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
+     id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
      client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
      `orders.Module.Record`), and
      `secondfactor.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
@@ -223,12 +223,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step (one per
   Workspace-owned table, the Send cap's bucket `send_cap_limiters` among them), scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`
-  (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
+  (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
   index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
-  `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log bus
-  subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/export` (the Export streams' bus
-  subscriber, which writes the Erasures rows from `contact.erased`, and their prune job over every
+  `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log's event
+  consumer: its envelope carries only a Workspace id, ADR 0022), `ee/export` (the Export streams'
+  event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
   Workspace's rows, ADR 0045), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor

@@ -45,5 +45,6 @@ func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testi
 	n, err := client.Event.Query().Where(event.Action(action)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "stored once")
-	assert.Len(t, testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameCollected), 1, "published once")
+	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameCollected)
+	assert.Len(t, published, 1, "published once")
 }

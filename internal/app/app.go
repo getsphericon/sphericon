@@ -1,5 +1,5 @@
 // Package app composes the application: it registers every singleton in the dependency container
-// and starts and stops the servers, the event router and the job workers.
+// and starts and stops the servers and the job workers.
 package app
 
 import (
@@ -191,7 +191,7 @@ var ErrNotServable = errors.New("app: this app has no servers to start")
 var ErrAlreadyStarted = errors.New("app: already started")
 
 // NewCommandApp builds the minimal app the commands need (config, database,
-// ent client, system sender) without the HTTP server, the event router or the job
+// ent client, system sender) without the HTTP server or the job
 // workers. Providers are lazy, so only what a command invokes is ever constructed;
 // that keeps `sphericon workspace …` quick to start and to shut down.
 func NewCommandApp(env string) (*App, error) {
@@ -210,7 +210,7 @@ func abort(injector do.Injector, err error) error {
 }
 
 // Start brings the application up and returns without blocking: it binds the metrics
-// listener, starts the domain-event router and the job queue, then serves the public
+// listener, starts the job queue, then serves the public
 // HTTP server. It returns the first startup error after unwinding whatever it had
 // already started (the container included), so a failed Start leaves nothing running.
 //

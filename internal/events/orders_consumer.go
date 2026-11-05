@@ -22,11 +22,11 @@ type OrderEvent struct {
 }
 
 // OrderRecorder reads order Events into Orders (ADR 0064), the attribution of each Order
-// included. The orders subscriber delegates to it, like the webhooks subscriber does to its
-// dispatcher: the subscriber owns the transaction and the lock, the recorder everything else.
+// included. The orders consumer delegates to it, like the webhooks consumer does to its
+// dispatcher: the consumer owns the transaction and the lock, the recorder everything else.
 type OrderRecorder interface {
 	// IsOrderAction reports whether a collected Event's action is an order Event. The
-	// subscriber opens no transaction for any other.
+	// consumer opens no transaction for any other.
 	IsOrderAction(action string) bool
 	// Prepare does what commits on its own before the Event's transaction opens (the first
 	// Order Completed sets the Reporting currency), so the transaction never waits on a second
@@ -36,8 +36,8 @@ type OrderRecorder interface {
 	Record(ctx context.Context, s *ent.Scoped, ev OrderEvent) error
 }
 
-// RecordOrder is the orders subscriber's work on one envelope; exported, like Suppress, so it
-// can be driven without running the router. An order Event is handed to the
+// RecordOrder is the orders consumer's work on one envelope, which its job (internal/jobs)
+// runs. An order Event is handed to the
 // recorder; every other event is passed over.
 func RecordOrder(ctx context.Context, client *ent.Client, recorder OrderRecorder, env Envelope) error {
 	ev, err := Decode(env)

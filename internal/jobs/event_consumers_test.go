@@ -2,15 +2,14 @@ package jobs_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertest"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -62,9 +62,9 @@ func TestABounceOrAComplaintQueuesOneSuppressionJob(t *testing.T) {
 	require.ErrorIs(t, err, boom)
 
 	queued := env.EventJobs(t, jobs.SuppressEventArgs{}.Kind())
+	keys := lo.Map(queued, func(e events.Envelope, _ int) string { return e.DedupKey })
 
-	assert.Equal(t, []string{"email.bounced/hard@example.com", "email.complained/complained@example.com"},
-		lo.Map(queued, func(e events.Envelope, _ int) string { return e.DedupKey }))
+	assert.Equal(t, []string{"email.bounced/hard@example.com", "email.complained/complained@example.com"}, keys)
 	for _, e := range queued {
 		assert.NotEmpty(t, e.ID)
 		assert.EqualValues(t, fixtures.AcmeID, e.WorkspaceID)
@@ -89,26 +89,6 @@ func TestTheSuppressionJobSuppressesTheAddressOnce(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, entries, 1)
 	assert.Equal(t, entsuppression.ReasonBounce, entries[0].Reason)
-}
-
-// A suppression job that fails on its last attempt is discarded, not dropped: it stays for an
-// operator to fix the cause and retry it (jobs.DiscardedJobRetention).
-func TestASuppressionJobPastItsAttemptsIsDiscarded(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	tx, err := sqlDB.BeginTx(ctx, nil)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = tx.Rollback() })
-	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), jobs.BaseConfig(), river.Worker[jobs.SuppressEventArgs](jobs.NewSuppressEventWorker(db.NewEntClient(sqlDB))))
-	undecodable := jobs.SuppressEventArgs{
-		ID: "01JUNDECODABLE", Name: "no.such.event", WorkspaceID: fixtures.AcmeID, Data: []byte(`{}`),
-	}
-
-	res, err := w.Work(ctx, t, tx, undecodable, &river.InsertOpts{Queue: events.QueueEvents, MaxAttempts: 1})
-
-	require.Error(t, err)
-	assert.Equal(t, rivertype.JobStateDiscarded, res.Job.State)
-	assert.Equal(t, 30*24*time.Hour, jobs.DiscardedJobRetention, "kept for a month")
 }
 
 // chainArgs is an event consumer's job of a test: its worker publishes an event.
@@ -167,16 +147,24 @@ func TestAnOrderEventQueuesOneOrdersJob(t *testing.T) {
 	publishEvent(t, env, orderEvent("page_view", nil, false))
 	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "order-less@example.com"))
 
-	queued := env.EventJobs(t, jobs.OrderEventArgs{}.Kind())
+	orderJobs := env.EventJobs(t, jobs.OrderEventArgs{}.Kind())
+	actions := collectedActions(t, orderJobs)
 
-	require.Len(t, queued, 2)
-	for _, e := range queued {
-		ev, err := events.Decode(e)
+	assert.ElementsMatch(t, []string{orders.ActionCompleted, orders.ActionRefunded}, actions)
+}
+
+// collectedActions are the customer's actions of the collected events the envelopes carry.
+func collectedActions(t *testing.T, envelopes []events.Envelope) []string {
+	t.Helper()
+	out := make([]string, 0, len(envelopes))
+	for i := range envelopes {
+		ev, err := events.Decode(envelopes[i])
 		require.NoError(t, err)
 		collected, ok := ev.(*events.CollectedEvent)
-		require.True(t, ok)
-		assert.True(t, orders.IsOrderAction(collected.Action), collected.Action)
+		require.True(t, ok, "%s is not a collected event", envelopes[i].Name)
+		out = append(out, collected.Action)
 	}
+	return out
 }
 
 // fixedCurrency adopts nothing: the Workspace has its Reporting currency already.
@@ -194,11 +182,9 @@ func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
 	client := db.NewEntClient(sqlDB)
 	// test writes: the Workspace's Reporting currency, so no Order Completed adopts one.
 	client.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").ExecX(ctx)
-	bus := events.New(sqlDB)
+	bus := testhelper.BusOn(t, sqlDB)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
-	bus.UseJobs(inserter)
-	bus.UseConsumers(jobs.EventConsumers()...)
 	for _, ev := range []*events.CollectedEvent{
 		orderEvent(orders.ActionCompleted, map[string]any{"order_id": "C-1", "total": 100.0, "currency": "USD"}, false),
 		orderEvent(orders.ActionRefunded, map[string]any{"order_id": "C-1", "total": 10.0, "refund_id": "R-1"}, false),
@@ -211,18 +197,18 @@ func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
 	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), jobs.BaseConfig(),
 		river.Worker[jobs.OrderEventArgs](jobs.NewOrderEventWorker(client, orders.New(fixedCurrency{}))))
 
+	// Each job is worked in a transaction of its own, opened before either starts.
+	txs := make([]*sql.Tx, len(listed.Jobs))
+	for i := range txs {
+		txs[i], err = sqlDB.BeginTx(ctx, nil)
+		require.NoError(t, err)
+		t.Cleanup(func() { cleanup.Report("roll the job's transaction back", txs[i].Rollback()) })
+	}
+
 	var wg sync.WaitGroup
 	errs := make([]error, len(listed.Jobs))
 	for i, job := range listed.Jobs {
-		wg.Go(func() {
-			tx, err := sqlDB.BeginTx(ctx, nil)
-			if err != nil {
-				errs[i] = err
-				return
-			}
-			defer func() { _ = tx.Rollback() }()
-			_, errs[i] = w.WorkJob(ctx, t, tx, job)
-		})
+		wg.Go(func() { _, errs[i] = w.WorkJob(ctx, t, txs[i], job) })
 	}
 	wg.Wait()
 

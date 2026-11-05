@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"cmp"
 	"context"
 
 	"github.com/riverqueue/river"
@@ -162,16 +161,14 @@ func (w *RuleEventWorker) Work(ctx context.Context, job *river.Job[RuleEventArgs
 		return err
 	}
 	p := ev.Project()
-	// Rules act only on events recorded after they were activated; an envelope from before
-	// RecordedAt existed says when it occurred.
-	recorded := cmp.Or(env.RecordedAt, env.OccurredAt)
 	_, err = w.queue.Insert(ctx, EvaluateRulesArgs{
 		WorkspaceID: env.WorkspaceID,
 		ContactID:   p.ContactID,
 		Action:      p.Action,
 		SourceID:    env.SourceID(),
-		RecordedAt:  recorded,
-		Properties:  events.BoundedProperties(p.Properties),
+		// Rules act only on events recorded after they were activated (ADR 0054).
+		RecordedAt: env.RecordedAt,
+		Properties: events.BoundedProperties(p.Properties),
 	}, nil)
 	return err
 }

@@ -39,8 +39,10 @@ func aliceOpened() *events.EmailEngagement {
 func TestALiveEventOfAContactQueuesItsAutomationAndRuleEvaluations(t *testing.T) {
 	env := testhelper.Setup(t)
 	publishEvent(t, env, aliceOpened())
-	require.Len(t, env.EventJobs(t, jobs.AutomationEventArgs{}.Kind()), 1)
-	require.Len(t, env.EventJobs(t, jobs.RuleEventArgs{}.Kind()), 1)
+	automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
+	ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+	require.Len(t, automationJobs, 1)
+	require.Len(t, ruleJobs, 1)
 
 	env.WorkAutomationJobs(t)
 	env.WorkRuleJobs(t)
@@ -110,8 +112,11 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 
 			publishEvent(t, env, ev)
 
-			assert.Empty(t, env.EventJobs(t, jobs.AutomationEventArgs{}.Kind()))
-			assert.Empty(t, env.EventJobs(t, jobs.RuleEventArgs{}.Kind()))
+			automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
+			ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+
+			assert.Empty(t, automationJobs)
+			assert.Empty(t, ruleJobs)
 		})
 	}
 
@@ -120,8 +125,11 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 
 		publishIn(events.CausedBy(t.Context(), "rule:1"), t, env, aliceOpened())
 
-		assert.Len(t, env.EventJobs(t, jobs.AutomationEventArgs{}.Kind()), 1)
-		assert.Empty(t, env.EventJobs(t, jobs.RuleEventArgs{}.Kind()))
+		automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
+		ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+
+		assert.Len(t, automationJobs, 1)
+		assert.Empty(t, ruleJobs)
 	})
 }
 
@@ -172,8 +180,9 @@ func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
 
 	env.WorkRuleJobs(t)
 	env.WorkRuleJobs(t)
+	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
 	m := rules.New(env.Cipher, env.Bus)
-	for _, args := range queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind) {
+	for _, args := range evaluations {
 		_, err := m.Evaluate(ctx, env.DB.Scoped(fixtures.AcmeID), rules.Event{
 			ContactID: args.ContactID, Action: args.Action, SourceID: args.SourceID, RecordedAt: args.RecordedAt, Properties: args.Properties,
 		})
@@ -183,6 +192,6 @@ func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
 	firings, err := env.DB.RuleFiring.Query().
 		Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(fixtures.ContactLiamID)).Count(ctx)
 	require.NoError(t, err)
-	assert.Len(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind), 2, "the retried job queued its evaluation again")
+	assert.Len(t, evaluations, 2, "the retried job queued its evaluation again")
 	assert.Equal(t, 1, firings)
 }

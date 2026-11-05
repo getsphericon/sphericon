@@ -50,7 +50,8 @@ func TestAJobLinksToTheSpanThatInsertedIt(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 	require.NoError(t, err)
 
-	assert.True(t, linksTo(spans.Ended(), "river.work", span.SpanContext().TraceID().String()), "the work span links to the inserting span")
+	linked := linksTo(spans.Ended(), "river.work", span.SpanContext().TraceID().String())
+	assert.True(t, linked, "the work span links to the inserting span")
 }
 
 // linksTo reports whether a span of that name links to a span of the trace.

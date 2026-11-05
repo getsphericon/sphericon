@@ -190,13 +190,12 @@ const listenerFallbackPoll = 5 * time.Second
 
 // River job retention, explicit rather than river's defaults: bounds the
 // river_job table (Event retention is separate, ADR 0019). A job that ran out of attempts, an
-// event consumer's included, stays discarded for DiscardedJobRetention: time to notice it, fix
+// event consumer's included, stays discarded for discardedJobRetention: time to notice it, fix
 // the cause and retry it from River UI (ADR 0101).
 const (
 	completedJobRetention = 24 * time.Hour
 	cancelledJobRetention = 24 * time.Hour
-	// DiscardedJobRetention is how long a discarded job is kept.
-	DiscardedJobRetention = 30 * 24 * time.Hour
+	discardedJobRetention = 30 * 24 * time.Hour
 )
 
 // BaseConfig is the river configuration every client of the application shares, the worker
@@ -237,7 +236,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 	cfg := BaseConfig()
 	cfg.CompletedJobRetentionPeriod = completedJobRetention
 	cfg.CancelledJobRetentionPeriod = cancelledJobRetention
-	cfg.DiscardedJobRetentionPeriod = DiscardedJobRetention
+	cfg.DiscardedJobRetentionPeriod = discardedJobRetention
 	cfg.Queues = Queues()
 	// Stop lets running jobs finish for SoftStopTimeout, then cancels their contexts.
 	cfg.SoftStopTimeout = SoftStopTimeout

@@ -37,21 +37,25 @@ func erasures(t *testing.T, env *testhelper.TestEnv) int {
 func TestAnErasureReachesTheStreamOnceThroughItsJob(t *testing.T) {
 	env := testhelper.Setup(t)
 	publishErased(t, env)
-	require.Len(t, env.EventJobs(t, export.ErasureEventArgs{}.Kind()), 1)
+	queued := env.EventJobs(t, export.ErasureEventArgs{}.Kind())
+	require.Len(t, queued, 1)
 
 	env.WorkEditionJobs(t)
 	env.WorkEditionJobs(t)
 
-	assert.Equal(t, 1, erasures(t, env))
+	stored := erasures(t, env)
+	assert.Equal(t, 1, stored)
 }
 
 // Without the export license the job is worked and stores nothing (ADR 0045).
 func TestAnUnlicensedInstanceStreamsNoErasure(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	publishErased(t, env)
-	require.Len(t, env.EventJobs(t, export.ErasureEventArgs{}.Kind()), 1, "the job is queued whatever the license")
+	queued := env.EventJobs(t, export.ErasureEventArgs{}.Kind())
+	require.Len(t, queued, 1, "the job is queued whatever the license")
 
 	env.WorkEditionJobs(t)
 
-	assert.Zero(t, erasures(t, env))
+	stored := erasures(t, env)
+	assert.Zero(t, stored)
 }

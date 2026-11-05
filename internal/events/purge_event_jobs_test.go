@@ -43,7 +43,8 @@ func TestPurgeEventJobsRemovesTheJobsThatNameTheContact(t *testing.T) {
 	env.EnqueueRunningJob(t, suppressJob(t, fixtures.InitechID, fixtures.ContactErasableID, "running@example.com", "running"))
 	publishAlone(t, env, hardBounce(fixtures.InitechID, 0, "someone-else@example.com", "other-contact"))
 	publishAlone(t, env, hardBounce(fixtures.AcmeID, 0, "erasable@example.com", "other-workspace"))
-	require.Len(t, env.EventJobs(t, kind), 5)
+	before := env.EventJobs(t, kind)
+	require.Len(t, before, 5)
 
 	scope := env.DB.Scoped(fixtures.InitechID)
 	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
