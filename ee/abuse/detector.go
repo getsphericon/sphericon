@@ -13,9 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
@@ -36,15 +34,16 @@ type Detector struct {
 	*Watch
 
 	client  *ent.Client
-	bus     *events.Bus
-	sender  messaging.EmailSender
+	notify  ownernotice.Notify
+	suspend *suspension.Suspender
 	support string
 }
 
-// New builds the Detector. The sender is the platform's (system) sender: the notices
-// never go through a Workspace's own Integration, which a freeze holds.
-func New(client *ent.Client, lic *licensekey.License, bus *events.Bus, sender messaging.EmailSender, cfg Config) *Detector {
-	return &Detector{Watch: NewWatch(lic, cfg.Limits), client: client, bus: bus, sender: sender, support: cfg.SupportEmail}
+// New builds the Detector. notify tells the owners through the platform's (system) sender, nil
+// for none: the notices never go through a Workspace's own Integration, which a freeze holds. A
+// freeze suspends through suspender, which tells the owners the same way.
+func New(client *ent.Client, lic *licensekey.License, notify ownernotice.Notify, suspender *suspension.Suspender, cfg Config) *Detector {
+	return &Detector{Watch: NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender, support: cfg.SupportEmail}
 }
 
 // Summary is who a pass warned and who it froze.
@@ -119,15 +118,14 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 // notice is logged, not returned: the freeze stands and nothing retries a suspended
 // Workspace.
 func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (bool, error) {
-	changed, err := suspension.SuspendWorkspace(ctx, d.bus, ws.ID, suspension.System, b.Describe()+" (freeze)")
-	if err != nil || !changed {
+	changed, err := d.suspend.Suspend(ctx, ws.ID, suspension.System, b.Describe()+" (freeze)")
+	if errors.Is(err, suspension.ErrNoticeNotSent) {
+		slog.ErrorContext(ctx, "workspace frozen by the abuse detector, but the owner notice could not be sent", "workspace_id", ws.ID, "error", err)
+	} else if err != nil || !changed {
 		return false, err
 	}
 	if err := d.client.Workspace.UpdateOneID(ws.ID).ClearAbuseWarningNotifiedAt().Exec(ctx); err != nil {
 		slog.ErrorContext(ctx, "workspace frozen, but its warning episode could not be ended", "workspace_id", ws.ID, "error", err)
-	}
-	if err := suspension.NotifyOwners(ctx, d.client, accounts.OwnerNotifier(d.client, d.sender), d.support, ws.ID); err != nil {
-		slog.ErrorContext(ctx, "workspace frozen by the abuse detector, but the owner notice could not be sent", "workspace_id", ws.ID, "error", err)
 	}
 	return true, nil
 }
@@ -138,7 +136,7 @@ var metricNames = map[Metric]i18n.ID{Complaint: i18n.MetricComplaint, Bounce: i1
 // warn mails the owners once per episode: the marker is set only after the mail went, so
 // a failed send is retried, and is cleared when the Workspace leaves the tier.
 func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now time.Time) (bool, error) {
-	if ws.AbuseWarningNotifiedAt != nil || d.sender == nil {
+	if ws.AbuseWarningNotifiedAt != nil || d.notify == nil {
 		return false, nil
 	}
 	data := map[string]any{
@@ -146,7 +144,7 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now ti
 		"Rate": Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
 		"Limit": Percent(float64(b.LimitBP) / 10000), "Support": d.support,
 	}
-	if err := accounts.OwnerNotifier(d.client, d.sender).Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
+	if err := d.notify.Tell(ctx, ws.ID, ownernotice.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)
 	}
 	if err := d.client.Workspace.UpdateOneID(ws.ID).SetAbuseWarningNotifiedAt(now).Exec(ctx); err != nil {

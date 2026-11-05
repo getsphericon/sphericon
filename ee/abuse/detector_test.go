@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -34,8 +35,13 @@ const support = "support@sphericon.test"
 
 func detector(t *testing.T, env *testhelper.TestEnv) *abuse.Detector {
 	t.Helper()
-	return abuse.New(env.DB, licenseFor(t, licensekey.FeatureStaff), env.Bus, env.SystemMail,
-		abuse.Config{Limits: limits, SupportEmail: support})
+	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), abuse.Config{Limits: limits, SupportEmail: support})
+}
+
+// newDetector is the detector over the env's bus and platform sender, as the Edition builds it.
+func newDetector(env *testhelper.TestEnv, lic *licensekey.License, cfg abuse.Config) *abuse.Detector {
+	notify := accounts.OwnerNotifier(env.DB, env.SystemMail)
+	return abuse.New(env.DB, lic, notify, suspension.NewSuspender(env.Bus, env.DB, notify, cfg.SupportEmail), cfg)
 }
 
 // The traffic the tests judge is in fixtures/events.yml, one scenario per day offset: a test runs
@@ -90,7 +96,7 @@ func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureRetention)} {
-		d := abuse.New(env.DB, lic, env.Bus, env.SystemMail, abuse.Config{Limits: limits})
+		d := newDetector(env, lic, abuse.Config{Limits: limits})
 		summary, err := d.Run(t.Context(), at(overDay))
 		require.NoError(t, err)
 		assert.Equal(t, abuse.Summary{}, summary)

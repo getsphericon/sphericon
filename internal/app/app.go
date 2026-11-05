@@ -385,26 +385,11 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return false, err
 	}
-	bus, err := do.Invoke[*events.Bus](a.injector)
+	suspender, err := do.Invoke[*suspension.Suspender](a.injector)
 	if err != nil {
 		return false, err
 	}
-	changed, err := suspension.SuspendWorkspace(ctx, bus, id, by, reason)
-	if err != nil || !changed {
-		return changed, err
-	}
-	sys, err := do.Invoke[SystemSender](a.injector)
-	if err != nil {
-		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
-	}
-	cfg, err := do.Invoke[*config.Config](a.injector)
-	if err != nil {
-		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
-	}
-	if err := suspension.NotifyOwners(ctx, client, accounts.OwnerNotifier(client, sys.EmailSender), cfg.SupportEmail, id); err != nil {
-		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
-	}
-	return true, nil
+	return suspender.Suspend(ctx, id, by, reason)
 }
 
 // UnsuspendWorkspace lifts a Workspace's suspension; held sends resume on their own.

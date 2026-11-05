@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
 )
 
@@ -45,7 +44,7 @@ type HoldChange = holds.Change
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (docs/architecture.md, list item 7).
-func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID, key string, in HoldInput) (HoldChange, error) {
+func (m *Module) SetHold(ctx context.Context, cred *ent.ServiceCredential, workspaceID, key string, in HoldInput) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
@@ -61,7 +60,7 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 			return HoldChange{}, ErrHoldActionURL
 		}
 	}
-	s, err := m.holdScope(ctx, bus, cred, workspaceID)
+	s, err := m.holdScope(ctx, cred, workspaceID)
 	if err != nil {
 		return HoldChange{}, err
 	}
@@ -70,11 +69,11 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
 // in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
-func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID, key string) (HoldChange, error) {
+func (m *Module) ClearHold(ctx context.Context, cred *ent.ServiceCredential, workspaceID, key string) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
-	s, err := m.holdScope(ctx, bus, cred, workspaceID)
+	s, err := m.holdScope(ctx, cred, workspaceID)
 	if err != nil {
 		return HoldChange{}, err
 	}
@@ -99,12 +98,12 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Ho
 }
 
 // holdScope loads the Workspace row and scopes over it, acting as the credential.
-func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string) (*ent.Scoped, error) {
+func (m *Module) holdScope(ctx context.Context, cred *ent.ServiceCredential, workspaceID string) (*ent.Scoped, error) {
 	s, err := m.scopeOver(ctx, workspaceID)
 	if err != nil {
 		return nil, err
 	}
-	return bus.Act(s, ServiceActor(cred)), nil
+	return m.bus.Act(s, ServiceActor(cred)), nil
 }
 
 // ServiceHoldsList lists a Workspace's active holds.
@@ -124,7 +123,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 // ServiceHoldsSet sets or renews a hold.
 func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
 	id := string(params.WorkspaceId)
-	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, serviceInputs.HoldSet(req))
+	change, err := h.module.SetHold(ctx, CurrentService(ctx), id, params.Key, serviceInputs.HoldSet(req))
 	var tooLong *HoldTooLongError
 	switch {
 	case ent.IsNotFound(err):
@@ -146,7 +145,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
 func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params serviceapi.ServiceHoldsClearParams) (serviceapi.ServiceHoldsClearRes, error) {
 	id := string(params.WorkspaceId)
-	change, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
+	change, err := h.module.ClearHold(ctx, CurrentService(ctx), id, params.Key)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
 		return &p, nil

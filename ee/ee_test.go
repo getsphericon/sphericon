@@ -37,29 +37,29 @@ func staffSessions(t *testing.T) *staffmembers.Sessions {
 }
 
 func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
-	_, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), nil, staff.Config{})
+	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, staff.Config{})
 
 	require.Error(t, err, "the Enterprise sections take the Staff member's sessions")
 }
 
 func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
-	plain, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureAudit), staffSessions(t), staff.Config{})
+	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, staff.Config{})
 	require.NoError(t, err)
-	off, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureAudit), nil, staff.Config{})
+	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, staff.Config{})
 	require.NoError(t, err, "an instance without the staff license needs no Staff sign-in")
-	licensed, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), staffSessions(t), staff.Config{})
+	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staff.Config{})
 	require.NoError(t, err)
 
-	assert.Nil(t, plain.StaffSections(nil, nil))
-	assert.Nil(t, off.StaffSections(nil, nil))
-	assert.NotNil(t, licensed.StaffSections(nil, nil))
+	assert.Nil(t, plain.StaffSections())
+	assert.Nil(t, off.StaffSections())
+	assert.NotNil(t, licensed.StaffSections())
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), staffSessions(t), staff.Config{})
+	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staff.Config{})
 	require.NoError(t, err)
 
-	jobs := e.Jobs(nil, nil)
+	jobs := e.Jobs()
 
 	assert.Len(t, jobs.PeriodicJobs, 3, "retention, usage and the abuse detector")
 	assert.NotPanics(t, func() { jobs.Workers(river.NewWorkers()) })

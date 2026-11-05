@@ -58,7 +58,7 @@ func failedAuthMail(t *testing.T, reply sesReply) *rivertype.JobRow {
 	e.SystemMail.SetErr(sendErr)
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
-	require.NoError(t, e.client.Enqueue(ctx, mailjobs.PasswordReset("a@example.com", "tok", true)))
+	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.PasswordReset("a@example.com", "tok", true)))
 
 	var row *rivertype.JobRow
 	require.Eventually(t, func() bool {
