@@ -15,7 +15,7 @@ func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
 	return mapper.WebhookToResource(e.WebhookEndpoint)
 }
 
-func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.WebhooksListParams) (externalapi.WebhooksListRes, error) {
+func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.WebhooksListParams) (*externalapi.WebhooksListOK, error) {
 	page, err := h.webhooks.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
 }
 
-func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (externalapi.WebhooksCreateRes, error) {
+func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (*externalapi.WebhookResource, error) {
 	// The signing secret is generated server-side and kept sealed; it is shown
 	// only in the app, never through /api.
 	e, err := h.webhooks.Create(ctx, auth.TokenScoped(ctx), inputs.WebhookCreate(req))
@@ -34,7 +34,7 @@ func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWe
 	return &res, nil
 }
 
-func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksGetParams) (externalapi.WebhooksGetRes, error) {
+func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksGetParams) (*externalapi.WebhookResource, error) {
 	id := int64(params.ID)
 
 	e, err := h.webhooks.Get(ctx, auth.TokenScoped(ctx), id)
@@ -45,7 +45,7 @@ func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksG
 	return &res, nil
 }
 
-func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWebhookInput, params externalapi.WebhooksUpdateParams) (externalapi.WebhooksUpdateRes, error) {
+func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWebhookInput, params externalapi.WebhooksUpdateParams) (*externalapi.WebhookResource, error) {
 	id := int64(params.ID)
 
 	e, err := h.webhooks.Update(ctx, auth.TokenScoped(ctx), id, inputs.WebhookUpdate(req))
@@ -56,12 +56,12 @@ func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWe
 	return &res, nil
 }
 
-func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.WebhooksDeleteParams) (externalapi.WebhooksDeleteRes, error) {
+func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.WebhooksDeleteParams) error {
 	id := int64(params.ID)
 
 	err := h.webhooks.Delete(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.WebhooksDeleteNoContent{}, nil
+	return nil
 }

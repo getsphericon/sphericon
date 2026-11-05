@@ -2,10 +2,8 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -19,14 +17,14 @@ func TestSiteMalformedIDIsABadRequest(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	for _, bad := range []string{"abc", "99999999999999999999", "1.5"} {
-		c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.RewriteURL("123456789", bad))
+		t.Run(bad, func(t *testing.T) {
+			c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.RewriteURL("123456789", bad))
 
-		inPath, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 123456789})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteContactsGetBadRequest{}, inPath, bad)
+			_, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 123456789})
+			testhelper.SiteRefusal(t, err, http.StatusBadRequest, bad)
 
-		inQuery, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(123456789)})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteEventsListBadRequest{}, inQuery, "a malformed contactId query is refused: %s", bad)
+			_, err = c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(123456789)})
+			testhelper.SiteRefusal(t, err, http.StatusBadRequest, "a malformed contactId query is refused: %s", bad)
+		})
 	}
 }

@@ -94,14 +94,12 @@ func TestSiteLoginThroughTheGeneratedClient(t *testing.T) {
 
 	res, err := c.SiteAuthLogin(context.Background(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteLoginResultHeaders)
-	require.Truef(t, isOK, "got %T", res)
+	ok := res
 	assert.Equal(t, siteapi.SiteLoginOutcomeSession, ok.Response.Outcome)
 	assert.True(t, ok.SetCookie.Set)
 
-	res, err = c.SiteAuthLogin(context.Background(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: "wrong"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthLoginUnauthorized{}, res)
+	_, err = c.SiteAuthLogin(context.Background(), &siteapi.SiteLoginInput{Email: fixtures.OwnerJohnEmail, Password: "wrong"})
+	testhelper.SiteRefusal(t, err, http.StatusUnauthorized)
 }
 
 func TestSiteLogoutClearsTheSessionCookie(t *testing.T) {

@@ -17,13 +17,11 @@ func TestContactBindingsAreItsOwnAndItsVisitors(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	list := func(contactID int64) []siteapi.SiteBindingResource {
-		res, err := owner.SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
+		bound, err := owner.SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
 			WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(contactID),
 		})
 		require.NoError(t, err)
-		bound, ok := res.(*siteapi.SiteTelegramListBindingsOKApplicationJSON)
-		require.Truef(t, ok, "got %T", res)
-		return *bound
+		return bound
 	}
 
 	liams := list(fixtures.ContactLiamID)
@@ -43,12 +41,10 @@ func TestTheSiteIssuesAStartLinkForAContact(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	id := bot.Integration.ID
 
-	res, err := owner.SiteTelegramIssueStartLink(t.Context(),
+	link, err := owner.SiteTelegramIssueStartLink(t.Context(),
 		&siteapi.IssueTelegramStartLinkInput{IntegrationId: siteapi.NewOptNilEntityId(id)},
 		siteapi.SiteTelegramIssueStartLinkParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactBobID)})
 
 	require.NoError(t, err)
-	link, ok := res.(*siteapi.TelegramStartLinkResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 }

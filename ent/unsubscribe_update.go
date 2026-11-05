@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // UnsubscribeUpdate is the builder for updating Unsubscribe entities.
@@ -52,13 +53,13 @@ func (_u *UnsubscribeUpdate) SetNillableWorkspaceID(v *int64) *UnsubscribeUpdate
 }
 
 // SetChannel sets the "channel" field.
-func (_u *UnsubscribeUpdate) SetChannel(v unsubscribe.Channel) *UnsubscribeUpdate {
+func (_u *UnsubscribeUpdate) SetChannel(v channels.Channel) *UnsubscribeUpdate {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *UnsubscribeUpdate) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeUpdate {
+func (_u *UnsubscribeUpdate) SetNillableChannel(v *channels.Channel) *UnsubscribeUpdate {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -361,13 +362,13 @@ func (_u *UnsubscribeUpdateOne) SetNillableWorkspaceID(v *int64) *UnsubscribeUpd
 }
 
 // SetChannel sets the "channel" field.
-func (_u *UnsubscribeUpdateOne) SetChannel(v unsubscribe.Channel) *UnsubscribeUpdateOne {
+func (_u *UnsubscribeUpdateOne) SetChannel(v channels.Channel) *UnsubscribeUpdateOne {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *UnsubscribeUpdateOne) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeUpdateOne {
+func (_u *UnsubscribeUpdateOne) SetNillableChannel(v *channels.Channel) *UnsubscribeUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
 	}

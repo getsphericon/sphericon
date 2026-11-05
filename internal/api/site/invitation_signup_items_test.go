@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -19,7 +20,7 @@ import (
 
 const inviteeAddress = fixtures.InvitationAcmeNewcomerEmail
 
-func setUpAccountAnswering(t *testing.T, env *testhelper.TestEnv, token string, answers ...siteapi.SiteSignupItemAnswer) siteapi.SitePublicInvitationsAcceptRes {
+func setUpAccountAnswering(t *testing.T, env *testhelper.TestEnv, token string, answers ...siteapi.SiteSignupItemAnswer) error {
 	t.Helper()
 	return acceptInvitation(t, env.SiteAnonymous(t), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword), SignupItems: answers,
@@ -31,17 +32,15 @@ func TestAnInvitationForANewAccountWithoutARequiredAcceptanceIsRefusedWithAField
 	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
-	res := setUpAccountAnswering(t, env, token, newsUnticked)
+	err := setUpAccountAnswering(t, env, token, newsUnticked)
 
-	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{
 		"signupItems." + fixtures.ServiceTermsKey: {"accept the Terms of service to sign up"},
 	}, problem.Errors.Value)
 	assert.False(t, userExists(t, env, inviteeAddress))
-	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(), siteapi.SitePublicInvitationsLookupParams{Token: token})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteInvitationLookupResult{}, lookup, "the Invitation is still pending")
+	_, err = env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(), siteapi.SitePublicInvitationsLookupParams{Token: token})
+	require.NoError(t, err, "the Invitation is still pending")
 }
 
 func TestAnInvitationForANewAccountWithTheAnswersCreatesTheMemberAndRecordsThemAsMadeOnTheInvitation(t *testing.T) {
@@ -49,9 +48,9 @@ func TestAnInvitationForANewAccountWithTheAnswersCreatesTheMemberAndRecordsThemA
 	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
-	res := setUpAccountAnswering(t, env, token, termsTicked, newsUnticked)
+	err := setUpAccountAnswering(t, env, token, termsTicked, newsUnticked)
 
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, err)
 	assert.True(t, isMemberOfAcme(t, env, inviteeAddress))
 	newcomer := userByEmail(t, env, inviteeAddress)
 	assert.Equal(t, []string{
@@ -69,10 +68,9 @@ func TestAnInvitationForANewAccountAnsweringAStaleVersionIsRefused(t *testing.T)
 	token := fixtures.InvitationAcmeNewcomerToken
 	withSignupItems(t, env)
 
-	res := setUpAccountAnswering(t, env, token, itemAnswer(fixtures.ServiceTermsKey, fixtures.ServiceTermsStaleLabel, true))
+	err := setUpAccountAnswering(t, env, token, itemAnswer(fixtures.ServiceTermsKey, fixtures.ServiceTermsStaleLabel, true))
 
-	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, []string{"signupItems"}, lo.Keys(problem.Errors.Value))
 	assert.False(t, userExists(t, env, inviteeAddress))
 }
@@ -87,8 +85,8 @@ func TestAnInvitationThatCompletesAnUnverifiedUserAsksTheSignupItems(t *testing.
 	refused := setUpAccountAnswering(t, env, token)
 	accepted := setUpAccountAnswering(t, env, token, termsTicked)
 
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, refused)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, accepted)
+	testhelper.SiteRefusal(t, refused, http.StatusUnprocessableEntity)
+	require.NoError(t, accepted)
 	assert.True(t, isMemberOfAcme(t, env, inviteeAddress))
 	assert.Equal(t, []string{
 		fixtures.ServiceTermsKey + ": accepted",
@@ -106,9 +104,9 @@ func TestAnExistingUserAcceptsAnInvitationWithoutBeingAskedTheSignupItems(t *tes
 	acceptPending(t, oscar, termsAccepted)
 	before := currentAnswers(t, env, fixtures.OutsiderOscarID)
 
-	res := acceptInvitation(t, oscar, token, &siteapi.SiteAcceptInvitationInput{})
+	err := acceptInvitation(t, oscar, token, &siteapi.SiteAcceptInvitationInput{})
 
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, err)
 	assert.True(t, isMemberOfAcme(t, env, fixtures.OutsiderOscarEmail))
 	after := currentAnswers(t, env, fixtures.OutsiderOscarID)
 	assert.Equal(t, before, after)

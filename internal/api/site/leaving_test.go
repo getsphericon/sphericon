@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -24,9 +25,8 @@ func TestLeavingAsMemberRemovesTheWorkspaceFromTheirList(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res, err := mary.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
+	err := mary.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, res)
 
 	assert.Equal(t, []siteapi.WorkspaceId{fixtures.GlobexPublicID}, workspaceIDs(t, mary))
 }
@@ -35,15 +35,12 @@ func TestLeavingAsAdminRemovesTheMembershipFromTheMembersList(t *testing.T) {
 	env := testhelper.Setup(t)
 	alice := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	res, err := alice.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
+	err := alice.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, res)
 
 	items, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteMembershipsList(t.Context(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	members, ok := items.(*siteapi.SiteMembershipsListOKApplicationJSON)
-	require.True(t, ok)
-	emails := lo.Map(*members, func(m siteapi.SiteMembershipResource, _ int) siteapi.EmailAddress { return m.Email })
+	emails := lo.Map(items, func(m siteapi.SiteMembershipResource, _ int) siteapi.EmailAddress { return m.Email })
 	assert.NotContains(t, emails, siteapi.EmailAddress(fixtures.AdminAliceEmail))
 }
 
@@ -51,9 +48,8 @@ func TestLeavingAsACoOwnerKeepsTheOtherOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	owen := env.SiteActor(t, fixtures.InitechCoOwnerOwenEmail)
 
-	res, err := owen.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.InitechPublicID})
+	err := owen.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, res)
 
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	assert.Contains(t, workspaceIDs(t, olga), siteapi.WorkspaceId(fixtures.InitechPublicID))
@@ -63,10 +59,8 @@ func TestLeavingAsTheOnlyOwnerIsRefusedAndNothingIsRemoved(t *testing.T) {
 	env := testhelper.Setup(t)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := john.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	refused, ok := res.(*siteapi.SiteWorkspacesLeaveUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	err := john.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value["workspace"][0], "another member an owner")
 
 	assert.Equal(t, []siteapi.WorkspaceId{fixtures.AcmePublicID}, workspaceIDs(t, john))
@@ -76,14 +70,13 @@ func TestLeavingAWorkspaceTheUserDoesNotBelongToIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := john.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.GlobexPublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesLeaveNotFound{}, res)
+	err := john.SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.GlobexPublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestLeavingIsAuditedWithTheUserAsActor(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
+	err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	env.WorkEditionJobs(t)
 

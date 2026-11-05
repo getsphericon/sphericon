@@ -11,7 +11,7 @@ import (
 // ExportAudit serves the Audit stream (ADR 0045): the Audit entries oldest first as NDJSON.
 // It needs the `audit` license feature as well as `export`; without it the operation is
 // absent (404), like the Audit log read is without its license.
-func (h *Handlers) ExportAudit(ctx context.Context, params externalapi.ExportAuditParams) (externalapi.ExportAuditRes, error) {
+func (h *Handlers) ExportAudit(ctx context.Context, params externalapi.ExportAuditParams) (*externalapi.ExportAuditOKHeaders, error) {
 	if !h.exportLicensed() || !h.audit.Licensed() {
 		return nil, exportstream.ErrNotOffered
 	}

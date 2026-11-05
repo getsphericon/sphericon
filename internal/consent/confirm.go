@@ -5,6 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -27,7 +28,7 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, target tracking.Co
 		// token here), so this is a scope source outside the site/external/job list.
 		sc := events.Ingest(tx.Scoped(target.WorkspaceID))
 		_, err := recordIn(ctx, sc, pub, grant{
-			channel: confirmation.ChannelEmail, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
+			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
 			contactID: target.ContactID, ip: ip,
 		})
 		return err

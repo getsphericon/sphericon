@@ -33,8 +33,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 		}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 
 	action := res.Draft.Value.Actions[0]
 	assert.NotEmpty(t, action.ID.Or(""))
@@ -50,8 +49,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Actions: []siteapi.SiteRuleAction{action}},
 		siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.True(t, upd.Draft.Value.Actions[0].HasSecret.Or(false))
 	assert.Equal(t, action.ID, upd.Draft.Value.Actions[0].ID)
 }
@@ -70,10 +68,8 @@ func TestSiteRuleHTTPActionRefusesASixthHeader(t *testing.T) {
 		return rawBody{inner: inner, body: body}
 	})
 
-	out, err := raw.SiteRulesCreate(context.Background(), &siteapi.SiteCreateRuleInput{},
+	_, err := raw.SiteRulesCreate(context.Background(), &siteapi.SiteCreateRuleInput{},
 		siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	bad, ok := out.(*siteapi.SiteRulesCreateBadRequest)
-	require.Truef(t, ok, "got %T", out)
+	bad := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 }

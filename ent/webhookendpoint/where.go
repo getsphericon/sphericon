@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // ID filters vertices based on their ID field.
@@ -496,23 +497,33 @@ func FailingSinceNotNil() predicate.WebhookEndpoint {
 }
 
 // LastErrorKindEQ applies the EQ predicate on the "last_error_kind" field.
-func LastErrorKindEQ(v LastErrorKind) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastErrorKind, v))
+func LastErrorKindEQ(v webhook.ErrorKind) predicate.WebhookEndpoint {
+	vc := v
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastErrorKind, vc))
 }
 
 // LastErrorKindNEQ applies the NEQ predicate on the "last_error_kind" field.
-func LastErrorKindNEQ(v LastErrorKind) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldLastErrorKind, v))
+func LastErrorKindNEQ(v webhook.ErrorKind) predicate.WebhookEndpoint {
+	vc := v
+	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldLastErrorKind, vc))
 }
 
 // LastErrorKindIn applies the In predicate on the "last_error_kind" field.
-func LastErrorKindIn(vs ...LastErrorKind) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldLastErrorKind, vs...))
+func LastErrorKindIn(vs ...webhook.ErrorKind) predicate.WebhookEndpoint {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.WebhookEndpoint(sql.FieldIn(FieldLastErrorKind, v...))
 }
 
 // LastErrorKindNotIn applies the NotIn predicate on the "last_error_kind" field.
-func LastErrorKindNotIn(vs ...LastErrorKind) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldLastErrorKind, vs...))
+func LastErrorKindNotIn(vs ...webhook.ErrorKind) predicate.WebhookEndpoint {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldLastErrorKind, v...))
 }
 
 // LastErrorKindIsNil applies the IsNil predicate on the "last_error_kind" field.

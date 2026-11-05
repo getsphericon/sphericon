@@ -246,9 +246,7 @@ interface SiteBroadcasts
       SiteBroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
-      never,
-      SiteBroadcastsListFilter,
-      ConflictProblem
+      SiteBroadcastsListFilter
     > {
   /**
    * Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
@@ -260,9 +258,7 @@ interface SiteBroadcasts
   @requiresPermissions(#[])
   archive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem;
+    | Problem;
 
   /** Bring an archived broadcast back to the list, in the status it had */
   @action("unarchive")
@@ -270,8 +266,7 @@ interface SiteBroadcasts
   @requiresPermissions(#[])
   unarchive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409. */
   @action("send")
@@ -279,10 +274,7 @@ interface SiteBroadcasts
   @requiresPermissions(#[])
   send(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too. */
   @action("schedule")
@@ -291,12 +283,7 @@ interface SiteBroadcasts
   schedule(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: ScheduleBroadcastInput,
-  ):
-    | SiteBroadcastResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): SiteBroadcastResource | Problem;
 
   /**
    * Send a one-off rendered preview to a single address: an email broadcast to the `email` given,
@@ -313,12 +300,7 @@ interface SiteBroadcasts
   testSend(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: TestSendBroadcastInput,
-  ):
-    | SiteTestSendBroadcastResult
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+  ): SiteTestSendBroadcastResult | Problem;
 }
 
 /** A broadcast's per-link click figures, most clicked first */
@@ -339,8 +321,7 @@ namespace SiteBroadcastLinks {
   @requiresPermissions(#[])
   op list(@path workspaceId: WorkspaceId, @path broadcastId: EntityId):
     | SiteBroadcastLinkClicksList
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 }
 
 @@requiresPermissions(SiteBroadcasts.create, #[]);

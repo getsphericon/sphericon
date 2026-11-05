@@ -3,6 +3,8 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,20 +18,16 @@ import (
 
 func revenueSettings(t *testing.T, c *siteapi.Client) *siteapi.SiteRevenueSettingsResource {
 	t.Helper()
-	res, err := c.SiteWorkspacesGetRevenueSettings(context.Background(),
+	got, err := c.SiteWorkspacesGetRevenueSettings(context.Background(),
 		siteapi.SiteWorkspacesGetRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteRevenueSettingsResource)
-	require.Truef(t, ok, "got %T", res)
 	return got
 }
 
-func updateRevenueSettings(t *testing.T, c *siteapi.Client, in siteapi.SiteUpdateRevenueSettingsInput) siteapi.SiteWorkspacesUpdateRevenueSettingsRes {
+func updateRevenueSettings(t *testing.T, c *siteapi.Client, in siteapi.SiteUpdateRevenueSettingsInput) (*siteapi.SiteRevenueSettingsResource, error) {
 	t.Helper()
-	res, err := c.SiteWorkspacesUpdateRevenueSettings(context.Background(), &in,
+	return c.SiteWorkspacesUpdateRevenueSettings(context.Background(), &in,
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	return res
 }
 
 func TestTheReportingCurrencyIsUnsetAndTheWindowIsFiveDaysUntilChosen(t *testing.T) {
@@ -45,12 +43,11 @@ func TestAnAdminChoosesTheCurrencyAndTheWindowAndEveryMemberReadsThem(t *testing
 	env := testhelper.Setup(t)
 	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	res := updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
+	updated, err := updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
 		ReportingCurrency:     siteapi.NewOptCurrencyCode("EUR"),
 		AttributionWindowDays: siteapi.NewOptAttributionWindowDays(14),
 	})
-	updated, ok := res.(*siteapi.SiteRevenueSettingsResource)
-	require.Truef(t, ok, "got %T", res)
+	require.NoError(t, err)
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), updated.ReportingCurrency.Value)
 	assert.Equal(t, siteapi.AttributionWindowDays(14), updated.AttributionWindowDays)
 
@@ -62,9 +59,11 @@ func TestAnAdminChoosesTheCurrencyAndTheWindowAndEveryMemberReadsThem(t *testing
 func TestAFieldLeftOutOfTheUpdateStaysAsItWas(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("JPY")})
+	_, err := updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("JPY")})
+	require.NoError(t, err)
 
-	updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(7)})
+	_, err = updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(7)})
+	require.NoError(t, err)
 
 	got := revenueSettings(t, owner)
 	assert.Equal(t, siteapi.CurrencyCode("JPY"), got.ReportingCurrency.Value)
@@ -74,13 +73,13 @@ func TestAFieldLeftOutOfTheUpdateStaysAsItWas(t *testing.T) {
 func TestAMemberCannotChangeTheRevenueSettings(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	member := updateRevenueSettings(t, env.SiteActor(t, fixtures.MemberMaryEmail),
+	_, member := updateRevenueSettings(t, env.SiteActor(t, fixtures.MemberMaryEmail),
 		siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("USD")})
-	outsider := updateRevenueSettings(t, env.SiteActor(t, fixtures.OutsiderOscarEmail),
+	_, outsider := updateRevenueSettings(t, env.SiteActor(t, fixtures.OutsiderOscarEmail),
 		siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("USD")})
 
-	assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsForbidden{}, member)
-	assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsNotFound{}, outsider)
+	testhelper.SiteRefusal(t, member, http.StatusForbidden)
+	testhelper.SiteRefusal(t, outsider, http.StatusNotFound)
 	assert.True(t, revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Null)
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
@@ -89,10 +88,9 @@ func TestAnUnknownCurrencyCodeIsRefusedWithAReasonAndNothingChanges(t *testing.T
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("QQQ")})
+	_, err := updateRevenueSettings(t, owner, siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("QQQ")})
 
-	refused, ok := res.(*siteapi.SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value["reportingCurrency"][0], "unknown currency")
 	assert.True(t, revenueSettings(t, owner).ReportingCurrency.Null)
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
@@ -103,11 +101,12 @@ func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	for _, days := range []siteapi.AttributionWindowDays{0, 91} {
-		res, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
-			&siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
-			siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsBadRequest{}, res, "days=%d", days)
+		t.Run(fmt.Sprintf("days=%d", days), func(t *testing.T) {
+			_, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
+				&siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
+				siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
+			testhelper.SiteRefusal(t, err, http.StatusBadRequest)
+		})
 	}
 
 	assert.Equal(t, siteapi.AttributionWindowDays(5), revenueSettings(t, owner).AttributionWindowDays)
@@ -118,14 +117,16 @@ func TestEveryChangeOfTheRevenueSettingsIsAuditedAndARepeatIsNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
+	_, err := updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
 		ReportingCurrency:     siteapi.NewOptCurrencyCode("EUR"),
 		AttributionWindowDays: siteapi.NewOptAttributionWindowDays(10),
 	})
-	updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
+	require.NoError(t, err)
+	_, err = updateRevenueSettings(t, admin, siteapi.SiteUpdateRevenueSettingsInput{
 		ReportingCurrency:     siteapi.NewOptCurrencyCode("EUR"),
 		AttributionWindowDays: siteapi.NewOptAttributionWindowDays(10),
 	})
+	require.NoError(t, err)
 
 	published := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, published, 1)

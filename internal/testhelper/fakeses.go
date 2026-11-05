@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/inbox"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server
@@ -56,11 +58,11 @@ func (f *FakeSES) SendQuota(context.Context) (messaging.Quota, error) {
 func (f *FakeSES) Catalog() *messaging.Catalog {
 	return messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
+			Channel: channels.Email, Provider: providers.SES,
 			Build: func([]byte, messaging.Deps) (any, error) { return f, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+			Channel: channels.Email, Provider: providers.SMTP,
 			Build: func([]byte, messaging.Deps) (any, error) { return plainSender{}, nil },
 		},
 	)

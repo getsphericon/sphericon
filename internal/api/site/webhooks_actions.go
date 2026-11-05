@@ -9,7 +9,7 @@ import (
 
 // SiteWebhooksRegenerateSecret replaces the endpoint's signing secret and returns the
 // endpoint with the new one.
-func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params siteapi.SiteWebhooksRegenerateSecretParams) (siteapi.SiteWebhooksRegenerateSecretRes, error) {
+func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params siteapi.SiteWebhooksRegenerateSecretParams) (*siteapi.SiteWebhookEndpointResource, error) {
 	scoped := workspaceScope(ctx)
 	e, err := h.webhooks.RegenerateSecret(ctx, scoped, int64(params.ID))
 	if err != nil {
@@ -21,7 +21,7 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 
 // SiteWebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered, at once.
-func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
+func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhookInput, params siteapi.SiteWebhooksTestParams) (*siteapi.SiteWebhookTestResult, error) {
 	scoped := workspaceScope(ctx)
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if err != nil {
@@ -32,7 +32,7 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhoo
 		out.Status = siteapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
-		out.Kind = siteapi.NewOptSiteWebhookErrorKind(mapper.DeliveryErrorKindToResource(res.Kind))
+		out.Kind = siteapi.NewOptSiteWebhookErrorKind(mapper.WebhookErrorKindToResource(res.Kind))
 	}
 	return &out, nil
 }

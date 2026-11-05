@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -224,7 +225,7 @@ const DefaultLease = 5 * time.Minute
 type Module struct {
 	bus *events.Bus
 	// channels are the Channels a message can be sent on, each with its renderer and adapter.
-	channels map[messaging.Channel]channel
+	channels map[channels.Channel]channel
 	senders  Senders
 	// bots builds the Telegram bots; nil while the Instance has none.
 	bots TelegramBots
@@ -299,9 +300,7 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 // New builds the module. tracker may be nil only if no marketing Request is sent.
 func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
 	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
-	m.channels = map[messaging.Channel]channel{
-		messaging.ChannelEmail: emailChannel{m: m}, messaging.ChannelTelegram: telegramChannel{m: m}, messaging.ChannelSMS: smsChannel{m: m},
-	}
+	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	for _, o := range opts {
 		o(m)
 	}
@@ -309,7 +308,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tr
 }
 
 // channel is the part of the send of ch, an error for a Channel no message is sent on.
-func (m *Module) channel(ch messaging.Channel) (channel, error) {
+func (m *Module) channel(ch channels.Channel) (channel, error) {
 	c, ok := m.channels[ch]
 	if !ok {
 		return nil, fmt.Errorf("outbound: no message is sent on channel %q", ch)
@@ -367,7 +366,7 @@ type Request struct {
 }
 
 // Channel is the Channel the message goes out on: its content's.
-func (r Request) Channel() messaging.Channel { return r.Content.Channel() }
+func (r Request) Channel() channels.Channel { return r.Content.Channel() }
 
 // contactID is the Contact the message is attributed to, 0 for none.
 func (r Request) contactID() int64 {

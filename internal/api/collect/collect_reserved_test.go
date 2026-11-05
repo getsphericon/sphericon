@@ -1,10 +1,10 @@
 package collect_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -14,16 +14,14 @@ import (
 func TestCollectRefusesReservedActions(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{
 			{VisitorId: "v-1", Action: "page_view"},
 			{VisitorId: "v-1", Action: "email.opened"},
 			{VisitorId: "v-1", Action: "telegram.bound"},
 		},
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	detail := refused.Detail.Or("")
 	assert.Contains(t, detail, "reserved")
 	assert.Empty(t, env.QueuedEnvelopes(t), "nothing of the batch is published")
@@ -34,12 +32,10 @@ func TestCollectRefusesReservedActions(t *testing.T) {
 func TestCollectRefusesSMSActions(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: "sms.received"}},
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")
 	assert.Empty(t, env.QueuedEnvelopes(t), "nothing is published")
 }

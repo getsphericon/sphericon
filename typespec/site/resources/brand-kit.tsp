@@ -87,10 +87,7 @@ namespace SiteBrandKit {
   /** Read the Brand kit. Every member may read it. */
   @get
   @requiresPermissions(#[])
-  op get(@path workspaceId: WorkspaceId):
-    | SiteBrandKitResource
-    | BadRequestProblem
-    | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId): SiteBrandKitResource | Problem;
 
   /** Save the Brand kit (owner and admin only). The first save also creates the starter
    * Templates (a welcome, a receipt, a digest and a one-button message) in its brand; a later
@@ -100,10 +97,7 @@ namespace SiteBrandKit {
   @requiresPermissions(#[Permission.brandKitManage])
   op save(@path workspaceId: WorkspaceId, @body body: SiteSaveBrandKitInput):
     | SiteBrandKitResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Create the starter Templates again from the saved Brand kit (owner and admin only). It adds
    * new Templates and never touches one that exists or a message already written. Answers 422
@@ -116,8 +110,5 @@ namespace SiteBrandKit {
         @statusCode statusCode: 201;
         @body body: SiteEmailTemplateResource[];
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

@@ -19,19 +19,19 @@ import (
 // step, look the address up, mint a token and enqueue a mail job. Only a known
 // address that was granted a slot gets its mail delivered; for the others the job
 // is a no-send one, so response time does not leak existence either.
-func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.SiteForgotPasswordInput) (siteapi.SiteAuthForgotPasswordRes, error) {
+func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.SiteForgotPasswordInput) error {
 	email := strings.TrimSpace(string(req.Email))
 	if email == "" {
-		return &siteapi.SiteAuthForgotPasswordAccepted{}, nil
+		return nil
 	}
 	// Unknown addresses spend their budget exactly like known ones.
 	granted, err := h.attempts.Take(ctx, accounts.KindPasswordReset, email)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	u, err := h.accounts.UserByEmail(ctx, email)
 	if err != nil && !ent.IsNotFound(err) {
-		return nil, err
+		return err
 	}
 	// The link is bound to the current password hash, so it works once; an unknown address
 	// gets a throwaway one over the same code path.
@@ -41,27 +41,27 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	}
 	token, err := h.links.PasswordResetLink(u)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// Best-effort enqueue (mirrors the welcome email): never fail the request.
 	if err := h.mail.Enqueue(ctx, mailjobs.PasswordReset(to, token, u != nil && granted)); err != nil {
 		mailNotQueued(ctx, "PasswordReset", err)
 	}
-	return &siteapi.SiteAuthForgotPasswordAccepted{}, nil
+	return nil
 }
 
 // SiteAuthResetPassword sets a new password from a reset link (accounts.Links).
-func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) (siteapi.SiteAuthResetPasswordRes, error) {
+func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
 	u, completedSignUp, err := h.links.ResetPassword(ctx, req.Token, req.Password)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if completedSignUp {
 		if err := h.mail.Enqueue(ctx, mailjobs.Welcome(u.Email, u.Name)); err != nil {
 			mailNotQueued(ctx, "Welcome", err)
 		}
 	}
-	return &siteapi.SiteAuthResetPasswordOK{}, nil
+	return nil
 }
 
 // SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, accounts.Links): the
@@ -70,7 +70,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 // session through the login issuer. The password stored at Sign-up stays only when
 // the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it.
-func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (siteapi.SiteAuthVerifyEmailRes, error) {
+func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
 	verified, landing, err := h.links.VerifyEmail(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 // (ADR 0020); when the confirming request carries a valid session of that same
 // User, it continues under a fresh token in the same response. The link alone
 // never signs anyone in.
-func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.SiteConfirmEmailChangeInput, params siteapi.SiteAuthConfirmEmailChangeParams) (siteapi.SiteAuthConfirmEmailChangeRes, error) {
+func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.SiteConfirmEmailChangeInput, params siteapi.SiteAuthConfirmEmailChangeParams) (*siteapi.SiteAuthConfirmEmailChangeOK, error) {
 	change, err := h.links.EmailChange(ctx, req.Token)
 	if err != nil {
 		return nil, err

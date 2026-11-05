@@ -89,9 +89,5 @@ namespace StaffWorkspaceAudit {
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 25,
-  ):
-    | StaffAuditEntryList
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  ): StaffAuditEntryList | Problem;
 }

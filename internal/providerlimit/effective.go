@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Source says where an effective ceiling comes from.
@@ -42,7 +41,7 @@ type Effective struct {
 
 	// Enforcement and Sandbox are the account's standing as the provider last reported it
 	// (ADR 0067): a stopped account holds every send, the rest are warnings.
-	Enforcement messaging.Enforcement
+	Enforcement providers.Enforcement
 	Sandbox     bool
 
 	// Inbox is set on a Test inbox, which hands its mail to no provider: nothing throttles it, so
@@ -59,22 +58,22 @@ func EffectiveOf(integ *ent.Integration) Effective {
 		ProviderQuotaUnavailable: integ.ProviderQuotaFailedAt != nil,
 		Enforcement:              enforcementOf(integ),
 		Sandbox:                  integ.ProviderSandbox,
-		Inbox:                    integ.Provider == integration.ProviderInbox,
+		Inbox:                    integ.Provider == providers.Inbox,
 	}
 }
 
 // Stopped reports whether the provider last said it has stopped the Integration's account,
 // which holds every send through it (ADR 0067).
 func Stopped(integ *ent.Integration) bool {
-	return enforcementOf(integ) == messaging.EnforcementShutdown
+	return enforcementOf(integ) == providers.EnforcementShutdown
 }
 
 // enforcementOf is the stored enforcement as the messaging value it was stored from.
-func enforcementOf(integ *ent.Integration) messaging.Enforcement {
+func enforcementOf(integ *ent.Integration) providers.Enforcement {
 	if integ.ProviderEnforcement == nil {
-		return messaging.EnforcementNone
+		return providers.EnforcementNone
 	}
-	return messaging.Enforcement(*integ.ProviderEnforcement)
+	return *integ.ProviderEnforcement
 }
 
 // lowest is the minimum rule: the lower of the two ceilings, the manual one on a tie.
@@ -124,11 +123,11 @@ func (e Effective) Warnings() []Warning {
 		out = append(out, WarningProviderQuotaUnavailable)
 	}
 	switch e.Enforcement {
-	case messaging.EnforcementShutdown:
+	case providers.EnforcementShutdown:
 		out = append(out, WarningProviderStopped)
-	case messaging.EnforcementProbation:
+	case providers.EnforcementProbation:
 		out = append(out, WarningProviderProbation)
-	case messaging.EnforcementNone:
+	case providers.EnforcementNone:
 	}
 	if e.Sandbox {
 		out = append(out, WarningProviderSandbox)

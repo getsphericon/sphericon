@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.TemplatesListParams) (externalapi.TemplatesListRes, error) {
+func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.TemplatesListParams) (*externalapi.TemplatesListOK, error) {
 	page, err := h.templates.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.Templat
 	return mapper.TemplatesListPage(page), nil
 }
 
-func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateTemplateInput) (externalapi.TemplatesCreateRes, error) {
+func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateTemplateInput) (*externalapi.TemplateResource, error) {
 	scoped := auth.TokenScoped(ctx)
 	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
@@ -26,7 +26,7 @@ func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateT
 	return &res, nil
 }
 
-func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.TemplatesGetParams) (externalapi.TemplatesGetRes, error) {
+func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.TemplatesGetParams) (*externalapi.TemplateResource, error) {
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
@@ -38,7 +38,7 @@ func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.Template
 	return &res, nil
 }
 
-func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateTemplateInput, params externalapi.TemplatesUpdateParams) (externalapi.TemplatesUpdateRes, error) {
+func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateTemplateInput, params externalapi.TemplatesUpdateParams) (*externalapi.TemplateResource, error) {
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
@@ -50,13 +50,13 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 	return &res, nil
 }
 
-func (h *Handlers) TemplatesDelete(ctx context.Context, params externalapi.TemplatesDeleteParams) (externalapi.TemplatesDeleteRes, error) {
+func (h *Handlers) TemplatesDelete(ctx context.Context, params externalapi.TemplatesDeleteParams) error {
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
 	err := h.templates.Delete(ctx, scoped, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.TemplatesDeleteNoContent{}, nil
+	return nil
 }

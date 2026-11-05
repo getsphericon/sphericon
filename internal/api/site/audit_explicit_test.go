@@ -48,8 +48,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 		&siteapi.SiteCreateInvitationInput{Email: "newbie@acme.test", Role: siteapi.SiteInvitableRoleAdmin},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationCreate)
 	require.Len(t, got, 1)
@@ -64,9 +63,8 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	assert.JSONEq(t, `{"role":{"to":"admin"}}`, string(diff))
 	assert.NotContains(t, string(diff), created.InviteUrl, "the link is a credential and never logged")
 
-	del, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: created.Resource.ID})
+	err = owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: created.Resource.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, del)
 
 	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationRevoke)
 	require.Len(t, revoked, 1)
@@ -76,11 +74,10 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 
 func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(context.Background(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(context.Background(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationAccept)
 	require.Len(t, got, 1)
@@ -118,12 +115,11 @@ func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T)
 	ctx := context.Background()
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res, err := mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{
+	_, err := mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 		NewPassword:     siteapi.NewOptString("brand-new-pass-1"),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteUserResourceHeaders{}, res)
 
 	acme := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange)
 	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserPasswordChange)
@@ -144,12 +140,11 @@ func TestAuditPasswordResetIsRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.SiteAnonymous(t)
-	_, err := c.SiteAuthForgotPassword(ctx, &siteapi.SiteForgotPasswordInput{Email: fixtures.MemberMaryEmail})
+	err := c.SiteAuthForgotPassword(ctx, &siteapi.SiteForgotPasswordInput{Email: fixtures.MemberMaryEmail})
 	require.NoError(t, err)
 	_, body := lastSystemEmail(t, env)
-	res, err := c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "reset-pass-123"})
+	err = c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "reset-pass-123"})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange)
 	require.Len(t, got, 1)
@@ -224,18 +219,18 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	promoteMary(t, env)                                                             // membership.update
-	_, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{ // membership.delete
+	promoteMary(t, env)                                                          // membership.update
+	err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{ // membership.delete
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeAdminMembershipID)})
 	require.NoError(t, err)
 	created, err := owner.SiteInvitationsCreate(ctx, // invitation.create
 		&siteapi.SiteCreateInvitationInput{Email: "x@acme.test", Role: siteapi.SiteInvitableRoleMember},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	_, err = owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{ // invitation.revoke
-		WorkspaceId: fixtures.AcmePublicID, ID: created.(*siteapi.SiteCreateInvitationResponse).Resource.ID})
+	err = owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{ // invitation.revoke
+		WorkspaceId: fixtures.AcmePublicID, ID: created.Resource.ID})
 	require.NoError(t, err)
-	_, err = env.SiteAnonymous(t).SitePublicInvitationsAccept(ctx, // invitation.accept
+	err = env.SiteAnonymous(t).SitePublicInvitationsAccept(ctx, // invitation.accept
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
@@ -248,18 +243,18 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	started, err := owner.SiteSecondFactorStartEnrollment(ctx, &siteapi.SiteSecondFactorStartInput{CurrentPassword: siteapi.NewOptString("another-pass-1")})
 	require.NoError(t, err)
-	code, err := totp.GenerateCode(started.(*siteapi.SiteSecondFactorEnrollment).Secret, time.Now())
+	code, err := totp.GenerateCode(started.Secret, time.Now())
 	require.NoError(t, err)
 	_, err = owner.SiteSecondFactorConfirmEnrollment(ctx, &siteapi.SiteSecondFactorConfirmInput{CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: code}) // user.second_factor_enroll
 	require.NoError(t, err)
 	regenerated, err := owner.SiteSecondFactorRegenerateRecoveryCodes(ctx, // user.recovery_codes_regenerate
 		&siteapi.SiteRecoveryCodesInput{CurrentPassword: siteapi.NewOptString("another-pass-1")})
 	require.NoError(t, err)
-	disabled, err := owner.SiteSecondFactorDisable(ctx, &siteapi.SiteSecondFactorDisableInput{ // user.recovery_code_use, user.second_factor_disable
-		CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: regenerated.(*siteapi.SiteRecoveryCodesHeaders).Response.Codes[0]})
+	_, err = owner.SiteSecondFactorDisable(ctx, &siteapi.SiteSecondFactorDisableInput{ // user.recovery_code_use, user.second_factor_disable
+		CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: regenerated.Response.Codes[0]})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteSecondFactorDisableNoContent{}, disabled)
-	_, err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
+
+	err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
 		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.GlobexSamMembershipID)})
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "Acme Three"}) // workspace.create
@@ -359,7 +354,7 @@ func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 		p.WorkspaceId = fixtures.AcmePublicID
 		res, err := owner.SiteAuditList(ctx, p)
 		require.NoError(t, err)
-		return len(res.(*siteapi.SiteAuditEntryList).Items)
+		return len(res.Items)
 	}
 	export := func(p siteapi.SiteAuditExportParams) int {
 		p.WorkspaceId = fixtures.AcmePublicID

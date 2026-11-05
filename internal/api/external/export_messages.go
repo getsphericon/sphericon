@@ -10,7 +10,7 @@ import (
 
 // ExportMessages serves the Outbound messages stream (ADR 0045): the same NDJSON page, cursor
 // header and gates as the Events stream, over delivery metadata only.
-func (h *Handlers) ExportMessages(ctx context.Context, params externalapi.ExportMessagesParams) (externalapi.ExportMessagesRes, error) {
+func (h *Handlers) ExportMessages(ctx context.Context, params externalapi.ExportMessagesParams) (*externalapi.ExportMessagesOKHeaders, error) {
 	if !h.exportLicensed() {
 		return nil, exportstream.ErrNotOffered
 	}

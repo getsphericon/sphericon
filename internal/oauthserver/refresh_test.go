@@ -183,12 +183,11 @@ func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
 func TestRevokingTheConnectionKillsItsRefreshToken(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{
+	err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{
 		WorkspaceId: fixtures.VehementPublicID,
 		ID:          siteapi.EntityId(fixtures.VehementOwnerConnectionID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteConnectionsDeleteNoContent{}, res)
 
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, valsConnection))
 	rec := exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken))

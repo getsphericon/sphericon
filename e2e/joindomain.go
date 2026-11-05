@@ -108,14 +108,12 @@ func (w *Workspace) RequireJoinedByDomain(c *Colleague) {
 	require.Contains(w.t, ids, w.publicID, "the Colleague reaches the Workspace")
 	require.Len(w.t, ids, 2, "and still has a personal Workspace of their own")
 
-	res, err := w.site.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
+	members, err := w.site.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
 	require.NoError(w.t, err)
-	members, isList := res.(*siteapi.SiteMembershipsListOKApplicationJSON)
-	require.True(w.t, isList, "list members: unexpected response %T", res)
 	var joined *siteapi.SiteMembershipResource
-	for i := range *members {
-		if string((*members)[i].Email) == c.Email {
-			joined = &(*members)[i]
+	for i := range members {
+		if string(members[i].Email) == c.Email {
+			joined = &members[i]
 		}
 	}
 	require.NotNil(w.t, joined, "%s is a member", c.Email)

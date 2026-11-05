@@ -7,6 +7,9 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Integration is a workspace-scoped connection to an external sending provider.
@@ -37,10 +40,10 @@ func (Integration) Fields() []ent.Field {
 		field.String(nameField).
 			NotEmpty(),
 		field.Enum("channel").
-			Values("email", "sms", "telegram").
+			GoType(channels.Channel("")).
 			Default("email"),
 		field.Enum("provider").
-			Values("smtp", "ses", "inbox", "telegram", "twilio"),
+			GoType(providers.Provider("")),
 		// Encrypted JSON blob produced by internal/secrets.Cipher.
 		field.String("config_encrypted").
 			Sensitive().
@@ -96,7 +99,7 @@ func (Integration) Fields() []ent.Field {
 		// nil is nothing. `shutdown` holds every send through the Integration until a read
 		// finds the account sending again; `probation` is a warning.
 		field.Enum("provider_enforcement").
-			Values("probation", "shutdown").
+			GoType(providers.Enforcement("")).
 			Optional().
 			Nillable(),
 		// Whether the provider last said the account is in its sandbox, delivering only to

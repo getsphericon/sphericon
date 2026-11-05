@@ -36,7 +36,7 @@ func (h *Handlers) SiteAuthSigninProviders(context.Context) (*siteapi.SiteSignin
 // SiteAuthSigninStart begins a provider sign-in (ADR 0048): it draws the flow, keeps it in
 // the signed flow cookie with the `return_to` that survived validation, and redirects the
 // browser to the provider.
-func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAuthSigninStartParams) (siteapi.SiteAuthSigninStartRes, error) {
+func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAuthSigninStartParams) (*siteapi.SiteAuthSigninStartFound, error) {
 	authURL, flow, err := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 // the login page with the Reason, which the SPA renders. A callback that is not for a flow
 // this browser began (no cookie, another state) is refused before the provider is asked
 // anything.
-func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (siteapi.SiteAuthSigninCallbackRes, error) {
+func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	if !h.signin.Has(params.Provider) {
 		return h.signinRefused(signin.Flow{}, signin.ReasonProviderUnavailable), nil
 	}

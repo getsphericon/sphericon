@@ -29,16 +29,14 @@ func (h *harness) consoles(t *testing.T) (core *staffapi.Client, enterprise *sta
 
 func (h *harness) setDefaultSendCap(t *testing.T, c *staffapi.Client, perDay int32) {
 	t.Helper()
-	res, err := c.StaffInstanceSetDefaultSendCap(t.Context(), &staffapi.StaffDefaultSendCapInput{PerDay: staffapi.MaxPerDay(perDay)})
+	_, err := c.StaffInstanceSetDefaultSendCap(t.Context(), &staffapi.StaffDefaultSendCapInput{PerDay: staffapi.MaxPerDay(perDay)})
 	require.NoError(t, err)
-	require.IsType(t, &staffapi.StaffDefaultSendCapChange{}, res)
 }
 
 func (h *harness) clearDefaultSendCap(t *testing.T, c *staffapi.Client) {
 	t.Helper()
-	res, err := c.StaffInstanceClearDefaultSendCap(t.Context())
+	_, err := c.StaffInstanceClearDefaultSendCap(t.Context())
 	require.NoError(t, err)
-	require.IsType(t, &staffapi.StaffDefaultSendCapChange{}, res)
 }
 
 // createWorkspace creates a Workspace as John, its Owner, and returns its id.
@@ -46,8 +44,7 @@ func (h *harness) createWorkspace(t *testing.T, name string) string {
 	t.Helper()
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: name})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 	return string(created.ID)
 }
 
@@ -92,11 +89,11 @@ func TestASignedUpUsersFirstWorkspaceStartsWithTheDefaultSendCap(t *testing.T) {
 	core, ee := h.consoles(t)
 	h.setDefaultSendCap(t, core, 750)
 
-	res, err := h.env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+	_, err := h.env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
 		Name: "Grace Hopper", Email: "grace@example.com", Password: siteapi.NewOptString("grace-password-1"),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
+
 	spaces, err := h.env.SiteActor(t, "grace@example.com").SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)

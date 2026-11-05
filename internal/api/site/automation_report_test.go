@@ -18,8 +18,7 @@ func automationResults(t *testing.T, c *siteapi.Client, params siteapi.SiteAutom
 	t.Helper()
 	res, err := c.SiteAutomationReportsGet(t.Context(), params)
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAutomationReport)
-	require.Truef(t, ok, "got %T", res)
+	report := res
 	return report.Results
 }
 

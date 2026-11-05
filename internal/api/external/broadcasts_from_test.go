@@ -2,9 +2,9 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -20,27 +20,24 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "broadcasts:write")
 
-	create := func(from string) externalapi.BroadcastsCreateRes {
-		res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
+	create := func(from string) error {
+		_, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 			Name:    "from check",
 			Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from))}),
 		})
-		require.NoError(t, err)
-		return res
+		return err
 	}
-	assert.IsType(t, &externalapi.BroadcastResource{}, create("news@"+fixtures.SendingDomainVerifiedDomain))
-	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, create("news@"+fixtures.SendingDomainUnverifiedDomain))
-	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, create("news@"+fixtures.SendingDomainGlobexDomain))
+	require.NoError(t, create("news@"+fixtures.SendingDomainVerifiedDomain))
+	testhelper.ExternalRefusal(t, create("news@"+fixtures.SendingDomainUnverifiedDomain), http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, create("news@"+fixtures.SendingDomainGlobexDomain), http.StatusUnprocessableEntity)
 
-	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, refused)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	edited, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
 		Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("New subject")}),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftFromLostDomainID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastResource{}, edited)
 }

@@ -59,7 +59,7 @@ func (h *Handlers) openPending(ctx context.Context, token string) (*ent.PendingS
 }
 
 // SiteAuthSigninPending shows the screen of a pending sign-up who the provider proved.
-func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.SiteAuthSigninPendingParams) (siteapi.SiteAuthSigninPendingRes, error) {
+func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.SiteAuthSigninPendingParams) (*siteapi.SitePendingSignup, error) {
 	pending, err := h.openPending(ctx, params.Token)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.Sit
 // (ADR 0062): the answers are checked as the sign-up form's are, the accounts module creates the
 // User and what comes with it in one transaction, and the session starts as at the end of a
 // provider sign-in, at the time of that sign-in.
-func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi.SiteSigninPendingSubmitInput) (siteapi.SiteAuthSigninPendingSubmitRes, error) {
+func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi.SiteSigninPendingSubmitInput) (*siteapi.SiteAuthSigninPendingSubmitNoContent, error) {
 	pending, err := h.openPending(ctx, req.Token)
 	if err != nil {
 		return nil, err
@@ -95,16 +95,13 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 
 // SiteAuthSigninPendingDecline deletes a pending sign-up: nothing is created. A reference that
 // names nothing open any more is declined already.
-func (h *Handlers) SiteAuthSigninPendingDecline(ctx context.Context, req *siteapi.SiteSigninPendingDeclineInput) (siteapi.SiteAuthSigninPendingDeclineRes, error) {
+func (h *Handlers) SiteAuthSigninPendingDecline(ctx context.Context, req *siteapi.SiteSigninPendingDeclineInput) error {
 	pending, err := h.openPending(ctx, req.Token)
 	if errors.Is(err, accounts.ErrPendingSignupGone) {
-		return &siteapi.SiteAuthSigninPendingDeclineNoContent{}, nil
+		return nil
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := h.accounts.DeclinePendingSignup(ctx, pending.ID); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteAuthSigninPendingDeclineNoContent{}, nil
+	return h.accounts.DeclinePendingSignup(ctx, pending.ID)
 }

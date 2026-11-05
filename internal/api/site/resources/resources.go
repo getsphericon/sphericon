@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -39,12 +38,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/smsrender"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
@@ -159,7 +160,7 @@ type Converter interface {
 	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
 	// goverter:useEmptyOnNil:slice
-	TokensToResources(source []*ent.ApiToken) siteapi.SiteTokensListOKApplicationJSON
+	TokensToResources(source []*ent.ApiToken) []siteapi.SiteApiTokenResource
 	// A Connection is an API token read with its Membership and that Membership's User loaded
 	// (apitokens.Connections); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
@@ -167,7 +168,7 @@ type Converter interface {
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
 	ConnectionToResource(source *ent.ApiToken) siteapi.SiteConnectionResource
 	// goverter:useEmptyOnNil:slice
-	ConnectionsToResources(source []*ent.ApiToken) siteapi.SiteConnectionsListOKApplicationJSON
+	ConnectionsToResources(source []*ent.ApiToken) []siteapi.SiteConnectionResource
 	// A Personal token is an API token read with its Membership and that Membership's User loaded
 	// (apitokens.PersonalTokens, MintPersonal); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
@@ -175,7 +176,7 @@ type Converter interface {
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
 	PersonalTokenToResource(source *ent.ApiToken) siteapi.SitePersonalTokenResource
 	// goverter:useEmptyOnNil:slice
-	PersonalTokensToResources(source []*ent.ApiToken) siteapi.SitePersonalTokensListOKApplicationJSON
+	PersonalTokensToResources(source []*ent.ApiToken) []siteapi.SitePersonalTokenResource
 
 	// Verification is derived: a non-nil email_verified_at means verified.
 	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot
@@ -470,12 +471,12 @@ type Converter interface {
 	// goverter:map Edges.User.Name Name
 	MembershipToResource(source *ent.Membership) siteapi.SiteMembershipResource
 	// goverter:useEmptyOnNil:slice
-	MembershipsToResources(source []*ent.Membership) siteapi.SiteMembershipsListOKApplicationJSON
+	MembershipsToResources(source []*ent.Membership) []siteapi.SiteMembershipResource
 
 	// goverter:map . InvitedByEmail | inviterEmail
 	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
 	// goverter:useEmptyOnNil:slice
-	InvitationsToResources(source []*ent.Invitation) siteapi.SiteInvitationsListOKApplicationJSON
+	InvitationsToResources(source []*ent.Invitation) []siteapi.SiteInvitationResource
 	// What the public accept page shows of a pending invite: the Workspace it joins is the
 	// loaded edge.
 	// goverter:map Edges.Workspace.Name WorkspaceName
@@ -680,7 +681,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
-	BroadcastChannelToResource(source broadcast.Channel) siteapi.BroadcastChannel
+	BroadcastChannelToResource(source channels.Channel) siteapi.BroadcastChannel
 	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
 	// goverter:enum:transform value
@@ -689,18 +690,14 @@ type Converter interface {
 	HoldReasonToResource(source holdreason.Reason) siteapi.HoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
-	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
-	// endpoint keeps (WebhookErrorKindToResource).
-	// goverter:enum:transform value
-	DeliveryErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
 	// goverter:enum:transform value
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.SiteEnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) siteapi.SiteEnrollmentStatus
 	// goverter:enum:transform value
-	IntegrationChannelToResource(source integration.Channel) siteapi.SiteIntegrationChannel
+	IntegrationChannelToResource(source channels.Channel) siteapi.SiteIntegrationChannel
 	// goverter:enum:transform value
-	IntegrationProviderToResource(source integration.Provider) siteapi.SiteIntegrationProvider
+	IntegrationProviderToResource(source providers.Provider) siteapi.SiteIntegrationProvider
 	// goverter:enum:transform value
 	InvitableRoleToResource(source invitation.Role) siteapi.SiteInvitableRole
 	// goverter:enum:transform value
@@ -732,7 +729,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	SignupItemKindToResource(source signupitem.Kind) siteapi.SignupItemKind
 	// goverter:enum:transform value
-	SuppressionChannelToResource(source suppression.Channel) siteapi.SiteSuppressionChannel
+	SuppressionChannelToResource(source channels.Channel) siteapi.SiteSuppressionChannel
 	// goverter:enum:transform value
 	SuppressionReasonToResource(source suppression.Reason) siteapi.SiteSuppressionReason
 	// goverter:enum:transform value
@@ -743,8 +740,9 @@ type Converter interface {
 	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.SiteTrackingDomainRole
 	// goverter:enum:transform value
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.SiteWebhookDisabledReason
+	// What a delivery failed with: the kind a test send answers and a Webhook endpoint keeps.
 	// goverter:enum:transform value
-	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) siteapi.SiteWebhookErrorKind
+	WebhookErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
@@ -844,11 +842,11 @@ func optNilInt32(v *int) siteapi.OptNilInt32 {
 // goverter, so only the switch is written here.
 func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 	switch b.Channel {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		return siteapi.BroadcastContent{OneOf: siteapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return siteapi.BroadcastContent{}
@@ -856,17 +854,17 @@ func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
 }
 
 // smsContentChannel is the discriminator of SMS's content arm.
-func smsContentChannel(broadcast.Channel) siteapi.SmsBroadcastContentChannel {
+func smsContentChannel(channels.Channel) siteapi.SmsBroadcastContentChannel {
 	return siteapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.
-func telegramContentChannel(broadcast.Channel) siteapi.TelegramBroadcastContentChannel {
+func telegramContentChannel(channels.Channel) siteapi.TelegramBroadcastContentChannel {
 	return siteapi.TelegramBroadcastContentChannelTelegram
 }
 
 // emailContentChannel is the discriminator of email's content arm.
-func emailContentChannel(broadcast.Channel) siteapi.EmailBroadcastContentChannel {
+func emailContentChannel(channels.Channel) siteapi.EmailBroadcastContentChannel {
 	return siteapi.EmailBroadcastContentChannelEmail
 }
 
@@ -893,7 +891,7 @@ func timestamp(t time.Time) siteapi.Timestamp {
 
 // transactionalChannel maps the Outbound message channel onto the transactional
 // send channel enum (email is the only channel built).
-func transactionalChannel(outboundmessage.Channel) siteapi.SiteTransactionalEmailChannel {
+func transactionalChannel(channels.Channel) siteapi.SiteTransactionalEmailChannel {
 	return siteapi.SiteTransactionalEmailChannelEmail
 }
 

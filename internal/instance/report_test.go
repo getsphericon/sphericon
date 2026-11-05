@@ -12,6 +12,7 @@ import (
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -108,7 +109,7 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 func TestReportProvidersComeFromKeptIntegrationsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ses, err := env.DB.Integration.Query().
-		Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).
+		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
 		All(t.Context())
 	require.NoError(t, err)
 	require.NotEmpty(t, ses)

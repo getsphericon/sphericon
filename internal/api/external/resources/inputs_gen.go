@@ -5,19 +5,17 @@ package resources
 
 import (
 	"fmt"
-	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
-	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	external "github.com/getsphericon/sphericon/gen/external"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	channels "github.com/getsphericon/sphericon/internal/channels"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
-	messaging "github.com/getsphericon/sphericon/internal/messaging"
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
@@ -151,19 +149,19 @@ func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) au
 	}
 	return automationsUpdateInput
 }
-func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) broadcast.Channel {
-	var broadcastChannel broadcast.Channel
+func (c *InputsImpl) BroadcastChannel(source external.BroadcastChannel) channels.Channel {
+	var channelsChannel channels.Channel
 	switch source {
 	case external.BroadcastChannelEmail:
-		broadcastChannel = broadcast.ChannelEmail
+		channelsChannel = channels.Email
 	case external.BroadcastChannelSMS:
-		broadcastChannel = broadcast.ChannelSms
+		channelsChannel = channels.SMS
 	case external.BroadcastChannelTelegram:
-		broadcastChannel = broadcast.ChannelTelegram
+		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return broadcastChannel
+	return channelsChannel
 }
 func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
@@ -210,19 +208,19 @@ func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInp
 	}
 	return consentEvidence
 }
-func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) messaging.Channel {
-	var messagingChannel messaging.Channel
+func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Channel {
+	var channelsChannel channels.Channel
 	switch source {
 	case external.ConsentChannelEmail:
-		messagingChannel = messaging.ChannelEmail
+		channelsChannel = channels.Email
 	case external.ConsentChannelSMS:
-		messagingChannel = messaging.ChannelSMS
+		channelsChannel = channels.SMS
 	case external.ConsentChannelTelegram:
-		messagingChannel = messaging.ChannelTelegram
+		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return messagingChannel
+	return channelsChannel
 }
 func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
 	var consentEvidence consent.Evidence
@@ -492,19 +490,19 @@ func (c *InputsImpl) SmsBroadcastContentPatch(source external.SmsBroadcastConten
 	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
 	return broadcastsSMSContentPatch
 }
-func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) suppression.Channel {
-	var suppressionChannel suppression.Channel
+func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) channels.Channel {
+	var channelsChannel channels.Channel
 	switch source {
 	case external.SuppressionChannelEmail:
-		suppressionChannel = suppression.ChannelEmail
+		channelsChannel = channels.Email
 	case external.SuppressionChannelSMS:
-		suppressionChannel = suppression.ChannelSms
+		channelsChannel = channels.SMS
 	case external.SuppressionChannelTelegram:
-		suppressionChannel = suppression.ChannelTelegram
+		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return suppressionChannel
+	return channelsChannel
 }
 func (c *InputsImpl) TelegramBroadcastContentIn(source external.TelegramBroadcastContentInput) broadcasts.TelegramContentInput {
 	var broadcastsTelegramContentInput broadcasts.TelegramContentInput

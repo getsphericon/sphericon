@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,10 +19,8 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write", "integrations:write", "sending_domains:write")
 
-	tag, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagVipID)})
-	require.NoError(t, err)
-	refused, ok := tag.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", tag)
+	err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagVipID)})
+	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)
 	names := map[externalapi.UsedByKind][]string{}
 	for _, u := range refused.UsedBy {
 		names[u.Kind] = append(names[u.Kind], u.Name)
@@ -31,15 +30,12 @@ func TestExternalDeletesRefusedWhileLiveWorkUsesTheRow(t *testing.T) {
 		externalapi.UsedByKindRule:       {fixtures.RuleVipOnlyName, fixtures.RuleMultiTriggerName},
 	}, names)
 
-	integration, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeDefaultID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.InUseProblemDetails{}, integration)
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeDefaultID)})
+	assert.NotEmpty(t, testhelper.ExternalRefusal(t, err, http.StatusConflict).UsedBy)
 
-	domain, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: externalapi.EntityId(fixtures.SendingDomainCodebasicsID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.InUseProblemDetails{}, domain)
+	err = c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: externalapi.EntityId(fixtures.SendingDomainCodebasicsID)})
+	assert.NotEmpty(t, testhelper.ExternalRefusal(t, err, http.StatusConflict).UsedBy)
 
-	free, err := c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagUnusedID)})
+	err = c.TagsDelete(ctx, externalapi.TagsDeleteParams{ID: externalapi.EntityId(fixtures.TagUnusedID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TagsDeleteNoContent{}, free)
 }

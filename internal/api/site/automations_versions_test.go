@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,8 +26,7 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 		t.Helper()
 		res, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: id})
 		require.NoError(t, err)
-		got, ok := res.(*siteapi.SiteAutomationResource)
-		require.Truef(t, ok, "got %T", res)
+		got := res
 		return got
 	}
 
@@ -61,9 +61,7 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAutomationStatusActive, resumed.Status)
 	assert.Equal(t, published.Live.Value, resumed.Live.Value, "Publish without a draft resumes the live version")
 
-	refused, err := c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	unprocessable, ok := refused.(*siteapi.SiteAutomationsRevertUnprocessableEntity)
-	require.Truef(t, ok, "got %T", refused)
+	_, err = c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: workspaceID, ID: id})
+	unprocessable := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, "no unpublished changes to revert", unprocessable.Detail.Or(""))
 }

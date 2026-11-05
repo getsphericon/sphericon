@@ -9,6 +9,7 @@ import (
 	"pgregory.net/rapid"
 
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -21,7 +22,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, "  Blocked@Example.COM ")
+	got, err := suppression.AddManual(ctx, s, channels.Email, "  Blocked@Example.COM ")
 	require.NoError(t, err)
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
@@ -37,7 +38,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, fixtures.SuppressionGhostBounceDestination)
+	got, err := suppression.AddManual(ctx, s, channels.Email, fixtures.SuppressionGhostBounceDestination)
 	require.NoError(t, err)
 	assert.Equal(t, entsuppression.ReasonBounce, got.Reason)
 	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), got.ID)
@@ -53,7 +54,7 @@ func TestAddIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	got, err := suppression.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), entsuppression.ChannelEmail, fixtures.ContactAliceEmail)
+	got, err := suppression.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.GlobexID), got.WorkspaceID)
 
@@ -83,7 +84,7 @@ func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	added, err := suppression.AddManual(ctx, s, entsuppression.ChannelEmail, "gone@example.com")
+	added, err := suppression.AddManual(ctx, s, channels.Email, "gone@example.com")
 	require.NoError(t, err)
 	require.NoError(t, suppression.Remove(ctx, s, added.ID))
 
@@ -147,17 +148,17 @@ func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.AddManual(ctx, s, entsuppression.ChannelSms, " +1 (415) 555-0132 ")
+	got, err := suppression.AddManual(ctx, s, channels.SMS, " +1 (415) 555-0132 ")
 	require.NoError(t, err)
 	assert.Equal(t, "+14155550132", got.Destination)
-	assert.Equal(t, entsuppression.ChannelSms, got.Channel)
+	assert.Equal(t, channels.SMS, got.Channel)
 
 	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, "+14155550132", eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
 
 	for _, typed := range []string{"4155550132", "not a number", "+1"} {
-		_, err := suppression.AddManual(ctx, s, entsuppression.ChannelSms, typed)
+		_, err := suppression.AddManual(ctx, s, channels.SMS, typed)
 		assert.ErrorIs(t, err, suppression.ErrDestinationInvalid, typed)
 	}
 }

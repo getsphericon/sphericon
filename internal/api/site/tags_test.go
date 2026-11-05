@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -32,43 +33,35 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	all, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
+	listed, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	listed, ok := all.(*siteapi.SiteTagsListOK)
-	require.Truef(t, ok, "got %T", all)
 	assert.Equal(t, []string{"newsletter", "renewal-due", "unused", "vip"}, siteTagNames(listed.Items))
 
 	mine, err := c.SiteTagsListForContact(ctx, siteapi.SiteTagsListForContactParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	assert.Equal(t, []string{"newsletter", "vip"}, siteTagNames(mine.(*siteapi.SiteTagsListForContactOK).Items))
+	assert.Equal(t, []string{"newsletter", "vip"}, siteTagNames(mine.Items))
 
-	applied, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "churn-risk"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
+	tag, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "churn-risk"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	tag, ok := applied.(*siteapi.SiteTagResource)
-	require.Truef(t, ok, "got %T", applied)
 	assert.Equal(t, "churn-risk", tag.Name)
 
 	mine, err = c.SiteTagsListForContact(ctx, siteapi.SiteTagsListForContactParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	assert.Equal(t, []string{"churn-risk"}, siteTagNames(mine.(*siteapi.SiteTagsListForContactOK).Items))
+	assert.Equal(t, []string{"churn-risk"}, siteTagNames(mine.Items))
 
-	removed, err := c.SiteTagsRemove(ctx, siteapi.SiteTagsRemoveParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID), Name: "churn-risk"})
+	err = c.SiteTagsRemove(ctx, siteapi.SiteTagsRemoveParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID), Name: "churn-risk"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsRemoveNoContent{}, removed)
 	mine, err = c.SiteTagsListForContact(ctx, siteapi.SiteTagsListForContactParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	assert.Empty(t, mine.(*siteapi.SiteTagsListForContactOK).Items)
+	assert.Empty(t, mine.Items)
 
 	// Errors: unknown contact, blank name, unknown workspace.
-	nf, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, nf)
-	blank, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: " "}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsApplyUnprocessableEntity{}, blank)
-	ws, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsListNotFound{}, ws)
+	_, err = c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: 999999})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: " "}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	_, err = c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteTagsApplyRefusesAForeignContact(t *testing.T) {
@@ -76,11 +69,10 @@ func TestSiteTagsApplyRefusesAForeignContact(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	got, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "brand-new"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, got)
+	_, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "brand-new"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactGlobexID)})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	all, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.NotContains(t, siteTagNames(all.(*siteapi.SiteTagsListOK).Items), "brand-new", "a refused apply creates no Tag")
+	assert.NotContains(t, siteTagNames(all.Items), "brand-new", "a refused apply creates no Tag")
 }

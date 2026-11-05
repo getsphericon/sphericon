@@ -41,5 +41,5 @@ namespace Workspace {
    * goes out over more than a day. Read-only: no operation changes the Send cap. */
   @get
   @requiresScopes(#[])
-  op get(): WorkspaceResource | UnauthorizedProblem | TooManyRequestsProblem;
+  op get(): WorkspaceResource | Problem;
 }

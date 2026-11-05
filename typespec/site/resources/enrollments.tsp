@@ -79,7 +79,7 @@ namespace SiteEnrollments {
 
     /** Only Enrollments in this status */
     @query status?: SiteEnrollmentStatus,
-  ): Page<SiteEnrollmentResource> | BadRequestProblem | NotFoundProblem;
+  ): Page<SiteEnrollmentResource> | Problem;
 
   /** Get one Enrollment of an Automation */
   @get
@@ -89,5 +89,5 @@ namespace SiteEnrollments {
     @path workspaceId: WorkspaceId,
     @path automationId: EntityId,
     @path enrollmentId: EntityId,
-  ): SiteEnrollmentResource | BadRequestProblem | NotFoundProblem;
+  ): SiteEnrollmentResource | Problem;
 }

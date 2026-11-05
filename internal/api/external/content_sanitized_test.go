@@ -21,8 +21,7 @@ func TestExternalSanitizesBodiesOnSave(t *testing.T) {
 		Name: "Hostile", Body: externalapi.NewOptString(hostile),
 	})
 	require.NoError(t, err)
-	created, ok := tpl.(*externalapi.TemplateResource)
-	require.Truef(t, ok, "got %T", tpl)
+	created := tpl
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created.Body)
 
 	bc, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
@@ -30,7 +29,6 @@ func TestExternalSanitizesBodiesOnSave(t *testing.T) {
 		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString(hostile)}),
 	})
 	require.NoError(t, err)
-	broadcast, ok := bc.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", bc)
+	broadcast := bc
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, testhelper.ExternalEmailOf(broadcast).Body)
 }

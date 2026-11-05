@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -27,8 +28,7 @@ func TestSiteTokensCreateListRevoke(t *testing.T) {
 		&siteapi.SiteCreateTokenInput{Name: "CI", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	resp, ok := created.(*siteapi.SiteCreateTokenResponse)
-	require.Truef(t, ok, "got %T", created)
+	resp := created
 	assert.NotEmpty(t, resp.Token)
 	assert.NotNil(t, credentials.ParseToken(resp.Token), "returned a well-formed token value")
 	assert.Equal(t, "CI", resp.Resource.Name)
@@ -39,12 +39,11 @@ func TestSiteTokensCreateListRevoke(t *testing.T) {
 	assert.Nil(t, row.RevokedAt, "freshly created token is not revoked")
 
 	// Revoke the new token; the row is then marked revoked (a soft delete).
-	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{
+	err = c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		ID:          resp.Resource.ID,
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 
 	revoked, err := env.DB.ApiToken.Query().Where(apitoken.Prefix(resp.Resource.Prefix)).Only(ctx)
 	require.NoError(t, err)
@@ -56,11 +55,9 @@ func TestSiteTokensListIsInCreationOrderAndKeepsRevoked(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteTokensListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	got := lo.Map(*list, func(it siteapi.SiteApiTokenResource, _ int) int64 { return int64(it.ID) })
+	got := lo.Map(list, func(it siteapi.SiteApiTokenResource, _ int) int64 { return int64(it.ID) })
 
 	want, err := env.DB.ApiToken.Query().
 		Where(apitoken.WorkspaceID(fixtures.AcmeID)).
@@ -74,9 +71,8 @@ func TestSiteTokensWorkspaceNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteTokensList(context.Background(), siteapi.SiteTokensListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensListNotFound{}, res)
+	_, err := c.SiteTokensList(context.Background(), siteapi.SiteTokensListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
@@ -84,22 +80,19 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteTokensCreate(ctx,
+	_, err := c.SiteTokensCreate(ctx,
 		&siteapi.SiteCreateTokenInput{Name: "sneaky", Scopes: []siteapi.ApiTokenScope{"contacts:write"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensCreateForbidden{}, created)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	tok := env.DB.ApiToken.Query().FirstX(ctx)
-	deleted, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(tok.ID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensDeleteForbidden{}, deleted)
+	err = c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(tok.ID)})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteTokensCreate(ctx,
+	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteTokensCreate(ctx,
 		&siteapi.SiteCreateTokenInput{Name: "ci", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteCreateTokenResponse{}, ok)
 }
 
 func TestSiteTokensRename(t *testing.T) {
@@ -111,20 +104,16 @@ func TestSiteTokensRename(t *testing.T) {
 
 	renamed, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "  Deploys "}, params)
 	require.NoError(t, err)
-	res, ok := renamed.(*siteapi.SiteApiTokenResource)
-	require.Truef(t, ok, "got %T", renamed)
+	res := renamed
 	assert.Equal(t, "Deploys", res.Name)
 
-	blank, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: " "}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensUpdateUnprocessableEntity{}, blank)
+	_, err = c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: " "}, params)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	revoked, err := c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "late"},
+	_, err = c.SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "late"},
 		siteapi.SiteTokensUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.RevokedTokenID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensUpdateNotFound{}, revoked, "a revoked token cannot be renamed")
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "a revoked token cannot be renamed")
 
-	member, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "x"}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensUpdateForbidden{}, member)
+	_, err = env.SiteActor(t, fixtures.MemberMaryEmail).SiteTokensUpdate(ctx, &siteapi.SiteUpdateTokenInput{Name: "x"}, params)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 }

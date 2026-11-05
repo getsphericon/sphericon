@@ -34,27 +34,27 @@ type Invoker interface {
 	// The Sign-up survey answers, counted per question. Read only.
 	//
 	// GET /signup-survey
-	StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error)
+	StaffSignupSurveyCounts(ctx context.Context) (*StaffSignupSurveyCounts, error)
 	// StaffSignupSurveyGet invokes StaffSignupSurvey_get operation.
 	//
 	// One User's answers. 404 when the User is unknown or has not answered the survey.
 	//
 	// GET /signup-survey/users/{userId}
-	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error)
+	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (*StaffSignupSurveyResponseResource, error)
 	// StaffWorkspaceAuditList invokes StaffWorkspaceAudit_list operation.
 	//
 	// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing
 	// is then recorded.
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
-	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
+	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (*StaffAuditEntryList, error)
 	// StaffWorkspacesClearSendCap invokes StaffWorkspaces_clearSendCap operation.
 	//
 	// Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited. Idempotent.
 	// Not found on an Instance that has no Send caps.
 	//
 	// DELETE /workspaces/{workspaceId}/send-cap
-	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error)
+	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (*StaffSendCapChange, error)
 	// StaffWorkspacesExempt invokes StaffWorkspaces_exempt operation.
 	//
 	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -62,19 +62,19 @@ type Invoker interface {
 	// Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error)
+	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error)
 	// StaffWorkspacesGet invokes StaffWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
 	//
 	// GET /workspaces/{workspaceId}
-	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
+	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (*StaffWorkspaceDetailResource, error)
 	// StaffWorkspacesList invokes StaffWorkspaces_list operation.
 	//
 	// List all Workspaces, newest first, optionally narrowed by an id or name search.
 	//
 	// GET /workspaces
-	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
+	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (*StaffWorkspacesListOK, error)
 	// StaffWorkspacesSetSendCap invokes StaffWorkspaces_setSendCap operation.
 	//
 	// Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
@@ -82,27 +82,27 @@ type Invoker interface {
 	// no Send caps.
 	//
 	// PUT /workspaces/{workspaceId}/send-cap
-	StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error)
+	StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (*StaffSendCapChange, error)
 	// StaffWorkspacesSuspend invokes StaffWorkspaces_suspend operation.
 	//
 	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
 	// member. Idempotent: an already-suspended Workspace is left as it was.
 	//
 	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error)
+	StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error)
 	// StaffWorkspacesUnexempt invokes StaffWorkspaces_unexempt operation.
 	//
 	// Police a Workspace by the abuse detector again. Audited. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error)
+	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error)
 	// StaffWorkspacesUnsuspend invokes StaffWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
 	// left as it was.
 	//
 	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error)
+	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error)
 }
 
 // Client implements OAS client.
@@ -151,12 +151,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // The Sign-up survey answers, counted per question. Read only.
 //
 // GET /signup-survey
-func (c *Client) StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error) {
+func (c *Client) StaffSignupSurveyCounts(ctx context.Context) (*StaffSignupSurveyCounts, error) {
 	res, err := c.sendStaffSignupSurveyCounts(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSignupSurveyCountsRes, err error) {
+func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res *StaffSignupSurveyCounts, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupSurvey_counts"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -264,12 +264,12 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 // One User's answers. 404 when the User is unknown or has not answered the survey.
 //
 // GET /signup-survey/users/{userId}
-func (c *Client) StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error) {
+func (c *Client) StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (*StaffSignupSurveyResponseResource, error) {
 	res, err := c.sendStaffSignupSurveyGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (res StaffSignupSurveyGetRes, err error) {
+func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (res *StaffSignupSurveyResponseResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupSurvey_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -399,12 +399,12 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 // is then recorded.
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (c *Client) StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error) {
+func (c *Client) StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (*StaffAuditEntryList, error) {
 	res, err := c.sendStaffWorkspaceAuditList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (res StaffWorkspaceAuditListRes, err error) {
+func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (res *StaffAuditEntryList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaceAudit_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -573,12 +573,12 @@ func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWo
 // Not found on an Instance that has no Send caps.
 //
 // DELETE /workspaces/{workspaceId}/send-cap
-func (c *Client) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error) {
+func (c *Client) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (*StaffSendCapChange, error) {
 	res, err := c.sendStaffWorkspacesClearSendCap(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (res StaffWorkspacesClearSendCapRes, err error) {
+func (c *Client) sendStaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (res *StaffSendCapChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_clearSendCap"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -710,12 +710,12 @@ func (c *Client) sendStaffWorkspacesClearSendCap(ctx context.Context, params Sta
 // Idempotent.
 //
 // POST /workspaces/{workspaceId}/exempt
-func (c *Client) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error) {
+func (c *Client) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error) {
 	res, err := c.sendStaffWorkspacesExempt(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (res StaffWorkspacesExemptRes, err error) {
+func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (res *StaffExemptionChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_exempt"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -845,12 +845,12 @@ func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWork
 // One Workspace's metadata, suspension state, rates and send volume.
 //
 // GET /workspaces/{workspaceId}
-func (c *Client) StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error) {
+func (c *Client) StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (*StaffWorkspaceDetailResource, error) {
 	res, err := c.sendStaffWorkspacesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (res StaffWorkspacesGetRes, err error) {
+func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (res *StaffWorkspaceDetailResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -979,12 +979,12 @@ func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspa
 // List all Workspaces, newest first, optionally narrowed by an id or name search.
 //
 // GET /workspaces
-func (c *Client) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error) {
+func (c *Client) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (*StaffWorkspacesListOK, error) {
 	res, err := c.sendStaffWorkspacesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (res StaffWorkspacesListRes, err error) {
+func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (res *StaffWorkspacesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1166,12 +1166,12 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 // no Send caps.
 //
 // PUT /workspaces/{workspaceId}/send-cap
-func (c *Client) StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error) {
+func (c *Client) StaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (*StaffSendCapChange, error) {
 	res, err := c.sendStaffWorkspacesSetSendCap(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (res StaffWorkspacesSetSendCapRes, err error) {
+func (c *Client) sendStaffWorkspacesSetSendCap(ctx context.Context, request *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (res *StaffSendCapChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_setSendCap"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -1305,12 +1305,12 @@ func (c *Client) sendStaffWorkspacesSetSendCap(ctx context.Context, request *Sta
 // member. Idempotent: an already-suspended Workspace is left as it was.
 //
 // POST /workspaces/{workspaceId}/suspend
-func (c *Client) StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error) {
+func (c *Client) StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error) {
 	res, err := c.sendStaffWorkspacesSuspend(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (res StaffWorkspacesSuspendRes, err error) {
+func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (res *StaffSuspensionChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_suspend"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1443,12 +1443,12 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 // Police a Workspace by the abuse detector again. Audited. Idempotent.
 //
 // POST /workspaces/{workspaceId}/unexempt
-func (c *Client) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error) {
+func (c *Client) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error) {
 	res, err := c.sendStaffWorkspacesUnexempt(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (res StaffWorkspacesUnexemptRes, err error) {
+func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (res *StaffExemptionChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_unexempt"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1579,12 +1579,12 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 // left as it was.
 //
 // POST /workspaces/{workspaceId}/unsuspend
-func (c *Client) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error) {
+func (c *Client) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error) {
 	res, err := c.sendStaffWorkspacesUnsuspend(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (res StaffWorkspacesUnsuspendRes, err error) {
+func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (res *StaffSuspensionChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_unsuspend"),
 		semconv.HTTPRequestMethodKey.String("POST"),

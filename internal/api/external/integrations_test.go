@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -19,16 +21,13 @@ func TestExternalIntegrationsListReportsProviderLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	denied, err := env.ExternalScoped(t, "contacts:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsListForbidden{}, denied, "integrations:read is required")
+	_, err := env.ExternalScoped(t, "contacts:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "integrations:read is required")
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(14).SetMaxPerDay(50000).ExecX(ctx)
 
-	res, err := env.ExternalScoped(t, "integrations:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
+	list, err := env.ExternalScoped(t, "integrations:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.IntegrationsListOK)
-	require.Truef(t, ok, "got %T", res)
 	require.GreaterOrEqual(t, len(list.Items), 2, "Acme's Integrations, ascending by id")
 	for _, it := range list.Items {
 		assert.NotEqual(t, fixtures.IntegrationGlobexName, it.Name, "Globex's Integrations are not visible")
@@ -55,9 +54,8 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "integrations:read")
 
-	res, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(1)})
+	list, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(1)})
 	require.NoError(t, err)
-	list := res.(*externalapi.IntegrationsListOK)
 	assert.Len(t, list.Items, 1)
 	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
 	require.NoError(t, err)
@@ -66,10 +64,10 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 
 	all, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ProviderIn(integration.ProviderSMTP, integration.ProviderSes, integration.ProviderTelegram, integration.ProviderTwilio)).Count(ctx)
+	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ProviderIn(providers.SMTP, providers.SES, providers.Telegram, providers.Twilio)).Count(ctx)
 	require.NoError(t, err)
-	assert.Len(t, all.(*externalapi.IntegrationsListOK).Items, n)
-	for _, it := range all.(*externalapi.IntegrationsListOK).Items {
+	assert.Len(t, all.Items, n)
+	for _, it := range all.Items {
 		assert.NotEqual(t, fixtures.IntegrationGlobexName, it.Name)
 	}
 }
@@ -80,10 +78,8 @@ func TestExternalIntegrationsListRedactsSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.ExternalScoped(t, "integrations:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
+	list, err := env.ExternalScoped(t, "integrations:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.IntegrationsListOK)
-	require.Truef(t, ok, "got %T", res)
 	body, err := json.Marshal(list)
 	require.NoError(t, err)
 
@@ -108,7 +104,7 @@ func TestExternalIntegrationsListRedactsSecrets(t *testing.T) {
 // An SES-compatible service needs both Provider limit values on /api too (ADR 0067).
 func TestExternalIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalScoped(t, "integrations:write").IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+	_, err := env.ExternalScoped(t, "integrations:write").IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
 		Name: "Postbox",
 		Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
 			"topic_arn": []byte(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
@@ -122,9 +118,7 @@ func TestExternalIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T)
 			}),
 		},
 	})
-	require.NoError(t, err)
-	problem, ok := res.(*externalapi.IntegrationsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Errors.Value, "maxPerDay")
 	assert.NotContains(t, problem.Errors.Value, "maxPerSecond")
 }

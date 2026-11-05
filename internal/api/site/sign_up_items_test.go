@@ -37,13 +37,12 @@ var (
 	newsUnticked = itemAnswer(fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, false)
 )
 
-func signUpAnswering(t *testing.T, env *testhelper.TestEnv, email string, answers ...siteapi.SiteSignupItemAnswer) siteapi.SiteAuthSignUpRes {
+func signUpAnswering(t *testing.T, env *testhelper.TestEnv, email string, answers ...siteapi.SiteSignupItemAnswer) error {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
 		Name: "Grace Hopper", Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(formPassword), SignupItems: answers,
 	})
-	require.NoError(t, err)
-	return res
+	return err
 }
 
 // currentAnswers is the User's current answers, each as its key and decision.
@@ -58,10 +57,9 @@ func TestASignUpWithoutARequiredAcceptanceIsRefusedWithAFieldNamingIt(t *testing
 	env := testhelper.Setup(t)
 	withSignupItems(t, env)
 
-	res := signUpAnswering(t, env, "grace@example.com", newsUnticked)
+	err := signUpAnswering(t, env, "grace@example.com", newsUnticked)
 
-	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{
 		"signupItems." + fixtures.ServiceTermsKey: {"accept the Terms of service to sign up"},
 	}, problem.Errors.Value)
@@ -74,10 +72,9 @@ func TestARefusedItemAndARefusedFieldAreNamedTogether(t *testing.T) {
 	env := testhelper.Setup(t)
 	withSignupItems(t, env)
 
-	res := signUpWithPassword(t, env, " ", "grace@example.com", formPassword)
+	err := trySignUpWithPassword(t, env, " ", "grace@example.com", formPassword)
 
-	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, []string{"name", "signupItems." + fixtures.ServiceTermsKey}, slices.Sorted(maps.Keys(problem.Errors.Value)))
 	assert.Equal(t, "check the name and sign-up items", problem.Detail.Value)
 }
@@ -86,9 +83,9 @@ func TestASignUpWithOptionalConsentsLeftUntickedSucceedsAndRecordsEveryAnswer(t 
 	env := testhelper.Setup(t)
 	withSignupItems(t, env)
 
-	res := signUpAnswering(t, env, "grace@example.com", termsTicked, newsUnticked)
+	err := signUpAnswering(t, env, "grace@example.com", termsTicked, newsUnticked)
 
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
+	require.NoError(t, err)
 	grace := userByEmail(t, env, "grace@example.com")
 	assert.Equal(t, []string{
 		fixtures.ServiceTermsKey + ": accepted",
@@ -106,10 +103,9 @@ func TestAnUnknownItemOrAStaleVersionIsRefused(t *testing.T) {
 	}
 	for name, wrong := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := signUpAnswering(t, env, "grace@example.com", termsTicked, wrong)
+			err := signUpAnswering(t, env, "grace@example.com", termsTicked, wrong)
 
-			problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-			require.Truef(t, ok, "got %T", res)
+			problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, []string{"signupItems"}, lo.Keys(problem.Errors.Value))
 			assert.False(t, userExists(t, env, "grace@example.com"))
 		})
@@ -119,9 +115,9 @@ func TestAnUnknownItemOrAStaleVersionIsRefused(t *testing.T) {
 func TestWithNoSignupItemsASignUpAsksNothingAndRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := signUpAnswering(t, env, "grace@example.com")
+	err := signUpAnswering(t, env, "grace@example.com")
 
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
+	require.NoError(t, err)
 	grace := userByEmail(t, env, "grace@example.com")
 	assert.Empty(t, currentAnswers(t, env, grace.ID))
 }
@@ -158,11 +154,11 @@ func TestDeletingTheAccountRemovesTheUsersConsentRecords(t *testing.T) {
 	env := testhelper.Setup(t)
 	before := currentAnswers(t, env, fixtures.MemberMaryID)
 
-	res := deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
+	err := deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
 		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
-	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
+	require.NoError(t, err)
 	assert.NotEmpty(t, before)
 	assert.Empty(t, currentAnswers(t, env, fixtures.MemberMaryID))
 }

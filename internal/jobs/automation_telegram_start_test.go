@@ -23,8 +23,7 @@ func visitorChat(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramB
 	t.Helper()
 	res, err := env.CollectAcme(t).CollectTelegramStartLinksCreate(t.Context(), &collectapi.CollectTelegramStartLinkInput{VisitorId: visitorID})
 	require.NoError(t, err)
-	link, ok := res.(*collectapi.CollectTelegramStartLink)
-	require.Truef(t, ok, "got %T", res)
+	link := res
 	env.StartTelegram(t, bot, from, from, link.URL)
 }
 

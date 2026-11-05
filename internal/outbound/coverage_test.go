@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	entbroadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -656,7 +656,7 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 	ctx := context.Background()
 	from, fromName := "hello@codebasics.dev", "CodeBasics"
 	broadcast := func(subject, body string) *ent.Broadcast {
-		return &ent.Broadcast{WorkspaceID: fixtures.AcmeID, Channel: entbroadcast.ChannelEmail, Subject: &subject, Body: &body, FromEmail: &from, FromName: &fromName}
+		return &ent.Broadcast{WorkspaceID: fixtures.AcmeID, Channel: channels.Email, Subject: &subject, Body: &body, FromEmail: &from, FromName: &fromName}
 	}
 
 	t.Run("sent", func(t *testing.T) {

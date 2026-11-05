@@ -4,14 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func newTestCipher(t *testing.T) *secrets.Cipher {
@@ -44,7 +46,7 @@ func TestResolverEmailSender(t *testing.T) {
 	resolver := messaging.NewResolver(envCipher(t), registry.Default())
 
 	s := env.DB.Scoped(fixtures.AcmeID)
-	integ, err := messaging.Integration(ctx, s, messaging.ChannelEmail, nil)
+	integ, err := messaging.Integration(ctx, s, channels.Email, nil)
 	require.NoError(t, err)
 
 	sender, err := resolver.EmailSender(ctx, s, integ)
@@ -60,7 +62,7 @@ func TestResolverNoDefault(t *testing.T) {
 	// The Globex fixture tenant has no integration.
 	resolver := messaging.NewResolver(newTestCipher(t), registry.Default())
 
-	_, err := messaging.Integration(ctx, env.DB.Scoped(fixtures.GlobexID), messaging.ChannelEmail, nil)
+	_, err := messaging.Integration(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email, nil)
 	require.ErrorIs(t, err, messaging.ErrNoProvider)
 
 	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID), nil)
@@ -69,10 +71,10 @@ func TestResolverNoDefault(t *testing.T) {
 	// A named Integration of another Workspace, or one that is disabled, is no provider either.
 	other := env.DB.Scoped(fixtures.GlobexID)
 	acme := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err = messaging.Integration(ctx, other, messaging.ChannelEmail, &acme)
+	_, err = messaging.Integration(ctx, other, channels.Email, &acme)
 	require.ErrorIs(t, err, messaging.ErrNoProvider, "another Workspace's Integration")
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(ctx)
-	_, err = messaging.Integration(ctx, env.DB.Scoped(fixtures.AcmeID), messaging.ChannelEmail, &acme)
+	_, err = messaging.Integration(ctx, env.DB.Scoped(fixtures.AcmeID), channels.Email, &acme)
 	require.ErrorIs(t, err, messaging.ErrNoProvider, "a disabled Integration")
 }

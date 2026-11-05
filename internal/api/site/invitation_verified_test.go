@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,11 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func acceptInvitation(t *testing.T, c *siteapi.Client, token string, in *siteapi.SiteAcceptInvitationInput) siteapi.SitePublicInvitationsAcceptRes {
+func acceptInvitation(t *testing.T, c *siteapi.Client, token string, in *siteapi.SiteAcceptInvitationInput) error {
 	t.Helper()
-	res, err := c.SitePublicInvitationsAccept(t.Context(), in, siteapi.SitePublicInvitationsAcceptParams{Token: token})
-	require.NoError(t, err)
-	return res
+	return c.SitePublicInvitationsAccept(t.Context(), in, siteapi.SitePublicInvitationsAcceptParams{Token: token})
 }
 
 func isMemberOfAcme(t *testing.T, env *testhelper.TestEnv, email string) bool {
@@ -34,8 +33,8 @@ func TestAnInvitationForAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeOscarToken
 
-	res := acceptInvitation(t, env.SiteAnonymous(t), token, &siteapi.SiteAcceptInvitationInput{})
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnauthorized{}, res)
+	err := acceptInvitation(t, env.SiteAnonymous(t), token, &siteapi.SiteAcceptInvitationInput{})
+	testhelper.SiteRefusal(t, err, http.StatusUnauthorized)
 	assert.False(t, isMemberOfAcme(t, env, fixtures.OutsiderOscarEmail))
 }
 
@@ -43,8 +42,8 @@ func TestAnInvitationForAVerifiedUserRefusesAnotherUsersSession(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeOscarToken
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{})
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptForbidden{}, res)
+	err := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.False(t, isMemberOfAcme(t, env, fixtures.OutsiderOscarEmail))
 	assert.False(t, isMemberOfAcme(t, env, fixtures.OwnerJaneEmail))
 }
@@ -55,10 +54,10 @@ func TestAnInvitationForAVerifiedUserAcceptsTheirSessionAndReadsNoPassword(t *te
 	before, err := env.DB.User.Query().Where(user.Email(fixtures.OutsiderOscarEmail)).Only(t.Context())
 	require.NoError(t, err)
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), token, &siteapi.SiteAcceptInvitationInput{
+	err = acceptInvitation(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Hijacker"), Password: siteapi.NewOptString("another-password-1"),
 	})
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, err)
 	assert.True(t, isMemberOfAcme(t, env, fixtures.OutsiderOscarEmail))
 
 	after, err := env.DB.User.Query().Where(user.Email(fixtures.OutsiderOscarEmail)).Only(t.Context())
@@ -72,10 +71,10 @@ func TestAnInvitationForAnUnverifiedAddressNeedsNoSession(t *testing.T) {
 	token := fixtures.InvitationAcmeFreshUnverifiedToken // to FreshUnverifiedUser
 
 	// A signed-in stranger does not get in the way of the invitee's own accept.
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{
+	err := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1"),
 	})
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, err)
 	assert.True(t, isMemberOfAcme(t, env, fixtures.FreshUnverifiedUserEmail))
 }
 
@@ -83,8 +82,8 @@ func TestAStaleSessionDoesNotBlockAnInvitationForAnUnverifiedAddress(t *testing.
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeNewcomerToken
 
-	res := acceptInvitation(t, env.SiteWithToken(t, "stale-garbage"), token, &siteapi.SiteAcceptInvitationInput{
+	err := acceptInvitation(t, env.SiteWithToken(t, "stale-garbage"), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("newcomer-password-1"),
 	})
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	assert.NoError(t, err)
 }

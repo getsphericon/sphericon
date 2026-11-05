@@ -18,6 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // IntegrationUpdate is the builder for updating Integration entities.
@@ -89,13 +91,13 @@ func (_u *IntegrationUpdate) SetNillableName(v *string) *IntegrationUpdate {
 }
 
 // SetChannel sets the "channel" field.
-func (_u *IntegrationUpdate) SetChannel(v integration.Channel) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetChannel(v channels.Channel) *IntegrationUpdate {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableChannel(v *integration.Channel) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetNillableChannel(v *channels.Channel) *IntegrationUpdate {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -103,13 +105,13 @@ func (_u *IntegrationUpdate) SetNillableChannel(v *integration.Channel) *Integra
 }
 
 // SetProvider sets the "provider" field.
-func (_u *IntegrationUpdate) SetProvider(v integration.Provider) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetProvider(v providers.Provider) *IntegrationUpdate {
 	_u.mutation.SetProvider(v)
 	return _u
 }
 
 // SetNillableProvider sets the "provider" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProvider(v *integration.Provider) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetNillableProvider(v *providers.Provider) *IntegrationUpdate {
 	if v != nil {
 		_u.SetProvider(*v)
 	}
@@ -321,13 +323,13 @@ func (_u *IntegrationUpdate) ClearProviderMaxPerDay() *IntegrationUpdate {
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (_u *IntegrationUpdate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpdate {
 	_u.mutation.SetProviderEnforcement(v)
 	return _u
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationUpdate {
+func (_u *IntegrationUpdate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationUpdate {
 	if v != nil {
 		_u.SetProviderEnforcement(*v)
 	}
@@ -1040,13 +1042,13 @@ func (_u *IntegrationUpdateOne) SetNillableName(v *string) *IntegrationUpdateOne
 }
 
 // SetChannel sets the "channel" field.
-func (_u *IntegrationUpdateOne) SetChannel(v integration.Channel) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetChannel(v channels.Channel) *IntegrationUpdateOne {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableChannel(v *integration.Channel) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetNillableChannel(v *channels.Channel) *IntegrationUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -1054,13 +1056,13 @@ func (_u *IntegrationUpdateOne) SetNillableChannel(v *integration.Channel) *Inte
 }
 
 // SetProvider sets the "provider" field.
-func (_u *IntegrationUpdateOne) SetProvider(v integration.Provider) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetProvider(v providers.Provider) *IntegrationUpdateOne {
 	_u.mutation.SetProvider(v)
 	return _u
 }
 
 // SetNillableProvider sets the "provider" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProvider(v *integration.Provider) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetNillableProvider(v *providers.Provider) *IntegrationUpdateOne {
 	if v != nil {
 		_u.SetProvider(*v)
 	}
@@ -1272,13 +1274,13 @@ func (_u *IntegrationUpdateOne) ClearProviderMaxPerDay() *IntegrationUpdateOne {
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (_u *IntegrationUpdateOne) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpdateOne {
 	_u.mutation.SetProviderEnforcement(v)
 	return _u
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationUpdateOne {
+func (_u *IntegrationUpdateOne) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationUpdateOne {
 	if v != nil {
 		_u.SetProviderEnforcement(*v)
 	}

@@ -228,8 +228,7 @@ namespace SiteIntegrations {
         @statusCode statusCode: 200;
         @body body: SiteIntegrationResource[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Create an integration. Owners and admins only. */
   @createsResource(SiteIntegrationResource)
@@ -244,11 +243,7 @@ namespace SiteIntegrations {
         @statusCode statusCode: 201;
         @body body: SiteIntegrationResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get an integration by id, deleted or not */
   @readsResource(SiteIntegrationResource)
@@ -257,8 +252,7 @@ namespace SiteIntegrations {
   @requiresPermissions(#[])
   op get(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Update an integration; a deleted one is read-only and answers 404. Owners and admins only. */
   @updatesResource(SiteIntegrationResource)
@@ -268,13 +262,7 @@ namespace SiteIntegrations {
   op update(
     ...ResourceParameters<SiteIntegrationResource>,
     @body body: UpdateIntegrationInput,
-  ):
-    | SiteIntegrationResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): SiteIntegrationResource | Problem;
 
   /** Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Owners and admins only. */
   @action("regenerate-key")
@@ -283,10 +271,7 @@ namespace SiteIntegrations {
   @requiresPermissions(#[Permission.integrationsManage])
   op regenerateKey(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. A Telegram integration's webhook is removed, best effort. Owners and admins only. */
   @deletesResource(SiteIntegrationResource)
@@ -295,10 +280,7 @@ namespace SiteIntegrations {
   @requiresPermissions(#[Permission.integrationsManage])
   op delete(...ResourceParameters<SiteIntegrationResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema
@@ -323,5 +305,5 @@ model SitePresetResource {
 namespace SitePresets {
   /** List the Presets the Instance offers, with the params schema of each */
   @get
-  op list(): SitePresetResource[];
+  op list(): SitePresetResource[] | Problem;
 }

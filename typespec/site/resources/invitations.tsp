@@ -63,8 +63,7 @@ namespace SiteInvitations {
         @statusCode statusCode: 200;
         @body body: SiteInvitationResource[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Invite an email address; the accept link is returned once */
   @createsResource(SiteInvitationResource)
@@ -79,11 +78,7 @@ namespace SiteInvitations {
         @statusCode statusCode: 201;
         @body body: SiteCreateInvitationResponse;
       }
-    | BadRequestProblem
-    | NotFoundProblem
-    | ForbiddenProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Revoke a pending invitation */
   @deletesResource(SiteInvitationResource)
@@ -92,9 +87,7 @@ namespace SiteInvitations {
   @requiresPermissions(#[Permission.membersManage])
   op delete(...ResourceParameters<SiteInvitationResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | ForbiddenProblem;
+    | Problem;
 }
 
 /** What an invite link reveals before acceptance, for rendering the accept page */
@@ -136,8 +129,7 @@ namespace SitePublicInvitations {
         @statusCode statusCode: 200;
         @body body: SiteInvitationLookupResult;
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Accept an invite: create or complete the User, or attach the signed-in Verified
    * User, and create the Membership. 401 without a session and 403 for another User's
@@ -147,10 +139,5 @@ namespace SitePublicInvitations {
   @route("/{token}/accept")
   op accept(@path token: string, @body body: SiteAcceptInvitationInput):
     | OkResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

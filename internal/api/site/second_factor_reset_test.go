@@ -16,12 +16,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func resetSecondFactor(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, membershipID int64) siteapi.SiteMembershipsResetSecondFactorRes {
+func resetSecondFactor(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, membershipID int64) error {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteMembershipsResetSecondFactor(t.Context(),
+	return env.SiteActor(t, email).SiteMembershipsResetSecondFactor(t.Context(),
 		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: workspaceID, ID: idStr(membershipID)})
-	require.NoError(t, err)
-	return res
 }
 
 func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
@@ -51,17 +49,17 @@ func TestAdminResetsAMembersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
 
-	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
+	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNoContent{}, res)
+	require.NoError(t, err)
 }
 
 func TestMemberCannotResetASecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
+	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorForbidden{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.True(t, st.Enabled)
@@ -70,19 +68,19 @@ func TestMemberCannotResetASecondFactor(t *testing.T) {
 func TestSecondFactorResetNeedsAMembershipInTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := resetSecondFactor(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, fixtures.GlobexSamMembershipID)
+	err := resetSecondFactor(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, fixtures.GlobexSamMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestAdminCannotResetAnOwnersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
 
-	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
+	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorForbidden{}, res)
-	assert.Equal(t, siteapi.ProblemCodePermissionRequired, res.(*siteapi.SiteMembershipsResetSecondFactorForbidden).Code.Value)
+	problem := testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, problem.Code.Value)
 }
 
 func TestSecondFactorResetRefusesOneselfAndAMemberWithoutAFactor(t *testing.T) {
@@ -91,8 +89,8 @@ func TestSecondFactorResetRefusesOneselfAndAMemberWithoutAFactor(t *testing.T) {
 	self := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
 	none := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexMaryMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity{}, self)
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity{}, none)
+	testhelper.SiteRefusal(t, self, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, none, http.StatusUnprocessableEntity)
 }
 
 func passkeysOf(t *testing.T, env *testhelper.TestEnv, userID int64) int {
@@ -107,9 +105,9 @@ func TestResetRemovesAMembersPasskeysAndKeepsItsAuditEntry(t *testing.T) {
 	pat := patSession(t, env)
 	require.Equal(t, 1, passkeysOf(t, env, fixtures.PasskeyPatID))
 
-	res := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID)
+	err := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID)
 
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNoContent{}, res)
+	require.NoError(t, err)
 	assert.Zero(t, passkeysOf(t, env, fixtures.PasskeyPatID))
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, pat), "the member's sessions end")
 	got := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserSecondFactorReset)
@@ -122,8 +120,7 @@ func TestAMemberWhoseSecondFactorWasResetCannotLogInWithTheirOldPasskey(t *testi
 	options, ceremony := beginLogin(t, env)
 	assertion := env.FixturePasskey(t).Assert(options)
 
-	res := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID)
-	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorNoContent{}, res)
+	require.NoError(t, resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexPatMembershipID))
 
 	rec := finishLogin(t, env, ceremony, assertion)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)

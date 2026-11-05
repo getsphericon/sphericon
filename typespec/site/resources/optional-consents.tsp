@@ -55,10 +55,12 @@ namespace SiteOptionalConsents {
    * Instance has none. A required acceptance and a notice are not listed: they are not the User's
    * to change. */
   @get
-  op list(): {
-    @statusCode statusCode: 200;
-    @body body: SiteOptionalConsentList;
-  };
+  op list():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteOptionalConsentList;
+      }
+    | Problem;
 
   /** Give or withdraw an optional consent. Giving it records `accepted` on the current version,
    * withdrawing a given one records `withdrawn`, both with the source account settings; a change
@@ -72,7 +74,5 @@ namespace SiteOptionalConsents {
         @statusCode statusCode: 200;
         @body body: SiteOptionalConsent;
       }
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

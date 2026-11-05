@@ -15,7 +15,7 @@ import {
   siteUserGetMeOptions,
   siteUserGetMeQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSignupItem, SiteSoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
+import type { SiteSignupItem, SoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useLogout } from '../../hooks/useLogout.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -69,7 +69,7 @@ function SoleOwnedWorkspaces({
   workspaces,
   onDeleted,
 }: {
-  workspaces: SiteSoleOwnedWorkspace[]
+  workspaces: SoleOwnedWorkspace[]
   onDeleted: (id: string) => void
 }) {
   const { t } = useTranslation()
@@ -105,7 +105,7 @@ export function AcceptancePage() {
   const { redirect } = acceptanceRoute.useSearch()
   const meQuery = useQuery(siteUserGetMeOptions())
   const pending = meQuery.data?.acceptancesPending ?? []
-  const [soleOwned, setSoleOwned] = useState<SiteSoleOwnedWorkspace[]>([])
+  const [soleOwned, setSoleOwned] = useState<SoleOwnedWorkspace[]>([])
 
   const accept = useResourceMutation({
     mutation: siteUserAcceptPendingMutation(),

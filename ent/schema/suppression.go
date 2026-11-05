@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Suppression is the workspace's authoritative, (channel, destination)-keyed
@@ -41,7 +43,7 @@ func (Suppression) Fields() []ent.Field {
 		// The channel this suppression applies to: email, telegram, or sms (a number the provider
 		// reports reaches no handset, or a manual one).
 		field.Enum("channel").
-			Values("email", "telegram", "sms").
+			GoType(channels.Channel("")).
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination address. On sms the number in
 		// E.164, which becomes its hash (phone.Hash) when the Contact whose phone it was is erased

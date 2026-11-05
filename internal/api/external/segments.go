@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (externalapi.SegmentsListRes, error) {
+func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (*externalapi.SegmentsListOK, error) {
 	page, err := h.segments.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 	return mapper.SegmentsListPage(page), nil
 }
 
-func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (externalapi.SegmentsCreateRes, error) {
+func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (*externalapi.SegmentResource, error) {
 	ws := auth.TokenScoped(ctx)
 	in, err := inputs.SegmentCreate(req)
 	if err != nil {
@@ -32,7 +32,7 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 	return &res, nil
 }
 
-func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsGetParams) (externalapi.SegmentsGetRes, error) {
+func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsGetParams) (*externalapi.SegmentResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	s, err := h.segments.Get(ctx, ws, id)
@@ -43,7 +43,7 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 	return &res, nil
 }
 
-func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSegmentInput, params externalapi.SegmentsUpdateParams) (externalapi.SegmentsUpdateRes, error) {
+func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSegmentInput, params externalapi.SegmentsUpdateParams) (*externalapi.SegmentResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	in, err := inputs.SegmentUpdate(req)
@@ -59,7 +59,7 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 }
 
 // SegmentsArchive archives a segment (ADR 0049); a draft Broadcast refuses it with 409.
-func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (externalapi.SegmentsArchiveRes, error) {
+func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (*externalapi.SegmentResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	s, err := h.segments.Archive(ctx, ws, id)
@@ -71,7 +71,7 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 }
 
 // SegmentsUnarchive restores an archived segment to the list.
-func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.SegmentsUnarchiveParams) (externalapi.SegmentsUnarchiveRes, error) {
+func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.SegmentsUnarchiveParams) (*externalapi.SegmentResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	s, err := h.segments.Unarchive(ctx, ws, id)
@@ -82,7 +82,7 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 	return &res, nil
 }
 
-func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (externalapi.SegmentsPreviewRes, error) {
+func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (*externalapi.PreviewSegmentResult, error) {
 	ws := auth.TokenScoped(ctx)
 	def := ""
 	if group, ok := req.Condition.Get(); ok {

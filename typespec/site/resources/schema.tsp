@@ -13,5 +13,5 @@ namespace SiteSchema {
   @useAuth(NoAuth)
   @post
   @route("/migrations")
-  op applyMigrations(): NoContentResponse | NotFoundProblem;
+  op applyMigrations(): NoContentResponse | Problem;
 }

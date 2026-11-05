@@ -14,7 +14,9 @@ import (
 
 	"golang.org/x/net/html"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // PerDay is the Test inbox's own ceiling per rolling 24 hours, equal to what it keeps per
@@ -25,8 +27,8 @@ const PerDay = 200
 // stored blob is ignored.
 func Descriptor() messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  messaging.ChannelEmail,
-		Provider: messaging.ProviderInbox,
+		Channel:  channels.Email,
+		Provider: providers.Inbox,
 		Validate: func([]byte) error { return nil },
 		Build: func(_ []byte, deps messaging.Deps) (any, error) {
 			return &sender{capturer: deps.Capturer}, nil

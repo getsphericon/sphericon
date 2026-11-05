@@ -12,10 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -45,8 +45,8 @@ var (
 // an imported Confirmation, and returns the Confirmation that stands: a stronger one already on
 // the destination stays. Only sms takes one: email is confirmed by its own double opt-in link and a
 // Telegram chat is its own opt-in. It never lifts an opt-out.
-func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel messaging.Channel, destination string, ev Evidence) (*ent.Confirmation, error) {
-	if channel != messaging.ChannelSMS {
+func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channels.Channel, destination string, ev Evidence) (*ent.Confirmation, error) {
+	if channel != channels.SMS {
 		return nil, ErrConfirmationChannel
 	}
 	number, err := smsNumber(destination)
@@ -63,7 +63,7 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel messag
 	// Read after the commit, so a concurrent request that recorded the number first answers with
 	// the Confirmation that stands.
 	standing, err := s.Confirmation().Query().Where(
-		confirmation.ChannelEQ(confirmation.ChannelSms),
+		confirmation.ChannelEQ(channels.SMS),
 		confirmation.DestinationEQ(number),
 	).Only(ctx)
 	if err != nil {
@@ -89,7 +89,7 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 		return nil, err
 	}
 	return recordIn(ctx, s, pub, grant{
-		channel: confirmation.ChannelSms, destination: number, provenance: confirmation.ProvenanceImported,
+		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceImported,
 		evidence: &ev, contactID: holder,
 	})
 }
@@ -108,7 +108,7 @@ func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number
 		return err
 	}
 	_, err = recordIn(ctx, s, pub, grant{
-		channel: confirmation.ChannelSms, destination: number, provenance: confirmation.ProvenanceKeyword,
+		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceKeyword,
 		contactID: holder,
 	})
 	return err
@@ -174,7 +174,7 @@ func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (Contac
 	}
 	out := ContactSMS{Phone: c.Phone}
 	out.Confirmation, err = s.Confirmation().Query().Where(
-		confirmation.ChannelEQ(confirmation.ChannelSms),
+		confirmation.ChannelEQ(channels.SMS),
 		confirmation.DestinationEQ(*c.Phone),
 	).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
@@ -198,7 +198,7 @@ func ConfirmContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, cont
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if _, err := Confirm(ctx, bus, s, messaging.ChannelSMS, number, ev); err != nil {
+	if _, err := Confirm(ctx, bus, s, channels.SMS, number, ev); err != nil {
 		return ContactSMS{}, err
 	}
 	return ReadContactSMS(ctx, s, contactID)

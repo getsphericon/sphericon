@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -21,12 +22,10 @@ func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteWorkspacesUpdate(ctx,
+	updated, err := c.SiteWorkspacesUpdate(ctx,
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Inc"},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	updated, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Acme Inc", updated.Name)
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), updated.ID, "the Workspace id is immutable")
 
@@ -44,12 +43,10 @@ func TestSiteWorkspacesUpdateResponseListsActiveStaffHolds(t *testing.T) {
 	env.ExtendHold(ctx, fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteWorkspacesUpdate(ctx,
+	updated, err := c.SiteWorkspacesUpdate(ctx,
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Inc"},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	updated, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 
 	require.Len(t, updated.Holds, 1)
 	assert.Equal(t, fixtures.HoldAcmeLapsedKey, updated.Holds[0].Key)
@@ -59,22 +56,20 @@ func TestSiteWorkspacesUpdateNotOwned(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteWorkspacesUpdate(context.Background(),
+	_, err := c.SiteWorkspacesUpdate(context.Background(),
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Hijacked"},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesUpdateNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteWorkspacesUpdateRejectsBlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteWorkspacesUpdate(context.Background(),
+	_, err := c.SiteWorkspacesUpdate(context.Background(),
 		&siteapi.SiteUpdateWorkspaceInput{Name: "   "},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesUpdateUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // The owner sees a suspension (ADR 0007): the workspace resource carries when it was
@@ -175,10 +170,8 @@ func TestSiteWorkspacesCreateMakesTheCallerOwner(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "  Second Brand  "})
+	created, err := c.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "  Second Brand  "})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Second Brand", created.Name)
 	assert.Equal(t, siteapi.SiteMembershipRoleOwner, created.Role)
 	assert.NotEmpty(t, created.ID)
@@ -200,10 +193,8 @@ func TestSiteWorkspacesCreateAllowsTwoWorkspacesWithOneName(t *testing.T) {
 
 	ids := make([]siteapi.WorkspaceId, 0, 2)
 	for range 2 {
-		res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Acme"})
+		created, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Acme"})
 		require.NoError(t, err)
-		created, ok := res.(*siteapi.SiteWorkspaceResource)
-		require.Truef(t, ok, "got %T", res)
 		ids = append(ids, created.ID)
 	}
 	assert.NotEqual(t, ids[0], ids[1])
@@ -213,19 +204,16 @@ func TestSiteWorkspacesCreateRefusesAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.FreshUnverifiedUserEmail)
 
-	res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Sneaky"})
-	require.NoError(t, err)
-	refused, ok := res.(*siteapi.SiteWorkspacesCreateForbidden)
-	require.Truef(t, ok, "got %T", res)
+	_, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Sneaky"})
+	refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	code, _ := refused.Code.Get()
 	assert.Equal(t, siteapi.ProblemCodeEmailVerificationRequired, code)
 }
 
 func TestSiteWorkspacesCreateRejectsBlankName(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: " "})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesCreateUnprocessableEntity{}, res)
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: " "})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestSiteWorkspacesUpdateIsForOwnerAndAdminOnly(t *testing.T) {
@@ -234,15 +222,12 @@ func TestSiteWorkspacesUpdateIsForOwnerAndAdminOnly(t *testing.T) {
 	params := siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.InitechPublicID}
 
 	for _, email := range []string{fixtures.InitechOwnerOlgaEmail, fixtures.InitechAdminAdaEmail} {
-		res, err := env.SiteActor(t, email).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Initech " + email}, params)
+		renamed, err := env.SiteActor(t, email).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Initech " + email}, params)
 		require.NoError(t, err)
-		renamed, ok := res.(*siteapi.SiteWorkspaceResource)
-		require.Truef(t, ok, "%s: got %T", email, res)
 		assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), renamed.ID)
 	}
 
-	res, err := env.SiteActor(t, fixtures.InitechMemberMaxEmail).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Mine now"}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesUpdateForbidden{}, res)
+	_, err := env.SiteActor(t, fixtures.InitechMemberMaxEmail).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Mine now"}, params)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, "Initech "+fixtures.InitechAdminAdaEmail, workspaceOf(t, env.SiteActor(t, fixtures.InitechMemberMaxEmail), fixtures.InitechPublicID).Name)
 }

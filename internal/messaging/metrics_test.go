@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
 
@@ -28,24 +30,24 @@ func TestCatalogSenderCountsSendOutcomes(t *testing.T) {
 	failing := errors.New("provider down")
 	catalog := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+			Channel: channels.Email, Provider: providers.SMTP,
 			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{}, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
+			Channel: channels.Email, Provider: providers.SES,
 			Build: func([]byte, messaging.Deps) (any, error) { return outcomeSender{err: failing}, nil },
 		},
 	)
 	ctx := t.Context()
 
-	smtp, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{})
+	smtp, err := catalog.BuildEmail(providers.SMTP, nil, messaging.Deps{})
 	require.NoError(t, err)
 	_, err = smtp.Send(ctx, messaging.EmailMessage{})
 	require.NoError(t, err)
 	_, err = smtp.Send(ctx, messaging.EmailMessage{})
 	require.NoError(t, err)
 
-	ses, err := catalog.BuildEmail(messaging.ProviderSES, nil, messaging.Deps{})
+	ses, err := catalog.BuildEmail(providers.SES, nil, messaging.Deps{})
 	require.NoError(t, err)
 	_, err = ses.Send(ctx, messaging.EmailMessage{})
 	require.ErrorIs(t, err, failing)
@@ -64,8 +66,8 @@ func TestCatalogSenderCountsSendOutcomes(t *testing.T) {
 // SES bounce and complaint notifications count under provider "ses".
 func TestRecordSendOutcomeBounceAndComplaint(t *testing.T) {
 	metricstest.StartMetrics(t)
-	messaging.RecordSendOutcome(t.Context(), messaging.ProviderSES, messaging.SendBounce)
-	messaging.RecordSendOutcome(t.Context(), messaging.ProviderSES, messaging.SendComplaint)
+	messaging.RecordSendOutcome(t.Context(), providers.SES, messaging.SendBounce)
+	messaging.RecordSendOutcome(t.Context(), providers.SES, messaging.SendComplaint)
 
 	scrape := metricstest.ScrapeMetrics(t)
 	assert.InDelta(t, 1, scrape.Value(t, "email_send_outcomes_total", map[string]string{"provider": "ses", "status": "bounce"}), 0)
@@ -77,7 +79,7 @@ func TestRecordSendOutcomeBounceAndComplaint(t *testing.T) {
 func TestCatalogSenderCountsDeferralsApartFromErrors(t *testing.T) {
 	metricstest.StartMetrics(t)
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
-		Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
+		Channel: channels.Email, Provider: providers.SES,
 		Build: func(cfg []byte, _ messaging.Deps) (any, error) {
 			switch string(cfg) {
 			case "busy":
@@ -91,7 +93,7 @@ func TestCatalogSenderCountsDeferralsApartFromErrors(t *testing.T) {
 	})
 	ctx := t.Context()
 	for _, cfg := range []string{"busy", "quota", "quota", "other"} {
-		s, err := catalog.BuildEmail(messaging.ProviderSES, []byte(cfg), messaging.Deps{})
+		s, err := catalog.BuildEmail(providers.SES, []byte(cfg), messaging.Deps{})
 		require.NoError(t, err)
 		_, err = s.Send(ctx, messaging.EmailMessage{})
 		require.Error(t, err)

@@ -16,11 +16,7 @@ namespace SitePublicConfirmations {
   @useAuth(NoAuth)
   @post
   @route("/{token}")
-  op perform(@path token: string):
-    | NoContentResponse
-    | BadRequestProblem
-    | GoneProblem
-    | TooManyRequestsProblem;
+  op perform(@path token: string): NoContentResponse | Problem;
 }
 
 @route("/unsubscribes")
@@ -32,5 +28,5 @@ namespace SitePublicUnsubscribes {
   @useAuth(NoAuth)
   @post
   @route("/{token}")
-  op perform(@path token: string): NoContentResponse | BadRequestProblem;
+  op perform(@path token: string): NoContentResponse | Problem;
 }

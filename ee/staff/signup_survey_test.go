@@ -16,10 +16,8 @@ func TestTheSignupSurveyCountsEveryAnswerIncludingOtherTexts(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffSignupSurveyCounts(t.Context())
+	got, err := c.StaffSignupSurveyCounts(t.Context())
 	require.NoError(t, err)
-	got, ok := res.(*staffeeapi.StaffSignupSurveyCounts)
-	require.Truef(t, ok, "got %T", res)
 
 	// Ann, Bob and Cara answered; every other fixture User is in no count.
 	assert.EqualValues(t, 3, got.Responses)
@@ -48,10 +46,8 @@ func TestAUsersSignupSurveyAnswersAreShownToAStaffMember(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: fixtures.SurveyAnsweredAnnID})
+	got, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: fixtures.SurveyAnsweredAnnID})
 	require.NoError(t, err)
-	got, ok := res.(*staffeeapi.StaffSignupSurveyResponseResource)
-	require.Truef(t, ok, "got %T", res)
 
 	assert.EqualValues(t, fixtures.SurveyAnsweredAnnID, got.UserId)
 	assert.Equal(t, staffeeapi.StaffSignupRoleDeveloper, got.Role)
@@ -66,10 +62,8 @@ func TestASkippedOptionalQuestionIsAbsentFromAUsersAnswers(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: fixtures.SurveyAnsweredBobID})
+	got, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: fixtures.SurveyAnsweredBobID})
 	require.NoError(t, err)
-	got, ok := res.(*staffeeapi.StaffSignupSurveyResponseResource)
-	require.Truef(t, ok, "got %T", res)
 
 	assert.False(t, got.HeardFrom.IsSet())
 }
@@ -79,9 +73,8 @@ func TestAUserWhoHasNotAnsweredTheSignupSurveyHasNoAnswers(t *testing.T) {
 	c, _ := h.staffSession(t)
 
 	for _, id := range []int64{fixtures.OwnerJohnID, fixtures.MemberMaryID} {
-		res, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: staffeeapi.EntityId(id)})
-		require.NoError(t, err)
-		assert.IsTypef(t, new(staffeeapi.StaffSignupSurveyGetNotFound), res, "user %d", id)
+		_, err := c.StaffSignupSurveyGet(t.Context(), staffeeapi.StaffSignupSurveyGetParams{UserId: staffeeapi.EntityId(id)})
+		testhelper.StaffeeRefusal(t, err, http.StatusNotFound, "user %d", id)
 	}
 }
 

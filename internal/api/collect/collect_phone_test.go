@@ -2,6 +2,7 @@ package collect_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -23,9 +24,8 @@ func TestCollectIdentifyWithALocalPhoneResolvesTheContactStoredInE164(t *testing
 	ctx := context.Background()
 	identify := func(in collectapi.CollectIdentifyInput) {
 		t.Helper()
-		res, err := c.CollectIdentifyCreate(ctx, &in)
+		_, err := c.CollectIdentifyCreate(ctx, &in)
 		require.NoError(t, err)
-		require.IsType(t, &collectapi.CollectOkResponse{}, res)
 	}
 	// ContactTexter's phone, +14155550810, written as a US local number.
 	identify(collectapi.CollectIdentifyInput{
@@ -50,13 +50,12 @@ func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFinds(t *tes
 	_, err := env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetCountry("DE").Save(ctx)
 	require.NoError(t, err)
 
-	res, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err = c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-alice",
 		Email:     collectapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail),
 		Phone:     collectapi.NewOptNilString("030 1234567"),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &collectapi.CollectOkResponse{}, res)
 
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
 	require.NoError(t, err)
@@ -68,12 +67,11 @@ func TestCollectIdentifyRefusesALocalPhoneWithoutACountry(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.CollectAcme(t).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err := env.CollectAcme(t).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-local",
 		Phone:     collectapi.NewOptNilString("415 555 0107"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectIdentifyCreateUnprocessableEntity{}, res)
+	testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 
 	n, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.PhoneContains("5550107")).Count(ctx)
 	require.NoError(t, err)

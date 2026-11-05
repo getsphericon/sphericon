@@ -82,18 +82,16 @@ func publishedKeys(t *testing.T, env *testhelper.TestEnv) receiver {
 	return receiver{keys: set}
 }
 
-func mintAccountLink(t *testing.T, env *testhelper.TestEnv, email string) siteapi.SiteWorkspacesAccountLinkRes {
+func mintAccountLink(t *testing.T, env *testhelper.TestEnv, email string) (*siteapi.SiteAccountLinkResource, error) {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteWorkspacesAccountLink(t.Context(), siteapi.SiteWorkspacesAccountLinkParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	return res
+	return env.SiteActor(t, email).SiteWorkspacesAccountLink(t.Context(), siteapi.SiteWorkspacesAccountLinkParams{WorkspaceId: fixtures.AcmePublicID})
 }
 
 func TestOwnerOpensAccountLinkWithVerifiableToken(t *testing.T) {
 	env := accountLinkEnv(t)
 
-	link, ok := mintAccountLink(t, env, fixtures.OwnerJohnEmail).(*siteapi.SiteAccountLinkResource)
-	require.True(t, ok)
+	link, err := mintAccountLink(t, env, fixtures.OwnerJohnEmail)
+	require.NoError(t, err)
 	assert.Equal(t, accountLinkAddress, link.URL)
 	assert.True(t, time.Time(link.ExpiresAt).Equal(accountLinkNow.Add(2*time.Minute)))
 
@@ -106,10 +104,11 @@ func TestOwnerOpensAccountLinkWithVerifiableToken(t *testing.T) {
 
 func TestAccountLinkTokenExpiresAndIsBoundToAudience(t *testing.T) {
 	env := accountLinkEnv(t)
-	link := mintAccountLink(t, env, fixtures.OwnerJohnEmail).(*siteapi.SiteAccountLinkResource)
+	link, err := mintAccountLink(t, env, fixtures.OwnerJohnEmail)
+	require.NoError(t, err)
 	r := publishedKeys(t, env)
 
-	_, err := r.verify(link.Token, accountLinkAddress, accountLinkNow.Add(3*time.Minute))
+	_, err = r.verify(link.Token, accountLinkAddress, accountLinkNow.Add(3*time.Minute))
 	require.ErrorIs(t, err, josejwt.ErrExpired)
 
 	_, err = r.verify(link.Token, "https://other.example.test", accountLinkNow)
@@ -119,8 +118,10 @@ func TestAccountLinkTokenExpiresAndIsBoundToAudience(t *testing.T) {
 func TestAccountLinkIsForTheOwnerOnly(t *testing.T) {
 	env := accountLinkEnv(t)
 
-	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkForbidden{}, mintAccountLink(t, env, fixtures.MemberMaryEmail))
-	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkNotFound{}, mintAccountLink(t, env, fixtures.OutsiderOscarEmail))
+	_, err := mintAccountLink(t, env, fixtures.MemberMaryEmail)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = mintAccountLink(t, env, fixtures.OutsiderOscarEmail)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	assert.True(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).AccountLinkAvailable)
 	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID).AccountLinkAvailable)
@@ -129,7 +130,8 @@ func TestAccountLinkIsForTheOwnerOnly(t *testing.T) {
 func TestAccountLinkIsAbsentWhenNotConfigured(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkNotFound{}, mintAccountLink(t, env, fixtures.OwnerJohnEmail))
+	_, err := mintAccountLink(t, env, fixtures.OwnerJohnEmail)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).AccountLinkAvailable)
 
 	rec := httptest.NewRecorder()

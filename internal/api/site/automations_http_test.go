@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,8 +34,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 
 	step := res.Draft.Value.Steps[0]
 	sealedAtCreate := sealedValues(t, env, int64(res.ID))
@@ -51,8 +51,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: []siteapi.SiteAutomationStep{step}},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.True(t, upd.Draft.Value.Steps[0].HasSecret.Or(false))
 
 	steps, err := automationsteps.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
@@ -101,14 +100,12 @@ func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 
 	ok, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.SiteDryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: contact}, params)
 	require.NoError(t, err)
-	rendered, isResult := ok.(*siteapi.SiteDryRunHttpStepResult)
-	require.Truef(t, isResult, "got %T", ok)
+	rendered := ok
 	assert.JSONEq(t, `{"name":"Alice"}`, rendered.Body.Or(""))
 
 	bad, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.SiteDryRunHttpStepInput{Body: `{"n": {{ nope }}}`, ContactId: contact}, params)
 	require.NoError(t, err)
-	failed, isResult := bad.(*siteapi.SiteDryRunHttpStepResult)
-	require.Truef(t, isResult, "got %T", bad)
+	failed := bad
 	assert.Equal(t, siteapi.SiteAutomationHttpErrorKindInvalidBody, failed.ErrorKind.Or(""))
 	assert.False(t, failed.Body.Set)
 }
@@ -116,15 +113,14 @@ func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := c.SiteAutomationsCreate(context.Background(), &siteapi.SiteCreateAutomationInput{
+	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.SiteCreateAutomationInput{
 		Name: "Bad", TriggerEvent: "signup",
 		Steps: []siteapi.SiteAutomationStep{{
 			Type: siteapi.SiteAutomationStepTypeHTTP, URL: siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: siteapi.NewOptString(`{"a": {{ nope }}}`),
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
@@ -134,19 +130,16 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for _, trigger := range []string{"email.delivered", "email.delayed", "email.dropped", "email.bounced", "email.complained", "email.sent"} {
-		res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
-		require.NoError(t, err)
-		assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res, trigger)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, trigger)
 	}
 
 	for _, trigger := range []string{"email.opened", "email.clicked", "email.unsubscribed"} {
-		res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
-		require.NoError(t, err)
-		assert.IsType(t, new(siteapi.SiteAutomationResource), res, trigger)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "From " + trigger, TriggerEvent: trigger}, params)
+		require.NoError(t, err, trigger)
 	}
 
-	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("email.bounced")},
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("email.bounced")},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteAutomationsUpdateUnprocessableEntity), updated)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

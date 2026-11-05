@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -63,25 +64,21 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("reset requires a password", func(t *testing.T) {
-		res, err := c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: "whatever", Password: ""})
-		require.NoError(t, err)
-		problem, ok := res.(*siteapi.SiteAuthResetPasswordUnprocessableEntity)
-		require.Truef(t, ok, "got %T", res)
+		err := c.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: "whatever", Password: ""})
+		problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		assert.Contains(t, problem.Errors.Value, "password")
 	})
 
 	t.Run("verify rejects garbage", func(t *testing.T) {
-		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: "garbage", Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, res)
+		_, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: "garbage", Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
+		testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("verify rejects a token for a user that no longer exists", func(t *testing.T) {
 		tok, err := s.Mint(authtoken.PurposeEmailVerify, 987654, "", time.Hour, map[string]string{"email": "ghost@example.com"})
 		require.NoError(t, err)
-		res, err := c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: tok, Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, res)
+		_, err = c.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: tok, Password: siteapi.NewOptString("password123")}, siteapi.SiteAuthVerifyEmailParams{})
+		testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("confirm email change rejects garbage", func(t *testing.T) {
@@ -115,14 +112,13 @@ func TestSiteUserEmailChangeEdgeCases(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	same, err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
+	err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
 		NewEmail: siteapi.EmailAddress(fixtures.OwnerJohnEmail), CurrentPassword: fixtures.OwnerJohnPassword,
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserEmailChangeUnprocessableEntity{}, same, "the new address must differ")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "the new address must differ")
 	assert.Empty(t, env.SystemMail.Messages())
 
 	anon := env.SiteAnonymous(t)
-	_, err = anon.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{NewEmail: "x@example.com", CurrentPassword: "x"})
+	err = anon.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{NewEmail: "x@example.com", CurrentPassword: "x"})
 	require.Error(t, err)
 }

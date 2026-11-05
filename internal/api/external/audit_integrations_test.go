@@ -75,9 +75,8 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	updated, err := scoped.Integration().Get(ctx, row.ID)
 	require.NoError(t, err)
 	require.NotEqual(t, row.ConfigEncrypted, updated.ConfigEncrypted, "the update sealed a new config")
-	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: created.ID})
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: created.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.IntegrationsDeleteNoContent{}, del)
 
 	assertTokenAudited(t, env, created.ID, "Audited mailer",
 		[]string{"integration.create", "integration.update", "integration.discard"},
@@ -103,12 +102,10 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	updated, err := scoped.SendingDomain().Get(ctx, row.ID)
 	require.NoError(t, err)
 	// A verify only records a check result; it is not an audited edit.
-	ver, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: created.ID})
+	_, err = c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: created.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.SendingDomainResource{}, ver)
-	deleted, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: created.ID})
+	err = c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: created.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.SendingDomainsDeleteNoContent{}, deleted)
 
 	assertTokenAudited(t, env, created.ID, "audited.example.com",
 		[]string{"sending_domain.create", "sending_domain.update", "sending_domain.discard"},
@@ -116,10 +113,8 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 		[]string{"PRIVATE KEY", row.DkimPrivateKeyEncrypted, updated.DkimPrivateKeyEncrypted})
 
 	env.WorkEditionJobs(t)
-	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
+	page, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	page, ok := list.(*siteapi.SiteAuditEntryList)
-	require.Truef(t, ok, "got %T", list)
 	domainEntries := lo.Filter(page.Items, func(item siteapi.SiteAuditEntryResource, _ int) bool {
 		return strings.HasPrefix(string(item.Action), "sending_domain.")
 	})

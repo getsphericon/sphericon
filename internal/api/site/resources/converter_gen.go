@@ -14,7 +14,6 @@ import (
 	consentrecord "github.com/getsphericon/sphericon/ent/consentrecord"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
-	integration "github.com/getsphericon/sphericon/ent/integration"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	rule "github.com/getsphericon/sphericon/ent/rule"
@@ -35,6 +34,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	channels "github.com/getsphericon/sphericon/internal/channels"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
@@ -47,6 +47,7 @@ import (
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
+	providers "github.com/getsphericon/sphericon/internal/providers"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -625,14 +626,14 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
-func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) site.BroadcastChannel {
+func (c *ConverterImpl) BroadcastChannelToResource(source channels.Channel) site.BroadcastChannel {
 	var siteapiBroadcastChannel site.BroadcastChannel
 	switch source {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		siteapiBroadcastChannel = site.BroadcastChannelEmail
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		siteapiBroadcastChannel = site.BroadcastChannelSMS
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 		siteapiBroadcastChannel = site.BroadcastChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -900,13 +901,13 @@ func (c *ConverterImpl) ConnectionToResource(source *ent.ApiToken) site.SiteConn
 	}
 	return siteapiSiteConnectionResource
 }
-func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) site.SiteConnectionsListOKApplicationJSON {
-	var siteapiSiteConnectionsListOKApplicationJSON site.SiteConnectionsListOKApplicationJSON
-	siteapiSiteConnectionsListOKApplicationJSON = make(site.SiteConnectionsListOKApplicationJSON, len(source))
+func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) []site.SiteConnectionResource {
+	var siteapiSiteConnectionResourceList []site.SiteConnectionResource
+	siteapiSiteConnectionResourceList = make([]site.SiteConnectionResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteConnectionsListOKApplicationJSON[i] = c.ConnectionToResource(source[i])
+		siteapiSiteConnectionResourceList[i] = c.ConnectionToResource(source[i])
 	}
-	return siteapiSiteConnectionsListOKApplicationJSON
+	return siteapiSiteConnectionResourceList
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) site.ContactExportSource {
 	var siteapiContactExportSource site.ContactExportSource
@@ -1040,22 +1041,6 @@ func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.S
 		// siteapiSiteDeletedWorkspaceResource.OnlyOwner: ignore
 	}
 	return siteapiSiteDeletedWorkspaceResource
-}
-func (c *ConverterImpl) DeliveryErrorKindToResource(source webhook.ErrorKind) site.SiteWebhookErrorKind {
-	var siteapiSiteWebhookErrorKind site.SiteWebhookErrorKind
-	switch source {
-	case webhook.KindBlockedAddress:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindBlockedAddress
-	case webhook.KindHTTPStatus:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindHTTPStatus
-	case webhook.KindNetwork:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindNetwork
-	case webhook.KindTimeout:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindTimeout
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiSiteWebhookErrorKind
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.SiteDnsRecord {
 	var siteapiSiteDnsRecord site.SiteDnsRecord
@@ -1294,33 +1279,32 @@ func (c *ConverterImpl) InstanceReleaseToResource(source instance.Release) site.
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
 	return siteapiSiteInstanceRelease
 }
-func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel) site.SiteIntegrationChannel {
+func (c *ConverterImpl) IntegrationChannelToResource(source channels.Channel) site.SiteIntegrationChannel {
 	var siteapiSiteIntegrationChannel site.SiteIntegrationChannel
 	switch source {
-	case integration.ChannelEmail:
+	case channels.Email:
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelEmail
-	case integration.ChannelSms:
+	case channels.SMS:
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelSMS
-	case integration.ChannelTelegram:
+	case channels.Telegram:
 		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelTelegram
-	// Skipped DefaultChannel(email) -> SiteIntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteIntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteIntegrationChannel
 }
-func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provider) site.SiteIntegrationProvider {
+func (c *ConverterImpl) IntegrationProviderToResource(source providers.Provider) site.SiteIntegrationProvider {
 	var siteapiSiteIntegrationProvider site.SiteIntegrationProvider
 	switch source {
-	case integration.ProviderInbox:
+	case providers.Inbox:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderInbox
-	case integration.ProviderSMTP:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSMTP
-	case integration.ProviderSes:
+	case providers.SES:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
-	case integration.ProviderTelegram:
+	case providers.SMTP:
+		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSMTP
+	case providers.Telegram:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1390,13 +1374,13 @@ func (c *ConverterImpl) InvitationToResource(source *ent.Invitation) site.SiteIn
 	}
 	return siteapiSiteInvitationResource
 }
-func (c *ConverterImpl) InvitationsToResources(source []*ent.Invitation) site.SiteInvitationsListOKApplicationJSON {
-	var siteapiSiteInvitationsListOKApplicationJSON site.SiteInvitationsListOKApplicationJSON
-	siteapiSiteInvitationsListOKApplicationJSON = make(site.SiteInvitationsListOKApplicationJSON, len(source))
+func (c *ConverterImpl) InvitationsToResources(source []*ent.Invitation) []site.SiteInvitationResource {
+	var siteapiSiteInvitationResourceList []site.SiteInvitationResource
+	siteapiSiteInvitationResourceList = make([]site.SiteInvitationResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteInvitationsListOKApplicationJSON[i] = c.InvitationToResource(source[i])
+		siteapiSiteInvitationResourceList[i] = c.InvitationToResource(source[i])
 	}
-	return siteapiSiteInvitationsListOKApplicationJSON
+	return siteapiSiteInvitationResourceList
 }
 func (c *ConverterImpl) JoinDomainToResource(source *ent.JoinDomain) site.SiteJoinDomainResource {
 	var siteapiSiteJoinDomainResource site.SiteJoinDomainResource
@@ -1528,13 +1512,13 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 	}
 	return siteapiSiteMembershipResource
 }
-func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) site.SiteMembershipsListOKApplicationJSON {
-	var siteapiSiteMembershipsListOKApplicationJSON site.SiteMembershipsListOKApplicationJSON
-	siteapiSiteMembershipsListOKApplicationJSON = make(site.SiteMembershipsListOKApplicationJSON, len(source))
+func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) []site.SiteMembershipResource {
+	var siteapiSiteMembershipResourceList []site.SiteMembershipResource
+	siteapiSiteMembershipResourceList = make([]site.SiteMembershipResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteMembershipsListOKApplicationJSON[i] = c.MembershipToResource(source[i])
+		siteapiSiteMembershipResourceList[i] = c.MembershipToResource(source[i])
 	}
-	return siteapiSiteMembershipsListOKApplicationJSON
+	return siteapiSiteMembershipResourceList
 }
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.SiteMessageRevenue {
 	var siteapiSiteMessageRevenue site.SiteMessageRevenue
@@ -1757,13 +1741,13 @@ func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SiteP
 	}
 	return siteapiSitePersonalTokenResource
 }
-func (c *ConverterImpl) PersonalTokensToResources(source []*ent.ApiToken) site.SitePersonalTokensListOKApplicationJSON {
-	var siteapiSitePersonalTokensListOKApplicationJSON site.SitePersonalTokensListOKApplicationJSON
-	siteapiSitePersonalTokensListOKApplicationJSON = make(site.SitePersonalTokensListOKApplicationJSON, len(source))
+func (c *ConverterImpl) PersonalTokensToResources(source []*ent.ApiToken) []site.SitePersonalTokenResource {
+	var siteapiSitePersonalTokenResourceList []site.SitePersonalTokenResource
+	siteapiSitePersonalTokenResourceList = make([]site.SitePersonalTokenResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSitePersonalTokensListOKApplicationJSON[i] = c.PersonalTokenToResource(source[i])
+		siteapiSitePersonalTokenResourceList[i] = c.PersonalTokenToResource(source[i])
 	}
-	return siteapiSitePersonalTokensListOKApplicationJSON
+	return siteapiSitePersonalTokenResourceList
 }
 func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) site.SiteProviderLimitSource {
 	var siteapiSiteProviderLimitSource site.SiteProviderLimitSource
@@ -2213,16 +2197,15 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.Tele
 	siteapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return siteapiTelegramStartLinkResource
 }
-func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) site.SiteSuppressionChannel {
+func (c *ConverterImpl) SuppressionChannelToResource(source channels.Channel) site.SiteSuppressionChannel {
 	var siteapiSiteSuppressionChannel site.SiteSuppressionChannel
 	switch source {
-	case suppression.ChannelEmail:
+	case channels.Email:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
-	case suppression.ChannelSms:
+	case channels.SMS:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelSMS
-	case suppression.ChannelTelegram:
+	case channels.Telegram:
 		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
-	// Skipped DefaultChannel(email) -> SiteSuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SiteSuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2395,13 +2378,13 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 	}
 	return siteapiSiteApiTokenResource
 }
-func (c *ConverterImpl) TokensToResources(source []*ent.ApiToken) site.SiteTokensListOKApplicationJSON {
-	var siteapiSiteTokensListOKApplicationJSON site.SiteTokensListOKApplicationJSON
-	siteapiSiteTokensListOKApplicationJSON = make(site.SiteTokensListOKApplicationJSON, len(source))
+func (c *ConverterImpl) TokensToResources(source []*ent.ApiToken) []site.SiteApiTokenResource {
+	var siteapiSiteApiTokenResourceList []site.SiteApiTokenResource
+	siteapiSiteApiTokenResourceList = make([]site.SiteApiTokenResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteTokensListOKApplicationJSON[i] = c.TokenToResource(source[i])
+		siteapiSiteApiTokenResourceList[i] = c.TokenToResource(source[i])
 	}
-	return siteapiSiteTokensListOKApplicationJSON
+	return siteapiSiteApiTokenResourceList
 }
 func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) site.SiteTrackingDomainRole {
 	var siteapiSiteTrackingDomainRole site.SiteTrackingDomainRole
@@ -2582,16 +2565,16 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 	}
 	return siteapiSiteWebhookEndpointResource
 }
-func (c *ConverterImpl) WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) site.SiteWebhookErrorKind {
+func (c *ConverterImpl) WebhookErrorKindToResource(source webhook.ErrorKind) site.SiteWebhookErrorKind {
 	var siteapiSiteWebhookErrorKind site.SiteWebhookErrorKind
 	switch source {
-	case webhookendpoint.LastErrorKindBlockedAddress:
+	case webhook.KindBlockedAddress:
 		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindBlockedAddress
-	case webhookendpoint.LastErrorKindHTTPStatus:
+	case webhook.KindHTTPStatus:
 		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindHTTPStatus
-	case webhookendpoint.LastErrorKindNetwork:
+	case webhook.KindNetwork:
 		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindNetwork
-	case webhookendpoint.LastErrorKindTimeout:
+	case webhook.KindTimeout:
 		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindTimeout
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

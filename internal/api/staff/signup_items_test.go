@@ -13,6 +13,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The Sign-up items and their Legal documents (ADR 0062) are a core section of the console: every
@@ -37,37 +38,30 @@ func (h *harness) markMailings(t *testing.T, id int64) {
 // addItem adds a Sign-up item through the console and returns it.
 func addItem(t *testing.T, c *staffapi.Client, in staffapi.StaffSignupItemInput) *staffapi.StaffSignupItemResource {
 	t.Helper()
-	res, err := c.StaffSignupItemsCreate(t.Context(), &in)
+	item, err := c.StaffSignupItemsCreate(t.Context(), &in)
 	require.NoError(t, err)
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the item is added, got %T", res)
 	return item
 }
 
 // saveDraft writes the item's draft through the console.
 func saveDraft(t *testing.T, c *staffapi.Client, id staffapi.EntityId, markdown string) *staffapi.StaffSignupItemResource {
 	t.Helper()
-	res, err := c.StaffSignupItemsSaveDraft(t.Context(), &staffapi.StaffLegalDocumentDraftInput{Markdown: staffapi.LegalDocumentMarkdown(markdown)}, staffapi.StaffSignupItemsSaveDraftParams{ID: id})
+	item, err := c.StaffSignupItemsSaveDraft(t.Context(), &staffapi.StaffLegalDocumentDraftInput{Markdown: staffapi.LegalDocumentMarkdown(markdown)}, staffapi.StaffSignupItemsSaveDraftParams{ID: id})
 	require.NoError(t, err)
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the draft is saved, got %T", res)
 	return item
 }
 
 // publish publishes the item's draft under label and returns the answer.
-func publish(t *testing.T, c *staffapi.Client, id staffapi.EntityId, label string) staffapi.StaffSignupItemsPublishRes {
+func publish(t *testing.T, c *staffapi.Client, id staffapi.EntityId, label string) (*staffapi.StaffSignupItemResource, error) {
 	t.Helper()
-	res, err := c.StaffSignupItemsPublish(t.Context(), &staffapi.StaffLegalDocumentPublishInput{Label: staffapi.LegalDocumentLabel(label)}, staffapi.StaffSignupItemsPublishParams{ID: id})
-	require.NoError(t, err)
-	return res
+	return c.StaffSignupItemsPublish(t.Context(), &staffapi.StaffLegalDocumentPublishInput{Label: staffapi.LegalDocumentLabel(label)}, staffapi.StaffSignupItemsPublishParams{ID: id})
 }
 
 // published publishes the item's draft under label, which must succeed.
 func published(t *testing.T, c *staffapi.Client, id staffapi.EntityId, label string) *staffapi.StaffSignupItemResource {
 	t.Helper()
-	res := publish(t, c, id, label)
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the version is published, got %T", res)
+	item, err := publish(t, c, id, label)
+	require.NoError(t, err)
 	return item
 }
 
@@ -80,46 +74,30 @@ func (h *harness) visibleItems(t *testing.T) []siteapi.SiteSignupItem {
 }
 
 // publicDocument is what a visitor reads on the public page of key.
-func (h *harness) publicDocument(t *testing.T, key string) siteapi.SiteLegalDocumentsGetRes {
+func (h *harness) publicDocument(t *testing.T, key string) (*siteapi.SiteLegalDocument, error) {
 	t.Helper()
-	res, err := h.env.SiteAnonymous(t).SiteLegalDocumentsGet(t.Context(), siteapi.SiteLegalDocumentsGetParams{Key: siteapi.SignupItemKey(key)})
-	require.NoError(t, err)
-	return res
+	return h.env.SiteAnonymous(t).SiteLegalDocumentsGet(t.Context(), siteapi.SiteLegalDocumentsGetParams{Key: siteapi.SignupItemKey(key)})
 }
 
 // readDocument is the public page of key, which must be served.
 func (h *harness) readDocument(t *testing.T, key string) *siteapi.SiteLegalDocument {
 	t.Helper()
-	res := h.publicDocument(t, key)
-	doc, ok := res.(*siteapi.SiteLegalDocument)
-	require.Truef(t, ok, "the document is served, got %T", res)
+	doc, err := h.publicDocument(t, key)
+	require.NoError(t, err)
 	return doc
 }
 
 // refusedFields is the fields a 422 of the console names.
-func refusedFields(t *testing.T, res any) []string {
+func refusedFields(t *testing.T, err error) []string {
 	t.Helper()
-	p := unprocessable(t, res)
+	p := unprocessable(t, err)
 	return lo.Keys(p.Errors.Value)
 }
 
 // unprocessable is the problem of a 422 the console answered with; anything else fails the test.
-func unprocessable(t *testing.T, res any) staffapi.ProblemDetails {
+func unprocessable(t *testing.T, err error) staffapi.ProblemDetails {
 	t.Helper()
-	switch p := res.(type) {
-	case *staffapi.StaffSignupItemsCreateUnprocessableEntity:
-		return staffapi.ProblemDetails(*p)
-	case *staffapi.StaffSignupItemsUpdateUnprocessableEntity:
-		return staffapi.ProblemDetails(*p)
-	case *staffapi.StaffSignupItemsPublishUnprocessableEntity:
-		return staffapi.ProblemDetails(*p)
-	case *staffapi.StaffSignupItemsReorderUnprocessableEntity:
-		return staffapi.ProblemDetails(*p)
-	case *staffapi.StaffSignupItemsDeleteUnprocessableEntity:
-		return staffapi.ProblemDetails(*p)
-	}
-	require.Failf(t, "not a 422", "got %T", res)
-	return staffapi.ProblemDetails{}
+	return testhelper.StaffRefusal(t, err, http.StatusUnprocessableEntity, "not a 422")
 }
 
 // request sends a bodiless request with the given method to the server.
@@ -151,14 +129,13 @@ func TestAnAddedItemWithoutAPublishedVersionIsListedInTheConsoleButNotToVisitors
 	assert.False(t, item.CurrentVersion.Set, "nothing is published yet")
 	list, err := c.StaffSignupItemsList(t.Context())
 	require.NoError(t, err)
-	listed, ok := list.(*staffapi.StaffSignupItemList)
-	require.True(t, ok)
+	listed := list
 	added, ok := lo.Find(listed.Items, func(it staffapi.StaffSignupItemResource) bool { return it.Key == "terms" })
 	require.True(t, ok, "the added item is listed")
 	assert.EqualValues(t, "Terms of service", added.Title)
 	visible := h.visibleItems(t)
 	assert.Empty(t, visible, "an item without a published version is not asked")
-	assert.IsType(t, &siteapi.SiteLegalDocumentsGetNotFound{}, h.publicDocument(t, "terms"), "a draft has no public page")
+	testhelper.SiteRefusal(t, errOf(h.publicDocument(t, "terms")), http.StatusNotFound, "a draft has no public page")
 }
 
 // The acceptance path of #736: a Staff member without a License key adds an item, writes a draft,
@@ -225,9 +202,9 @@ func TestAPublishedVersionCannotBeRepublishedUnderItsLabel(t *testing.T) {
 	before := h.readDocument(t, fixtures.ServiceTermsKey)
 	saveDraft(t, c, fixtures.ServiceTermsID, "a new text")
 
-	res := publish(t, c, fixtures.ServiceTermsID, fixtures.ServiceTermsCurrentLabel)
+	_, err := publish(t, c, fixtures.ServiceTermsID, fixtures.ServiceTermsCurrentLabel)
 
-	assert.Equal(t, []string{"label"}, refusedFields(t, res))
+	assert.Equal(t, []string{"label"}, refusedFields(t, err))
 	after := h.readDocument(t, fixtures.ServiceTermsKey)
 	assert.Equal(t, before, after, "the published version is unchanged")
 }
@@ -251,9 +228,9 @@ func TestPublishingAnItemWithoutADraftIsRefused(t *testing.T) {
 	c := h.console(t)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	res := publish(t, c, fixtures.ServiceTermsID, "2026-03")
+	_, err := publish(t, c, fixtures.ServiceTermsID, "2026-03")
 
-	unprocessable(t, res)
+	unprocessable(t, err)
 	assert.EqualValues(t, fixtures.ServiceTermsCurrentLabel, h.visibleItems(t)[0].Version, "no version is published")
 }
 
@@ -261,10 +238,9 @@ func TestATakenKeyIsRefused(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	res, err := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: fixtures.ServiceTermsKey, Title: "Other terms", Kind: staffapi.SignupItemKindNotice})
-	require.NoError(t, err)
+	_, err := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: fixtures.ServiceTermsKey, Title: "Other terms", Kind: staffapi.SignupItemKindNotice})
 
-	assert.Equal(t, []string{"key"}, refusedFields(t, res))
+	assert.Equal(t, []string{"key"}, refusedFields(t, err))
 }
 
 func TestAMailingsConsentIsOnlyAnOptionalConsent(t *testing.T) {
@@ -272,9 +248,8 @@ func TestAMailingsConsentIsOnlyAnOptionalConsent(t *testing.T) {
 	c := h.console(t)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.DataNoticeID)
 
-	required, err := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: "terms", Title: "Terms", Kind: staffapi.SignupItemKindRequiredAcceptance, MailingsConsent: staffapi.NewOptBool(true)})
-	require.NoError(t, err)
-	marked := update(t, c, fixtures.DataNoticeID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
+	_, required := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: "terms", Title: "Terms", Kind: staffapi.SignupItemKindRequiredAcceptance, MailingsConsent: staffapi.NewOptBool(true)})
+	_, marked := tryUpdate(t, c, fixtures.DataNoticeID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
 
 	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, required))
 	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, marked))
@@ -286,9 +261,8 @@ func TestASecondMailingsConsentIsRefused(t *testing.T) {
 	h.markMailings(t, fixtures.OperatorNewsID)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.PartnerOffersID)
 
-	added, err := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: "events", Title: "Events", Kind: staffapi.SignupItemKindOptionalConsent, MailingsConsent: staffapi.NewOptBool(true)})
-	require.NoError(t, err)
-	marked := update(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
+	_, added := c.StaffSignupItemsCreate(t.Context(), &staffapi.StaffSignupItemInput{Key: "events", Title: "Events", Kind: staffapi.SignupItemKindOptionalConsent, MailingsConsent: staffapi.NewOptBool(true)})
+	_, marked := tryUpdate(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
 
 	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, added))
 	assert.Equal(t, []string{"mailingsConsent"}, refusedFields(t, marked))
@@ -303,10 +277,8 @@ func TestTheMailingsConsentMovesOnceItIsUnmarked(t *testing.T) {
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.PartnerOffersID)
 
 	update(t, c, fixtures.OperatorNewsID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(false)})
-	res := update(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
+	moved := update(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
 
-	moved, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the mark moves, got %T", res)
 	assert.True(t, moved.MailingsConsent)
 }
 
@@ -314,17 +286,15 @@ func TestAnUnknownItemIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	res, err := c.StaffSignupItemsGet(t.Context(), staffapi.StaffSignupItemsGetParams{ID: 999999})
-	require.NoError(t, err)
+	_, err := c.StaffSignupItemsGet(t.Context(), staffapi.StaffSignupItemsGetParams{ID: 999999})
 
-	assert.IsType(t, &staffapi.StaffSignupItemsGetNotFound{}, res)
+	testhelper.StaffRefusal(t, err, http.StatusNotFound)
 }
 
 func TestTheSignupItemsNeedAStaffSession(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.StaffAnonymous(t).StaffSignupItemsList(t.Context())
-	require.NoError(t, err)
+	_, err := h.env.StaffAnonymous(t).StaffSignupItemsList(t.Context())
 
-	requireProblem(t, res, http.StatusUnauthorized)
+	requireProblem(t, err, http.StatusUnauthorized)
 }

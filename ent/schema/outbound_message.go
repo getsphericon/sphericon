@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // OutboundMessage is the durable record of one Outbound send (ADR 0015): one row per
@@ -52,7 +54,7 @@ func (OutboundMessage) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("channel").
-			Values("email", "telegram", "sms").
+			GoType(channels.Channel("")).
 			Default("email"),
 		// Normalized (lower-cased) channel-specific destination. Cleared (NULL) when the
 		// Contact it belonged to is erased (ADR 0021): the row stays as an anonymous

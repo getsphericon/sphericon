@@ -261,9 +261,7 @@ interface SiteAutomations
       SiteAutomationResource,
       SiteCreateAutomationInput,
       SiteUpdateAutomationInput,
-      never,
-      SiteAutomationsListFilter,
-      ConflictProblem
+      SiteAutomationsListFilter
     > {
   /**
    * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
@@ -275,9 +273,7 @@ interface SiteAutomations
   @requiresPermissions(#[])
   archive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
   @action("unarchive")
@@ -285,8 +281,7 @@ interface SiteAutomations
   @requiresPermissions(#[])
   unarchive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /**
    * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
@@ -300,10 +295,7 @@ interface SiteAutomations
   @requiresPermissions(#[])
   publish(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. */
   @action("revert")
@@ -311,10 +303,7 @@ interface SiteAutomations
   @requiresPermissions(#[])
   revert(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Deactivate an automation (stops new enrollments). 409 when it is archived. */
   @action("deactivate")
@@ -322,9 +311,7 @@ interface SiteAutomations
   @requiresPermissions(#[])
   deactivate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem;
+    | Problem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(SiteAutomationResource, "dry-run-http-step")
@@ -333,11 +320,7 @@ interface SiteAutomations
   dryRunHttpStep(
     ...ResourceCollectionParameters<SiteAutomationResource>,
     @body body: SiteDryRunHttpStepInput,
-  ):
-    | SiteDryRunHttpStepResult
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteDryRunHttpStepResult | Problem;
 }
 
 /** An automation's engagement figures */
@@ -474,7 +457,7 @@ namespace SiteAutomationReports {
     /** The period the results are read over (defaults to 30d) */
     @query
     period?: SiteAutomationReportPeriod = SiteAutomationReportPeriod.`30d`,
-  ): SiteAutomationReport | BadRequestProblem | NotFoundProblem;
+  ): SiteAutomationReport | Problem;
 }
 
 @@doc(

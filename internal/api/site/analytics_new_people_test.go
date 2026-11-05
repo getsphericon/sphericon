@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,9 +25,8 @@ func TestSiteAnalyticsNewPeopleIsRefusedForAForeignWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteAnalyticsNewPeople(context.Background(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAnalyticsNewPeopleNotFound{}, out)
+	_, err := c.SiteAnalyticsNewPeople(context.Background(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestEveryRoleReadsTheNewPeopleReport(t *testing.T) {
@@ -40,8 +40,7 @@ func TestEveryRoleReadsTheNewPeopleReport(t *testing.T) {
 			Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 		})
 		require.NoError(t, err, email)
-		report, ok := res.(*siteapi.SiteNewPeopleReport)
-		require.Truef(t, ok, "%s got %T", email, res)
+		report := res
 		assert.Len(t, report.Timeseries, 7, email)
 	}
 }

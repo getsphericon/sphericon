@@ -11,7 +11,7 @@ import (
 
 // StaffInstanceSetDefaultSendCap sets the Send cap of new Workspaces as the signed-in Staff member
 // (ADR 0067); not found on an Instance that has no Send caps.
-func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staffapi.StaffDefaultSendCapInput) (staffapi.StaffInstanceSetDefaultSendCapRes, error) {
+func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staffapi.StaffDefaultSendCapInput) (*staffapi.StaffDefaultSendCapChange, error) {
 	perDay := int(req.PerDay)
 	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), &perDay)
 	if err != nil {
@@ -22,7 +22,7 @@ func (h *Handlers) StaffInstanceSetDefaultSendCap(ctx context.Context, req *staf
 
 // StaffInstanceClearDefaultSendCap removes the Send cap of new Workspaces as the signed-in Staff
 // member; not found on an Instance that has no Send caps.
-func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (staffapi.StaffInstanceClearDefaultSendCapRes, error) {
+func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (*staffapi.StaffDefaultSendCapChange, error) {
 	change, err := h.instance.SetDefaultSendCap(ctx, staffmembers.Current(ctx), nil)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (h *Handlers) StaffInstanceClearDefaultSendCap(ctx context.Context) (staffa
 }
 
 // StaffInstanceListAuditEntries is a page of the Instance audit log (ADR 0070), newest first.
-func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params staffapi.StaffInstanceListAuditEntriesParams) (staffapi.StaffInstanceListAuditEntriesRes, error) {
+func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params staffapi.StaffInstanceListAuditEntriesParams) (*staffapi.StaffInstanceAuditEntryList, error) {
 	cursor, err := auditapi.Page(params.Cursor.Or(""))
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (h *Handlers) StaffInstanceListAuditEntries(ctx context.Context, params sta
 }
 
 // StaffInstanceGetState is the Instance's own settings and state (ADR 0032, ADR 0063).
-func (h *Handlers) StaffInstanceGetState(ctx context.Context) (staffapi.StaffInstanceGetStateRes, error) {
+func (h *Handlers) StaffInstanceGetState(ctx context.Context) (*staffapi.StaffInstanceState, error) {
 	s, err := h.instance.State(ctx)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (h *Handlers) StaffInstanceGetState(ctx context.Context) (staffapi.StaffIns
 
 // StaffInstanceSetTelemetry stores the Staff member's Telemetry report choice; 409 while the
 // environment decides.
-func (h *Handlers) StaffInstanceSetTelemetry(ctx context.Context, req *staffapi.StaffInstanceTelemetryInput) (staffapi.StaffInstanceSetTelemetryRes, error) {
+func (h *Handlers) StaffInstanceSetTelemetry(ctx context.Context, req *staffapi.StaffInstanceTelemetryInput) (*staffapi.StaffInstanceState, error) {
 	s, err := h.instance.SetTelemetry(ctx, req.Enabled)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (h *Handlers) StaffInstanceSetTelemetry(ctx context.Context, req *staffapi.
 
 // StaffInstanceAcknowledgeNotice records that a Staff member saw the one-time notice, which the
 // first report waits for.
-func (h *Handlers) StaffInstanceAcknowledgeNotice(ctx context.Context) (staffapi.StaffInstanceAcknowledgeNoticeRes, error) {
+func (h *Handlers) StaffInstanceAcknowledgeNotice(ctx context.Context) (*staffapi.StaffInstanceState, error) {
 	s, err := h.instance.AcknowledgeNotice(ctx)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (h *Handlers) StaffInstanceAcknowledgeNotice(ctx context.Context) (staffapi
 
 // StaffInstancePreviewTelemetryReport is the Telemetry report exactly as the Instance would send
 // it now, whether or not sending is on: the body of the same builder the daily sender uses.
-func (h *Handlers) StaffInstancePreviewTelemetryReport(ctx context.Context) (staffapi.StaffInstancePreviewTelemetryReportRes, error) {
+func (h *Handlers) StaffInstancePreviewTelemetryReport(ctx context.Context) (staffapi.JsonObject, error) {
 	report, err := h.instance.Report(ctx)
 	if err != nil {
 		return nil, err
@@ -91,5 +91,5 @@ func (h *Handlers) StaffInstancePreviewTelemetryReport(ctx context.Context) (sta
 	if err := json.Unmarshal(body, &fields); err != nil {
 		return nil, err
 	}
-	return &fields, nil
+	return fields, nil
 }

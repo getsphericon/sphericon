@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -26,8 +27,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Big news"), Body: siteapi.NewOptString("<p>Hi {{ first_name }}</p>")}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.Equal(t, "Spring sale", res.Name)
 	assert.Equal(t, "Big news", testhelper.SiteEmailOf(res).Subject)
 	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, res.Status)
@@ -36,8 +36,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	// Fetch the created broadcast back by id (selection by key).
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	gotRes := got
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames a draft.
@@ -45,8 +44,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 		Name: siteapi.NewOptString("Spring sale (v2)"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	updRes, ok := updated.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", updated)
+	updRes := updated
 	assert.Equal(t, "Spring sale (v2)", updRes.Name)
 
 	// Schedule moves it to scheduled with a future time.
@@ -55,39 +53,33 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 		ScheduledAt: siteapi.Timestamp(when),
 	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	schedRes, ok := sched.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", sched)
+	schedRes := sched
 	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, schedRes.Status)
 	assert.True(t, schedRes.ScheduledAt.Set)
 
 	// Send moves it into the sending state.
 	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	sentRes, ok := sent.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", sent)
+	sentRes := sent
 	assert.Equal(t, siteapi.SiteBroadcastStatusSending, sentRes.Status)
 
 	// Sending an already-sending broadcast is rejected with 422.
-	again, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsSendUnprocessableEntity{}, again)
+	_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// Editing a non-draft broadcast is rejected with 422.
-	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name: siteapi.NewOptString("nope"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// A sent broadcast is history: Archive keeps it (it stays addressable).
 	env.DeliverQueuedBroadcasts(t)
-	arch, err := c.SiteBroadcastsArchive(ctx, siteapi.SiteBroadcastsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
+	_, err = c.SiteBroadcastsArchive(ctx, siteapi.SiteBroadcastsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, arch)
 
-	kept, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	_, err = c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, kept)
 }
 
 // Broadcasts are scoped to the workspace: a workspaceID the user does not own is a 404.
@@ -96,9 +88,8 @@ func TestSiteBroadcastsRequireOwnedWorkspace(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	out, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsListNotFound{}, out)
+	_, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // JSON Merge Patch on update: explicit null clears sender name, sender email, the
@@ -116,8 +107,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 		IntegrationId: siteapi.NewOptNilEntityId(1),
 	}, params)
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", res)
+	got := res
 	assert.EqualValues(t, 1, got.SegmentId.Or(0))
 	assert.EqualValues(t, 1, got.IntegrationId.Or(0))
 	assert.Equal(t, "CodeBasics", testhelper.SiteEmailOf(got).FromName.Or(""))
@@ -133,8 +123,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 		IntegrationId: nullIntegration,
 	}, params)
 	require.NoError(t, err)
-	got, ok = res.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", res)
+	got = res
 	assert.Empty(t, testhelper.SiteEmailOf(got).FromName.Or(""))
 	assert.Empty(t, testhelper.SiteEmailOf(got).FromEmail.Or(""))
 	assert.Empty(t, got.SegmentId.Or(0))
@@ -151,21 +140,19 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
-	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "forged",
 		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, workspaceID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:          "forged",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, workspaceID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "a refused create stores nothing")
 }
@@ -177,17 +164,15 @@ func TestSiteBroadcastsUpdateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, before.SegmentID, after.SegmentID, "a refused update changes nothing")

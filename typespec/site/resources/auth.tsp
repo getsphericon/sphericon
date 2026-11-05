@@ -192,10 +192,7 @@ namespace SiteAuth {
         /** The Sign-up browser cookie, absent when the install does not require verification */
         @header("Set-Cookie") setCookie?: string;
       }
-    | BadRequestProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Check the password. A User without a Second factor gets a session (outcome
    * `session`, the JWT cookie set here); a User with one gets outcome `challenge`,
@@ -217,10 +214,7 @@ namespace SiteAuth {
 
         @body body: SiteLoginResult;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** The second login step of a User with a Second factor: verify the challenge
    * and a TOTP or Recovery code, then start the session. An expired, reused or
@@ -240,19 +234,19 @@ namespace SiteAuth {
 
         @body body: SiteLoginResult;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** The Sign-in providers this Instance offers, for the buttons of the login and sign-up
    * pages. Public; empty when none is configured. */
   @useAuth(NoAuth)
   @get
   @route("/signin-providers")
-  op signinProviders(): {
-    @statusCode statusCode: 200;
-    @body body: SiteSigninProviders;
-  };
+  op signinProviders():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteSigninProviders;
+      }
+    | Problem;
 
   /** Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and
    * `nonce`, keeps them (with the validated `return_to`) in a short-lived signed cookie
@@ -282,8 +276,7 @@ namespace SiteAuth {
         /** The flow cookie */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Where the provider sends the browser back (the redirect URI derived from the app URL).
    * Always answers 302: to `return_to` (or `/`) with the session cookie when the sign-in
@@ -327,7 +320,7 @@ namespace SiteAuth {
         /** The session cookie on success; the expired flow cookie on a refusal */
         @header("Set-Cookie") setCookie?: string;
       }
-    | BadRequestProblem;
+    | Problem;
 
   /** A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up
    * items. The token is the signed reference of the callback's redirect, valid for ten minutes;
@@ -335,7 +328,7 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @get
   @route("/signin-pending")
-  op signinPending(@query token: string): SitePendingSignup | BadRequestProblem;
+  op signinPending(@query token: string): SitePendingSignup | Problem;
 
   /** Complete a pending sign-up with the answers to the Sign-up items: creates the User with its
    * Verified email, its Linked identity, its first Workspace (and the Membership of the
@@ -354,8 +347,7 @@ namespace SiteAuth {
         /** The session cookie of the new User */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a
    * token that names nothing any more. */
@@ -364,7 +356,7 @@ namespace SiteAuth {
   @route("/signin-pending/decline")
   op signinPendingDecline(@body body: SiteSigninPendingDeclineInput):
     | NoContentResponse
-    | BadRequestProblem;
+    | Problem;
 
   /** End the session on this browser: clears the session cookie. Answered while an
    * acceptance is pending (ADR 0062), so a gated User can sign out. */
@@ -372,12 +364,14 @@ namespace SiteAuth {
   @allowedWhileAcceptancePending
   @post
   @route("/logout")
-  op logout(): {
-    @statusCode statusCode: 204;
+  op logout():
+    | {
+        @statusCode statusCode: 204;
 
-    /** The expired session cookie */
-    @header("Set-Cookie") setCookie: string;
-  };
+        /** The expired session cookie */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | Problem;
 
   /** Request a password-reset link. Always returns 202 regardless of whether
    * the email matches an account and even when the address has used its hourly
@@ -388,18 +382,14 @@ namespace SiteAuth {
   @route("/forgot-password")
   op forgotPassword(@body body: SiteForgotPasswordInput):
     | AcceptedResponse
-    | BadRequestProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Set a new password from a reset token. A password outside the length rule answers 422
    * with the field error; an invalid or expired token answers 400. */
   @useAuth(NoAuth)
   @post
   @route("/reset-password")
-  op resetPassword(@body body: SiteResetPasswordInput):
-    | OkResponse
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+  op resetPassword(@body body: SiteResetPasswordInput): OkResponse | Problem;
 
   /** Complete a Sign-up from the verification link (the token is the
    * credential): stamps the Verified email, ends every earlier session, creates the
@@ -430,10 +420,7 @@ namespace SiteAuth {
 
         @body body: SiteVerifyEmailResult;
       }
-    | BadRequestProblem
-    | PreconditionRequiredProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Send the verification link again to an Unverified User. Answers 202 the same
    * way whether the address is unknown, already verified or unverified, so it adds no
@@ -449,7 +436,7 @@ namespace SiteAuth {
     @cookie("SIGN_UP_BROWSER") signUpBrowser?: string,
 
     @body body: SiteResendVerificationInput,
-  ): AcceptedResponse | BadRequestProblem | TooManyRequestsProblem;
+  ): AcceptedResponse | Problem;
 
   /** Confirm an email change from the token sent to the new address. Public:
    * the link may be opened from a browser without a session. The change ends
@@ -471,7 +458,7 @@ namespace SiteAuth {
         /** The confirming session reissued, set when the request carried one */
         @header("Set-Cookie") setCookie?: string;
       }
-    | BadRequestProblem;
+    | Problem;
 
   /** Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
    * one Linked identity of the User, which is unlinked, and every session of the User ends.
@@ -480,7 +467,5 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/signin-not-me")
-  op signinNotMe(@body body: SiteSigninNotMeInput):
-    | OkResponse
-    | BadRequestProblem;
+  op signinNotMe(@body body: SiteSigninNotMeInput): OkResponse | Problem;
 }

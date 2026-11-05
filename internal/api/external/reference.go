@@ -12,7 +12,7 @@ import (
 )
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
-func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
+func (h *Handlers) CustomFieldsList(ctx context.Context) (*externalapi.CustomFieldsListOK, error) {
 	items, err := contacts.CustomFields(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 }
 
 // CustomFieldsUpdate renames a Custom field or changes its type.
-func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (externalapi.CustomFieldsUpdateRes, error) {
+func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (*externalapi.CustomFieldResource, error) {
 	field, err := contacts.UpdateCustomField(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.Upda
 
 // SendingDomainRatesList returns the (numerator, denominator, rate) triples of ADR 0011
 // for every Sending domain, over the trailing window.
-func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (externalapi.SendingDomainRatesListRes, error) {
+func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (*externalapi.SendingDomainRatesListOK, error) {
 	days := params.WindowDays.Value
 
 	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour))

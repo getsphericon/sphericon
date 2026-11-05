@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -89,7 +89,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	// Guard: the email audience filters EmailNotNil, but a contact could lose its email between plan
 	// and send. Terminal: the row can never send. A Channel of Bindings has no such guard: a Contact
 	// that lost its last Binding is Skipped no_destination by Outbound send.
-	if b.Channel == broadcast.ChannelEmail && c.Email == nil {
+	if b.Channel == channels.Email && c.Email == nil {
 		return d.fail(ctx, s, rec, errNoEmail)
 	}
 

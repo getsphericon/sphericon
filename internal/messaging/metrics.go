@@ -7,6 +7,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 const otelScope = "github.com/getsphericon/sphericon/internal/messaging"
@@ -35,7 +37,7 @@ const (
 
 // RecordSendOutcome counts one send outcome for a provider on the global meter
 // provider (a no-op when telemetry is disabled).
-func RecordSendOutcome(ctx context.Context, provider Provider, status SendStatus) {
+func RecordSendOutcome(ctx context.Context, provider providers.Provider, status SendStatus) {
 	counter, err := otel.Meter(otelScope).Int64Counter(
 		"email.send.outcomes",
 		metric.WithDescription("Email send outcomes by provider and status."),
@@ -54,7 +56,7 @@ func RecordSendOutcome(ctx context.Context, provider Provider, status SendStatus
 type instrumentedSender struct {
 	EmailSender
 
-	provider Provider
+	provider providers.Provider
 }
 
 // DefaultFrom forwards the wrapped sender's DefaultFromer, which the decorator

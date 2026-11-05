@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"net/http/httptest"
-
 	"github.com/samber/do/v2"
+
+	"net/http/httptest"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
@@ -597,7 +598,7 @@ type inboxResolver struct {
 }
 
 func (r inboxResolver) EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
-	if integ != nil && messaging.Provider(integ.Provider) == messaging.ProviderInbox {
+	if integ != nil && integ.Provider == providers.Inbox {
 		return r.real.EmailSender(ctx, s, integ)
 	}
 	return r.fixed.EmailSender(ctx, s, integ)

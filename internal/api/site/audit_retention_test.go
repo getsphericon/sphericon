@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,32 +15,29 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func setRetention(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, days siteapi.NilRetentionDays) siteapi.SiteAuditSetRetentionRes {
+func setRetention(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, days siteapi.NilRetentionDays) (*siteapi.SiteAuditRetention, error) {
 	t.Helper()
-	res, err := c.SiteAuditSetRetention(context.Background(), &siteapi.SiteAuditRetention{RetentionDays: days},
+	return c.SiteAuditSetRetention(context.Background(), &siteapi.SiteAuditRetention{RetentionDays: days},
 		siteapi.SiteAuditSetRetentionParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	return res
 }
 
-func retentionOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteAuditGetRetentionRes {
+func retentionOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.SiteAuditRetention, error) {
 	t.Helper()
-	res, err := c.SiteAuditGetRetention(context.Background(), siteapi.SiteAuditGetRetentionParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	return res
+	return c.SiteAuditGetRetention(context.Background(), siteapi.SiteAuditGetRetentionParams{WorkspaceId: workspaceID})
 }
 
 func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	first := retentionOf(t, owner, fixtures.AcmePublicID)
-	require.IsType(t, &siteapi.SiteAuditRetention{}, first)
-	assert.True(t, first.(*siteapi.SiteAuditRetention).RetentionDays.Null, "no window by default")
+	first, err := retentionOf(t, owner, fixtures.AcmePublicID)
+	require.NoError(t, err)
+	assert.True(t, first.RetentionDays.Null, "no window by default")
 
-	res := setRetention(t, owner, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(90))
-	require.IsType(t, &siteapi.SiteAuditRetention{}, res)
-	got := retentionOf(t, owner, fixtures.AcmePublicID).(*siteapi.SiteAuditRetention)
+	_, err = setRetention(t, owner, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(90))
+	require.NoError(t, err)
+	got, err := retentionOf(t, owner, fixtures.AcmePublicID)
+	require.NoError(t, err)
 	assert.Equal(t, siteapi.RetentionDays(90), got.RetentionDays.Value)
 
 	got2 := env.QueuedEvents(t, events.NameAuditEntry)
@@ -51,23 +49,33 @@ func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {
 	assert.JSONEq(t, `{"retention_days":{"from":null,"to":90}}`, string(diff))
 
 	// Setting the same value again records nothing; clearing records the change back.
-	setRetention(t, owner, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(90))
+	_, err = setRetention(t, owner, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(90))
+	require.NoError(t, err)
 	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)
-	setRetention(t, owner, fixtures.AcmePublicID, siteapi.NilRetentionDays{Null: true})
+	_, err = setRetention(t, owner, fixtures.AcmePublicID, siteapi.NilRetentionDays{Null: true})
+	require.NoError(t, err)
 	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 2)
-	assert.True(t, retentionOf(t, owner, fixtures.AcmePublicID).(*siteapi.SiteAuditRetention).RetentionDays.Null)
+	cleared, err := retentionOf(t, owner, fixtures.AcmePublicID)
+	require.NoError(t, err)
+	assert.True(t, cleared.RetentionDays.Null)
 }
 
 func TestAuditRetentionIsOwnerAdminOnlyLicensed(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
-	assert.IsType(t, &siteapi.SiteAuditSetRetentionForbidden{}, setRetention(t, mary, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30)))
-	assert.IsType(t, &siteapi.SiteAuditGetRetentionForbidden{}, retentionOf(t, mary, fixtures.AcmePublicID))
+	_, err := setRetention(t, mary, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30))
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = retentionOf(t, mary, fixtures.AcmePublicID)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	assert.IsType(t, &siteapi.SiteAuditSetRetentionNotFound{}, setRetention(t, oscar, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30)))
-	assert.IsType(t, &siteapi.SiteAuditGetRetentionNotFound{}, retentionOf(t, oscar, fixtures.AcmePublicID))
+	_, err = setRetention(t, oscar, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30))
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = retentionOf(t, oscar, fixtures.AcmePublicID)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	unlicensed := testhelper.Setup(t, testhelper.WithoutLicense()).SiteActor(t, fixtures.OwnerJohnEmail)
-	assert.IsType(t, &siteapi.SiteAuditSetRetentionPaymentRequired{}, setRetention(t, unlicensed, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30)))
-	assert.IsType(t, &siteapi.SiteAuditGetRetentionPaymentRequired{}, retentionOf(t, unlicensed, fixtures.AcmePublicID))
+	_, err = setRetention(t, unlicensed, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(30))
+	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired)
+	_, err = retentionOf(t, unlicensed, fixtures.AcmePublicID)
+	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired)
 }

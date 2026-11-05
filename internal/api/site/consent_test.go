@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -50,27 +50,24 @@ func TestSitePublicConfirmationsPerform(t *testing.T) {
 	}
 	require.Zero(t, count())
 
-	out, err := anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: token})
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: token})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicConfirmationsPerformNoContent{}, out)
 	assert.Equal(t, 1, count())
 
-	_, err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: token})
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: token})
 	require.NoError(t, err)
 	assert.Equal(t, 1, count(), "repeating is a no-op")
 
-	out, err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: "garbage"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicConfirmationsPerformBadRequest{}, out, "an invalid token is a 400")
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: "garbage"})
+	testhelper.SiteRefusal(t, err, http.StatusBadRequest, "an invalid token is a 400")
 
 	// An expired link is told apart from an invalid one (410), so the page can offer
 	// to sign up again instead of a generic failure.
 	expired := env.ExpiredConfirmToken(t, tracking.ConfirmTarget{
 		Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
-	out, err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: expired})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicConfirmationsPerformGone{}, out, "an expired token is a 410")
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: expired})
+	testhelper.SiteRefusal(t, err, http.StatusGone, "an expired token is a 410")
 	assert.Equal(t, 1, count(), "an expired token records nothing more")
 }
 
@@ -83,7 +80,7 @@ func TestSitePublicUnsubscribesPerform(t *testing.T) {
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	url, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	require.NoError(t, err)
@@ -99,14 +96,12 @@ func TestSitePublicUnsubscribesPerform(t *testing.T) {
 	}
 	require.False(t, optedOut())
 
-	out, err := anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: token})
+	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: token})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
 	assert.True(t, optedOut())
 
-	out, err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: "garbage"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, out)
+	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: "garbage"})
+	testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 }
 
 // ADR 0013: the confirmation event carries the confirming client's address as
@@ -146,16 +141,16 @@ func TestSitePublicConsentWriteFailureIsAnError(t *testing.T) {
 	const poisoned = "a\x00b@example.com"
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: poisoned, WorkspaceID: fixtures.AcmeID,
 	})
 	require.NoError(t, err)
-	_, err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
+	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
 	require.Error(t, err, "a failed opt-out write must not answer 204")
 
 	confirmURL, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{Destination: poisoned, WorkspaceID: fixtures.AcmeID})
 	require.NoError(t, err)
-	_, err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
 	require.Error(t, err, "a failed confirmation write must not answer 204")
 }
 
@@ -168,17 +163,15 @@ func TestSitePublicConsentForDeletedWorkspaceIsNoOp(t *testing.T) {
 	const goneWorkspace = 999999
 
 	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace,
 	})
 	require.NoError(t, err)
-	out, err := anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
+	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
 
 	confirmURL, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace})
 	require.NoError(t, err)
-	out2, err := anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
+	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicConfirmationsPerformNoContent{}, out2)
 }

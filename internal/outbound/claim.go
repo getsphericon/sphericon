@@ -31,7 +31,7 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		return msg, nil, err
 	}
 
-	onChannel := outboundmessage.Channel(req.Channel())
+	onChannel := req.Channel()
 	create := s.OutboundMessage().Create().
 		SetKind(req.Kind).
 		SetIdempotencyKey(req.Key).

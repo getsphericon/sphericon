@@ -376,9 +376,7 @@ interface Automations
       UpdateAutomationInput,
       ApiTokenScope.automationsRead,
       ApiTokenScope.automationsWrite,
-      never,
-      AutomationsListFilter,
-      ConflictProblem
+      AutomationsListFilter
     > {
   /** Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them). */
   @action("archive")
@@ -386,12 +384,7 @@ interface Automations
   @requiresScopes(#[ApiTokenScope.automationsWrite])
   archive(...ResourceParameters<AutomationResource>):
     | AutomationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
   @action("unarchive")
@@ -399,11 +392,7 @@ interface Automations
   @requiresScopes(#[ApiTokenScope.automationsWrite])
   unarchive(...ResourceParameters<AutomationResource>):
     | AutomationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope. */
   @action("publish")
@@ -411,13 +400,7 @@ interface Automations
   @requiresScopes(#[ApiTokenScope.automationsPublish])
   publish(...ResourceParameters<AutomationResource>):
     | AutomationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live, 409 when the automation is archived. Needs the automations:write scope. */
   @action("revert")
@@ -425,13 +408,7 @@ interface Automations
   @requiresScopes(#[ApiTokenScope.automationsWrite])
   revert(...ResourceParameters<AutomationResource>):
     | AutomationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Read the report: the engagement of the automation's emails over its whole history, and its
    * results over a period of Report days in the Workspace time zone (entered, completed,
@@ -446,13 +423,7 @@ interface Automations
 
     /** The period the results are read over (defaults to 30d) */
     @query period?: AutomationReportPeriod = AutomationReportPeriod.`30d`,
-  ):
-    | AutomationReport
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  ): AutomationReport | Problem;
 
   /** Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived. Needs the automations:write scope. */
   @action("deactivate")
@@ -460,12 +431,7 @@ interface Automations
   @requiresScopes(#[ApiTokenScope.automationsWrite])
   deactivate(...ResourceParameters<AutomationResource>):
     | AutomationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem;
+    | Problem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(AutomationResource, "dry-run-http-step")
@@ -474,14 +440,7 @@ interface Automations
   dryRunHttpStep(
     ...ResourceCollectionParameters<AutomationResource>,
     @body body: DryRunHttpStepInput,
-  ):
-    | DryRunHttpStepResult
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): DryRunHttpStepResult | Problem;
 }
 
 @@doc(

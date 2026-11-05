@@ -68,7 +68,10 @@ func TestAProviderSigninThatCreatesAUserOnASelfHostedInstanceJoinsTheWorkspaceOf
 
 func TestAProviderLinkOfAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 	env, fake := githubEnv(t, testhelper.WithConfig(verificationOff))
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Colleague", Email: siteapi.EmailAddress(colleague.Email), Password: siteapi.NewOptString(joinerPassword),
+	})
+	require.NoError(t, err)
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)
@@ -99,14 +102,12 @@ func TestAProviderTakeOverOfAPendingSignUpJoinsTheUser(t *testing.T) {
 // changeEmail runs the whole confirmed email change of the person's session.
 func changeEmail(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, to string) {
 	t.Helper()
-	res, err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{NewEmail: siteapi.EmailAddress(to), CurrentPassword: joinerPassword})
+	err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{NewEmail: siteapi.EmailAddress(to), CurrentPassword: joinerPassword})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteUserEmailChangeAccepted{}, res)
 	_, body := lastSystemEmail(t, env)
-	confirm, err := env.SiteAnonymous(t).SiteAuthConfirmEmailChange(t.Context(),
+	_, err = env.SiteAnonymous(t).SiteAuthConfirmEmailChange(t.Context(),
 		&siteapi.SiteConfirmEmailChangeInput{Token: tokenFromEmail(t, body)}, siteapi.SiteAuthConfirmEmailChangeParams{})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthConfirmEmailChangeOK{}, confirm)
 }
 
 func TestAConfirmedEmailChangeToTheDomainJoinsTheUser(t *testing.T) {
@@ -136,9 +137,8 @@ func TestARemovedMemberRejoinsByConfirmingAnotherAddressOnTheDomainButNotByLoggi
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	joined := acmeMembersNamed(acmeMembers(t, owner), colleague.Email)
 	require.Len(t, joined, 1)
-	del, err := owner.SiteMembershipsDelete(t.Context(), siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: joined[0].ID})
+	err := owner.SiteMembershipsDelete(t.Context(), siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: joined[0].ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, del)
 
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, colleague.Email, joinerPassword))
 	requireNotInAcme(t, env, colleague.Email)
@@ -149,11 +149,10 @@ func TestARemovedMemberRejoinsByConfirmingAnotherAddressOnTheDomainButNotByLoggi
 
 func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Colleague"), Password: siteapi.NewOptString(joinerPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 }
 
 func TestAnInvitationToAnotherWorkspaceThatProvesANewAddressAlsoJoinsTheDomainWorkspace(t *testing.T) {
@@ -172,10 +171,9 @@ func TestAnInvitationForAnAlreadyProvenAddressTriggersNoDomainJoin(t *testing.T)
 	enableAcmeJoin(t, env)
 	token := fixtures.InvitationGlobexColleagueToken
 
-	res, err := person.client.SitePublicInvitationsAccept(t.Context(), &siteapi.SiteAcceptInvitationInput{},
+	err := person.client.SitePublicInvitationsAccept(t.Context(), &siteapi.SiteAcceptInvitationInput{},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	requireNotInAcme(t, env, colleague.Email)
 }
@@ -200,10 +198,9 @@ func TestAnAdminInvitationRaisesADomainJoinedMember(t *testing.T) {
 	person := signUp(t, env, colleague.Email)
 	requireDomainJoined(t, env, colleague.Email)
 
-	res, err := person.client.SitePublicInvitationsAccept(t.Context(), &siteapi.SiteAcceptInvitationInput{},
+	err := person.client.SitePublicInvitationsAccept(t.Context(), &siteapi.SiteAcceptInvitationInput{},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	got := acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), colleague.Email)
 	require.Len(t, got, 1)
@@ -213,18 +210,19 @@ func TestAnAdminInvitationRaisesADomainJoinedMember(t *testing.T) {
 func resetPassword(t *testing.T, env *testhelper.TestEnv, email string) {
 	t.Helper()
 	c := env.SiteAnonymous(t)
-	forgot, err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: siteapi.EmailAddress(email)})
+	err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: siteapi.EmailAddress(email)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthForgotPasswordAccepted{}, forgot)
 	_, body := lastSystemEmail(t, env)
-	res, err := c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
+	err = c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
 }
 
 func TestAResetLinkThatProvesAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(verificationOff))
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Colleague", Email: siteapi.EmailAddress(colleague.Email), Password: siteapi.NewOptString(joinerPassword),
+	})
+	require.NoError(t, err)
 	enableAcmeJoin(t, env)
 
 	resetPassword(t, env, colleague.Email)

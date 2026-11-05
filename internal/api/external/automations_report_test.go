@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -16,10 +17,8 @@ import (
 
 func automationReport(t *testing.T, c *externalapi.Client, params externalapi.AutomationsReportParams) *externalapi.AutomationReport {
 	t.Helper()
-	res, err := c.AutomationsReport(context.Background(), params)
+	report, err := c.AutomationsReport(context.Background(), params)
 	require.NoError(t, err)
-	report, ok := res.(*externalapi.AutomationReport)
-	require.Truef(t, ok, "got %T", res)
 	return report
 }
 
@@ -57,11 +56,9 @@ func TestExternalAutomationReportNeedsTheReadScopeAndTheTokensWorkspace(t *testi
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	foreign, err := env.ExternalScoped(t, "automations:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationGlobexID)})
-	require.NoError(t, err)
-	denied, err := env.ExternalScoped(t, "contacts:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
-	require.NoError(t, err)
+	_, foreign := env.ExternalScoped(t, "automations:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationGlobexID)})
+	_, denied := env.ExternalScoped(t, "contacts:read").AutomationsReport(ctx, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 
-	assert.IsType(t, &externalapi.AutomationsReportNotFound{}, foreign)
-	assert.IsType(t, &externalapi.AutomationsReportForbidden{}, denied)
+	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound)
+	testhelper.ExternalRefusal(t, denied, http.StatusForbidden)
 }

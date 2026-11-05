@@ -1124,7 +1124,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms", "telegram"}, Default: "email"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses", "inbox", "telegram", "twilio"}},
 		{Name: "config_encrypted", Type: field.TypeString},
 		{Name: "preset", Type: field.TypeString, Nullable: true},
@@ -3201,7 +3201,7 @@ func init() {
 		Table: "integrations",
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
-		"integrations_channel_check":              "channel IN ('email', 'sms', 'telegram')",
+		"integrations_channel_check":              "channel IN ('email', 'telegram', 'sms')",
 		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox', 'telegram', 'twilio')",
 		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}

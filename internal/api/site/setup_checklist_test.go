@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,10 +24,8 @@ const (
 func setupChecklist(t *testing.T, email string, workspaceID siteapi.WorkspaceId) *siteapi.SiteSetupProgress {
 	t.Helper()
 	c := testhelper.Setup(t).SiteActor(t, email)
-	res, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: workspaceID})
+	out, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	out, ok := res.(*siteapi.SiteSetupProgress)
-	require.Truef(t, ok, "got %T", res)
 	return out
 }
 
@@ -41,9 +40,8 @@ func TestSiteSetupChecklistHidesAForeignWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.GlobexPublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSetupChecklistGetNotFound{}, res)
+	_, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.GlobexPublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteSetupChecklistStates(t *testing.T) {
@@ -79,10 +77,8 @@ func TestAChecklistFoundCompleteStaysCompleteWhenAStepRegresses(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	read := func() *siteapi.SiteSetupProgress {
 		t.Helper()
-		res, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.AcmePublicID})
+		out, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
-		out, ok := res.(*siteapi.SiteSetupProgress)
-		require.Truef(t, ok, "got %T", res)
 		return out
 	}
 	first := read()
@@ -107,10 +103,8 @@ func TestSiteSetupChecklistAsksForAnEmailProviderNotATelegramBot(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.SabreOwnerSueEmail)
 
-	res, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.SabrePublicID})
+	got, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.SabrePublicID})
 	require.NoError(t, err)
 
-	got, ok := res.(*siteapi.SiteSetupProgress)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, todo, got.Steps.Integration)
 }

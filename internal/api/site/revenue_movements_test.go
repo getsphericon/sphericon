@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -25,9 +26,8 @@ func (s shop) at(at time.Time, action string, props map[string]string) {
 	in := orderInput("alice", action, props)
 	in.OccurredAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(at))
 	// A Backfill takes any age, so a test does not depend on the time of day it runs at.
-	res, err := s.api.EventsBatchSubmit(s.t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
+	_, err := s.api.EventsBatchSubmit(s.t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(s.t, err)
-	require.IsType(s.t, &externalapi.RecordEventsBatchResult{}, res)
 }
 
 func orderProps(id, total string, extra ...string) map[string]string {
@@ -184,13 +184,11 @@ func TestAnOrderEventForAnOrderThatNeverCompletesCountsNothing(t *testing.T) {
 func TestARefundIdThatIsNotTextOrANumberIsRefusedAtIngest(t *testing.T) {
 	_, s := setup(t)
 
-	res, err := s.api.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+	err := s.api.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderInput("alice", "Order Refunded", orderProps("A-1", "1.00", "refund_id", `{"a":1}`)),
 	}})
 
-	require.NoError(t, err)
-	refused, ok := res.(*externalapi.EventsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "refund_id")
 }
 

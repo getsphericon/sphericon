@@ -70,9 +70,5 @@ namespace SiteTransactionalEmails {
   op list(
     ...ResourceCollectionParameters<SiteTransactionalEmailResource>,
     ...PageQuery,
-  ):
-    | Page<SiteTransactionalEmailResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteTransactionalEmailResource> | Problem;
 }

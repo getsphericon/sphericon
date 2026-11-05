@@ -62,10 +62,5 @@ namespace Export {
   @get
   @route("/contacts")
   @requiresScopes(#[ApiTokenScope.exportRead])
-  op contacts(...ExportPageQuery):
-    | ExportPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op contacts(...ExportPageQuery): ExportPage | Problem;
 }

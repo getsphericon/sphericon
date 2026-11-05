@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -67,7 +68,7 @@ func eventProperties(m map[string]jx.Raw) map[string]any {
 	return out
 }
 
-func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.CollectEventsInput) (collectapi.CollectEventsCreateRes, error) {
+func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.CollectEventsInput) error {
 	evts := lo.Map(req.Events, func(e collectapi.CollectEventInput, _ int) visitors.CollectEventInput {
 		evt := visitors.CollectEventInput{
 			VisitorID: e.VisitorId,
@@ -86,13 +87,10 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 		return evt
 	})
 
-	if err := visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts); err != nil {
-		return nil, err
-	}
-	return &collectapi.CollectEventsCreateNoContent{}, nil
+	return visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts)
 }
 
-func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (collectapi.CollectIdentifyCreateRes, error) {
+func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (*collectapi.CollectOkResponse, error) {
 	input := visitors.IdentifyInput{
 		VisitorID: req.VisitorId,
 	}
@@ -123,7 +121,7 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 }
 
 // CollectTelegramStartLinksCreate issues the Visitor's start link on the default Telegram bot.
-func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *collectapi.CollectTelegramStartLinkInput) (collectapi.CollectTelegramStartLinksCreateRes, error) {
+func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *collectapi.CollectTelegramStartLinkInput) (*collectapi.CollectTelegramStartLink, error) {
 	link, err := h.bindings.IssueVisitorStartLink(ctx, auth.CollectScoped(ctx), req.VisitorId)
 	if err != nil {
 		return nil, err
@@ -132,3 +130,9 @@ func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *col
 }
 
 var _ collectapi.Handler = (*Handlers)(nil)
+
+// NewError answers a refused or failed request with the contract's Problem: the status and
+// the body are decided once for every surface (internal/problem).
+func (*Handlers) NewError(ctx context.Context, err error) *collectapi.ProblemDetailsStatusCode {
+	return problem.Collect(ctx, err)
+}

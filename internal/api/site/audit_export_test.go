@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -17,17 +18,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func auditExport(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteAuditExportRes {
+func auditExport(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteAuditExportOKHeaders {
 	t.Helper()
 	res, err := c.SiteAuditExport(context.Background(), siteapi.SiteAuditExportParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
 
-func auditCSV(t *testing.T, res siteapi.SiteAuditExportRes) [][]string {
+func auditCSV(t *testing.T, res *siteapi.SiteAuditExportOKHeaders) [][]string {
 	t.Helper()
-	ok, isOK := res.(*siteapi.SiteAuditExportOKHeaders)
-	require.Truef(t, isOK, "export answered %T", res)
+	ok := res
 	assert.Contains(t, ok.ContentDisposition, "attachment")
 	assert.Contains(t, ok.ContentDisposition, ".csv")
 	body, err := io.ReadAll(ok.Response.Data)
@@ -91,19 +91,23 @@ func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {
 func TestAuditExportIsOwnerAndAdminOnlyAndLicensed(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportForbidden{}, auditExport(t, mary, fixtures.AcmePublicID), "a member is refused")
+	_, err := mary.SiteAuditExport(t.Context(), siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden, "a member is refused")
 
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportNotFound{}, auditExport(t, oscar, fixtures.AcmePublicID), "a stranger finds no workspace")
+	_, err = oscar.SiteAuditExport(t.Context(), siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "a stranger finds no workspace")
 
 	promoteMary(t, env)
-	assert.IsType(t, &siteapi.SiteAuditExportOKHeaders{}, auditExport(t, mary, fixtures.AcmePublicID), "an admin exports")
+	_, err = mary.SiteAuditExport(t.Context(), siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID})
+	assert.NoError(t, err, "an admin exports")
 }
 
 func TestAuditExportWithoutLicenseIsPaymentRequired(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportPaymentRequired{}, auditExport(t, owner, fixtures.AcmePublicID))
+	_, err := owner.SiteAuditExport(t.Context(), siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired)
 }
 
 // The export is itself an audit_log.export entry that names the filter it ran with

@@ -63,10 +63,7 @@ namespace ServiceUsage {
   @requiresServiceScopes(#[ServiceScope.usageRead])
   op list(...UsagePeriodQuery, ...PageQuery):
     | Page<WorkspaceUsageResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }
 
 @tag("Service Usage")
@@ -79,9 +76,5 @@ namespace ServiceWorkspaceUsage {
   @requiresServiceScopes(#[ServiceScope.usageRead])
   op get(@path workspaceId: WorkspaceId, ...UsagePeriodQuery):
     | WorkspaceUsageResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

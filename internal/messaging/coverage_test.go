@@ -5,13 +5,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/wneessen/go-mail"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -29,11 +32,11 @@ func TestDomainOf(t *testing.T) {
 func TestCatalogChannelOf(t *testing.T) {
 	cat := registry.Default()
 
-	ch, ok := cat.ChannelOf(messaging.ProviderSES)
+	ch, ok := cat.ChannelOf(providers.SES)
 	assert.True(t, ok)
-	assert.Equal(t, messaging.ChannelEmail, ch)
+	assert.Equal(t, channels.Email, ch)
 
-	_, ok = cat.ChannelOf(messaging.Provider("carrier-pigeon"))
+	_, ok = cat.ChannelOf(providers.Provider("carrier-pigeon"))
 	assert.False(t, ok)
 }
 
@@ -41,22 +44,22 @@ func TestCatalogValidate(t *testing.T) {
 	boom := errors.New("boom")
 	cat := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+			Channel: channels.Email, Provider: providers.SMTP,
 			Validate: func([]byte) error { return boom },
 		},
-		messaging.ProviderDescriptor{Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES},
+		messaging.ProviderDescriptor{Channel: channels.Email, Provider: providers.SES},
 	)
 
-	require.ErrorIs(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSMTP, nil), boom)
-	require.NoError(t, cat.Validate(messaging.ChannelEmail, messaging.ProviderSES, nil), "no Validate hook means nothing to check")
-	assert.ErrorContains(t, cat.Validate(messaging.ChannelSMS, messaging.ProviderSES, nil), "unknown provider")
+	require.ErrorIs(t, cat.Validate(channels.Email, providers.SMTP, nil), boom)
+	require.NoError(t, cat.Validate(channels.Email, providers.SES, nil), "no Validate hook means nothing to check")
+	assert.ErrorContains(t, cat.Validate(channels.SMS, providers.SES, nil), "unknown provider")
 }
 
 func TestCatalogBuildEmail(t *testing.T) {
 	boom := errors.New("build failed")
 	cat := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+			Channel: channels.Email, Provider: providers.SMTP,
 			Build: func([]byte, messaging.Deps) (any, error) {
 				return &EmailSenderMock{SendFunc: func(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
 					return messaging.Receipt{MessageID: "stub"}, nil
@@ -64,26 +67,26 @@ func TestCatalogBuildEmail(t *testing.T) {
 			},
 		},
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
+			Channel: channels.Email, Provider: providers.SES,
 			Build: func([]byte, messaging.Deps) (any, error) { return nil, boom },
 		},
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.Provider("wrong"),
+			Channel: channels.Email, Provider: providers.Provider("wrong"),
 			Build: func([]byte, messaging.Deps) (any, error) { return "not a sender", nil },
 		},
 	)
 
-	sender, err := cat.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{})
+	sender, err := cat.BuildEmail(providers.SMTP, nil, messaging.Deps{})
 	require.NoError(t, err)
 	assert.NotNil(t, sender, "built sender is wrapped by the outcome counter, so assert behaviour in metrics_test.go")
 
-	_, err = cat.BuildEmail(messaging.ProviderSES, nil, messaging.Deps{})
+	_, err = cat.BuildEmail(providers.SES, nil, messaging.Deps{})
 	require.ErrorIs(t, err, boom)
 
-	_, err = cat.BuildEmail(messaging.Provider("wrong"), nil, messaging.Deps{})
+	_, err = cat.BuildEmail(providers.Provider("wrong"), nil, messaging.Deps{})
 	require.ErrorContains(t, err, "did not build an EmailSender")
 
-	_, err = cat.BuildEmail(messaging.Provider("missing"), nil, messaging.Deps{})
+	_, err = cat.BuildEmail(providers.Provider("missing"), nil, messaging.Deps{})
 	assert.ErrorContains(t, err, "unknown email provider")
 }
 
@@ -173,12 +176,12 @@ func TestResolverErrors(t *testing.T) {
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	_, err := messaging.Integration(canceled, env.DB.Scoped(fixtures.AcmeID), messaging.ChannelEmail, nil)
+	_, err := messaging.Integration(canceled, env.DB.Scoped(fixtures.AcmeID), channels.Email, nil)
 	require.Error(t, err)
 	require.NotErrorIs(t, err, messaging.ErrNoProvider)
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetConfigEncrypted("not-a-ciphertext").SetIsDefault(true).ExecX(ctx)
-	integ, err := messaging.Integration(ctx, env.DB.Scoped(fixtures.GlobexID), messaging.ChannelEmail, nil)
+	integ, err := messaging.Integration(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email, nil)
 	require.NoError(t, err)
 	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID), integ)
 	assert.ErrorContains(t, err, "decrypt integration")

@@ -264,10 +264,8 @@ func TestHookRedeliveryHasTheEffectOfOnce(t *testing.T) {
 
 func updateParams(t *testing.T, c *externalapi.Client, id int64, update *externalapi.UpdateIntegrationInput) *externalapi.IntegrationResource {
 	t.Helper()
-	res, err := c.IntegrationsUpdate(t.Context(), update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
+	out, err := c.IntegrationsUpdate(t.Context(), update, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
 	require.NoError(t, err)
-	out, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	return out
 }
 
@@ -308,10 +306,8 @@ func TestRegeneratingTheKeyInvalidatesTheOldURL(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	old := fixtures.IntegrationAcmeGenericAIngestKey
 
-	res, err := c.IntegrationsRegenerateKey(t.Context(), externalapi.IntegrationsRegenerateKeyParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
+	got, err := c.IntegrationsRegenerateKey(t.Context(), externalapi.IntegrationsRegenerateKeyParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	require.Contains(t, got.HookUrl, "/hooks/omik_", got.HookUrl)
 	require.NotContains(t, got.HookUrl, old)
 	newKey := got.HookUrl[strings.LastIndex(got.HookUrl, "/")+1:]
@@ -334,10 +330,8 @@ func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 		})},
 		"a Preset that does not exist": {Preset: externalapi.NewOptNilString("nope")},
 	} {
-		res, err := c.IntegrationsUpdate(t.Context(), &in, externalapi.IntegrationsUpdateParams{ID: id})
-		require.NoError(t, err, name)
-		_, unprocessable := res.(*externalapi.IntegrationsUpdateUnprocessableEntity)
-		assert.True(t, unprocessable, "%s: got %T", name, res)
+		_, err := c.IntegrationsUpdate(t.Context(), &in, externalapi.IntegrationsUpdateParams{ID: id})
+		testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, name)
 	}
 }
 
@@ -354,10 +348,9 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_1", "a@example.com", true)).Code,
 		"an SMTP Integration with no Preset receives nothing")
 
-	res, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic")},
+	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic")},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(id)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(secretA)})
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
@@ -380,10 +373,8 @@ func TestPresetsListCarriesTheParamsSchemaOfEachPreset(t *testing.T) {
 	env := setupHooks(t)
 	c := env.ExternalScoped(t, "integrations:read")
 
-	res, err := c.PresetsList(t.Context())
+	list, err := c.PresetsList(t.Context())
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.PresetsListOK)
-	require.Truef(t, ok, "got %T", res)
 	generic, found := lo.Find(list.Items, func(p externalapi.PresetResource) bool { return p.Name == "generic" })
 	require.True(t, found)
 	assert.Contains(t, string(generic.ParamsSchema["properties"]), "writeOnly")
@@ -418,18 +409,15 @@ func TestEveryReadOfAnIntegrationCarriesItsHookURL(t *testing.T) {
 	env := setupHooks(t)
 	c := env.ExternalScoped(t, "integrations:read")
 
-	res, err := c.IntegrationsGet(t.Context(), externalapi.IntegrationsGetParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
+	got, err := c.IntegrationsGet(t.Context(), externalapi.IntegrationsGetParams{ID: externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.True(t, strings.HasSuffix(got.HookUrl, "/hooks/"+fixtures.IntegrationAcmeGenericAIngestKey), got.HookUrl)
 	preset, _ := got.Preset.Get()
 	assert.Equal(t, "generic", preset)
 
 	list, err := c.IntegrationsList(t.Context(), externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	page, ok := list.(*externalapi.IntegrationsListOK)
-	require.Truef(t, ok, "got %T", list)
+	page := list
 	for _, item := range page.Items {
 		assert.Contains(t, item.HookUrl, "/hooks/omik_")
 	}

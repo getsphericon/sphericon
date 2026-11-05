@@ -9,7 +9,7 @@ import (
 )
 
 // TelegramStartLinksIssue issues the Contact's start link on the named bot or the default one.
-func (h *Handlers) TelegramStartLinksIssue(ctx context.Context, req *externalapi.IssueTelegramStartLinkInput, params externalapi.TelegramStartLinksIssueParams) (externalapi.TelegramStartLinksIssueRes, error) {
+func (h *Handlers) TelegramStartLinksIssue(ctx context.Context, req *externalapi.IssueTelegramStartLinkInput, params externalapi.TelegramStartLinksIssueParams) (*externalapi.TelegramStartLinkResource, error) {
 	link, err := h.bindings.IssueStartLink(ctx, auth.TokenScoped(ctx), int64(params.ContactId), convert.Int64Ptr(req.IntegrationId))
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ import (
 // /site shares. Reading needs captured_messages:read, deleting captured_messages:write.
 
 // CapturedMessagesList returns the Workspace's Captured messages, newest first, without content.
-func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.CapturedMessagesListParams) (externalapi.CapturedMessagesListRes, error) {
+func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.CapturedMessagesListParams) (*externalapi.CapturedMessagesListOK, error) {
 	page, err := h.captured.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.
 }
 
 // CapturedMessagesGet returns one Captured message in full.
-func (h *Handlers) CapturedMessagesGet(ctx context.Context, params externalapi.CapturedMessagesGetParams) (externalapi.CapturedMessagesGetRes, error) {
+func (h *Handlers) CapturedMessagesGet(ctx context.Context, params externalapi.CapturedMessagesGetParams) (*externalapi.CapturedMessageResource, error) {
 	row, err := h.captured.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -31,18 +31,15 @@ func (h *Handlers) CapturedMessagesGet(ctx context.Context, params externalapi.C
 }
 
 // CapturedMessagesDelete deletes one Captured message.
-func (h *Handlers) CapturedMessagesDelete(ctx context.Context, params externalapi.CapturedMessagesDeleteParams) (externalapi.CapturedMessagesDeleteRes, error) {
+func (h *Handlers) CapturedMessagesDelete(ctx context.Context, params externalapi.CapturedMessagesDeleteParams) error {
 	err := h.captured.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.CapturedMessagesDeleteNoContent{}, nil
+	return nil
 }
 
 // CapturedMessagesDeleteAll deletes every Captured message of the Workspace.
-func (h *Handlers) CapturedMessagesDeleteAll(ctx context.Context) (externalapi.CapturedMessagesDeleteAllRes, error) {
-	if err := h.captured.DeleteAll(ctx, auth.TokenScoped(ctx)); err != nil {
-		return nil, err
-	}
-	return &externalapi.CapturedMessagesDeleteAllNoContent{}, nil
+func (h *Handlers) CapturedMessagesDeleteAll(ctx context.Context) error {
+	return h.captured.DeleteAll(ctx, auth.TokenScoped(ctx))
 }

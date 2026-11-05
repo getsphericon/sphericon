@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -34,36 +35,30 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
+	b, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:    "Spring sale",
 		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Big news")}),
 	})
 	require.NoError(t, err)
-	b, ok := created.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status)
 	assert.Equal(t, "Big news", testhelper.ExternalEmailOf(b).Subject)
 	assert.False(t, b.SegmentId.IsSet(), "no Segment yet")
 
-	got, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: b.ID})
+	_, err = c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: b.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastResource{}, got)
 
 	updated, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("Spring sale v2")},
 		externalapi.BroadcastsUpdateParams{ID: b.ID})
 	require.NoError(t, err)
-	assert.Equal(t, "Spring sale v2", updated.(*externalapi.BroadcastResource).Name)
+	assert.Equal(t, "Spring sale v2", updated.Name)
 
 	// A scheduled broadcast is no longer editable.
-	locked, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
 		externalapi.BroadcastsUpdateParams{ID: schedBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, locked)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	list, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
+	listed, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
 	require.NoError(t, err)
-	listed, ok := list.(*externalapi.BroadcastsListOK)
-	require.Truef(t, ok, "got %T", list)
 	assert.NotEmpty(t, listed.Items)
 }
 
@@ -79,10 +74,8 @@ func TestExternalBroadcastsUpdateClearsANullAndKeepsAnAbsentField(t *testing.T) 
 
 	var none externalapi.OptNilString
 	none.SetToNull()
-	res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromName: none})}, params)
+	got, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalEmailEdit(externalapi.EmailBroadcastContentInput{FromName: none})}, params)
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Empty(t, testhelper.ExternalEmailOf(got).FromName.Or(""), "a null clears the From name")
 	assert.Equal(t, externalapi.NewOptNilEntityId(proSegment), got.SegmentId, "an absent Segment is kept")
 }
@@ -91,12 +84,10 @@ func TestExternalBroadcastsListPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 
-	res, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
+	page, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
 		Page: externalapi.NewOptInt32(2), PageSize: externalapi.NewOptInt32(2),
 	})
 	require.NoError(t, err)
-	page, ok := res.(*externalapi.BroadcastsListOK)
-	require.Truef(t, ok, "got %T", res)
 	assert.Len(t, page.Items, 2)
 	assert.EqualValues(t, 2, page.Page)
 	assert.EqualValues(t, 2, page.PageSize)
@@ -109,10 +100,9 @@ func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	set, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
+	b, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	b := set.(*externalapi.BroadcastResource)
 	id, ok := b.SegmentId.Get()
 	require.True(t, ok)
 	assert.Equal(t, proSegment, id)
@@ -121,17 +111,15 @@ func TestExternalBroadcastSegmentIsASegmentOrEveryone(t *testing.T) {
 	cleared, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.False(t, cleared.(*externalapi.BroadcastResource).SegmentId.IsSet())
+	assert.False(t, cleared.SegmentId.IsSet())
 
-	unknown, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(999999)},
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(999999)},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, unknown)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	locked, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(proSegment)},
 		externalapi.BroadcastsSetSegmentParams{ID: schedBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, locked)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
@@ -139,10 +127,9 @@ func TestExternalBroadcastTestSendGoesToOneAddressOnly(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
+	err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsTestSendNoContent{}, out)
 
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)
@@ -155,17 +142,15 @@ func TestExternalBroadcastReport(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	got, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: failedBroadcast})
+	r, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: failedBroadcast})
 	require.NoError(t, err)
-	r, ok := got.(*externalapi.BroadcastReport)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, externalapi.BroadcastStatusFailed, r.Status)
 	assert.EqualValues(t, 2, r.SkippedCount)
 	assert.EqualValues(t, 3, r.FailedCount)
 
 	sent, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	sr := sent.(*externalapi.BroadcastReport)
+	sr := sent
 	// The figures are the recipients' (fixtures: 11 sent, 5 opened, 2 clicked).
 	assert.EqualValues(t, 11, sr.RecipientsTotal)
 	assert.EqualValues(t, 11, sr.SentCount)
@@ -180,36 +165,28 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	noScope := env.ExternalScoped(t, "contacts:read")
 
 	// read scope reads...
-	got, err := readOnly.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: draftBroadcast})
+	_, err := readOnly.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastResource{}, got)
-	rep, err := readOnly.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
+	_, err = readOnly.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastReport{}, rep)
 
 	// ...but cannot write, set the Segment or test-send.
-	created, err := readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsCreateForbidden{}, created)
-	upd, err := readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateForbidden{}, upd)
-	aud, err := readOnly.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+	_, err = readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = readOnly.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentForbidden{}, aud)
-	ts, err := readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsTestSendForbidden{}, ts)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	err = readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// A token without any broadcast scope reads nothing.
-	list, err := noScope.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsListForbidden{}, list)
-	rep, err = noScope.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsReportForbidden{}, rep)
+	_, err = noScope.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = noScope.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
@@ -220,36 +197,29 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 
 	// Authoring scopes are not enough to send, in either direction.
 	author := env.ExternalScoped(t, authorScopes...)
-	res, err := author.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleForbidden{}, res)
-	un, err := author.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: schedBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnscheduleForbidden{}, un)
+	_, err := author.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = author.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: schedBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 	assert.Equal(t, broadcast.StatusScheduled, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID).Status)
 
 	// emails:send is a different lock.
 	emailer := env.ExternalScoped(t, "emails:send")
-	res, err = emailer.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleForbidden{}, res)
+	_, err = emailer.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// broadcasts:send alone schedules and unschedules.
 	sender := env.ExternalScoped(t, "broadcasts:send")
-	res, err = sender.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
+	b, err := sender.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	b, ok := res.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.BroadcastStatusScheduled, b.Status)
 	sched, ok := b.ScheduledAt.Get()
 	require.True(t, ok)
 	assert.True(t, when.Equal(time.Time(sched)))
 
-	un, err = sender.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: draftBroadcast})
+	b, err = sender.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	b, ok = un.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", un)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status)
 	assert.Nil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).ScheduledAt)
 }
@@ -260,19 +230,15 @@ func TestExternalBroadcastScheduleRefusesWhatCannotBeScheduled(t *testing.T) {
 	c := env.ExternalScoped(t, "broadcasts:send")
 	body := &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}
 
-	res, err := c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: sentBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleUnprocessableEntity{}, res, "a sent broadcast is history")
-	res, err = c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleNotFound{}, res)
+	_, err := c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: sentBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "a sent broadcast is history")
+	_, err = c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	un, err := c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnscheduleUnprocessableEntity{}, un, "nothing to unschedule on a draft")
-	un, err = c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnscheduleNotFound{}, un)
+	_, err = c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: draftBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "nothing to unschedule on a draft")
+	_, err = c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
@@ -287,35 +253,28 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 
 	list, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
 	require.NoError(t, err)
-	for _, item := range list.(*externalapi.BroadcastsListOK).Items {
+	for _, item := range list.Items {
 		assert.NotEqual(t, foreignID, item.ID, "another tenant's broadcast leaked")
 	}
 
-	get, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsGetNotFound{}, get)
-	upd, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("hijack")}, externalapi.BroadcastsUpdateParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateNotFound{}, upd)
-	arch, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveNotFound{}, arch)
-	rep, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsReportNotFound{}, rep)
-	ts, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsTestSendNotFound{}, ts)
+	_, err = c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("hijack")}, externalapi.BroadcastsUpdateParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	err = c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")}, externalapi.BroadcastsTestSendParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	assert.Empty(t, env.CustomerMail.Messages())
-	aud, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: foreignID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentNotFound{}, aud)
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: foreignID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	// Another workspace's segment cannot be the Segment of our broadcast.
-	cross, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(foreignSegID))},
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(foreignSegID))},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, cross)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	assert.Equal(t, fixtures.BroadcastGlobexName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastGlobexID).Name, "the foreign broadcast is untouched")
 }
@@ -328,12 +287,10 @@ func TestExternalBroadcastSegmentRefusesAnArchivedSegment(t *testing.T) {
 	ctx := context.Background()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	refused, err := c.BroadcastsSetSegment(ctx,
+	_, err := c.BroadcastsSetSegment(ctx,
 		&externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentArchivedID))},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	problem, ok := refused.(*externalapi.BroadcastsSetSegmentUnprocessableEntity)
-	require.Truef(t, ok, "got %T", refused)
+	problem := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Detail.Value, fixtures.SegmentArchivedName, "the refusal names the archived Segment")
 
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
@@ -346,10 +303,8 @@ func TestExternalBroadcastKeepsShowingItsArchivedSegment(t *testing.T) {
 	c := env.ExternalScoped(t, "broadcasts:read")
 	ctx := context.Background()
 
-	got, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: entityIDString(fixtures.BroadcastArchivedID)})
+	b, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: entityIDString(fixtures.BroadcastArchivedID)})
 	require.NoError(t, err)
-	b, ok := got.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", got)
 	segmentID, ok := b.SegmentId.Get()
 	require.True(t, ok)
 	assert.Equal(t, entityIDString(fixtures.SegmentArchivedID), segmentID)
@@ -361,9 +316,8 @@ func TestExternalBroadcastSegmentRefusesAForeignSegment(t *testing.T) {
 	ctx := context.Background()
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID
 
-	got, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentGlobexID))},
+	_, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(entityIDString(fixtures.SegmentGlobexID))},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnprocessableEntity{}, got)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, before, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID)
 }

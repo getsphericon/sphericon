@@ -12,15 +12,15 @@ import (
 // erasure module, with the signed-in User as requester. Owner or admin only, like
 // deleting a Contact. Not found means neither a Contact nor delivery records hold the
 // address.
-func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) (siteapi.SiteContactsEraseRes, error) {
+func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) error {
 	// An invalid address is refused before anything is erased.
 	if _, err := erasure.NormalizeEmail(params.Email); err != nil {
-		return nil, err
+		return err
 	}
 	err := h.erasure.Erase(ctx, workspaceScope(ctx), erasure.ByEmail(params.Email),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteContactsEraseNoContent{}, nil
+	return nil
 }

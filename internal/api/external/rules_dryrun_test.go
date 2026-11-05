@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,17 +22,14 @@ func TestExternalRulesDryRunNeedsOnlyTheReadScopeAndWritesNothing(t *testing.T) 
 	params := externalapi.RulesDryRunParams{ID: entityIDString(fixtures.RuleTagClickedID)}
 	body := &externalapi.DryRunRuleInput{EventId: entityIDString(fixtures.EventRuleClickLiamID)}
 
-	out, err := reader.RulesDryRun(ctx, body, params)
+	res, err := reader.RulesDryRun(ctx, body, params)
 
 	require.NoError(t, err)
-	res, ok := out.(*externalapi.RuleDryRunResource)
-	require.Truef(t, ok, "got %T", out)
 	assert.Equal(t, externalapi.RuleDryRunOutcomeWouldFire, res.Outcome)
 	require.Len(t, res.Actions, 1)
 	assert.Equal(t, "apply_tag", res.Actions[0].Type)
 	assert.Equal(t, firings, env.DB.RuleFiring.Query().CountX(ctx))
 
-	denied, err := env.ExternalScoped(t, "contacts:read").RulesDryRun(ctx, body, params)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDryRunForbidden{}, denied)
+	_, err = env.ExternalScoped(t, "contacts:read").RulesDryRun(ctx, body, params)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

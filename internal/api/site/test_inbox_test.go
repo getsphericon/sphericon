@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,43 +30,37 @@ func inboxInput() siteapi.IntegrationConfigInput {
 	}
 }
 
-func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId) siteapi.SiteIntegrationsCreateRes {
+func createInbox(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	return c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name: "Test inbox", Config: inboxInput(),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspace})
-	require.NoError(t, err)
-	return res
 }
 
 // makeDefault picks an Integration as its Workspace's default, the way any Integration is chosen.
 func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, id int64) {
 	t.Helper()
-	res, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
+	_, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: idStr(id)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
 }
 
-func sendGlobexTransactional(t *testing.T, env *testhelper.TestEnv, to string) externalapi.EmailsSendRes {
+func sendGlobexTransactional(t *testing.T, env *testhelper.TestEnv, to string) (*externalapi.SendTransactionalEmailResponse, error) {
 	t.Helper()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "emails:send"))
-	res, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	return c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(fixtures.TemplateGlobexID), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	return res
 }
 
 func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out := createInbox(t, c, fixtures.AcmePublicID)
+	created, err := createInbox(t, c, fixtures.AcmePublicID)
 
-	created, ok := out.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", out)
+	require.NoError(t, err)
 	assert.Equal(t, siteapi.SiteIntegrationProviderInbox, created.Provider)
 	assert.Equal(t, siteapi.SiteIntegrationChannelEmail, created.Channel)
 	assert.False(t, created.IsDefault, "a Test inbox never becomes the default by itself")
@@ -77,7 +72,7 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	assert.Equal(t, 1, defaults, "the existing default is untouched")
 	reread, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
-	limit := reread.(*siteapi.SiteIntegrationResource).ProviderLimit.PerDay
+	limit := reread.ProviderLimit.PerDay
 	assert.Equal(t, int32(200), limit.Limit.Value, "it reports its own ceiling")
 	assert.Equal(t, siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSourceProvider), limit.Source)
 }
@@ -97,22 +92,21 @@ func TestSiteSecondTestInboxIsRefusedNamingTheRule(t *testing.T) {
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
 	// Globex keeps a Test inbox already.
-	out := createInbox(t, jane, fixtures.GlobexPublicID)
+	_, err := createInbox(t, jane, fixtures.GlobexPublicID)
 
-	refused, ok := out.(*siteapi.SiteIntegrationsCreateConflict)
-	require.Truef(t, ok, "got %T", out)
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, refused.Detail.Value, "at most one Test inbox")
 }
 
 func TestSiteDeletingATestInboxFreesThePlaceForAnother(t *testing.T) {
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	deleted, err := jane.SiteIntegrationsDelete(t.Context(),
+	err := jane.SiteIntegrationsDelete(t.Context(),
 		siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleted)
 
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, createInbox(t, jane, fixtures.GlobexPublicID), "the deleted one frees the place")
+	_, err = createInbox(t, jane, fixtures.GlobexPublicID)
+	assert.NoError(t, err, "the deleted one frees the place")
 }
 
 func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *testing.T) {
@@ -120,13 +114,11 @@ func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *te
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	own, err := jane.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
+	page, err := jane.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	other, err := john.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.AcmePublicID})
+	empty, err := john.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	page, ok := own.(*siteapi.SiteCapturedMessagesListOK)
-	require.Truef(t, ok, "got %T", own)
 	require.Len(t, page.Items, 2)
 	assert.Equal(t, int32(2), page.TotalItems)
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexWelcomeID), int64(page.Items[0].ID), "newest first")
@@ -136,8 +128,6 @@ func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *te
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, welcome.Subject)
 	assert.True(t, welcome.FromUnverified)
 	assert.True(t, welcome.OutboundMessageId.Null, "a message with no Outbound message names none")
-	empty, ok := other.(*siteapi.SiteCapturedMessagesListOK)
-	require.Truef(t, ok, "got %T", other)
 	require.Len(t, empty.Items, 1)
 	assert.Equal(t, int64(fixtures.CapturedMessageAcmeArchivedInboxID), int64(empty.Items[0].ID), "a Workspace sees only its own, archived inbox included")
 }
@@ -146,12 +136,11 @@ func TestSiteCapturedMessagesArePaginated(t *testing.T) {
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	out, err := jane.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{
+	page, err := jane.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{
 		WorkspaceId: fixtures.GlobexPublicID, Page: siteapi.NewOptInt32(2), PageSize: siteapi.NewOptInt32(1),
 	})
 	require.NoError(t, err)
 
-	page := out.(*siteapi.SiteCapturedMessagesListOK)
 	require.Len(t, page.Items, 1)
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexNewsletterID), int64(page.Items[0].ID))
 	assert.Equal(t, int32(2), page.TotalPages)
@@ -164,16 +153,15 @@ func TestTransactionalSendWithoutAVerifiedDomainIsHeldThroughSMTPAndCapturedThro
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexID)
 
-	held := sendGlobexTransactional(t, env, "held@example.com")
+	_, held := sendGlobexTransactional(t, env, "held@example.com")
 
-	assert.IsType(t, &externalapi.EmailsSendUnprocessableEntity{}, held)
+	testhelper.ExternalRefusal(t, held, http.StatusUnprocessableEntity)
 	capturedBefore := env.DB.CapturedMessage.Query().CountX(t.Context())
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 
-	sent := sendGlobexTransactional(t, env, "Ada@Example.com")
+	ok, err := sendGlobexTransactional(t, env, "Ada@Example.com")
 
-	ok, isSent := sent.(*externalapi.SendTransactionalEmailResponse)
-	require.Truef(t, isSent, "got %T", sent)
+	require.NoError(t, err)
 	assert.Equal(t, externalapi.TransactionalSendStatusSent, ok.Status)
 	kept := env.DB.CapturedMessage.Query().Order(ent.Desc(capturedmessage.FieldID)).FirstX(t.Context())
 	assert.Equal(t, capturedBefore+1, env.DB.CapturedMessage.Query().CountX(t.Context()))
@@ -192,8 +180,9 @@ func TestTheOutboundMessageOfACapturedSendIsStampedDeliveredOnceAndNothingBounce
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 
-	sent := sendGlobexTransactional(t, env, "ada@example.com").(*externalapi.SendTransactionalEmailResponse)
+	sent, err := sendGlobexTransactional(t, env, "ada@example.com")
 
+	require.NoError(t, err)
 	row := env.DB.OutboundMessage.Query().Where(outboundmessage.ID(int64(sent.ID))).OnlyX(t.Context())
 	assert.NotNil(t, row.DeliveredAt)
 	assert.Nil(t, row.BouncedAt)
@@ -209,11 +198,10 @@ func TestABroadcastThroughTheTestInboxWithoutAVerifiedDomainIsCaptured(t *testin
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 
-	sent, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastResource{}, sent)
 	env.DeliverQueuedBroadcasts(t)
 
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
@@ -233,11 +221,10 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexID)
 	before := env.DB.CapturedMessage.Query().CountX(t.Context())
 
-	sent, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastResource{}, sent)
 	delivered := env.TryDeliverQueuedBroadcasts(t)
 
 	require.ErrorContains(t, delivered, outbound.HoldUnverifiedDomain)
@@ -255,17 +242,15 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 
-	skipped := sendGlobexTransactional(t, env, fixtures.SuppressionGlobexDestination)
+	suppressedResult, err := sendGlobexTransactional(t, env, fixtures.SuppressionGlobexDestination)
+	require.NoError(t, err)
 	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.GlobexID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
 	require.True(t, suspended)
-	frozen := sendGlobexTransactional(t, env, "free@example.com")
+	_, frozen := sendGlobexTransactional(t, env, "free@example.com")
 
-	suppressedResult, ok := skipped.(*externalapi.SendTransactionalEmailResponse)
-	require.Truef(t, ok, "got %T", skipped)
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, suppressedResult.Status)
-	heldResult, ok := frozen.(*externalapi.EmailsSendUnprocessableEntity)
-	require.Truef(t, ok, "got %T", frozen)
+	heldResult := testhelper.ExternalRefusal(t, frozen, http.StatusUnprocessableEntity)
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
@@ -276,22 +261,22 @@ func TestDisablingTheTestInboxStopsCapturingAndKeepsWhatWasCaptured(t *testing.T
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
-	sent := sendGlobexTransactional(t, env, "ada@example.com").(*externalapi.SendTransactionalEmailResponse)
+	sent, err := sendGlobexTransactional(t, env, "ada@example.com")
+	require.NoError(t, err)
 	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.OutboundMessageID(int64(sent.ID))).OnlyX(t.Context())
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 
-	disabled, err := jane.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	_, err = jane.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
 		Enabled: siteapi.NewOptBool(false),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, disabled)
-	sendGlobexTransactional(t, env, "grace@example.com")
+	_, err = sendGlobexTransactional(t, env, "grace@example.com")
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "without the Test inbox the send goes to the default, which refuses it")
 
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 	assert.Equal(t, before, after, "nothing is captured once the Test inbox is disabled")
-	read, err := jane.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
+	_, err = jane.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(kept.ID),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteCapturedMessageResource{}, read, "what was captured stays readable")
+	require.NoError(t, err, "what was captured stays readable")
 }

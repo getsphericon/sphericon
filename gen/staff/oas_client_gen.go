@@ -35,14 +35,14 @@ type Invoker interface {
 	// Unknown email and wrong password answer the same 401.
 	//
 	// POST /auth/login
-	StaffAuthLogin(ctx context.Context, request *StaffLoginInput) (StaffAuthLoginRes, error)
+	StaffAuthLogin(ctx context.Context, request *StaffLoginInput) (*StaffLoginResult, error)
 	// StaffAuthLogout invokes StaffAuth_logout operation.
 	//
 	// End the session: bumps the Staff member's session epoch, so every session token of the Staff member
 	// (a copied one too) stops verifying, and clears the session cookie.
 	//
 	// POST /auth/logout
-	StaffAuthLogout(ctx context.Context) (StaffAuthLogoutRes, error)
+	StaffAuthLogout(ctx context.Context) (*StaffAuthLogoutNoContent, error)
 	// StaffAuthSecondFactor invokes StaffAuth_secondFactor operation.
 	//
 	// The second login step: verify the challenge and a TOTP code, then start the session (the cookie is
@@ -50,14 +50,14 @@ type Invoker interface {
 	// challenge and a wrong code answer the same 401.
 	//
 	// POST /auth/second-factor
-	StaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (StaffAuthSecondFactorRes, error)
+	StaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (*StaffResourceHeaders, error)
 	// StaffInstanceAcknowledgeNotice invokes StaffInstance_acknowledgeNotice operation.
 	//
 	// Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
 	// acknowledgement stands, and a repeat changes nothing.
 	//
 	// POST /instance/notice/acknowledge
-	StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error)
+	StaffInstanceAcknowledgeNotice(ctx context.Context) (*StaffInstanceState, error)
 	// StaffInstanceClearDefaultSendCap invokes StaffInstance_clearDefaultSendCap operation.
 	//
 	// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
@@ -65,27 +65,27 @@ type Invoker interface {
 	// Send caps.
 	//
 	// DELETE /instance/default-send-cap
-	StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error)
+	StaffInstanceClearDefaultSendCap(ctx context.Context) (*StaffDefaultSendCapChange, error)
 	// StaffInstanceGetState invokes StaffInstance_getState operation.
 	//
 	// The Instance's own settings and state.
 	//
 	// GET /instance
-	StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error)
+	StaffInstanceGetState(ctx context.Context) (*StaffInstanceState, error)
 	// StaffInstanceListAuditEntries invokes StaffInstance_listAuditEntries operation.
 	//
 	// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
 	// own settings.
 	//
 	// GET /instance/audit-entries
-	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error)
+	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (*StaffInstanceAuditEntryList, error)
 	// StaffInstancePreviewTelemetryReport invokes StaffInstance_previewTelemetryReport operation.
 	//
 	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
 	// schema describes, built by the code that sends it. Works whether or not sending is on.
 	//
 	// GET /instance/telemetry/preview
-	StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error)
+	StaffInstancePreviewTelemetryReport(ctx context.Context) (JsonObject, error)
 	// StaffInstanceSetDefaultSendCap invokes StaffInstance_setDefaultSendCap operation.
 	//
 	// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
@@ -93,26 +93,26 @@ type Invoker interface {
 	// Not found on an Instance that has no Send caps.
 	//
 	// PUT /instance/default-send-cap
-	StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error)
+	StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (*StaffDefaultSendCapChange, error)
 	// StaffInstanceSetTelemetry invokes StaffInstance_setTelemetry operation.
 	//
 	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
 	//
 	// PUT /instance/telemetry
-	StaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (StaffInstanceSetTelemetryRes, error)
+	StaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (*StaffInstanceState, error)
 	// StaffMeGet invokes StaffMe_get operation.
 	//
 	// The authenticated Staff member.
 	//
 	// GET /me
-	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
+	StaffMeGet(ctx context.Context) (*StaffResource, error)
 	// StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 	//
 	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
 	// a second mailings consent are refused (422).
 	//
 	// POST /signup-items
-	StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (StaffSignupItemsCreateRes, error)
+	StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (*StaffSignupItemResource, error)
 	// StaffSignupItemsDelete invokes StaffSignupItems_delete operation.
 	//
 	// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
@@ -121,26 +121,26 @@ type Invoker interface {
 	// unmarked.
 	//
 	// DELETE /signup-items/{id}
-	StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (StaffSignupItemsDeleteRes, error)
+	StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) error
 	// StaffSignupItemsGet invokes StaffSignupItems_get operation.
 	//
 	// One Sign-up item, a deleted one too.
 	//
 	// GET /signup-items/{id}
-	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error)
+	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsList invokes StaffSignupItems_list operation.
 	//
 	// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 	//
 	// GET /signup-items
-	StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error)
+	StaffSignupItemsList(ctx context.Context) (*StaffSignupItemList, error)
 	// StaffSignupItemsListVersions invokes StaffSignupItems_listVersions operation.
 	//
 	// Every published version of the item's Legal document with who published it and when, the latest
 	// first.
 	//
 	// GET /signup-items/{id}/versions
-	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error)
+	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (*StaffLegalDocumentVersionList, error)
 	// StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 	//
 	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
@@ -148,28 +148,28 @@ type Invoker interface {
 	// deleted item is not found.
 	//
 	// POST /signup-items/{id}/versions
-	StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error)
+	StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsReorder invokes StaffSignupItems_reorder operation.
 	//
 	// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
 	// the id of every item that is not deleted, exactly once, is refused (422).
 	//
 	// PUT /signup-items/order
-	StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error)
+	StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (*StaffSignupItemList, error)
 	// StaffSignupItemsSaveDraft invokes StaffSignupItems_saveDraft operation.
 	//
 	// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
 	// until it is published. A deleted item is not found.
 	//
 	// PUT /signup-items/{id}/draft
-	StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error)
+	StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 	//
 	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
 	// and a second mailings consent are refused (422); a deleted item is not found.
 	//
 	// PATCH /signup-items/{id}
-	StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error)
+	StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (*StaffSignupItemResource, error)
 }
 
 // Client implements OAS client.
@@ -219,12 +219,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // Unknown email and wrong password answer the same 401.
 //
 // POST /auth/login
-func (c *Client) StaffAuthLogin(ctx context.Context, request *StaffLoginInput) (StaffAuthLoginRes, error) {
+func (c *Client) StaffAuthLogin(ctx context.Context, request *StaffLoginInput) (*StaffLoginResult, error) {
 	res, err := c.sendStaffAuthLogin(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffAuthLogin(ctx context.Context, request *StaffLoginInput) (res StaffAuthLoginRes, err error) {
+func (c *Client) sendStaffAuthLogin(ctx context.Context, request *StaffLoginInput) (res *StaffLoginResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffAuth_login"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -303,12 +303,12 @@ func (c *Client) sendStaffAuthLogin(ctx context.Context, request *StaffLoginInpu
 // (a copied one too) stops verifying, and clears the session cookie.
 //
 // POST /auth/logout
-func (c *Client) StaffAuthLogout(ctx context.Context) (StaffAuthLogoutRes, error) {
+func (c *Client) StaffAuthLogout(ctx context.Context) (*StaffAuthLogoutNoContent, error) {
 	res, err := c.sendStaffAuthLogout(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffAuthLogout(ctx context.Context) (res StaffAuthLogoutRes, err error) {
+func (c *Client) sendStaffAuthLogout(ctx context.Context) (res *StaffAuthLogoutNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffAuth_logout"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -418,12 +418,12 @@ func (c *Client) sendStaffAuthLogout(ctx context.Context) (res StaffAuthLogoutRe
 // challenge and a wrong code answer the same 401.
 //
 // POST /auth/second-factor
-func (c *Client) StaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (StaffAuthSecondFactorRes, error) {
+func (c *Client) StaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (*StaffResourceHeaders, error) {
 	res, err := c.sendStaffAuthSecondFactor(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (res StaffAuthSecondFactorRes, err error) {
+func (c *Client) sendStaffAuthSecondFactor(ctx context.Context, request *StaffSecondFactorInput) (res *StaffResourceHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffAuth_secondFactor"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -502,12 +502,12 @@ func (c *Client) sendStaffAuthSecondFactor(ctx context.Context, request *StaffSe
 // acknowledgement stands, and a repeat changes nothing.
 //
 // POST /instance/notice/acknowledge
-func (c *Client) StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error) {
+func (c *Client) StaffInstanceAcknowledgeNotice(ctx context.Context) (*StaffInstanceState, error) {
 	res, err := c.sendStaffInstanceAcknowledgeNotice(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceAcknowledgeNotice(ctx context.Context) (res StaffInstanceAcknowledgeNoticeRes, err error) {
+func (c *Client) sendStaffInstanceAcknowledgeNotice(ctx context.Context) (res *StaffInstanceState, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_acknowledgeNotice"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -617,12 +617,12 @@ func (c *Client) sendStaffInstanceAcknowledgeNotice(ctx context.Context) (res St
 // Send caps.
 //
 // DELETE /instance/default-send-cap
-func (c *Client) StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error) {
+func (c *Client) StaffInstanceClearDefaultSendCap(ctx context.Context) (*StaffDefaultSendCapChange, error) {
 	res, err := c.sendStaffInstanceClearDefaultSendCap(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceClearDefaultSendCap(ctx context.Context) (res StaffInstanceClearDefaultSendCapRes, err error) {
+func (c *Client) sendStaffInstanceClearDefaultSendCap(ctx context.Context) (res *StaffDefaultSendCapChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_clearDefaultSendCap"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -730,12 +730,12 @@ func (c *Client) sendStaffInstanceClearDefaultSendCap(ctx context.Context) (res 
 // The Instance's own settings and state.
 //
 // GET /instance
-func (c *Client) StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error) {
+func (c *Client) StaffInstanceGetState(ctx context.Context) (*StaffInstanceState, error) {
 	res, err := c.sendStaffInstanceGetState(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceGetState(ctx context.Context) (res StaffInstanceGetStateRes, err error) {
+func (c *Client) sendStaffInstanceGetState(ctx context.Context) (res *StaffInstanceState, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_getState"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -844,12 +844,12 @@ func (c *Client) sendStaffInstanceGetState(ctx context.Context) (res StaffInstan
 // own settings.
 //
 // GET /instance/audit-entries
-func (c *Client) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error) {
+func (c *Client) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (*StaffInstanceAuditEntryList, error) {
 	res, err := c.sendStaffInstanceListAuditEntries(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (res StaffInstanceListAuditEntriesRes, err error) {
+func (c *Client) sendStaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (res *StaffInstanceAuditEntryList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_listAuditEntries"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -996,12 +996,12 @@ func (c *Client) sendStaffInstanceListAuditEntries(ctx context.Context, params S
 // schema describes, built by the code that sends it. Works whether or not sending is on.
 //
 // GET /instance/telemetry/preview
-func (c *Client) StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error) {
+func (c *Client) StaffInstancePreviewTelemetryReport(ctx context.Context) (JsonObject, error) {
 	res, err := c.sendStaffInstancePreviewTelemetryReport(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffInstancePreviewTelemetryReport(ctx context.Context) (res StaffInstancePreviewTelemetryReportRes, err error) {
+func (c *Client) sendStaffInstancePreviewTelemetryReport(ctx context.Context) (res JsonObject, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_previewTelemetryReport"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1111,12 +1111,12 @@ func (c *Client) sendStaffInstancePreviewTelemetryReport(ctx context.Context) (r
 // Not found on an Instance that has no Send caps.
 //
 // PUT /instance/default-send-cap
-func (c *Client) StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error) {
+func (c *Client) StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (*StaffDefaultSendCapChange, error) {
 	res, err := c.sendStaffInstanceSetDefaultSendCap(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (res StaffInstanceSetDefaultSendCapRes, err error) {
+func (c *Client) sendStaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (res *StaffDefaultSendCapChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_setDefaultSendCap"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -1227,12 +1227,12 @@ func (c *Client) sendStaffInstanceSetDefaultSendCap(ctx context.Context, request
 // Switch the Telemetry report on or off. Answers 409 while the environment decides.
 //
 // PUT /instance/telemetry
-func (c *Client) StaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (StaffInstanceSetTelemetryRes, error) {
+func (c *Client) StaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (*StaffInstanceState, error) {
 	res, err := c.sendStaffInstanceSetTelemetry(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (res StaffInstanceSetTelemetryRes, err error) {
+func (c *Client) sendStaffInstanceSetTelemetry(ctx context.Context, request *StaffInstanceTelemetryInput) (res *StaffInstanceState, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffInstance_setTelemetry"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -1343,12 +1343,12 @@ func (c *Client) sendStaffInstanceSetTelemetry(ctx context.Context, request *Sta
 // The authenticated Staff member.
 //
 // GET /me
-func (c *Client) StaffMeGet(ctx context.Context) (StaffMeGetRes, error) {
+func (c *Client) StaffMeGet(ctx context.Context) (*StaffResource, error) {
 	res, err := c.sendStaffMeGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffMeGet(ctx context.Context) (res StaffMeGetRes, err error) {
+func (c *Client) sendStaffMeGet(ctx context.Context) (res *StaffResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffMe_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1457,12 +1457,12 @@ func (c *Client) sendStaffMeGet(ctx context.Context) (res StaffMeGetRes, err err
 // a second mailings consent are refused (422).
 //
 // POST /signup-items
-func (c *Client) StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (StaffSignupItemsCreateRes, error) {
+func (c *Client) StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (*StaffSignupItemResource, error) {
 	res, err := c.sendStaffSignupItemsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (res StaffSignupItemsCreateRes, err error) {
+func (c *Client) sendStaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (res *StaffSignupItemResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1576,12 +1576,12 @@ func (c *Client) sendStaffSignupItemsCreate(ctx context.Context, request *StaffS
 // unmarked.
 //
 // DELETE /signup-items/{id}
-func (c *Client) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (StaffSignupItemsDeleteRes, error) {
-	res, err := c.sendStaffSignupItemsDelete(ctx, params)
-	return res, err
+func (c *Client) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) error {
+	_, err := c.sendStaffSignupItemsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendStaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (res StaffSignupItemsDeleteRes, err error) {
+func (c *Client) sendStaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (res *StaffSignupItemsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -1710,12 +1710,12 @@ func (c *Client) sendStaffSignupItemsDelete(ctx context.Context, params StaffSig
 // One Sign-up item, a deleted one too.
 //
 // GET /signup-items/{id}
-func (c *Client) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error) {
+func (c *Client) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (*StaffSignupItemResource, error) {
 	res, err := c.sendStaffSignupItemsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (res StaffSignupItemsGetRes, err error) {
+func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (res *StaffSignupItemResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1844,12 +1844,12 @@ func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignup
 // The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 //
 // GET /signup-items
-func (c *Client) StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error) {
+func (c *Client) StaffSignupItemsList(ctx context.Context) (*StaffSignupItemList, error) {
 	res, err := c.sendStaffSignupItemsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsList(ctx context.Context) (res StaffSignupItemsListRes, err error) {
+func (c *Client) sendStaffSignupItemsList(ctx context.Context) (res *StaffSignupItemList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1958,12 +1958,12 @@ func (c *Client) sendStaffSignupItemsList(ctx context.Context) (res StaffSignupI
 // first.
 //
 // GET /signup-items/{id}/versions
-func (c *Client) StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error) {
+func (c *Client) StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (*StaffLegalDocumentVersionList, error) {
 	res, err := c.sendStaffSignupItemsListVersions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (res StaffSignupItemsListVersionsRes, err error) {
+func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (res *StaffLegalDocumentVersionList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_listVersions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2095,12 +2095,12 @@ func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params St
 // deleted item is not found.
 //
 // POST /signup-items/{id}/versions
-func (c *Client) StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error) {
+func (c *Client) StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (*StaffSignupItemResource, error) {
 	res, err := c.sendStaffSignupItemsPublish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (res StaffSignupItemsPublishRes, err error) {
+func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (res *StaffSignupItemResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2234,12 +2234,12 @@ func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *Staff
 // the id of every item that is not deleted, exactly once, is refused (422).
 //
 // PUT /signup-items/order
-func (c *Client) StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error) {
+func (c *Client) StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (*StaffSignupItemList, error) {
 	res, err := c.sendStaffSignupItemsReorder(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (res StaffSignupItemsReorderRes, err error) {
+func (c *Client) sendStaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (res *StaffSignupItemList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_reorder"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -2351,12 +2351,12 @@ func (c *Client) sendStaffSignupItemsReorder(ctx context.Context, request *Staff
 // until it is published. A deleted item is not found.
 //
 // PUT /signup-items/{id}/draft
-func (c *Client) StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error) {
+func (c *Client) StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (*StaffSignupItemResource, error) {
 	res, err := c.sendStaffSignupItemsSaveDraft(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (res StaffSignupItemsSaveDraftRes, err error) {
+func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (res *StaffSignupItemResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_saveDraft"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -2490,12 +2490,12 @@ func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *Sta
 // and a second mailings consent are refused (422); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
-func (c *Client) StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error) {
+func (c *Client) StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (*StaffSignupItemResource, error) {
 	res, err := c.sendStaffSignupItemsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (res StaffSignupItemsUpdateRes, err error) {
+func (c *Client) sendStaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (res *StaffSignupItemResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffSignupItems_update"),
 		semconv.HTTPRequestMethodKey.String("PATCH"),

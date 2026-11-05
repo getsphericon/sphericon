@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
@@ -64,10 +65,16 @@ type Handlers struct {
 
 var _ staffapi.Handler = (*Handlers)(nil)
 
+// NewError answers a refused or failed request with the contract's Problem: the status and
+// the body are decided once for every surface (internal/problem).
+func (*Handlers) NewError(ctx context.Context, err error) *staffapi.ProblemDetailsStatusCode {
+	return problem.Staff(ctx, err)
+}
+
 // StaffAuthLogin is the password step, run by the login module: it answers a challenge
 // (or, at first login, an enrolment) and never a session. An unknown email and a wrong
 // password answer the same 401.
-func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginInput) (staffapi.StaffAuthLoginRes, error) {
+func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginInput) (*staffapi.StaffLoginResult, error) {
 	res, err := h.module.CheckPassword(ctx, req.Email, req.Password)
 	if err != nil {
 		return nil, err
@@ -94,7 +101,7 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 
 // StaffAuthSecondFactor is the second step: a valid challenge and a current TOTP
 // code start the session. A bad challenge and a wrong code answer the same 401.
-func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.StaffSecondFactorInput) (staffapi.StaffAuthSecondFactorRes, error) {
+func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.StaffSecondFactorInput) (*staffapi.StaffResourceHeaders, error) {
 	res, err := h.module.Complete(ctx, req.Challenge, req.Code)
 	if err != nil {
 		return nil, err
@@ -115,7 +122,7 @@ func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.Staf
 
 // StaffAuthLogout ends the Staff member's sessions server-side (the session epoch is
 // bumped, so a token copied elsewhere stops verifying too) and clears the cookie.
-func (h *Handlers) StaffAuthLogout(ctx context.Context) (staffapi.StaffAuthLogoutRes, error) {
+func (h *Handlers) StaffAuthLogout(ctx context.Context) (*staffapi.StaffAuthLogoutNoContent, error) {
 	if err := h.module.EndSessions(ctx, staffmembers.Current(ctx).ID); err != nil {
 		return nil, err
 	}
@@ -123,7 +130,7 @@ func (h *Handlers) StaffAuthLogout(ctx context.Context) (staffapi.StaffAuthLogou
 }
 
 // StaffMeGet is the current Staff member.
-func (h *Handlers) StaffMeGet(ctx context.Context) (staffapi.StaffMeGetRes, error) {
+func (h *Handlers) StaffMeGet(ctx context.Context) (*staffapi.StaffResource, error) {
 	res := mapper.StaffMemberToResource(staffmembers.Current(ctx))
 	return &res, nil
 }

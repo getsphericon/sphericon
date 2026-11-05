@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 )
@@ -14,7 +15,7 @@ import (
 // its shape the Channel's own. Its Channel is the Channel the send goes out on, so a Request
 // cannot name one Channel and carry another's content.
 type Content interface {
-	Channel() messaging.Channel
+	Channel() channels.Channel
 }
 
 // A channel is one Channel's part of the Outbound send (ADR 0079): its renderer and its provider

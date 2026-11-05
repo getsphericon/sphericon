@@ -306,7 +306,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
   with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); each domain module returns it from
-  its delete and each API surface renders it as the contract's `InUseProblem` (409, `usedBy`).
+  its delete and every API surface answers it with the contract's `Problem` (409, `usedBy`).
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.

@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -39,8 +40,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	require.Len(t, res.Draft.Value.Steps, 3)
 
 	assert.Contains(t, res.Draft.Value.Steps[0].Body.Value, "Hello {{ first_name }}")
@@ -60,8 +60,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 		Steps: []siteapi.SiteAutomationStep{docStep("Hi", paragraphDoc("Second"))},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.Contains(t, upd.Draft.Value.Steps[0].Body.Value, "Second")
 	assert.NotContains(t, upd.Draft.Value.Steps[0].Body.Value, "Hello")
 
@@ -72,8 +71,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 		}},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	clr, ok := cleared.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", cleared)
+	clr := cleared
 	assert.False(t, clr.Draft.Value.Steps[0].Doc.Set)
 	assert.False(t, clr.Draft.Value.Steps[0].EditorVersion.Set)
 	stored, err = automationsteps.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
@@ -89,26 +87,23 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
-	res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Refused", TriggerEvent: "refused.signup",
 		Steps: []siteapi.SiteAutomationStep{
 			docStep("Fine", paragraphDoc("Fine")),
 			docStep("Broken", bad),
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	refused, ok := res.(*siteapi.SiteAutomationsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "step 2")
 
 	// Both a body and a document on one step is refused too.
 	both := docStep("Both", paragraphDoc("x"))
 	both.Body = siteapi.NewOptString("<p>x</p>")
-	res, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Both", TriggerEvent: "both.signup", Steps: []siteapi.SiteAutomationStep{both},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	n, err := env.DB.Automation.Query().Count(ctx)
 	require.NoError(t, err)

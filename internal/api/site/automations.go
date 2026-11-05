@@ -7,7 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
+func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (*siteapi.SiteAutomationsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	page, err := h.automations.ListWithRevenue(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.AutomationsListFilter(params))
@@ -17,7 +17,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	return mapper.AutomationsListPage(page), nil
 }
 
-func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
+func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	a, err := h.automations.Create(ctx, ws, inputs.AutomationCreate(req))
@@ -28,7 +28,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 	return &res, nil
 }
 
-func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (siteapi.SiteAutomationsGetRes, error) {
+func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	a, err := h.automations.GetWithRevenue(ctx, ws, int64(params.ID))
@@ -39,7 +39,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	return &res, nil
 }
 
-func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {
+func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -54,7 +54,7 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 // SiteAutomationsArchive archives an automation (ADR 0100): it leaves the list and enrolls
 // nobody, and keeps its enrollments. Live use (active enrollments, an active rule) refuses it with
 // 409.
-func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (siteapi.SiteAutomationsArchiveRes, error) {
+func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -67,7 +67,7 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 }
 
 // SiteAutomationsUnarchive brings an archived automation back to the list, inactive.
-func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (siteapi.SiteAutomationsUnarchiveRes, error) {
+func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -80,7 +80,7 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 }
 
 // SiteAutomationsPublish makes the Automation active: it starts enrolling Contacts.
-func (h *Handlers) SiteAutomationsPublish(ctx context.Context, params siteapi.SiteAutomationsPublishParams) (siteapi.SiteAutomationsPublishRes, error) {
+func (h *Handlers) SiteAutomationsPublish(ctx context.Context, params siteapi.SiteAutomationsPublishParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 	a, err := h.automations.Publish(ctx, ws, int64(params.ID))
 	if err != nil {
@@ -91,7 +91,7 @@ func (h *Handlers) SiteAutomationsPublish(ctx context.Context, params siteapi.Si
 }
 
 // SiteAutomationsDeactivate makes the Automation inactive: it stops new Enrollments.
-func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
+func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 	a, err := h.automations.Deactivate(ctx, ws, int64(params.ID))
 	if err != nil {
@@ -102,7 +102,7 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 }
 
 // SiteAutomationsRevert drops the Automation's draft: the live version is again the latest.
-func (h *Handlers) SiteAutomationsRevert(ctx context.Context, params siteapi.SiteAutomationsRevertParams) (siteapi.SiteAutomationsRevertRes, error) {
+func (h *Handlers) SiteAutomationsRevert(ctx context.Context, params siteapi.SiteAutomationsRevertParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 	a, err := h.automations.Revert(ctx, ws, int64(params.ID))
 	if err != nil {

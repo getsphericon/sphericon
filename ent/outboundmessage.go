@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // OutboundMessage is the model entity for the OutboundMessage schema.
@@ -36,7 +37,7 @@ type OutboundMessage struct {
 	// IdempotencyKey holds the value of the "idempotency_key" field.
 	IdempotencyKey string `json:"idempotency_key,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel outboundmessage.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
@@ -285,7 +286,7 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = outboundmessage.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case outboundmessage.FieldDestination:
 			if value, ok := values[i].(*sql.NullString); !ok {

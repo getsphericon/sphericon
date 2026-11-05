@@ -28,7 +28,7 @@ func (h *Handlers) SiteIdentitiesList(ctx context.Context) (*siteapi.SiteLinkedI
 
 // SiteIdentitiesLink begins linking a provider account to the session User: the same flow as
 // a sign-in, but the signed flow cookie also names the User the callback adds the subject to.
-func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteIdentitiesLinkParams) (siteapi.SiteIdentitiesLinkRes, error) {
+func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteIdentitiesLinkParams) (*siteapi.SiteIdentitiesLinkFound, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteId
 
 // SiteIdentitiesUnlink removes a Linked identity of the session User, unless it is the last
 // way to sign in, ends the other sessions and reissues the acting one.
-func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.SiteIdentitiesUnlinkParams) (siteapi.SiteIdentitiesUnlinkRes, error) {
+func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.SiteIdentitiesUnlinkParams) (*siteapi.SiteIdentitiesUnlinkNoContent, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err

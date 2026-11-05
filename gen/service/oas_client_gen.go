@@ -34,13 +34,13 @@ type Invoker interface {
 	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 	//
 	// DELETE /workspaces/{workspaceId}/holds/{key}
-	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error)
+	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (*HoldClearResult, error)
 	// ServiceHoldsList invokes ServiceHolds_list operation.
 	//
 	// The holds of a Workspace that are active now; a lapsed one is not listed.
 	//
 	// GET /workspaces/{workspaceId}/holds
-	ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (ServiceHoldsListRes, error)
+	ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (*HoldList, error)
 	// ServiceHoldsSet invokes ServiceHolds_set operation.
 	//
 	// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
@@ -48,13 +48,13 @@ type Invoker interface {
 	// change.
 	//
 	// PUT /workspaces/{workspaceId}/holds/{key}
-	ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
+	ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (*HoldSetResult, error)
 	// ServiceIdentityGet invokes ServiceIdentity_get operation.
 	//
 	// The calling credential's own name, scopes and expiry.
 	//
 	// GET /identity
-	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
+	ServiceIdentityGet(ctx context.Context) (*ServiceIdentityResource, error)
 	// ServiceTrackingHostFeedList invokes ServiceTrackingHostFeed_list operation.
 	//
 	// The changes of Tracking domain hosts since an opaque cursor, in the order they were made: a host
@@ -65,14 +65,14 @@ type Invoker interface {
 	// a cursor returns the same entries, so applying one twice must change nothing.
 	//
 	// GET /domains/changes
-	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (ServiceTrackingHostFeedListRes, error)
+	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (*ServiceTrackingHostFeedPage, error)
 	// ServiceUsageList invokes ServiceUsage_list operation.
 	//
 	// The figures of every Workspace for a Usage period, by Workspace id: Live usage for the open period,
 	// Usage snapshots for a closed one. Never a recount on read.
 	//
 	// GET /usage
-	ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (ServiceUsageListRes, error)
+	ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (*ServiceUsageListOK, error)
 	// ServiceUserFeedList invokes ServiceUserFeed_list operation.
 	//
 	// The Users created or changed since an opaque cursor, each with their current consent to the
@@ -82,7 +82,7 @@ type Invoker interface {
 	// entries, and an empty cursor starts from the beginning.
 	//
 	// GET /users/changes
-	ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (ServiceUserFeedListRes, error)
+	ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (*ServiceUserFeedPage, error)
 	// ServiceWorkspaceFeedList invokes ServiceWorkspaceFeed_list operation.
 	//
 	// The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
@@ -91,7 +91,7 @@ type Invoker interface {
 	// same entries, and an empty cursor starts from the beginning.
 	//
 	// GET /workspaces/changes
-	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)
+	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (*ServiceWorkspaceFeedPage, error)
 	// ServiceWorkspaceUsageGet invokes ServiceWorkspaceUsage_get operation.
 	//
 	// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
@@ -99,7 +99,7 @@ type Invoker interface {
 	// read.
 	//
 	// GET /workspaces/{workspaceId}/usage
-	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error)
+	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (*WorkspaceUsageResource, error)
 }
 
 // Client implements OAS client.
@@ -148,12 +148,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 //
 // DELETE /workspaces/{workspaceId}/holds/{key}
-func (c *Client) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error) {
+func (c *Client) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (*HoldClearResult, error) {
 	res, err := c.sendServiceHoldsClear(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (res ServiceHoldsClearRes, err error) {
+func (c *Client) sendServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (res *HoldClearResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceHolds_clear"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -301,12 +301,12 @@ func (c *Client) sendServiceHoldsClear(ctx context.Context, params ServiceHoldsC
 // The holds of a Workspace that are active now; a lapsed one is not listed.
 //
 // GET /workspaces/{workspaceId}/holds
-func (c *Client) ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (ServiceHoldsListRes, error) {
+func (c *Client) ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (*HoldList, error) {
 	res, err := c.sendServiceHoldsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (res ServiceHoldsListRes, err error) {
+func (c *Client) sendServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (res *HoldList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceHolds_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -438,12 +438,12 @@ func (c *Client) sendServiceHoldsList(ctx context.Context, params ServiceHoldsLi
 // change.
 //
 // PUT /workspaces/{workspaceId}/holds/{key}
-func (c *Client) ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error) {
+func (c *Client) ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (*HoldSetResult, error) {
 	res, err := c.sendServiceHoldsSet(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (res ServiceHoldsSetRes, err error) {
+func (c *Client) sendServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (res *HoldSetResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceHolds_set"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -594,12 +594,12 @@ func (c *Client) sendServiceHoldsSet(ctx context.Context, request *HoldInput, pa
 // The calling credential's own name, scopes and expiry.
 //
 // GET /identity
-func (c *Client) ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error) {
+func (c *Client) ServiceIdentityGet(ctx context.Context) (*ServiceIdentityResource, error) {
 	res, err := c.sendServiceIdentityGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendServiceIdentityGet(ctx context.Context) (res ServiceIdentityGetRes, err error) {
+func (c *Client) sendServiceIdentityGet(ctx context.Context) (res *ServiceIdentityResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceIdentity_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -712,12 +712,12 @@ func (c *Client) sendServiceIdentityGet(ctx context.Context) (res ServiceIdentit
 // a cursor returns the same entries, so applying one twice must change nothing.
 //
 // GET /domains/changes
-func (c *Client) ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (ServiceTrackingHostFeedListRes, error) {
+func (c *Client) ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (*ServiceTrackingHostFeedPage, error) {
 	res, err := c.sendServiceTrackingHostFeedList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (res ServiceTrackingHostFeedListRes, err error) {
+func (c *Client) sendServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (res *ServiceTrackingHostFeedPage, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceTrackingHostFeed_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -864,12 +864,12 @@ func (c *Client) sendServiceTrackingHostFeedList(ctx context.Context, params Ser
 // Usage snapshots for a closed one. Never a recount on read.
 //
 // GET /usage
-func (c *Client) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (ServiceUsageListRes, error) {
+func (c *Client) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (*ServiceUsageListOK, error) {
 	res, err := c.sendServiceUsageList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceUsageList(ctx context.Context, params ServiceUsageListParams) (res ServiceUsageListRes, err error) {
+func (c *Client) sendServiceUsageList(ctx context.Context, params ServiceUsageListParams) (res *ServiceUsageListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceUsage_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1036,12 +1036,12 @@ func (c *Client) sendServiceUsageList(ctx context.Context, params ServiceUsageLi
 // entries, and an empty cursor starts from the beginning.
 //
 // GET /users/changes
-func (c *Client) ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (ServiceUserFeedListRes, error) {
+func (c *Client) ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (*ServiceUserFeedPage, error) {
 	res, err := c.sendServiceUserFeedList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (res ServiceUserFeedListRes, err error) {
+func (c *Client) sendServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (res *ServiceUserFeedPage, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceUserFeed_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1190,12 +1190,12 @@ func (c *Client) sendServiceUserFeedList(ctx context.Context, params ServiceUser
 // same entries, and an empty cursor starts from the beginning.
 //
 // GET /workspaces/changes
-func (c *Client) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error) {
+func (c *Client) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (*ServiceWorkspaceFeedPage, error) {
 	res, err := c.sendServiceWorkspaceFeedList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (res ServiceWorkspaceFeedListRes, err error) {
+func (c *Client) sendServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (res *ServiceWorkspaceFeedPage, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceWorkspaceFeed_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1343,12 +1343,12 @@ func (c *Client) sendServiceWorkspaceFeedList(ctx context.Context, params Servic
 // read.
 //
 // GET /workspaces/{workspaceId}/usage
-func (c *Client) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error) {
+func (c *Client) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (*WorkspaceUsageResource, error) {
 	res, err := c.sendServiceWorkspaceUsageGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (res ServiceWorkspaceUsageGetRes, err error) {
+func (c *Client) sendServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (res *WorkspaceUsageResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ServiceWorkspaceUsage_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),

@@ -55,8 +55,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 var (
@@ -7474,7 +7477,7 @@ func (x *BroadcastScopedCreate) SetName(v string) *BroadcastScopedCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (x *BroadcastScopedCreate) SetChannel(v broadcast.Channel) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetChannel(v channels.Channel) *BroadcastScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
@@ -10986,13 +10989,13 @@ func (x *ConfirmationScopedCreate) SetNillableUpdatedAt(v *time.Time) *Confirmat
 }
 
 // SetChannel sets the "channel" field.
-func (x *ConfirmationScopedCreate) SetChannel(v confirmation.Channel) *ConfirmationScopedCreate {
+func (x *ConfirmationScopedCreate) SetChannel(v channels.Channel) *ConfirmationScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *ConfirmationScopedCreate) SetNillableChannel(v *confirmation.Channel) *ConfirmationScopedCreate {
+func (x *ConfirmationScopedCreate) SetNillableChannel(v *channels.Channel) *ConfirmationScopedCreate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -11162,7 +11165,7 @@ func (u *ConfirmationScopedUpsert) UpdateUpdatedAt() *ConfirmationScopedUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *ConfirmationScopedUpsert) SetChannel(v confirmation.Channel) *ConfirmationScopedUpsert {
+func (u *ConfirmationScopedUpsert) SetChannel(v channels.Channel) *ConfirmationScopedUpsert {
 	u.u.Set(confirmation.FieldChannel, v)
 	return u
 }
@@ -11416,13 +11419,13 @@ func (x *ConfirmationScopedUpdateOne) SetUpdatedAt(v time.Time) *ConfirmationSco
 }
 
 // SetChannel sets the "channel" field.
-func (x *ConfirmationScopedUpdateOne) SetChannel(v confirmation.Channel) *ConfirmationScopedUpdateOne {
+func (x *ConfirmationScopedUpdateOne) SetChannel(v channels.Channel) *ConfirmationScopedUpdateOne {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *ConfirmationScopedUpdateOne) SetNillableChannel(v *confirmation.Channel) *ConfirmationScopedUpdateOne {
+func (x *ConfirmationScopedUpdateOne) SetNillableChannel(v *channels.Channel) *ConfirmationScopedUpdateOne {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -11601,13 +11604,13 @@ func (x *ConfirmationScopedUpdate) SetUpdatedAt(v time.Time) *ConfirmationScoped
 }
 
 // SetChannel sets the "channel" field.
-func (x *ConfirmationScopedUpdate) SetChannel(v confirmation.Channel) *ConfirmationScopedUpdate {
+func (x *ConfirmationScopedUpdate) SetChannel(v channels.Channel) *ConfirmationScopedUpdate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *ConfirmationScopedUpdate) SetNillableChannel(v *confirmation.Channel) *ConfirmationScopedUpdate {
+func (x *ConfirmationScopedUpdate) SetNillableChannel(v *channels.Channel) *ConfirmationScopedUpdate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -18246,19 +18249,19 @@ func (x *IntegrationScopedCreate) SetName(v string) *IntegrationScopedCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (x *IntegrationScopedCreate) SetChannel(v integration.Channel) *IntegrationScopedCreate {
+func (x *IntegrationScopedCreate) SetChannel(v channels.Channel) *IntegrationScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableChannel(v *integration.Channel) *IntegrationScopedCreate {
+func (x *IntegrationScopedCreate) SetNillableChannel(v *channels.Channel) *IntegrationScopedCreate {
 	x.b.SetNillableChannel(v)
 	return x
 }
 
 // SetProvider sets the "provider" field.
-func (x *IntegrationScopedCreate) SetProvider(v integration.Provider) *IntegrationScopedCreate {
+func (x *IntegrationScopedCreate) SetProvider(v providers.Provider) *IntegrationScopedCreate {
 	x.b.SetProvider(v)
 	return x
 }
@@ -18372,13 +18375,13 @@ func (x *IntegrationScopedCreate) SetNillableProviderMaxPerDay(v *int) *Integrat
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedCreate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationScopedCreate {
+func (x *IntegrationScopedCreate) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedCreate {
 	x.b.SetProviderEnforcement(v)
 	return x
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationScopedCreate {
+func (x *IntegrationScopedCreate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedCreate {
 	x.b.SetNillableProviderEnforcement(v)
 	return x
 }
@@ -18679,7 +18682,7 @@ func (u *IntegrationScopedUpsert) UpdateName() *IntegrationScopedUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *IntegrationScopedUpsert) SetChannel(v integration.Channel) *IntegrationScopedUpsert {
+func (u *IntegrationScopedUpsert) SetChannel(v channels.Channel) *IntegrationScopedUpsert {
 	u.u.Set(integration.FieldChannel, v)
 	return u
 }
@@ -18691,7 +18694,7 @@ func (u *IntegrationScopedUpsert) UpdateChannel() *IntegrationScopedUpsert {
 }
 
 // SetProvider sets the "provider" field.
-func (u *IntegrationScopedUpsert) SetProvider(v integration.Provider) *IntegrationScopedUpsert {
+func (u *IntegrationScopedUpsert) SetProvider(v providers.Provider) *IntegrationScopedUpsert {
 	u.u.Set(integration.FieldProvider, v)
 	return u
 }
@@ -18883,7 +18886,7 @@ func (u *IntegrationScopedUpsert) ClearProviderMaxPerDay() *IntegrationScopedUps
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (u *IntegrationScopedUpsert) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationScopedUpsert {
+func (u *IntegrationScopedUpsert) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpsert {
 	u.u.Set(integration.FieldProviderEnforcement, v)
 	return u
 }
@@ -19181,25 +19184,25 @@ func (x *IntegrationScopedUpdateOne) SetNillableName(v *string) *IntegrationScop
 }
 
 // SetChannel sets the "channel" field.
-func (x *IntegrationScopedUpdateOne) SetChannel(v integration.Channel) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetChannel(v channels.Channel) *IntegrationScopedUpdateOne {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableChannel(v *integration.Channel) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetNillableChannel(v *channels.Channel) *IntegrationScopedUpdateOne {
 	x.b.SetNillableChannel(v)
 	return x
 }
 
 // SetProvider sets the "provider" field.
-func (x *IntegrationScopedUpdateOne) SetProvider(v integration.Provider) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetProvider(v providers.Provider) *IntegrationScopedUpdateOne {
 	x.b.SetProvider(v)
 	return x
 }
 
 // SetNillableProvider sets the "provider" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProvider(v *integration.Provider) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetNillableProvider(v *providers.Provider) *IntegrationScopedUpdateOne {
 	x.b.SetNillableProvider(v)
 	return x
 }
@@ -19385,13 +19388,13 @@ func (x *IntegrationScopedUpdateOne) ClearProviderMaxPerDay() *IntegrationScoped
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedUpdateOne) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpdateOne {
 	x.b.SetProviderEnforcement(v)
 	return x
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationScopedUpdateOne {
+func (x *IntegrationScopedUpdateOne) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedUpdateOne {
 	x.b.SetNillableProviderEnforcement(v)
 	return x
 }
@@ -19703,25 +19706,25 @@ func (x *IntegrationScopedUpdate) SetNillableName(v *string) *IntegrationScopedU
 }
 
 // SetChannel sets the "channel" field.
-func (x *IntegrationScopedUpdate) SetChannel(v integration.Channel) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetChannel(v channels.Channel) *IntegrationScopedUpdate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableChannel(v *integration.Channel) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetNillableChannel(v *channels.Channel) *IntegrationScopedUpdate {
 	x.b.SetNillableChannel(v)
 	return x
 }
 
 // SetProvider sets the "provider" field.
-func (x *IntegrationScopedUpdate) SetProvider(v integration.Provider) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetProvider(v providers.Provider) *IntegrationScopedUpdate {
 	x.b.SetProvider(v)
 	return x
 }
 
 // SetNillableProvider sets the "provider" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProvider(v *integration.Provider) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetNillableProvider(v *providers.Provider) *IntegrationScopedUpdate {
 	x.b.SetNillableProvider(v)
 	return x
 }
@@ -19907,13 +19910,13 @@ func (x *IntegrationScopedUpdate) ClearProviderMaxPerDay() *IntegrationScopedUpd
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedUpdate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpdate {
 	x.b.SetProviderEnforcement(v)
 	return x
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationScopedUpdate {
+func (x *IntegrationScopedUpdate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedUpdate {
 	x.b.SetNillableProviderEnforcement(v)
 	return x
 }
@@ -23961,13 +23964,13 @@ func (x *OutboundMessageScopedCreate) SetIdempotencyKey(v string) *OutboundMessa
 }
 
 // SetChannel sets the "channel" field.
-func (x *OutboundMessageScopedCreate) SetChannel(v outboundmessage.Channel) *OutboundMessageScopedCreate {
+func (x *OutboundMessageScopedCreate) SetChannel(v channels.Channel) *OutboundMessageScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageScopedCreate {
+func (x *OutboundMessageScopedCreate) SetNillableChannel(v *channels.Channel) *OutboundMessageScopedCreate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -24521,7 +24524,7 @@ func (u *OutboundMessageScopedUpsert) UpdateUpdatedAt() *OutboundMessageScopedUp
 }
 
 // SetChannel sets the "channel" field.
-func (u *OutboundMessageScopedUpsert) SetChannel(v outboundmessage.Channel) *OutboundMessageScopedUpsert {
+func (u *OutboundMessageScopedUpsert) SetChannel(v channels.Channel) *OutboundMessageScopedUpsert {
 	u.u.Set(outboundmessage.FieldChannel, v)
 	return u
 }
@@ -25081,13 +25084,13 @@ func (x *OutboundMessageScopedUpdateOne) SetUpdatedAt(v time.Time) *OutboundMess
 }
 
 // SetChannel sets the "channel" field.
-func (x *OutboundMessageScopedUpdateOne) SetChannel(v outboundmessage.Channel) *OutboundMessageScopedUpdateOne {
+func (x *OutboundMessageScopedUpdateOne) SetChannel(v channels.Channel) *OutboundMessageScopedUpdateOne {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageScopedUpdateOne {
+func (x *OutboundMessageScopedUpdateOne) SetNillableChannel(v *channels.Channel) *OutboundMessageScopedUpdateOne {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -25731,13 +25734,13 @@ func (x *OutboundMessageScopedUpdate) SetUpdatedAt(v time.Time) *OutboundMessage
 }
 
 // SetChannel sets the "channel" field.
-func (x *OutboundMessageScopedUpdate) SetChannel(v outboundmessage.Channel) *OutboundMessageScopedUpdate {
+func (x *OutboundMessageScopedUpdate) SetChannel(v channels.Channel) *OutboundMessageScopedUpdate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageScopedUpdate {
+func (x *OutboundMessageScopedUpdate) SetNillableChannel(v *channels.Channel) *OutboundMessageScopedUpdate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -33635,13 +33638,13 @@ func (x *SuppressionScopedCreate) SetNillableUpdatedAt(v *time.Time) *Suppressio
 }
 
 // SetChannel sets the "channel" field.
-func (x *SuppressionScopedCreate) SetChannel(v suppression.Channel) *SuppressionScopedCreate {
+func (x *SuppressionScopedCreate) SetChannel(v channels.Channel) *SuppressionScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *SuppressionScopedCreate) SetNillableChannel(v *suppression.Channel) *SuppressionScopedCreate {
+func (x *SuppressionScopedCreate) SetNillableChannel(v *channels.Channel) *SuppressionScopedCreate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -33793,7 +33796,7 @@ func (u *SuppressionScopedUpsert) UpdateUpdatedAt() *SuppressionScopedUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *SuppressionScopedUpsert) SetChannel(v suppression.Channel) *SuppressionScopedUpsert {
+func (u *SuppressionScopedUpsert) SetChannel(v channels.Channel) *SuppressionScopedUpsert {
 	u.u.Set(suppression.FieldChannel, v)
 	return u
 }
@@ -34011,13 +34014,13 @@ func (x *SuppressionScopedUpdateOne) SetUpdatedAt(v time.Time) *SuppressionScope
 }
 
 // SetChannel sets the "channel" field.
-func (x *SuppressionScopedUpdateOne) SetChannel(v suppression.Channel) *SuppressionScopedUpdateOne {
+func (x *SuppressionScopedUpdateOne) SetChannel(v channels.Channel) *SuppressionScopedUpdateOne {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *SuppressionScopedUpdateOne) SetNillableChannel(v *suppression.Channel) *SuppressionScopedUpdateOne {
+func (x *SuppressionScopedUpdateOne) SetNillableChannel(v *channels.Channel) *SuppressionScopedUpdateOne {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -34160,13 +34163,13 @@ func (x *SuppressionScopedUpdate) SetUpdatedAt(v time.Time) *SuppressionScopedUp
 }
 
 // SetChannel sets the "channel" field.
-func (x *SuppressionScopedUpdate) SetChannel(v suppression.Channel) *SuppressionScopedUpdate {
+func (x *SuppressionScopedUpdate) SetChannel(v channels.Channel) *SuppressionScopedUpdate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *SuppressionScopedUpdate) SetNillableChannel(v *suppression.Channel) *SuppressionScopedUpdate {
+func (x *SuppressionScopedUpdate) SetNillableChannel(v *channels.Channel) *SuppressionScopedUpdate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -36459,13 +36462,13 @@ func (x *UnsubscribeScopedCreate) SetNillableUpdatedAt(v *time.Time) *Unsubscrib
 }
 
 // SetChannel sets the "channel" field.
-func (x *UnsubscribeScopedCreate) SetChannel(v unsubscribe.Channel) *UnsubscribeScopedCreate {
+func (x *UnsubscribeScopedCreate) SetChannel(v channels.Channel) *UnsubscribeScopedCreate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *UnsubscribeScopedCreate) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeScopedCreate {
+func (x *UnsubscribeScopedCreate) SetNillableChannel(v *channels.Channel) *UnsubscribeScopedCreate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -36611,7 +36614,7 @@ func (u *UnsubscribeScopedUpsert) UpdateUpdatedAt() *UnsubscribeScopedUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *UnsubscribeScopedUpsert) SetChannel(v unsubscribe.Channel) *UnsubscribeScopedUpsert {
+func (u *UnsubscribeScopedUpsert) SetChannel(v channels.Channel) *UnsubscribeScopedUpsert {
 	u.u.Set(unsubscribe.FieldChannel, v)
 	return u
 }
@@ -36829,13 +36832,13 @@ func (x *UnsubscribeScopedUpdateOne) SetUpdatedAt(v time.Time) *UnsubscribeScope
 }
 
 // SetChannel sets the "channel" field.
-func (x *UnsubscribeScopedUpdateOne) SetChannel(v unsubscribe.Channel) *UnsubscribeScopedUpdateOne {
+func (x *UnsubscribeScopedUpdateOne) SetChannel(v channels.Channel) *UnsubscribeScopedUpdateOne {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *UnsubscribeScopedUpdateOne) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeScopedUpdateOne {
+func (x *UnsubscribeScopedUpdateOne) SetNillableChannel(v *channels.Channel) *UnsubscribeScopedUpdateOne {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -36978,13 +36981,13 @@ func (x *UnsubscribeScopedUpdate) SetUpdatedAt(v time.Time) *UnsubscribeScopedUp
 }
 
 // SetChannel sets the "channel" field.
-func (x *UnsubscribeScopedUpdate) SetChannel(v unsubscribe.Channel) *UnsubscribeScopedUpdate {
+func (x *UnsubscribeScopedUpdate) SetChannel(v channels.Channel) *UnsubscribeScopedUpdate {
 	x.b.SetChannel(v)
 	return x
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (x *UnsubscribeScopedUpdate) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeScopedUpdate {
+func (x *UnsubscribeScopedUpdate) SetNillableChannel(v *channels.Channel) *UnsubscribeScopedUpdate {
 	x.b.SetNillableChannel(v)
 	return x
 }
@@ -38679,13 +38682,13 @@ func (x *WebhookEndpointScopedCreate) SetNillableFailingSince(v *time.Time) *Web
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedCreate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedCreate {
+func (x *WebhookEndpointScopedCreate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedCreate {
 	x.b.SetLastErrorKind(v)
 	return x
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedCreate {
+func (x *WebhookEndpointScopedCreate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedCreate {
 	x.b.SetNillableLastErrorKind(v)
 	return x
 }
@@ -38944,7 +38947,7 @@ func (u *WebhookEndpointScopedUpsert) ClearFailingSince() *WebhookEndpointScoped
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (u *WebhookEndpointScopedUpsert) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpsert {
+func (u *WebhookEndpointScopedUpsert) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpsert {
 	u.u.Set(webhookendpoint.FieldLastErrorKind, v)
 	return u
 }
@@ -39308,13 +39311,13 @@ func (x *WebhookEndpointScopedUpdateOne) ClearFailingSince() *WebhookEndpointSco
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdateOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdateOne {
+func (x *WebhookEndpointScopedUpdateOne) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpdateOne {
 	x.b.SetLastErrorKind(v)
 	return x
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdateOne {
+func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedUpdateOne {
 	x.b.SetNillableLastErrorKind(v)
 	return x
 }
@@ -39566,13 +39569,13 @@ func (x *WebhookEndpointScopedUpdate) ClearFailingSince() *WebhookEndpointScoped
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdate {
+func (x *WebhookEndpointScopedUpdate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpdate {
 	x.b.SetLastErrorKind(v)
 	return x
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdate {
+func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedUpdate {
 	x.b.SetNillableLastErrorKind(v)
 	return x
 }

@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,16 +24,14 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
 
-	send := func() externalapi.EmailsSendRes {
-		res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	send := func() error {
+		_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 			TemplateId: fixtures.TemplateBrokenSubjectID, Destination: "render@example.com",
 		}, externalapi.EmailsSendParams{IdempotencyKey: externalapi.NewOptString("render-1")})
-		require.NoError(t, err)
-		return res
+		return err
 	}
 
-	first, ok := send().(*externalapi.EmailsSendUnprocessableEntity)
-	require.True(t, ok)
+	first := testhelper.ExternalRefusal(t, send(), http.StatusUnprocessableEntity)
 	assert.Contains(t, first.Detail.Value, "message content cannot be rendered")
 
 	rec, err := env.DB.OutboundMessage.Query().
@@ -40,7 +39,7 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessage.StatusFailed, rec.Status)
 
-	assert.IsType(t, &externalapi.EmailsSendConflict{}, send(), "a failed key is spent")
+	testhelper.ExternalRefusal(t, send(), http.StatusConflict, "a failed key is spent")
 	assert.Empty(t, env.CustomerMail.Messages())
 }
 
@@ -53,12 +52,10 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	tmpl := variablesTemplate(env.DB)
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
-	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId: templateID(tmpl), Destination: "held@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	held := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.Empty(t, env.CustomerMail.Messages())
 	n, err := env.DB.OutboundMessage.Query().Where(outboundmessage.Destination("held@example.com")).Count(ctx)

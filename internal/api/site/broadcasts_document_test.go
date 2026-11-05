@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -26,8 +27,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.Contains(t, testhelper.SiteEmailOf(res).Body, "Hello {{ first_name }}")
 	assert.True(t, testhelper.SiteEmailOf(res).Doc.Set && !testhelper.SiteEmailOf(res).Doc.Null, "the response carries the document")
 	assert.Equal(t, emaildoc.EditorVersion(), testhelper.SiteEmailOf(res).EditorVersion.Value)
@@ -43,8 +43,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.Contains(t, testhelper.SiteEmailOf(upd).Body, "Second")
 	assert.NotContains(t, testhelper.SiteEmailOf(upd).Body, "Hello")
 
@@ -58,8 +57,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>Plain</p>")})},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	clr, ok := cleared.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", cleared)
+	clr := cleared
 	assert.False(t, testhelper.SiteEmailOf(clr).Doc.Set && !testhelper.SiteEmailOf(clr).Doc.Null, "the response carries no document")
 	row = env.DB.Broadcast.GetX(ctx, int64(res.ID))
 	assert.Empty(t, row.Doc)
@@ -79,22 +77,19 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 		"type":    jx.Raw(`"doc"`),
 		"content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`),
 	}
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Bad",
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badLevel)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", created)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "level")
 	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "nothing is stored")
 
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name:    siteapi.NewOptString("Renamed"),
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(map[string]jx.Raw{"type": jx.Raw(`"nope"`)})}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, draft.Name, after.Name, "nothing is stored")
 	assert.Equal(t, draft.Body, after.Body)
@@ -105,18 +100,16 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Both",
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, created)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
@@ -126,8 +119,7 @@ func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
 
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
-	res, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	res := got
 	assert.False(t, testhelper.SiteEmailOf(res).Doc.Set && !testhelper.SiteEmailOf(res).Doc.Null)
 	assert.Empty(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Doc)
 }
@@ -138,10 +130,9 @@ func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
+	_, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("preview@example.com")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastAuthoredID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
 
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)

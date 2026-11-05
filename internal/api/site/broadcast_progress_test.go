@@ -27,8 +27,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	getOf := func(id int64) siteapi.SiteBroadcastResource {
 		got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 		require.NoError(t, err)
-		res, ok := got.(*siteapi.SiteBroadcastResource)
-		require.Truef(t, ok, "got %T", got)
+		res := got
 		return *res
 	}
 	get := func() siteapi.SiteBroadcastResource { return getOf(id) }
@@ -64,8 +63,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 
 	list, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	listed, ok := list.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", list)
+	listed := list
 	for _, item := range listed.Items {
 		assert.False(t, item.Progress.IsSet(), "the list leaves progress to get and send")
 	}

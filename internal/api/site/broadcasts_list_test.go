@@ -17,8 +17,7 @@ func listedBroadcastIDs(t *testing.T, c *siteapi.Client, params siteapi.SiteBroa
 	params.WorkspaceId = fixtures.AcmePublicID
 	res, err := c.SiteBroadcastsList(t.Context(), params)
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	return lo.Map(list.Items, func(b siteapi.SiteBroadcastResource, _ int) siteapi.EntityId { return b.ID })
 }
 

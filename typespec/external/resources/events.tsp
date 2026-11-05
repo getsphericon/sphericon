@@ -95,13 +95,7 @@ namespace Events {
   /** Record events in batch */
   @post
   @requiresScopes(#[ApiTokenScope.eventsWrite])
-  op create(@body body: RecordEventsInput):
-    | NoContentResponse
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+  op create(@body body: RecordEventsInput): NoContentResponse | Problem;
 }
 
 // Aligned with the site API's `/events/actions` naming.
@@ -111,13 +105,7 @@ namespace EventActions {
   /** List unique event actions */
   @get
   @requiresScopes(#[ApiTokenScope.eventsRead])
-  op list(...PageQuery):
-    | Page<EventActionResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+  op list(...PageQuery): Page<EventActionResource> | Problem;
 }
 
 @route("/events/batch")
@@ -128,9 +116,5 @@ namespace EventsBatch {
   @requiresScopes(#[ApiTokenScope.eventsWrite])
   op submit(@body body: RecordEventsBatchInput):
     | RecordEventsBatchResult
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

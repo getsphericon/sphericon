@@ -19,7 +19,7 @@ var _ Handler = UnimplementedHandler{}
 // Unknown email and wrong password answer the same 401.
 //
 // POST /auth/login
-func (UnimplementedHandler) StaffAuthLogin(ctx context.Context, req *StaffLoginInput) (r StaffAuthLoginRes, _ error) {
+func (UnimplementedHandler) StaffAuthLogin(ctx context.Context, req *StaffLoginInput) (r *StaffLoginResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -29,7 +29,7 @@ func (UnimplementedHandler) StaffAuthLogin(ctx context.Context, req *StaffLoginI
 // (a copied one too) stops verifying, and clears the session cookie.
 //
 // POST /auth/logout
-func (UnimplementedHandler) StaffAuthLogout(ctx context.Context) (r StaffAuthLogoutRes, _ error) {
+func (UnimplementedHandler) StaffAuthLogout(ctx context.Context) (r *StaffAuthLogoutNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -40,7 +40,7 @@ func (UnimplementedHandler) StaffAuthLogout(ctx context.Context) (r StaffAuthLog
 // challenge and a wrong code answer the same 401.
 //
 // POST /auth/second-factor
-func (UnimplementedHandler) StaffAuthSecondFactor(ctx context.Context, req *StaffSecondFactorInput) (r StaffAuthSecondFactorRes, _ error) {
+func (UnimplementedHandler) StaffAuthSecondFactor(ctx context.Context, req *StaffSecondFactorInput) (r *StaffResourceHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -50,7 +50,7 @@ func (UnimplementedHandler) StaffAuthSecondFactor(ctx context.Context, req *Staf
 // acknowledgement stands, and a repeat changes nothing.
 //
 // POST /instance/notice/acknowledge
-func (UnimplementedHandler) StaffInstanceAcknowledgeNotice(ctx context.Context) (r StaffInstanceAcknowledgeNoticeRes, _ error) {
+func (UnimplementedHandler) StaffInstanceAcknowledgeNotice(ctx context.Context) (r *StaffInstanceState, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -61,7 +61,7 @@ func (UnimplementedHandler) StaffInstanceAcknowledgeNotice(ctx context.Context) 
 // Send caps.
 //
 // DELETE /instance/default-send-cap
-func (UnimplementedHandler) StaffInstanceClearDefaultSendCap(ctx context.Context) (r StaffInstanceClearDefaultSendCapRes, _ error) {
+func (UnimplementedHandler) StaffInstanceClearDefaultSendCap(ctx context.Context) (r *StaffDefaultSendCapChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -70,7 +70,7 @@ func (UnimplementedHandler) StaffInstanceClearDefaultSendCap(ctx context.Context
 // The Instance's own settings and state.
 //
 // GET /instance
-func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r StaffInstanceGetStateRes, _ error) {
+func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r *StaffInstanceState, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -80,7 +80,7 @@ func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r StaffI
 // own settings.
 //
 // GET /instance/audit-entries
-func (UnimplementedHandler) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (r StaffInstanceListAuditEntriesRes, _ error) {
+func (UnimplementedHandler) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (r *StaffInstanceAuditEntryList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -90,7 +90,7 @@ func (UnimplementedHandler) StaffInstanceListAuditEntries(ctx context.Context, p
 // schema describes, built by the code that sends it. Works whether or not sending is on.
 //
 // GET /instance/telemetry/preview
-func (UnimplementedHandler) StaffInstancePreviewTelemetryReport(ctx context.Context) (r StaffInstancePreviewTelemetryReportRes, _ error) {
+func (UnimplementedHandler) StaffInstancePreviewTelemetryReport(ctx context.Context) (r JsonObject, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -101,7 +101,7 @@ func (UnimplementedHandler) StaffInstancePreviewTelemetryReport(ctx context.Cont
 // Not found on an Instance that has no Send caps.
 //
 // PUT /instance/default-send-cap
-func (UnimplementedHandler) StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (r StaffInstanceSetDefaultSendCapRes, _ error) {
+func (UnimplementedHandler) StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (r *StaffDefaultSendCapChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -110,7 +110,7 @@ func (UnimplementedHandler) StaffInstanceSetDefaultSendCap(ctx context.Context, 
 // Switch the Telemetry report on or off. Answers 409 while the environment decides.
 //
 // PUT /instance/telemetry
-func (UnimplementedHandler) StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (r StaffInstanceSetTelemetryRes, _ error) {
+func (UnimplementedHandler) StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (r *StaffInstanceState, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -119,7 +119,7 @@ func (UnimplementedHandler) StaffInstanceSetTelemetry(ctx context.Context, req *
 // The authenticated Staff member.
 //
 // GET /me
-func (UnimplementedHandler) StaffMeGet(ctx context.Context) (r StaffMeGetRes, _ error) {
+func (UnimplementedHandler) StaffMeGet(ctx context.Context) (r *StaffResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -129,7 +129,7 @@ func (UnimplementedHandler) StaffMeGet(ctx context.Context) (r StaffMeGetRes, _ 
 // a second mailings consent are refused (422).
 //
 // POST /signup-items
-func (UnimplementedHandler) StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (r StaffSignupItemsCreateRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (r *StaffSignupItemResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -141,8 +141,8 @@ func (UnimplementedHandler) StaffSignupItemsCreate(ctx context.Context, req *Sta
 // unmarked.
 //
 // DELETE /signup-items/{id}
-func (UnimplementedHandler) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (r StaffSignupItemsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // StaffSignupItemsGet implements StaffSignupItems_get operation.
@@ -150,7 +150,7 @@ func (UnimplementedHandler) StaffSignupItemsDelete(ctx context.Context, params S
 // One Sign-up item, a deleted one too.
 //
 // GET /signup-items/{id}
-func (UnimplementedHandler) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (r StaffSignupItemsGetRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (r *StaffSignupItemResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -159,7 +159,7 @@ func (UnimplementedHandler) StaffSignupItemsGet(ctx context.Context, params Staf
 // The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 //
 // GET /signup-items
-func (UnimplementedHandler) StaffSignupItemsList(ctx context.Context) (r StaffSignupItemsListRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsList(ctx context.Context) (r *StaffSignupItemList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -169,7 +169,7 @@ func (UnimplementedHandler) StaffSignupItemsList(ctx context.Context) (r StaffSi
 // first.
 //
 // GET /signup-items/{id}/versions
-func (UnimplementedHandler) StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (r StaffSignupItemsListVersionsRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (r *StaffLegalDocumentVersionList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -180,7 +180,7 @@ func (UnimplementedHandler) StaffSignupItemsListVersions(ctx context.Context, pa
 // deleted item is not found.
 //
 // POST /signup-items/{id}/versions
-func (UnimplementedHandler) StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (r StaffSignupItemsPublishRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (r *StaffSignupItemResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -190,7 +190,7 @@ func (UnimplementedHandler) StaffSignupItemsPublish(ctx context.Context, req *St
 // the id of every item that is not deleted, exactly once, is refused (422).
 //
 // PUT /signup-items/order
-func (UnimplementedHandler) StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (r StaffSignupItemsReorderRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (r *StaffSignupItemList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -200,7 +200,7 @@ func (UnimplementedHandler) StaffSignupItemsReorder(ctx context.Context, req *St
 // until it is published. A deleted item is not found.
 //
 // PUT /signup-items/{id}/draft
-func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (r StaffSignupItemsSaveDraftRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (r *StaffSignupItemResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -210,6 +210,14 @@ func (UnimplementedHandler) StaffSignupItemsSaveDraft(ctx context.Context, req *
 // and a second mailings consent are refused (422); a deleted item is not found.
 //
 // PATCH /signup-items/{id}
-func (UnimplementedHandler) StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (r StaffSignupItemsUpdateRes, _ error) {
+func (UnimplementedHandler) StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (r *StaffSignupItemResource, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

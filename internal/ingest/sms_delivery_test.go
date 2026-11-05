@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
@@ -80,7 +81,7 @@ func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUn
 			assert.Equal(t, 1, undelivered)
 			delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
 			assert.Zero(t, delivered)
-			suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
+			suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(t.Context())
 			assert.Zero(t, suppressions, "an unreachable handset is no dead number")
 		})
 	}
@@ -137,7 +138,7 @@ func TestAReportOfAnUnknownTextChangesNothing(t *testing.T) {
 	assert.Nil(t, got.UndeliveredAt)
 	reports := env.QueuedEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
 	assert.Empty(t, reports)
-	suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
+	suppressions := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(t.Context())
 	assert.Zero(t, suppressions)
 }
 
@@ -151,7 +152,7 @@ func TestAnUndeliveredReportOfADeadNumberSuppressesIt(t *testing.T) {
 
 			report(t, env, account, text, "undelivered", code)
 
-			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).OnlyX(t.Context())
+			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).OnlyX(t.Context())
 			assert.Equal(t, fixtures.ContactTexterPhone, suppressed.Destination)
 			assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 			assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(suppressed.ContactID))

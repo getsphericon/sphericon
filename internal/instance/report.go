@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/postgres"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
@@ -103,7 +104,7 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	externalAPI := q.exists(client.ApiToken.Query().Where(apitoken.LastUsedAtGTE(since)).Exist(ctx))
 	webhooks := q.exists(client.WebhookEndpoint.Query().Exist(ctx))
 	// The providers in use are those of kept Integrations: a deleted one is not set up (ADR 0099).
-	providers, err := client.Integration.Query().Where(integration.DiscardedAtIsNil()).Unique(true).Select(integration.FieldProvider).Strings(ctx)
+	inUse, err := client.Integration.Query().Where(integration.DiscardedAtIsNil()).Unique(true).Select(integration.FieldProvider).Strings(ctx)
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}
@@ -114,16 +115,16 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}
-	kinds := make([]telemetryapi.TelemetryIntegrationKind, 0, len(providers))
-	for _, p := range providers {
-		switch integration.Provider(p) {
-		case integration.ProviderSMTP:
+	kinds := make([]telemetryapi.TelemetryIntegrationKind, 0, len(inUse))
+	for _, p := range inUse {
+		switch providers.Provider(p) {
+		case providers.SMTP:
 			kinds = append(kinds, telemetryapi.TelemetryIntegrationKindSMTP)
-		case integration.ProviderSes:
+		case providers.SES:
 			kinds = append(kinds, telemetryapi.TelemetryIntegrationKindSes)
-		case integration.ProviderInbox:
+		case providers.Inbox:
 			// A Test inbox sends nothing: it is not a sending Integration in use.
-		case integration.ProviderTelegram, integration.ProviderTwilio:
+		case providers.Telegram, providers.Twilio:
 			// The Telemetry report lists email providers; a Telegram or Twilio kind is a change of its
 			// schema.
 		}

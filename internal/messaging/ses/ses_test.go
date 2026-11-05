@@ -14,8 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -168,8 +170,8 @@ func TestDefaultFrom(t *testing.T) {
 
 func TestDescriptorValidate(t *testing.T) {
 	d := ses.Descriptor()
-	assert.Equal(t, messaging.ChannelEmail, d.Channel)
-	assert.Equal(t, messaging.ProviderSES, d.Provider)
+	assert.Equal(t, channels.Email, d.Channel)
+	assert.Equal(t, providers.SES, d.Provider)
 
 	cases := map[string]struct {
 		cfg     string
@@ -272,16 +274,16 @@ func TestSendQuota(t *testing.T) {
 		api := newSESAPI(t, http.StatusOK, accountBody("HEALTHY", true))
 		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, messaging.EnforcementNone, got.Enforcement)
+		assert.Equal(t, providers.EnforcementNone, got.Enforcement)
 		assert.False(t, got.Sandbox)
 	})
 
 	t.Run("reads the enforcement status", func(t *testing.T) {
-		for status, want := range map[string]messaging.Enforcement{
-			"PROBATION": messaging.EnforcementProbation,
-			"SHUTDOWN":  messaging.EnforcementShutdown,
-			"HEALTHY":   messaging.EnforcementNone,
-			"SOMETHING": messaging.EnforcementNone,
+		for status, want := range map[string]providers.Enforcement{
+			"PROBATION": providers.EnforcementProbation,
+			"SHUTDOWN":  providers.EnforcementShutdown,
+			"HEALTHY":   providers.EnforcementNone,
+			"SOMETHING": providers.EnforcementNone,
 		} {
 			api := newSESAPI(t, http.StatusOK, accountBody(status, true))
 			got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
@@ -294,7 +296,7 @@ func TestSendQuota(t *testing.T) {
 		api := newSESAPI(t, http.StatusOK, quotaBody("200.0", "1.0"))
 		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, messaging.EnforcementNone, got.Enforcement)
+		assert.Equal(t, providers.EnforcementNone, got.Enforcement)
 	})
 
 	t.Run("an AWS account without production access is in the sandbox", func(t *testing.T) {

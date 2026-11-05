@@ -18,22 +18,20 @@ import (
 
 func listSegments(t *testing.T, c *siteapi.Client, archived bool) []int64 {
 	t.Helper()
-	res, err := c.SiteSegmentsList(context.Background(), siteapi.SiteSegmentsListParams{
+	list, err := c.SiteSegmentsList(context.Background(), siteapi.SiteSegmentsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 		Archived:    siteapi.NewOptBool(archived),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteSegmentsListOK)
-	require.Truef(t, ok, "got %T", res)
 	return lo.Map(list.Items, func(s siteapi.SiteSegmentResource, _ int) int64 { return int64(s.ID) })
 }
 
-func archiveSegment(c *siteapi.Client, id int64) (siteapi.SiteSegmentsArchiveRes, error) {
+func archiveSegment(c *siteapi.Client, id int64) (*siteapi.SiteSegmentResource, error) {
 	return c.SiteSegmentsArchive(context.Background(), siteapi.SiteSegmentsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 }
 
-func unarchiveSegment(c *siteapi.Client, id int64) (siteapi.SiteSegmentsUnarchiveRes, error) {
+func unarchiveSegment(c *siteapi.Client, id int64) (*siteapi.SiteSegmentResource, error) {
 	return c.SiteSegmentsUnarchive(context.Background(), siteapi.SiteSegmentsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 }
 
@@ -44,23 +42,17 @@ func TestSiteSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testin
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := archiveSegment(c, fixtures.SegmentProPlanID)
+	archived, err := archiveSegment(c, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	archived, ok := got.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
-	res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
-	require.NoError(t, err)
-	refused, ok := res.(*siteapi.SiteBroadcastsScheduleUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, fixtures.SegmentProPlanName)
 
-	b, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
+	draft, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
 	require.NoError(t, err)
-	draft, ok := b.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", b)
 	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, draft.Status)
 }
 
@@ -69,28 +61,22 @@ func TestSiteSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testin
 func TestSiteArchivedSegmentIsReadOnlyUntilUnarchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	rename := func() siteapi.SiteSegmentsUpdateRes {
-		res, err := c.SiteSegmentsUpdate(t.Context(), &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")},
+	rename := func() (*siteapi.SiteSegmentResource, error) {
+		return c.SiteSegmentsUpdate(t.Context(), &siteapi.SiteUpdateSegmentInput{Name: siteapi.NewOptString("Renamed")},
 			siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentArchivedID)})
-		require.NoError(t, err)
-		return res
 	}
 
-	refused := rename()
+	_, refused := rename()
 	kept, err := c.SiteSegmentsGet(t.Context(), siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentArchivedID)})
 	require.NoError(t, err)
 	_, err = unarchiveSegment(c, fixtures.SegmentArchivedID)
 	require.NoError(t, err)
-	saved := rename()
+	renamed, err := rename()
+	require.NoError(t, err)
 
-	conflict, ok := refused.(*siteapi.SiteSegmentsUpdateConflict)
-	require.Truef(t, ok, "got %T", refused)
+	conflict := testhelper.SiteRefusal(t, refused, http.StatusConflict)
 	assert.EqualValues(t, http.StatusConflict, conflict.Status.Or(0))
-	unchanged, ok := kept.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", kept)
-	assert.Equal(t, fixtures.SegmentArchivedName, unchanged.Name)
-	renamed, ok := saved.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", saved)
+	assert.Equal(t, fixtures.SegmentArchivedName, kept.Name)
 	assert.Equal(t, "Renamed", renamed.Name)
 }
 
@@ -100,16 +86,12 @@ func TestSiteSegmentOfAScheduledBroadcastIsArchived(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := archiveSegment(c, fixtures.SegmentRenewalAudienceID)
+	archived, err := archiveSegment(c, fixtures.SegmentRenewalAudienceID)
 	require.NoError(t, err)
-	archived, ok := got.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
-	res, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastScheduledRenewalID)})
+	b, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastScheduledRenewalID)})
 	require.NoError(t, err)
-	b, ok := res.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, b.Status)
 	assert.Equal(t, idStr(fixtures.SegmentRenewalAudienceID), b.SegmentId.Value)
 }
@@ -123,10 +105,8 @@ func TestSiteSegmentArchiveAndRestore(t *testing.T) {
 	ctx := context.Background()
 	id := int64(fixtures.SegmentRetiredID)
 
-	out, err := archiveSegment(c, id)
+	archived, err := archiveSegment(c, id)
 	require.NoError(t, err)
-	archived, ok := out.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", out)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
 	assert.NotContains(t, listSegments(t, c, false), id)
@@ -135,18 +115,15 @@ func TestSiteSegmentArchiveAndRestore(t *testing.T) {
 	assert.Contains(t, shown, int64(fixtures.SegmentArchivedID))
 	assert.NotContains(t, shown, int64(fixtures.SegmentActiveID))
 
-	got, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
-	require.NoError(t, err)
-	assert.IsTypef(t, &siteapi.SiteSegmentResource{}, got, "an archived segment can still be opened")
+	_, err = c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+	require.NoError(t, err, "an archived segment can still be opened")
 
 	failed, err := env.DB.Scoped(fixtures.AcmeID).Broadcast().Get(ctx, fixtures.BroadcastFailedID)
 	require.NoError(t, err)
 	assert.Equal(t, id, lo.FromPtr(failed.SegmentID))
 
-	back, err := unarchiveSegment(c, id)
+	restored, err := unarchiveSegment(c, id)
 	require.NoError(t, err)
-	restored, ok := back.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", back)
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Contains(t, listSegments(t, c, false), id)
 }
@@ -157,18 +134,14 @@ func TestSiteSentBroadcastStillNamesItsArchivedSegment(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	b, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastArchivedID)})
+	broadcast, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastArchivedID)})
 	require.NoError(t, err)
-	broadcast, ok := b.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", b)
 	segmentID, ok := broadcast.SegmentId.Get()
 	require.True(t, ok)
 	assert.EqualValues(t, fixtures.SegmentArchivedID, segmentID)
 
-	s, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: segmentID})
+	seg, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: segmentID})
 	require.NoError(t, err)
-	seg, ok := s.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", s)
 	assert.Equal(t, fixtures.SegmentArchivedName, seg.Name)
 }
 
@@ -177,12 +150,11 @@ func TestSiteSegmentNameIsFreeAfterArchive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteSegmentsCreate(context.Background(), &siteapi.SiteCreateSegmentInput{
+	_, err := c.SiteSegmentsCreate(context.Background(), &siteapi.SiteCreateSegmentInput{
 		Name:      fixtures.SegmentArchivedName,
 		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentResource{}, out)
 }
 
 // Archive and Unarchive are recorded in the Audit log with their actor, as the owner names them

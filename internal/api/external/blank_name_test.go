@@ -2,10 +2,8 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -19,12 +17,10 @@ func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:write", "broadcasts:write")
 	const def = `{"kind":"group","combinator":"and","rules":[]}`
 
-	segment, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})
-	require.NoError(t, err)
-	broadcast, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("")},
+	_, segment := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})
+	_, broadcast := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
-	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.SegmentsCreateUnprocessableEntity{}, segment)
-	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, broadcast)
+	testhelper.ExternalRefusal(t, segment, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, broadcast, http.StatusUnprocessableEntity)
 }

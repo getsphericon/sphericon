@@ -45,8 +45,7 @@ func identity(t *testing.T, c *serviceapi.Client) *serviceapi.ServiceIdentityRes
 	t.Helper()
 	res, err := c.ServiceIdentityGet(t.Context())
 	require.NoError(t, err)
-	id, ok := res.(*serviceapi.ServiceIdentityResource)
-	require.Truef(t, ok, "the identity is answered, got %T", res)
+	id := res
 	return id
 }
 
@@ -312,8 +311,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	customerPage, ok := res.(*siteapi.SiteAuditEntryList)
-	require.Truef(t, ok, "got %T", res)
+	customerPage := res
 	attributed := lo.Filter(customerPage.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Target.Name.Value == "attributed-tag" })
 	for _, e := range attributed {
 		assert.Equal(t, siteapi.SiteAuditActorKindStaff, e.Actor.Kind)

@@ -30,7 +30,7 @@ func TestTagChangesRecordSystemEvents(t *testing.T) {
 	}
 	remove := func() {
 		t.Helper()
-		_, err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: bob, Name: "vip"})
+		err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: bob, Name: "vip"})
 		require.NoError(t, err)
 	}
 
@@ -58,11 +58,10 @@ func TestContactUpdateRecordsFieldChanges(t *testing.T) {
 	bob := entityIDString(fixtures.ContactBobID)
 	update := func(fields externalapi.JsonObject) {
 		t.Helper()
-		res, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
+		_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
 			CustomFields: externalapi.NewOptNilJsonObject(fields),
 		}, externalapi.ContactsUpdateParams{ID: bob})
 		require.NoError(t, err)
-		require.IsType(t, &externalapi.ContactResource{}, res)
 	}
 
 	update(externalapi.JsonObject{"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4`)})
@@ -84,7 +83,7 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
-	res, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+	_, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{
 			Email:        externalapi.NewOptNilEmailAddress("imported@example.org"),
 			CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),
@@ -95,7 +94,7 @@ func TestBatchImportRecordsNoFieldChanges(t *testing.T) {
 		},
 	}})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
+
 	changes := env.FieldChanges(t)
 	created := env.QueuedEnvelopes(t, events.NameContactCreated)
 

@@ -1,7 +1,7 @@
 // Package inuse is the one shape of a refused removal (ADR 0049): a row that live work still
 // uses is not removed, and the refusal names the users. Each domain module returns an *Error
-// from its delete; the server's error handler renders it as the contracts' InUseProblem (409,
-// `usedBy`) on every surface.
+// from its delete; internal/problem renders it as the contracts' Problem (409, `usedBy`) on every
+// surface.
 package inuse
 
 import (

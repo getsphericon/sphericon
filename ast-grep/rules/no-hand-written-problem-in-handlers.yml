@@ -1,0 +1,35 @@
+id: no-hand-written-problem-in-handlers
+language: Go
+severity: error
+message: "rule 15: a handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/ConflictField/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete/UnknownReference) and let internal/problem answer it"
+note: >-
+  A refusal answers the same on every surface and is mapped once (review rule 15): the module that
+  decides it returns a sentinel whose kind carries its status and code (not found 404, refused 422,
+  conflict 409, forbidden 403 permission_required, unauthorized 401, denied 403, unverified 403
+  email_verification_required, an invalid link 400, incomplete 428, an unknown reference 400), the
+  handler returns it as its error, and the surface's NewError answers it through internal/problem.
+  A handler that builds a surface's ProblemDetails (or its ProblemDetailsStatusCode) or a
+  problem.Error writes a second mapping of the decision, next to the handler rather than the
+  module, which drifts from the other surfaces. The files under `ignores` keep an answer no refusal
+  kind gives (a problem.Error); a new file is covered at once.
+rule:
+  any:
+    - kind: composite_literal
+      has:
+        field: type
+        regex: ^(siteapi|externalapi|collectapi|staffapi|staffeeapi|serviceapi)\.ProblemDetails(StatusCode)?$
+    - kind: composite_literal
+      has:
+        field: type
+        regex: ^problem\.Error$
+files:
+  - internal/api/**/*.go
+  - ee/api/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'
+  # No refusal kind fits these: the 402 of a missing Enterprise license (audit), the 410 of an
+  # expired confirmation link (consent).
+  - internal/api/site/audit.go
+  - internal/api/site/consent.go
+  - internal/api/external/audit.go

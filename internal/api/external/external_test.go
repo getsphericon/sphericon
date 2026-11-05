@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"sort"
 	"testing"
 	"time"
@@ -44,34 +45,27 @@ func TestExternalContactsCRUD(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
 	ctx := context.Background()
 
-	list, err := c.ContactsList(ctx, externalapi.ContactsListParams{})
+	listed, err := c.ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
-	listed, ok := list.(*externalapi.ContactsListOK)
-	require.Truef(t, ok, "got %T", list)
 	assert.NotEmpty(t, listed.Items, "the workspace returns its contacts")
 
-	created, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
+	contact, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Email:     externalapi.NewOptNilEmailAddress("new@example.com"),
 		FirstName: externalapi.NewOptNilString("New"),
 	})
 	require.NoError(t, err)
-	contact, ok := created.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", created)
 	email, ok := contact.Email.Get()
 	require.True(t, ok)
 	assert.Equal(t, externalapi.EmailAddress("new@example.com"), email)
 
-	got, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: entityIDString(fixtures.ContactAliceID)})
+	_, err = c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactResource{}, got)
 
-	missing, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsGetNotFound{}, missing)
+	_, err = c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	deleted, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactAliceID)})
+	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteNoContent{}, deleted)
 }
 
 // A contact created through /api enrolls into Automations like a UI-created one:
@@ -80,12 +74,10 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	created, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("published@example.com"),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", res)
 
 	n := env.QueuedCount(t, "contact.created", map[string]any{"email": "published@example.com", "contactId": created.ID})
 	assert.Equal(t, 1, n, "contact.created published once")
@@ -96,23 +88,19 @@ func TestExternalAuthAndScopes(t *testing.T) {
 	ctx := context.Background()
 
 	// No token / bad token → 401 Unauthorized variant.
-	res, err := env.ExternalAnonymous(t).ContactsList(ctx, externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, res)
+	_, err := env.ExternalAnonymous(t).ContactsList(ctx, externalapi.ContactsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
-	res, err = env.ExternalWithToken(t, "omtk_deadbeef_invalidsecret").ContactsList(ctx, externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, res)
+	_, err = env.ExternalWithToken(t, "omtk_deadbeef_invalidsecret").ContactsList(ctx, externalapi.ContactsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	// Read-only token: can read, cannot create.
 	ro := env.ExternalScoped(t, "contacts:read")
-	createRes, err := ro.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateForbidden{}, createRes)
+	_, err = ro.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	listRes, err := ro.ContactsList(ctx, externalapi.ContactsListParams{})
+	_, err = ro.ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListOK{}, listRes)
 }
 
 // TestExternalEventsCreate verifies a batch ingest persists events scoped to the
@@ -124,7 +112,7 @@ func TestExternalEventsCreate(t *testing.T) {
 	ctx := context.Background()
 
 	occurred := eventsNow.Add(-time.Hour) // inside the live window
-	res, err := c.EventsCreate(ctx, &externalapi.RecordEventsInput{
+	err := c.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{
 			{
 				SubjectId:  "user:dave@example.com",
@@ -140,7 +128,6 @@ func TestExternalEventsCreate(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.EventsCreateNoContent{}, res)
 
 	// Both events are published as CollectedEvents, scoped to the
 	// token's workspace, with every optional field carried as-is.
@@ -172,17 +159,15 @@ func TestExternalEventsScopes(t *testing.T) {
 
 	// events:read cannot write.
 	ro := env.ExternalScoped(t, "events:read")
-	createRes, err := ro.EventsCreate(ctx, &externalapi.RecordEventsInput{
+	err := ro.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s", Action: "a"}},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsCreateForbidden{}, createRes)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// events:write cannot read actions.
 	wo := env.ExternalScoped(t, "events:write")
-	listRes, err := wo.EventActionsList(ctx, externalapi.EventActionsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventActionsListForbidden{}, listRes)
+	_, err = wo.EventActionsList(ctx, externalapi.EventActionsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // TestExternalEventActionsList verifies distinct actions for the token's
@@ -194,13 +179,11 @@ func TestExternalEventActionsList(t *testing.T) {
 
 	res, err := c.EventActionsList(context.Background(), externalapi.EventActionsListParams{})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.EventActionsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	// Distinct actions for the token's workspace, sorted. Selected by membership so
 	// the assertion is independent of how many actions are seeded.
-	actions := make([]string, len(ok.Items))
-	for i, item := range ok.Items {
+	actions := make([]string, len(res.Items))
+	for i, item := range res.Items {
 		actions[i] = item.Action
 	}
 	assert.True(t, sort.StringsAreSorted(actions), "actions are sorted")
@@ -221,16 +204,15 @@ func TestExternalEventsWorkspaceIsolation(t *testing.T) {
 	// Listing for workspace 1 must not surface workspace 2's action.
 	res, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{})
 	require.NoError(t, err)
-	ok := res.(*externalapi.EventActionsListOK)
-	acmeActions := make([]string, len(ok.Items))
-	for i, item := range ok.Items {
+	acmeActions := make([]string, len(res.Items))
+	for i, item := range res.Items {
 		assert.NotEqual(t, fixtures.EventGlobexAction, item.Action, "another tenant's action leaked")
 		acmeActions[i] = item.Action
 	}
 	assert.Contains(t, acmeActions, "page_view", "the workspace's own actions are returned")
 
 	// Writes land in workspace 1, not the token-agnostic global pool.
-	_, err = c.EventsCreate(ctx, &externalapi.RecordEventsInput{
+	err = c.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "user:fred@example.com", Action: "ws1_write"}},
 	})
 	require.NoError(t, err)
@@ -245,7 +227,6 @@ func TestExternalRequestValidation(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:write")
 
 	// An invalid email is refused by ogen's validation with the documented 400.
-	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateBadRequest{}, res)
+	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("not-an-email")})
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

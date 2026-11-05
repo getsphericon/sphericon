@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -35,7 +36,7 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	if err != nil {
 		return fmt.Errorf("decrypt integration %d config: %w", integ.ID, err)
 	}
-	built, err := catalog.BuildEmail(messaging.Provider(integ.Provider), config, messaging.Deps{})
+	built, err := catalog.BuildEmail(integ.Provider, config, messaging.Deps{})
 	if err != nil {
 		return err
 	}
@@ -65,10 +66,10 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	if quota.PerDay == nil {
 		upd.ClearProviderMaxPerDay()
 	}
-	if quota.Enforcement == messaging.EnforcementNone {
+	if quota.Enforcement == providers.EnforcementNone {
 		upd.ClearProviderEnforcement()
 	} else {
-		upd.SetProviderEnforcement(integration.ProviderEnforcement(quota.Enforcement))
+		upd.SetProviderEnforcement(quota.Enforcement)
 	}
 	upd.SetProviderSandbox(quota.Sandbox)
 	if err := upd.Exec(ctx); err != nil {

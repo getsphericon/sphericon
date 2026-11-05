@@ -27,12 +27,12 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 		&siteapi.CreateTemplateInput{Name: "Audited template", Subject: siteapi.NewOptString("Hi")},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	tmplID := created.(*siteapi.SiteEmailTemplateResource).ID
+	tmplID := created.ID
 
 	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Subject: siteapi.NewOptString("Hello")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
-	_, err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
+	err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
 
 	_, err = c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Audited segment", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)},
@@ -66,14 +66,14 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 		FirstName: siteapi.NewOptNilString(first),
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	id := created.(*siteapi.SiteContactResource).ID
+	id := created.ID
 
 	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
 		LastName:     siteapi.NewOptNilString("Lastleak"),
 		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": jx.Raw(`"` + secret + `"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 
 	contactEntries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {

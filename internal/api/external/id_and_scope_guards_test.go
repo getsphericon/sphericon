@@ -2,112 +2,132 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/samber/lo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-// guardCase is one id-addressed operation with the response each guard must yield.
+// guardCase is one id-addressed operation; every guard refuses it with the same status: a
+// missing scope with 403, a missing credential with 401 and a malformed id with 400.
 type guardCase struct {
 	name string
-	call func(c *externalapi.Client, id externalapi.EntityId) (any, error)
-	// forbidden, unauthorized and badID are the typed responses for a missing
-	// scope (403), a missing credential (401) and a malformed id.
-	forbidden, unauthorized, badID any
+	call func(c *externalapi.Client, id externalapi.EntityId) error
 }
 
 func idGuardCases() []guardCase {
 	ctx := context.Background()
 	return []guardCase{
-		{"AutomationsGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
-		}, &externalapi.AutomationsGetForbidden{}, &externalapi.AutomationsGetUnauthorized{}, &externalapi.AutomationsGetBadRequest{}},
-		{"AutomationsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{}, externalapi.AutomationsUpdateParams{ID: id})
-		}, &externalapi.AutomationsUpdateForbidden{}, &externalapi.AutomationsUpdateUnauthorized{}, &externalapi.AutomationsUpdateBadRequest{}},
-		{"AutomationsArchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
-		}, &externalapi.AutomationsArchiveForbidden{}, &externalapi.AutomationsArchiveUnauthorized{}, &externalapi.AutomationsArchiveBadRequest{}},
-		{"AutomationsPublish", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
-		}, &externalapi.AutomationsPublishForbidden{}, &externalapi.AutomationsPublishUnauthorized{}, &externalapi.AutomationsPublishBadRequest{}},
-		{"AutomationsDeactivate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
-		}, &externalapi.AutomationsDeactivateForbidden{}, &externalapi.AutomationsDeactivateUnauthorized{}, &externalapi.AutomationsDeactivateBadRequest{}},
-		{"BroadcastsGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: id})
-		}, &externalapi.BroadcastsGetForbidden{}, &externalapi.BroadcastsGetUnauthorized{}, &externalapi.BroadcastsGetBadRequest{}},
-		{"BroadcastsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: id})
-		}, &externalapi.BroadcastsUpdateForbidden{}, &externalapi.BroadcastsUpdateUnauthorized{}, &externalapi.BroadcastsUpdateBadRequest{}},
-		{"BroadcastsSetSegment", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
-		}, &externalapi.BroadcastsSetSegmentForbidden{}, &externalapi.BroadcastsSetSegmentUnauthorized{}, &externalapi.BroadcastsSetSegmentBadRequest{}},
-		{"BroadcastsSchedule", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}, externalapi.BroadcastsScheduleParams{ID: id})
-		}, &externalapi.BroadcastsScheduleForbidden{}, &externalapi.BroadcastsScheduleUnauthorized{}, &externalapi.BroadcastsScheduleBadRequest{}},
-		{"BroadcastsUnschedule", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: id})
-		}, &externalapi.BroadcastsUnscheduleForbidden{}, &externalapi.BroadcastsUnscheduleUnauthorized{}, &externalapi.BroadcastsUnscheduleBadRequest{}},
-		{"BroadcastsTestSend", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+		{"AutomationsGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
+			return err
+		}},
+		{"AutomationsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{}, externalapi.AutomationsUpdateParams{ID: id})
+			return err
+		}},
+		{"AutomationsArchive", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
+			return err
+		}},
+		{"AutomationsPublish", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+			return err
+		}},
+		{"AutomationsDeactivate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
+			return err
+		}},
+		{"BroadcastsGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: id})
+			return err
+		}},
+		{"BroadcastsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: id})
+			return err
+		}},
+		{"BroadcastsSetSegment", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}}, externalapi.BroadcastsSetSegmentParams{ID: id})
+			return err
+		}},
+		{"BroadcastsSchedule", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))}, externalapi.BroadcastsScheduleParams{ID: id})
+			return err
+		}},
+		{"BroadcastsUnschedule", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: id})
+			return err
+		}},
+		{"BroadcastsTestSend", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@example.com")}, externalapi.BroadcastsTestSendParams{ID: id})
-		}, &externalapi.BroadcastsTestSendForbidden{}, &externalapi.BroadcastsTestSendUnauthorized{}, &externalapi.BroadcastsTestSendBadRequest{}},
-		{"BroadcastsReport", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: id})
-		}, &externalapi.BroadcastsReportForbidden{}, &externalapi.BroadcastsReportUnauthorized{}, &externalapi.BroadcastsReportBadRequest{}},
-		{"ContactsGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: id})
-		}, &externalapi.ContactsGetForbidden{}, &externalapi.ContactsGetUnauthorized{}, &externalapi.ContactsGetBadRequest{}},
-		{"ContactsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: id})
-		}, &externalapi.ContactsUpdateForbidden{}, &externalapi.ContactsUpdateUnauthorized{}, &externalapi.ContactsUpdateBadRequest{}},
-		{"ContactsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+		}},
+		{"BroadcastsReport", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: id})
+			return err
+		}},
+		{"ContactsGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: id})
+			return err
+		}},
+		{"ContactsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: id})
+			return err
+		}},
+		{"ContactsDelete", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: id})
-		}, &externalapi.ContactsDeleteForbidden{}, &externalapi.ContactsDeleteUnauthorized{}, &externalapi.ContactsDeleteBadRequest{}},
-		{"SegmentsGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
-		}, &externalapi.SegmentsGetForbidden{}, &externalapi.SegmentsGetUnauthorized{}, &externalapi.SegmentsGetBadRequest{}},
-		{"SegmentsUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: id})
-		}, &externalapi.SegmentsUpdateForbidden{}, &externalapi.SegmentsUpdateUnauthorized{}, &externalapi.SegmentsUpdateBadRequest{}},
-		{"SegmentsArchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
-		}, &externalapi.SegmentsArchiveForbidden{}, &externalapi.SegmentsArchiveUnauthorized{}, &externalapi.SegmentsArchiveBadRequest{}},
-		{"SegmentsUnarchive", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.SegmentsUnarchive(ctx, externalapi.SegmentsUnarchiveParams{ID: id})
-		}, &externalapi.SegmentsUnarchiveForbidden{}, &externalapi.SegmentsUnarchiveUnauthorized{}, &externalapi.SegmentsUnarchiveBadRequest{}},
-		{"TagsListForContact", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: id})
-		}, &externalapi.TagsListForContactForbidden{}, &externalapi.TagsListForContactUnauthorized{}, &externalapi.TagsListForContactBadRequest{}},
-		{"TagsApply", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "vip"}, externalapi.TagsApplyParams{ContactId: id})
-		}, &externalapi.TagsApplyForbidden{}, &externalapi.TagsApplyUnauthorized{}, &externalapi.TagsApplyBadRequest{}},
-		{"TagsRemove", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+		}},
+		{"SegmentsGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
+			return err
+		}},
+		{"SegmentsUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: id})
+			return err
+		}},
+		{"SegmentsArchive", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
+			return err
+		}},
+		{"SegmentsUnarchive", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.SegmentsUnarchive(ctx, externalapi.SegmentsUnarchiveParams{ID: id})
+			return err
+		}},
+		{"TagsListForContact", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: id})
+			return err
+		}},
+		{"TagsApply", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "vip"}, externalapi.TagsApplyParams{ContactId: id})
+			return err
+		}},
+		{"TagsRemove", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: id, Name: "vip"})
-		}, &externalapi.TagsRemoveForbidden{}, &externalapi.TagsRemoveUnauthorized{}, &externalapi.TagsRemoveBadRequest{}},
-		{"TemplatesGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
-		}, &externalapi.TemplatesGetForbidden{}, &externalapi.TemplatesGetUnauthorized{}, &externalapi.TemplatesGetBadRequest{}},
-		{"TemplatesUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{}, externalapi.TemplatesUpdateParams{ID: id})
-		}, &externalapi.TemplatesUpdateForbidden{}, &externalapi.TemplatesUpdateUnauthorized{}, &externalapi.TemplatesUpdateBadRequest{}},
-		{"TemplatesDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+		}},
+		{"TemplatesGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.TemplatesGet(ctx, externalapi.TemplatesGetParams{ID: id})
+			return err
+		}},
+		{"TemplatesUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{}, externalapi.TemplatesUpdateParams{ID: id})
+			return err
+		}},
+		{"TemplatesDelete", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.TemplatesDelete(ctx, externalapi.TemplatesDeleteParams{ID: id})
-		}, &externalapi.TemplatesDeleteForbidden{}, &externalapi.TemplatesDeleteUnauthorized{}, &externalapi.TemplatesDeleteBadRequest{}},
-		{"WebhooksGet", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: id})
-		}, &externalapi.WebhooksGetForbidden{}, &externalapi.WebhooksGetUnauthorized{}, &externalapi.WebhooksGetBadRequest{}},
-		{"WebhooksUpdate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: id})
-		}, &externalapi.WebhooksUpdateForbidden{}, &externalapi.WebhooksUpdateUnauthorized{}, &externalapi.WebhooksUpdateBadRequest{}},
-		{"WebhooksDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+		}},
+		{"WebhooksGet", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: id})
+			return err
+		}},
+		{"WebhooksUpdate", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: id})
+			return err
+		}},
+		{"WebhooksDelete", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: id})
-		}, &externalapi.WebhooksDeleteForbidden{}, &externalapi.WebhooksDeleteUnauthorized{}, &externalapi.WebhooksDeleteBadRequest{}},
+		}},
 	}
 }
 
@@ -125,9 +145,8 @@ func TestExternalMalformedIDIsABadRequest(t *testing.T) {
 		c := env.ExternalVia(t, bearer, testhelper.RewriteURL("123456789", bad))
 		for _, tc := range idGuardCases() {
 			t.Run(tc.name+"/"+bad, func(t *testing.T) {
-				res, err := tc.call(c, 123456789)
-				require.NoError(t, err)
-				assert.IsType(t, tc.badID, res)
+				err := tc.call(c, 123456789)
+				testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 			})
 		}
 	}
@@ -140,9 +159,8 @@ func TestExternalIDOperationsRequireTheirScope(t *testing.T) {
 	c := env.ExternalScoped(t, "tokens:read")
 	for _, tc := range idGuardCases() {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.call(c, 1)
-			require.NoError(t, err)
-			assert.IsType(t, tc.forbidden, res)
+			err := tc.call(c, 1)
+			testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 		})
 	}
 }
@@ -153,9 +171,8 @@ func TestExternalIDOperationsRequireACredential(t *testing.T) {
 	c := env.ExternalAnonymous(t)
 	for _, tc := range idGuardCases() {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.call(c, 1)
-			require.NoError(t, err)
-			assert.IsType(t, tc.unauthorized, res)
+			err := tc.call(c, 1)
+			testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 		})
 	}
 }

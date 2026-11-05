@@ -3,11 +3,16 @@
 package staffapi
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
+
+func (s *ProblemDetailsStatusCode) Error() string {
+	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
+}
 
 type ApiKeyAuth struct {
 	APIKey string
@@ -88,8 +93,6 @@ func (s *JsonObject) init() JsonObject {
 	}
 	return m
 }
-
-func (*JsonObject) staffInstancePreviewTelemetryReportRes() {}
 
 type LegalDocumentLabel string
 
@@ -1009,6 +1012,12 @@ type ProblemDetails struct {
 	RetryAfter OptInt32 `json:"retryAfter"`
 	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
 	Debug OptProblemDebug `json:"debug"`
+	// A removal refused because live work still uses the row (a 409, ADR 0049): the rows that use it,
+	// never empty.
+	UsedBy []UsedBy `json:"usedBy"`
+	// A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each handed
+	// over or deleted first; empty when the refusal is another rule's.
+	Workspaces []SoleOwnedWorkspace `json:"workspaces"`
 }
 
 // GetCode returns the value of Code.
@@ -1066,6 +1075,16 @@ func (s *ProblemDetails) GetDebug() OptProblemDebug {
 	return s.Debug
 }
 
+// GetUsedBy returns the value of UsedBy.
+func (s *ProblemDetails) GetUsedBy() []UsedBy {
+	return s.UsedBy
+}
+
+// GetWorkspaces returns the value of Workspaces.
+func (s *ProblemDetails) GetWorkspaces() []SoleOwnedWorkspace {
+	return s.Workspaces
+}
+
 // SetCode sets the value of Code.
 func (s *ProblemDetails) SetCode(val OptProblemCode) {
 	s.Code = val
@@ -1121,12 +1140,15 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) staffAuthLogoutRes()                     {}
-func (*ProblemDetails) staffInstanceAcknowledgeNoticeRes()      {}
-func (*ProblemDetails) staffInstanceGetStateRes()               {}
-func (*ProblemDetails) staffInstancePreviewTelemetryReportRes() {}
-func (*ProblemDetails) staffMeGetRes()                          {}
-func (*ProblemDetails) staffSignupItemsListRes()                {}
+// SetUsedBy sets the value of UsedBy.
+func (s *ProblemDetails) SetUsedBy(val []UsedBy) {
+	s.UsedBy = val
+}
+
+// SetWorkspaces sets the value of Workspaces.
+func (s *ProblemDetails) SetWorkspaces(val []SoleOwnedWorkspace) {
+	s.Workspaces = val
+}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -1152,67 +1174,31 @@ func (s *ProblemDetailsFields) init() ProblemDetailsFields {
 	return m
 }
 
-// ProblemDetailsHeaders wraps ProblemDetails with response headers.
-type ProblemDetailsHeaders struct {
-	RetryAfter          int32
-	XRateLimitLimit     int32
-	XRateLimitRemaining int32
-	XRateLimitReset     int64
-	Response            ProblemDetails
+// ProblemDetailsStatusCode wraps ProblemDetails with StatusCode.
+type ProblemDetailsStatusCode struct {
+	StatusCode int
+	Response   ProblemDetails
 }
 
-// GetRetryAfter returns the value of RetryAfter.
-func (s *ProblemDetailsHeaders) GetRetryAfter() int32 {
-	return s.RetryAfter
-}
-
-// GetXRateLimitLimit returns the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) GetXRateLimitLimit() int32 {
-	return s.XRateLimitLimit
-}
-
-// GetXRateLimitRemaining returns the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) GetXRateLimitRemaining() int32 {
-	return s.XRateLimitRemaining
-}
-
-// GetXRateLimitReset returns the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) GetXRateLimitReset() int64 {
-	return s.XRateLimitReset
+// GetStatusCode returns the value of StatusCode.
+func (s *ProblemDetailsStatusCode) GetStatusCode() int {
+	return s.StatusCode
 }
 
 // GetResponse returns the value of Response.
-func (s *ProblemDetailsHeaders) GetResponse() ProblemDetails {
+func (s *ProblemDetailsStatusCode) GetResponse() ProblemDetails {
 	return s.Response
 }
 
-// SetRetryAfter sets the value of RetryAfter.
-func (s *ProblemDetailsHeaders) SetRetryAfter(val int32) {
-	s.RetryAfter = val
-}
-
-// SetXRateLimitLimit sets the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) SetXRateLimitLimit(val int32) {
-	s.XRateLimitLimit = val
-}
-
-// SetXRateLimitRemaining sets the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) SetXRateLimitRemaining(val int32) {
-	s.XRateLimitRemaining = val
-}
-
-// SetXRateLimitReset sets the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) SetXRateLimitReset(val int64) {
-	s.XRateLimitReset = val
+// SetStatusCode sets the value of StatusCode.
+func (s *ProblemDetailsStatusCode) SetStatusCode(val int) {
+	s.StatusCode = val
 }
 
 // SetResponse sets the value of Response.
-func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
+func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
-
-func (*ProblemDetailsHeaders) staffAuthLoginRes()        {}
-func (*ProblemDetailsHeaders) staffAuthSecondFactorRes() {}
 
 type SignupItemKey string
 
@@ -1268,13 +1254,34 @@ func (s *SignupItemKind) UnmarshalText(data []byte) error {
 
 type SignupItemTitle string
 
-type StaffAuthLoginBadRequest ProblemDetails
+// A Workspace the User is the only Owner of, which blocks User deletion.
+// Ref: #/components/schemas/SoleOwnedWorkspace
+type SoleOwnedWorkspace struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+}
 
-func (*StaffAuthLoginBadRequest) staffAuthLoginRes() {}
+// GetID returns the value of ID.
+func (s *SoleOwnedWorkspace) GetID() WorkspaceId {
+	return s.ID
+}
 
-type StaffAuthLoginUnauthorized ProblemDetails
+// GetName returns the value of Name.
+func (s *SoleOwnedWorkspace) GetName() string {
+	return s.Name
+}
 
-func (*StaffAuthLoginUnauthorized) staffAuthLoginRes() {}
+// SetID sets the value of ID.
+func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SoleOwnedWorkspace) SetName(val string) {
+	s.Name = val
+}
 
 // StaffAuthLogoutNoContent is response for StaffAuthLogout operation.
 type StaffAuthLogoutNoContent struct {
@@ -1290,16 +1297,6 @@ func (s *StaffAuthLogoutNoContent) GetSetCookie() string {
 func (s *StaffAuthLogoutNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-func (*StaffAuthLogoutNoContent) staffAuthLogoutRes() {}
-
-type StaffAuthSecondFactorBadRequest ProblemDetails
-
-func (*StaffAuthSecondFactorBadRequest) staffAuthSecondFactorRes() {}
-
-type StaffAuthSecondFactorUnauthorized ProblemDetails
-
-func (*StaffAuthSecondFactorUnauthorized) staffAuthSecondFactorRes() {}
 
 // The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it leaves
 // the Send caps of existing Workspaces as they are.
@@ -1346,9 +1343,6 @@ func (s *StaffDefaultSendCapChange) SetChanged(val bool) {
 func (s *StaffDefaultSendCapChange) SetDefaultSendCap(val StaffDefaultSendCap) {
 	s.DefaultSendCap = val
 }
-
-func (*StaffDefaultSendCapChange) staffInstanceClearDefaultSendCapRes() {}
-func (*StaffDefaultSendCapChange) staffInstanceSetDefaultSendCapRes()   {}
 
 // The default Send cap a Staff member sets.
 // Ref: #/components/schemas/StaffDefaultSendCapInput
@@ -1436,8 +1430,6 @@ func (s *StaffInstanceAuditEntryList) SetNextCursor(val OptNilString) {
 	s.NextCursor = val
 }
 
-func (*StaffInstanceAuditEntryList) staffInstanceListAuditEntriesRes() {}
-
 // One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the Instance
 // itself.
 // Ref: #/components/schemas/StaffInstanceAuditEntryResource
@@ -1504,46 +1496,6 @@ func (s *StaffInstanceAuditEntryResource) SetAction(val InstanceAuditAction) {
 func (s *StaffInstanceAuditEntryResource) SetDiff(val JsonObject) {
 	s.Diff = val
 }
-
-type StaffInstanceClearDefaultSendCapNotFound ProblemDetails
-
-func (*StaffInstanceClearDefaultSendCapNotFound) staffInstanceClearDefaultSendCapRes() {}
-
-type StaffInstanceClearDefaultSendCapUnauthorized ProblemDetails
-
-func (*StaffInstanceClearDefaultSendCapUnauthorized) staffInstanceClearDefaultSendCapRes() {}
-
-type StaffInstanceListAuditEntriesBadRequest ProblemDetails
-
-func (*StaffInstanceListAuditEntriesBadRequest) staffInstanceListAuditEntriesRes() {}
-
-type StaffInstanceListAuditEntriesUnauthorized ProblemDetails
-
-func (*StaffInstanceListAuditEntriesUnauthorized) staffInstanceListAuditEntriesRes() {}
-
-type StaffInstanceSetDefaultSendCapBadRequest ProblemDetails
-
-func (*StaffInstanceSetDefaultSendCapBadRequest) staffInstanceSetDefaultSendCapRes() {}
-
-type StaffInstanceSetDefaultSendCapNotFound ProblemDetails
-
-func (*StaffInstanceSetDefaultSendCapNotFound) staffInstanceSetDefaultSendCapRes() {}
-
-type StaffInstanceSetDefaultSendCapUnauthorized ProblemDetails
-
-func (*StaffInstanceSetDefaultSendCapUnauthorized) staffInstanceSetDefaultSendCapRes() {}
-
-type StaffInstanceSetTelemetryBadRequest ProblemDetails
-
-func (*StaffInstanceSetTelemetryBadRequest) staffInstanceSetTelemetryRes() {}
-
-type StaffInstanceSetTelemetryConflict ProblemDetails
-
-func (*StaffInstanceSetTelemetryConflict) staffInstanceSetTelemetryRes() {}
-
-type StaffInstanceSetTelemetryUnauthorized ProblemDetails
-
-func (*StaffInstanceSetTelemetryUnauthorized) staffInstanceSetTelemetryRes() {}
 
 // The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff member
 // sees and decides about the Instance itself.
@@ -1626,10 +1578,6 @@ func (s *StaffInstanceState) SetTelemetrySchemaUrl(val string) {
 func (s *StaffInstanceState) SetDefaultSendCap(val OptStaffDefaultSendCap) {
 	s.DefaultSendCap = val
 }
-
-func (*StaffInstanceState) staffInstanceAcknowledgeNoticeRes() {}
-func (*StaffInstanceState) staffInstanceGetStateRes()          {}
-func (*StaffInstanceState) staffInstanceSetTelemetryRes()      {}
 
 // The Telemetry report setting as it applies right now (ADR 0032).
 // Ref: #/components/schemas/StaffInstanceTelemetry
@@ -1822,8 +1770,6 @@ func (s *StaffLegalDocumentVersionList) SetItems(val []StaffLegalDocumentVersion
 	s.Items = val
 }
 
-func (*StaffLegalDocumentVersionList) staffSignupItemsListVersionsRes() {}
-
 // Sign in with an email and password. The email is a plain string: a malformed address must answer
 // like an unknown one.
 // Ref: #/components/schemas/StaffLoginInput
@@ -1938,8 +1884,6 @@ func (s *StaffLoginResult) SetEnrolment(val OptStaffEnrolment) {
 	s.Enrolment = val
 }
 
-func (*StaffLoginResult) staffAuthLoginRes() {}
-
 // The authenticated platform Staff member (shown to customers only as "Sphericon staff").
 // Ref: #/components/schemas/StaffResource
 type StaffResource struct {
@@ -1969,8 +1913,6 @@ func (s *StaffResource) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
-func (*StaffResource) staffMeGetRes() {}
-
 // StaffResourceHeaders wraps StaffResource with response headers.
 type StaffResourceHeaders struct {
 	SetCookie string
@@ -1996,8 +1938,6 @@ func (s *StaffResourceHeaders) SetSetCookie(val string) {
 func (s *StaffResourceHeaders) SetResponse(val StaffResource) {
 	s.Response = val
 }
-
-func (*StaffResourceHeaders) staffAuthSecondFactorRes() {}
 
 // The second login step: the challenge from the password step and a TOTP code.
 // Ref: #/components/schemas/StaffSecondFactorInput
@@ -2095,9 +2035,6 @@ func (s *StaffSignupItemList) GetItems() []StaffSignupItemResource {
 func (s *StaffSignupItemList) SetItems(val []StaffSignupItemResource) {
 	s.Items = val
 }
-
-func (*StaffSignupItemList) staffSignupItemsListRes()    {}
-func (*StaffSignupItemList) staffSignupItemsReorderRes() {}
 
 // The new order of the sign-up form: the id of every Sign-up item that is not deleted, each once.
 // Ref: #/components/schemas/StaffSignupItemOrder
@@ -2241,12 +2178,6 @@ func (s *StaffSignupItemResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*StaffSignupItemResource) staffSignupItemsCreateRes()    {}
-func (*StaffSignupItemResource) staffSignupItemsGetRes()       {}
-func (*StaffSignupItemResource) staffSignupItemsPublishRes()   {}
-func (*StaffSignupItemResource) staffSignupItemsSaveDraftRes() {}
-func (*StaffSignupItemResource) staffSignupItemsUpdateRes()    {}
-
 // Change a Sign-up item.
 // Ref: #/components/schemas/StaffSignupItemUpdate
 type StaffSignupItemUpdate struct {
@@ -2277,117 +2208,128 @@ func (s *StaffSignupItemUpdate) SetMailingsConsent(val OptBool) {
 	s.MailingsConsent = val
 }
 
-type StaffSignupItemsCreateBadRequest ProblemDetails
-
-func (*StaffSignupItemsCreateBadRequest) staffSignupItemsCreateRes() {}
-
-type StaffSignupItemsCreateUnauthorized ProblemDetails
-
-func (*StaffSignupItemsCreateUnauthorized) staffSignupItemsCreateRes() {}
-
-type StaffSignupItemsCreateUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsCreateUnprocessableEntity) staffSignupItemsCreateRes() {}
-
-type StaffSignupItemsDeleteBadRequest ProblemDetails
-
-func (*StaffSignupItemsDeleteBadRequest) staffSignupItemsDeleteRes() {}
-
 // StaffSignupItemsDeleteNoContent is response for StaffSignupItemsDelete operation.
 type StaffSignupItemsDeleteNoContent struct{}
 
-func (*StaffSignupItemsDeleteNoContent) staffSignupItemsDeleteRes() {}
-
-type StaffSignupItemsDeleteNotFound ProblemDetails
-
-func (*StaffSignupItemsDeleteNotFound) staffSignupItemsDeleteRes() {}
-
-type StaffSignupItemsDeleteUnauthorized ProblemDetails
-
-func (*StaffSignupItemsDeleteUnauthorized) staffSignupItemsDeleteRes() {}
-
-type StaffSignupItemsDeleteUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsDeleteUnprocessableEntity) staffSignupItemsDeleteRes() {}
-
-type StaffSignupItemsGetBadRequest ProblemDetails
-
-func (*StaffSignupItemsGetBadRequest) staffSignupItemsGetRes() {}
-
-type StaffSignupItemsGetNotFound ProblemDetails
-
-func (*StaffSignupItemsGetNotFound) staffSignupItemsGetRes() {}
-
-type StaffSignupItemsGetUnauthorized ProblemDetails
-
-func (*StaffSignupItemsGetUnauthorized) staffSignupItemsGetRes() {}
-
-type StaffSignupItemsListVersionsBadRequest ProblemDetails
-
-func (*StaffSignupItemsListVersionsBadRequest) staffSignupItemsListVersionsRes() {}
-
-type StaffSignupItemsListVersionsNotFound ProblemDetails
-
-func (*StaffSignupItemsListVersionsNotFound) staffSignupItemsListVersionsRes() {}
-
-type StaffSignupItemsListVersionsUnauthorized ProblemDetails
-
-func (*StaffSignupItemsListVersionsUnauthorized) staffSignupItemsListVersionsRes() {}
-
-type StaffSignupItemsPublishBadRequest ProblemDetails
-
-func (*StaffSignupItemsPublishBadRequest) staffSignupItemsPublishRes() {}
-
-type StaffSignupItemsPublishNotFound ProblemDetails
-
-func (*StaffSignupItemsPublishNotFound) staffSignupItemsPublishRes() {}
-
-type StaffSignupItemsPublishUnauthorized ProblemDetails
-
-func (*StaffSignupItemsPublishUnauthorized) staffSignupItemsPublishRes() {}
-
-type StaffSignupItemsPublishUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsPublishUnprocessableEntity) staffSignupItemsPublishRes() {}
-
-type StaffSignupItemsReorderBadRequest ProblemDetails
-
-func (*StaffSignupItemsReorderBadRequest) staffSignupItemsReorderRes() {}
-
-type StaffSignupItemsReorderUnauthorized ProblemDetails
-
-func (*StaffSignupItemsReorderUnauthorized) staffSignupItemsReorderRes() {}
-
-type StaffSignupItemsReorderUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsReorderUnprocessableEntity) staffSignupItemsReorderRes() {}
-
-type StaffSignupItemsSaveDraftBadRequest ProblemDetails
-
-func (*StaffSignupItemsSaveDraftBadRequest) staffSignupItemsSaveDraftRes() {}
-
-type StaffSignupItemsSaveDraftNotFound ProblemDetails
-
-func (*StaffSignupItemsSaveDraftNotFound) staffSignupItemsSaveDraftRes() {}
-
-type StaffSignupItemsSaveDraftUnauthorized ProblemDetails
-
-func (*StaffSignupItemsSaveDraftUnauthorized) staffSignupItemsSaveDraftRes() {}
-
-type StaffSignupItemsUpdateBadRequest ProblemDetails
-
-func (*StaffSignupItemsUpdateBadRequest) staffSignupItemsUpdateRes() {}
-
-type StaffSignupItemsUpdateNotFound ProblemDetails
-
-func (*StaffSignupItemsUpdateNotFound) staffSignupItemsUpdateRes() {}
-
-type StaffSignupItemsUpdateUnauthorized ProblemDetails
-
-func (*StaffSignupItemsUpdateUnauthorized) staffSignupItemsUpdateRes() {}
-
-type StaffSignupItemsUpdateUnprocessableEntity ProblemDetails
-
-func (*StaffSignupItemsUpdateUnprocessableEntity) staffSignupItemsUpdateRes() {}
-
 type Timestamp time.Time
+
+// A row that uses the one a removal was refused for: what a client shows to say what to change first.
+// Ref: #/components/schemas/UsedBy
+type UsedBy struct {
+	// What kind of row it is.
+	Kind UsedByKind `json:"kind"`
+	// Its id.
+	ID EntityId `json:"id"`
+	// Its name.
+	Name string `json:"name"`
+	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
+	// (id, name) and counts its active Enrollments.
+	Count OptInt32 `json:"count"`
+}
+
+// GetKind returns the value of Kind.
+func (s *UsedBy) GetKind() UsedByKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *UsedBy) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *UsedBy) GetName() string {
+	return s.Name
+}
+
+// GetCount returns the value of Count.
+func (s *UsedBy) GetCount() OptInt32 {
+	return s.Count
+}
+
+// SetKind sets the value of Kind.
+func (s *UsedBy) SetKind(val UsedByKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *UsedBy) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *UsedBy) SetName(val string) {
+	s.Name = val
+}
+
+// SetCount sets the value of Count.
+func (s *UsedBy) SetCount(val OptInt32) {
+	s.Count = val
+}
+
+// What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind of live
+// user a removal can find, so a client branches on it without parsing text.
+// Ref: #/components/schemas/UsedByKind
+type UsedByKind string
+
+const (
+	UsedByKindBroadcast  UsedByKind = "broadcast"
+	UsedByKindAutomation UsedByKind = "automation"
+	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindRule       UsedByKind = "rule"
+	UsedByKindEnrollment UsedByKind = "enrollment"
+)
+
+// AllValues returns all UsedByKind values.
+func (UsedByKind) AllValues() []UsedByKind {
+	return []UsedByKind{
+		UsedByKindBroadcast,
+		UsedByKindAutomation,
+		UsedByKindSegment,
+		UsedByKindRule,
+		UsedByKindEnrollment,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UsedByKind) MarshalText() ([]byte, error) {
+	switch s {
+	case UsedByKindBroadcast:
+		return []byte(s), nil
+	case UsedByKindAutomation:
+		return []byte(s), nil
+	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindRule:
+		return []byte(s), nil
+	case UsedByKindEnrollment:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UsedByKind) UnmarshalText(data []byte) error {
+	switch UsedByKind(data) {
+	case UsedByKindBroadcast:
+		*s = UsedByKindBroadcast
+		return nil
+	case UsedByKindAutomation:
+		*s = UsedByKindAutomation
+		return nil
+	case UsedByKindSegment:
+		*s = UsedByKindSegment
+		return nil
+	case UsedByKindRule:
+		*s = UsedByKindRule
+		return nil
+	case UsedByKindEnrollment:
+		*s = UsedByKindEnrollment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WorkspaceId string

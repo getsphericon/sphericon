@@ -26,7 +26,7 @@ import (
 func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(context.Background(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(context.Background(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{
 			VisitorId: "dev-props",
 			Action:    "viewed",
@@ -36,7 +36,6 @@ func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	require.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
 	collected := env.QueuedEvents(t, events.NameCollected)
 	require.Len(t, collected, 1)
@@ -52,13 +51,12 @@ func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {
 	c := env.CollectAcme(t)
 	ctx := context.Background()
 
-	res, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "dev-phone",
 		Phone:     collectapi.NewOptNilString("+14155550117"),
 		SubjectId: collectapi.NewOptNilString("crm-77"),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectOkResponse{}, res)
 
 	ct, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.SubjectID("crm-77")).Only(ctx)
 	require.NoError(t, err)
@@ -77,12 +75,11 @@ func TestCollectIdentifyIsScopedToTheKeysWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "shared-device",
 		Email:     collectapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectOkResponse{}, res)
 
 	globexAlice, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.GlobexID), contact.Email(fixtures.ContactAliceEmail)).Only(ctx)
 	require.NoError(t, err)
@@ -117,7 +114,7 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 	ctx := context.Background()
 	at := time.Date(2026, 4, 2, 10, 30, 0, 0, time.UTC)
 
-	res, err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
+	err := env.CollectWithKey(t, fixtures.GlobexCollectKey).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{
 			VisitorId:  "dev-ev",
 			Action:     "checkout",
@@ -126,7 +123,6 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 		}},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
 	collected := env.QueuedEvents(t, events.NameCollected)
 	require.Len(t, collected, 1, "exactly one event")
@@ -149,10 +145,9 @@ func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	require.NoError(t, sqlDB.Close())
 	h := collect.NewHandlers(events.New(sqlDB), nil)
 
-	res, err := h.CollectEventsCreate(
+	err = h.CollectEventsCreate(
 		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)}),
 		&collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{{VisitorId: "dev", Action: "x"}}},
 	)
 	require.Error(t, err)
-	assert.Nil(t, res)
 }

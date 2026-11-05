@@ -81,10 +81,7 @@ namespace SiteSuppressions {
         @statusCode statusCode: 201;
         @body body: SiteSuppressionResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** List suppressed addresses (every member) */
   @listsResource(SiteSuppressionResource)
@@ -95,11 +92,7 @@ namespace SiteSuppressions {
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     ...PageQuery,
     ...SiteSuppressionListQuery,
-  ):
-    | Page<SiteSuppressionResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteSuppressionResource> | Problem;
 
   /** Lift a suppression: the row stays with its lift time and the address can receive mail again.
    * Lifting one that is already lifted is a 404. Owners and admins only. */
@@ -109,7 +102,5 @@ namespace SiteSuppressions {
   @requiresPermissions(#[Permission.suppressionsManage])
   op delete(...ResourceParameters<SiteSuppressionResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 }

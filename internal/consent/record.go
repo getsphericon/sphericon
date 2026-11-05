@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -36,7 +37,7 @@ type Evidence struct {
 
 // grant is one Confirmation to record.
 type grant struct {
-	channel     confirmation.Channel
+	channel     channels.Channel
 	destination string
 	provenance  confirmation.Provenance
 	// evidence is nil for a Confirmation that carries none (a double opt-in, a keyword).
@@ -98,12 +99,12 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 // one Channel's consent never starts what another's was meant to (a welcome email).
 func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	switch g.channel {
-	case confirmation.ChannelEmail:
+	case channels.Email:
 		return &events.MarketingConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
 			Provenance: string(g.provenance), IP: g.ip,
 		}, nil
-	case confirmation.ChannelSms:
+	case channels.SMS:
 		e := &events.SmsConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Phone: g.destination, Provenance: string(g.provenance),
 		}

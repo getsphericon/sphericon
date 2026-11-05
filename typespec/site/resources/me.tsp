@@ -94,15 +94,6 @@ model SiteAcceptPendingInput {
   items: SiteAcceptance[];
 }
 
-/** A Workspace the User is the only Owner of, which blocks User deletion */
-model SiteSoleOwnedWorkspace {
-  /** The Workspace id */
-  id: WorkspaceId;
-
-  /** Display name */
-  name: string;
-}
-
 /** Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
  * (a User with no password sends the token of the mailed link instead) and, when a Second
  * factor is enrolled, a current code. */
@@ -126,32 +117,18 @@ model SiteDeleteUserLinkInput {
   email: EmailAddress;
 }
 
-/** The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
- * of Workspaces, the list of them (empty when the typed email did not match) */
-model SiteDeleteUserProblemDetails {
-  ...ProblemDetails;
-
-  /** The live Workspaces the User is the only Owner of; each is handed over or deleted first */
-  workspaces: SiteSoleOwnedWorkspace[];
-}
-
-/** RFC 7807 validation response of User deletion */
-@error
-model SiteDeleteUserRefusedProblem is Response<422> {
-  @header contentType: "application/problem+json";
-  @body body: SiteDeleteUserProblemDetails;
-}
-
 @route("/me")
 @tag("Site User")
 namespace SiteUser {
   /** Get the authenticated user's profile */
   @get
   @allowedWhileAcceptancePending
-  op getMe(): {
-    @statusCode statusCode: 200;
-    @body body: SiteUserResource;
-  };
+  op getMe():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteUserResource;
+      }
+    | Problem;
 
   /** Update the authenticated user's profile (name, time zone, Regional format and/or password). A password
    * change ends every session of the user (ADR 0020); the acting one continues
@@ -167,33 +144,27 @@ namespace SiteUser {
 
         @body body: SiteUserResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Request an email change; sends a confirmation link to the new address.
    * Requires the current password. A taken address answers 202 like a free one: its
    * owner gets a notice by mail instead of the link (ADR 0031). */
   @post
   @route("/email-change")
-  op emailChange(@body body: SiteEmailChangeInput):
-    | AcceptedResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+  op emailChange(@body body: SiteEmailChangeInput): AcceptedResponse | Problem;
 
   /** Sign out everywhere: end every session of the user, on every device,
    * including the one making the request (its cookie is cleared). */
   @post
   @route("/sign-out-everywhere")
-  op signOutEverywhere(): {
-    @statusCode statusCode: 204;
+  op signOutEverywhere():
+    | {
+        @statusCode statusCode: 204;
 
-    /** The expired session cookie */
-    @header("Set-Cookie") setCookie: string;
-  };
+        /** The expired session cookie */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | Problem;
 
   /** Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,
    * Linked identity, the Second factor and the Recovery codes go, every session ends (the
@@ -215,10 +186,7 @@ namespace SiteUser {
         /** The expired session cookie */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | SiteDeleteUserRefusedProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the
    * User's Verified email, is bound to the User (not the address), expires after an hour and
@@ -230,8 +198,7 @@ namespace SiteUser {
   @allowedWhileAcceptancePending
   op deleteUserLink(@body body: SiteDeleteUserLinkInput):
     | AcceptedResponse
-    | BadRequestProblem
-    | SiteDeleteUserRefusedProblem;
+    | Problem;
 
   /** Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted
    * with the source re-acceptance, and the next request is no longer refused. The body names each
@@ -246,6 +213,5 @@ namespace SiteUser {
         @statusCode statusCode: 200;
         @body body: SiteUserResource;
       }
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

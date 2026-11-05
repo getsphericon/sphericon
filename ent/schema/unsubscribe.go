@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Unsubscribe is a per-(workspace, channel, destination, sending source) opt-out
@@ -43,7 +45,7 @@ func (Unsubscribe) Fields() []ent.Field {
 			Immutable(),
 		// The channel this opt-out applies to.
 		field.Enum("channel").
-			Values("email", "telegram", "sms").
+			GoType(channels.Channel("")).
 			Default("email"),
 		// Normalized channel-specific destination: the lower-cased email address, the Telegram
 		// user id, or the phone number in E.164, which becomes its hash (phone.Hash) when the

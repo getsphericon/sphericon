@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -94,13 +94,13 @@ func New(bus *events.Bus, bots Bots) *Module { return &Module{bus: bus, bots: bo
 
 // interpreterFor is the Interpreter of a Channel. A new Channel value fails the exhaustive
 // lint here until its Channel is given one: its own, or Ignore while it reads nothing.
-func (m *Module) interpreterFor(ch integration.Channel) Interpreter {
+func (m *Module) interpreterFor(ch channels.Channel) Interpreter {
 	switch ch {
-	case integration.ChannelEmail:
+	case channels.Email:
 		return email{}
-	case integration.ChannelTelegram:
+	case channels.Telegram:
 		return telegram{bots: m.bots}
-	case integration.ChannelSms:
+	case channels.SMS:
 		return sms{}
 	}
 	return Ignore{}

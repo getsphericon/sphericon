@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -106,11 +107,10 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 // saveTwilioKey saves the Integration with key, as an Owner fixing its credentials does.
 func saveTwilioKey(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAccount, key twiliotest.APIKey) {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, key.SID, key.Secret, testhelper.TwilioNumber)),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
 }
 
 // recipientsOf is the numbers the texts Twilio accepted went to, in order: the recipients' inbox.
@@ -123,8 +123,7 @@ func attentionOf(t *testing.T, env *testhelper.TestEnv) []siteapi.SiteAttentionI
 	t.Helper()
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAttentionGet(t.Context(), siteapi.SiteAttentionGetParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteAttentionList)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	return list.Items
 }
 
@@ -201,7 +200,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 			assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment goes on")
 			inbox := env.Twilio.Messages()
 			assert.Empty(t, inbox, "a refusal of the number is not retried, though Twilio would accept it now")
-			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(ctx)
+			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).CountX(ctx)
 			assert.Zero(t, suppressed)
 			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, sent)
@@ -216,11 +215,11 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(testhelper.SiteTwilio(account.Account.SID, account.Key.SID, account.Key.Secret, "Acme Shop")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: account.Integration.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+
 	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
 	queueStep(t, env, runID)
 	env.Twilio.RefuseNextSend(twiliotest.FromNotCapable)
@@ -251,7 +250,7 @@ func TestANumberTwilioSaysIsNoMobileNumberIsSuppressed(t *testing.T) {
 
 	runSteps(t, env)
 
-	suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).OnlyX(ctx)
+	suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(channels.SMS)).OnlyX(ctx)
 	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, suppressed.Destination)
 	assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 	assert.Equal(t, int64(fixtures.ContactTexterConfirmedID), lo.FromPtr(suppressed.ContactID))

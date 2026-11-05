@@ -20,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
@@ -33,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -448,7 +449,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
-	BroadcastChannelToResource(source broadcast.Channel) externalapi.BroadcastChannel
+	BroadcastChannelToResource(source channels.Channel) externalapi.BroadcastChannel
 	// goverter:enum:transform value
 	CapturedMessageSurfaceToResource(source capturedmessage.Surface) externalapi.CapturedMessageSurface
 	// goverter:enum:transform value
@@ -459,18 +460,14 @@ type Converter interface {
 	HoldReasonToResource(source holdreason.Reason) externalapi.HoldReason
 	// goverter:enum:transform value
 	CustomFieldTypeToResource(source customfield.Type) externalapi.CustomFieldType
-	// What a test send of a Webhook endpoint failed with: a delivery's own error, not the one the
-	// endpoint keeps (WebhookErrorKindToResource).
-	// goverter:enum:transform value
-	DeliveryErrorKindToResource(source webhook.ErrorKind) externalapi.WebhookErrorKind
 	// goverter:enum:transform value
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) externalapi.EnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) externalapi.EnrollmentStatus
 	// goverter:enum:transform value
-	IntegrationChannelToResource(source integration.Channel) externalapi.IntegrationChannel
+	IntegrationChannelToResource(source channels.Channel) externalapi.IntegrationChannel
 	// goverter:enum:transform value
-	IntegrationProviderToResource(source integration.Provider) externalapi.IntegrationProvider
+	IntegrationProviderToResource(source providers.Provider) externalapi.IntegrationProvider
 	// goverter:enum:transform value
 	LintCodeToResource(source emailrender.Code) externalapi.LintCode
 	// goverter:enum:transform value
@@ -486,11 +483,10 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleStatusToResource(source rule.Status) externalapi.RuleStatus
 	// goverter:enum:transform value
-	SuppressionChannelToResource(source suppression.Channel) externalapi.SuppressionChannel
+	SuppressionChannelToResource(source channels.Channel) externalapi.SuppressionChannel
+	// The channel of an Unsubscribe and of a Confirmation.
 	// goverter:enum:transform value
-	UnsubscribeChannelToResource(source unsubscribe.Channel) externalapi.ConsentChannel
-	// goverter:enum:transform value
-	ConfirmationChannelToResource(source confirmation.Channel) externalapi.ConsentChannel
+	ConsentChannelToResource(source channels.Channel) externalapi.ConsentChannel
 	// goverter:enum:transform value
 	ConfirmationProvenanceToResource(source confirmation.Provenance) externalapi.ConfirmationProvenance
 	// goverter:enum:transform value
@@ -505,8 +501,9 @@ type Converter interface {
 	TrackingDomainRoleToResource(source trackingdomain.Role) externalapi.TrackingDomainRole
 	// goverter:enum:transform value
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) externalapi.WebhookDisabledReason
+	// What a delivery failed with: the kind a test send answers and a Webhook endpoint keeps.
 	// goverter:enum:transform value
-	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) externalapi.WebhookErrorKind
+	WebhookErrorKindToResource(source webhook.ErrorKind) externalapi.WebhookErrorKind
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
@@ -610,11 +607,11 @@ func jsonObject(m map[string]any) externalapi.OptNilJsonObject {
 // goverter, so only the switch is written here.
 func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastContent {
 	switch b.Channel {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewEmailBroadcastContentBroadcastContentSum(c.EmailBroadcastContentToResource(b))}
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewTelegramBroadcastContentBroadcastContentSum(c.TelegramBroadcastContentToResource(b))}
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		return externalapi.BroadcastContent{OneOf: externalapi.NewSmsBroadcastContentBroadcastContentSum(c.SmsBroadcastContentToResource(b))}
 	default:
 		return externalapi.BroadcastContent{}
@@ -622,17 +619,17 @@ func broadcastContent(c Converter, b *ent.Broadcast) externalapi.BroadcastConten
 }
 
 // smsContentChannel is the discriminator of SMS's content arm.
-func smsContentChannel(broadcast.Channel) externalapi.SmsBroadcastContentChannel {
+func smsContentChannel(channels.Channel) externalapi.SmsBroadcastContentChannel {
 	return externalapi.SmsBroadcastContentChannelSMS
 }
 
 // telegramContentChannel is the discriminator of Telegram's content arm.
-func telegramContentChannel(broadcast.Channel) externalapi.TelegramBroadcastContentChannel {
+func telegramContentChannel(channels.Channel) externalapi.TelegramBroadcastContentChannel {
 	return externalapi.TelegramBroadcastContentChannelTelegram
 }
 
 // emailContentChannel is the discriminator of email's content arm.
-func emailContentChannel(broadcast.Channel) externalapi.EmailBroadcastContentChannel {
+func emailContentChannel(channels.Channel) externalapi.EmailBroadcastContentChannel {
 	return externalapi.EmailBroadcastContentChannelEmail
 }
 

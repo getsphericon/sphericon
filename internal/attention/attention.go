@@ -27,11 +27,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/holdreason"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Kind is what an item is about.
@@ -225,11 +226,11 @@ func (m *Module) integrations(ctx context.Context, s *ent.Scoped, now time.Time)
 			items = append(items, Item{Kind: KindIntegrationProviderRefused, Severity: SeverityBlocked, Count: 1, Subject: subject, Since: integ.ProviderRefusedAt})
 		}
 		switch eff.Enforcement {
-		case messaging.EnforcementShutdown:
+		case providers.EnforcementShutdown:
 			items = append(items, Item{Kind: KindIntegrationProviderStopped, Severity: SeverityBlocked, Count: 1, Subject: subject})
-		case messaging.EnforcementProbation:
+		case providers.EnforcementProbation:
 			items = append(items, Item{Kind: KindIntegrationProviderProbation, Severity: SeverityDegraded, Count: 1, Subject: subject})
-		case messaging.EnforcementNone:
+		case providers.EnforcementNone:
 		}
 		if eff.Sandbox {
 			items = append(items, Item{Kind: KindIntegrationProviderSandbox, Severity: SeverityDegraded, Count: 1, Subject: subject})
@@ -283,7 +284,7 @@ func (m *Module) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ tim
 	}
 	// The answer of each Channel and Integration choice; the default is under 0, which no row has.
 	type choice struct {
-		ch          messaging.Channel
+		ch          channels.Channel
 		integration int64
 	}
 	holdOf := map[choice]string{}

@@ -143,11 +143,7 @@ namespace Suppressions {
         @statusCode statusCode: 201;
         @body body: SuppressionResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 @route("/unsubscribes")
@@ -165,11 +161,7 @@ namespace Unsubscribes {
         @statusCode statusCode: 201;
         @body body: UnsubscribeResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 @route("/confirmations")
@@ -190,11 +182,7 @@ namespace Confirmations {
         @statusCode statusCode: 201;
         @body body: ConfirmationResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 @route("/contacts/{contactId}/sms-consent")
@@ -208,11 +196,5 @@ namespace SmsConsents {
    */
   @get
   @requiresScopes(#[ApiTokenScope.contactsRead])
-  op get(@path contactId: EntityId):
-    | SmsConsent
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  op get(@path contactId: EntityId): SmsConsent | Problem;
 }

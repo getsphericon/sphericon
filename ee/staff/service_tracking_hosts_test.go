@@ -23,10 +23,8 @@ func hostChanges(t *testing.T, c *serviceapi.Client, cursor string, limit int32)
 	if limit > 0 {
 		params.Limit = serviceapi.NewOptInt32(limit)
 	}
-	res, err := c.ServiceTrackingHostFeedList(t.Context(), params)
+	page, err := c.ServiceTrackingHostFeedList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*serviceapi.ServiceTrackingHostFeedPage)
-	require.Truef(t, ok, "the feed is answered, got %T", res)
 	return page
 }
 
@@ -149,10 +147,9 @@ func TestRetiringAHostIsNotReported(t *testing.T) {
 func TestAnInvalidHostFeedCursorIsABadRequest(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := domainsReader(t, h).ServiceTrackingHostFeedList(t.Context(),
+	_, err := domainsReader(t, h).ServiceTrackingHostFeedList(t.Context(),
 		serviceapi.ServiceTrackingHostFeedListParams{Cursor: serviceapi.NewOptString("not-a-cursor!")})
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceTrackingHostFeedListBadRequest{}, res)
+	testhelper.ServiceRefusal(t, err, http.StatusBadRequest)
 }
 
 func TestReadingTheHostFeedNeedsTheDomainsReadScope(t *testing.T) {

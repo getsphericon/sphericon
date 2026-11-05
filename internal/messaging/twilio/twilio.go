@@ -22,8 +22,10 @@ import (
 	api "github.com/twilio/twilio-go/rest/api/v2010"
 	msgapi "github.com/twilio/twilio-go/rest/messaging/v1"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/smsrender"
 )
 
@@ -123,8 +125,8 @@ func Validate(c Config) error {
 // URL every account of the Instance is reached at.
 func Descriptor(apiURL string) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  messaging.ChannelSMS,
-		Provider: messaging.ProviderTwilio,
+		Channel:  channels.SMS,
+		Provider: providers.Twilio,
 		Validate: func(config []byte) error {
 			c, err := parse(config)
 			if err != nil {

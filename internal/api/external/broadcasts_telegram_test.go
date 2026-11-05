@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -21,27 +22,22 @@ func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliver
 	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write")
 
-	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
+	made, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name:          "News",
 		Content:       testhelper.ExternalTelegram("Hello <b>{{ first_name }}</b>"),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(int64(bot.Integration.ID))),
 	})
 	require.NoError(t, err)
-	made, ok := created.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", created)
-	edited, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalTelegramEdit("Edited")},
+	read, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Content: testhelper.ExternalTelegramEdit("Edited")},
 		externalapi.BroadcastsUpdateParams{ID: made.ID})
 	require.NoError(t, err)
-	read, ok := edited.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", edited)
 	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: made.ID})
 	require.NoError(t, err)
 
 	assert.Equal(t, externalapi.BroadcastChannelTelegram, made.Channel)
 	assert.Equal(t, "Hello <b>{{ first_name }}</b>", testhelper.ExternalTelegramOf(made).Text)
 	assert.Equal(t, "Edited", testhelper.ExternalTelegramOf(read).Text)
-	figures, ok := report.(*externalapi.BroadcastReport)
-	require.Truef(t, ok, "got %T", report)
+	figures := report
 	assert.True(t, figures.OpenedCount.Null)
 	assert.True(t, figures.DeliveredCount.Null)
 	assert.True(t, figures.OpenRate.Null)
@@ -57,17 +53,14 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 		in := &externalapi.CreateBroadcastInput{
 			Name: "News", Content: testhelper.ExternalTelegram(text), IntegrationId: externalapi.NewOptNilEntityId(entityIDString(integrationID)),
 		}
-		res, err := c.BroadcastsCreate(ctx, in)
+		b, err := c.BroadcastsCreate(ctx, in)
 		require.NoError(t, err)
-		b, ok := res.(*externalapi.BroadcastResource)
-		require.Truef(t, ok, "got %T", res)
 		return b.ID
 	}
-	schedule := func(id externalapi.EntityId) externalapi.BroadcastsScheduleRes {
-		res, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	schedule := func(id externalapi.EntityId) error {
+		_, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 			externalapi.BroadcastsScheduleParams{ID: id})
-		require.NoError(t, err)
-		return res
+		return err
 	}
 	botID := int64(bot.Integration.ID)
 
@@ -75,9 +68,9 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 	tooLong := schedule(create(strings.Repeat("a", 4097), botID))
 	atTheLimit := schedule(create(strings.Repeat("a", 4096), botID))
 
-	assert.IsType(t, &externalapi.BroadcastsScheduleConflict{}, noDefault, "the Channel has no default Integration to send through")
-	assert.IsType(t, &externalapi.BroadcastsScheduleUnprocessableEntity{}, tooLong)
-	assert.IsType(t, &externalapi.BroadcastResource{}, atTheLimit)
+	testhelper.ExternalRefusal(t, noDefault, http.StatusConflict, "the Channel has no default Integration to send through")
+	testhelper.ExternalRefusal(t, tooLong, http.StatusUnprocessableEntity)
+	assert.NoError(t, atTheLimit)
 }
 
 func TestExternalTelegramBroadcastHasNoTestSend(t *testing.T) {
@@ -85,12 +78,9 @@ func TestExternalTelegramBroadcastHasNoTestSend(t *testing.T) {
 	ctx := t.Context()
 	c := env.ExternalScoped(t, authorScopes...)
 
-	out, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
+	err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: entityIDString(fixtures.BroadcastTelegramDraftID)})
-	require.NoError(t, err)
-
-	refused, ok := out.(*externalapi.BroadcastsTestSendUnprocessableEntity)
-	require.Truef(t, ok, "got %T", out)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "no test send")
 	assert.Empty(t, env.CustomerMail.Messages(), "nothing was sent")
 }

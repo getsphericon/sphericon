@@ -3,12 +3,17 @@
 package siteapi
 
 import (
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
+
+func (s *ProblemDetailsStatusCode) Error() string {
+	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
+}
 
 type ApiKeyAuth struct {
 	APIKey string
@@ -3415,186 +3420,6 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 
 type ImageUrl string
 
-// The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it.
-// Ref: #/components/schemas/InUseProblemDetails
-type InUseProblemDetails struct {
-	// Why the request was refused, when the client should act on it.
-	Code OptProblemCode `json:"code"`
-	// A URI reference that identifies the problem type.
-	Type OptString `json:"type"`
-	// A short, human-readable summary of the problem type.
-	Title OptString `json:"title"`
-	// HTTP status code.
-	Status OptInt32 `json:"status"`
-	// A human-readable explanation specific to this occurrence.
-	Detail OptString `json:"detail"`
-	// A URI reference that identifies the specific occurrence.
-	Instance OptString `json:"instance"`
-	// Validation errors grouped by field.
-	Errors OptInUseProblemDetailsErrors `json:"errors"`
-	// Form-level validation error.
-	Form OptString `json:"form"`
-	// Field validation errors.
-	Fields OptInUseProblemDetailsFields `json:"fields"`
-	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
-	RetryAfter OptInt32 `json:"retryAfter"`
-	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
-	Debug OptProblemDebug `json:"debug"`
-	// The live rows that use the one a removal was refused for, never empty.
-	UsedBy []UsedBy `json:"usedBy"`
-}
-
-// GetCode returns the value of Code.
-func (s *InUseProblemDetails) GetCode() OptProblemCode {
-	return s.Code
-}
-
-// GetType returns the value of Type.
-func (s *InUseProblemDetails) GetType() OptString {
-	return s.Type
-}
-
-// GetTitle returns the value of Title.
-func (s *InUseProblemDetails) GetTitle() OptString {
-	return s.Title
-}
-
-// GetStatus returns the value of Status.
-func (s *InUseProblemDetails) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// GetDetail returns the value of Detail.
-func (s *InUseProblemDetails) GetDetail() OptString {
-	return s.Detail
-}
-
-// GetInstance returns the value of Instance.
-func (s *InUseProblemDetails) GetInstance() OptString {
-	return s.Instance
-}
-
-// GetErrors returns the value of Errors.
-func (s *InUseProblemDetails) GetErrors() OptInUseProblemDetailsErrors {
-	return s.Errors
-}
-
-// GetForm returns the value of Form.
-func (s *InUseProblemDetails) GetForm() OptString {
-	return s.Form
-}
-
-// GetFields returns the value of Fields.
-func (s *InUseProblemDetails) GetFields() OptInUseProblemDetailsFields {
-	return s.Fields
-}
-
-// GetRetryAfter returns the value of RetryAfter.
-func (s *InUseProblemDetails) GetRetryAfter() OptInt32 {
-	return s.RetryAfter
-}
-
-// GetDebug returns the value of Debug.
-func (s *InUseProblemDetails) GetDebug() OptProblemDebug {
-	return s.Debug
-}
-
-// GetUsedBy returns the value of UsedBy.
-func (s *InUseProblemDetails) GetUsedBy() []UsedBy {
-	return s.UsedBy
-}
-
-// SetCode sets the value of Code.
-func (s *InUseProblemDetails) SetCode(val OptProblemCode) {
-	s.Code = val
-}
-
-// SetType sets the value of Type.
-func (s *InUseProblemDetails) SetType(val OptString) {
-	s.Type = val
-}
-
-// SetTitle sets the value of Title.
-func (s *InUseProblemDetails) SetTitle(val OptString) {
-	s.Title = val
-}
-
-// SetStatus sets the value of Status.
-func (s *InUseProblemDetails) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// SetDetail sets the value of Detail.
-func (s *InUseProblemDetails) SetDetail(val OptString) {
-	s.Detail = val
-}
-
-// SetInstance sets the value of Instance.
-func (s *InUseProblemDetails) SetInstance(val OptString) {
-	s.Instance = val
-}
-
-// SetErrors sets the value of Errors.
-func (s *InUseProblemDetails) SetErrors(val OptInUseProblemDetailsErrors) {
-	s.Errors = val
-}
-
-// SetForm sets the value of Form.
-func (s *InUseProblemDetails) SetForm(val OptString) {
-	s.Form = val
-}
-
-// SetFields sets the value of Fields.
-func (s *InUseProblemDetails) SetFields(val OptInUseProblemDetailsFields) {
-	s.Fields = val
-}
-
-// SetRetryAfter sets the value of RetryAfter.
-func (s *InUseProblemDetails) SetRetryAfter(val OptInt32) {
-	s.RetryAfter = val
-}
-
-// SetDebug sets the value of Debug.
-func (s *InUseProblemDetails) SetDebug(val OptProblemDebug) {
-	s.Debug = val
-}
-
-// SetUsedBy sets the value of UsedBy.
-func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
-	s.UsedBy = val
-}
-
-func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
-func (*InUseProblemDetails) siteCustomFieldsUpdateRes()   {}
-func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
-func (*InUseProblemDetails) siteSegmentsArchiveRes()      {}
-func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
-func (*InUseProblemDetails) siteTagsDeleteRes()           {}
-
-// Validation errors grouped by field.
-type InUseProblemDetailsErrors map[string][]string
-
-func (s *InUseProblemDetailsErrors) init() InUseProblemDetailsErrors {
-	m := *s
-	if m == nil {
-		m = map[string][]string{}
-		*s = m
-	}
-	return m
-}
-
-// Field validation errors.
-type InUseProblemDetailsFields map[string]string
-
-func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
-	m := *s
-	if m == nil {
-		m = map[string]string{}
-		*s = m
-	}
-	return m
-}
-
 // The Test inbox takes no credentials: a Workspace has at most one.
 // Ref: #/components/schemas/InboxConfigInput
 type InboxConfigInput struct {
@@ -5111,98 +4936,6 @@ func (o OptEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEntityId) Or(d EntityId) EntityId {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInUseProblemDetailsErrors returns new OptInUseProblemDetailsErrors with value set to v.
-func NewOptInUseProblemDetailsErrors(v InUseProblemDetailsErrors) OptInUseProblemDetailsErrors {
-	return OptInUseProblemDetailsErrors{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInUseProblemDetailsErrors is optional InUseProblemDetailsErrors.
-type OptInUseProblemDetailsErrors struct {
-	Value InUseProblemDetailsErrors
-	Set   bool
-}
-
-// IsSet returns true if OptInUseProblemDetailsErrors was set.
-func (o OptInUseProblemDetailsErrors) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInUseProblemDetailsErrors) Reset() {
-	var v InUseProblemDetailsErrors
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInUseProblemDetailsErrors) SetTo(v InUseProblemDetailsErrors) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInUseProblemDetailsErrors) Get() (v InUseProblemDetailsErrors, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInUseProblemDetailsErrors) Or(d InUseProblemDetailsErrors) InUseProblemDetailsErrors {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInUseProblemDetailsFields returns new OptInUseProblemDetailsFields with value set to v.
-func NewOptInUseProblemDetailsFields(v InUseProblemDetailsFields) OptInUseProblemDetailsFields {
-	return OptInUseProblemDetailsFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInUseProblemDetailsFields is optional InUseProblemDetailsFields.
-type OptInUseProblemDetailsFields struct {
-	Value InUseProblemDetailsFields
-	Set   bool
-}
-
-// IsSet returns true if OptInUseProblemDetailsFields was set.
-func (o OptInUseProblemDetailsFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInUseProblemDetailsFields) Reset() {
-	var v InUseProblemDetailsFields
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInUseProblemDetailsFields) SetTo(v InUseProblemDetailsFields) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInUseProblemDetailsFields) Get() (v InUseProblemDetailsFields, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInUseProblemDetailsFields) Or(d InUseProblemDetailsFields) InUseProblemDetailsFields {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -7697,98 +7430,6 @@ func (o OptSiteCustomFieldType) Or(d SiteCustomFieldType) SiteCustomFieldType {
 	return d
 }
 
-// NewOptSiteDeleteUserProblemDetailsErrors returns new OptSiteDeleteUserProblemDetailsErrors with value set to v.
-func NewOptSiteDeleteUserProblemDetailsErrors(v SiteDeleteUserProblemDetailsErrors) OptSiteDeleteUserProblemDetailsErrors {
-	return OptSiteDeleteUserProblemDetailsErrors{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteDeleteUserProblemDetailsErrors is optional SiteDeleteUserProblemDetailsErrors.
-type OptSiteDeleteUserProblemDetailsErrors struct {
-	Value SiteDeleteUserProblemDetailsErrors
-	Set   bool
-}
-
-// IsSet returns true if OptSiteDeleteUserProblemDetailsErrors was set.
-func (o OptSiteDeleteUserProblemDetailsErrors) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteDeleteUserProblemDetailsErrors) Reset() {
-	var v SiteDeleteUserProblemDetailsErrors
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteDeleteUserProblemDetailsErrors) SetTo(v SiteDeleteUserProblemDetailsErrors) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteDeleteUserProblemDetailsErrors) Get() (v SiteDeleteUserProblemDetailsErrors, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteDeleteUserProblemDetailsErrors) Or(d SiteDeleteUserProblemDetailsErrors) SiteDeleteUserProblemDetailsErrors {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteDeleteUserProblemDetailsFields returns new OptSiteDeleteUserProblemDetailsFields with value set to v.
-func NewOptSiteDeleteUserProblemDetailsFields(v SiteDeleteUserProblemDetailsFields) OptSiteDeleteUserProblemDetailsFields {
-	return OptSiteDeleteUserProblemDetailsFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteDeleteUserProblemDetailsFields is optional SiteDeleteUserProblemDetailsFields.
-type OptSiteDeleteUserProblemDetailsFields struct {
-	Value SiteDeleteUserProblemDetailsFields
-	Set   bool
-}
-
-// IsSet returns true if OptSiteDeleteUserProblemDetailsFields was set.
-func (o OptSiteDeleteUserProblemDetailsFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteDeleteUserProblemDetailsFields) Reset() {
-	var v SiteDeleteUserProblemDetailsFields
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteDeleteUserProblemDetailsFields) SetTo(v SiteDeleteUserProblemDetailsFields) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteDeleteUserProblemDetailsFields) Get() (v SiteDeleteUserProblemDetailsFields, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteDeleteUserProblemDetailsFields) Or(d SiteDeleteUserProblemDetailsFields) SiteDeleteUserProblemDetailsFields {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSiteEnrollmentFailure returns new OptSiteEnrollmentFailure with value set to v.
 func NewOptSiteEnrollmentFailure(v SiteEnrollmentFailure) OptSiteEnrollmentFailure {
 	return OptSiteEnrollmentFailure{
@@ -9355,6 +8996,12 @@ type ProblemDetails struct {
 	RetryAfter OptInt32 `json:"retryAfter"`
 	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
 	Debug OptProblemDebug `json:"debug"`
+	// A removal refused because live work still uses the row (a 409, ADR 0049): the rows that use it,
+	// never empty.
+	UsedBy []UsedBy `json:"usedBy"`
+	// A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each handed
+	// over or deleted first; empty when the refusal is another rule's.
+	Workspaces []SoleOwnedWorkspace `json:"workspaces"`
 }
 
 // GetCode returns the value of Code.
@@ -9412,6 +9059,16 @@ func (s *ProblemDetails) GetDebug() OptProblemDebug {
 	return s.Debug
 }
 
+// GetUsedBy returns the value of UsedBy.
+func (s *ProblemDetails) GetUsedBy() []UsedBy {
+	return s.UsedBy
+}
+
+// GetWorkspaces returns the value of Workspaces.
+func (s *ProblemDetails) GetWorkspaces() []SoleOwnedWorkspace {
+	return s.Workspaces
+}
+
 // SetCode sets the value of Code.
 func (s *ProblemDetails) SetCode(val OptProblemCode) {
 	s.Code = val
@@ -9467,20 +9124,15 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) siteAuthConfirmEmailChangeRes()    {}
-func (*ProblemDetails) siteAuthForgotPasswordRes()        {}
-func (*ProblemDetails) siteAuthResendVerificationRes()    {}
-func (*ProblemDetails) siteAuthSigninCallbackRes()        {}
-func (*ProblemDetails) siteAuthSigninNotMeRes()           {}
-func (*ProblemDetails) siteAuthSigninPendingDeclineRes()  {}
-func (*ProblemDetails) siteAuthSigninPendingRes()         {}
-func (*ProblemDetails) siteInstanceGetReleaseRes()        {}
-func (*ProblemDetails) sitePasskeyLoginBeginRes()         {}
-func (*ProblemDetails) sitePasskeysBeginCheckRes()        {}
-func (*ProblemDetails) sitePasskeysBeginRegistrationRes() {}
-func (*ProblemDetails) sitePublicUnsubscribesPerformRes() {}
-func (*ProblemDetails) siteSchemaApplyMigrationsRes()     {}
-func (*ProblemDetails) siteUserDeleteUserLinkRes()        {}
+// SetUsedBy sets the value of UsedBy.
+func (s *ProblemDetails) SetUsedBy(val []UsedBy) {
+	s.UsedBy = val
+}
+
+// SetWorkspaces sets the value of Workspaces.
+func (s *ProblemDetails) SetWorkspaces(val []SoleOwnedWorkspace) {
+	s.Workspaces = val
+}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -9506,85 +9158,31 @@ func (s *ProblemDetailsFields) init() ProblemDetailsFields {
 	return m
 }
 
-// ProblemDetailsHeaders wraps ProblemDetails with response headers.
-type ProblemDetailsHeaders struct {
-	RetryAfter          int32
-	XRateLimitLimit     int32
-	XRateLimitRemaining int32
-	XRateLimitReset     int64
-	Response            ProblemDetails
+// ProblemDetailsStatusCode wraps ProblemDetails with StatusCode.
+type ProblemDetailsStatusCode struct {
+	StatusCode int
+	Response   ProblemDetails
 }
 
-// GetRetryAfter returns the value of RetryAfter.
-func (s *ProblemDetailsHeaders) GetRetryAfter() int32 {
-	return s.RetryAfter
-}
-
-// GetXRateLimitLimit returns the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) GetXRateLimitLimit() int32 {
-	return s.XRateLimitLimit
-}
-
-// GetXRateLimitRemaining returns the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) GetXRateLimitRemaining() int32 {
-	return s.XRateLimitRemaining
-}
-
-// GetXRateLimitReset returns the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) GetXRateLimitReset() int64 {
-	return s.XRateLimitReset
+// GetStatusCode returns the value of StatusCode.
+func (s *ProblemDetailsStatusCode) GetStatusCode() int {
+	return s.StatusCode
 }
 
 // GetResponse returns the value of Response.
-func (s *ProblemDetailsHeaders) GetResponse() ProblemDetails {
+func (s *ProblemDetailsStatusCode) GetResponse() ProblemDetails {
 	return s.Response
 }
 
-// SetRetryAfter sets the value of RetryAfter.
-func (s *ProblemDetailsHeaders) SetRetryAfter(val int32) {
-	s.RetryAfter = val
-}
-
-// SetXRateLimitLimit sets the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) SetXRateLimitLimit(val int32) {
-	s.XRateLimitLimit = val
-}
-
-// SetXRateLimitRemaining sets the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) SetXRateLimitRemaining(val int32) {
-	s.XRateLimitRemaining = val
-}
-
-// SetXRateLimitReset sets the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) SetXRateLimitReset(val int64) {
-	s.XRateLimitReset = val
+// SetStatusCode sets the value of StatusCode.
+func (s *ProblemDetailsStatusCode) SetStatusCode(val int) {
+	s.StatusCode = val
 }
 
 // SetResponse sets the value of Response.
-func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
+func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
-
-func (*ProblemDetailsHeaders) siteAuthForgotPasswordRes()                  {}
-func (*ProblemDetailsHeaders) siteAuthLoginRes()                           {}
-func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
-func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
-func (*ProblemDetailsHeaders) siteAuthSignUpRes()                          {}
-func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
-func (*ProblemDetailsHeaders) siteBroadcastsTestSendRes()                  {}
-func (*ProblemDetailsHeaders) sitePasskeyLoginFinishRes()                  {}
-func (*ProblemDetailsHeaders) sitePasskeysFinishRegistrationRes()          {}
-func (*ProblemDetailsHeaders) sitePasskeysRemoveRes()                      {}
-func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
-func (*ProblemDetailsHeaders) sitePublicInvitationsAcceptRes()             {}
-func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
-func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
-func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
-func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
-func (*ProblemDetailsHeaders) siteSignupSurveySubmitRes()                  {}
-func (*ProblemDetailsHeaders) siteUserDeleteUserRes()                      {}
-func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
-func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
 
 type RegionalFormat string
 
@@ -10126,8 +9724,6 @@ func (s *SiteAccountLinkResource) SetExpiresAt(val Timestamp) {
 	s.ExpiresAt = val
 }
 
-func (*SiteAccountLinkResource) siteWorkspacesAccountLinkRes() {}
-
 // Request body for adding a Join domain.
 // Ref: #/components/schemas/SiteAddJoinDomainInput
 type SiteAddJoinDomainInput struct {
@@ -10228,16 +9824,6 @@ func (s *SiteAnalyticsClicksByLink) SetEventsRetentionDays(val int32) {
 	s.EventsRetentionDays = val
 }
 
-func (*SiteAnalyticsClicksByLink) siteAnalyticsClicksByLinkRes() {}
-
-type SiteAnalyticsClicksByLinkBadRequest ProblemDetails
-
-func (*SiteAnalyticsClicksByLinkBadRequest) siteAnalyticsClicksByLinkRes() {}
-
-type SiteAnalyticsClicksByLinkNotFound ProblemDetails
-
-func (*SiteAnalyticsClicksByLinkNotFound) siteAnalyticsClicksByLinkRes() {}
-
 // Current contact counts (point-in-time snapshot, not range-scoped).
 // Ref: #/components/schemas/SiteAnalyticsContacts
 type SiteAnalyticsContacts struct {
@@ -10309,16 +9895,6 @@ func (s *SiteAnalyticsDeliverability) SetWindowHours(val int32) {
 func (s *SiteAnalyticsDeliverability) SetDomains(val []SiteSendingDomainRates) {
 	s.Domains = val
 }
-
-func (*SiteAnalyticsDeliverability) siteAnalyticsDeliverabilityRes() {}
-
-type SiteAnalyticsDeliverabilityBadRequest ProblemDetails
-
-func (*SiteAnalyticsDeliverabilityBadRequest) siteAnalyticsDeliverabilityRes() {}
-
-type SiteAnalyticsDeliverabilityNotFound ProblemDetails
-
-func (*SiteAnalyticsDeliverabilityNotFound) siteAnalyticsDeliverabilityRes() {}
 
 // Email engagement for the Broadcast and Automation messages sent in the selected range (the send
 // cohort; a Transactional message is not in it), from delivery logs. Each message counts once, not
@@ -10471,16 +10047,6 @@ func (s *SiteAnalyticsEvents) SetActions(val []SiteAnalyticsEventAction) {
 	s.Actions = val
 }
 
-func (*SiteAnalyticsEvents) siteAnalyticsEventsRes() {}
-
-type SiteAnalyticsEventsBadRequest ProblemDetails
-
-func (*SiteAnalyticsEventsBadRequest) siteAnalyticsEventsRes() {}
-
-type SiteAnalyticsEventsNotFound ProblemDetails
-
-func (*SiteAnalyticsEventsNotFound) siteAnalyticsEventsRes() {}
-
 // One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it.
 // Ref: #/components/schemas/SiteAnalyticsLink
 type SiteAnalyticsLink struct {
@@ -10575,14 +10141,6 @@ func (s *SiteAnalyticsLinkOwner) SetClicks(val int32) {
 	s.Clicks = val
 }
 
-type SiteAnalyticsNewPeopleBadRequest ProblemDetails
-
-func (*SiteAnalyticsNewPeopleBadRequest) siteAnalyticsNewPeopleRes() {}
-
-type SiteAnalyticsNewPeopleNotFound ProblemDetails
-
-func (*SiteAnalyticsNewPeopleNotFound) siteAnalyticsNewPeopleRes() {}
-
 // Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left
 // out.
 // Ref: #/components/schemas/SiteAnalyticsOpensByHour
@@ -10611,16 +10169,6 @@ func (s *SiteAnalyticsOpensByHour) SetCells(val []SiteAnalyticsOpensCell) {
 func (s *SiteAnalyticsOpensByHour) SetTotal(val int32) {
 	s.Total = val
 }
-
-func (*SiteAnalyticsOpensByHour) siteAnalyticsOpensByHourRes() {}
-
-type SiteAnalyticsOpensByHourBadRequest ProblemDetails
-
-func (*SiteAnalyticsOpensByHourBadRequest) siteAnalyticsOpensByHourRes() {}
-
-type SiteAnalyticsOpensByHourNotFound ProblemDetails
-
-func (*SiteAnalyticsOpensByHourNotFound) siteAnalyticsOpensByHourRes() {}
 
 // Human opens of one weekday and hour of day in the Workspace time zone.
 // Ref: #/components/schemas/SiteAnalyticsOpensCell
@@ -10738,16 +10286,6 @@ func (s *SiteAnalyticsOverview) SetTimeseries(val []SiteAnalyticsPoint) {
 func (s *SiteAnalyticsOverview) SetDeliverability(val SiteAnalyticsDeliverability) {
 	s.Deliverability = val
 }
-
-func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
-
-type SiteAnalyticsOverviewBadRequest ProblemDetails
-
-func (*SiteAnalyticsOverviewBadRequest) siteAnalyticsOverviewRes() {}
-
-type SiteAnalyticsOverviewNotFound ProblemDetails
-
-func (*SiteAnalyticsOverviewNotFound) siteAnalyticsOverviewRes() {}
 
 // What carried a clicked link: a Broadcast or an Automation.
 // Ref: #/components/schemas/SiteAnalyticsOwnerKind
@@ -11028,16 +10566,6 @@ func (s *SiteAnalyticsRevenue) SetSeries(val []SiteRevenuePoint) {
 	s.Series = val
 }
 
-func (*SiteAnalyticsRevenue) siteAnalyticsRevenueRes() {}
-
-type SiteAnalyticsRevenueBadRequest ProblemDetails
-
-func (*SiteAnalyticsRevenueBadRequest) siteAnalyticsRevenueRes() {}
-
-type SiteAnalyticsRevenueNotFound ProblemDetails
-
-func (*SiteAnalyticsRevenueNotFound) siteAnalyticsRevenueRes() {}
-
 // The revenue of one period of Report days, in the Reporting currency.
 // Ref: #/components/schemas/SiteAnalyticsRevenuePeriod
 type SiteAnalyticsRevenuePeriod struct {
@@ -11288,16 +10816,6 @@ func (s *SiteAnalyticsSubscribedPeople) SetSeries(val []SiteAnalyticsSubscribedP
 	s.Series = val
 }
 
-func (*SiteAnalyticsSubscribedPeople) siteAnalyticsSubscribedPeopleRes() {}
-
-type SiteAnalyticsSubscribedPeopleBadRequest ProblemDetails
-
-func (*SiteAnalyticsSubscribedPeopleBadRequest) siteAnalyticsSubscribedPeopleRes() {}
-
-type SiteAnalyticsSubscribedPeopleNotFound ProblemDetails
-
-func (*SiteAnalyticsSubscribedPeopleNotFound) siteAnalyticsSubscribedPeopleRes() {}
-
 // One Report day of the Subscribed people report, zero-filled across the range.
 // Ref: #/components/schemas/SiteAnalyticsSubscribedPoint
 type SiteAnalyticsSubscribedPoint struct {
@@ -11451,16 +10969,6 @@ func (s *SiteApiTokenResource) SetRevokedAt(val OptNilTimestamp) {
 func (s *SiteApiTokenResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
-
-func (*SiteApiTokenResource) siteTokensUpdateRes() {}
-
-type SiteAttentionGetBadRequest ProblemDetails
-
-func (*SiteAttentionGetBadRequest) siteAttentionGetRes() {}
-
-type SiteAttentionGetNotFound ProblemDetails
-
-func (*SiteAttentionGetNotFound) siteAttentionGetRes() {}
 
 // One thing in the Workspace that needs a member's action now.
 // Ref: #/components/schemas/SiteAttentionItem
@@ -11718,8 +11226,6 @@ func (s *SiteAttentionList) SetItems(val []SiteAttentionItem) {
 	s.Items = val
 }
 
-func (*SiteAttentionList) siteAttentionGetRes() {}
-
 // How urgent an item is.
 // Ref: #/components/schemas/SiteAttentionSeverity
 type SiteAttentionSeverity string
@@ -11926,8 +11432,6 @@ func (s *SiteAuditEntryList) SetNextCursor(val OptNilString) {
 	s.NextCursor = val
 }
 
-func (*SiteAuditEntryList) siteAuditListRes() {}
-
 // One immutable Audit entry (Enterprise).
 // Ref: #/components/schemas/SiteAuditEntryResource
 type SiteAuditEntryResource struct {
@@ -12041,18 +11545,6 @@ func (s *SiteAuditEntryResource) SetUserAgent(val OptNilString) {
 	s.UserAgent = val
 }
 
-type SiteAuditExportBadRequest ProblemDetails
-
-func (*SiteAuditExportBadRequest) siteAuditExportRes() {}
-
-type SiteAuditExportForbidden ProblemDetails
-
-func (*SiteAuditExportForbidden) siteAuditExportRes() {}
-
-type SiteAuditExportNotFound ProblemDetails
-
-func (*SiteAuditExportNotFound) siteAuditExportRes() {}
-
 type SiteAuditExportOK struct {
 	Data io.Reader
 }
@@ -12092,12 +11584,6 @@ func (s *SiteAuditExportOKHeaders) SetContentDisposition(val string) {
 func (s *SiteAuditExportOKHeaders) SetResponse(val SiteAuditExportOK) {
 	s.Response = val
 }
-
-func (*SiteAuditExportOKHeaders) siteAuditExportRes() {}
-
-type SiteAuditExportPaymentRequired ProblemDetails
-
-func (*SiteAuditExportPaymentRequired) siteAuditExportRes() {}
 
 // The values that occur in a Workspace's Audit log, offered as the choices of its filter.
 // Ref: #/components/schemas/SiteAuditFacets
@@ -12141,56 +11627,6 @@ func (s *SiteAuditFacets) SetTargetTypes(val []string) {
 	s.TargetTypes = val
 }
 
-func (*SiteAuditFacets) siteAuditFacetsRes() {}
-
-type SiteAuditFacetsBadRequest ProblemDetails
-
-func (*SiteAuditFacetsBadRequest) siteAuditFacetsRes() {}
-
-type SiteAuditFacetsForbidden ProblemDetails
-
-func (*SiteAuditFacetsForbidden) siteAuditFacetsRes() {}
-
-type SiteAuditFacetsNotFound ProblemDetails
-
-func (*SiteAuditFacetsNotFound) siteAuditFacetsRes() {}
-
-type SiteAuditFacetsPaymentRequired ProblemDetails
-
-func (*SiteAuditFacetsPaymentRequired) siteAuditFacetsRes() {}
-
-type SiteAuditGetRetentionBadRequest ProblemDetails
-
-func (*SiteAuditGetRetentionBadRequest) siteAuditGetRetentionRes() {}
-
-type SiteAuditGetRetentionForbidden ProblemDetails
-
-func (*SiteAuditGetRetentionForbidden) siteAuditGetRetentionRes() {}
-
-type SiteAuditGetRetentionNotFound ProblemDetails
-
-func (*SiteAuditGetRetentionNotFound) siteAuditGetRetentionRes() {}
-
-type SiteAuditGetRetentionPaymentRequired ProblemDetails
-
-func (*SiteAuditGetRetentionPaymentRequired) siteAuditGetRetentionRes() {}
-
-type SiteAuditListBadRequest ProblemDetails
-
-func (*SiteAuditListBadRequest) siteAuditListRes() {}
-
-type SiteAuditListForbidden ProblemDetails
-
-func (*SiteAuditListForbidden) siteAuditListRes() {}
-
-type SiteAuditListNotFound ProblemDetails
-
-func (*SiteAuditListNotFound) siteAuditListRes() {}
-
-type SiteAuditListPaymentRequired ProblemDetails
-
-func (*SiteAuditListPaymentRequired) siteAuditListRes() {}
-
 // How long the Audit log is kept; the Enterprise advanced-retention control.
 // Ref: #/components/schemas/SiteAuditRetention
 type SiteAuditRetention struct {
@@ -12207,29 +11643,6 @@ func (s *SiteAuditRetention) GetRetentionDays() NilRetentionDays {
 func (s *SiteAuditRetention) SetRetentionDays(val NilRetentionDays) {
 	s.RetentionDays = val
 }
-
-func (*SiteAuditRetention) siteAuditGetRetentionRes() {}
-func (*SiteAuditRetention) siteAuditSetRetentionRes() {}
-
-type SiteAuditSetRetentionBadRequest ProblemDetails
-
-func (*SiteAuditSetRetentionBadRequest) siteAuditSetRetentionRes() {}
-
-type SiteAuditSetRetentionForbidden ProblemDetails
-
-func (*SiteAuditSetRetentionForbidden) siteAuditSetRetentionRes() {}
-
-type SiteAuditSetRetentionNotFound ProblemDetails
-
-func (*SiteAuditSetRetentionNotFound) siteAuditSetRetentionRes() {}
-
-type SiteAuditSetRetentionPaymentRequired ProblemDetails
-
-func (*SiteAuditSetRetentionPaymentRequired) siteAuditSetRetentionRes() {}
-
-type SiteAuditSetRetentionUnprocessableEntity ProblemDetails
-
-func (*SiteAuditSetRetentionUnprocessableEntity) siteAuditSetRetentionRes() {}
 
 // What an audited change was done to.
 // Ref: #/components/schemas/SiteAuditTarget
@@ -12287,24 +11700,8 @@ func (s *SiteAuthConfirmEmailChangeOK) SetSetCookie(val OptString) {
 	s.SetCookie = val
 }
 
-func (*SiteAuthConfirmEmailChangeOK) siteAuthConfirmEmailChangeRes() {}
-
 // SiteAuthForgotPasswordAccepted is response for SiteAuthForgotPassword operation.
 type SiteAuthForgotPasswordAccepted struct{}
-
-func (*SiteAuthForgotPasswordAccepted) siteAuthForgotPasswordRes() {}
-
-type SiteAuthLoginBadRequest ProblemDetails
-
-func (*SiteAuthLoginBadRequest) siteAuthLoginRes() {}
-
-type SiteAuthLoginForbidden ProblemDetails
-
-func (*SiteAuthLoginForbidden) siteAuthLoginRes() {}
-
-type SiteAuthLoginUnauthorized ProblemDetails
-
-func (*SiteAuthLoginUnauthorized) siteAuthLoginRes() {}
 
 // SiteAuthLogoutNoContent is response for SiteAuthLogout operation.
 type SiteAuthLogoutNoContent struct {
@@ -12324,28 +11721,8 @@ func (s *SiteAuthLogoutNoContent) SetSetCookie(val string) {
 // SiteAuthResendVerificationAccepted is response for SiteAuthResendVerification operation.
 type SiteAuthResendVerificationAccepted struct{}
 
-func (*SiteAuthResendVerificationAccepted) siteAuthResendVerificationRes() {}
-
-type SiteAuthResetPasswordBadRequest ProblemDetails
-
-func (*SiteAuthResetPasswordBadRequest) siteAuthResetPasswordRes() {}
-
 // SiteAuthResetPasswordOK is response for SiteAuthResetPassword operation.
 type SiteAuthResetPasswordOK struct{}
-
-func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
-
-type SiteAuthResetPasswordUnprocessableEntity ProblemDetails
-
-func (*SiteAuthResetPasswordUnprocessableEntity) siteAuthResetPasswordRes() {}
-
-type SiteAuthSecondFactorBadRequest ProblemDetails
-
-func (*SiteAuthSecondFactorBadRequest) siteAuthSecondFactorRes() {}
-
-type SiteAuthSecondFactorUnauthorized ProblemDetails
-
-func (*SiteAuthSecondFactorUnauthorized) siteAuthSecondFactorRes() {}
 
 // SiteAuthSignUpAccepted is response for SiteAuthSignUp operation.
 type SiteAuthSignUpAccepted struct {
@@ -12361,20 +11738,6 @@ func (s *SiteAuthSignUpAccepted) GetSetCookie() OptString {
 func (s *SiteAuthSignUpAccepted) SetSetCookie(val OptString) {
 	s.SetCookie = val
 }
-
-func (*SiteAuthSignUpAccepted) siteAuthSignUpRes() {}
-
-type SiteAuthSignUpBadRequest ProblemDetails
-
-func (*SiteAuthSignUpBadRequest) siteAuthSignUpRes() {}
-
-type SiteAuthSignUpConflict ProblemDetails
-
-func (*SiteAuthSignUpConflict) siteAuthSignUpRes() {}
-
-type SiteAuthSignUpUnprocessableEntity ProblemDetails
-
-func (*SiteAuthSignUpUnprocessableEntity) siteAuthSignUpRes() {}
 
 // SiteAuthSigninCallbackFound is response for SiteAuthSigninCallback operation.
 type SiteAuthSigninCallbackFound struct {
@@ -12402,21 +11765,11 @@ func (s *SiteAuthSigninCallbackFound) SetSetCookie(val OptString) {
 	s.SetCookie = val
 }
 
-func (*SiteAuthSigninCallbackFound) siteAuthSigninCallbackRes() {}
-
 // SiteAuthSigninNotMeOK is response for SiteAuthSigninNotMe operation.
 type SiteAuthSigninNotMeOK struct{}
 
-func (*SiteAuthSigninNotMeOK) siteAuthSigninNotMeRes() {}
-
 // SiteAuthSigninPendingDeclineNoContent is response for SiteAuthSigninPendingDecline operation.
 type SiteAuthSigninPendingDeclineNoContent struct{}
-
-func (*SiteAuthSigninPendingDeclineNoContent) siteAuthSigninPendingDeclineRes() {}
-
-type SiteAuthSigninPendingSubmitBadRequest ProblemDetails
-
-func (*SiteAuthSigninPendingSubmitBadRequest) siteAuthSigninPendingSubmitRes() {}
 
 // SiteAuthSigninPendingSubmitNoContent is response for SiteAuthSigninPendingSubmit operation.
 type SiteAuthSigninPendingSubmitNoContent struct {
@@ -12432,16 +11785,6 @@ func (s *SiteAuthSigninPendingSubmitNoContent) GetSetCookie() string {
 func (s *SiteAuthSigninPendingSubmitNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-func (*SiteAuthSigninPendingSubmitNoContent) siteAuthSigninPendingSubmitRes() {}
-
-type SiteAuthSigninPendingSubmitUnprocessableEntity ProblemDetails
-
-func (*SiteAuthSigninPendingSubmitUnprocessableEntity) siteAuthSigninPendingSubmitRes() {}
-
-type SiteAuthSigninStartBadRequest ProblemDetails
-
-func (*SiteAuthSigninStartBadRequest) siteAuthSigninStartRes() {}
 
 // SiteAuthSigninStartFound is response for SiteAuthSigninStart operation.
 type SiteAuthSigninStartFound struct {
@@ -12468,24 +11811,6 @@ func (s *SiteAuthSigninStartFound) SetLocation(val string) {
 func (s *SiteAuthSigninStartFound) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-func (*SiteAuthSigninStartFound) siteAuthSigninStartRes() {}
-
-type SiteAuthSigninStartNotFound ProblemDetails
-
-func (*SiteAuthSigninStartNotFound) siteAuthSigninStartRes() {}
-
-type SiteAuthVerifyEmailBadRequest ProblemDetails
-
-func (*SiteAuthVerifyEmailBadRequest) siteAuthVerifyEmailRes() {}
-
-type SiteAuthVerifyEmailPreconditionRequired ProblemDetails
-
-func (*SiteAuthVerifyEmailPreconditionRequired) siteAuthVerifyEmailRes() {}
-
-type SiteAuthVerifyEmailUnprocessableEntity ProblemDetails
-
-func (*SiteAuthVerifyEmailUnprocessableEntity) siteAuthVerifyEmailRes() {}
 
 // Closed error kind of an HTTP step's body.
 // Ref: #/components/schemas/SiteAutomationHttpErrorKind
@@ -12799,8 +12124,6 @@ func (s *SiteAutomationReport) SetSteps(val []SiteAutomationStepFigures) {
 	s.Steps = val
 }
 
-func (*SiteAutomationReport) siteAutomationReportsGetRes() {}
-
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
 // included.
 // Ref: #/components/schemas/SiteAutomationReportPeriod
@@ -12858,14 +12181,6 @@ func (s *SiteAutomationReportPeriod) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type SiteAutomationReportsGetBadRequest ProblemDetails
-
-func (*SiteAutomationReportsGetBadRequest) siteAutomationReportsGetRes() {}
-
-type SiteAutomationReportsGetNotFound ProblemDetails
-
-func (*SiteAutomationReportsGetNotFound) siteAutomationReportsGetRes() {}
 
 // Merged schema.
 type SiteAutomationReportsGetPeriod string
@@ -13036,15 +12351,6 @@ func (s *SiteAutomationResource) SetCreatedAt(val Timestamp) {
 func (s *SiteAutomationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
-
-func (*SiteAutomationResource) siteAutomationsArchiveRes()    {}
-func (*SiteAutomationResource) siteAutomationsCreateRes()     {}
-func (*SiteAutomationResource) siteAutomationsDeactivateRes() {}
-func (*SiteAutomationResource) siteAutomationsGetRes()        {}
-func (*SiteAutomationResource) siteAutomationsPublishRes()    {}
-func (*SiteAutomationResource) siteAutomationsRevertRes()     {}
-func (*SiteAutomationResource) siteAutomationsUnarchiveRes()  {}
-func (*SiteAutomationResource) siteAutomationsUpdateRes()     {}
 
 // An automation's results over a period of Report days, read from its enrollments, with the period
 // just before it to compare with.
@@ -13728,66 +13034,6 @@ func (s *SiteAutomationVersion) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
 }
 
-type SiteAutomationsArchiveBadRequest ProblemDetails
-
-func (*SiteAutomationsArchiveBadRequest) siteAutomationsArchiveRes() {}
-
-type SiteAutomationsArchiveNotFound ProblemDetails
-
-func (*SiteAutomationsArchiveNotFound) siteAutomationsArchiveRes() {}
-
-type SiteAutomationsCreateBadRequest ProblemDetails
-
-func (*SiteAutomationsCreateBadRequest) siteAutomationsCreateRes() {}
-
-type SiteAutomationsCreateNotFound ProblemDetails
-
-func (*SiteAutomationsCreateNotFound) siteAutomationsCreateRes() {}
-
-type SiteAutomationsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsCreateUnprocessableEntity) siteAutomationsCreateRes() {}
-
-type SiteAutomationsDeactivateBadRequest ProblemDetails
-
-func (*SiteAutomationsDeactivateBadRequest) siteAutomationsDeactivateRes() {}
-
-type SiteAutomationsDeactivateConflict ProblemDetails
-
-func (*SiteAutomationsDeactivateConflict) siteAutomationsDeactivateRes() {}
-
-type SiteAutomationsDeactivateNotFound ProblemDetails
-
-func (*SiteAutomationsDeactivateNotFound) siteAutomationsDeactivateRes() {}
-
-type SiteAutomationsDryRunHttpStepBadRequest ProblemDetails
-
-func (*SiteAutomationsDryRunHttpStepBadRequest) siteAutomationsDryRunHttpStepRes() {}
-
-type SiteAutomationsDryRunHttpStepNotFound ProblemDetails
-
-func (*SiteAutomationsDryRunHttpStepNotFound) siteAutomationsDryRunHttpStepRes() {}
-
-type SiteAutomationsDryRunHttpStepUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsDryRunHttpStepUnprocessableEntity) siteAutomationsDryRunHttpStepRes() {}
-
-type SiteAutomationsGetBadRequest ProblemDetails
-
-func (*SiteAutomationsGetBadRequest) siteAutomationsGetRes() {}
-
-type SiteAutomationsGetNotFound ProblemDetails
-
-func (*SiteAutomationsGetNotFound) siteAutomationsGetRes() {}
-
-type SiteAutomationsListBadRequest ProblemDetails
-
-func (*SiteAutomationsListBadRequest) siteAutomationsListRes() {}
-
-type SiteAutomationsListNotFound ProblemDetails
-
-func (*SiteAutomationsListNotFound) siteAutomationsListRes() {}
-
 // Paginated response.
 type SiteAutomationsListOK struct {
 	// List of items.
@@ -13852,44 +13098,6 @@ func (s *SiteAutomationsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteAutomationsListOK) siteAutomationsListRes() {}
-
-type SiteAutomationsListUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsListUnprocessableEntity) siteAutomationsListRes() {}
-
-type SiteAutomationsPublishBadRequest ProblemDetails
-
-func (*SiteAutomationsPublishBadRequest) siteAutomationsPublishRes() {}
-
-type SiteAutomationsPublishConflict ProblemDetails
-
-func (*SiteAutomationsPublishConflict) siteAutomationsPublishRes() {}
-
-type SiteAutomationsPublishNotFound ProblemDetails
-
-func (*SiteAutomationsPublishNotFound) siteAutomationsPublishRes() {}
-
-type SiteAutomationsPublishUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsPublishUnprocessableEntity) siteAutomationsPublishRes() {}
-
-type SiteAutomationsRevertBadRequest ProblemDetails
-
-func (*SiteAutomationsRevertBadRequest) siteAutomationsRevertRes() {}
-
-type SiteAutomationsRevertConflict ProblemDetails
-
-func (*SiteAutomationsRevertConflict) siteAutomationsRevertRes() {}
-
-type SiteAutomationsRevertNotFound ProblemDetails
-
-func (*SiteAutomationsRevertNotFound) siteAutomationsRevertRes() {}
-
-type SiteAutomationsRevertUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsRevertUnprocessableEntity) siteAutomationsRevertRes() {}
-
 // What the automation list is ordered by.
 // Ref: #/components/schemas/SiteAutomationsSort
 type SiteAutomationsSort string
@@ -13932,30 +13140,6 @@ func (s *SiteAutomationsSort) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type SiteAutomationsUnarchiveBadRequest ProblemDetails
-
-func (*SiteAutomationsUnarchiveBadRequest) siteAutomationsUnarchiveRes() {}
-
-type SiteAutomationsUnarchiveNotFound ProblemDetails
-
-func (*SiteAutomationsUnarchiveNotFound) siteAutomationsUnarchiveRes() {}
-
-type SiteAutomationsUpdateBadRequest ProblemDetails
-
-func (*SiteAutomationsUpdateBadRequest) siteAutomationsUpdateRes() {}
-
-type SiteAutomationsUpdateConflict ProblemDetails
-
-func (*SiteAutomationsUpdateConflict) siteAutomationsUpdateRes() {}
-
-type SiteAutomationsUpdateNotFound ProblemDetails
-
-func (*SiteAutomationsUpdateNotFound) siteAutomationsUpdateRes() {}
-
-type SiteAutomationsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsUpdateUnprocessableEntity) siteAutomationsUpdateRes() {}
 
 // A Telegram chat a contact is reached through: its own, or that of one of its visitors. Made only by
 // what the bot receives, so it is read here and never written.
@@ -14021,36 +13205,6 @@ func (s *SiteBindingResource) SetBotUsername(val OptNilString) {
 // SetBoundAt sets the value of BoundAt.
 func (s *SiteBindingResource) SetBoundAt(val Timestamp) {
 	s.BoundAt = val
-}
-
-type SiteBrandKitGetBadRequest ProblemDetails
-
-func (*SiteBrandKitGetBadRequest) siteBrandKitGetRes() {}
-
-type SiteBrandKitGetNotFound ProblemDetails
-
-func (*SiteBrandKitGetNotFound) siteBrandKitGetRes() {}
-
-type SiteBrandKitRecreateStarterTemplatesBadRequest ProblemDetails
-
-func (*SiteBrandKitRecreateStarterTemplatesBadRequest) siteBrandKitRecreateStarterTemplatesRes() {}
-
-type SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON []SiteEmailTemplateResource
-
-func (*SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON) siteBrandKitRecreateStarterTemplatesRes() {
-}
-
-type SiteBrandKitRecreateStarterTemplatesForbidden ProblemDetails
-
-func (*SiteBrandKitRecreateStarterTemplatesForbidden) siteBrandKitRecreateStarterTemplatesRes() {}
-
-type SiteBrandKitRecreateStarterTemplatesNotFound ProblemDetails
-
-func (*SiteBrandKitRecreateStarterTemplatesNotFound) siteBrandKitRecreateStarterTemplatesRes() {}
-
-type SiteBrandKitRecreateStarterTemplatesUnprocessableEntity ProblemDetails
-
-func (*SiteBrandKitRecreateStarterTemplatesUnprocessableEntity) siteBrandKitRecreateStarterTemplatesRes() {
 }
 
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
@@ -14193,25 +13347,6 @@ func (s *SiteBrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteBrandKitResource) siteBrandKitGetRes()  {}
-func (*SiteBrandKitResource) siteBrandKitSaveRes() {}
-
-type SiteBrandKitSaveBadRequest ProblemDetails
-
-func (*SiteBrandKitSaveBadRequest) siteBrandKitSaveRes() {}
-
-type SiteBrandKitSaveForbidden ProblemDetails
-
-func (*SiteBrandKitSaveForbidden) siteBrandKitSaveRes() {}
-
-type SiteBrandKitSaveNotFound ProblemDetails
-
-func (*SiteBrandKitSaveNotFound) siteBrandKitSaveRes() {}
-
-type SiteBrandKitSaveUnprocessableEntity ProblemDetails
-
-func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
-
 // What slows a sending broadcast.
 // Ref: #/components/schemas/SiteBroadcastLimit
 type SiteBroadcastLimit string
@@ -14271,16 +13406,6 @@ func (s *SiteBroadcastLinkClicksList) GetItems() []SiteLinkClicks {
 func (s *SiteBroadcastLinkClicksList) SetItems(val []SiteLinkClicks) {
 	s.Items = val
 }
-
-func (*SiteBroadcastLinkClicksList) siteBroadcastLinksListRes() {}
-
-type SiteBroadcastLinksListBadRequest ProblemDetails
-
-func (*SiteBroadcastLinksListBadRequest) siteBroadcastLinksListRes() {}
-
-type SiteBroadcastLinksListNotFound ProblemDetails
-
-func (*SiteBroadcastLinksListNotFound) siteBroadcastLinksListRes() {}
 
 // How far a sending broadcast has got. A broadcast limited by its Integration's Provider limit is
 // paced: recipients go out at an even interval. The Workspace's Send cap lets a day's worth out at a
@@ -14551,14 +13676,6 @@ func (s *SiteBroadcastResource) SetCreatedAt(val Timestamp) {
 func (s *SiteBroadcastResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
-
-func (*SiteBroadcastResource) siteBroadcastsArchiveRes()   {}
-func (*SiteBroadcastResource) siteBroadcastsCreateRes()    {}
-func (*SiteBroadcastResource) siteBroadcastsGetRes()       {}
-func (*SiteBroadcastResource) siteBroadcastsScheduleRes()  {}
-func (*SiteBroadcastResource) siteBroadcastsSendRes()      {}
-func (*SiteBroadcastResource) siteBroadcastsUnarchiveRes() {}
-func (*SiteBroadcastResource) siteBroadcastsUpdateRes()    {}
 
 // Delivery figures of a broadcast, derived from its recipients and their messages, per Channel (ADR
 // 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and unsubscribed. A
@@ -14880,46 +13997,6 @@ func (s *SiteBroadcastStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteBroadcastsArchiveBadRequest ProblemDetails
-
-func (*SiteBroadcastsArchiveBadRequest) siteBroadcastsArchiveRes() {}
-
-type SiteBroadcastsArchiveConflict ProblemDetails
-
-func (*SiteBroadcastsArchiveConflict) siteBroadcastsArchiveRes() {}
-
-type SiteBroadcastsArchiveNotFound ProblemDetails
-
-func (*SiteBroadcastsArchiveNotFound) siteBroadcastsArchiveRes() {}
-
-type SiteBroadcastsCreateBadRequest ProblemDetails
-
-func (*SiteBroadcastsCreateBadRequest) siteBroadcastsCreateRes() {}
-
-type SiteBroadcastsCreateNotFound ProblemDetails
-
-func (*SiteBroadcastsCreateNotFound) siteBroadcastsCreateRes() {}
-
-type SiteBroadcastsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsCreateUnprocessableEntity) siteBroadcastsCreateRes() {}
-
-type SiteBroadcastsGetBadRequest ProblemDetails
-
-func (*SiteBroadcastsGetBadRequest) siteBroadcastsGetRes() {}
-
-type SiteBroadcastsGetNotFound ProblemDetails
-
-func (*SiteBroadcastsGetNotFound) siteBroadcastsGetRes() {}
-
-type SiteBroadcastsListBadRequest ProblemDetails
-
-func (*SiteBroadcastsListBadRequest) siteBroadcastsListRes() {}
-
-type SiteBroadcastsListNotFound ProblemDetails
-
-func (*SiteBroadcastsListNotFound) siteBroadcastsListRes() {}
-
 // Paginated response.
 type SiteBroadcastsListOK struct {
 	// List of items.
@@ -14984,12 +14061,6 @@ func (s *SiteBroadcastsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteBroadcastsListOK) siteBroadcastsListRes() {}
-
-type SiteBroadcastsListUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsListUnprocessableEntity) siteBroadcastsListRes() {}
-
 // The order of the broadcast list.
 // Ref: #/components/schemas/SiteBroadcastsOrder
 type SiteBroadcastsOrder string
@@ -15039,74 +14110,6 @@ func (s *SiteBroadcastsOrder) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type SiteBroadcastsScheduleBadRequest ProblemDetails
-
-func (*SiteBroadcastsScheduleBadRequest) siteBroadcastsScheduleRes() {}
-
-type SiteBroadcastsScheduleConflict ProblemDetails
-
-func (*SiteBroadcastsScheduleConflict) siteBroadcastsScheduleRes() {}
-
-type SiteBroadcastsScheduleNotFound ProblemDetails
-
-func (*SiteBroadcastsScheduleNotFound) siteBroadcastsScheduleRes() {}
-
-type SiteBroadcastsScheduleUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsScheduleUnprocessableEntity) siteBroadcastsScheduleRes() {}
-
-type SiteBroadcastsSendBadRequest ProblemDetails
-
-func (*SiteBroadcastsSendBadRequest) siteBroadcastsSendRes() {}
-
-type SiteBroadcastsSendConflict ProblemDetails
-
-func (*SiteBroadcastsSendConflict) siteBroadcastsSendRes() {}
-
-type SiteBroadcastsSendNotFound ProblemDetails
-
-func (*SiteBroadcastsSendNotFound) siteBroadcastsSendRes() {}
-
-type SiteBroadcastsSendUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsSendUnprocessableEntity) siteBroadcastsSendRes() {}
-
-type SiteBroadcastsTestSendBadRequest ProblemDetails
-
-func (*SiteBroadcastsTestSendBadRequest) siteBroadcastsTestSendRes() {}
-
-type SiteBroadcastsTestSendNotFound ProblemDetails
-
-func (*SiteBroadcastsTestSendNotFound) siteBroadcastsTestSendRes() {}
-
-type SiteBroadcastsTestSendUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsTestSendUnprocessableEntity) siteBroadcastsTestSendRes() {}
-
-type SiteBroadcastsUnarchiveBadRequest ProblemDetails
-
-func (*SiteBroadcastsUnarchiveBadRequest) siteBroadcastsUnarchiveRes() {}
-
-type SiteBroadcastsUnarchiveNotFound ProblemDetails
-
-func (*SiteBroadcastsUnarchiveNotFound) siteBroadcastsUnarchiveRes() {}
-
-type SiteBroadcastsUpdateBadRequest ProblemDetails
-
-func (*SiteBroadcastsUpdateBadRequest) siteBroadcastsUpdateRes() {}
-
-type SiteBroadcastsUpdateConflict ProblemDetails
-
-func (*SiteBroadcastsUpdateConflict) siteBroadcastsUpdateRes() {}
-
-type SiteBroadcastsUpdateNotFound ProblemDetails
-
-func (*SiteBroadcastsUpdateNotFound) siteBroadcastsUpdateRes() {}
-
-type SiteBroadcastsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteBroadcastsUpdateUnprocessableEntity) siteBroadcastsUpdateRes() {}
 
 // One header line of a Captured message.
 // Ref: #/components/schemas/SiteCapturedMessageHeader
@@ -15321,8 +14324,6 @@ func (s *SiteCapturedMessageResource) SetLinks(val []string) {
 	s.Links = val
 }
 
-func (*SiteCapturedMessageResource) siteCapturedMessagesGetRes() {}
-
 // A Captured message as the list shows it: without the content.
 // Ref: #/components/schemas/SiteCapturedMessageSummary
 type SiteCapturedMessageSummary struct {
@@ -15518,47 +14519,11 @@ func (s *SiteCapturedMessageSurface) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteCapturedMessagesDeleteAllBadRequest ProblemDetails
-
-func (*SiteCapturedMessagesDeleteAllBadRequest) siteCapturedMessagesDeleteAllRes() {}
-
 // SiteCapturedMessagesDeleteAllNoContent is response for SiteCapturedMessagesDeleteAll operation.
 type SiteCapturedMessagesDeleteAllNoContent struct{}
 
-func (*SiteCapturedMessagesDeleteAllNoContent) siteCapturedMessagesDeleteAllRes() {}
-
-type SiteCapturedMessagesDeleteAllNotFound ProblemDetails
-
-func (*SiteCapturedMessagesDeleteAllNotFound) siteCapturedMessagesDeleteAllRes() {}
-
-type SiteCapturedMessagesDeleteBadRequest ProblemDetails
-
-func (*SiteCapturedMessagesDeleteBadRequest) siteCapturedMessagesDeleteRes() {}
-
 // SiteCapturedMessagesDeleteNoContent is response for SiteCapturedMessagesDelete operation.
 type SiteCapturedMessagesDeleteNoContent struct{}
-
-func (*SiteCapturedMessagesDeleteNoContent) siteCapturedMessagesDeleteRes() {}
-
-type SiteCapturedMessagesDeleteNotFound ProblemDetails
-
-func (*SiteCapturedMessagesDeleteNotFound) siteCapturedMessagesDeleteRes() {}
-
-type SiteCapturedMessagesGetBadRequest ProblemDetails
-
-func (*SiteCapturedMessagesGetBadRequest) siteCapturedMessagesGetRes() {}
-
-type SiteCapturedMessagesGetNotFound ProblemDetails
-
-func (*SiteCapturedMessagesGetNotFound) siteCapturedMessagesGetRes() {}
-
-type SiteCapturedMessagesListBadRequest ProblemDetails
-
-func (*SiteCapturedMessagesListBadRequest) siteCapturedMessagesListRes() {}
-
-type SiteCapturedMessagesListNotFound ProblemDetails
-
-func (*SiteCapturedMessagesListNotFound) siteCapturedMessagesListRes() {}
 
 // Paginated response.
 type SiteCapturedMessagesListOK struct {
@@ -15623,12 +14588,6 @@ func (s *SiteCapturedMessagesListOK) SetTotalItems(val int32) {
 func (s *SiteCapturedMessagesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteCapturedMessagesListOK) siteCapturedMessagesListRes() {}
-
-type SiteCapturedMessagesListUnprocessableEntity ProblemDetails
-
-func (*SiteCapturedMessagesListUnprocessableEntity) siteCapturedMessagesListRes() {}
 
 // The CNAME record to publish: `host` must point at `target`.
 // Ref: #/components/schemas/SiteCnameRecord
@@ -16819,30 +15778,8 @@ func (s *SiteConnectionResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type SiteConnectionsDeleteBadRequest ProblemDetails
-
-func (*SiteConnectionsDeleteBadRequest) siteConnectionsDeleteRes() {}
-
 // SiteConnectionsDeleteNoContent is response for SiteConnectionsDelete operation.
 type SiteConnectionsDeleteNoContent struct{}
-
-func (*SiteConnectionsDeleteNoContent) siteConnectionsDeleteRes() {}
-
-type SiteConnectionsDeleteNotFound ProblemDetails
-
-func (*SiteConnectionsDeleteNotFound) siteConnectionsDeleteRes() {}
-
-type SiteConnectionsListBadRequest ProblemDetails
-
-func (*SiteConnectionsListBadRequest) siteConnectionsListRes() {}
-
-type SiteConnectionsListNotFound ProblemDetails
-
-func (*SiteConnectionsListNotFound) siteConnectionsListRes() {}
-
-type SiteConnectionsListOKApplicationJSON []SiteConnectionResource
-
-func (*SiteConnectionsListOKApplicationJSON) siteConnectionsListRes() {}
 
 // What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
 // held is all zeros and `contactHeld: false`.
@@ -16921,8 +15858,6 @@ func (s *SiteContactHoldings) SetSuppressions(val int32) {
 func (s *SiteContactHoldings) SetCapturedMessages(val int32) {
 	s.CapturedMessages = val
 }
-
-func (*SiteContactHoldings) siteContactsLookupRes() {}
 
 // Contact resource used by the site UI.
 // Ref: #/components/schemas/SiteContactResource
@@ -17121,75 +16056,11 @@ func (s *SiteContactResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteContactResource) siteContactsCreateRes() {}
-func (*SiteContactResource) siteContactsGetRes()    {}
-func (*SiteContactResource) siteContactsUpdateRes() {}
-
-type SiteContactsCreateBadRequest ProblemDetails
-
-func (*SiteContactsCreateBadRequest) siteContactsCreateRes() {}
-
-type SiteContactsCreateConflict ProblemDetails
-
-func (*SiteContactsCreateConflict) siteContactsCreateRes() {}
-
-type SiteContactsCreateNotFound ProblemDetails
-
-func (*SiteContactsCreateNotFound) siteContactsCreateRes() {}
-
-type SiteContactsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteContactsCreateUnprocessableEntity) siteContactsCreateRes() {}
-
-type SiteContactsDeleteBadRequest ProblemDetails
-
-func (*SiteContactsDeleteBadRequest) siteContactsDeleteRes() {}
-
-type SiteContactsDeleteForbidden ProblemDetails
-
-func (*SiteContactsDeleteForbidden) siteContactsDeleteRes() {}
-
 // SiteContactsDeleteNoContent is response for SiteContactsDelete operation.
 type SiteContactsDeleteNoContent struct{}
 
-func (*SiteContactsDeleteNoContent) siteContactsDeleteRes() {}
-
-type SiteContactsDeleteNotFound ProblemDetails
-
-func (*SiteContactsDeleteNotFound) siteContactsDeleteRes() {}
-
-type SiteContactsEraseBadRequest ProblemDetails
-
-func (*SiteContactsEraseBadRequest) siteContactsEraseRes() {}
-
-type SiteContactsEraseForbidden ProblemDetails
-
-func (*SiteContactsEraseForbidden) siteContactsEraseRes() {}
-
 // SiteContactsEraseNoContent is response for SiteContactsErase operation.
 type SiteContactsEraseNoContent struct{}
-
-func (*SiteContactsEraseNoContent) siteContactsEraseRes() {}
-
-type SiteContactsEraseNotFound ProblemDetails
-
-func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
-
-type SiteContactsEraseUnprocessableEntity ProblemDetails
-
-func (*SiteContactsEraseUnprocessableEntity) siteContactsEraseRes() {}
-
-type SiteContactsExportBadRequest ProblemDetails
-
-func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
-
-type SiteContactsExportForbidden ProblemDetails
-
-func (*SiteContactsExportForbidden) siteContactsExportRes() {}
-
-type SiteContactsExportNotFound ProblemDetails
-
-func (*SiteContactsExportNotFound) siteContactsExportRes() {}
 
 type SiteContactsExportOKApplicationOctetStream struct {
 	Data io.Reader
@@ -17232,26 +16103,6 @@ func (s *SiteContactsExportOKApplicationOctetStreamHeaders) SetResponse(val Site
 }
 
 func (*SiteContactsExportOKApplicationOctetStreamHeaders) siteContactsExportRes() {}
-
-type SiteContactsExportUnprocessableEntity ProblemDetails
-
-func (*SiteContactsExportUnprocessableEntity) siteContactsExportRes() {}
-
-type SiteContactsGetBadRequest ProblemDetails
-
-func (*SiteContactsGetBadRequest) siteContactsGetRes() {}
-
-type SiteContactsGetNotFound ProblemDetails
-
-func (*SiteContactsGetNotFound) siteContactsGetRes() {}
-
-type SiteContactsListBadRequest ProblemDetails
-
-func (*SiteContactsListBadRequest) siteContactsListRes() {}
-
-type SiteContactsListNotFound ProblemDetails
-
-func (*SiteContactsListNotFound) siteContactsListRes() {}
 
 // Paginated response.
 type SiteContactsListOK struct {
@@ -17316,44 +16167,6 @@ func (s *SiteContactsListOK) SetTotalItems(val int32) {
 func (s *SiteContactsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteContactsListOK) siteContactsListRes() {}
-
-type SiteContactsListUnprocessableEntity ProblemDetails
-
-func (*SiteContactsListUnprocessableEntity) siteContactsListRes() {}
-
-type SiteContactsLookupBadRequest ProblemDetails
-
-func (*SiteContactsLookupBadRequest) siteContactsLookupRes() {}
-
-type SiteContactsLookupForbidden ProblemDetails
-
-func (*SiteContactsLookupForbidden) siteContactsLookupRes() {}
-
-type SiteContactsLookupNotFound ProblemDetails
-
-func (*SiteContactsLookupNotFound) siteContactsLookupRes() {}
-
-type SiteContactsLookupUnprocessableEntity ProblemDetails
-
-func (*SiteContactsLookupUnprocessableEntity) siteContactsLookupRes() {}
-
-type SiteContactsUpdateBadRequest ProblemDetails
-
-func (*SiteContactsUpdateBadRequest) siteContactsUpdateRes() {}
-
-type SiteContactsUpdateConflict ProblemDetails
-
-func (*SiteContactsUpdateConflict) siteContactsUpdateRes() {}
-
-type SiteContactsUpdateNotFound ProblemDetails
-
-func (*SiteContactsUpdateNotFound) siteContactsUpdateRes() {}
-
-type SiteContactsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteContactsUpdateUnprocessableEntity) siteContactsUpdateRes() {}
 
 // Site request body for creating an automation.
 // Ref: #/components/schemas/SiteCreateAutomationInput
@@ -17642,8 +16455,6 @@ func (s *SiteCreateInvitationResponse) SetResource(val SiteInvitationResource) {
 	s.Resource = val
 }
 
-func (*SiteCreateInvitationResponse) siteInvitationsCreateRes() {}
-
 // Mint a Personal token of the caller's own.
 // Ref: #/components/schemas/SiteCreatePersonalTokenInput
 type SiteCreatePersonalTokenInput struct {
@@ -17709,8 +16520,6 @@ func (s *SiteCreatePersonalTokenResponse) SetToken(val string) {
 func (s *SiteCreatePersonalTokenResponse) SetResource(val SitePersonalTokenResource) {
 	s.Resource = val
 }
-
-func (*SiteCreatePersonalTokenResponse) sitePersonalTokensCreateRes() {}
 
 // Site request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/SiteCreateRuleInput
@@ -17887,8 +16696,6 @@ func (s *SiteCreateTokenResponse) SetResource(val SiteApiTokenResource) {
 	s.Resource = val
 }
 
-func (*SiteCreateTokenResponse) siteTokensCreateRes() {}
-
 // Create a Workspace (ADR 0043).
 // Ref: #/components/schemas/SiteCreateWorkspaceInput
 type SiteCreateWorkspaceInput struct {
@@ -17996,8 +16803,6 @@ func (s *SiteCustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteCustomFieldResource) siteCustomFieldsUpdateRes() {}
-
 // A Custom field's value type.
 // Ref: #/components/schemas/SiteCustomFieldType
 type SiteCustomFieldType string
@@ -18054,14 +16859,6 @@ func (s *SiteCustomFieldType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type SiteCustomFieldsListBadRequest ProblemDetails
-
-func (*SiteCustomFieldsListBadRequest) siteCustomFieldsListRes() {}
-
-type SiteCustomFieldsListNotFound ProblemDetails
-
-func (*SiteCustomFieldsListNotFound) siteCustomFieldsListRes() {}
 
 // Paginated response.
 type SiteCustomFieldsListOK struct {
@@ -18126,24 +16923,6 @@ func (s *SiteCustomFieldsListOK) SetTotalItems(val int32) {
 func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
-
-type SiteCustomFieldsUpdateBadRequest ProblemDetails
-
-func (*SiteCustomFieldsUpdateBadRequest) siteCustomFieldsUpdateRes() {}
-
-type SiteCustomFieldsUpdateForbidden ProblemDetails
-
-func (*SiteCustomFieldsUpdateForbidden) siteCustomFieldsUpdateRes() {}
-
-type SiteCustomFieldsUpdateNotFound ProblemDetails
-
-func (*SiteCustomFieldsUpdateNotFound) siteCustomFieldsUpdateRes() {}
-
-type SiteCustomFieldsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteCustomFieldsUpdateUnprocessableEntity) siteCustomFieldsUpdateRes() {}
 
 // Confirmation of User deletion (ADR 0050): the User's own email typed in, their password (a User with
 // no password sends the token of the mailed link instead) and, when a Second factor is enrolled, a
@@ -18215,183 +16994,6 @@ func (s *SiteDeleteUserLinkInput) GetEmail() EmailAddress {
 // SetEmail sets the value of Email.
 func (s *SiteDeleteUserLinkInput) SetEmail(val EmailAddress) {
 	s.Email = val
-}
-
-// The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner of
-// Workspaces, the list of them (empty when the typed email did not match).
-// Ref: #/components/schemas/SiteDeleteUserProblemDetails
-type SiteDeleteUserProblemDetails struct {
-	// Why the request was refused, when the client should act on it.
-	Code OptProblemCode `json:"code"`
-	// A URI reference that identifies the problem type.
-	Type OptString `json:"type"`
-	// A short, human-readable summary of the problem type.
-	Title OptString `json:"title"`
-	// HTTP status code.
-	Status OptInt32 `json:"status"`
-	// A human-readable explanation specific to this occurrence.
-	Detail OptString `json:"detail"`
-	// A URI reference that identifies the specific occurrence.
-	Instance OptString `json:"instance"`
-	// Validation errors grouped by field.
-	Errors OptSiteDeleteUserProblemDetailsErrors `json:"errors"`
-	// Form-level validation error.
-	Form OptString `json:"form"`
-	// Field validation errors.
-	Fields OptSiteDeleteUserProblemDetailsFields `json:"fields"`
-	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
-	RetryAfter OptInt32 `json:"retryAfter"`
-	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
-	Debug OptProblemDebug `json:"debug"`
-	// The live Workspaces the User is the only Owner of; each is handed over or deleted first.
-	Workspaces []SiteSoleOwnedWorkspace `json:"workspaces"`
-}
-
-// GetCode returns the value of Code.
-func (s *SiteDeleteUserProblemDetails) GetCode() OptProblemCode {
-	return s.Code
-}
-
-// GetType returns the value of Type.
-func (s *SiteDeleteUserProblemDetails) GetType() OptString {
-	return s.Type
-}
-
-// GetTitle returns the value of Title.
-func (s *SiteDeleteUserProblemDetails) GetTitle() OptString {
-	return s.Title
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteDeleteUserProblemDetails) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// GetDetail returns the value of Detail.
-func (s *SiteDeleteUserProblemDetails) GetDetail() OptString {
-	return s.Detail
-}
-
-// GetInstance returns the value of Instance.
-func (s *SiteDeleteUserProblemDetails) GetInstance() OptString {
-	return s.Instance
-}
-
-// GetErrors returns the value of Errors.
-func (s *SiteDeleteUserProblemDetails) GetErrors() OptSiteDeleteUserProblemDetailsErrors {
-	return s.Errors
-}
-
-// GetForm returns the value of Form.
-func (s *SiteDeleteUserProblemDetails) GetForm() OptString {
-	return s.Form
-}
-
-// GetFields returns the value of Fields.
-func (s *SiteDeleteUserProblemDetails) GetFields() OptSiteDeleteUserProblemDetailsFields {
-	return s.Fields
-}
-
-// GetRetryAfter returns the value of RetryAfter.
-func (s *SiteDeleteUserProblemDetails) GetRetryAfter() OptInt32 {
-	return s.RetryAfter
-}
-
-// GetDebug returns the value of Debug.
-func (s *SiteDeleteUserProblemDetails) GetDebug() OptProblemDebug {
-	return s.Debug
-}
-
-// GetWorkspaces returns the value of Workspaces.
-func (s *SiteDeleteUserProblemDetails) GetWorkspaces() []SiteSoleOwnedWorkspace {
-	return s.Workspaces
-}
-
-// SetCode sets the value of Code.
-func (s *SiteDeleteUserProblemDetails) SetCode(val OptProblemCode) {
-	s.Code = val
-}
-
-// SetType sets the value of Type.
-func (s *SiteDeleteUserProblemDetails) SetType(val OptString) {
-	s.Type = val
-}
-
-// SetTitle sets the value of Title.
-func (s *SiteDeleteUserProblemDetails) SetTitle(val OptString) {
-	s.Title = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteDeleteUserProblemDetails) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// SetDetail sets the value of Detail.
-func (s *SiteDeleteUserProblemDetails) SetDetail(val OptString) {
-	s.Detail = val
-}
-
-// SetInstance sets the value of Instance.
-func (s *SiteDeleteUserProblemDetails) SetInstance(val OptString) {
-	s.Instance = val
-}
-
-// SetErrors sets the value of Errors.
-func (s *SiteDeleteUserProblemDetails) SetErrors(val OptSiteDeleteUserProblemDetailsErrors) {
-	s.Errors = val
-}
-
-// SetForm sets the value of Form.
-func (s *SiteDeleteUserProblemDetails) SetForm(val OptString) {
-	s.Form = val
-}
-
-// SetFields sets the value of Fields.
-func (s *SiteDeleteUserProblemDetails) SetFields(val OptSiteDeleteUserProblemDetailsFields) {
-	s.Fields = val
-}
-
-// SetRetryAfter sets the value of RetryAfter.
-func (s *SiteDeleteUserProblemDetails) SetRetryAfter(val OptInt32) {
-	s.RetryAfter = val
-}
-
-// SetDebug sets the value of Debug.
-func (s *SiteDeleteUserProblemDetails) SetDebug(val OptProblemDebug) {
-	s.Debug = val
-}
-
-// SetWorkspaces sets the value of Workspaces.
-func (s *SiteDeleteUserProblemDetails) SetWorkspaces(val []SiteSoleOwnedWorkspace) {
-	s.Workspaces = val
-}
-
-func (*SiteDeleteUserProblemDetails) siteUserDeleteUserLinkRes() {}
-func (*SiteDeleteUserProblemDetails) siteUserDeleteUserRes()     {}
-
-// Validation errors grouped by field.
-type SiteDeleteUserProblemDetailsErrors map[string][]string
-
-func (s *SiteDeleteUserProblemDetailsErrors) init() SiteDeleteUserProblemDetailsErrors {
-	m := *s
-	if m == nil {
-		m = map[string][]string{}
-		*s = m
-	}
-	return m
-}
-
-// Field validation errors.
-type SiteDeleteUserProblemDetailsFields map[string]string
-
-func (s *SiteDeleteUserProblemDetailsFields) init() SiteDeleteUserProblemDetailsFields {
-	m := *s
-	if m == nil {
-		m = map[string]string{}
-		*s = m
-	}
-	return m
 }
 
 // Delete a Workspace (ADR 0043): the typed name must equal the stored name.
@@ -18478,8 +17080,6 @@ func (s *SiteDeletedWorkspaceResource) SetOnlyOwner(val bool) {
 	s.OnlyOwner = val
 }
 
-func (*SiteDeletedWorkspaceResource) siteWorkspacesDeleteRes() {}
-
 // A DNS record the user publishes to authenticate a sending domain.
 // Ref: #/components/schemas/SiteDnsRecord
 type SiteDnsRecord struct {
@@ -18556,18 +17156,6 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteDomainJoinGetBadRequest ProblemDetails
-
-func (*SiteDomainJoinGetBadRequest) siteDomainJoinGetRes() {}
-
-type SiteDomainJoinGetForbidden ProblemDetails
-
-func (*SiteDomainJoinGetForbidden) siteDomainJoinGetRes() {}
-
-type SiteDomainJoinGetNotFound ProblemDetails
-
-func (*SiteDomainJoinGetNotFound) siteDomainJoinGetRes() {}
-
 // Whether the Workspace admits Users by Join domain.
 // Ref: #/components/schemas/SiteDomainJoinResource
 type SiteDomainJoinResource struct {
@@ -18585,21 +17173,6 @@ func (s *SiteDomainJoinResource) GetEnabled() bool {
 func (s *SiteDomainJoinResource) SetEnabled(val bool) {
 	s.Enabled = val
 }
-
-func (*SiteDomainJoinResource) siteDomainJoinGetRes() {}
-func (*SiteDomainJoinResource) siteDomainJoinSetRes() {}
-
-type SiteDomainJoinSetBadRequest ProblemDetails
-
-func (*SiteDomainJoinSetBadRequest) siteDomainJoinSetRes() {}
-
-type SiteDomainJoinSetForbidden ProblemDetails
-
-func (*SiteDomainJoinSetForbidden) siteDomainJoinSetRes() {}
-
-type SiteDomainJoinSetNotFound ProblemDetails
-
-func (*SiteDomainJoinSetNotFound) siteDomainJoinSetRes() {}
 
 // Request body for rendering an HTTP step's body for a Contact.
 // Ref: #/components/schemas/SiteDryRunHttpStepInput
@@ -18670,8 +17243,6 @@ func (s *SiteDryRunHttpStepResult) SetErrorKind(val OptSiteAutomationHttpErrorKi
 func (s *SiteDryRunHttpStepResult) SetDetail(val OptString) {
 	s.Detail = val
 }
-
-func (*SiteDryRunHttpStepResult) siteAutomationsDryRunHttpStepRes() {}
 
 // Site request body for dry-running a Rule on a stored Event.
 // Ref: #/components/schemas/SiteDryRunRuleInput
@@ -18833,10 +17404,6 @@ func (s *SiteEmailTemplateResource) SetCreatedAt(val Timestamp) {
 func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
-
-func (*SiteEmailTemplateResource) siteTemplatesCreateRes() {}
-func (*SiteEmailTemplateResource) siteTemplatesGetRes()    {}
-func (*SiteEmailTemplateResource) siteTemplatesUpdateRes() {}
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/SiteEnrollmentFailure
@@ -19057,8 +17624,6 @@ func (s *SiteEnrollmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteEnrollmentResource) siteEnrollmentsGetRes() {}
-
 // Where a Contact is in an Automation.
 // Ref: #/components/schemas/SiteEnrollmentStatus
 type SiteEnrollmentStatus string
@@ -19122,22 +17687,6 @@ func (s *SiteEnrollmentStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type SiteEnrollmentsGetBadRequest ProblemDetails
-
-func (*SiteEnrollmentsGetBadRequest) siteEnrollmentsGetRes() {}
-
-type SiteEnrollmentsGetNotFound ProblemDetails
-
-func (*SiteEnrollmentsGetNotFound) siteEnrollmentsGetRes() {}
-
-type SiteEnrollmentsListBadRequest ProblemDetails
-
-func (*SiteEnrollmentsListBadRequest) siteEnrollmentsListRes() {}
-
-type SiteEnrollmentsListNotFound ProblemDetails
-
-func (*SiteEnrollmentsListNotFound) siteEnrollmentsListRes() {}
 
 // Paginated response.
 type SiteEnrollmentsListOK struct {
@@ -19203,8 +17752,6 @@ func (s *SiteEnrollmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteEnrollmentsListOK) siteEnrollmentsListRes() {}
-
 // Distinct event actions seen in a workspace (for segment/filter pickers).
 // Ref: #/components/schemas/SiteEventActionsResult
 type SiteEventActionsResult struct {
@@ -19220,8 +17767,6 @@ func (s *SiteEventActionsResult) GetActions() []string {
 func (s *SiteEventActionsResult) SetActions(val []string) {
 	s.Actions = val
 }
-
-func (*SiteEventActionsResult) siteEventsActionsRes() {}
 
 // A tracked event shown in the activity feed.
 // Ref: #/components/schemas/SiteEventResource
@@ -19326,22 +17871,6 @@ func (s *SiteEventResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type SiteEventsActionsBadRequest ProblemDetails
-
-func (*SiteEventsActionsBadRequest) siteEventsActionsRes() {}
-
-type SiteEventsActionsNotFound ProblemDetails
-
-func (*SiteEventsActionsNotFound) siteEventsActionsRes() {}
-
-type SiteEventsListBadRequest ProblemDetails
-
-func (*SiteEventsListBadRequest) siteEventsListRes() {}
-
-type SiteEventsListNotFound ProblemDetails
-
-func (*SiteEventsListNotFound) siteEventsListRes() {}
-
 // Paginated response.
 type SiteEventsListOK struct {
 	// List of items.
@@ -19406,8 +17935,6 @@ func (s *SiteEventsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteEventsListOK) siteEventsListRes() {}
-
 // Request a password-reset link (always accepted; no account enumeration).
 // Ref: #/components/schemas/SiteForgotPasswordInput
 type SiteForgotPasswordInput struct {
@@ -19423,10 +17950,6 @@ func (s *SiteForgotPasswordInput) GetEmail() EmailAddress {
 func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
-
-type SiteIdentitiesLinkBadRequest ProblemDetails
-
-func (*SiteIdentitiesLinkBadRequest) siteIdentitiesLinkRes() {}
 
 // SiteIdentitiesLinkFound is response for SiteIdentitiesLink operation.
 type SiteIdentitiesLinkFound struct {
@@ -19454,20 +17977,6 @@ func (s *SiteIdentitiesLinkFound) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-func (*SiteIdentitiesLinkFound) siteIdentitiesLinkRes() {}
-
-type SiteIdentitiesLinkNotFound ProblemDetails
-
-func (*SiteIdentitiesLinkNotFound) siteIdentitiesLinkRes() {}
-
-type SiteIdentitiesUnlinkBadRequest ProblemDetails
-
-func (*SiteIdentitiesUnlinkBadRequest) siteIdentitiesUnlinkRes() {}
-
-type SiteIdentitiesUnlinkConflict ProblemDetails
-
-func (*SiteIdentitiesUnlinkConflict) siteIdentitiesUnlinkRes() {}
-
 // SiteIdentitiesUnlinkNoContent is response for SiteIdentitiesUnlink operation.
 type SiteIdentitiesUnlinkNoContent struct {
 	SetCookie string
@@ -19482,12 +17991,6 @@ func (s *SiteIdentitiesUnlinkNoContent) GetSetCookie() string {
 func (s *SiteIdentitiesUnlinkNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-func (*SiteIdentitiesUnlinkNoContent) siteIdentitiesUnlinkRes() {}
-
-type SiteIdentitiesUnlinkNotFound ProblemDetails
-
-func (*SiteIdentitiesUnlinkNotFound) siteIdentitiesUnlinkRes() {}
 
 // The Test inbox has no settings.
 // Ref: #/components/schemas/SiteInboxConfig
@@ -19558,8 +18061,6 @@ func (s *SiteInstanceRelease) GetLatestRelease() OptString {
 func (s *SiteInstanceRelease) SetLatestRelease(val OptString) {
 	s.LatestRelease = val
 }
-
-func (*SiteInstanceRelease) siteInstanceGetReleaseRes() {}
 
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/SiteIntegrationChannel
@@ -20059,103 +18560,8 @@ func (s *SiteIntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteIntegrationResource) siteIntegrationsCreateRes()        {}
-func (*SiteIntegrationResource) siteIntegrationsGetRes()           {}
-func (*SiteIntegrationResource) siteIntegrationsRegenerateKeyRes() {}
-func (*SiteIntegrationResource) siteIntegrationsUpdateRes()        {}
-
-type SiteIntegrationsCreateBadRequest ProblemDetails
-
-func (*SiteIntegrationsCreateBadRequest) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsCreateConflict ProblemDetails
-
-func (*SiteIntegrationsCreateConflict) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsCreateForbidden ProblemDetails
-
-func (*SiteIntegrationsCreateForbidden) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsCreateNotFound ProblemDetails
-
-func (*SiteIntegrationsCreateNotFound) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteIntegrationsCreateUnprocessableEntity) siteIntegrationsCreateRes() {}
-
-type SiteIntegrationsDeleteBadRequest ProblemDetails
-
-func (*SiteIntegrationsDeleteBadRequest) siteIntegrationsDeleteRes() {}
-
-type SiteIntegrationsDeleteForbidden ProblemDetails
-
-func (*SiteIntegrationsDeleteForbidden) siteIntegrationsDeleteRes() {}
-
 // SiteIntegrationsDeleteNoContent is response for SiteIntegrationsDelete operation.
 type SiteIntegrationsDeleteNoContent struct{}
-
-func (*SiteIntegrationsDeleteNoContent) siteIntegrationsDeleteRes() {}
-
-type SiteIntegrationsDeleteNotFound ProblemDetails
-
-func (*SiteIntegrationsDeleteNotFound) siteIntegrationsDeleteRes() {}
-
-type SiteIntegrationsGetBadRequest ProblemDetails
-
-func (*SiteIntegrationsGetBadRequest) siteIntegrationsGetRes() {}
-
-type SiteIntegrationsGetNotFound ProblemDetails
-
-func (*SiteIntegrationsGetNotFound) siteIntegrationsGetRes() {}
-
-type SiteIntegrationsListBadRequest ProblemDetails
-
-func (*SiteIntegrationsListBadRequest) siteIntegrationsListRes() {}
-
-type SiteIntegrationsListNotFound ProblemDetails
-
-func (*SiteIntegrationsListNotFound) siteIntegrationsListRes() {}
-
-type SiteIntegrationsListOKApplicationJSON []SiteIntegrationResource
-
-func (*SiteIntegrationsListOKApplicationJSON) siteIntegrationsListRes() {}
-
-type SiteIntegrationsRegenerateKeyBadRequest ProblemDetails
-
-func (*SiteIntegrationsRegenerateKeyBadRequest) siteIntegrationsRegenerateKeyRes() {}
-
-type SiteIntegrationsRegenerateKeyForbidden ProblemDetails
-
-func (*SiteIntegrationsRegenerateKeyForbidden) siteIntegrationsRegenerateKeyRes() {}
-
-type SiteIntegrationsRegenerateKeyNotFound ProblemDetails
-
-func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes() {}
-
-type SiteIntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
-
-func (*SiteIntegrationsRegenerateKeyUnprocessableEntity) siteIntegrationsRegenerateKeyRes() {}
-
-type SiteIntegrationsUpdateBadRequest ProblemDetails
-
-func (*SiteIntegrationsUpdateBadRequest) siteIntegrationsUpdateRes() {}
-
-type SiteIntegrationsUpdateConflict ProblemDetails
-
-func (*SiteIntegrationsUpdateConflict) siteIntegrationsUpdateRes() {}
-
-type SiteIntegrationsUpdateForbidden ProblemDetails
-
-func (*SiteIntegrationsUpdateForbidden) siteIntegrationsUpdateRes() {}
-
-type SiteIntegrationsUpdateNotFound ProblemDetails
-
-func (*SiteIntegrationsUpdateNotFound) siteIntegrationsUpdateRes() {}
-
-type SiteIntegrationsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteIntegrationsUpdateUnprocessableEntity) siteIntegrationsUpdateRes() {}
 
 // Roles that may be invited. owner is never invited — it is transferred.
 // Ref: #/components/schemas/SiteInvitableRole
@@ -20228,8 +18634,6 @@ func (s *SiteInvitationLookupResult) SetWorkspaceName(val string) {
 func (s *SiteInvitationLookupResult) SetEmail(val EmailAddress) {
 	s.Email = val
 }
-
-func (*SiteInvitationLookupResult) sitePublicInvitationsLookupRes() {}
 
 // A pending invitation of an email address to join the workspace.
 // Ref: #/components/schemas/SiteInvitationResource
@@ -20308,54 +18712,8 @@ func (s *SiteInvitationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type SiteInvitationsCreateBadRequest ProblemDetails
-
-func (*SiteInvitationsCreateBadRequest) siteInvitationsCreateRes() {}
-
-type SiteInvitationsCreateConflict ProblemDetails
-
-func (*SiteInvitationsCreateConflict) siteInvitationsCreateRes() {}
-
-type SiteInvitationsCreateForbidden ProblemDetails
-
-func (*SiteInvitationsCreateForbidden) siteInvitationsCreateRes() {}
-
-type SiteInvitationsCreateNotFound ProblemDetails
-
-func (*SiteInvitationsCreateNotFound) siteInvitationsCreateRes() {}
-
-type SiteInvitationsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteInvitationsCreateUnprocessableEntity) siteInvitationsCreateRes() {}
-
-type SiteInvitationsDeleteBadRequest ProblemDetails
-
-func (*SiteInvitationsDeleteBadRequest) siteInvitationsDeleteRes() {}
-
-type SiteInvitationsDeleteForbidden ProblemDetails
-
-func (*SiteInvitationsDeleteForbidden) siteInvitationsDeleteRes() {}
-
 // SiteInvitationsDeleteNoContent is response for SiteInvitationsDelete operation.
 type SiteInvitationsDeleteNoContent struct{}
-
-func (*SiteInvitationsDeleteNoContent) siteInvitationsDeleteRes() {}
-
-type SiteInvitationsDeleteNotFound ProblemDetails
-
-func (*SiteInvitationsDeleteNotFound) siteInvitationsDeleteRes() {}
-
-type SiteInvitationsListBadRequest ProblemDetails
-
-func (*SiteInvitationsListBadRequest) siteInvitationsListRes() {}
-
-type SiteInvitationsListNotFound ProblemDetails
-
-func (*SiteInvitationsListNotFound) siteInvitationsListRes() {}
-
-type SiteInvitationsListOKApplicationJSON []SiteInvitationResource
-
-func (*SiteInvitationsListOKApplicationJSON) siteInvitationsListRes() {}
 
 // A Join domain: a domain whose Users may join the Workspace once domain join is on, proven by a TXT
 // record. `verified` is a live property: it holds while the record is published. Any Workspace may
@@ -20460,81 +18818,8 @@ func (s *SiteJoinDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteJoinDomainResource) siteJoinDomainsAddRes()    {}
-func (*SiteJoinDomainResource) siteJoinDomainsVerifyRes() {}
-
-type SiteJoinDomainsAddBadRequest ProblemDetails
-
-func (*SiteJoinDomainsAddBadRequest) siteJoinDomainsAddRes() {}
-
-type SiteJoinDomainsAddConflict ProblemDetails
-
-func (*SiteJoinDomainsAddConflict) siteJoinDomainsAddRes() {}
-
-type SiteJoinDomainsAddForbidden ProblemDetails
-
-func (*SiteJoinDomainsAddForbidden) siteJoinDomainsAddRes() {}
-
-type SiteJoinDomainsAddNotFound ProblemDetails
-
-func (*SiteJoinDomainsAddNotFound) siteJoinDomainsAddRes() {}
-
-type SiteJoinDomainsAddUnprocessableEntity ProblemDetails
-
-func (*SiteJoinDomainsAddUnprocessableEntity) siteJoinDomainsAddRes() {}
-
-type SiteJoinDomainsListBadRequest ProblemDetails
-
-func (*SiteJoinDomainsListBadRequest) siteJoinDomainsListRes() {}
-
-type SiteJoinDomainsListForbidden ProblemDetails
-
-func (*SiteJoinDomainsListForbidden) siteJoinDomainsListRes() {}
-
-type SiteJoinDomainsListNotFound ProblemDetails
-
-func (*SiteJoinDomainsListNotFound) siteJoinDomainsListRes() {}
-
-type SiteJoinDomainsListOKApplicationJSON []SiteJoinDomainResource
-
-func (*SiteJoinDomainsListOKApplicationJSON) siteJoinDomainsListRes() {}
-
-type SiteJoinDomainsRemoveBadRequest ProblemDetails
-
-func (*SiteJoinDomainsRemoveBadRequest) siteJoinDomainsRemoveRes() {}
-
-type SiteJoinDomainsRemoveForbidden ProblemDetails
-
-func (*SiteJoinDomainsRemoveForbidden) siteJoinDomainsRemoveRes() {}
-
 // SiteJoinDomainsRemoveNoContent is response for SiteJoinDomainsRemove operation.
 type SiteJoinDomainsRemoveNoContent struct{}
-
-func (*SiteJoinDomainsRemoveNoContent) siteJoinDomainsRemoveRes() {}
-
-type SiteJoinDomainsRemoveNotFound ProblemDetails
-
-func (*SiteJoinDomainsRemoveNotFound) siteJoinDomainsRemoveRes() {}
-
-type SiteJoinDomainsVerifyBadRequest ProblemDetails
-
-func (*SiteJoinDomainsVerifyBadRequest) siteJoinDomainsVerifyRes() {}
-
-type SiteJoinDomainsVerifyConflict ProblemDetails
-
-func (*SiteJoinDomainsVerifyConflict) siteJoinDomainsVerifyRes() {}
-
-type SiteJoinDomainsVerifyForbidden ProblemDetails
-
-func (*SiteJoinDomainsVerifyForbidden) siteJoinDomainsVerifyRes() {}
-
-type SiteJoinDomainsVerifyNotFound ProblemDetails
-
-func (*SiteJoinDomainsVerifyNotFound) siteJoinDomainsVerifyRes() {}
-
-type SiteJoinDomainsVerifyUnprocessableEntity ProblemDetails
-
-func (*SiteJoinDomainsVerifyUnprocessableEntity) siteJoinDomainsVerifyRes() {}
 
 // The current version of a Sign-up item's Legal document.
 // Ref: #/components/schemas/SiteLegalDocument
@@ -20598,16 +18883,6 @@ func (s *SiteLegalDocument) SetMarkdown(val LegalDocumentMarkdown) {
 func (s *SiteLegalDocument) SetPublishedAt(val Timestamp) {
 	s.PublishedAt = val
 }
-
-func (*SiteLegalDocument) siteLegalDocumentsGetRes() {}
-
-type SiteLegalDocumentsGetBadRequest ProblemDetails
-
-func (*SiteLegalDocumentsGetBadRequest) siteLegalDocumentsGetRes() {}
-
-type SiteLegalDocumentsGetNotFound ProblemDetails
-
-func (*SiteLegalDocumentsGetNotFound) siteLegalDocumentsGetRes() {}
 
 // How often one link of a broadcast's or an automation's emails was clicked.
 // Ref: #/components/schemas/SiteLinkClicks
@@ -20835,10 +19110,6 @@ func (s *SiteLoginResultHeaders) SetResponse(val SiteLoginResult) {
 	s.Response = val
 }
 
-func (*SiteLoginResultHeaders) siteAuthLoginRes()          {}
-func (*SiteLoginResultHeaders) siteAuthSecondFactorRes()   {}
-func (*SiteLoginResultHeaders) sitePasskeyLoginFinishRes() {}
-
 // The second login step: the challenge from the password step and a code.
 // Ref: #/components/schemas/SiteLoginSecondFactorInput
 type SiteLoginSecondFactorInput struct {
@@ -20956,8 +19227,6 @@ func (s *SiteMembershipResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteMembershipResource) siteMembershipsUpdateRes() {}
-
 // A User's permission level in a Workspace.
 // Ref: #/components/schemas/SiteMembershipRole
 type SiteMembershipRole string
@@ -21058,75 +19327,11 @@ func (s *SiteMembershipSource) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteMembershipsDeleteBadRequest ProblemDetails
-
-func (*SiteMembershipsDeleteBadRequest) siteMembershipsDeleteRes() {}
-
-type SiteMembershipsDeleteForbidden ProblemDetails
-
-func (*SiteMembershipsDeleteForbidden) siteMembershipsDeleteRes() {}
-
 // SiteMembershipsDeleteNoContent is response for SiteMembershipsDelete operation.
 type SiteMembershipsDeleteNoContent struct{}
 
-func (*SiteMembershipsDeleteNoContent) siteMembershipsDeleteRes() {}
-
-type SiteMembershipsDeleteNotFound ProblemDetails
-
-func (*SiteMembershipsDeleteNotFound) siteMembershipsDeleteRes() {}
-
-type SiteMembershipsDeleteUnprocessableEntity ProblemDetails
-
-func (*SiteMembershipsDeleteUnprocessableEntity) siteMembershipsDeleteRes() {}
-
-type SiteMembershipsListBadRequest ProblemDetails
-
-func (*SiteMembershipsListBadRequest) siteMembershipsListRes() {}
-
-type SiteMembershipsListNotFound ProblemDetails
-
-func (*SiteMembershipsListNotFound) siteMembershipsListRes() {}
-
-type SiteMembershipsListOKApplicationJSON []SiteMembershipResource
-
-func (*SiteMembershipsListOKApplicationJSON) siteMembershipsListRes() {}
-
-type SiteMembershipsResetSecondFactorBadRequest ProblemDetails
-
-func (*SiteMembershipsResetSecondFactorBadRequest) siteMembershipsResetSecondFactorRes() {}
-
-type SiteMembershipsResetSecondFactorForbidden ProblemDetails
-
-func (*SiteMembershipsResetSecondFactorForbidden) siteMembershipsResetSecondFactorRes() {}
-
 // SiteMembershipsResetSecondFactorNoContent is response for SiteMembershipsResetSecondFactor operation.
 type SiteMembershipsResetSecondFactorNoContent struct{}
-
-func (*SiteMembershipsResetSecondFactorNoContent) siteMembershipsResetSecondFactorRes() {}
-
-type SiteMembershipsResetSecondFactorNotFound ProblemDetails
-
-func (*SiteMembershipsResetSecondFactorNotFound) siteMembershipsResetSecondFactorRes() {}
-
-type SiteMembershipsResetSecondFactorUnprocessableEntity ProblemDetails
-
-func (*SiteMembershipsResetSecondFactorUnprocessableEntity) siteMembershipsResetSecondFactorRes() {}
-
-type SiteMembershipsUpdateBadRequest ProblemDetails
-
-func (*SiteMembershipsUpdateBadRequest) siteMembershipsUpdateRes() {}
-
-type SiteMembershipsUpdateForbidden ProblemDetails
-
-func (*SiteMembershipsUpdateForbidden) siteMembershipsUpdateRes() {}
-
-type SiteMembershipsUpdateNotFound ProblemDetails
-
-func (*SiteMembershipsUpdateNotFound) siteMembershipsUpdateRes() {}
-
-type SiteMembershipsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
 
 // The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
 // 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
@@ -21267,8 +19472,6 @@ func (s *SiteNewPeopleReport) SetTimeseries(val []SiteNewPeoplePoint) {
 	s.Timeseries = val
 }
 
-func (*SiteNewPeopleReport) siteAnalyticsNewPeopleRes() {}
-
 // What an MCP client (dynamically registered) is asking permission for, as validated by the
 // authorization server. Rendered on the consent screen.
 // Ref: #/components/schemas/SiteOAuthAuthorizationRequest
@@ -21374,8 +19577,6 @@ func (s *SiteOAuthAuthorizationRequest) SetRequiredPermissions(val SiteOAuthAuth
 	s.RequiredPermissions = val
 }
 
-func (*SiteOAuthAuthorizationRequest) siteOAuthDescribeRes() {}
-
 // The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the
 // scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what
 // the User may grant, and the server refuses the rest.
@@ -21389,22 +19590,6 @@ func (s *SiteOAuthAuthorizationRequestRequiredPermissions) init() SiteOAuthAutho
 	}
 	return m
 }
-
-type SiteOAuthDecideBadRequest ProblemDetails
-
-func (*SiteOAuthDecideBadRequest) siteOAuthDecideRes() {}
-
-type SiteOAuthDecideForbidden ProblemDetails
-
-func (*SiteOAuthDecideForbidden) siteOAuthDecideRes() {}
-
-type SiteOAuthDecideNotFound ProblemDetails
-
-func (*SiteOAuthDecideNotFound) siteOAuthDecideRes() {}
-
-type SiteOAuthDecideUnprocessableEntity ProblemDetails
-
-func (*SiteOAuthDecideUnprocessableEntity) siteOAuthDecideRes() {}
 
 // The user's decision on an authorization request.
 // Ref: #/components/schemas/SiteOAuthDecisionInput
@@ -21533,20 +19718,6 @@ func (s *SiteOAuthDecisionResult) SetRedirectUrl(val string) {
 	s.RedirectUrl = val
 }
 
-func (*SiteOAuthDecisionResult) siteOAuthDecideRes() {}
-
-type SiteOAuthDescribeBadRequest ProblemDetails
-
-func (*SiteOAuthDescribeBadRequest) siteOAuthDescribeRes() {}
-
-type SiteOAuthDescribeNotFound ProblemDetails
-
-func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
-
-type SiteOAuthDescribeUnprocessableEntity ProblemDetails
-
-func (*SiteOAuthDescribeUnprocessableEntity) siteOAuthDescribeRes() {}
-
 // An optional consent in effect, with the User's current answer to it (ADR 0062).
 // Ref: #/components/schemas/SiteOptionalConsent
 type SiteOptionalConsent struct {
@@ -21611,8 +19782,6 @@ func (s *SiteOptionalConsent) SetDecision(val OptSiteOptionalConsentDecision) {
 func (s *SiteOptionalConsent) SetDecidedAt(val OptTimestamp) {
 	s.DecidedAt = val
 }
-
-func (*SiteOptionalConsent) siteOptionalConsentsSetRes() {}
 
 // A change of the User's answer to an optional consent.
 // Ref: #/components/schemas/SiteOptionalConsentChange
@@ -21710,18 +19879,6 @@ func (s *SiteOptionalConsentList) SetItems(val []SiteOptionalConsent) {
 	s.Items = val
 }
 
-type SiteOptionalConsentsSetBadRequest ProblemDetails
-
-func (*SiteOptionalConsentsSetBadRequest) siteOptionalConsentsSetRes() {}
-
-type SiteOptionalConsentsSetNotFound ProblemDetails
-
-func (*SiteOptionalConsentsSetNotFound) siteOptionalConsentsSetRes() {}
-
-type SiteOptionalConsentsSetUnprocessableEntity ProblemDetails
-
-func (*SiteOptionalConsentsSetUnprocessableEntity) siteOptionalConsentsSetRes() {}
-
 // Orders completed in a period in one currency other than the Reporting currency.
 // Ref: #/components/schemas/SiteOrdersInCurrency
 type SiteOrdersInCurrency struct {
@@ -21804,9 +19961,6 @@ func (s *SitePasskey) SetCreatedAt(val Timestamp) {
 func (s *SitePasskey) SetLastUsedAt(val OptTimestamp) {
 	s.LastUsedAt = val
 }
-
-func (*SitePasskey) sitePasskeysFinishRegistrationRes() {}
-func (*SitePasskey) sitePasskeysRenameRes()             {}
 
 // The browser's answer to the request options: the W3C `AuthenticationResponseJSON` dictionary
 // (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
@@ -22050,8 +20204,6 @@ func (s *SitePasskeyCheckBegunHeaders) SetSetCookie(val string) {
 func (s *SitePasskeyCheckBegunHeaders) SetResponse(val SitePasskeyCheckBegun) {
 	s.Response = val
 }
-
-func (*SitePasskeyCheckBegunHeaders) sitePasskeysBeginCheckRes() {}
 
 // The browser's response to a Passkey check ceremony.
 // Ref: #/components/schemas/SitePasskeyCheckInput
@@ -22455,16 +20607,6 @@ func (s *SitePasskeyLoginBegunHeaders) SetResponse(val SitePasskeyLoginBegun) {
 	s.Response = val
 }
 
-func (*SitePasskeyLoginBegunHeaders) sitePasskeyLoginBeginRes() {}
-
-type SitePasskeyLoginFinishBadRequest ProblemDetails
-
-func (*SitePasskeyLoginFinishBadRequest) sitePasskeyLoginFinishRes() {}
-
-type SitePasskeyLoginFinishUnauthorized ProblemDetails
-
-func (*SitePasskeyLoginFinishUnauthorized) sitePasskeyLoginFinishRes() {}
-
 // The browser's response to a login ceremony.
 // Ref: #/components/schemas/SitePasskeyLoginInput
 type SitePasskeyLoginInput struct {
@@ -22585,8 +20727,6 @@ func (s *SitePasskeyRegistrationBegunHeaders) SetSetCookie(val string) {
 func (s *SitePasskeyRegistrationBegunHeaders) SetResponse(val SitePasskeyRegistrationBegun) {
 	s.Response = val
 }
-
-func (*SitePasskeyRegistrationBegunHeaders) sitePasskeysBeginRegistrationRes() {}
 
 // The browser's response to a registration ceremony, with the proof of identity and a name.
 // Ref: #/components/schemas/SitePasskeyRegistrationInput
@@ -22862,14 +21002,6 @@ func (s *SitePasskeyUserEntity) SetDisplayName(val string) {
 	s.DisplayName = val
 }
 
-type SitePasskeysFinishCheckBadRequest ProblemDetails
-
-func (*SitePasskeysFinishCheckBadRequest) sitePasskeysFinishCheckRes() {}
-
-type SitePasskeysFinishCheckForbidden ProblemDetails
-
-func (*SitePasskeysFinishCheckForbidden) sitePasskeysFinishCheckRes() {}
-
 // SitePasskeysFinishCheckNoContent is response for SitePasskeysFinishCheck operation.
 type SitePasskeysFinishCheckNoContent struct {
 	SetCookie string
@@ -22885,40 +21017,6 @@ func (s *SitePasskeysFinishCheckNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-func (*SitePasskeysFinishCheckNoContent) sitePasskeysFinishCheckRes() {}
-
-type SitePasskeysFinishCheckNotFound ProblemDetails
-
-func (*SitePasskeysFinishCheckNotFound) sitePasskeysFinishCheckRes() {}
-
-type SitePasskeysFinishRegistrationBadRequest ProblemDetails
-
-func (*SitePasskeysFinishRegistrationBadRequest) sitePasskeysFinishRegistrationRes() {}
-
-type SitePasskeysFinishRegistrationForbidden ProblemDetails
-
-func (*SitePasskeysFinishRegistrationForbidden) sitePasskeysFinishRegistrationRes() {}
-
-type SitePasskeysFinishRegistrationNotFound ProblemDetails
-
-func (*SitePasskeysFinishRegistrationNotFound) sitePasskeysFinishRegistrationRes() {}
-
-type SitePasskeysFinishRegistrationUnprocessableEntity ProblemDetails
-
-func (*SitePasskeysFinishRegistrationUnprocessableEntity) sitePasskeysFinishRegistrationRes() {}
-
-type SitePasskeysRemoveBadRequest ProblemDetails
-
-func (*SitePasskeysRemoveBadRequest) sitePasskeysRemoveRes() {}
-
-type SitePasskeysRemoveConflict ProblemDetails
-
-func (*SitePasskeysRemoveConflict) sitePasskeysRemoveRes() {}
-
-type SitePasskeysRemoveForbidden ProblemDetails
-
-func (*SitePasskeysRemoveForbidden) sitePasskeysRemoveRes() {}
-
 // SitePasskeysRemoveNoContent is response for SitePasskeysRemove operation.
 type SitePasskeysRemoveNoContent struct {
 	SetCookie string
@@ -22933,24 +21031,6 @@ func (s *SitePasskeysRemoveNoContent) GetSetCookie() string {
 func (s *SitePasskeysRemoveNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-func (*SitePasskeysRemoveNoContent) sitePasskeysRemoveRes() {}
-
-type SitePasskeysRemoveNotFound ProblemDetails
-
-func (*SitePasskeysRemoveNotFound) sitePasskeysRemoveRes() {}
-
-type SitePasskeysRenameBadRequest ProblemDetails
-
-func (*SitePasskeysRenameBadRequest) sitePasskeysRenameRes() {}
-
-type SitePasskeysRenameNotFound ProblemDetails
-
-func (*SitePasskeysRenameNotFound) sitePasskeysRenameRes() {}
-
-type SitePasskeysRenameUnprocessableEntity ProblemDetails
-
-func (*SitePasskeysRenameUnprocessableEntity) sitePasskeysRenameRes() {}
 
 // A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved, for the
 // screen that asks the items. No User exists yet.
@@ -22993,8 +21073,6 @@ func (s *SitePendingSignup) SetEmail(val EmailAddress) {
 func (s *SitePendingSignup) SetName(val string) {
 	s.Name = val
 }
-
-func (*SitePendingSignup) siteAuthSigninPendingRes() {}
 
 // A Personal token: a User's own bearer credential for the external API in this Workspace, for the
 // scripts and tools they run (ADR 0061: a Connection without the application). It belongs to that
@@ -23113,58 +21191,8 @@ func (s *SitePersonalTokenResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type SitePersonalTokensCreateBadRequest ProblemDetails
-
-func (*SitePersonalTokensCreateBadRequest) sitePersonalTokensCreateRes() {}
-
-type SitePersonalTokensCreateForbidden ProblemDetails
-
-func (*SitePersonalTokensCreateForbidden) sitePersonalTokensCreateRes() {}
-
-type SitePersonalTokensCreateNotFound ProblemDetails
-
-func (*SitePersonalTokensCreateNotFound) sitePersonalTokensCreateRes() {}
-
-type SitePersonalTokensCreateUnprocessableEntity ProblemDetails
-
-func (*SitePersonalTokensCreateUnprocessableEntity) sitePersonalTokensCreateRes() {}
-
-type SitePersonalTokensDeleteBadRequest ProblemDetails
-
-func (*SitePersonalTokensDeleteBadRequest) sitePersonalTokensDeleteRes() {}
-
 // SitePersonalTokensDeleteNoContent is response for SitePersonalTokensDelete operation.
 type SitePersonalTokensDeleteNoContent struct{}
-
-func (*SitePersonalTokensDeleteNoContent) sitePersonalTokensDeleteRes() {}
-
-type SitePersonalTokensDeleteNotFound ProblemDetails
-
-func (*SitePersonalTokensDeleteNotFound) sitePersonalTokensDeleteRes() {}
-
-type SitePersonalTokensGrantableScopesBadRequest ProblemDetails
-
-func (*SitePersonalTokensGrantableScopesBadRequest) sitePersonalTokensGrantableScopesRes() {}
-
-type SitePersonalTokensGrantableScopesNotFound ProblemDetails
-
-func (*SitePersonalTokensGrantableScopesNotFound) sitePersonalTokensGrantableScopesRes() {}
-
-type SitePersonalTokensGrantableScopesOKApplicationJSON []PersonalScope
-
-func (*SitePersonalTokensGrantableScopesOKApplicationJSON) sitePersonalTokensGrantableScopesRes() {}
-
-type SitePersonalTokensListBadRequest ProblemDetails
-
-func (*SitePersonalTokensListBadRequest) sitePersonalTokensListRes() {}
-
-type SitePersonalTokensListNotFound ProblemDetails
-
-func (*SitePersonalTokensListNotFound) sitePersonalTokensListRes() {}
-
-type SitePersonalTokensListOKApplicationJSON []SitePersonalTokenResource
-
-func (*SitePersonalTokensListOKApplicationJSON) sitePersonalTokensListRes() {}
 
 // A Preset the Instance offers.
 // Ref: #/components/schemas/SitePresetResource
@@ -23280,8 +21308,6 @@ func (s *SitePreviewSegmentResult) SetCount(val int32) {
 func (s *SitePreviewSegmentResult) SetRecipients(val OptInt32) {
 	s.Recipients = val
 }
-
-func (*SitePreviewSegmentResult) siteSegmentsPreviewRes() {}
 
 // Where an effective Provider limit comes from.
 // Ref: #/components/schemas/SiteProviderLimitSource
@@ -23472,56 +21498,14 @@ func (s *SiteProviderLimitWarning) UnmarshalText(data []byte) error {
 	}
 }
 
-type SitePublicConfirmationsPerformBadRequest ProblemDetails
-
-func (*SitePublicConfirmationsPerformBadRequest) sitePublicConfirmationsPerformRes() {}
-
-type SitePublicConfirmationsPerformGone ProblemDetails
-
-func (*SitePublicConfirmationsPerformGone) sitePublicConfirmationsPerformRes() {}
-
 // SitePublicConfirmationsPerformNoContent is response for SitePublicConfirmationsPerform operation.
 type SitePublicConfirmationsPerformNoContent struct{}
-
-func (*SitePublicConfirmationsPerformNoContent) sitePublicConfirmationsPerformRes() {}
-
-type SitePublicInvitationsAcceptBadRequest ProblemDetails
-
-func (*SitePublicInvitationsAcceptBadRequest) sitePublicInvitationsAcceptRes() {}
-
-type SitePublicInvitationsAcceptForbidden ProblemDetails
-
-func (*SitePublicInvitationsAcceptForbidden) sitePublicInvitationsAcceptRes() {}
-
-type SitePublicInvitationsAcceptNotFound ProblemDetails
-
-func (*SitePublicInvitationsAcceptNotFound) sitePublicInvitationsAcceptRes() {}
 
 // SitePublicInvitationsAcceptOK is response for SitePublicInvitationsAccept operation.
 type SitePublicInvitationsAcceptOK struct{}
 
-func (*SitePublicInvitationsAcceptOK) sitePublicInvitationsAcceptRes() {}
-
-type SitePublicInvitationsAcceptUnauthorized ProblemDetails
-
-func (*SitePublicInvitationsAcceptUnauthorized) sitePublicInvitationsAcceptRes() {}
-
-type SitePublicInvitationsAcceptUnprocessableEntity ProblemDetails
-
-func (*SitePublicInvitationsAcceptUnprocessableEntity) sitePublicInvitationsAcceptRes() {}
-
-type SitePublicInvitationsLookupBadRequest ProblemDetails
-
-func (*SitePublicInvitationsLookupBadRequest) sitePublicInvitationsLookupRes() {}
-
-type SitePublicInvitationsLookupNotFound ProblemDetails
-
-func (*SitePublicInvitationsLookupNotFound) sitePublicInvitationsLookupRes() {}
-
 // SitePublicUnsubscribesPerformNoContent is response for SitePublicUnsubscribesPerform operation.
 type SitePublicUnsubscribesPerformNoContent struct{}
-
-func (*SitePublicUnsubscribesPerformNoContent) sitePublicUnsubscribesPerformRes() {}
 
 // A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is, with no
 // display floor: the rate is null only when the denominator is zero.
@@ -23607,9 +21591,6 @@ func (s *SiteRecoveryCodesHeaders) SetSetCookie(val string) {
 func (s *SiteRecoveryCodesHeaders) SetResponse(val SiteRecoveryCodes) {
 	s.Response = val
 }
-
-func (*SiteRecoveryCodesHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
-func (*SiteRecoveryCodesHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 
 // Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery
 // codes.
@@ -23748,9 +21729,6 @@ func (s *SiteRevenueSettingsResource) SetReportingCurrency(val NilCurrencyCode) 
 func (s *SiteRevenueSettingsResource) SetAttributionWindowDays(val AttributionWindowDays) {
 	s.AttributionWindowDays = val
 }
-
-func (*SiteRevenueSettingsResource) siteWorkspacesGetRevenueSettingsRes()    {}
-func (*SiteRevenueSettingsResource) siteWorkspacesUpdateRevenueSettingsRes() {}
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
 // name, http actions the call.
@@ -24165,8 +22143,6 @@ func (s *SiteRuleDryRunResource) SetActions(val []SiteRuleDryRunAction) {
 	s.Actions = val
 }
 
-func (*SiteRuleDryRunResource) siteRulesDryRunRes() {}
-
 // One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
 // Ref: #/components/schemas/SiteRuleFiringResource
 type SiteRuleFiringResource struct {
@@ -24268,14 +22244,6 @@ func (s *SiteRuleFiringResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type SiteRuleFiringsListBadRequest ProblemDetails
-
-func (*SiteRuleFiringsListBadRequest) siteRuleFiringsListRes() {}
-
-type SiteRuleFiringsListNotFound ProblemDetails
-
-func (*SiteRuleFiringsListNotFound) siteRuleFiringsListRes() {}
-
 // Paginated response.
 type SiteRuleFiringsListOK struct {
 	// List of items.
@@ -24339,8 +22307,6 @@ func (s *SiteRuleFiringsListOK) SetTotalItems(val int32) {
 func (s *SiteRuleFiringsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteRuleFiringsListOK) siteRuleFiringsListRes() {}
 
 // Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned
 // (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive.
@@ -24457,13 +22423,6 @@ func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteRuleResource) siteRulesCreateRes()     {}
-func (*SiteRuleResource) siteRulesDeactivateRes() {}
-func (*SiteRuleResource) siteRulesGetRes()        {}
-func (*SiteRuleResource) siteRulesPublishRes()    {}
-func (*SiteRuleResource) siteRulesRevertRes()     {}
-func (*SiteRuleResource) siteRulesUpdateRes()     {}
-
 // Rule lifecycle status: active reacts to Events, inactive acts on nothing.
 // Ref: #/components/schemas/SiteRuleStatus
 type SiteRuleStatus string
@@ -24560,62 +22519,8 @@ func (s *SiteRuleVersion) SetActions(val []SiteRuleAction) {
 	s.Actions = val
 }
 
-type SiteRulesCreateBadRequest ProblemDetails
-
-func (*SiteRulesCreateBadRequest) siteRulesCreateRes() {}
-
-type SiteRulesCreateNotFound ProblemDetails
-
-func (*SiteRulesCreateNotFound) siteRulesCreateRes() {}
-
-type SiteRulesCreateUnprocessableEntity ProblemDetails
-
-func (*SiteRulesCreateUnprocessableEntity) siteRulesCreateRes() {}
-
-type SiteRulesDeactivateBadRequest ProblemDetails
-
-func (*SiteRulesDeactivateBadRequest) siteRulesDeactivateRes() {}
-
-type SiteRulesDeactivateNotFound ProblemDetails
-
-func (*SiteRulesDeactivateNotFound) siteRulesDeactivateRes() {}
-
-type SiteRulesDeleteBadRequest ProblemDetails
-
-func (*SiteRulesDeleteBadRequest) siteRulesDeleteRes() {}
-
 // SiteRulesDeleteNoContent is response for SiteRulesDelete operation.
 type SiteRulesDeleteNoContent struct{}
-
-func (*SiteRulesDeleteNoContent) siteRulesDeleteRes() {}
-
-type SiteRulesDeleteNotFound ProblemDetails
-
-func (*SiteRulesDeleteNotFound) siteRulesDeleteRes() {}
-
-type SiteRulesDryRunBadRequest ProblemDetails
-
-func (*SiteRulesDryRunBadRequest) siteRulesDryRunRes() {}
-
-type SiteRulesDryRunNotFound ProblemDetails
-
-func (*SiteRulesDryRunNotFound) siteRulesDryRunRes() {}
-
-type SiteRulesGetBadRequest ProblemDetails
-
-func (*SiteRulesGetBadRequest) siteRulesGetRes() {}
-
-type SiteRulesGetNotFound ProblemDetails
-
-func (*SiteRulesGetNotFound) siteRulesGetRes() {}
-
-type SiteRulesListBadRequest ProblemDetails
-
-func (*SiteRulesListBadRequest) siteRulesListRes() {}
-
-type SiteRulesListNotFound ProblemDetails
-
-func (*SiteRulesListNotFound) siteRulesListRes() {}
 
 // Paginated response.
 type SiteRulesListOK struct {
@@ -24680,48 +22585,6 @@ func (s *SiteRulesListOK) SetTotalItems(val int32) {
 func (s *SiteRulesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteRulesListOK) siteRulesListRes() {}
-
-type SiteRulesListUnprocessableEntity ProblemDetails
-
-func (*SiteRulesListUnprocessableEntity) siteRulesListRes() {}
-
-type SiteRulesPublishBadRequest ProblemDetails
-
-func (*SiteRulesPublishBadRequest) siteRulesPublishRes() {}
-
-type SiteRulesPublishNotFound ProblemDetails
-
-func (*SiteRulesPublishNotFound) siteRulesPublishRes() {}
-
-type SiteRulesPublishUnprocessableEntity ProblemDetails
-
-func (*SiteRulesPublishUnprocessableEntity) siteRulesPublishRes() {}
-
-type SiteRulesRevertBadRequest ProblemDetails
-
-func (*SiteRulesRevertBadRequest) siteRulesRevertRes() {}
-
-type SiteRulesRevertNotFound ProblemDetails
-
-func (*SiteRulesRevertNotFound) siteRulesRevertRes() {}
-
-type SiteRulesRevertUnprocessableEntity ProblemDetails
-
-func (*SiteRulesRevertUnprocessableEntity) siteRulesRevertRes() {}
-
-type SiteRulesUpdateBadRequest ProblemDetails
-
-func (*SiteRulesUpdateBadRequest) siteRulesUpdateRes() {}
-
-type SiteRulesUpdateNotFound ProblemDetails
-
-func (*SiteRulesUpdateNotFound) siteRulesUpdateRes() {}
-
-type SiteRulesUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteRulesUpdateUnprocessableEntity) siteRulesUpdateRes() {}
 
 // Save the Brand kit: the first save creates it and the starter Templates, a later one replaces its
 // values.
@@ -24840,24 +22703,6 @@ func (s *SiteSaveBrandKitInput) SetFooterText(val string) {
 // SiteSchemaApplyMigrationsNoContent is response for SiteSchemaApplyMigrations operation.
 type SiteSchemaApplyMigrationsNoContent struct{}
 
-func (*SiteSchemaApplyMigrationsNoContent) siteSchemaApplyMigrationsRes() {}
-
-type SiteSecondFactorConfirmEnrollmentBadRequest ProblemDetails
-
-func (*SiteSecondFactorConfirmEnrollmentBadRequest) siteSecondFactorConfirmEnrollmentRes() {}
-
-type SiteSecondFactorConfirmEnrollmentConflict ProblemDetails
-
-func (*SiteSecondFactorConfirmEnrollmentConflict) siteSecondFactorConfirmEnrollmentRes() {}
-
-type SiteSecondFactorConfirmEnrollmentForbidden ProblemDetails
-
-func (*SiteSecondFactorConfirmEnrollmentForbidden) siteSecondFactorConfirmEnrollmentRes() {}
-
-type SiteSecondFactorConfirmEnrollmentUnprocessableEntity ProblemDetails
-
-func (*SiteSecondFactorConfirmEnrollmentUnprocessableEntity) siteSecondFactorConfirmEnrollmentRes() {}
-
 // Proof of the User's password (or a fresh provider login or Passkey check) and a code from the
 // authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorConfirmInput
@@ -24888,18 +22733,6 @@ func (s *SiteSecondFactorConfirmInput) SetCurrentPassword(val OptString) {
 func (s *SiteSecondFactorConfirmInput) SetCode(val string) {
 	s.Code = val
 }
-
-type SiteSecondFactorDisableBadRequest ProblemDetails
-
-func (*SiteSecondFactorDisableBadRequest) siteSecondFactorDisableRes() {}
-
-type SiteSecondFactorDisableConflict ProblemDetails
-
-func (*SiteSecondFactorDisableConflict) siteSecondFactorDisableRes() {}
-
-type SiteSecondFactorDisableForbidden ProblemDetails
-
-func (*SiteSecondFactorDisableForbidden) siteSecondFactorDisableRes() {}
 
 // Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the
 // Second factor.
@@ -24947,12 +22780,6 @@ func (s *SiteSecondFactorDisableNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-func (*SiteSecondFactorDisableNoContent) siteSecondFactorDisableRes() {}
-
-type SiteSecondFactorDisableUnprocessableEntity ProblemDetails
-
-func (*SiteSecondFactorDisableUnprocessableEntity) siteSecondFactorDisableRes() {}
-
 // A pending enrollment: the TOTP secret to add to an authenticator app.
 // Ref: #/components/schemas/SiteSecondFactorEnrollment
 type SiteSecondFactorEnrollment struct {
@@ -24993,35 +22820,6 @@ func (s *SiteSecondFactorEnrollment) SetOtpauthUri(val string) {
 func (s *SiteSecondFactorEnrollment) SetQrCode(val string) {
 	s.QrCode = val
 }
-
-func (*SiteSecondFactorEnrollment) siteSecondFactorStartEnrollmentRes() {}
-
-type SiteSecondFactorRegenerateRecoveryCodesBadRequest ProblemDetails
-
-func (*SiteSecondFactorRegenerateRecoveryCodesBadRequest) siteSecondFactorRegenerateRecoveryCodesRes() {
-}
-
-type SiteSecondFactorRegenerateRecoveryCodesConflict ProblemDetails
-
-func (*SiteSecondFactorRegenerateRecoveryCodesConflict) siteSecondFactorRegenerateRecoveryCodesRes() {
-}
-
-type SiteSecondFactorRegenerateRecoveryCodesForbidden ProblemDetails
-
-func (*SiteSecondFactorRegenerateRecoveryCodesForbidden) siteSecondFactorRegenerateRecoveryCodesRes() {
-}
-
-type SiteSecondFactorStartEnrollmentBadRequest ProblemDetails
-
-func (*SiteSecondFactorStartEnrollmentBadRequest) siteSecondFactorStartEnrollmentRes() {}
-
-type SiteSecondFactorStartEnrollmentConflict ProblemDetails
-
-func (*SiteSecondFactorStartEnrollmentConflict) siteSecondFactorStartEnrollmentRes() {}
-
-type SiteSecondFactorStartEnrollmentForbidden ProblemDetails
-
-func (*SiteSecondFactorStartEnrollmentForbidden) siteSecondFactorStartEnrollmentRes() {}
 
 // Proof of the User's password (or a fresh provider login or Passkey check), for starting an
 // enrollment.
@@ -25112,14 +22910,6 @@ func (s *SiteSecondFactorStatus) SetIdentityProofFresh(val bool) {
 	s.IdentityProofFresh = val
 }
 
-type SiteSegmentContactsListBadRequest ProblemDetails
-
-func (*SiteSegmentContactsListBadRequest) siteSegmentContactsListRes() {}
-
-type SiteSegmentContactsListNotFound ProblemDetails
-
-func (*SiteSegmentContactsListNotFound) siteSegmentContactsListRes() {}
-
 // Paginated response.
 type SiteSegmentContactsListOK struct {
 	// List of items.
@@ -25183,12 +22973,6 @@ func (s *SiteSegmentContactsListOK) SetTotalItems(val int32) {
 func (s *SiteSegmentContactsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteSegmentContactsListOK) siteSegmentContactsListRes() {}
-
-type SiteSegmentContactsListUnprocessableEntity ProblemDetails
-
-func (*SiteSegmentContactsListUnprocessableEntity) siteSegmentContactsListRes() {}
 
 // Segment resource used by the site UI.
 // Ref: #/components/schemas/SiteSegmentResource
@@ -25267,48 +23051,6 @@ func (s *SiteSegmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSegmentResource) siteSegmentsArchiveRes()   {}
-func (*SiteSegmentResource) siteSegmentsCreateRes()    {}
-func (*SiteSegmentResource) siteSegmentsGetRes()       {}
-func (*SiteSegmentResource) siteSegmentsUnarchiveRes() {}
-func (*SiteSegmentResource) siteSegmentsUpdateRes()    {}
-
-type SiteSegmentsArchiveBadRequest ProblemDetails
-
-func (*SiteSegmentsArchiveBadRequest) siteSegmentsArchiveRes() {}
-
-type SiteSegmentsArchiveNotFound ProblemDetails
-
-func (*SiteSegmentsArchiveNotFound) siteSegmentsArchiveRes() {}
-
-type SiteSegmentsCreateBadRequest ProblemDetails
-
-func (*SiteSegmentsCreateBadRequest) siteSegmentsCreateRes() {}
-
-type SiteSegmentsCreateNotFound ProblemDetails
-
-func (*SiteSegmentsCreateNotFound) siteSegmentsCreateRes() {}
-
-type SiteSegmentsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteSegmentsCreateUnprocessableEntity) siteSegmentsCreateRes() {}
-
-type SiteSegmentsGetBadRequest ProblemDetails
-
-func (*SiteSegmentsGetBadRequest) siteSegmentsGetRes() {}
-
-type SiteSegmentsGetNotFound ProblemDetails
-
-func (*SiteSegmentsGetNotFound) siteSegmentsGetRes() {}
-
-type SiteSegmentsListBadRequest ProblemDetails
-
-func (*SiteSegmentsListBadRequest) siteSegmentsListRes() {}
-
-type SiteSegmentsListNotFound ProblemDetails
-
-func (*SiteSegmentsListNotFound) siteSegmentsListRes() {}
-
 // Paginated response.
 type SiteSegmentsListOK struct {
 	// List of items.
@@ -25372,48 +23114,6 @@ func (s *SiteSegmentsListOK) SetTotalItems(val int32) {
 func (s *SiteSegmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteSegmentsListOK) siteSegmentsListRes() {}
-
-type SiteSegmentsListUnprocessableEntity ProblemDetails
-
-func (*SiteSegmentsListUnprocessableEntity) siteSegmentsListRes() {}
-
-type SiteSegmentsPreviewBadRequest ProblemDetails
-
-func (*SiteSegmentsPreviewBadRequest) siteSegmentsPreviewRes() {}
-
-type SiteSegmentsPreviewNotFound ProblemDetails
-
-func (*SiteSegmentsPreviewNotFound) siteSegmentsPreviewRes() {}
-
-type SiteSegmentsPreviewUnprocessableEntity ProblemDetails
-
-func (*SiteSegmentsPreviewUnprocessableEntity) siteSegmentsPreviewRes() {}
-
-type SiteSegmentsUnarchiveBadRequest ProblemDetails
-
-func (*SiteSegmentsUnarchiveBadRequest) siteSegmentsUnarchiveRes() {}
-
-type SiteSegmentsUnarchiveNotFound ProblemDetails
-
-func (*SiteSegmentsUnarchiveNotFound) siteSegmentsUnarchiveRes() {}
-
-type SiteSegmentsUpdateBadRequest ProblemDetails
-
-func (*SiteSegmentsUpdateBadRequest) siteSegmentsUpdateRes() {}
-
-type SiteSegmentsUpdateConflict ProblemDetails
-
-func (*SiteSegmentsUpdateConflict) siteSegmentsUpdateRes() {}
-
-type SiteSegmentsUpdateNotFound ProblemDetails
-
-func (*SiteSegmentsUpdateNotFound) siteSegmentsUpdateRes() {}
-
-type SiteSegmentsUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteSegmentsUpdateUnprocessableEntity) siteSegmentsUpdateRes() {}
 
 // The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
 // its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
@@ -25692,62 +23392,8 @@ func (s *SiteSendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSendingDomainResource) siteSendingDomainsCreateRes() {}
-func (*SiteSendingDomainResource) siteSendingDomainsGetRes()    {}
-func (*SiteSendingDomainResource) siteSendingDomainsVerifyRes() {}
-
-type SiteSendingDomainsCreateBadRequest ProblemDetails
-
-func (*SiteSendingDomainsCreateBadRequest) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsCreateConflict ProblemDetails
-
-func (*SiteSendingDomainsCreateConflict) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsCreateForbidden ProblemDetails
-
-func (*SiteSendingDomainsCreateForbidden) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsCreateNotFound ProblemDetails
-
-func (*SiteSendingDomainsCreateNotFound) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteSendingDomainsCreateUnprocessableEntity) siteSendingDomainsCreateRes() {}
-
-type SiteSendingDomainsDeleteBadRequest ProblemDetails
-
-func (*SiteSendingDomainsDeleteBadRequest) siteSendingDomainsDeleteRes() {}
-
-type SiteSendingDomainsDeleteForbidden ProblemDetails
-
-func (*SiteSendingDomainsDeleteForbidden) siteSendingDomainsDeleteRes() {}
-
 // SiteSendingDomainsDeleteNoContent is response for SiteSendingDomainsDelete operation.
 type SiteSendingDomainsDeleteNoContent struct{}
-
-func (*SiteSendingDomainsDeleteNoContent) siteSendingDomainsDeleteRes() {}
-
-type SiteSendingDomainsDeleteNotFound ProblemDetails
-
-func (*SiteSendingDomainsDeleteNotFound) siteSendingDomainsDeleteRes() {}
-
-type SiteSendingDomainsGetBadRequest ProblemDetails
-
-func (*SiteSendingDomainsGetBadRequest) siteSendingDomainsGetRes() {}
-
-type SiteSendingDomainsGetNotFound ProblemDetails
-
-func (*SiteSendingDomainsGetNotFound) siteSendingDomainsGetRes() {}
-
-type SiteSendingDomainsListBadRequest ProblemDetails
-
-func (*SiteSendingDomainsListBadRequest) siteSendingDomainsListRes() {}
-
-type SiteSendingDomainsListNotFound ProblemDetails
-
-func (*SiteSendingDomainsListNotFound) siteSendingDomainsListRes() {}
 
 // Paginated response.
 type SiteSendingDomainsListOK struct {
@@ -25812,24 +23458,6 @@ func (s *SiteSendingDomainsListOK) SetTotalItems(val int32) {
 func (s *SiteSendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteSendingDomainsListOK) siteSendingDomainsListRes() {}
-
-type SiteSendingDomainsListUnprocessableEntity ProblemDetails
-
-func (*SiteSendingDomainsListUnprocessableEntity) siteSendingDomainsListRes() {}
-
-type SiteSendingDomainsVerifyBadRequest ProblemDetails
-
-func (*SiteSendingDomainsVerifyBadRequest) siteSendingDomainsVerifyRes() {}
-
-type SiteSendingDomainsVerifyForbidden ProblemDetails
-
-func (*SiteSendingDomainsVerifyForbidden) siteSendingDomainsVerifyRes() {}
-
-type SiteSendingDomainsVerifyNotFound ProblemDetails
-
-func (*SiteSendingDomainsVerifyNotFound) siteSendingDomainsVerifyRes() {}
 
 // SES config without the secret access key.
 // Ref: #/components/schemas/SiteSesConfig
@@ -25955,14 +23583,6 @@ func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
 	s.Enabled = val
 }
 
-type SiteSetupChecklistGetBadRequest ProblemDetails
-
-func (*SiteSetupChecklistGetBadRequest) siteSetupChecklistGetRes() {}
-
-type SiteSetupChecklistGetNotFound ProblemDetails
-
-func (*SiteSetupChecklistGetNotFound) siteSetupChecklistGetRes() {}
-
 // The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read that
 // first finds every step done stamps the Workspace, which keeps it complete for good.
 // Ref: #/components/schemas/SiteSetupProgress
@@ -25991,8 +23611,6 @@ func (s *SiteSetupProgress) SetSteps(val SiteSetupSteps) {
 func (s *SiteSetupProgress) SetCompletedAt(val OptNilTimestamp) {
 	s.CompletedAt = val
 }
-
-func (*SiteSetupProgress) siteSetupChecklistGetRes() {}
 
 // Where one Setup checklist step stands, read off the Workspace's own data.
 // Ref: #/components/schemas/SiteSetupStepStatus
@@ -26745,54 +24363,8 @@ func (s *SiteSignupSurveyInput) SetHeardFromOther(val OptString) {
 	s.HeardFromOther = val
 }
 
-type SiteSignupSurveySubmitBadRequest ProblemDetails
-
-func (*SiteSignupSurveySubmitBadRequest) siteSignupSurveySubmitRes() {}
-
-type SiteSignupSurveySubmitConflict ProblemDetails
-
-func (*SiteSignupSurveySubmitConflict) siteSignupSurveySubmitRes() {}
-
 // SiteSignupSurveySubmitNoContent is response for SiteSignupSurveySubmit operation.
 type SiteSignupSurveySubmitNoContent struct{}
-
-func (*SiteSignupSurveySubmitNoContent) siteSignupSurveySubmitRes() {}
-
-type SiteSignupSurveySubmitUnprocessableEntity ProblemDetails
-
-func (*SiteSignupSurveySubmitUnprocessableEntity) siteSignupSurveySubmitRes() {}
-
-type SiteSmsConsentsConfirmBadRequest ProblemDetails
-
-func (*SiteSmsConsentsConfirmBadRequest) siteSmsConsentsConfirmRes() {}
-
-type SiteSmsConsentsConfirmNotFound ProblemDetails
-
-func (*SiteSmsConsentsConfirmNotFound) siteSmsConsentsConfirmRes() {}
-
-type SiteSmsConsentsConfirmUnprocessableEntity ProblemDetails
-
-func (*SiteSmsConsentsConfirmUnprocessableEntity) siteSmsConsentsConfirmRes() {}
-
-type SiteSmsConsentsGetBadRequest ProblemDetails
-
-func (*SiteSmsConsentsGetBadRequest) siteSmsConsentsGetRes() {}
-
-type SiteSmsConsentsGetNotFound ProblemDetails
-
-func (*SiteSmsConsentsGetNotFound) siteSmsConsentsGetRes() {}
-
-type SiteSmsConsentsOptOutBadRequest ProblemDetails
-
-func (*SiteSmsConsentsOptOutBadRequest) siteSmsConsentsOptOutRes() {}
-
-type SiteSmsConsentsOptOutNotFound ProblemDetails
-
-func (*SiteSmsConsentsOptOutNotFound) siteSmsConsentsOptOutRes() {}
-
-type SiteSmsConsentsOptOutUnprocessableEntity ProblemDetails
-
-func (*SiteSmsConsentsOptOutUnprocessableEntity) siteSmsConsentsOptOutRes() {}
 
 // The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2).
 // Ref: #/components/schemas/SiteSmsLengthLimit
@@ -26926,35 +24498,6 @@ func (s *SiteSmtpConfigKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
-}
-
-// A Workspace the User is the only Owner of, which blocks User deletion.
-// Ref: #/components/schemas/SiteSoleOwnedWorkspace
-type SiteSoleOwnedWorkspace struct {
-	// The Workspace id.
-	ID WorkspaceId `json:"id"`
-	// Display name.
-	Name string `json:"name"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteSoleOwnedWorkspace) GetID() WorkspaceId {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *SiteSoleOwnedWorkspace) GetName() string {
-	return s.Name
-}
-
-// SetID sets the value of ID.
-func (s *SiteSoleOwnedWorkspace) SetID(val WorkspaceId) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteSoleOwnedWorkspace) SetName(val string) {
-	s.Name = val
 }
 
 // The channel a suppression applies to.
@@ -27147,48 +24690,8 @@ func (s *SiteSuppressionResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteSuppressionResource) siteSuppressionsCreateRes() {}
-
-type SiteSuppressionsCreateBadRequest ProblemDetails
-
-func (*SiteSuppressionsCreateBadRequest) siteSuppressionsCreateRes() {}
-
-type SiteSuppressionsCreateForbidden ProblemDetails
-
-func (*SiteSuppressionsCreateForbidden) siteSuppressionsCreateRes() {}
-
-type SiteSuppressionsCreateNotFound ProblemDetails
-
-func (*SiteSuppressionsCreateNotFound) siteSuppressionsCreateRes() {}
-
-type SiteSuppressionsCreateUnprocessableEntity ProblemDetails
-
-func (*SiteSuppressionsCreateUnprocessableEntity) siteSuppressionsCreateRes() {}
-
-type SiteSuppressionsDeleteBadRequest ProblemDetails
-
-func (*SiteSuppressionsDeleteBadRequest) siteSuppressionsDeleteRes() {}
-
-type SiteSuppressionsDeleteForbidden ProblemDetails
-
-func (*SiteSuppressionsDeleteForbidden) siteSuppressionsDeleteRes() {}
-
 // SiteSuppressionsDeleteNoContent is response for SiteSuppressionsDelete operation.
 type SiteSuppressionsDeleteNoContent struct{}
-
-func (*SiteSuppressionsDeleteNoContent) siteSuppressionsDeleteRes() {}
-
-type SiteSuppressionsDeleteNotFound ProblemDetails
-
-func (*SiteSuppressionsDeleteNotFound) siteSuppressionsDeleteRes() {}
-
-type SiteSuppressionsListBadRequest ProblemDetails
-
-func (*SiteSuppressionsListBadRequest) siteSuppressionsListRes() {}
-
-type SiteSuppressionsListNotFound ProblemDetails
-
-func (*SiteSuppressionsListNotFound) siteSuppressionsListRes() {}
 
 // Paginated response.
 type SiteSuppressionsListOK struct {
@@ -27254,12 +24757,6 @@ func (s *SiteSuppressionsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteSuppressionsListOK) siteSuppressionsListRes() {}
-
-type SiteSuppressionsListUnprocessableEntity ProblemDetails
-
-func (*SiteSuppressionsListUnprocessableEntity) siteSuppressionsListRes() {}
-
 // A Tag: a presence-only, workspace-scoped label on Contacts (auto-created on first use).
 // Ref: #/components/schemas/SiteTagResource
 type SiteTagResource struct {
@@ -27301,44 +24798,8 @@ func (s *SiteTagResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteTagResource) siteTagsApplyRes() {}
-
-type SiteTagsApplyBadRequest ProblemDetails
-
-func (*SiteTagsApplyBadRequest) siteTagsApplyRes() {}
-
-type SiteTagsApplyNotFound ProblemDetails
-
-func (*SiteTagsApplyNotFound) siteTagsApplyRes() {}
-
-type SiteTagsApplyUnprocessableEntity ProblemDetails
-
-func (*SiteTagsApplyUnprocessableEntity) siteTagsApplyRes() {}
-
-type SiteTagsDeleteBadRequest ProblemDetails
-
-func (*SiteTagsDeleteBadRequest) siteTagsDeleteRes() {}
-
 // SiteTagsDeleteNoContent is response for SiteTagsDelete operation.
 type SiteTagsDeleteNoContent struct{}
-
-func (*SiteTagsDeleteNoContent) siteTagsDeleteRes() {}
-
-type SiteTagsDeleteNotFound ProblemDetails
-
-func (*SiteTagsDeleteNotFound) siteTagsDeleteRes() {}
-
-type SiteTagsListBadRequest ProblemDetails
-
-func (*SiteTagsListBadRequest) siteTagsListRes() {}
-
-type SiteTagsListForContactBadRequest ProblemDetails
-
-func (*SiteTagsListForContactBadRequest) siteTagsListForContactRes() {}
-
-type SiteTagsListForContactNotFound ProblemDetails
-
-func (*SiteTagsListForContactNotFound) siteTagsListForContactRes() {}
 
 // Paginated response.
 type SiteTagsListForContactOK struct {
@@ -27404,16 +24865,6 @@ func (s *SiteTagsListForContactOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteTagsListForContactOK) siteTagsListForContactRes() {}
-
-type SiteTagsListForContactUnprocessableEntity ProblemDetails
-
-func (*SiteTagsListForContactUnprocessableEntity) siteTagsListForContactRes() {}
-
-type SiteTagsListNotFound ProblemDetails
-
-func (*SiteTagsListNotFound) siteTagsListRes() {}
-
 // Paginated response.
 type SiteTagsListOK struct {
 	// List of items.
@@ -27478,24 +24929,8 @@ func (s *SiteTagsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteTagsListOK) siteTagsListRes() {}
-
-type SiteTagsListUnprocessableEntity ProblemDetails
-
-func (*SiteTagsListUnprocessableEntity) siteTagsListRes() {}
-
-type SiteTagsRemoveBadRequest ProblemDetails
-
-func (*SiteTagsRemoveBadRequest) siteTagsRemoveRes() {}
-
 // SiteTagsRemoveNoContent is response for SiteTagsRemove operation.
 type SiteTagsRemoveNoContent struct{}
-
-func (*SiteTagsRemoveNoContent) siteTagsRemoveRes() {}
-
-type SiteTagsRemoveNotFound ProblemDetails
-
-func (*SiteTagsRemoveNotFound) siteTagsRemoveRes() {}
 
 // A Telegram bot without its token: who it is, as Telegram said when it was connected.
 // Ref: #/components/schemas/SiteTelegramConfig
@@ -27571,70 +25006,8 @@ func (s *SiteTelegramConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteTelegramIssueStartLinkBadRequest ProblemDetails
-
-func (*SiteTelegramIssueStartLinkBadRequest) siteTelegramIssueStartLinkRes() {}
-
-type SiteTelegramIssueStartLinkNotFound ProblemDetails
-
-func (*SiteTelegramIssueStartLinkNotFound) siteTelegramIssueStartLinkRes() {}
-
-type SiteTelegramIssueStartLinkUnprocessableEntity ProblemDetails
-
-func (*SiteTelegramIssueStartLinkUnprocessableEntity) siteTelegramIssueStartLinkRes() {}
-
-type SiteTelegramListBindingsBadRequest ProblemDetails
-
-func (*SiteTelegramListBindingsBadRequest) siteTelegramListBindingsRes() {}
-
-type SiteTelegramListBindingsNotFound ProblemDetails
-
-func (*SiteTelegramListBindingsNotFound) siteTelegramListBindingsRes() {}
-
-type SiteTelegramListBindingsOKApplicationJSON []SiteBindingResource
-
-func (*SiteTelegramListBindingsOKApplicationJSON) siteTelegramListBindingsRes() {}
-
-type SiteTemplatesCreateBadRequest ProblemDetails
-
-func (*SiteTemplatesCreateBadRequest) siteTemplatesCreateRes() {}
-
-type SiteTemplatesCreateNotFound ProblemDetails
-
-func (*SiteTemplatesCreateNotFound) siteTemplatesCreateRes() {}
-
-type SiteTemplatesCreateUnprocessableEntity ProblemDetails
-
-func (*SiteTemplatesCreateUnprocessableEntity) siteTemplatesCreateRes() {}
-
-type SiteTemplatesDeleteBadRequest ProblemDetails
-
-func (*SiteTemplatesDeleteBadRequest) siteTemplatesDeleteRes() {}
-
 // SiteTemplatesDeleteNoContent is response for SiteTemplatesDelete operation.
 type SiteTemplatesDeleteNoContent struct{}
-
-func (*SiteTemplatesDeleteNoContent) siteTemplatesDeleteRes() {}
-
-type SiteTemplatesDeleteNotFound ProblemDetails
-
-func (*SiteTemplatesDeleteNotFound) siteTemplatesDeleteRes() {}
-
-type SiteTemplatesGetBadRequest ProblemDetails
-
-func (*SiteTemplatesGetBadRequest) siteTemplatesGetRes() {}
-
-type SiteTemplatesGetNotFound ProblemDetails
-
-func (*SiteTemplatesGetNotFound) siteTemplatesGetRes() {}
-
-type SiteTemplatesListBadRequest ProblemDetails
-
-func (*SiteTemplatesListBadRequest) siteTemplatesListRes() {}
-
-type SiteTemplatesListNotFound ProblemDetails
-
-func (*SiteTemplatesListNotFound) siteTemplatesListRes() {}
 
 // Paginated response.
 type SiteTemplatesListOK struct {
@@ -27700,24 +25073,6 @@ func (s *SiteTemplatesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*SiteTemplatesListOK) siteTemplatesListRes() {}
-
-type SiteTemplatesListUnprocessableEntity ProblemDetails
-
-func (*SiteTemplatesListUnprocessableEntity) siteTemplatesListRes() {}
-
-type SiteTemplatesUpdateBadRequest ProblemDetails
-
-func (*SiteTemplatesUpdateBadRequest) siteTemplatesUpdateRes() {}
-
-type SiteTemplatesUpdateNotFound ProblemDetails
-
-func (*SiteTemplatesUpdateNotFound) siteTemplatesUpdateRes() {}
-
-type SiteTemplatesUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteTemplatesUpdateUnprocessableEntity) siteTemplatesUpdateRes() {}
-
 // What a test send did: on email the address the preview went out from.
 // Ref: #/components/schemas/SiteTestSendBroadcastResult
 type SiteTestSendBroadcastResult struct {
@@ -27750,68 +25105,8 @@ func (s *SiteTestSendBroadcastResult) SetCaptured(val bool) {
 	s.Captured = val
 }
 
-func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
-
-type SiteTokensCreateBadRequest ProblemDetails
-
-func (*SiteTokensCreateBadRequest) siteTokensCreateRes() {}
-
-type SiteTokensCreateForbidden ProblemDetails
-
-func (*SiteTokensCreateForbidden) siteTokensCreateRes() {}
-
-type SiteTokensCreateNotFound ProblemDetails
-
-func (*SiteTokensCreateNotFound) siteTokensCreateRes() {}
-
-type SiteTokensCreateUnprocessableEntity ProblemDetails
-
-func (*SiteTokensCreateUnprocessableEntity) siteTokensCreateRes() {}
-
-type SiteTokensDeleteBadRequest ProblemDetails
-
-func (*SiteTokensDeleteBadRequest) siteTokensDeleteRes() {}
-
-type SiteTokensDeleteForbidden ProblemDetails
-
-func (*SiteTokensDeleteForbidden) siteTokensDeleteRes() {}
-
 // SiteTokensDeleteNoContent is response for SiteTokensDelete operation.
 type SiteTokensDeleteNoContent struct{}
-
-func (*SiteTokensDeleteNoContent) siteTokensDeleteRes() {}
-
-type SiteTokensDeleteNotFound ProblemDetails
-
-func (*SiteTokensDeleteNotFound) siteTokensDeleteRes() {}
-
-type SiteTokensListBadRequest ProblemDetails
-
-func (*SiteTokensListBadRequest) siteTokensListRes() {}
-
-type SiteTokensListNotFound ProblemDetails
-
-func (*SiteTokensListNotFound) siteTokensListRes() {}
-
-type SiteTokensListOKApplicationJSON []SiteApiTokenResource
-
-func (*SiteTokensListOKApplicationJSON) siteTokensListRes() {}
-
-type SiteTokensUpdateBadRequest ProblemDetails
-
-func (*SiteTokensUpdateBadRequest) siteTokensUpdateRes() {}
-
-type SiteTokensUpdateForbidden ProblemDetails
-
-func (*SiteTokensUpdateForbidden) siteTokensUpdateRes() {}
-
-type SiteTokensUpdateNotFound ProblemDetails
-
-func (*SiteTokensUpdateNotFound) siteTokensUpdateRes() {}
-
-type SiteTokensUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteTokensUpdateUnprocessableEntity) siteTokensUpdateRes() {}
 
 // A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and
 // the first-party tracker are served.
@@ -27951,9 +25246,6 @@ func (s *SiteTrackingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteTrackingDomainResource) siteTrackingDomainsSetRes()    {}
-func (*SiteTrackingDomainResource) siteTrackingDomainsVerifyRes() {}
-
 // What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
 // snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
 // the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
@@ -28006,62 +25298,8 @@ func (s *SiteTrackingDomainRole) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteTrackingDomainsListBadRequest ProblemDetails
-
-func (*SiteTrackingDomainsListBadRequest) siteTrackingDomainsListRes() {}
-
-type SiteTrackingDomainsListNotFound ProblemDetails
-
-func (*SiteTrackingDomainsListNotFound) siteTrackingDomainsListRes() {}
-
-type SiteTrackingDomainsListOKApplicationJSON []SiteTrackingDomainResource
-
-func (*SiteTrackingDomainsListOKApplicationJSON) siteTrackingDomainsListRes() {}
-
-type SiteTrackingDomainsRemoveBadRequest ProblemDetails
-
-func (*SiteTrackingDomainsRemoveBadRequest) siteTrackingDomainsRemoveRes() {}
-
-type SiteTrackingDomainsRemoveForbidden ProblemDetails
-
-func (*SiteTrackingDomainsRemoveForbidden) siteTrackingDomainsRemoveRes() {}
-
 // SiteTrackingDomainsRemoveNoContent is response for SiteTrackingDomainsRemove operation.
 type SiteTrackingDomainsRemoveNoContent struct{}
-
-func (*SiteTrackingDomainsRemoveNoContent) siteTrackingDomainsRemoveRes() {}
-
-type SiteTrackingDomainsRemoveNotFound ProblemDetails
-
-func (*SiteTrackingDomainsRemoveNotFound) siteTrackingDomainsRemoveRes() {}
-
-type SiteTrackingDomainsSetBadRequest ProblemDetails
-
-func (*SiteTrackingDomainsSetBadRequest) siteTrackingDomainsSetRes() {}
-
-type SiteTrackingDomainsSetForbidden ProblemDetails
-
-func (*SiteTrackingDomainsSetForbidden) siteTrackingDomainsSetRes() {}
-
-type SiteTrackingDomainsSetNotFound ProblemDetails
-
-func (*SiteTrackingDomainsSetNotFound) siteTrackingDomainsSetRes() {}
-
-type SiteTrackingDomainsSetUnprocessableEntity ProblemDetails
-
-func (*SiteTrackingDomainsSetUnprocessableEntity) siteTrackingDomainsSetRes() {}
-
-type SiteTrackingDomainsVerifyBadRequest ProblemDetails
-
-func (*SiteTrackingDomainsVerifyBadRequest) siteTrackingDomainsVerifyRes() {}
-
-type SiteTrackingDomainsVerifyForbidden ProblemDetails
-
-func (*SiteTrackingDomainsVerifyForbidden) siteTrackingDomainsVerifyRes() {}
-
-type SiteTrackingDomainsVerifyNotFound ProblemDetails
-
-func (*SiteTrackingDomainsVerifyNotFound) siteTrackingDomainsVerifyRes() {}
 
 // Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
@@ -28357,14 +25595,6 @@ func (s *SiteTransactionalEmailStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteTransactionalEmailsListBadRequest ProblemDetails
-
-func (*SiteTransactionalEmailsListBadRequest) siteTransactionalEmailsListRes() {}
-
-type SiteTransactionalEmailsListNotFound ProblemDetails
-
-func (*SiteTransactionalEmailsListNotFound) siteTransactionalEmailsListRes() {}
-
 // Paginated response.
 type SiteTransactionalEmailsListOK struct {
 	// List of items.
@@ -28428,12 +25658,6 @@ func (s *SiteTransactionalEmailsListOK) SetTotalItems(val int32) {
 func (s *SiteTransactionalEmailsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteTransactionalEmailsListOK) siteTransactionalEmailsListRes() {}
-
-type SiteTransactionalEmailsListUnprocessableEntity ProblemDetails
-
-func (*SiteTransactionalEmailsListUnprocessableEntity) siteTransactionalEmailsListRes() {}
 
 // A Twilio account without its secret.
 // Ref: #/components/schemas/SiteTwilioConfig
@@ -29050,26 +26274,8 @@ func (s *SiteUpdateWorkspaceInput) SetPostalAddress(val OptString) {
 	s.PostalAddress = val
 }
 
-type SiteUserAcceptPendingBadRequest ProblemDetails
-
-func (*SiteUserAcceptPendingBadRequest) siteUserAcceptPendingRes() {}
-
-type SiteUserAcceptPendingUnprocessableEntity ProblemDetails
-
-func (*SiteUserAcceptPendingUnprocessableEntity) siteUserAcceptPendingRes() {}
-
-type SiteUserDeleteUserBadRequest ProblemDetails
-
-func (*SiteUserDeleteUserBadRequest) siteUserDeleteUserRes() {}
-
-type SiteUserDeleteUserForbidden ProblemDetails
-
-func (*SiteUserDeleteUserForbidden) siteUserDeleteUserRes() {}
-
 // SiteUserDeleteUserLinkAccepted is response for SiteUserDeleteUserLink operation.
 type SiteUserDeleteUserLinkAccepted struct{}
-
-func (*SiteUserDeleteUserLinkAccepted) siteUserDeleteUserLinkRes() {}
 
 // SiteUserDeleteUserNoContent is response for SiteUserDeleteUser operation.
 type SiteUserDeleteUserNoContent struct {
@@ -29086,24 +26292,8 @@ func (s *SiteUserDeleteUserNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-func (*SiteUserDeleteUserNoContent) siteUserDeleteUserRes() {}
-
 // SiteUserEmailChangeAccepted is response for SiteUserEmailChange operation.
 type SiteUserEmailChangeAccepted struct{}
-
-func (*SiteUserEmailChangeAccepted) siteUserEmailChangeRes() {}
-
-type SiteUserEmailChangeBadRequest ProblemDetails
-
-func (*SiteUserEmailChangeBadRequest) siteUserEmailChangeRes() {}
-
-type SiteUserEmailChangeForbidden ProblemDetails
-
-func (*SiteUserEmailChangeForbidden) siteUserEmailChangeRes() {}
-
-type SiteUserEmailChangeUnprocessableEntity ProblemDetails
-
-func (*SiteUserEmailChangeUnprocessableEntity) siteUserEmailChangeRes() {}
 
 // The authenticated dashboard user.
 // Ref: #/components/schemas/SiteUserResource
@@ -29228,8 +26418,6 @@ func (s *SiteUserResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteUserResource) siteUserAcceptPendingRes() {}
-
 // SiteUserResourceHeaders wraps SiteUserResource with response headers.
 type SiteUserResourceHeaders struct {
 	SetCookie OptString
@@ -29256,8 +26444,6 @@ func (s *SiteUserResourceHeaders) SetResponse(val SiteUserResource) {
 	s.Response = val
 }
 
-func (*SiteUserResourceHeaders) siteUserUpdateMeRes() {}
-
 // SiteUserSignOutEverywhereNoContent is response for SiteUserSignOutEverywhere operation.
 type SiteUserSignOutEverywhereNoContent struct {
 	SetCookie string
@@ -29272,18 +26458,6 @@ func (s *SiteUserSignOutEverywhereNoContent) GetSetCookie() string {
 func (s *SiteUserSignOutEverywhereNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
-
-type SiteUserUpdateMeBadRequest ProblemDetails
-
-func (*SiteUserUpdateMeBadRequest) siteUserUpdateMeRes() {}
-
-type SiteUserUpdateMeForbidden ProblemDetails
-
-func (*SiteUserUpdateMeForbidden) siteUserUpdateMeRes() {}
-
-type SiteUserUpdateMeUnprocessableEntity ProblemDetails
-
-func (*SiteUserUpdateMeUnprocessableEntity) siteUserUpdateMeRes() {}
 
 // Prove an email address with the token sent to it.
 // Ref: #/components/schemas/SiteVerifyEmailInput
@@ -29357,8 +26531,6 @@ func (s *SiteVerifyEmailResultHeaders) SetSetCookie(val string) {
 func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
 	s.Response = val
 }
-
-func (*SiteVerifyEmailResultHeaders) siteAuthVerifyEmailRes() {}
 
 // Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
 // answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
@@ -29538,11 +26710,6 @@ func (s *SiteWebhookEndpointResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteWebhookEndpointResource) siteWebhooksCreateRes()           {}
-func (*SiteWebhookEndpointResource) siteWebhooksGetRes()              {}
-func (*SiteWebhookEndpointResource) siteWebhooksRegenerateSecretRes() {}
-func (*SiteWebhookEndpointResource) siteWebhooksUpdateRes()           {}
-
 // Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
 // `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
 // answer, see `status`) and `network` (any other transport failure).
@@ -29708,64 +26875,8 @@ func (s *SiteWebhookTestResult) SetKind(val OptSiteWebhookErrorKind) {
 	s.Kind = val
 }
 
-func (*SiteWebhookTestResult) siteWebhooksTestRes() {}
-
-type SiteWebhooksCreateBadRequest ProblemDetails
-
-func (*SiteWebhooksCreateBadRequest) siteWebhooksCreateRes() {}
-
-type SiteWebhooksCreateForbidden ProblemDetails
-
-func (*SiteWebhooksCreateForbidden) siteWebhooksCreateRes() {}
-
-type SiteWebhooksCreateNotFound ProblemDetails
-
-func (*SiteWebhooksCreateNotFound) siteWebhooksCreateRes() {}
-
-type SiteWebhooksCreateUnprocessableEntity ProblemDetails
-
-func (*SiteWebhooksCreateUnprocessableEntity) siteWebhooksCreateRes() {}
-
-type SiteWebhooksDeleteBadRequest ProblemDetails
-
-func (*SiteWebhooksDeleteBadRequest) siteWebhooksDeleteRes() {}
-
-type SiteWebhooksDeleteForbidden ProblemDetails
-
-func (*SiteWebhooksDeleteForbidden) siteWebhooksDeleteRes() {}
-
 // SiteWebhooksDeleteNoContent is response for SiteWebhooksDelete operation.
 type SiteWebhooksDeleteNoContent struct{}
-
-func (*SiteWebhooksDeleteNoContent) siteWebhooksDeleteRes() {}
-
-type SiteWebhooksDeleteNotFound ProblemDetails
-
-func (*SiteWebhooksDeleteNotFound) siteWebhooksDeleteRes() {}
-
-type SiteWebhooksGetBadRequest ProblemDetails
-
-func (*SiteWebhooksGetBadRequest) siteWebhooksGetRes() {}
-
-type SiteWebhooksGetForbidden ProblemDetails
-
-func (*SiteWebhooksGetForbidden) siteWebhooksGetRes() {}
-
-type SiteWebhooksGetNotFound ProblemDetails
-
-func (*SiteWebhooksGetNotFound) siteWebhooksGetRes() {}
-
-type SiteWebhooksListBadRequest ProblemDetails
-
-func (*SiteWebhooksListBadRequest) siteWebhooksListRes() {}
-
-type SiteWebhooksListForbidden ProblemDetails
-
-func (*SiteWebhooksListForbidden) siteWebhooksListRes() {}
-
-type SiteWebhooksListNotFound ProblemDetails
-
-func (*SiteWebhooksListNotFound) siteWebhooksListRes() {}
 
 // Paginated response.
 type SiteWebhooksListOK struct {
@@ -29830,56 +26941,6 @@ func (s *SiteWebhooksListOK) SetTotalItems(val int32) {
 func (s *SiteWebhooksListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SiteWebhooksListOK) siteWebhooksListRes() {}
-
-type SiteWebhooksListUnprocessableEntity ProblemDetails
-
-func (*SiteWebhooksListUnprocessableEntity) siteWebhooksListRes() {}
-
-type SiteWebhooksRegenerateSecretBadRequest ProblemDetails
-
-func (*SiteWebhooksRegenerateSecretBadRequest) siteWebhooksRegenerateSecretRes() {}
-
-type SiteWebhooksRegenerateSecretForbidden ProblemDetails
-
-func (*SiteWebhooksRegenerateSecretForbidden) siteWebhooksRegenerateSecretRes() {}
-
-type SiteWebhooksRegenerateSecretNotFound ProblemDetails
-
-func (*SiteWebhooksRegenerateSecretNotFound) siteWebhooksRegenerateSecretRes() {}
-
-type SiteWebhooksTestBadRequest ProblemDetails
-
-func (*SiteWebhooksTestBadRequest) siteWebhooksTestRes() {}
-
-type SiteWebhooksTestForbidden ProblemDetails
-
-func (*SiteWebhooksTestForbidden) siteWebhooksTestRes() {}
-
-type SiteWebhooksTestNotFound ProblemDetails
-
-func (*SiteWebhooksTestNotFound) siteWebhooksTestRes() {}
-
-type SiteWebhooksTestUnprocessableEntity ProblemDetails
-
-func (*SiteWebhooksTestUnprocessableEntity) siteWebhooksTestRes() {}
-
-type SiteWebhooksUpdateBadRequest ProblemDetails
-
-func (*SiteWebhooksUpdateBadRequest) siteWebhooksUpdateRes() {}
-
-type SiteWebhooksUpdateForbidden ProblemDetails
-
-func (*SiteWebhooksUpdateForbidden) siteWebhooksUpdateRes() {}
-
-type SiteWebhooksUpdateNotFound ProblemDetails
-
-func (*SiteWebhooksUpdateNotFound) siteWebhooksUpdateRes() {}
-
-type SiteWebhooksUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteWebhooksUpdateUnprocessableEntity) siteWebhooksUpdateRes() {}
 
 // A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's members see it. It
 // is not a suspension: it is set from outside, carries its own message, and lifts by itself at its
@@ -30226,13 +27287,6 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                      {}
-func (*SiteWorkspaceResource) siteWorkspacesLiftSecondFactorRequirementRes() {}
-func (*SiteWorkspaceResource) siteWorkspacesRequireSecondFactorRes()         {}
-func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                     {}
-func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                 {}
-func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                      {}
-
 // Set the Workspace time zone.
 // Ref: #/components/schemas/SiteWorkspaceTimezoneInput
 type SiteWorkspaceTimezoneInput struct {
@@ -30250,158 +27304,8 @@ func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
 	s.Timezone = val
 }
 
-type SiteWorkspacesAccountLinkBadRequest ProblemDetails
-
-func (*SiteWorkspacesAccountLinkBadRequest) siteWorkspacesAccountLinkRes() {}
-
-type SiteWorkspacesAccountLinkForbidden ProblemDetails
-
-func (*SiteWorkspacesAccountLinkForbidden) siteWorkspacesAccountLinkRes() {}
-
-type SiteWorkspacesAccountLinkNotFound ProblemDetails
-
-func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
-
-type SiteWorkspacesCreateBadRequest ProblemDetails
-
-func (*SiteWorkspacesCreateBadRequest) siteWorkspacesCreateRes() {}
-
-type SiteWorkspacesCreateForbidden ProblemDetails
-
-func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
-
-type SiteWorkspacesCreateUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesCreateUnprocessableEntity) siteWorkspacesCreateRes() {}
-
-type SiteWorkspacesDeleteBadRequest ProblemDetails
-
-func (*SiteWorkspacesDeleteBadRequest) siteWorkspacesDeleteRes() {}
-
-type SiteWorkspacesDeleteForbidden ProblemDetails
-
-func (*SiteWorkspacesDeleteForbidden) siteWorkspacesDeleteRes() {}
-
-type SiteWorkspacesDeleteNotFound ProblemDetails
-
-func (*SiteWorkspacesDeleteNotFound) siteWorkspacesDeleteRes() {}
-
-type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
-
-type SiteWorkspacesGetRevenueSettingsBadRequest ProblemDetails
-
-func (*SiteWorkspacesGetRevenueSettingsBadRequest) siteWorkspacesGetRevenueSettingsRes() {}
-
-type SiteWorkspacesGetRevenueSettingsNotFound ProblemDetails
-
-func (*SiteWorkspacesGetRevenueSettingsNotFound) siteWorkspacesGetRevenueSettingsRes() {}
-
-type SiteWorkspacesLeaveBadRequest ProblemDetails
-
-func (*SiteWorkspacesLeaveBadRequest) siteWorkspacesLeaveRes() {}
-
 // SiteWorkspacesLeaveNoContent is response for SiteWorkspacesLeave operation.
 type SiteWorkspacesLeaveNoContent struct{}
-
-func (*SiteWorkspacesLeaveNoContent) siteWorkspacesLeaveRes() {}
-
-type SiteWorkspacesLeaveNotFound ProblemDetails
-
-func (*SiteWorkspacesLeaveNotFound) siteWorkspacesLeaveRes() {}
-
-type SiteWorkspacesLeaveUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesLeaveUnprocessableEntity) siteWorkspacesLeaveRes() {}
-
-type SiteWorkspacesLiftSecondFactorRequirementBadRequest ProblemDetails
-
-func (*SiteWorkspacesLiftSecondFactorRequirementBadRequest) siteWorkspacesLiftSecondFactorRequirementRes() {
-}
-
-type SiteWorkspacesLiftSecondFactorRequirementForbidden ProblemDetails
-
-func (*SiteWorkspacesLiftSecondFactorRequirementForbidden) siteWorkspacesLiftSecondFactorRequirementRes() {
-}
-
-type SiteWorkspacesLiftSecondFactorRequirementNotFound ProblemDetails
-
-func (*SiteWorkspacesLiftSecondFactorRequirementNotFound) siteWorkspacesLiftSecondFactorRequirementRes() {
-}
-
-type SiteWorkspacesRequireSecondFactorBadRequest ProblemDetails
-
-func (*SiteWorkspacesRequireSecondFactorBadRequest) siteWorkspacesRequireSecondFactorRes() {}
-
-type SiteWorkspacesRequireSecondFactorForbidden ProblemDetails
-
-func (*SiteWorkspacesRequireSecondFactorForbidden) siteWorkspacesRequireSecondFactorRes() {}
-
-type SiteWorkspacesRequireSecondFactorNotFound ProblemDetails
-
-func (*SiteWorkspacesRequireSecondFactorNotFound) siteWorkspacesRequireSecondFactorRes() {}
-
-type SiteWorkspacesRestoreBadRequest ProblemDetails
-
-func (*SiteWorkspacesRestoreBadRequest) siteWorkspacesRestoreRes() {}
-
-type SiteWorkspacesRestoreConflict ProblemDetails
-
-func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
-
-type SiteWorkspacesRestoreNotFound ProblemDetails
-
-func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
-
-type SiteWorkspacesSetTimezoneBadRequest ProblemDetails
-
-func (*SiteWorkspacesSetTimezoneBadRequest) siteWorkspacesSetTimezoneRes() {}
-
-type SiteWorkspacesSetTimezoneForbidden ProblemDetails
-
-func (*SiteWorkspacesSetTimezoneForbidden) siteWorkspacesSetTimezoneRes() {}
-
-type SiteWorkspacesSetTimezoneNotFound ProblemDetails
-
-func (*SiteWorkspacesSetTimezoneNotFound) siteWorkspacesSetTimezoneRes() {}
-
-type SiteWorkspacesSetTimezoneUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesSetTimezoneUnprocessableEntity) siteWorkspacesSetTimezoneRes() {}
-
-type SiteWorkspacesUpdateBadRequest ProblemDetails
-
-func (*SiteWorkspacesUpdateBadRequest) siteWorkspacesUpdateRes() {}
-
-type SiteWorkspacesUpdateForbidden ProblemDetails
-
-func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
-
-type SiteWorkspacesUpdateNotFound ProblemDetails
-
-func (*SiteWorkspacesUpdateNotFound) siteWorkspacesUpdateRes() {}
-
-type SiteWorkspacesUpdateRevenueSettingsBadRequest ProblemDetails
-
-func (*SiteWorkspacesUpdateRevenueSettingsBadRequest) siteWorkspacesUpdateRevenueSettingsRes() {}
-
-type SiteWorkspacesUpdateRevenueSettingsForbidden ProblemDetails
-
-func (*SiteWorkspacesUpdateRevenueSettingsForbidden) siteWorkspacesUpdateRevenueSettingsRes() {}
-
-type SiteWorkspacesUpdateRevenueSettingsNotFound ProblemDetails
-
-func (*SiteWorkspacesUpdateRevenueSettingsNotFound) siteWorkspacesUpdateRevenueSettingsRes() {}
-
-type SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity) siteWorkspacesUpdateRevenueSettingsRes() {
-}
-
-type SiteWorkspacesUpdateUnprocessableEntity ProblemDetails
-
-func (*SiteWorkspacesUpdateUnprocessableEntity) siteWorkspacesUpdateRes() {}
 
 // SMS's content of a Broadcast as stored.
 // Ref: #/components/schemas/SmsBroadcastContent
@@ -30667,10 +27571,6 @@ func (s *SmsConsent) SetOptOut(val OptNilSmsOptOut) {
 	s.OptOut = val
 }
 
-func (*SmsConsent) siteSmsConsentsConfirmRes() {}
-func (*SmsConsent) siteSmsConsentsGetRes()     {}
-func (*SmsConsent) siteSmsConsentsOptOutRes()  {}
-
 // What an SMS integration's messages go out from.
 // Ref: #/components/schemas/SmsFromKind
 type SmsFromKind string
@@ -30866,6 +27766,35 @@ func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// A Workspace the User is the only Owner of, which blocks User deletion.
+// Ref: #/components/schemas/SoleOwnedWorkspace
+type SoleOwnedWorkspace struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *SoleOwnedWorkspace) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SoleOwnedWorkspace) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SoleOwnedWorkspace) SetName(val string) {
+	s.Name = val
 }
 
 // Direction of a list's order. Only the surfaces with a sortable list import this file, so the others
@@ -31265,8 +28194,6 @@ func (s *TelegramStartLinkResource) SetURL(val string) {
 func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
 	s.ExpiresAt = val
 }
-
-func (*TelegramStartLinkResource) siteTelegramIssueStartLinkRes() {}
 
 // Request body for a test send: where the preview goes, in the field of the broadcast's Channel. The
 // field of the other Channel is not read.

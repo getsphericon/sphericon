@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,13 +15,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func setTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, name string) siteapi.SiteWorkspacesSetTimezoneRes {
+func setTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, name string) *siteapi.SiteWorkspaceResource {
 	t.Helper()
-	res, err := c.SiteWorkspacesSetTimezone(context.Background(),
-		&siteapi.SiteWorkspaceTimezoneInput{Timezone: siteapi.TimeZoneName(name)},
-		siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: workspaceID})
+	res, err := trySetTimezone(t, c, workspaceID, name)
 	require.NoError(t, err)
 	return res
+}
+
+// trySetTimezone is setTimezone for a test that expects the refusal.
+func trySetTimezone(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, name string) (*siteapi.SiteWorkspaceResource, error) {
+	t.Helper()
+	return c.SiteWorkspacesSetTimezone(context.Background(),
+		&siteapi.SiteWorkspaceTimezoneInput{Timezone: siteapi.TimeZoneName(name)},
+		siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: workspaceID})
 }
 
 func TestAWorkspaceReportsInUTCUntilAnOwnerSetsAZone(t *testing.T) {
@@ -37,9 +44,7 @@ func TestAnOwnerSetsTheTimezoneAndItIsRecordedInTheAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := setTimezone(t, owner, fixtures.AcmePublicID, "Europe/Berlin")
-	updated, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
+	updated := setTimezone(t, owner, fixtures.AcmePublicID, "Europe/Berlin")
 	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), updated.Timezone)
 
 	list, err := owner.SiteWorkspacesList(context.Background())
@@ -71,21 +76,19 @@ func TestSettingTheSameTimezoneAgainRecordsNothing(t *testing.T) {
 func TestAMemberCannotSetTheTimezone(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	member := setTimezone(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID, "Asia/Tokyo")
-	outsider := setTimezone(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), fixtures.AcmePublicID, "Asia/Tokyo")
+	_, member := trySetTimezone(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID, "Asia/Tokyo")
+	_, outsider := trySetTimezone(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), fixtures.AcmePublicID, "Asia/Tokyo")
 
-	assert.IsType(t, &siteapi.SiteWorkspacesSetTimezoneForbidden{}, member)
-	assert.IsType(t, &siteapi.SiteWorkspacesSetTimezoneNotFound{}, outsider)
+	testhelper.SiteRefusal(t, member, http.StatusForbidden)
+	testhelper.SiteRefusal(t, outsider, http.StatusNotFound)
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
 func TestAnAdminSetsTheTimezone(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := setTimezone(t, env.SiteActor(t, fixtures.AdminAliceEmail), fixtures.AcmePublicID, "Asia/Tokyo")
+	updated := setTimezone(t, env.SiteActor(t, fixtures.AdminAliceEmail), fixtures.AcmePublicID, "Asia/Tokyo")
 
-	updated, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.TimeZoneName("Asia/Tokyo"), updated.Timezone)
 }
 
@@ -93,9 +96,8 @@ func TestAnUnknownTimezoneIsRefusedAndTheZoneStays(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := setTimezone(t, owner, fixtures.AcmePublicID, "Mars/Olympus")
-	refused, ok := res.(*siteapi.SiteWorkspacesSetTimezoneUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err := trySetTimezone(t, owner, fixtures.AcmePublicID, "Mars/Olympus")
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value["timezone"][0], "unknown time zone")
 
 	list, err := owner.SiteWorkspacesList(context.Background())

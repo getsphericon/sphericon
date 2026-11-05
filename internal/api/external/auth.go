@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/apitokens"
 )
 
-func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, error) {
+func (h *Handlers) AuthMeGet(ctx context.Context) (*externalapi.ApiTokenInfo, error) {
 	// The security handler admitted the token, so the request carries it.
 	token, err := apitokens.Get(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).TokenID)
 	if err != nil {
@@ -20,7 +20,7 @@ func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, err
 	return &info, nil
 }
 
-func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensListRes, error) {
+func (h *Handlers) AuthTokensList(ctx context.Context) (*externalapi.ApiTokenListResponse, error) {
 	tokens, err := apitokens.List(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 	return &externalapi.ApiTokenListResponse{Items: items}, nil
 }
 
-func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (externalapi.AuthTokensCreateRes, error) {
+func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (*externalapi.CreateApiTokenResponse, error) {
 	// A token can only mint scopes it holds itself (tokens:write is not a way to
 	// gain send or any other power).
 	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, inputs.ApiTokenCreate(req))
@@ -40,7 +40,7 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 	return mintedResponse(minted), nil
 }
 
-func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.CreateApiTokenInput, params externalapi.AuthTokensBootstrapParams) (externalapi.AuthTokensBootstrapRes, error) {
+func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.CreateApiTokenInput, params externalapi.AuthTokensBootstrapParams) (*externalapi.CreateApiTokenResponse, error) {
 	if err := apitokens.CheckBootstrap(h.bootstrapToken, params.XBootstrapToken); err != nil {
 		return nil, err
 	}
@@ -57,14 +57,14 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 	return mintedResponse(minted), nil
 }
 
-func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) (externalapi.AuthTokensDeleteRes, error) {
+func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) error {
 	id := int64(params.ID)
 
 	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.AuthTokensDeleteNoContent{}, nil
+	return nil
 }
 
 func mintedResponse(m apitokens.Minted) *externalapi.CreateApiTokenResponse {

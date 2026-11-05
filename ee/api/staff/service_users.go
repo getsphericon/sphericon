@@ -10,7 +10,7 @@ import (
 
 // ServiceUserFeedList is the Users created, changed or deleted since a cursor, each with their
 // current consent to the operator's mailings (needs users:read).
-func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params serviceapi.ServiceUserFeedListParams) (serviceapi.ServiceUserFeedListRes, error) {
+func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params serviceapi.ServiceUserFeedListParams) (*serviceapi.ServiceUserFeedPage, error) {
 	page, err := h.module.UserFeed(ctx, params.Cursor.Or(""), int(params.Limit.Value))
 	if err != nil {
 		return nil, err

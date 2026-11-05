@@ -9,9 +9,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/integration"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
@@ -66,7 +67,7 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 	}
 	if result == outbound.ResultUndelivered && deadNumber(tx.Integration.Provider, code) {
 		err := suppression.Add(ctx, tx.Scoped, suppression.Entry{
-			Channel: entsuppression.ChannelSms, Destination: msg.Destination, Reason: entsuppression.ReasonBounce,
+			Channel: channels.SMS, Destination: msg.Destination, Reason: entsuppression.ReasonBounce,
 			ContactID: *msg.ContactID,
 		})
 		if err != nil {
@@ -88,9 +89,9 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 // deadNumber says whether the provider's error code of an undelivered report means the number
 // reaches no handset (Twilio's 30005, 30006), read the way the provider's adapter reads the same
 // code at send time.
-func deadNumber(provider integration.Provider, code string) bool {
+func deadNumber(provider providers.Provider, code string) bool {
 	n, err := strconv.Atoi(code)
-	if err != nil || provider != integration.ProviderTwilio {
+	if err != nil || provider != providers.Twilio {
 		return false
 	}
 	return twilio.Classify(0, n, "") == messaging.SMSRefusalDeadNumber

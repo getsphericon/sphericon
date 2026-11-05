@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,27 +20,23 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 	ctx := context.Background()
 
-	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Upsell", TriggerEvent: "plan_limit_reached",
 		ExitEvents: []string{"account_closed"}, GoalEvent: externalapi.NewOptNilString("subscription_expanded"),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, []string{"account_closed"}, created.Draft.Value.ExitEvents)
 	assert.Equal(t, "subscription_expanded", created.Draft.Value.GoalEvent.Or(""))
 
-	sameAsTrigger, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Bad", TriggerEvent: "plan_limit_reached", GoalEvent: externalapi.NewOptNilString("plan_limit_reached"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsCreateUnprocessableEntity{}, sameAsTrigger)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	alsoAnExit, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
 		GoalEvent: externalapi.NewOptNilString("account_closed"),
 	}, externalapi.AutomationsUpdateParams{ID: created.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, alsoAnExit)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // On a published Automation an edit of the exit and goal events writes the draft (ADR 0065): the
@@ -54,8 +51,7 @@ func TestExternalAutomationEndingsEditOfAPublishedAutomationWritesTheDraft(t *te
 	}, externalapi.AutomationsUpdateParams{ID: entityIDString(fixtures.AutomationPaymentRecoveryID)})
 	require.NoError(t, err)
 
-	edited, ok := res.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", res)
+	edited := res
 	live, draft := edited.Live.Value, edited.Draft.Value
 	assert.Equal(t, []string{"account_closed", "plan_downgraded", "email.clicked"}, live.ExitEvents)
 	assert.Equal(t, "payment_succeeded", live.GoalEvent.Or(""))

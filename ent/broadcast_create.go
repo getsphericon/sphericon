@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
@@ -84,7 +85,7 @@ func (_c *BroadcastCreate) SetName(v string) *BroadcastCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (_c *BroadcastCreate) SetChannel(v broadcast.Channel) *BroadcastCreate {
+func (_c *BroadcastCreate) SetChannel(v channels.Channel) *BroadcastCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -69,7 +70,7 @@ func (r Route) Armable() error {
 // (HoldProviderStopped), and so does one whose credentials the provider refused at send time
 // (HoldProviderRefused). It says nothing of the Workspace freeze or the Channel's own check (the
 // From's Sending domain on email): those are the send's own checks (gate).
-func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch messaging.Channel, integrationID *int64) (Route, error) {
+func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch channels.Channel, integrationID *int64) (Route, error) {
 	part, err := m.channel(ch)
 	if err != nil {
 		return Route{}, err

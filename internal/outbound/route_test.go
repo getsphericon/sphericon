@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -20,7 +20,7 @@ func TestTheRouteOfTheDefaultCarriesItsIntegrationAndPace(t *testing.T) {
 	env := testhelper.Setup(t)
 	limited(t, env, new(4), nil)
 
-	route, err := newModule(env).Route(context.Background(), acme(env), messaging.ChannelEmail, nil)
+	route, err := newModule(env).Route(context.Background(), acme(env), channels.Email, nil)
 
 	require.NoError(t, err)
 	assert.False(t, route.Held())
@@ -44,7 +44,7 @@ func TestTheRouteOfANamedIntegrationThatCannotSendIsHeld(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			route, err := newModule(env).Route(context.Background(), acme(env), messaging.ChannelEmail, &id)
+			route, err := newModule(env).Route(context.Background(), acme(env), channels.Email, &id)
 
 			require.NoError(t, err)
 			assert.Equal(t, outbound.HoldNoIntegration, route.Hold)
@@ -67,7 +67,7 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	route, err := m.Route(context.Background(), acme(env), messaging.ChannelEmail, req.IntegrationID)
+	route, err := m.Route(context.Background(), acme(env), channels.Email, req.IntegrationID)
 	require.NoError(t, err)
 	assert.Equal(t, route.Hold, res.Reason, "the send holds for the reason its route gives")
 	assert.Zero(t, res.MessageID)
@@ -119,7 +119,7 @@ func TestTheRouteNeverGoesThroughAnotherChannelsIntegration(t *testing.T) {
 	req := marketing(t, env, "bc:sms", fixtures.ContactAliceID)
 	req.IntegrationID = new(int64(fixtures.IntegrationAcmeSmsID))
 
-	route, err := m.Route(context.Background(), acme(env), messaging.ChannelEmail, req.IntegrationID)
+	route, err := m.Route(context.Background(), acme(env), channels.Email, req.IntegrationID)
 	require.NoError(t, err)
 	res, err := m.Send(context.Background(), acme(env), req)
 	require.NoError(t, err)

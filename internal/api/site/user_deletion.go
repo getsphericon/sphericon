@@ -14,7 +14,7 @@ import (
 // the typed email, the password (through the login module's one prove path, so a wrong one
 // is counted on the Login throttle) and, with a Second factor, a current code. The
 // accounts operation does the rest in one transaction; this handler authenticates and proves.
-func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDeleteUserInput) (siteapi.SiteUserDeleteUserRes, error) {
+func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDeleteUserInput) (*siteapi.SiteUserDeleteUserNoContent, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -64,27 +64,27 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 
 // SiteUserDeleteUserLink mails the one-time deletion link to a User with no password (ADR
 // 0050): the typed email must be the User's, and the link goes to that Verified address.
-func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.SiteDeleteUserLinkInput) (siteapi.SiteUserDeleteUserLinkRes, error) {
+func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.SiteDeleteUserLinkInput) error {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	u, err := h.accounts.DeletionSubject(ctx, userID, string(req.Email))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	token, err := h.links.DeletionLink(u)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// Like the email-change link, every request takes a slot of the address's budget; a spent
 	// budget queues a mail job that sends nothing.
 	granted, err := h.attempts.Take(ctx, accounts.KindEmailChange, u.Email)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := h.mail.Enqueue(ctx, mailjobs.UserDeletionLink(u.Email, token, granted)); err != nil {
 		mailNotQueued(ctx, "UserDeletionLink", err)
 	}
-	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
+	return nil
 }

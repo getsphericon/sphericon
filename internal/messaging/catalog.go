@@ -3,14 +3,17 @@ package messaging
 import (
 	"context"
 	"fmt"
+
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // ProviderDescriptor is the extensibility seam: it teaches the catalog how to
 // validate and build one provider. Build returns a channel-specific sender as
 // `any`; callers type-assert to the channel interface (e.g. EmailSender).
 type ProviderDescriptor struct {
-	Channel  Channel
-	Provider Provider
+	Channel  channels.Channel
+	Provider providers.Provider
 
 	// Validate runs semantic checks on a decrypted, structurally-valid config
 	// blob (the typed API union already enforces shape and required fields).
@@ -61,8 +64,8 @@ type Catalog struct {
 }
 
 type catalogKey struct {
-	channel  Channel
-	provider Provider
+	channel  channels.Channel
+	provider providers.Provider
 }
 
 // NewCatalog builds a catalog from the given descriptors.
@@ -75,14 +78,14 @@ func NewCatalog(descriptors ...ProviderDescriptor) *Catalog {
 }
 
 // Descriptor looks up a registered provider; ok is false for unknown pairs.
-func (c *Catalog) Descriptor(channel Channel, provider Provider) (ProviderDescriptor, bool) {
+func (c *Catalog) Descriptor(channel channels.Channel, provider providers.Provider) (ProviderDescriptor, bool) {
 	d, ok := c.descriptors[catalogKey{channel, provider}]
 	return d, ok
 }
 
 // ChannelOf reports which channel a provider belongs to; ok is false for an
 // unregistered provider.
-func (c *Catalog) ChannelOf(provider Provider) (Channel, bool) {
+func (c *Catalog) ChannelOf(provider providers.Provider) (channels.Channel, bool) {
 	for k := range c.descriptors {
 		if k.provider == provider {
 			return k.channel, true
@@ -92,7 +95,7 @@ func (c *Catalog) ChannelOf(provider Provider) (Channel, bool) {
 }
 
 // Validate runs the provider's semantic validation, or reports an unknown provider.
-func (c *Catalog) Validate(channel Channel, provider Provider, config []byte) error {
+func (c *Catalog) Validate(channel channels.Channel, provider providers.Provider, config []byte) error {
 	d, ok := c.Descriptor(channel, provider)
 	if !ok {
 		return fmt.Errorf("unknown provider %q for channel %q", provider, channel)
@@ -106,7 +109,7 @@ func (c *Catalog) Validate(channel Channel, provider Provider, config []byte) er
 // Build builds the sender of a provider of channel from deps: a value of that Channel's own send
 // interface (EmailSender on email), decorated as every sender of the Channel is. Adding a Channel
 // adds its descriptors and its entry in instruments.
-func (c *Catalog) Build(channel Channel, provider Provider, config []byte, deps Deps) (any, error) {
+func (c *Catalog) Build(channel channels.Channel, provider providers.Provider, config []byte, deps Deps) (any, error) {
 	d, ok := c.Descriptor(channel, provider)
 	if !ok {
 		return nil, fmt.Errorf("unknown %s provider %q", channel, provider)
@@ -124,33 +127,30 @@ func (c *Catalog) Build(channel Channel, provider Provider, config []byte, deps 
 
 // instruments checks that a freshly built sender of each Channel is of the Channel's send
 // interface and decorates it: with the metrics decorator on email.
-var instruments = map[Channel]func(Provider, any) (any, error){
-	ChannelEmail: func(provider Provider, built any) (any, error) {
-		sender, ok := built.(EmailSender)
-		if !ok {
-			return nil, fmt.Errorf("provider %q did not build an EmailSender", provider)
-		}
-		return instrumentedSender{EmailSender: sender, provider: provider}, nil
-	},
-	ChannelTelegram: func(provider Provider, built any) (any, error) {
-		bot, ok := built.(TelegramBot)
-		if !ok {
-			return nil, fmt.Errorf("provider %q did not build a TelegramBot", provider)
-		}
-		return bot, nil
-	},
-	ChannelSMS: func(provider Provider, built any) (any, error) {
-		sender, ok := built.(SMSSender)
-		if !ok {
-			return nil, fmt.Errorf("provider %q did not build an SMSSender", provider)
-		}
-		return sender, nil
-	},
+var instruments = map[channels.Channel]func(providers.Provider, any) (any, error){channels.Email: func(provider providers.Provider, built any) (any, error) {
+	sender, ok := built.(EmailSender)
+	if !ok {
+		return nil, fmt.Errorf("provider %q did not build an EmailSender", provider)
+	}
+	return instrumentedSender{EmailSender: sender, provider: provider}, nil
+}, channels.Telegram: func(provider providers.Provider, built any) (any, error) {
+	bot, ok := built.(TelegramBot)
+	if !ok {
+		return nil, fmt.Errorf("provider %q did not build a TelegramBot", provider)
+	}
+	return bot, nil
+}, channels.SMS: func(provider providers.Provider, built any) (any, error) {
+	sender, ok := built.(SMSSender)
+	if !ok {
+		return nil, fmt.Errorf("provider %q did not build an SMSSender", provider)
+	}
+	return sender, nil
+},
 }
 
 // BuildEmail builds an EmailSender for an email-channel provider from deps: Build, typed.
-func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (EmailSender, error) {
-	built, err := c.Build(ChannelEmail, provider, config, deps)
+func (c *Catalog) BuildEmail(provider providers.Provider, config []byte, deps Deps) (EmailSender, error) {
+	built, err := c.Build(channels.Email, provider, config, deps)
 	if err != nil {
 		return nil, err
 	}
@@ -162,8 +162,8 @@ func (c *Catalog) BuildEmail(provider Provider, config []byte, deps Deps) (Email
 }
 
 // BuildTelegram builds the TelegramBot of a telegram-channel provider: Build, typed.
-func (c *Catalog) BuildTelegram(provider Provider, config []byte) (TelegramBot, error) {
-	built, err := c.Build(ChannelTelegram, provider, config, Deps{})
+func (c *Catalog) BuildTelegram(provider providers.Provider, config []byte) (TelegramBot, error) {
+	built, err := c.Build(channels.Telegram, provider, config, Deps{})
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +175,8 @@ func (c *Catalog) BuildTelegram(provider Provider, config []byte) (TelegramBot, 
 }
 
 // BuildSMS builds the SMSSender of an sms-channel provider: Build, typed.
-func (c *Catalog) BuildSMS(provider Provider, config []byte) (SMSSender, error) {
-	built, err := c.Build(ChannelSMS, provider, config, Deps{})
+func (c *Catalog) BuildSMS(provider providers.Provider, config []byte) (SMSSender, error) {
+	built, err := c.Build(channels.SMS, provider, config, Deps{})
 	if err != nil {
 		return nil, err
 	}

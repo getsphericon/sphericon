@@ -1,12 +1,11 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -15,10 +14,8 @@ import (
 func TestSiteSchemaApplyMigrationsIsNotFoundWhereTheServerDoesNotOfferIt(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteAnonymous(t).SiteSchemaApplyMigrations(t.Context())
+	err := env.SiteAnonymous(t).SiteSchemaApplyMigrations(t.Context())
 
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.ProblemDetails)
-	require.True(t, ok, "expected a problem, got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	assert.Equal(t, int32(404), problem.Status.Value)
 }

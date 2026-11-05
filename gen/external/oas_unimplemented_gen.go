@@ -18,42 +18,42 @@ var _ Handler = UnimplementedHandler{}
 // List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope).
 //
 // GET /audit-entries
-func (UnimplementedHandler) AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (r AuditEntriesListRes, _ error) {
+func (UnimplementedHandler) AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (r *AuditEntryList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // AuthMeGet implements Auth_meGet operation.
 //
 // GET /auth/me
-func (UnimplementedHandler) AuthMeGet(ctx context.Context) (r AuthMeGetRes, _ error) {
+func (UnimplementedHandler) AuthMeGet(ctx context.Context) (r *ApiTokenInfo, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // AuthTokensBootstrap implements Auth_tokensBootstrap operation.
 //
 // POST /auth/tokens/bootstrap
-func (UnimplementedHandler) AuthTokensBootstrap(ctx context.Context, req *CreateApiTokenInput, params AuthTokensBootstrapParams) (r AuthTokensBootstrapRes, _ error) {
+func (UnimplementedHandler) AuthTokensBootstrap(ctx context.Context, req *CreateApiTokenInput, params AuthTokensBootstrapParams) (r *CreateApiTokenResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // AuthTokensCreate implements Auth_tokensCreate operation.
 //
 // POST /auth/tokens
-func (UnimplementedHandler) AuthTokensCreate(ctx context.Context, req *CreateApiTokenInput) (r AuthTokensCreateRes, _ error) {
+func (UnimplementedHandler) AuthTokensCreate(ctx context.Context, req *CreateApiTokenInput) (r *CreateApiTokenResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // AuthTokensDelete implements Auth_tokensDelete operation.
 //
 // DELETE /auth/tokens/{id}
-func (UnimplementedHandler) AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (r AuthTokensDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // AuthTokensList implements Auth_tokensList operation.
 //
 // GET /auth/tokens
-func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r AuthTokensListRes, _ error) {
+func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r *ApiTokenListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -64,7 +64,7 @@ func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r AuthTokensLis
 // an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /automations/{id}/archive
-func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (r AutomationsArchiveRes, _ error) {
+func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -73,7 +73,7 @@ func (UnimplementedHandler) AutomationsArchive(ctx context.Context, params Autom
 // Create a resource.
 //
 // POST /automations
-func (UnimplementedHandler) AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (r AutomationsCreateRes, _ error) {
+func (UnimplementedHandler) AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -83,7 +83,7 @@ func (UnimplementedHandler) AutomationsCreate(ctx context.Context, req *CreateAu
 // Needs the automations:write scope.
 //
 // POST /automations/{id}/deactivate
-func (UnimplementedHandler) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (r AutomationsDeactivateRes, _ error) {
+func (UnimplementedHandler) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -92,7 +92,7 @@ func (UnimplementedHandler) AutomationsDeactivate(ctx context.Context, params Au
 // Render an HTTP step's body for a Contact and validate it, calling nothing.
 //
 // POST /automations/dry-run-http-step
-func (UnimplementedHandler) AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (r AutomationsDryRunHttpStepRes, _ error) {
+func (UnimplementedHandler) AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (r *DryRunHttpStepResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -101,7 +101,7 @@ func (UnimplementedHandler) AutomationsDryRunHttpStep(ctx context.Context, req *
 // Get a resource by ID.
 //
 // GET /automations/{id}
-func (UnimplementedHandler) AutomationsGet(ctx context.Context, params AutomationsGetParams) (r AutomationsGetRes, _ error) {
+func (UnimplementedHandler) AutomationsGet(ctx context.Context, params AutomationsGetParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -110,7 +110,7 @@ func (UnimplementedHandler) AutomationsGet(ctx context.Context, params Automatio
 // List resources with pagination.
 //
 // GET /automations
-func (UnimplementedHandler) AutomationsList(ctx context.Context, params AutomationsListParams) (r AutomationsListRes, _ error) {
+func (UnimplementedHandler) AutomationsList(ctx context.Context, params AutomationsListParams) (r *AutomationsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -123,7 +123,7 @@ func (UnimplementedHandler) AutomationsList(ctx context.Context, params Automati
 // refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
-func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r AutomationsPublishRes, _ error) {
+func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -135,7 +135,7 @@ func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params Autom
 // before it. Needs the automations:read scope.
 //
 // GET /automations/{id}/report
-func (UnimplementedHandler) AutomationsReport(ctx context.Context, params AutomationsReportParams) (r AutomationsReportRes, _ error) {
+func (UnimplementedHandler) AutomationsReport(ctx context.Context, params AutomationsReportParams) (r *AutomationReport, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -145,7 +145,7 @@ func (UnimplementedHandler) AutomationsReport(ctx context.Context, params Automa
 // 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
-func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (r AutomationsRevertRes, _ error) {
+func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -155,7 +155,7 @@ func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params Automa
 // again.
 //
 // POST /automations/{id}/unarchive
-func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (r AutomationsUnarchiveRes, _ error) {
+func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -165,7 +165,7 @@ func (UnimplementedHandler) AutomationsUnarchive(ctx context.Context, params Aut
 // archived. Needs the automations:write scope.
 //
 // PUT /automations/{id}
-func (UnimplementedHandler) AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (r AutomationsUpdateRes, _ error) {
+func (UnimplementedHandler) AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (r *AutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -176,7 +176,7 @@ func (UnimplementedHandler) AutomationsUpdate(ctx context.Context, req *UpdateAu
 // Read-only: an agent never changes the Brand kit.
 //
 // GET /brand-kit
-func (UnimplementedHandler) BrandKitGet(ctx context.Context) (r BrandKitGetRes, _ error) {
+func (UnimplementedHandler) BrandKitGet(ctx context.Context) (r *BrandKitResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -187,7 +187,7 @@ func (UnimplementedHandler) BrandKitGet(ctx context.Context) (r BrandKitGetRes, 
 // Archiving an archived broadcast changes nothing.
 //
 // POST /broadcasts/{id}/archive
-func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (r BroadcastsArchiveRes, _ error) {
+func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -196,7 +196,7 @@ func (UnimplementedHandler) BroadcastsArchive(ctx context.Context, params Broadc
 // Create a resource.
 //
 // POST /broadcasts
-func (UnimplementedHandler) BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (r BroadcastsCreateRes, _ error) {
+func (UnimplementedHandler) BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -205,7 +205,7 @@ func (UnimplementedHandler) BroadcastsCreate(ctx context.Context, req *CreateBro
 // Get a resource by ID.
 //
 // GET /broadcasts/{id}
-func (UnimplementedHandler) BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (r BroadcastsGetRes, _ error) {
+func (UnimplementedHandler) BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -214,7 +214,7 @@ func (UnimplementedHandler) BroadcastsGet(ctx context.Context, params Broadcasts
 // List resources with pagination.
 //
 // GET /broadcasts
-func (UnimplementedHandler) BroadcastsList(ctx context.Context, params BroadcastsListParams) (r BroadcastsListRes, _ error) {
+func (UnimplementedHandler) BroadcastsList(ctx context.Context, params BroadcastsListParams) (r *BroadcastsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -223,7 +223,7 @@ func (UnimplementedHandler) BroadcastsList(ctx context.Context, params Broadcast
 // Read the delivery report: sent, skipped, failed, opened and clicked counts.
 //
 // GET /broadcasts/{id}/report
-func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (r BroadcastsReportRes, _ error) {
+func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (r *BroadcastReport, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -237,7 +237,7 @@ func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params Broadca
 // needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
-func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (r BroadcastsScheduleRes, _ error) {
+func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -247,7 +247,7 @@ func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *Schedul
 // is a 409.
 //
 // PUT /broadcasts/{id}/segment
-func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (r BroadcastsSetSegmentRes, _ error) {
+func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -259,8 +259,8 @@ func (UnimplementedHandler) BroadcastsSetSegment(ctx context.Context, req *SetBr
 // a Telegram broadcast is a 422.
 //
 // POST /broadcasts/{id}/test-send
-func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (r BroadcastsTestSendRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) error {
+	return ht.ErrNotImplemented
 }
 
 // BroadcastsUnarchive implements Broadcasts_unarchive operation.
@@ -268,7 +268,7 @@ func (UnimplementedHandler) BroadcastsTestSend(ctx context.Context, req *TestSen
 // Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /broadcasts/{id}/unarchive
-func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (r BroadcastsUnarchiveRes, _ error) {
+func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -279,7 +279,7 @@ func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params Broa
 // mcp:send over MCP.
 //
 // POST /broadcasts/{id}/unschedule
-func (UnimplementedHandler) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (r BroadcastsUnscheduleRes, _ error) {
+func (UnimplementedHandler) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -288,7 +288,7 @@ func (UnimplementedHandler) BroadcastsUnschedule(ctx context.Context, params Bro
 // Update a resource.
 //
 // PUT /broadcasts/{id}
-func (UnimplementedHandler) BroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params BroadcastsUpdateParams) (r BroadcastsUpdateRes, _ error) {
+func (UnimplementedHandler) BroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params BroadcastsUpdateParams) (r *BroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -297,8 +297,8 @@ func (UnimplementedHandler) BroadcastsUpdate(ctx context.Context, req *UpdateBro
 // Delete one Captured message.
 //
 // DELETE /captured-messages/{id}
-func (UnimplementedHandler) CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (r CapturedMessagesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // CapturedMessagesDeleteAll implements CapturedMessages_deleteAll operation.
@@ -306,8 +306,8 @@ func (UnimplementedHandler) CapturedMessagesDelete(ctx context.Context, params C
 // Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
 //
 // DELETE /captured-messages/all
-func (UnimplementedHandler) CapturedMessagesDeleteAll(ctx context.Context) (r CapturedMessagesDeleteAllRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) CapturedMessagesDeleteAll(ctx context.Context) error {
+	return ht.ErrNotImplemented
 }
 
 // CapturedMessagesGet implements CapturedMessages_get operation.
@@ -315,7 +315,7 @@ func (UnimplementedHandler) CapturedMessagesDeleteAll(ctx context.Context) (r Ca
 // Read one Captured message in full: headers, HTML, text and links.
 //
 // GET /captured-messages/{id}
-func (UnimplementedHandler) CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (r CapturedMessagesGetRes, _ error) {
+func (UnimplementedHandler) CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (r *CapturedMessageResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -324,7 +324,7 @@ func (UnimplementedHandler) CapturedMessagesGet(ctx context.Context, params Capt
 // List the Captured messages, newest first, without their content (read one for it).
 //
 // GET /captured-messages
-func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (r CapturedMessagesListRes, _ error) {
+func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (r *CapturedMessagesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -337,7 +337,7 @@ func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params Cap
 // does not lift an opt-out: only the person can, by texting START.
 //
 // POST /confirmations
-func (UnimplementedHandler) ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (r ConfirmationsCreateRes, _ error) {
+func (UnimplementedHandler) ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (r *ConfirmationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -346,7 +346,7 @@ func (UnimplementedHandler) ConfirmationsCreate(ctx context.Context, req *Create
 // Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
 //
 // POST /contacts/batch
-func (UnimplementedHandler) ContactsBatchUpsert(ctx context.Context, req *UpsertContactsInput) (r ContactsBatchUpsertRes, _ error) {
+func (UnimplementedHandler) ContactsBatchUpsert(ctx context.Context, req *UpsertContactsInput) (r *UpsertContactsResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -355,7 +355,7 @@ func (UnimplementedHandler) ContactsBatchUpsert(ctx context.Context, req *Upsert
 // Create a resource.
 //
 // POST /contacts
-func (UnimplementedHandler) ContactsCreate(ctx context.Context, req *CreateContactInput) (r ContactsCreateRes, _ error) {
+func (UnimplementedHandler) ContactsCreate(ctx context.Context, req *CreateContactInput) (r *ContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -365,8 +365,8 @@ func (UnimplementedHandler) ContactsCreate(ctx context.Context, req *CreateConta
 // its opt-outs survive. Requires the contacts:erase scope.
 //
 // DELETE /contacts/{id}
-func (UnimplementedHandler) ContactsDelete(ctx context.Context, params ContactsDeleteParams) (r ContactsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) ContactsDelete(ctx context.Context, params ContactsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // ContactsEraseBy implements Contacts_eraseBy operation.
@@ -377,8 +377,8 @@ func (UnimplementedHandler) ContactsDelete(ctx context.Context, params ContactsD
 // contacts:erase scope.
 //
 // DELETE /contacts/erase
-func (UnimplementedHandler) ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (r ContactsEraseByRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) error {
+	return ht.ErrNotImplemented
 }
 
 // ContactsExport implements Contacts_export operation.
@@ -398,7 +398,7 @@ func (UnimplementedHandler) ContactsExport(ctx context.Context, params ContactsE
 // Get a resource by ID.
 //
 // GET /contacts/{id}
-func (UnimplementedHandler) ContactsGet(ctx context.Context, params ContactsGetParams) (r ContactsGetRes, _ error) {
+func (UnimplementedHandler) ContactsGet(ctx context.Context, params ContactsGetParams) (r *ContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -407,7 +407,7 @@ func (UnimplementedHandler) ContactsGet(ctx context.Context, params ContactsGetP
 // List resources with pagination.
 //
 // GET /contacts
-func (UnimplementedHandler) ContactsList(ctx context.Context, params ContactsListParams) (r ContactsListRes, _ error) {
+func (UnimplementedHandler) ContactsList(ctx context.Context, params ContactsListParams) (r *ContactsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -416,7 +416,7 @@ func (UnimplementedHandler) ContactsList(ctx context.Context, params ContactsLis
 // Update a resource.
 //
 // PUT /contacts/{id}
-func (UnimplementedHandler) ContactsUpdate(ctx context.Context, req *UpdateContactInput, params ContactsUpdateParams) (r ContactsUpdateRes, _ error) {
+func (UnimplementedHandler) ContactsUpdate(ctx context.Context, req *UpdateContactInput, params ContactsUpdateParams) (r *ContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -425,7 +425,7 @@ func (UnimplementedHandler) ContactsUpdate(ctx context.Context, req *UpdateConta
 // List the workspace's custom field definitions.
 //
 // GET /custom-fields
-func (UnimplementedHandler) CustomFieldsList(ctx context.Context) (r CustomFieldsListRes, _ error) {
+func (UnimplementedHandler) CustomFieldsList(ctx context.Context) (r *CustomFieldsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -435,7 +435,7 @@ func (UnimplementedHandler) CustomFieldsList(ctx context.Context) (r CustomField
 // broadcast tests the field with an operator the new type does not take (`usedBy` names them).
 //
 // PUT /custom-fields/{id}
-func (UnimplementedHandler) CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (r CustomFieldsUpdateRes, _ error) {
+func (UnimplementedHandler) CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (r *CustomFieldResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -447,7 +447,7 @@ func (UnimplementedHandler) CustomFieldsUpdate(ctx context.Context, req *UpdateC
 // untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
 //
 // POST /emails/lint
-func (UnimplementedHandler) EmailLintLint(ctx context.Context, req *LintEmailInput) (r EmailLintLintRes, _ error) {
+func (UnimplementedHandler) EmailLintLint(ctx context.Context, req *LintEmailInput) (r *LintEmailResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -459,7 +459,7 @@ func (UnimplementedHandler) EmailLintLint(ctx context.Context, req *LintEmailInp
 // as `doc` on a Template, Broadcast or Automation email step.
 //
 // GET /emails/schema
-func (UnimplementedHandler) EmailSchemaGet(ctx context.Context) (r EmailSchemaGetRes, _ error) {
+func (UnimplementedHandler) EmailSchemaGet(ctx context.Context) (r *EmailSchemaResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -473,7 +473,7 @@ func (UnimplementedHandler) EmailSchemaGet(ctx context.Context) (r EmailSchemaGe
 // sending a second email, and a key whose first request is still in flight returns 409.
 //
 // POST /emails
-func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (r EmailsSendRes, _ error) {
+func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (r *SendTransactionalEmailResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -482,7 +482,7 @@ func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransaction
 // Get one Enrollment of an Automation. Needs the enrollments:read scope.
 //
 // GET /automations/{automationId}/enrollments/{enrollmentId}
-func (UnimplementedHandler) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (r EnrollmentsGetRes, _ error) {
+func (UnimplementedHandler) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (r *EnrollmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -491,7 +491,7 @@ func (UnimplementedHandler) EnrollmentsGet(ctx context.Context, params Enrollmen
 // List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
 //
 // GET /automations/{automationId}/enrollments
-func (UnimplementedHandler) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (r EnrollmentsListRes, _ error) {
+func (UnimplementedHandler) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (r *EnrollmentsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -500,7 +500,7 @@ func (UnimplementedHandler) EnrollmentsList(ctx context.Context, params Enrollme
 // List unique event actions.
 //
 // GET /events/actions
-func (UnimplementedHandler) EventActionsList(ctx context.Context, params EventActionsListParams) (r EventActionsListRes, _ error) {
+func (UnimplementedHandler) EventActionsList(ctx context.Context, params EventActionsListParams) (r *EventActionsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -509,7 +509,7 @@ func (UnimplementedHandler) EventActionsList(ctx context.Context, params EventAc
 // Record up to 1000 events; a failing item does not affect the others.
 //
 // POST /events/batch
-func (UnimplementedHandler) EventsBatchSubmit(ctx context.Context, req *RecordEventsBatchInput) (r EventsBatchSubmitRes, _ error) {
+func (UnimplementedHandler) EventsBatchSubmit(ctx context.Context, req *RecordEventsBatchInput) (r *RecordEventsBatchResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -518,8 +518,8 @@ func (UnimplementedHandler) EventsBatchSubmit(ctx context.Context, req *RecordEv
 // Record events in batch.
 //
 // POST /events
-func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsInput) (r EventsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsInput) error {
+	return ht.ErrNotImplemented
 }
 
 // ExportAudit implements Export_audit operation.
@@ -529,7 +529,7 @@ func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsI
 // Audit log list is the human read; this is the machine stream.
 //
 // GET /export/audit
-func (UnimplementedHandler) ExportAudit(ctx context.Context, params ExportAuditParams) (r ExportAuditRes, _ error) {
+func (UnimplementedHandler) ExportAudit(ctx context.Context, params ExportAuditParams) (r *ExportAuditOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -539,7 +539,7 @@ func (UnimplementedHandler) ExportAudit(ctx context.Context, params ExportAuditP
 // line of the body is an `ExportContactRow`; every key is always present.
 //
 // GET /export/contacts
-func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportContactsParams) (r ExportContactsRes, _ error) {
+func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportContactsParams) (r *ExportContactsOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -551,7 +551,7 @@ func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportCon
 // re-seeds from an empty cursor.
 //
 // GET /export/erasures
-func (UnimplementedHandler) ExportErasures(ctx context.Context, params ExportErasuresParams) (r ExportErasuresRes, _ error) {
+func (UnimplementedHandler) ExportErasures(ctx context.Context, params ExportErasuresParams) (r *ExportErasuresOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -561,7 +561,7 @@ func (UnimplementedHandler) ExportErasures(ctx context.Context, params ExportEra
 // line of the body is an `ExportEventRow`; every key is always present.
 //
 // GET /export/events
-func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEventsParams) (r ExportEventsRes, _ error) {
+func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEventsParams) (r *ExportEventsOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -571,7 +571,7 @@ func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEvent
 // scope). Each line of the body is an `ExportMessageRow`; every key is always present.
 //
 // GET /export/messages
-func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMessagesParams) (r ExportMessagesRes, _ error) {
+func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMessagesParams) (r *ExportMessagesOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -580,7 +580,7 @@ func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMes
 // Create an integration.
 //
 // POST /integrations
-func (UnimplementedHandler) IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (r IntegrationsCreateRes, _ error) {
+func (UnimplementedHandler) IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (r *IntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -592,8 +592,8 @@ func (UnimplementedHandler) IntegrationsCreate(ctx context.Context, req *CreateI
 // webhook is removed, best effort.
 //
 // DELETE /integrations/{id}
-func (UnimplementedHandler) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (r IntegrationsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // IntegrationsGet implements Integrations_get operation.
@@ -601,7 +601,7 @@ func (UnimplementedHandler) IntegrationsDelete(ctx context.Context, params Integ
 // Get an integration by ID, deleted or not.
 //
 // GET /integrations/{id}
-func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (r IntegrationsGetRes, _ error) {
+func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (r *IntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -610,7 +610,7 @@ func (UnimplementedHandler) IntegrationsGet(ctx context.Context, params Integrat
 // List integrations with pagination.
 //
 // GET /integrations
-func (UnimplementedHandler) IntegrationsList(ctx context.Context, params IntegrationsListParams) (r IntegrationsListRes, _ error) {
+func (UnimplementedHandler) IntegrationsList(ctx context.Context, params IntegrationsListParams) (r *IntegrationsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -621,7 +621,7 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 // is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
-func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
+func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r *IntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -630,7 +630,7 @@ func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, param
 // Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
-func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r IntegrationsUpdateRes, _ error) {
+func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r *IntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -639,7 +639,7 @@ func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateI
 // List the Presets the Instance offers, with the params schema of each.
 //
 // GET /presets
-func (UnimplementedHandler) PresetsList(ctx context.Context) (r PresetsListRes, _ error) {
+func (UnimplementedHandler) PresetsList(ctx context.Context) (r *PresetsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -648,7 +648,7 @@ func (UnimplementedHandler) PresetsList(ctx context.Context) (r PresetsListRes, 
 // List a Rule's Firings, newest first. Needs the automations:read scope.
 //
 // GET /rules/{ruleId}/firings
-func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (r RuleFiringsListRes, _ error) {
+func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (r *RuleFiringsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -657,7 +657,7 @@ func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiri
 // Create a resource.
 //
 // POST /rules
-func (UnimplementedHandler) RulesCreate(ctx context.Context, req *CreateRuleInput) (r RulesCreateRes, _ error) {
+func (UnimplementedHandler) RulesCreate(ctx context.Context, req *CreateRuleInput) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -666,7 +666,7 @@ func (UnimplementedHandler) RulesCreate(ctx context.Context, req *CreateRuleInpu
 // Deactivate a Rule: it stops firing. Needs the automations:write scope.
 //
 // POST /rules/{id}/deactivate
-func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (r RulesDeactivateRes, _ error) {
+func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -675,8 +675,8 @@ func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDea
 // Delete a resource.
 //
 // DELETE /rules/{id}
-func (UnimplementedHandler) RulesDelete(ctx context.Context, params RulesDeleteParams) (r RulesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) RulesDelete(ctx context.Context, params RulesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // RulesDryRun implements Rules_dryRun operation.
@@ -685,7 +685,7 @@ func (UnimplementedHandler) RulesDelete(ctx context.Context, params RulesDeleteP
 // nothing. Needs the automations:read scope.
 //
 // POST /rules/{id}/dry-run
-func (UnimplementedHandler) RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (r RulesDryRunRes, _ error) {
+func (UnimplementedHandler) RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (r *RuleDryRunResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -694,7 +694,7 @@ func (UnimplementedHandler) RulesDryRun(ctx context.Context, req *DryRunRuleInpu
 // Get a resource by ID.
 //
 // GET /rules/{id}
-func (UnimplementedHandler) RulesGet(ctx context.Context, params RulesGetParams) (r RulesGetRes, _ error) {
+func (UnimplementedHandler) RulesGet(ctx context.Context, params RulesGetParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -703,7 +703,7 @@ func (UnimplementedHandler) RulesGet(ctx context.Context, params RulesGetParams)
 // List resources with pagination.
 //
 // GET /rules
-func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParams) (r RulesListRes, _ error) {
+func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParams) (r *RulesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -714,7 +714,7 @@ func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParam
 // neither draft nor live version. Needs the automations:publish scope.
 //
 // POST /rules/{id}/publish
-func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublishParams) (r RulesPublishRes, _ error) {
+func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublishParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -724,7 +724,7 @@ func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublis
 // Needs the automations:write scope.
 //
 // POST /rules/{id}/revert
-func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertParams) (r RulesRevertRes, _ error) {
+func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -733,7 +733,7 @@ func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertP
 // Update a resource.
 //
 // PUT /rules/{id}
-func (UnimplementedHandler) RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (r RulesUpdateRes, _ error) {
+func (UnimplementedHandler) RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (r *RuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -743,7 +743,7 @@ func (UnimplementedHandler) RulesUpdate(ctx context.Context, req *UpdateRuleInpu
 // with 409 while live work uses it.
 //
 // POST /segments/{id}/archive
-func (UnimplementedHandler) SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (r SegmentsArchiveRes, _ error) {
+func (UnimplementedHandler) SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (r *SegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -752,7 +752,7 @@ func (UnimplementedHandler) SegmentsArchive(ctx context.Context, params Segments
 // Create a resource.
 //
 // POST /segments
-func (UnimplementedHandler) SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (r SegmentsCreateRes, _ error) {
+func (UnimplementedHandler) SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (r *SegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -761,7 +761,7 @@ func (UnimplementedHandler) SegmentsCreate(ctx context.Context, req *CreateSegme
 // Get a resource by ID.
 //
 // GET /segments/{id}
-func (UnimplementedHandler) SegmentsGet(ctx context.Context, params SegmentsGetParams) (r SegmentsGetRes, _ error) {
+func (UnimplementedHandler) SegmentsGet(ctx context.Context, params SegmentsGetParams) (r *SegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -770,7 +770,7 @@ func (UnimplementedHandler) SegmentsGet(ctx context.Context, params SegmentsGetP
 // List resources with pagination.
 //
 // GET /segments
-func (UnimplementedHandler) SegmentsList(ctx context.Context, params SegmentsListParams) (r SegmentsListRes, _ error) {
+func (UnimplementedHandler) SegmentsList(ctx context.Context, params SegmentsListParams) (r *SegmentsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -779,7 +779,7 @@ func (UnimplementedHandler) SegmentsList(ctx context.Context, params SegmentsLis
 // Count the contacts matching an unsaved rule definition.
 //
 // POST /segments/preview
-func (UnimplementedHandler) SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (r SegmentsPreviewRes, _ error) {
+func (UnimplementedHandler) SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (r *PreviewSegmentResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -788,7 +788,7 @@ func (UnimplementedHandler) SegmentsPreview(ctx context.Context, req *PreviewSeg
 // Restore an archived resource.
 //
 // POST /segments/{id}/unarchive
-func (UnimplementedHandler) SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (r SegmentsUnarchiveRes, _ error) {
+func (UnimplementedHandler) SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (r *SegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -797,7 +797,7 @@ func (UnimplementedHandler) SegmentsUnarchive(ctx context.Context, params Segmen
 // Update a resource.
 //
 // PUT /segments/{id}
-func (UnimplementedHandler) SegmentsUpdate(ctx context.Context, req *UpdateSegmentInput, params SegmentsUpdateParams) (r SegmentsUpdateRes, _ error) {
+func (UnimplementedHandler) SegmentsUpdate(ctx context.Context, req *UpdateSegmentInput, params SegmentsUpdateParams) (r *SegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -806,7 +806,7 @@ func (UnimplementedHandler) SegmentsUpdate(ctx context.Context, req *UpdateSegme
 // Complaint and bounce rates per sending domain over a trailing window.
 //
 // GET /sending-domains/rates
-func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (r SendingDomainRatesListRes, _ error) {
+func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (r *SendingDomainRatesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -815,7 +815,7 @@ func (UnimplementedHandler) SendingDomainRatesList(ctx context.Context, params S
 // Create a resource.
 //
 // POST /sending-domains
-func (UnimplementedHandler) SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (r SendingDomainsCreateRes, _ error) {
+func (UnimplementedHandler) SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (r *SendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -826,8 +826,8 @@ func (UnimplementedHandler) SendingDomainsCreate(ctx context.Context, req *Creat
 // sends from it.
 //
 // DELETE /sending-domains/{id}
-func (UnimplementedHandler) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (r SendingDomainsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SendingDomainsGet implements SendingDomains_get operation.
@@ -835,7 +835,7 @@ func (UnimplementedHandler) SendingDomainsDelete(ctx context.Context, params Sen
 // Get a resource by ID.
 //
 // GET /sending-domains/{id}
-func (UnimplementedHandler) SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (r SendingDomainsGetRes, _ error) {
+func (UnimplementedHandler) SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (r *SendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -844,7 +844,7 @@ func (UnimplementedHandler) SendingDomainsGet(ctx context.Context, params Sendin
 // List resources with pagination.
 //
 // GET /sending-domains
-func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (r SendingDomainsListRes, _ error) {
+func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (r *SendingDomainsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -853,7 +853,7 @@ func (UnimplementedHandler) SendingDomainsList(ctx context.Context, params Sendi
 // Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
-func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (r SendingDomainsUpdateRes, _ error) {
+func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (r *SendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -864,7 +864,7 @@ func (UnimplementedHandler) SendingDomainsUpdate(ctx context.Context, req *Updat
 // again (404).
 //
 // POST /sending-domains/{id}/verify
-func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (r SendingDomainsVerifyRes, _ error) {
+func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (r *SendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -876,7 +876,7 @@ func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params Sen
 // the contact has now.
 //
 // GET /contacts/{contactId}/sms-consent
-func (UnimplementedHandler) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (r SmsConsentsGetRes, _ error) {
+func (UnimplementedHandler) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (r *SmsConsent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -887,7 +887,7 @@ func (UnimplementedHandler) SmsConsentsGet(ctx context.Context, params SmsConsen
 // available through the API.
 //
 // POST /suppressions
-func (UnimplementedHandler) SuppressionsCreate(ctx context.Context, req *CreateSuppressionInput) (r SuppressionsCreateRes, _ error) {
+func (UnimplementedHandler) SuppressionsCreate(ctx context.Context, req *CreateSuppressionInput) (r *SuppressionResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -896,7 +896,7 @@ func (UnimplementedHandler) SuppressionsCreate(ctx context.Context, req *CreateS
 // Apply a tag to a contact, creating the tag on first use. Idempotent.
 //
 // POST /contacts/{contactId}/tags
-func (UnimplementedHandler) TagsApply(ctx context.Context, req *ApplyTagInput, params TagsApplyParams) (r TagsApplyRes, _ error) {
+func (UnimplementedHandler) TagsApply(ctx context.Context, req *ApplyTagInput, params TagsApplyParams) (r *TagResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -906,8 +906,8 @@ func (UnimplementedHandler) TagsApply(ctx context.Context, req *ApplyTagInput, p
 // the users.
 //
 // DELETE /tags/{id}
-func (UnimplementedHandler) TagsDelete(ctx context.Context, params TagsDeleteParams) (r TagsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) TagsDelete(ctx context.Context, params TagsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // TagsList implements Tags_list operation.
@@ -915,7 +915,7 @@ func (UnimplementedHandler) TagsDelete(ctx context.Context, params TagsDeletePar
 // List the workspace's tags.
 //
 // GET /tags
-func (UnimplementedHandler) TagsList(ctx context.Context, params TagsListParams) (r TagsListRes, _ error) {
+func (UnimplementedHandler) TagsList(ctx context.Context, params TagsListParams) (r *TagsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -924,7 +924,7 @@ func (UnimplementedHandler) TagsList(ctx context.Context, params TagsListParams)
 // List the tags a contact has.
 //
 // GET /contacts/{contactId}/tags
-func (UnimplementedHandler) TagsListForContact(ctx context.Context, params TagsListForContactParams) (r TagsListForContactRes, _ error) {
+func (UnimplementedHandler) TagsListForContact(ctx context.Context, params TagsListForContactParams) (r *TagsListForContactOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -933,8 +933,8 @@ func (UnimplementedHandler) TagsListForContact(ctx context.Context, params TagsL
 // Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 //
 // DELETE /contacts/{contactId}/tags/{name}
-func (UnimplementedHandler) TagsRemove(ctx context.Context, params TagsRemoveParams) (r TagsRemoveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) TagsRemove(ctx context.Context, params TagsRemoveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // TelegramStartLinksIssue implements TelegramStartLinks_issue operation.
@@ -943,7 +943,7 @@ func (UnimplementedHandler) TagsRemove(ctx context.Context, params TagsRemovePar
 // binds to the contact, once. Each call issues a new link.
 //
 // POST /contacts/{contactId}/telegram-start-links
-func (UnimplementedHandler) TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (r TelegramStartLinksIssueRes, _ error) {
+func (UnimplementedHandler) TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (r *TelegramStartLinkResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -952,7 +952,7 @@ func (UnimplementedHandler) TelegramStartLinksIssue(ctx context.Context, req *Is
 // Create a resource.
 //
 // POST /templates
-func (UnimplementedHandler) TemplatesCreate(ctx context.Context, req *CreateTemplateInput) (r TemplatesCreateRes, _ error) {
+func (UnimplementedHandler) TemplatesCreate(ctx context.Context, req *CreateTemplateInput) (r *TemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -961,8 +961,8 @@ func (UnimplementedHandler) TemplatesCreate(ctx context.Context, req *CreateTemp
 // Delete a resource.
 //
 // DELETE /templates/{id}
-func (UnimplementedHandler) TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (r TemplatesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // TemplatesGet implements Templates_get operation.
@@ -970,7 +970,7 @@ func (UnimplementedHandler) TemplatesDelete(ctx context.Context, params Template
 // Get a resource by ID.
 //
 // GET /templates/{id}
-func (UnimplementedHandler) TemplatesGet(ctx context.Context, params TemplatesGetParams) (r TemplatesGetRes, _ error) {
+func (UnimplementedHandler) TemplatesGet(ctx context.Context, params TemplatesGetParams) (r *TemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -979,7 +979,7 @@ func (UnimplementedHandler) TemplatesGet(ctx context.Context, params TemplatesGe
 // List resources with pagination.
 //
 // GET /templates
-func (UnimplementedHandler) TemplatesList(ctx context.Context, params TemplatesListParams) (r TemplatesListRes, _ error) {
+func (UnimplementedHandler) TemplatesList(ctx context.Context, params TemplatesListParams) (r *TemplatesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -988,7 +988,7 @@ func (UnimplementedHandler) TemplatesList(ctx context.Context, params TemplatesL
 // Update a resource.
 //
 // PUT /templates/{id}
-func (UnimplementedHandler) TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (r TemplatesUpdateRes, _ error) {
+func (UnimplementedHandler) TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (r *TemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -998,7 +998,7 @@ func (UnimplementedHandler) TemplatesUpdate(ctx context.Context, req *UpdateTemp
 // Empty while the Instance offers none.
 //
 // GET /tracking-domains
-func (UnimplementedHandler) TrackingDomainsList(ctx context.Context) (r TrackingDomainsListRes, _ error) {
+func (UnimplementedHandler) TrackingDomainsList(ctx context.Context) (r []TrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1010,8 +1010,8 @@ func (UnimplementedHandler) TrackingDomainsList(ctx context.Context) (r Tracking
 // it stop working.
 //
 // DELETE /tracking-domains/{id}
-func (UnimplementedHandler) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (r TrackingDomainsRemoveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // TrackingDomainsSet implements TrackingDomains_set operation.
@@ -1023,7 +1023,7 @@ func (UnimplementedHandler) TrackingDomainsRemove(ctx context.Context, params Tr
 // 422; 404 when the Instance offers no Tracking domains.
 //
 // POST /tracking-domains
-func (UnimplementedHandler) TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (r TrackingDomainsSetRes, _ error) {
+func (UnimplementedHandler) TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (r *TrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1033,7 +1033,7 @@ func (UnimplementedHandler) TrackingDomainsSet(ctx context.Context, req *SetTrac
 // replacement that reaches `serving` becomes current. Verification is never set by the caller.
 //
 // POST /tracking-domains/{id}/verify
-func (UnimplementedHandler) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (r TrackingDomainsVerifyRes, _ error) {
+func (UnimplementedHandler) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (r *TrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1043,7 +1043,7 @@ func (UnimplementedHandler) TrackingDomainsVerify(ctx context.Context, params Tr
 // that reached you by any route. Idempotent. Resubscribing is not available through the API.
 //
 // POST /unsubscribes
-func (UnimplementedHandler) UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (r UnsubscribesCreateRes, _ error) {
+func (UnimplementedHandler) UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (r *UnsubscribeResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1052,7 +1052,7 @@ func (UnimplementedHandler) UnsubscribesCreate(ctx context.Context, req *CreateU
 // Create a resource.
 //
 // POST /webhooks
-func (UnimplementedHandler) WebhooksCreate(ctx context.Context, req *CreateWebhookInput) (r WebhooksCreateRes, _ error) {
+func (UnimplementedHandler) WebhooksCreate(ctx context.Context, req *CreateWebhookInput) (r *WebhookResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1061,8 +1061,8 @@ func (UnimplementedHandler) WebhooksCreate(ctx context.Context, req *CreateWebho
 // Delete a resource.
 //
 // DELETE /webhooks/{id}
-func (UnimplementedHandler) WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (r WebhooksDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // WebhooksGet implements Webhooks_get operation.
@@ -1070,7 +1070,7 @@ func (UnimplementedHandler) WebhooksDelete(ctx context.Context, params WebhooksD
 // Get a resource by ID.
 //
 // GET /webhooks/{id}
-func (UnimplementedHandler) WebhooksGet(ctx context.Context, params WebhooksGetParams) (r WebhooksGetRes, _ error) {
+func (UnimplementedHandler) WebhooksGet(ctx context.Context, params WebhooksGetParams) (r *WebhookResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1079,7 +1079,7 @@ func (UnimplementedHandler) WebhooksGet(ctx context.Context, params WebhooksGetP
 // List resources with pagination.
 //
 // GET /webhooks
-func (UnimplementedHandler) WebhooksList(ctx context.Context, params WebhooksListParams) (r WebhooksListRes, _ error) {
+func (UnimplementedHandler) WebhooksList(ctx context.Context, params WebhooksListParams) (r *WebhooksListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1089,7 +1089,7 @@ func (UnimplementedHandler) WebhooksList(ctx context.Context, params WebhooksLis
 // returned here: read it in the app. Needs the webhooks:regenerate scope.
 //
 // POST /webhooks/{id}/regenerate-secret
-func (UnimplementedHandler) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (r WebhooksRegenerateSecretRes, _ error) {
+func (UnimplementedHandler) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (r *WebhookResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1099,7 +1099,7 @@ func (UnimplementedHandler) WebhooksRegenerateSecret(ctx context.Context, params
 // Does not change the endpoint's failure state. Needs the webhooks:test scope.
 //
 // POST /webhooks/{id}/test
-func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (r WebhooksTestRes, _ error) {
+func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (r *WebhookTestResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1108,7 +1108,7 @@ func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookIn
 // Update a resource.
 //
 // PUT /webhooks/{id}
-func (UnimplementedHandler) WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (r WebhooksUpdateRes, _ error) {
+func (UnimplementedHandler) WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (r *WebhookResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1119,6 +1119,14 @@ func (UnimplementedHandler) WebhooksUpdate(ctx context.Context, req *UpdateWebho
 // more than a day. Read-only: no operation changes the Send cap.
 //
 // GET /workspace
-func (UnimplementedHandler) WorkspaceGet(ctx context.Context) (r WorkspaceGetRes, _ error) {
+func (UnimplementedHandler) WorkspaceGet(ctx context.Context) (r *WorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

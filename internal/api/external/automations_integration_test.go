@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,27 +29,23 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	ctx := context.Background()
 	mailgun := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID))
 
-	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Onboarding", TriggerEvent: "signup",
 		Steps: []externalapi.AutomationStep{emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})},
 	})
 	require.NoError(t, err)
-	res, ok := created.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", created)
 	steps := res.Draft.Value.Steps
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
-	refusedCreate, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	_, refusedCreate := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStep{emailStepVia(bad)},
 	})
-	require.NoError(t, err)
-	refusedUpdate, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
+	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
-	require.NoError(t, err)
 
 	require.Len(t, steps, 2)
 	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, steps[0].IntegrationId.Or(0), "the first step through the relay")
 	assert.False(t, steps[1].IntegrationId.Set, "the second step names none: the default")
-	assert.IsType(t, &externalapi.AutomationsCreateUnprocessableEntity{}, refusedCreate)
-	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, refusedUpdate)
+	testhelper.ExternalRefusal(t, refusedCreate, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, refusedUpdate, http.StatusUnprocessableEntity)
 }

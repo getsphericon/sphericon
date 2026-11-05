@@ -77,9 +77,9 @@ func TestARemovalOfARowInUseAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
 	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsWrite)), capture(&ext))
 
-	_, err := siteClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.TagVipID})
+	err := siteClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.TagVipID})
 	require.NoError(t, err)
-	_, err = extClient.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: fixtures.TagVipID})
+	err = extClient.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: fixtures.TagVipID})
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusConflict, site.status)
@@ -97,7 +97,7 @@ func TestAWorkspaceTheCallerCannotReachAnswers404AlikeOnEveryOperation(t *testin
 	unknownClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&unknown))
 	foreignClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&foreign))
 
-	_, err := unknownClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: "Unknown0", ID: fixtures.TagVipID})
+	err := unknownClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: "Unknown0", ID: fixtures.TagVipID})
 	require.NoError(t, err)
 	_, err = foreignClient.SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
@@ -242,9 +242,8 @@ func TestAConflictRefusalAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	inbox := siteapi.IntegrationConfigInput{OneOf: siteapi.NewInboxConfigInputIntegrationConfigInputSum(
 		siteapi.InboxConfigInput{Kind: siteapi.InboxConfigInputKindInbox})}
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
-	kept, err := k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Kept inbox", Config: inbox}, params)
+	_, err := k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Kept inbox", Config: inbox}, params)
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, kept)
 
 	_, err = k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Second inbox", Config: inbox}, params)
 	require.NoError(t, err)
@@ -331,7 +330,7 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
-	_, err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
+	err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		externalapi.BroadcastsTestSendParams{ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 

@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,9 +21,8 @@ func TestSiteContactsEraseIsRefusedForMembers(t *testing.T) {
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsDeleteForbidden{}, res)
+	err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	still, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactBobID)).Exist(ctx)
 	require.NoError(t, err)
@@ -36,9 +36,8 @@ func TestSiteContactsDeleteByOwnerErases(t *testing.T) {
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
+	err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, res)
 
 	msg, err := env.DB.OutboundMessage.Get(ctx, 100)
 	require.NoError(t, err)
@@ -51,9 +50,8 @@ func TestSiteContactsEraseRecordsTheUserRequester(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteContactsDelete(context.Background(), siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
+	err := c.SiteContactsDelete(context.Background(), siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, res)
 
 	msgs := env.QueuedMessages(t, events.NameContactErased)
 	require.Len(t, msgs, 1)

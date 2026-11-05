@@ -54,7 +54,7 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 	return MessageRow{
 		ID:                m.ID,
 		Kind:              m.Kind.String(),
-		Channel:           m.Channel.String(),
+		Channel:           string(m.Channel),
 		Destination:       lo.EmptyableToPtr(m.Destination),
 		Status:            m.Status.String(),
 		Reason:            m.Reason,

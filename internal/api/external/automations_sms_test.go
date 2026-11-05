@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	twilio := env.AcmeTwilio(t).Integration.ID
 	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish", "integrations:read", "integrations:write")
 
-	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Cart reminder",
 		TriggerEvent: "cart_abandoned",
 		Steps: []externalapi.AutomationStep{{
@@ -29,8 +30,6 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	a, ok := created.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", created)
 	require.Len(t, a.Draft.Value.Steps, 1)
 	step := a.Draft.Value.Steps[0]
 	assert.Equal(t, externalapi.AutomationStepTypeSMS, step.Type)
@@ -38,13 +37,11 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	assert.Equal(t, externalapi.EntityId(twilio), step.IntegrationId.Value)
 	assert.False(t, step.Subject.Set, "an SMS step carries no email field")
 
-	published, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: a.ID})
+	_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: a.ID})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.AutomationResource{}, published)
 
-	deleted, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(twilio)})
-	require.NoError(t, err)
-	users := usersOfRefusal(t, deleted)
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: externalapi.EntityId(twilio)})
+	users := usersOfRefusal(t, err)
 	assert.Len(t, automationUsers(users, int64(a.ID)), 1, "the live SMS step sends through it")
 }
 
@@ -52,11 +49,10 @@ func TestExternalAnSMSStepWithNoTextIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 
-	res, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
+	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
 		Name: "Blank", TriggerEvent: "cart_abandoned",
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeSMS}},
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsCreateUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

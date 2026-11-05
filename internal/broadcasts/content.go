@@ -10,9 +10,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/smsrender"
@@ -24,7 +23,7 @@ import (
 // own input in this package: EmailContentInput is email's, TelegramContentInput Telegram's,
 // SMSContentInput SMS's.
 type ContentInput interface {
-	Channel() messaging.Channel
+	Channel() channels.Channel
 	// create checks the content and sets it on the new Broadcast q.
 	create(ctx context.Context, m *Module, s *ent.Scoped, q *ent.BroadcastScopedCreate) error
 }
@@ -32,13 +31,13 @@ type ContentInput interface {
 // ContentPatch is an edit of a draft's content, in the shape of the draft's Channel: a patch of
 // another Channel's content is ErrChannelFixed. EmailContentPatch is email's.
 type ContentPatch interface {
-	Channel() messaging.Channel
+	Channel() channels.Channel
 	// update checks the edit of the draft cur and sets it on u.
 	update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error
 }
 
 // channelOf is the Broadcast column value of a Channel.
-func channelOf(c messaging.Channel) broadcast.Channel { return broadcast.Channel(c) }
+func channelOf(c channels.Channel) channels.Channel { return c }
 
 // EmailContentInput is the email content of a new Broadcast. A nil field takes its default: an
 // empty subject and body, and the Integration's From.
@@ -53,7 +52,7 @@ type EmailContentInput struct {
 }
 
 // Channel is email.
-func (EmailContentInput) Channel() messaging.Channel { return messaging.ChannelEmail }
+func (EmailContentInput) Channel() channels.Channel { return channels.Email }
 
 // create resolves the body (from the document when one is written), stores it sanitized and
 // refuses a From that is not on a verified Sending domain.
@@ -89,7 +88,7 @@ type EmailContentPatch struct {
 }
 
 // Channel is email.
-func (EmailContentPatch) Channel() messaging.Channel { return messaging.ChannelEmail }
+func (EmailContentPatch) Channel() channels.Channel { return channels.Email }
 
 // update resolves a written body or document as create does; a From set to a new value must be on
 // a verified Sending domain, an unchanged one is not checked again.
@@ -129,7 +128,7 @@ type TelegramContentInput struct {
 }
 
 // Channel is Telegram.
-func (TelegramContentInput) Channel() messaging.Channel { return messaging.ChannelTelegram }
+func (TelegramContentInput) Channel() channels.Channel { return channels.Telegram }
 
 // create stores the content. A text whose Liquid does not render, an image that is no https URL,
 // too many buttons or a button without a label or an http(s) URL are refused; the text's length is
@@ -162,7 +161,7 @@ type TelegramContentPatch struct {
 }
 
 // Channel is Telegram.
-func (TelegramContentPatch) Channel() messaging.Channel { return messaging.ChannelTelegram }
+func (TelegramContentPatch) Channel() channels.Channel { return channels.Telegram }
 
 func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
 	if err := checkTelegram(c.Text.Ptr(), c.ImageURL.Ptr(), c.Buttons.Ptr(), c.UnsubscribeButton.Ptr()); err != nil {
@@ -185,7 +184,7 @@ type SMSContentInput struct {
 }
 
 // Channel is SMS.
-func (SMSContentInput) Channel() messaging.Channel { return messaging.ChannelSMS }
+func (SMSContentInput) Channel() channels.Channel { return channels.SMS }
 
 // create stores the content. A text whose Liquid does not render, or longer than the provider sends, is
 // refused; a blank one is refused at Schedule, not here, so a draft can be saved before it is
@@ -209,7 +208,7 @@ type SMSContentPatch struct {
 }
 
 // Channel is SMS.
-func (SMSContentPatch) Channel() messaging.Channel { return messaging.ChannelSMS }
+func (SMSContentPatch) Channel() channels.Channel { return channels.SMS }
 
 // update checks the text the draft will hold, the stored one when only link tracking changes:
 // turning tracking off counts its links as written, which can take it over the provider's length limit.

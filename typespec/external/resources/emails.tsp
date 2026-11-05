@@ -80,13 +80,7 @@ namespace EmailLint {
    */
   @post
   @requiresScopes(#[ApiTokenScope.templatesRead])
-  op lint(@body body: LintEmailInput):
-    | LintEmailResult
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+  op lint(@body body: LintEmailInput): LintEmailResult | Problem;
 }
 
 /** One attribute of a node or mark in the editor's document */
@@ -145,11 +139,7 @@ namespace EmailSchema {
    */
   @get
   @requiresScopes(#[ApiTokenScope.templatesRead])
-  op get():
-    | EmailSchemaResult
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  op get(): EmailSchemaResult | Problem;
 }
 
 @route("/emails")
@@ -177,11 +167,5 @@ namespace Emails {
         @statusCode statusCode: 202;
         @body body: SendTransactionalEmailResponse;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

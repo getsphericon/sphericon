@@ -3,6 +3,7 @@ package site_test
 import (
 	"crypto/ed25519"
 	"log/slog"
+	"net/http"
 	"testing"
 	"time"
 
@@ -55,11 +56,11 @@ func TestAnExpiredLicenseKeyBootsAsTheCore(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired), testhelper.WithClock(lapseClock))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	_, listed := auditList(t, john, fixtures.AcmePublicID).(*siteapi.SiteAuditEntryList)
+	_, err := john.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired, "the Audit log is dark without its feature")
 	report, err := env.Instance.Report(t.Context())
 	require.NoError(t, err)
 
-	assert.False(t, listed, "the Audit log is dark without its feature")
 	assert.Equal(t, telemetryapi.TelemetryEditionCore, report.Edition, "a lapsed key reports the core")
 }
 
@@ -77,8 +78,8 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	rows := acme.AuditEntry().Query().CountX(t.Context())
 	require.Positive(t, rows, "the fixtures carry an Audit entry")
-	_, listed := auditList(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).(*siteapi.SiteAuditEntryList)
-	require.False(t, listed, "dark while the key is lapsed")
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired, "dark while the key is lapsed")
 
 	// Renewal: the same database read under the renewed key, as after a restart.
 	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)

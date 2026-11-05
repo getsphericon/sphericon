@@ -39,9 +39,6 @@ func (h *Handlers) providerDisplayName(name string) string {
 // identity the token names and ends every session of its User (ADR 0048). The token is the
 // credential, so it works without a session; it works once, because once the identity is
 // gone there is nothing left to undo.
-func (h *Handlers) SiteAuthSigninNotMe(ctx context.Context, req *siteapi.SiteSigninNotMeInput) (siteapi.SiteAuthSigninNotMeRes, error) {
-	if err := h.links.UndoNotMe(ctx, req.Token); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteAuthSigninNotMeOK{}, nil
+func (h *Handlers) SiteAuthSigninNotMe(ctx context.Context, req *siteapi.SiteSigninNotMeInput) error {
+	return h.links.UndoNotMe(ctx, req.Token)
 }

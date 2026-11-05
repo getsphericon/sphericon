@@ -20,7 +20,7 @@ func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) externalapi.Tra
 }
 
 // TrackingDomainsList returns the Workspace's Tracking domains with the CNAME to publish.
-func (h *Handlers) TrackingDomainsList(ctx context.Context) (externalapi.TrackingDomainsListRes, error) {
+func (h *Handlers) TrackingDomainsList(ctx context.Context) ([]externalapi.TrackingDomainResource, error) {
 	rows, err := h.trackingDomains.List(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
@@ -29,12 +29,11 @@ func (h *Handlers) TrackingDomainsList(ctx context.Context) (externalapi.Trackin
 	for i, d := range rows {
 		items[i] = h.trackingDomainResource(d)
 	}
-	res := externalapi.TrackingDomainsListOKApplicationJSON(items)
-	return &res, nil
+	return items, nil
 }
 
 // TrackingDomainsSet sets the Workspace's Tracking domain.
-func (h *Handlers) TrackingDomainsSet(ctx context.Context, req *externalapi.SetTrackingDomainInput) (externalapi.TrackingDomainsSetRes, error) {
+func (h *Handlers) TrackingDomainsSet(ctx context.Context, req *externalapi.SetTrackingDomainInput) (*externalapi.TrackingDomainResource, error) {
 	d, err := h.trackingDomains.Set(ctx, auth.TokenScoped(ctx), req.Host)
 	if err != nil {
 		return nil, err
@@ -44,7 +43,7 @@ func (h *Handlers) TrackingDomainsSet(ctx context.Context, req *externalapi.SetT
 }
 
 // TrackingDomainsVerify checks a Tracking domain now.
-func (h *Handlers) TrackingDomainsVerify(ctx context.Context, params externalapi.TrackingDomainsVerifyParams) (externalapi.TrackingDomainsVerifyRes, error) {
+func (h *Handlers) TrackingDomainsVerify(ctx context.Context, params externalapi.TrackingDomainsVerifyParams) (*externalapi.TrackingDomainResource, error) {
 	d, err := h.trackingDomains.Verify(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -54,9 +53,6 @@ func (h *Handlers) TrackingDomainsVerify(ctx context.Context, params externalapi
 }
 
 // TrackingDomainsRemove removes a Tracking domain by its role.
-func (h *Handlers) TrackingDomainsRemove(ctx context.Context, params externalapi.TrackingDomainsRemoveParams) (externalapi.TrackingDomainsRemoveRes, error) {
-	if err := h.trackingDomains.Remove(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &externalapi.TrackingDomainsRemoveNoContent{}, nil
+func (h *Handlers) TrackingDomainsRemove(ctx context.Context, params externalapi.TrackingDomainsRemoveParams) error {
+	return h.trackingDomains.Remove(ctx, auth.TokenScoped(ctx), int64(params.ID))
 }

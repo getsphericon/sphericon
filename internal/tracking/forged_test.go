@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -58,7 +59,7 @@ func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 
 	got, err := tr.DecodeUnsub(signed(t, ok))
 	require.NoError(t, err)
-	assert.Equal(t, tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
+	assert.Equal(t, tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
 
 	for name, claims := range map[string]jwt.MapClaims{
 		"missing ch":  with("ch", nil),
@@ -121,7 +122,7 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 func TestURLsCarryDecodableTokens(t *testing.T) {
 	tr := tracking.New(forgeSecret, "https://app.test/")
 
-	u, err := tr.UnsubscribeURL(tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
+	u, err := tr.UnsubscribeURL(tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
 	require.NoError(t, err)
 	require.Contains(t, u, "https://app.test/e/u/")
 	target, err := tr.DecodeUnsub(u[len("https://app.test/e/u/"):])

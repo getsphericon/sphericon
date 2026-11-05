@@ -13,7 +13,7 @@ import (
 // ServiceUsageList is the stored figures of every Workspace for a Usage period: Live
 // usage for the open one (the default), Usage snapshots for a closed one. It reads what
 // the usage job stored and never recounts.
-func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceapi.ServiceUsageListParams) (serviceapi.ServiceUsageListRes, error) {
+func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceapi.ServiceUsageListParams) (*serviceapi.ServiceUsageListOK, error) {
 	period, err := requestedPeriod(params.Period)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func requestedPeriod(v serviceapi.OptString) (time.Time, error) {
 // ServiceWorkspaceUsageGet is the stored figures of one Workspace for a Usage period:
 // Live usage for the open one (the default), Usage snapshots for a closed one. It reads
 // what the usage job stored and never recounts.
-func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params serviceapi.ServiceWorkspaceUsageGetParams) (serviceapi.ServiceWorkspaceUsageGetRes, error) {
+func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params serviceapi.ServiceWorkspaceUsageGetParams) (*serviceapi.WorkspaceUsageResource, error) {
 	period, err := requestedPeriod(params.Period)
 	if err != nil {
 		return nil, err

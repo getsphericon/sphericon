@@ -522,14 +522,14 @@ run = "pnpm run i18n:types"
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
 run = [
   "cd ent && heavy -- go run -mod=mod entc.go",
-  "heavy -- go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
-  "heavy -- go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
-  "heavy -- go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
-  "heavy -- go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
-  "heavy -- go tool ogen --target gen/staffee --package staffeeapi --clean openapi/staffee.openapi.json",
-  "heavy -- go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/site --package siteapi --clean openapi/site.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/external --package externalapi --clean openapi/external.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/staffee --package staffeeapi --clean openapi/staffee.openapi.json",
+  "heavy -- go tool ogen --config ogen.yml --target gen/service --package serviceapi --clean openapi/service.openapi.json",
   "heavy -- go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
-  "heavy -- go run ./cmd/goverter gen ./internal/api/site/resources ./internal/api/external/resources ./internal/api/staff/resources ./ee/api/staff/resources ./internal/server/refusals",
+  "heavy -- go run ./cmd/goverter gen ./internal/api/site/resources ./internal/api/external/resources ./internal/api/staff/resources ./ee/api/staff/resources ./internal/problem/mapping",
 ]
 
 ["generate:mocks"]

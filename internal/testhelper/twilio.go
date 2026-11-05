@@ -107,14 +107,12 @@ func (env *TestEnv) ConnectTwilio(t *testing.T) TwilioAccount {
 	account := env.Twilio.AddAccount()
 	key := env.Twilio.AddAPIKey(account)
 	number := env.Twilio.AddNumber(account, TwilioNumber)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
+	row, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Name:   "Acme SMS",
 		Config: SiteTwilio(account.SID, key.SID, key.Secret, TwilioNumber),
 		Params: siteapi.NewOptJsonObject(TwilioAuthToken(account.AuthToken)),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	row, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "connect the Twilio account: got %T", res)
 	return TwilioAccount{Integration: row, Account: account, Key: key, NumberSID: number}
 }
 

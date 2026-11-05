@@ -14,21 +14,14 @@ namespace Sphericon;
  * equivalent). Instantiate once per resource; @autoRoute derives the nested
  * path from the resource's @segment and its @parentResource(SiteWorkspaceResource):
  * `/workspaces/{workspaceId}/<segment>` for the collection and
- * `/workspaces/{workspaceId}/<segment>/{id}` for a single item.
- *
- * `WriteConflict` is the extra error a write may raise on a uniqueness clash;
- * it defaults to `never` (no 409). Resources with a unique key (contacts,
- * integrations) instantiate `WorkspaceCrudUnique`, which supplies ConflictProblem.
- * `UpdateConflict` is the error an update alone may raise besides it: an archived resource is
- * read-only until it is unarchived (ADR 0100).
+ * `/workspaces/{workspaceId}/<segment>/{id}` for a single item. Every operation answers a
+ * refusal with the `Problem` default response, whatever its status.
  */
 interface WorkspaceCrudKept<
   Resource extends {},
   CreateInput,
   UpdateInput,
-  WriteConflict = never,
-  ListFilter extends {} = {},
-  UpdateConflict = never
+  ListFilter extends {} = {}
 > {
   /** List resources for the site UI */
   @listsResource(Resource)
@@ -36,9 +29,7 @@ interface WorkspaceCrudKept<
   @autoRoute
   list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Create a resource from the site UI */
   @createsResource(Resource)
@@ -49,19 +40,13 @@ interface WorkspaceCrudKept<
         @statusCode statusCode: 201;
         @body body: Resource;
       }
-    | BadRequestProblem
-    | NotFoundProblem
-    | WriteConflict
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get a resource by ID for the site UI */
   @readsResource(Resource)
   @get
   @autoRoute
-  get(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | NotFoundProblem;
+  get(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Update a resource from the site UI */
   @updatesResource(Resource)
@@ -69,11 +54,7 @@ interface WorkspaceCrudKept<
   @autoRoute
   update(...ResourceParameters<Resource>, @body body: UpdateInput):
     | Resource
-    | BadRequestProblem
-    | NotFoundProblem
-    | WriteConflict
-    | UpdateConflict
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 /**
@@ -82,36 +63,22 @@ interface WorkspaceCrudKept<
  * refused with 409 while live work uses the resource, and an update of an archived resource
  * with 409 until it is unarchived.
  */
-interface WorkspaceCrudArchivable<
-  Resource extends {},
-  CreateInput,
-  UpdateInput,
-  WriteConflict = never
->
+interface WorkspaceCrudArchivable<Resource extends {}, CreateInput, UpdateInput>
   extends WorkspaceCrudKept<
       Resource,
       CreateInput,
       UpdateInput,
-      WriteConflict,
-      ArchivedFilter,
-      ConflictProblem
+      ArchivedFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
   @autoRoute
-  archive(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | NotFoundProblem
-    | InUseProblem;
+  archive(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Restore an archived resource */
   @action("unarchive")
   @autoRoute
-  unarchive(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | NotFoundProblem;
+  unarchive(...ResourceParameters<Resource>): Resource | Problem;
 }
 
 /** Filter of a list of archivable resources */
@@ -120,60 +87,26 @@ model ArchivedFilter {
   @query archived?: boolean;
 }
 
+/** Workspace-scoped CRUD with a delete. */
 interface WorkspaceCrud<
   Resource extends {},
   CreateInput,
   UpdateInput,
-  WriteConflict = never,
-  DeleteDenied = never,
   ListFilter extends {} = {}
->
-  extends WorkspaceCrudKept<
-      Resource,
-      CreateInput,
-      UpdateInput,
-      WriteConflict,
-      ListFilter
-    > {
+> extends WorkspaceCrudKept<Resource, CreateInput, UpdateInput, ListFilter> {
   /** Delete a resource from the site UI */
   @deletesResource(Resource)
   @delete
   @autoRoute
-  delete(...ResourceParameters<Resource>):
-    | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | DeleteDenied;
+  delete(...ResourceParameters<Resource>): NoContentResponse | Problem;
 }
 
 /**
- * Workspace-scoped CRUD for a resource with a unique key (adds 409 on writes).
- * `DeleteDenied` is the extra error a delete may raise (e.g. 403 for a role gate).
- */
-interface WorkspaceCrudUnique<
-  Resource extends {},
-  CreateInput,
-  UpdateInput,
-  DeleteDenied = never,
-  ListFilter extends {} = {}
->
-  extends WorkspaceCrud<
-      Resource,
-      CreateInput,
-      UpdateInput,
-      ConflictProblem,
-      DeleteDenied,
-      ListFilter
-    > {}
-
-/**
  * Flat, token-scoped CRUD for the external (public) API. No parent nesting —
- * `/<segment>` and `/<segment>/{id}`. Every operation can return 401
+ * `/<segment>` and `/<segment>/{id}`. Every operation can be refused with 401
  * (bearer-token auth) and 403 (a token without the scope the operation declares,
- * ADR 0061). `ReadScope` gates list and get, `WriteScope` create and update.
- * `WriteConflict` defaults to `never` (no 409); resources with a unique key use
- * `ExternalCrudUnique`. `UpdateConflict` is the error an update alone may raise besides it: an
- * archived resource is read-only until it is unarchived (ADR 0100).
+ * ADR 0061), answered with the `Problem` default response. `ReadScope` gates list and get,
+ * `WriteScope` create and update.
  */
 interface ExternalCrudKept<
   Resource extends {},
@@ -181,9 +114,7 @@ interface ExternalCrudKept<
   UpdateInput,
   ReadScope extends valueof ApiTokenScope,
   WriteScope extends valueof ApiTokenScope,
-  WriteConflict = never,
-  ListFilter extends {} = {},
-  UpdateConflict = never
+  ListFilter extends {} = {}
 > {
   /** List resources with pagination */
   @listsResource(Resource)
@@ -192,11 +123,7 @@ interface ExternalCrudKept<
   @requiresScopes(#[ReadScope])
   list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Create a resource */
   @createsResource(Resource)
@@ -208,25 +135,14 @@ interface ExternalCrudKept<
         @statusCode statusCode: 201;
         @body body: Resource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | WriteConflict
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get a resource by ID */
   @readsResource(Resource)
   @get
   @autoRoute
   @requiresScopes(#[ReadScope])
-  get(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  get(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Update a resource */
   @updatesResource(Resource)
@@ -235,14 +151,7 @@ interface ExternalCrudKept<
   @requiresScopes(#[WriteScope])
   update(...ResourceParameters<Resource>, @body body: UpdateInput):
     | Resource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | WriteConflict
-    | UpdateConflict
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 /** Flat external CRUD of a resource that is archived instead of deleted (ADR 0100).
@@ -253,8 +162,7 @@ interface ExternalCrudArchivable<
   CreateInput,
   UpdateInput,
   ReadScope extends valueof ApiTokenScope,
-  WriteScope extends valueof ApiTokenScope,
-  WriteConflict = never
+  WriteScope extends valueof ApiTokenScope
 >
   extends ExternalCrudKept<
       Resource,
@@ -262,34 +170,19 @@ interface ExternalCrudArchivable<
       UpdateInput,
       ReadScope,
       WriteScope,
-      WriteConflict,
-      ArchivedFilter,
-      ConflictProblem
+      ArchivedFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
   @autoRoute
   @requiresScopes(#[WriteScope])
-  archive(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | InUseProblem;
+  archive(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Restore an archived resource */
   @action("unarchive")
   @autoRoute
   @requiresScopes(#[WriteScope])
-  unarchive(...ResourceParameters<Resource>):
-    | Resource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  unarchive(...ResourceParameters<Resource>): Resource | Problem;
 }
 
 /** Flat external CRUD with a delete, which needs `DeleteScope` (the write scope of most
@@ -301,8 +194,6 @@ interface ExternalCrud<
   ReadScope extends valueof ApiTokenScope,
   WriteScope extends valueof ApiTokenScope,
   DeleteScope extends valueof ApiTokenScope,
-  WriteConflict = never,
-  DeleteDenied = never,
   ListFilter extends {} = {}
 >
   extends ExternalCrudKept<
@@ -311,7 +202,6 @@ interface ExternalCrud<
       UpdateInput,
       ReadScope,
       WriteScope,
-      WriteConflict,
       ListFilter
     > {
   /** Delete a resource */
@@ -319,34 +209,5 @@ interface ExternalCrud<
   @delete
   @autoRoute
   @requiresScopes(#[DeleteScope])
-  delete(...ResourceParameters<Resource>):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem
-    | DeleteDenied;
+  delete(...ResourceParameters<Resource>): NoContentResponse | Problem;
 }
-
-/** Flat external CRUD for a resource with a unique key (adds 409 on writes). */
-interface ExternalCrudUnique<
-  Resource extends {},
-  CreateInput,
-  UpdateInput,
-  ReadScope extends valueof ApiTokenScope,
-  WriteScope extends valueof ApiTokenScope,
-  DeleteScope extends valueof ApiTokenScope,
-  DeleteDenied = never
->
-  extends ExternalCrud<
-      Resource,
-      CreateInput,
-      UpdateInput,
-      ReadScope,
-      WriteScope,
-      DeleteScope,
-      ConflictProblem,
-      DeleteDenied
-    > {}

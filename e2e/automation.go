@@ -131,7 +131,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 // public API. Ingest is accept-then-process: observe the effect with Inbox.Wait.
 func (w *Workspace) RecordEvent(email, action string) {
 	w.t.Helper()
-	res, err := w.api.EventsCreate(w.t.Context(), &externalapi.RecordEventsInput{
+	err := w.api.EventsCreate(w.t.Context(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{
 			SubjectId: "subject-" + email,
 			Action:    action,
@@ -139,8 +139,6 @@ func (w *Workspace) RecordEvent(email, action string) {
 		}},
 	})
 	require.NoError(w.t, err, "record event")
-	_, isNoContent := res.(*externalapi.EventsCreateNoContent)
-	require.True(w.t, isNoContent, "record event: unexpected response %T: %+v", res, res)
 }
 
 // openPixel finds the open pixel a tracked email carries.

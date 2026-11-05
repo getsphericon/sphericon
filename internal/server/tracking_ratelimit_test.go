@@ -10,15 +10,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // The tracking guard only decides whether an engagement is recorded (ADR 0025):
@@ -114,7 +115,7 @@ func TestBelowTheTrackingGuardEngagementsAreRecorded(t *testing.T) {
 func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
 	env := testhelper.Setup(t, withTrackingLimit(1))
 	path := unsubPath(t, env.Tracker, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail,
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
 	})

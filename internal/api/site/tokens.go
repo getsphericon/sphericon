@@ -9,7 +9,7 @@ import (
 
 // SiteTokensList returns the workspace's API tokens (Connections are listed apart, ADR 0061); a
 // revoked one stays listed, marked by its revoked_at.
-func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
+func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListParams) ([]siteapi.SiteApiTokenResource, error) {
 	scoped := workspaceScope(ctx)
 
 	tokens, err := apitokens.List(ctx, scoped)
@@ -18,12 +18,12 @@ func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListP
 	}
 
 	items := mapper.TokensToResources(tokens)
-	return &items, nil
+	return items, nil
 }
 
 // SiteTokensCreate mints a workspace API token. The full secret is returned once;
 // only its SHA-256 hash and public prefix are stored.
-func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, _ siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
+func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, _ siteapi.SiteTokensCreateParams) (*siteapi.SiteCreateTokenResponse, error) {
 	scoped := workspaceScope(ctx)
 
 	// Owners and admins may grant any scope of the vocabulary.
@@ -39,7 +39,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 }
 
 // SiteTokensUpdate renames an active workspace API token.
-func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (siteapi.SiteTokensUpdateRes, error) {
+func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (*siteapi.SiteApiTokenResource, error) {
 	scoped := workspaceScope(ctx)
 
 	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
@@ -51,7 +51,7 @@ func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdate
 }
 
 // SiteTokensDelete revokes (soft-deletes) a workspace API token.
-func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteTokensDeleteParams) (siteapi.SiteTokensDeleteRes, error) {
+func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteTokensDeleteParams) error {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -59,7 +59,7 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 	// An unknown, foreign or already-revoked id is a 404.
 	err := apitokens.Revoke(ctx, scoped, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteTokensDeleteNoContent{}, nil
+	return nil
 }

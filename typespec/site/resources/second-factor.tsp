@@ -85,10 +85,12 @@ namespace SiteSecondFactor {
    * the account deletion form (ADR 0062). */
   @get
   @allowedWhileAcceptancePending
-  op getStatus(): {
-    @statusCode statusCode: 200;
-    @body body: SiteSecondFactorStatus;
-  };
+  op getStatus():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteSecondFactorStatus;
+      }
+    | Problem;
 
   /** Start enrolling a TOTP Second factor, proving the password: creates a pending
    * secret (replacing an earlier pending one). It counts as a Second factor only
@@ -102,10 +104,7 @@ namespace SiteSecondFactor {
         @statusCode statusCode: 200;
         @body body: SiteSecondFactorEnrollment;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | ConflictProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Confirm the pending enrollment with the password and a code from the app. On
    * success the Second factor is active, every other session ends and the acting
@@ -123,11 +122,7 @@ namespace SiteSecondFactor {
 
         @body body: SiteRecoveryCodes;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Replace the Recovery codes with a fresh set (the previous set stops working).
    * Every other session ends; the acting one continues under the cookie set here.
@@ -144,10 +139,7 @@ namespace SiteSecondFactor {
 
         @body body: SiteRecoveryCodes;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | ConflictProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Disable the Second factor, proving the password and a current code. Every
    * other session ends; the acting one continues under the cookie set here. 403 on
@@ -162,9 +154,5 @@ namespace SiteSecondFactor {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

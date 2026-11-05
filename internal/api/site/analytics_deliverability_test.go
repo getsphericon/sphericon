@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -26,8 +27,7 @@ func overviewDeliverability(t *testing.T, env *testhelper.TestEnv) siteapi.SiteA
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsOverview(context.Background(),
 		siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-	require.Truef(t, ok, "got %T", res)
+	ov := res
 	return ov.Deliverability
 }
 
@@ -38,8 +38,7 @@ func deliverabilityReport(t *testing.T, env *testhelper.TestEnv, email string, r
 		Range:       siteapi.NewOptSiteAnalyticsRange(rng),
 	})
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAnalyticsDeliverability)
-	require.Truef(t, ok, "%s got %T", email, res)
+	report := res
 	return *report
 }
 
@@ -115,8 +114,7 @@ func TestEveryRoleReadsTheDeliverabilityReportAndTheOverviewRates(t *testing.T) 
 		res, err := env.SiteActor(t, email).SiteAnalyticsOverview(context.Background(),
 			siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err, email)
-		overview, ok := res.(*siteapi.SiteAnalyticsOverview)
-		require.Truef(t, ok, "%s got %T", email, res)
+		overview := res
 		_, listed := ratesOf(overview.Deliverability.Domains, fixtures.SendingDomainLaunchDomain)
 		assert.True(t, listed, email)
 	}
@@ -129,8 +127,7 @@ func TestSiteAnalyticsDeliverabilityRequiresAuthAndAnOwnedWorkspace(t *testing.T
 		siteapi.SiteAnalyticsDeliverabilityParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 
-	out, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsDeliverability(context.Background(),
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAnalyticsDeliverability(context.Background(),
 		siteapi.SiteAnalyticsDeliverabilityParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAnalyticsDeliverabilityNotFound{}, out)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

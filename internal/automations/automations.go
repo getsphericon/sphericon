@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -177,7 +178,7 @@ type SendStep struct {
 }
 
 // Channel is the Channel the step sends on.
-func (s SendStep) Channel() messaging.Channel {
+func (s SendStep) Channel() channels.Channel {
 	ch, _ := s.Step.Type.Channel()
 	return ch
 }
@@ -657,7 +658,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 		}
 	}
 	type routeKey struct {
-		ch          messaging.Channel
+		ch          channels.Channel
 		integration int64
 	}
 	asked := map[routeKey]bool{}

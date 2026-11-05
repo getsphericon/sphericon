@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -28,7 +29,7 @@ type EmailContent struct {
 }
 
 // Channel is email.
-func (EmailContent) Channel() messaging.Channel { return messaging.ChannelEmail }
+func (EmailContent) Channel() channels.Channel { return channels.Email }
 
 // emailChannel is email's part of the Outbound send: the renderer that adds the unsubscribe footer,
 // the List-Unsubscribe URL, the open pixel and the tracked links, and the adapter over the
@@ -133,7 +134,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	}
 
 	unsub := tracking.UnsubTarget{
-		Channel:     messaging.ChannelEmail,
+		Channel:     channels.Email,
 		Source:      req.Source,
 		Destination: dest,
 		WorkspaceID: ws.ID,

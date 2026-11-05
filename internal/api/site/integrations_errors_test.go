@@ -3,6 +3,7 @@ package site_test
 import (
 	"cmp"
 	"context"
+	"net/http"
 	"slices"
 	"testing"
 
@@ -26,66 +27,54 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("list is scoped and requires a workspace", func(t *testing.T) {
-		res, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: acme})
+		list, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: acme})
 		require.NoError(t, err)
-		list, ok := res.(*siteapi.SiteIntegrationsListOKApplicationJSON)
-		require.Truef(t, ok, "got %T", res)
-		require.Len(t, *list, total, "the Workspace's integrations")
-		assert.True(t, slices.IsSortedFunc(*list, func(a, b siteapi.SiteIntegrationResource) int {
+		require.Len(t, list, total, "the Workspace's integrations")
+		assert.True(t, slices.IsSortedFunc(list, func(a, b siteapi.SiteIntegrationResource) int {
 			return cmp.Compare(a.ID, b.ID)
 		}), "ordered by id")
 
-		nf, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: foreign})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsListNotFound{}, nf)
+		_, err = c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: foreign})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 		_, err = env.SiteAnonymous(t).SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: acme})
 		require.Error(t, err)
 	})
 
 	t.Run("create validates", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "x", Config: smtpInput("h", "p")},
+		_, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "x", Config: smtpInput("h", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: foreign})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsCreateNotFound{}, r1)
-		r2, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "   ", Config: smtpInput("h", "p")},
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
+		_, err = c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "   ", Config: smtpInput("h", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsCreateUnprocessableEntity{}, r2)
-		r3, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "bad", Config: smtpInput("", "p")},
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+		_, err = c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "bad", Config: smtpInput("", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsCreateUnprocessableEntity{}, r3, "an SMTP config without a host is rejected")
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "an SMTP config without a host is rejected")
 		n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, total, n, "rejected creates persisted nothing")
 	})
 
 	t.Run("get", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: foreign, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsGetNotFound{}, r1)
-		r3, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: acme, ID: idStr(99999)})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsGetNotFound{}, r3)
+		_, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: foreign, ID: id})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
+		_, err = c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: acme, ID: idStr(99999)})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	})
 
 	t.Run("update", func(t *testing.T) {
 		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}
-		r1, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r1)
-		r3, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r3)
-		r4, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
+		_, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: id})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
+		_, err = c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
+		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r4)
-		r5, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+		_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r5, "an invalid config is rejected")
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "an invalid config is rejected")
 
 		stored, err := env.DB.Integration.Get(ctx, int64(id))
 		require.NoError(t, err)
@@ -96,20 +85,17 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 			Enabled: siteapi.NewOptBool(false), IsDefault: siteapi.NewOptBool(false),
 		}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
-		assert.False(t, r6.(*siteapi.SiteIntegrationResource).Enabled)
+		assert.False(t, r6.Enabled)
 	})
 
 	t.Run("archive", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: foreign, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r1)
-		r3, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r3)
+		err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: foreign, ID: id})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
+		err = c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-		r4, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: id})
+		err = c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: acme, ID: id})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, r4)
 		archived, err := env.DB.Integration.Query().Where(integration.ID(int64(id)), integration.DiscardedAtNotNil()).Exist(ctx)
 		require.NoError(t, err)
 		assert.True(t, archived, "archived, not removed")

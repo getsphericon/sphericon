@@ -108,11 +108,9 @@ func (env *TestEnv) acmeIntegration(t *testing.T, id int64) *siteapi.SiteIntegra
 // fixtureIntegration is a fixture Integration of the Workspace as the Site API reads it to owner.
 func (env *TestEnv) fixtureIntegration(t *testing.T, owner, workspace string, id int64) *siteapi.SiteIntegrationResource {
 	t.Helper()
-	res, err := env.SiteActor(t, owner).SiteIntegrationsGet(t.Context(),
+	row, err := env.SiteActor(t, owner).SiteIntegrationsGet(t.Context(),
 		siteapi.SiteIntegrationsGetParams{WorkspaceId: siteapi.WorkspaceId(workspace), ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	row, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "read the fixture Integration %d: got %T", id, res)
 	return row
 }
 
@@ -134,12 +132,10 @@ func (env *TestEnv) PostTelegramUpdate(t *testing.T, bot TelegramBot, update str
 func (env *TestEnv) BindTelegram(t *testing.T, bot TelegramBot, contactID, userID, updateID int64) {
 	t.Helper()
 	botID := externalapi.EntityId(bot.Integration.ID)
-	res, err := env.ExternalScoped(t, "contacts:write").TelegramStartLinksIssue(t.Context(),
+	link, err := env.ExternalScoped(t, "contacts:write").TelegramStartLinksIssue(t.Context(),
 		&externalapi.IssueTelegramStartLinkInput{IntegrationId: externalapi.NewOptNilEntityId(botID)},
 		externalapi.TelegramStartLinksIssueParams{ContactId: externalapi.EntityId(contactID)})
 	require.NoError(t, err)
-	link, ok := res.(*externalapi.TelegramStartLinkResource)
-	require.Truef(t, ok, "issue the start link: got %T", res)
 	u, err := url.Parse(link.URL)
 	require.NoError(t, err)
 	env.PostTelegramUpdate(t, bot, fmt.Sprintf(

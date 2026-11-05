@@ -29,11 +29,11 @@ func TestAnAutomationStepThroughTheTestInboxIsSentAndCapturedWithoutAVerifiedDom
 		},
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	inbox := created.(*siteapi.SiteIntegrationResource)
-	chosen, err := owner.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	inbox := created
+	_, err = owner.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: inbox.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, chosen)
+
 	liam := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
 	runID := int64(fixtures.AutomationRunJobsSingleEmailLiamID)
 	queueStep(t, env, runID)

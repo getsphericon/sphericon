@@ -17,6 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // IntegrationCreate is the builder for creating a Integration entity.
@@ -82,13 +84,13 @@ func (_c *IntegrationCreate) SetName(v string) *IntegrationCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (_c *IntegrationCreate) SetChannel(v integration.Channel) *IntegrationCreate {
+func (_c *IntegrationCreate) SetChannel(v channels.Channel) *IntegrationCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *IntegrationCreate) SetNillableChannel(v *integration.Channel) *IntegrationCreate {
+func (_c *IntegrationCreate) SetNillableChannel(v *channels.Channel) *IntegrationCreate {
 	if v != nil {
 		_c.SetChannel(*v)
 	}
@@ -96,7 +98,7 @@ func (_c *IntegrationCreate) SetNillableChannel(v *integration.Channel) *Integra
 }
 
 // SetProvider sets the "provider" field.
-func (_c *IntegrationCreate) SetProvider(v integration.Provider) *IntegrationCreate {
+func (_c *IntegrationCreate) SetProvider(v providers.Provider) *IntegrationCreate {
 	_c.mutation.SetProvider(v)
 	return _c
 }
@@ -226,13 +228,13 @@ func (_c *IntegrationCreate) SetNillableProviderMaxPerDay(v *int) *IntegrationCr
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (_c *IntegrationCreate) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationCreate {
+func (_c *IntegrationCreate) SetProviderEnforcement(v providers.Enforcement) *IntegrationCreate {
 	_c.mutation.SetProviderEnforcement(v)
 	return _c
 }
 
 // SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (_c *IntegrationCreate) SetNillableProviderEnforcement(v *integration.ProviderEnforcement) *IntegrationCreate {
+func (_c *IntegrationCreate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationCreate {
 	if v != nil {
 		_c.SetProviderEnforcement(*v)
 	}
@@ -814,7 +816,7 @@ func (u *IntegrationUpsert) UpdateName() *IntegrationUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *IntegrationUpsert) SetChannel(v integration.Channel) *IntegrationUpsert {
+func (u *IntegrationUpsert) SetChannel(v channels.Channel) *IntegrationUpsert {
 	u.Set(integration.FieldChannel, v)
 	return u
 }
@@ -826,7 +828,7 @@ func (u *IntegrationUpsert) UpdateChannel() *IntegrationUpsert {
 }
 
 // SetProvider sets the "provider" field.
-func (u *IntegrationUpsert) SetProvider(v integration.Provider) *IntegrationUpsert {
+func (u *IntegrationUpsert) SetProvider(v providers.Provider) *IntegrationUpsert {
 	u.Set(integration.FieldProvider, v)
 	return u
 }
@@ -1018,7 +1020,7 @@ func (u *IntegrationUpsert) ClearProviderMaxPerDay() *IntegrationUpsert {
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (u *IntegrationUpsert) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsert {
+func (u *IntegrationUpsert) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpsert {
 	u.Set(integration.FieldProviderEnforcement, v)
 	return u
 }
@@ -1216,7 +1218,7 @@ func (u *IntegrationUpsertOne) UpdateName() *IntegrationUpsertOne {
 }
 
 // SetChannel sets the "channel" field.
-func (u *IntegrationUpsertOne) SetChannel(v integration.Channel) *IntegrationUpsertOne {
+func (u *IntegrationUpsertOne) SetChannel(v channels.Channel) *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetChannel(v)
 	})
@@ -1230,7 +1232,7 @@ func (u *IntegrationUpsertOne) UpdateChannel() *IntegrationUpsertOne {
 }
 
 // SetProvider sets the "provider" field.
-func (u *IntegrationUpsertOne) SetProvider(v integration.Provider) *IntegrationUpsertOne {
+func (u *IntegrationUpsertOne) SetProvider(v providers.Provider) *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetProvider(v)
 	})
@@ -1454,7 +1456,7 @@ func (u *IntegrationUpsertOne) ClearProviderMaxPerDay() *IntegrationUpsertOne {
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (u *IntegrationUpsertOne) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsertOne {
+func (u *IntegrationUpsertOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetProviderEnforcement(v)
 	})
@@ -1832,7 +1834,7 @@ func (u *IntegrationUpsertBulk) UpdateName() *IntegrationUpsertBulk {
 }
 
 // SetChannel sets the "channel" field.
-func (u *IntegrationUpsertBulk) SetChannel(v integration.Channel) *IntegrationUpsertBulk {
+func (u *IntegrationUpsertBulk) SetChannel(v channels.Channel) *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetChannel(v)
 	})
@@ -1846,7 +1848,7 @@ func (u *IntegrationUpsertBulk) UpdateChannel() *IntegrationUpsertBulk {
 }
 
 // SetProvider sets the "provider" field.
-func (u *IntegrationUpsertBulk) SetProvider(v integration.Provider) *IntegrationUpsertBulk {
+func (u *IntegrationUpsertBulk) SetProvider(v providers.Provider) *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetProvider(v)
 	})
@@ -2070,7 +2072,7 @@ func (u *IntegrationUpsertBulk) ClearProviderMaxPerDay() *IntegrationUpsertBulk 
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (u *IntegrationUpsertBulk) SetProviderEnforcement(v integration.ProviderEnforcement) *IntegrationUpsertBulk {
+func (u *IntegrationUpsertBulk) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.SetProviderEnforcement(v)
 	})

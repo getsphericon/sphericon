@@ -1,4 +1,4 @@
-package server
+package logging
 
 import "strings"
 
@@ -10,9 +10,9 @@ var secretPathPrefixes = []string{
 	"/site/confirmations/", "/site/unsubscribes/", "/site/invitations/",
 }
 
-// loggedPath is the request path as it may appear in a log line: the credential after a
+// RedactedPath is the request path as it may appear in a log line: the credential after a
 // secret prefix is replaced, the rest is kept.
-func loggedPath(path string) string {
+func RedactedPath(path string) string {
 	for _, prefix := range secretPathPrefixes {
 		if strings.HasPrefix(path, prefix) {
 			return prefix + "{redacted}"

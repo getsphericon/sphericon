@@ -8,7 +8,7 @@ import (
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
-func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
+func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMembershipsListParams) ([]siteapi.SiteMembershipResource, error) {
 	s := workspaceScope(ctx)
 
 	members, err := accounts.Members(ctx, s)
@@ -17,13 +17,13 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMember
 	}
 
 	items := mapper.MembershipsToResources(members)
-	return &items, nil
+	return items, nil
 }
 
 // SiteMembershipsUpdate changes a member's role (members:manage); granting the owner role or
 // changing an owner's needs owners:manage (refused 403 permission_required), and the last owner
 // can never be demoted.
-func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (siteapi.SiteMembershipsUpdateRes, error) {
+func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (*siteapi.SiteMembershipResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -38,16 +38,16 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 
 // SiteMembershipsDelete removes a member (members:manage); removing an owner needs
 // owners:manage, and the last owner cannot be removed.
-func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) (siteapi.SiteMembershipsDeleteRes, error) {
+func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) error {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
 	err := h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteMembershipsDeleteNoContent{}, nil
+	return nil
 }
 
 // SiteMembershipsResetSecondFactor resets a member's Second factor (ADR 0020):
@@ -55,22 +55,22 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 // and records `user.second_factor_reset` in this Workspace; the acting session is
 // someone else's, so nothing is reissued. A member resets nobody, and nobody resets
 // their own here (disabling takes a password and a code).
-func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) (siteapi.SiteMembershipsResetSecondFactorRes, error) {
+func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) error {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	callerID, err := sessionUserID(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	target, err := accounts.SecondFactorResetTarget(ctx, s, callerID, callerMembership(ctx).Role, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = h.secondFactor.Reset(ctx, target.UserID, h.actor(ctx), s.WorkspaceID())
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteMembershipsResetSecondFactorNoContent{}, nil
+	return nil
 }

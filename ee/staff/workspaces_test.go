@@ -44,18 +44,14 @@ func (h *harness) staffSession(t *testing.T) (*staffeeapi.Client, *http.Cookie) 
 
 func (h *harness) listWorkspaces(t *testing.T, c *staffeeapi.Client, params staffeeapi.StaffWorkspacesListParams) *staffeeapi.StaffWorkspacesListOK {
 	t.Helper()
-	res, err := c.StaffWorkspacesList(t.Context(), params)
+	page, err := c.StaffWorkspacesList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*staffeeapi.StaffWorkspacesListOK)
-	require.Truef(t, ok, "got %T", res)
 	return page
 }
 
-func (h *harness) getWorkspace(t *testing.T, c *staffeeapi.Client, id string) staffeeapi.StaffWorkspacesGetRes {
+func (h *harness) getWorkspace(t *testing.T, c *staffeeapi.Client, id string) (*staffeeapi.StaffWorkspaceDetailResource, error) {
 	t.Helper()
-	res, err := c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
-	require.NoError(t, err)
-	return res
+	return c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 }
 
 func names(items []staffeeapi.StaffWorkspaceResource) []string {
@@ -142,14 +138,14 @@ func TestTheDetailShowsMetadataAndTheSuspensionState(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	acme, err := h.getWorkspace(t, c, fixtures.AcmePublicID)
+	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmePublicID, acme.ID)
 	assert.Equal(t, fixtures.AcmeName, acme.Name)
 	assert.False(t, acme.Suspension.Set, "an active Workspace has no suspension")
 
-	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	hooli, err := h.getWorkspace(t, c, fixtures.HooliPublicID)
+	require.NoError(t, err)
 	require.True(t, hooli.Suspension.Set)
 	assert.Equal(t, staffeeapi.StaffSuspensionActorKindStaff, hooli.Suspension.Value.Actor.Kind)
 	assert.Equal(t, "op-fixture", hooli.Suspension.Value.Actor.ID.Value)
@@ -160,7 +156,8 @@ func TestAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	assert.IsType(t, &staffeeapi.StaffWorkspacesGetNotFound{}, h.getWorkspace(t, c, "NoSuchId"))
+	_, err := h.getWorkspace(t, c, "NoSuchId")
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
 }
 
 // An id that is not 8 base62 characters is refused by the contract as a 400 problem, before a handler runs.
@@ -228,8 +225,8 @@ func soylentDeliverability(t *testing.T, h *harness) staffeeapi.StaffDeliverabil
 
 func soylentDeliverabilityAs(t *testing.T, h *harness, c *staffeeapi.Client) staffeeapi.StaffDeliverability {
 	t.Helper()
-	soylent, ok := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	soylent, err := h.getWorkspace(t, c, fixtures.SoylentPublicID)
+	require.NoError(t, err)
 	return soylent.Deliverability
 }
 
@@ -298,16 +295,16 @@ func TestAWorkspaceWithoutSendingDomainsHasNoRatesAndNoVolume(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	hooli, err := h.getWorkspace(t, c, fixtures.HooliPublicID)
+	require.NoError(t, err)
 	assert.Empty(t, hooli.Deliverability.Domains)
 	assert.EqualValues(t, 0, hooli.Deliverability.SendVolume)
 }
 
 func (h *harness) acmeHolds(t *testing.T, c *staffeeapi.Client) []staffeeapi.StaffHold {
 	t.Helper()
-	detail, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	detail, err := h.getWorkspace(t, c, fixtures.AcmePublicID)
+	require.NoError(t, err)
 	return detail.Holds
 }
 
@@ -335,8 +332,8 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 	h.clock.t = h.clock.t.Add(2 * time.Hour)
 
 	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed holds and the expired one are not active")
-	globex, ok := h.getWorkspace(t, c, fixtures.GlobexPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
+	globex, err := h.getWorkspace(t, c, fixtures.GlobexPublicID)
+	require.NoError(t, err)
 	assert.Empty(t, globex.Holds)
 }
 

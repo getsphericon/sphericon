@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"testing"
 	"time"
@@ -83,69 +83,54 @@ func (p exportParams) optLimit() externalapi.OptInt32 {
 
 // exportStream is one Export stream as the tests drive it: the TypeSpec row schema its lines
 // are checked against, the Workspace whose fixtures give it rows, and one call of its
-// operation that answers the raw response, and the body and next cursor when it is the 200.
+// operation that answers the body and next cursor of the 200, or the error it was refused with.
 type exportStream struct {
 	name        string
 	schema      string
 	workspaceID int64
-	call        func(ctx context.Context, c *externalapi.Client, p exportParams) (res any, body io.Reader, next string)
+	call        func(ctx context.Context, c *externalapi.Client, p exportParams) (body io.Reader, next string, err error)
 }
 
 var (
 	eventsStream = exportStream{"events", exportstream.EventsSchema, fixtures.InitechID,
-		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (io.Reader, string, error) {
 			res, err := c.ExportEvents(ctx, externalapi.ExportEventsParams{Cursor: p.optCursor(), Limit: p.optLimit()})
 			if err != nil {
-				panic(err)
+				return nil, "", err
 			}
-			if ok, isOK := res.(*externalapi.ExportEventsOKHeaders); isOK {
-				return res, ok.Response, ok.XNextCursor
-			}
-			return res, nil, ""
+			return res.Response, res.XNextCursor, nil
 		}}
 	messagesStream = exportStream{"messages", exportstream.MessagesSchema, fixtures.InitechID,
-		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (io.Reader, string, error) {
 			res, err := c.ExportMessages(ctx, externalapi.ExportMessagesParams{Cursor: p.optCursor(), Limit: p.optLimit()})
 			if err != nil {
-				panic(err)
+				return nil, "", err
 			}
-			if ok, isOK := res.(*externalapi.ExportMessagesOKHeaders); isOK {
-				return res, ok.Response, ok.XNextCursor
-			}
-			return res, nil, ""
+			return res.Response, res.XNextCursor, nil
 		}}
 	contactsStream = exportStream{"contacts", exportstream.ContactsSchema, fixtures.InitechID,
-		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (io.Reader, string, error) {
 			res, err := c.ExportContacts(ctx, externalapi.ExportContactsParams{Cursor: p.optCursor(), Limit: p.optLimit()})
 			if err != nil {
-				panic(err)
+				return nil, "", err
 			}
-			if ok, isOK := res.(*externalapi.ExportContactsOKHeaders); isOK {
-				return res, ok.Response, ok.XNextCursor
-			}
-			return res, nil, ""
+			return res.Response, res.XNextCursor, nil
 		}}
 	auditStream = exportStream{"audit", exportstream.AuditSchema, fixtures.GlobexID,
-		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (io.Reader, string, error) {
 			res, err := c.ExportAudit(ctx, externalapi.ExportAuditParams{Cursor: p.optCursor(), Limit: p.optLimit()})
 			if err != nil {
-				panic(err)
+				return nil, "", err
 			}
-			if ok, isOK := res.(*externalapi.ExportAuditOKHeaders); isOK {
-				return res, ok.Response, ok.XNextCursor
-			}
-			return res, nil, ""
+			return res.Response, res.XNextCursor, nil
 		}}
 	erasuresStream = exportStream{"erasures", exportstream.ErasuresSchema, fixtures.AcmeID,
-		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (io.Reader, string, error) {
 			res, err := c.ExportErasures(ctx, externalapi.ExportErasuresParams{Cursor: p.optCursor(), Limit: p.optLimit()})
 			if err != nil {
-				panic(err)
+				return nil, "", err
 			}
-			if ok, isOK := res.(*externalapi.ExportErasuresOKHeaders); isOK {
-				return res, ok.Response, ok.XNextCursor
-			}
-			return res, nil, ""
+			return res.Response, res.XNextCursor, nil
 		}}
 
 	allExportStreams = []exportStream{eventsStream, messagesStream, contactsStream, auditStream, erasuresStream}
@@ -155,8 +140,8 @@ var (
 // TypeSpec row schema, so a stream that drifts from its contract fails every test here.
 func readExportStream(t *testing.T, c *externalapi.Client, stream exportStream, cursor string, limit int32) exportPage {
 	t.Helper()
-	res, body, next := stream.call(context.Background(), c, exportParams{cursor: cursor, limit: limit})
-	require.NotNilf(t, body, "%s: got %T", stream.name, res)
+	body, next, err := stream.call(context.Background(), c, exportParams{cursor: cursor, limit: limit})
+	require.NoErrorf(t, err, "%s", stream.name)
 	raw, err := io.ReadAll(body)
 	require.NoError(t, err)
 
@@ -252,9 +237,8 @@ func TestExportEventsNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		res, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportEventsForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
 
@@ -262,10 +246,9 @@ func TestExportEventsAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.InitechID)
 
-	res, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+	_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportEventsNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportEventsNeverReadsAnotherWorkspace(t *testing.T) {
@@ -282,12 +265,11 @@ func TestExportEventsRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.InitechID)
 
-	res, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{
+	_, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportEventsBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }
 
 func TestEveryExportStreamAnEmptyPageReturnsTheSameCursor(t *testing.T) {
@@ -328,10 +310,10 @@ func TestEveryExportStreamOfADeletedWorkspaceDoesNotAuthenticate(t *testing.T) {
 			readExportStream(t, c, stream, "", 0)
 			env.FeedDB.Workspace.UpdateOneID(stream.workspaceID).SetDiscardedAt(time.Now()).ExecX(ctx)
 
-			res, body, _ := stream.call(ctx, c, exportParams{})
+			body, _, err := stream.call(ctx, c, exportParams{})
 
 			assert.Nil(t, body)
-			assert.Contains(t, fmt.Sprintf("%T", res), "Unauthorized")
+			testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 		})
 	}
 }

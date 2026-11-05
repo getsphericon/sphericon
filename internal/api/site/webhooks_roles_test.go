@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,47 +24,37 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	list, err := member.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksListForbidden), list)
+	_, err := member.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	got, err := member.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksGetForbidden), got)
+	_, err = member.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	made, err := member.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://attacker.example/hook"},
+	_, err = member.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://attacker.example/hook"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksCreateForbidden), made)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	updated, err := member.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("https://attacker.example/hook")},
+	_, err = member.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("https://attacker.example/hook")},
 		siteapi.SiteWebhooksUpdateParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksUpdateForbidden), updated)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	regenerated, err := member.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksRegenerateSecretForbidden), regenerated)
+	_, err = member.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: workspaceID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	tested, err := member.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "contact.created"},
+	_, err = member.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "contact.created"},
 		siteapi.SiteWebhooksTestParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksTestForbidden), tested)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	deleted, err := member.SiteWebhooksDelete(ctx, siteapi.SiteWebhooksDeleteParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksDeleteForbidden), deleted)
+	err = member.SiteWebhooksDelete(ctx, siteapi.SiteWebhooksDeleteParams{WorkspaceId: workspaceID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	// The refused calls changed nothing: the owner still sees the endpoint, unchanged.
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	read, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
+	endpoint, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	endpoint, ok := read.(*siteapi.SiteWebhookEndpointResource)
-	require.True(t, ok, "got %T", read)
 	assert.Equal(t, fixtures.WebhookCodebasicsURL, endpoint.URL)
 
 	// An admin manages them.
-	adminList, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
+	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksListOK), adminList)
 }

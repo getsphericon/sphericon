@@ -10,7 +10,7 @@ import (
 
 // ExportErasures serves the Erasures stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header, behind the same gate as every Export stream.
-func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.ExportErasuresParams) (externalapi.ExportErasuresRes, error) {
+func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.ExportErasuresParams) (*externalapi.ExportErasuresOKHeaders, error) {
 	if !h.exportLicensed() {
 		return nil, exportstream.ErrNotOffered
 	}

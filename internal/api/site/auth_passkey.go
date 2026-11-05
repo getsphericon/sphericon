@@ -15,7 +15,7 @@ import (
 
 // SitePasskeyLoginBegin answers the request options for a usernameless Passkey login and sets
 // the ceremony cookie. It is anonymous and writes nothing (ADR 0052).
-func (h *Handlers) SitePasskeyLoginBegin(context.Context) (siteapi.SitePasskeyLoginBeginRes, error) {
+func (h *Handlers) SitePasskeyLoginBegin(context.Context) (*siteapi.SitePasskeyLoginBegunHeaders, error) {
 	raw, ceremony, err := h.passkeys.BeginLogin()
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (h *Handlers) SitePasskeyLoginBegin(context.Context) (siteapi.SitePasskeyLo
 // credential, a response that does not verify, a spent or expired challenge, the verification
 // gate) is the one 401 and counts nothing. The session is issued through the one issuer, with
 // the Passkey method: it replaces the password and the Second factor.
-func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.SitePasskeyLoginInput, params siteapi.SitePasskeyLoginFinishParams) (siteapi.SitePasskeyLoginFinishRes, error) {
+func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.SitePasskeyLoginInput, params siteapi.SitePasskeyLoginFinishParams) (*siteapi.SiteLoginResultHeaders, error) {
 	response, err := credentialJSON(req.Credential)
 	if err != nil {
 		return nil, err

@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // SuppressionCreate is the builder for creating a Suppression entity.
@@ -59,13 +60,13 @@ func (_c *SuppressionCreate) SetWorkspaceID(v int64) *SuppressionCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (_c *SuppressionCreate) SetChannel(v suppression.Channel) *SuppressionCreate {
+func (_c *SuppressionCreate) SetChannel(v channels.Channel) *SuppressionCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *SuppressionCreate) SetNillableChannel(v *suppression.Channel) *SuppressionCreate {
+func (_c *SuppressionCreate) SetNillableChannel(v *channels.Channel) *SuppressionCreate {
 	if v != nil {
 		_c.SetChannel(*v)
 	}
@@ -395,7 +396,7 @@ func (u *SuppressionUpsert) UpdateWorkspaceID() *SuppressionUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *SuppressionUpsert) SetChannel(v suppression.Channel) *SuppressionUpsert {
+func (u *SuppressionUpsert) SetChannel(v channels.Channel) *SuppressionUpsert {
 	u.Set(suppression.FieldChannel, v)
 	return u
 }
@@ -546,7 +547,7 @@ func (u *SuppressionUpsertOne) UpdateWorkspaceID() *SuppressionUpsertOne {
 }
 
 // SetChannel sets the "channel" field.
-func (u *SuppressionUpsertOne) SetChannel(v suppression.Channel) *SuppressionUpsertOne {
+func (u *SuppressionUpsertOne) SetChannel(v channels.Channel) *SuppressionUpsertOne {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.SetChannel(v)
 	})
@@ -875,7 +876,7 @@ func (u *SuppressionUpsertBulk) UpdateWorkspaceID() *SuppressionUpsertBulk {
 }
 
 // SetChannel sets the "channel" field.
-func (u *SuppressionUpsertBulk) SetChannel(v suppression.Channel) *SuppressionUpsertBulk {
+func (u *SuppressionUpsertBulk) SetChannel(v channels.Channel) *SuppressionUpsertBulk {
 	return u.Update(func(s *SuppressionUpsert) {
 		s.SetChannel(v)
 	})

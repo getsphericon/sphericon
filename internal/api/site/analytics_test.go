@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -28,9 +29,8 @@ func TestSiteAnalyticsEventsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAnalyticsEventsNotFound{}, out)
+	_, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteAnalyticsEventsAreVisibleToEveryRole(t *testing.T) {
@@ -42,8 +42,7 @@ func TestSiteAnalyticsEventsAreVisibleToEveryRole(t *testing.T) {
 			Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 		})
 		require.NoError(t, err, email)
-		report, ok := res.(*siteapi.SiteAnalyticsEvents)
-		require.Truef(t, ok, "%s: got %T", email, res)
+		report := res
 
 		view, found := lo.Find(report.Actions, func(a siteapi.SiteAnalyticsEventAction) bool { return a.Action == "report_view" })
 		require.True(t, found, email)
@@ -66,9 +65,8 @@ func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAnalyticsOverviewNotFound{}, out)
+	_, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // The handler only maps the analytics module's Overview (rules are tested in
@@ -83,8 +81,7 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
 	require.NoError(t, err)
-	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-	require.Truef(t, ok, "got %T", res)
+	ov := res
 
 	assert.Len(t, ov.Timeseries, 7)
 	// 11 Broadcast sends three days ago and 4 unengaged marketing messages of the last 30 hours.
@@ -96,7 +93,7 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 
 	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 7, "7d is the default window")
+	assert.Len(t, res.Timeseries, 7, "7d is the default window")
 }
 
 // Read on 14 March 2026 over 7 days, Gotham's periods are cut in New York: 8-14 March and 1-7
@@ -111,8 +108,7 @@ func TestSiteAnalyticsOverviewHasThePeriodBeforeTheRangeInTheWorkspaceTimeZone(t
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
 	require.NoError(t, err)
-	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-	require.Truef(t, ok, "got %T", res)
+	ov := res
 
 	assert.Equal(t, "2026-03-08", ov.Current.From)
 	assert.Equal(t, "2026-03-14", ov.Current.To)
@@ -143,8 +139,7 @@ func TestSubscribedPeopleMapsTheModule(t *testing.T) {
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAnalyticsSubscribedPeople)
-	require.Truef(t, ok, "got %T", res)
+	report := res
 
 	assert.Len(t, report.Series, 7)
 	assert.Positive(t, report.Current)
@@ -172,8 +167,7 @@ func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testi
 		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAnalyticsClicksByLink)
-	require.Truef(t, ok, "got %T", res)
+	report := res
 
 	require.Len(t, report.Links, 1)
 	assert.Equal(t, "https://codebasics.dev/pricing", report.Links[0].URL)
@@ -201,8 +195,7 @@ func TestSiteAnalyticsOpensByHourMapsTheModule(t *testing.T) {
 
 	res, err := c.SiteAnalyticsOpensByHour(context.Background(), siteapi.SiteAnalyticsOpensByHourParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAnalyticsOpensByHour)
-	require.Truef(t, ok, "got %T", res)
+	report := res
 
 	assert.Len(t, report.Cells, 7*24)
 	var sum int32

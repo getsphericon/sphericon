@@ -34,12 +34,5 @@ model CollectEventsInput {
 @tag("Collect")
 namespace CollectEvents {
   @post
-  op create(@body body: CollectEventsInput):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | PayloadTooLargeProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem
-    | ServiceUnavailableProblem;
+  op create(@body body: CollectEventsInput): NoContentResponse | Problem;
 }

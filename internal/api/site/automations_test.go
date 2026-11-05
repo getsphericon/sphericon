@@ -27,8 +27,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.Equal(t, "Welcome series", res.Name)
 	assert.Equal(t, siteapi.SiteAutomationStatusInactive, res.Status)
 	assert.Equal(t, "contact.created", res.Draft.Value.TriggerEvent)
@@ -44,21 +43,18 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	// Publish / deactivate flip the status.
 	act, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	actRes, ok := act.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", act)
+	actRes := act
 	assert.Equal(t, siteapi.SiteAutomationStatusActive, actRes.Status)
 
 	deact, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	deactRes, ok := deact.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", deact)
+	deactRes := deact
 	assert.Equal(t, siteapi.SiteAutomationStatusInactive, deactRes.Status)
 
 	// Fetch the created automation back by id (selection by key).
 	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", got)
+	gotRes := got
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames.
@@ -66,18 +62,15 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 		Name: siteapi.NewOptString("Onboarding"),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	updRes, ok := upd.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", upd)
+	updRes := upd
 	assert.Equal(t, "Onboarding", updRes.Name)
 
 	// Archive: it is kept, and a fetch by id still reads it, archived.
-	arch, err := c.SiteAutomationsArchive(ctx, siteapi.SiteAutomationsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
+	_, err = c.SiteAutomationsArchive(ctx, siteapi.SiteAutomationsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationResource{}, arch)
 
 	kept, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	keptRes, ok := kept.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", kept)
+	keptRes := kept
 	assert.True(t, keptRes.ArchivedAt.IsSet())
 }

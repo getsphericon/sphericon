@@ -26,8 +26,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 		Phone: externalapi.NewOptNilString("+14155550188"),
 	})
 	require.NoError(t, err)
-	texter, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "create the Contact: got %T", res)
+	texter := res
 
 	env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken, url.Values{
 		"MessageSid": {"SM0100"}, "AccountSid": {sms.Account.SID}, "From": {"+14155550188"},

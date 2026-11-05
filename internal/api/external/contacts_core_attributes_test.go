@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestExternalUpsertOverwritesCoreAttributes(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
+	_, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
 		Email:     externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail),
 		FirstName: externalapi.NewOptNilString("Alicia"),
 		LastName:  externalapi.OptNilString{Set: true, Null: true},
@@ -31,7 +32,6 @@ func TestExternalUpsertOverwritesCoreAttributes(t *testing.T) {
 		Avatar:    externalapi.NewOptNilImageUrl("https://example.com/alice.png"),
 	}}})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
 
 	stored, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
 	require.NoError(t, err)
@@ -47,22 +47,20 @@ func TestExternalContactRefusesACustomFieldNamedAfterACoreAttribute(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email:        externalapi.NewOptNilEmailAddress("reserved.key@example.com"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"city": jx.Raw(`"Berlin"`)}),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalContactRefusesAPhotoThatIsNotHTTPS(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
+	_, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{
 		Email:  externalapi.NewOptNilEmailAddress("plain.http@example.com"),
 		Avatar: externalapi.NewOptNilImageUrl("http://example.com/a.png"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateBadRequest{}, res, "the contract's pattern refuses it")
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest, "the contract's pattern refuses it")
 }

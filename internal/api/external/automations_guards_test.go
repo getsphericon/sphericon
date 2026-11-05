@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,25 +30,20 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 		"foreign": entityIDString(foreign.ID),
 	} {
 		t.Run(name, func(t *testing.T) {
-			get, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsGetNotFound{}, get)
+			_, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-			upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("hijack")}, externalapi.AutomationsUpdateParams{ID: id})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsUpdateNotFound{}, upd)
+			_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("hijack")}, externalapi.AutomationsUpdateParams{ID: id})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-			act, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsPublishNotFound{}, act)
+			_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-			deact, err := c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsDeactivateNotFound{}, deact)
+			_, err = c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-			archived, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsArchiveNotFound{}, archived)
+			_, err = c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 		})
 	}
 

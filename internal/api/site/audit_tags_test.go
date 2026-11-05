@@ -19,10 +19,9 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteTagsApply(context.Background(), &siteapi.ApplyTagInput{Name: "audited-tag"},
+	_, err := c.SiteTagsApply(context.Background(), &siteapi.ApplyTagInput{Name: "audited-tag"},
 		siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteTagResource{}, res)
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)

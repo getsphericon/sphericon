@@ -22,17 +22,15 @@ func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivi
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	erased, err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase")).
+	err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase")).
 		ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.ContactsDeleteNoContent{}, erased)
 
-	res, err := env.CollectWithKey(t, fixtures.InitechCollectKey).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err = env.CollectWithKey(t, fixtures.InitechCollectKey).CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "returning-visitor",
 		Email:     collectapi.NewOptNilEmailAddress(fixtures.ContactErasableEmail),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &collectapi.CollectOkResponse{}, res)
 
 	fresh, err := env.DB.Contact.Query().
 		Where(contact.WorkspaceID(fixtures.InitechID), contact.Email(fixtures.ContactErasableEmail)).Only(ctx)

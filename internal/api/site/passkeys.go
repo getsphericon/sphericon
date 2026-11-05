@@ -34,7 +34,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 
 // SitePasskeysBeginRegistration answers the creation options for the browser and sets the
 // ceremony cookie. It writes nothing.
-func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (siteapi.SitePasskeysBeginRegistrationRes, error) {
+func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.SitePasskeyRegistrationBegunHeaders, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (siteapi.S
 // SitePasskeysFinishRegistration stores the Passkey once the User proves their identity (the
 // password, or a fresh provider login) and the authenticator's response checks out, and mails
 // the owner. Every session of the User goes on.
-func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (siteapi.SitePasskeysFinishRegistrationRes, error) {
+func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (*siteapi.SitePasskey, error) {
 	name, err := secondfactor.PasskeyName(string(req.Name))
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 
 // SitePasskeysBeginCheck answers the request options of a fresh Passkey check of the session
 // User, who holds at least one Passkey, and sets the ceremony cookie.
-func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (siteapi.SitePasskeysBeginCheckRes, error) {
+func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePasskeyCheckBegunHeaders, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (siteapi.SitePass
 // passkeys module's Check, whose every refusal is the one 403). The acting session is reissued
 // with the time of the check, which stands in for the password for a few minutes
 // (identityProofTTL).
-func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.SitePasskeyCheckInput, params siteapi.SitePasskeysFinishCheckParams) (siteapi.SitePasskeysFinishCheckRes, error) {
+func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.SitePasskeyCheckInput, params siteapi.SitePasskeysFinishCheckParams) (*siteapi.SitePasskeysFinishCheckNoContent, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func (h *Handlers) ceremonyCookie(path, ceremony string) string {
 }
 
 // SitePasskeysRename renames a Passkey of the session User.
-func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePasskeyRenameInput, params siteapi.SitePasskeysRenameParams) (siteapi.SitePasskeysRenameRes, error) {
+func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePasskeyRenameInput, params siteapi.SitePasskeysRenameParams) (*siteapi.SitePasskey, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 // SitePasskeysRemove removes a Passkey of the session User once they prove their identity (the
 // password, or a fresh provider login). It ends the other sessions, reissues the acting one and
 // mails the owner.
-func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePasskeyRemoveInput, params siteapi.SitePasskeysRemoveParams) (siteapi.SitePasskeysRemoveRes, error) {
+func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePasskeyRemoveInput, params siteapi.SitePasskeysRemoveParams) (*siteapi.SitePasskeysRemoveNoContent, error) {
 	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err

@@ -44,7 +44,7 @@ func (h *Handlers) userResource(ctx context.Context, u *ent.User) (*siteapi.Site
 
 // SiteUserAcceptPending accepts every required acceptance pending for the signed-in User at the
 // versions the screen showed (ADR 0062), and is their profile after it.
-func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteAcceptPendingInput) (siteapi.SiteUserAcceptPendingRes, error) {
+func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteAcceptPendingInput) (*siteapi.SiteUserResource, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
 		return nil, auth.ErrUnauthorized
@@ -62,7 +62,7 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 // SiteUserUpdateMe changes the authenticated User's name, time zone, Regional format and/or password through accounts,
 // which holds the profile rules. The email is the login identity and is not editable here. A
 // password change ended every session; the acting one continues under a fresh cookie.
-func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (siteapi.SiteUserUpdateMeRes, error) {
+func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (*siteapi.SiteUserResourceHeaders, error) {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -103,22 +103,22 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 // current password, and emails a confirmation link to the NEW address (or, when that
 // address is Taken, a notice to its owner: the answer is the same) — the change only
 // takes effect once that link is confirmed (SiteAuthConfirmEmailChange). Returns 202.
-func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEmailChangeInput) (siteapi.SiteUserEmailChangeRes, error) {
+func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEmailChangeInput) error {
 	userID, err := sessionUserID(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	u, err := h.accounts.User(ctx, userID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	newEmail, err := accounts.NewEmailFor(u, string(req.NewEmail))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := h.proveCurrentPassword(ctx, u, req.CurrentPassword); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Whether the new address is Taken is never told to the requester (ADR 0031): every
@@ -127,16 +127,16 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	// notice to its owner. A job with no mail due (budget spent) is a no-send one.
 	granted, err := h.attempts.Take(ctx, accounts.KindEmailChange, newEmail)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	taken, err := h.accounts.EmailTaken(ctx, newEmail)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	token, err := h.links.EmailChangeLink(u, newEmail)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if taken {
 		if err := h.mail.Enqueue(ctx, mailjobs.AddressTakenNotice(newEmail, granted)); err != nil {
@@ -148,7 +148,7 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		}
 	}
 
-	return &siteapi.SiteUserEmailChangeAccepted{}, nil
+	return nil
 }
 
 // SiteUserSignOutEverywhere ends every session of the authenticated user, on

@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// accessLog writes one line per finished request: method, path (loggedPath, so a credential in
+// accessLog writes one line per finished request: method, path (logging.RedactedPath, so a credential in
 // it is redacted), status, response bytes and duration, under the request id. The query string,
 // headers, body and client address are not logged. It sits outside the timeout and the limiter,
 // so a 429, a 413 and a 504 are recorded with the status the client got.
@@ -34,7 +34,7 @@ func accessLog(next http.Handler) http.Handler {
 		}
 		logging.FromContext(r.Context()).Log(r.Context(), accessLevel(r.URL.Path, status), "request",
 			"method", r.Method,
-			"path", loggedPath(r.URL.Path),
+			"path", logging.RedactedPath(r.URL.Path),
 			"status", status,
 			"bytes", ww.BytesWritten(),
 			"duration_ms", time.Since(start).Milliseconds(),

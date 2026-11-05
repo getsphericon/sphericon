@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -26,36 +27,30 @@ func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 	fired, never := idStr(fixtures.RuleTagClickedID), idStr(fixtures.RuleInactiveID)
 
 	for _, id := range []siteapi.EntityId{fired, never} {
-		deleted, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
+		err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, deleted)
 
-		kept, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: id})
+		res, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: id})
 		require.NoError(t, err)
-		res, ok := kept.(*siteapi.SiteRuleResource)
-		require.Truef(t, ok, "got %T", kept)
 		_, discardedAt := res.DiscardedAt.Get()
 		assert.True(t, discardedAt)
 		assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
 
-		again, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, again)
-		renamed, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptString("renamed")},
+		again := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
+		require.NoError(t, again)
+		_, renamed := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Name: siteapi.NewOptString("renamed")},
 			siteapi.SiteRulesUpdateParams{WorkspaceId: ws, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteRulesUpdateNotFound{}, renamed, "a deleted Rule changes no more")
-		published, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteRulesPublishNotFound{}, published, "a deleted Rule is never published again")
+		testhelper.SiteRefusal(t, renamed, http.StatusNotFound, "a deleted Rule changes no more")
+		_, published := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})
+		testhelper.SiteRefusal(t, published, http.StatusNotFound, "a deleted Rule is never published again")
 	}
 	firings, err := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: ws, RuleId: fired})
 	require.NoError(t, err)
-	assert.NotEmpty(t, firings.(*siteapi.SiteRuleFiringsListOK).Items)
+	assert.NotEmpty(t, firings.Items)
 
 	listed, err := c.SiteRulesList(ctx, siteapi.SiteRulesListParams{WorkspaceId: ws})
 	require.NoError(t, err)
-	for _, r := range listed.(*siteapi.SiteRulesListOK).Items {
+	for _, r := range listed.Items {
 		assert.NotContains(t, []siteapi.EntityId{fired, never}, r.ID)
 	}
 }
@@ -70,11 +65,9 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 		actions[i] = tagAction(siteapi.SiteRuleActionTypeApplyTag, "t"+strconv.Itoa(i))
 	}
 
-	tooMany, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{Name: "big", TriggerEvents: []string{"a"}, Actions: actions},
+	_, tooMany := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{Name: "big", TriggerEvents: []string{"a"}, Actions: actions},
 		siteapi.SiteRulesCreateParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	refused, ok := tooMany.(*siteapi.SiteRulesCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", tooMany)
+	refused := testhelper.SiteRefusal(t, tooMany, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "at most 20 Actions")
 
 	leaf := `{"kind":"rule","field":"tag","operator":"has","value":"vip"}`
@@ -84,12 +77,10 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 		body.WriteString(leaf + ",")
 	}
 	body.WriteString(leaf + `]}`)
-	bigCondition, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	refusedCondition, ok := bigCondition.(*siteapi.SiteRulesCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", bigCondition)
+	refusedCondition := testhelper.SiteRefusal(t, bigCondition, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCondition.Detail.Or(""), "Condition")
 }

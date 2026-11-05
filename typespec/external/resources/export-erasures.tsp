@@ -51,10 +51,5 @@ namespace Export {
   @get
   @route("/erasures")
   @requiresScopes(#[ApiTokenScope.exportRead])
-  op erasures(...ExportPageQuery):
-    | ExportPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op erasures(...ExportPageQuery): ExportPage | Problem;
 }

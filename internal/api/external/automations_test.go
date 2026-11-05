@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -20,18 +21,14 @@ func TestExternalAutomationsRead(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "automations:read")
 
-	list, err := c.AutomationsList(ctx, externalapi.AutomationsListParams{})
+	listed, err := c.AutomationsList(ctx, externalapi.AutomationsListParams{})
 	require.NoError(t, err)
-	listed, ok := list.(*externalapi.AutomationsListOK)
-	require.Truef(t, ok, "got %T", list)
 	total, err := env.DB.Automation.Query().Where(automation.WorkspaceID(fixtures.AcmeID), automation.ArchivedAtIsNil()).Count(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, total, listed.TotalItems)
 
-	got, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
+	a, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 	require.NoError(t, err)
-	a, ok := got.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "Welcome series", a.Name)
 	assert.Equal(t, externalapi.AutomationStatusActive, a.Status)
 	live, draft := a.Live.Value, a.Draft.Value
@@ -46,20 +43,18 @@ func TestExternalAutomationsRead(t *testing.T) {
 
 	tagged, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: entityIDString(fixtures.AutomationTagOnEngagementID)})
 	require.NoError(t, err)
-	steps := tagged.(*externalapi.AutomationResource).Live.Value.Steps
+	steps := tagged.Live.Value.Steps
 	require.Len(t, steps, 2)
 	assert.Equal(t, externalapi.AutomationStepTypeApplyTag, steps[0].Type)
 	assert.Equal(t, "engaged", steps[0].Tag.Or(""))
 	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, steps[1].Type)
 
-	missing, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsGetNotFound{}, missing)
+	_, err = c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	denied := env.ExternalScoped(t, "contacts:read")
-	res, err := denied.AutomationsList(ctx, externalapi.AutomationsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsListForbidden{}, res)
+	_, err = denied.AutomationsList(ctx, externalapi.AutomationsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // Created automations are always inactive, even for a token that may publish; steps
@@ -69,7 +64,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish")
 
-	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Tag newcomers",
 		TriggerEvent: "newcomer",
 		Steps: []externalapi.AutomationStep{
@@ -78,47 +73,39 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	a, ok := created.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.AutomationStatusInactive, a.Status)
 	assert.True(t, a.Live.Null, "nothing is live until it is published")
 	require.Len(t, a.Draft.Value.Steps, 2)
 	assert.Equal(t, "newcomer", a.Draft.Value.Steps[0].Tag.Or(""))
 
-	blank, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Bad", TriggerEvent: "x",
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("  ")}},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsCreateUnprocessableEntity{}, blank)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
 		Name:  externalapi.NewOptString("Tag newcomers 2"),
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	require.NoError(t, err)
-	updated := upd.(*externalapi.AutomationResource)
 	assert.Equal(t, "Tag newcomers 2", updated.Name)
 	require.Len(t, updated.Draft.Value.Steps, 1)
 	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, updated.Draft.Value.Steps[0].Type)
 
-	badUpd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{
 		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeApplyTag}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, badUpd)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	archived, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationResource{}, archived, "a never-published automation is archived")
-	again, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationResource{}, again, "archiving it again changes nothing")
+	_, err = c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
+	require.NoError(t, err, "a never-published automation is archived")
+	_, err = c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: a.ID})
+	require.NoError(t, err, "archiving it again changes nothing")
 
 	readOnly := env.ExternalScoped(t, "automations:read")
-	res, err := readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsCreateForbidden{}, res)
+	_, err = readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // Publish needs automations:publish, which authoring scopes never imply (ADR 0016, ADR 0065).
@@ -129,24 +116,22 @@ func TestExternalAutomationsPublishNeedsThePublishScope(t *testing.T) {
 	id := entityIDString(fixtures.AutomationWinBackID)
 
 	authoring := env.ExternalScoped(t, "automations:read", "automations:write")
-	refused, err := authoring.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsPublishForbidden{}, refused)
+	_, err := authoring.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	still, err := authoring.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, externalapi.AutomationStatusInactive, still.(*externalapi.AutomationResource).Status)
+	assert.Equal(t, externalapi.AutomationStatusInactive, still.Status)
 
 	c := env.ExternalScoped(t, "automations:read", "automations:publish")
 	on, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, externalapi.AutomationStatusActive, on.(*externalapi.AutomationResource).Status)
+	assert.Equal(t, externalapi.AutomationStatusActive, on.Status)
 	read, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, externalapi.AutomationStatusActive, read.(*externalapi.AutomationResource).Status)
+	assert.Equal(t, externalapi.AutomationStatusActive, read.Status)
 
-	missing, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsPublishNotFound{}, missing)
+	_, err = c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // Deactivate only stops new Enrollments, so it is authoring: automations:write is enough, and the
@@ -157,12 +142,11 @@ func TestExternalAutomationsDeactivateNeedsOnlyTheWriteScope(t *testing.T) {
 	id := entityIDString(fixtures.AutomationWelcomeSeriesID)
 
 	publisher := env.ExternalScoped(t, "automations:publish")
-	refused, err := publisher.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsDeactivateForbidden{}, refused)
+	_, err := publisher.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	authoring := env.ExternalScoped(t, "automations:write")
 	off, err := authoring.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, externalapi.AutomationStatusInactive, off.(*externalapi.AutomationResource).Status)
+	assert.Equal(t, externalapi.AutomationStatusInactive, off.Status)
 }

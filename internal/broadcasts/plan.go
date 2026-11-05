@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -254,14 +255,14 @@ func destinationOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (eligib
 
 // destinationFor is destinationOf for a Channel and the Integration a Broadcast names (nil: the
 // Channel's default), before a Broadcast exists.
-func destinationFor(ctx context.Context, s *ent.Scoped, channel broadcast.Channel, integrationID *int64) (eligibility.Destination, error) {
+func destinationFor(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64) (eligibility.Destination, error) {
 	switch channel {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		return eligibility.EmailDestination(), nil
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		return eligibility.PhoneDestination(), nil
-	case broadcast.ChannelTelegram:
-		integ, err := messaging.Integration(ctx, s, messaging.ChannelTelegram, integrationID)
+	case channels.Telegram:
+		integ, err := messaging.Integration(ctx, s, channels.Telegram, integrationID)
 		if errors.Is(err, messaging.ErrNoProvider) {
 			return eligibility.BindingDestination(eligibility.ChannelTelegram, 0), nil
 		}
@@ -278,7 +279,7 @@ func destinationFor(ctx context.Context, s *ent.Scoped, channel broadcast.Channe
 // all) a Broadcast on the Channel would take if it ran now, through the Integration it names (nil:
 // the Channel's default): the audience of its plan, so the Contacts with an eligible Destination on
 // that Channel. It is the audience the plan takes, asked before a Broadcast exists.
-func RecipientsOf(ctx context.Context, s *ent.Scoped, channel broadcast.Channel, integrationID *int64, cond string) (int, error) {
+func RecipientsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64, cond string) (int, error) {
 	dest, err := destinationFor(ctx, s, channel, integrationID)
 	if err != nil {
 		return 0, err
@@ -349,7 +350,7 @@ func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rou
 	for i := range calls {
 		calls[i] = 1
 	}
-	if b.Channel != broadcast.ChannelTelegram || route.Integration == nil || len(recipientIDs) == 0 {
+	if b.Channel != channels.Telegram || route.Integration == nil || len(recipientIDs) == 0 {
 		return calls, nil
 	}
 	contacts, err := s.BroadcastRecipient().Query().
@@ -407,7 +408,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientI
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	channel := messaging.Channel(b.Channel)
+	channel := b.Channel
 	route, err := d.out.Route(ctx, s, channel, b.IntegrationID)
 	if err != nil {
 		return nil, err

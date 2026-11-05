@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"github.com/getsphericon/sphericon/internal/problem"
 	"net/http"
 	"time"
 
@@ -14,10 +15,9 @@ import (
 // AuditEntriesList reads the Workspace's Audit log, newest first, for a token with
 // the audit:read scope (a SIEM feed). An instance without an Enterprise license
 // answers 402 (ADR 0014, ADR 0022).
-func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.AuditEntriesListParams) (externalapi.AuditEntriesListRes, error) {
+func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.AuditEntriesListParams) (*externalapi.AuditEntryList, error) {
 	if h.audit == nil || !h.audit.Licensed() {
-		res := externalapi.AuditEntriesListPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
-		return &res, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "the audit log needs an Enterprise license"}
 	}
 
 	cursor, err := auditapi.Page(params.Cursor.Or(""))

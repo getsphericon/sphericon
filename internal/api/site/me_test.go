@@ -38,8 +38,7 @@ func TestSiteUserUpdateMeName(t *testing.T) {
 
 	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Renamed")})
 	require.NoError(t, err)
-	updated, ok := res.(*siteapi.SiteUserResourceHeaders)
-	require.Truef(t, ok, "got %T", res)
+	updated := res
 	assert.Equal(t, "Renamed", updated.Response.Name)
 
 	// The change persists.
@@ -52,10 +51,9 @@ func TestSiteUserUpdateMeRejectsBlankName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteUserUpdateMe(context.Background(),
+	_, err := c.SiteUserUpdateMe(context.Background(),
 		&siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("   ")})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // The User time zone (ADR 0068) is set and cleared through the profile, and a change of the name
@@ -90,10 +88,9 @@ func TestSiteUserUpdateMeRejectsUnknownTimezone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteUserUpdateMe(context.Background(),
+	_, err := c.SiteUserUpdateMe(context.Background(),
 		&siteapi.SiteUpdateMeInput{Timezone: siteapi.NewOptNilTimeZoneName("Mars/Olympus")})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // The Regional format is set, stored in its canonical spelling and cleared through the profile, and
@@ -107,9 +104,8 @@ func TestSiteUserUpdateMeRegionalFormat(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, me.RegionalFormat.IsNull(), "no format until the User chooses one")
 
-	res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat("de-de")})
+	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat("de-de")})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserResourceHeaders{}, res)
 	_, err = c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Renamed")})
 	require.NoError(t, err)
 	me, err = c.SiteUserGetMe(ctx)
@@ -131,9 +127,10 @@ func TestSiteUserUpdateMeRejectsMalformedRegionalFormat(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tag := range []string{"xx-??", "not a tag", "   "} {
-		res, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat(siteapi.RegionalFormat(tag))})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteUserUpdateMeUnprocessableEntity{}, res, tag)
+		t.Run(tag, func(t *testing.T) {
+			_, err := c.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{RegionalFormat: siteapi.NewOptNilRegionalFormat(siteapi.RegionalFormat(tag))})
+			testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+		})
 	}
 	me, err := c.SiteUserGetMe(ctx)
 	require.NoError(t, err)
@@ -144,12 +141,11 @@ func TestSiteUserUpdateMePasswordWrongCurrent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
+	_, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString("wrong"),
 		NewPassword:     siteapi.NewOptString("newsecret123"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserUpdateMeForbidden{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	// Original password still works.
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
@@ -159,12 +155,11 @@ func TestSiteUserUpdateMePasswordChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
+	_, err := c.SiteUserUpdateMe(context.Background(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
 		NewPassword:     siteapi.NewOptString("newsecret123"),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserResourceHeaders{}, res)
 
 	// The new password works; the old one no longer does.
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, "newsecret123"))
@@ -175,40 +170,36 @@ func TestSiteUserUpdateMeWrongCurrentPasswordsAreThrottled(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	for range 3 {
-		res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+		_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
 			CurrentPassword: siteapi.NewOptString("wrong"),
 			NewPassword:     siteapi.NewOptString("newsecret123"),
 		})
-		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteUserUpdateMeForbidden{}, res)
+		testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	}
 
-	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+	_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
 		NewPassword:     siteapi.NewOptString("newsecret123"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, res, "while the delay runs even the right password is refused")
+	testhelper.SiteRefusal(t, err, http.StatusTooManyRequests, "while the delay runs even the right password is refused")
 }
 
 func TestSiteUserEmailChangeWrongCurrentPasswordsAreThrottled(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	for range 3 {
-		res, err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+		err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 			NewEmail: "new-john@gmail.com", CurrentPassword: "wrong",
 		})
-		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteUserEmailChangeForbidden{}, res)
+		testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	}
 
-	res, err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+	err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 		NewEmail: "new-john@gmail.com", CurrentPassword: fixtures.OwnerJohnPassword,
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusTooManyRequests)
 }
 
 func TestAWrongCurrentPasswordOnTheProfileCountsAgainstTheLoginBudget(t *testing.T) {

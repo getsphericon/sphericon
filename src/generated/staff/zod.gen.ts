@@ -86,52 +86,6 @@ export const zProblemDebug = z.object({
 });
 
 /**
- * RFC 7807 Problem Details
- */
-export const zProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug)
-});
-
-/**
- * RFC 7807 forbidden response
- */
-export const zForbiddenProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
- * RFC 7807 gone response: the resource existed but is no longer available (an expired link)
- */
-export const zGoneProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
- * RFC 7807 payment required response: the feature needs an Enterprise license
- */
-export const zPaymentRequiredProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
- * RFC 7807 precondition required response: the request needs something it did not carry
- * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
- */
-export const zPreconditionRequiredProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
  * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
@@ -390,9 +344,23 @@ export const zUsedBy = z.object({
 });
 
 /**
- * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
  */
-export const zInUseProblemDetails = z.object({
+export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
+
+/**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export const zSoleOwnedWorkspace = z.object({
+  id: zWorkspaceId,
+  name: z.string()
+});
+
+/**
+ * RFC 7807 Problem Details
+ */
+export const zProblemDetails = z.object({
   code: z.exactOptional(zProblemCode),
   type: z.exactOptional(z.string()),
   title: z.exactOptional(z.string()),
@@ -404,23 +372,9 @@ export const zInUseProblemDetails = z.object({
   fields: z.exactOptional(z.record(z.string(), z.string())),
   retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   debug: z.exactOptional(zProblemDebug),
-  usedBy: z.array(zUsedBy)
+  usedBy: z.exactOptional(z.array(zUsedBy)),
+  workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
 });
-
-/**
- * RFC 7807 conflict response for a removal refused because live work still uses the row
- * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
- * Integration, Sending domain or Automation answers it.
- */
-export const zInUseProblem = z.object({
-  body: zInUseProblemDetails
-});
-
-/**
- * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
- * Workspace's one public address.
- */
-export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
 
 export const zStaffAuthLoginBody = zStaffLoginInput;
 

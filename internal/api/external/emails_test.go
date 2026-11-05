@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -43,11 +44,9 @@ func TestExternalEmailsSend(t *testing.T) {
 			}),
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.SendTransactionalEmailResponse)
-	require.Truef(t, isOK, "got %T", res)
-	assert.Equal(t, externalapi.TransactionalSendStatusSent, ok.Status)
-	assert.Equal(t, "customer@example.com", ok.Destination, "destination normalized")
-	assert.NotEmpty(t, ok.ID, "the durable send record id is returned")
+	assert.Equal(t, externalapi.TransactionalSendStatusSent, res.Status)
+	assert.Equal(t, "customer@example.com", res.Destination, "destination normalized")
+	assert.NotEmpty(t, res.ID, "the durable send record id is returned")
 
 	// The capturing provider received the rendered message — template content is
 	// referenced and rendered at send time, variables merged, no raw braces.
@@ -71,13 +70,11 @@ func TestExternalEmailsSendRejectsUnverifiedDomain(t *testing.T) {
 	ctx := context.Background()
 	tmpl := variablesTemplate(env.DB)
 
-	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: "customer@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	_, isUnprocessable := res.(*externalapi.EmailsSendUnprocessableEntity)
-	require.Truef(t, isUnprocessable, "got %T, want 422 unprocessable", res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "want 422 unprocessable")
 
 	n, err := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.DestinationEQ("customer@example.com")).Count(ctx)
@@ -98,9 +95,7 @@ func TestExternalEmailsSendSuppressed(t *testing.T) {
 		Destination: fixtures.SuppressionGhostBounceDestination,
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.SendTransactionalEmailResponse)
-	require.Truef(t, isOK, "got %T", res)
-	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, ok.Status)
+	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, res.Status)
 	assert.Empty(t, env.CustomerMail.Messages(), "suppressed destination is not sent to")
 }
 
@@ -117,8 +112,7 @@ func TestExternalEmailsSendIgnoresUnsubscribe(t *testing.T) {
 		Destination: fixtures.UnsubscribeEverythingNoContactDestination,
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
-	ok := res.(*externalapi.SendTransactionalEmailResponse)
-	assert.Equal(t, externalapi.TransactionalSendStatusSent, ok.Status)
+	assert.Equal(t, externalapi.TransactionalSendStatusSent, res.Status)
 	assert.Len(t, env.CustomerMail.Messages(), 1)
 }
 
@@ -131,12 +125,11 @@ func TestExternalEmailsSendCrossWorkspaceTemplate(t *testing.T) {
 
 	// Token belongs to workspace 1; referencing ws2's template id must 404.
 	c := env.ExternalScoped(t, "emails:send")
-	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(otherTmpl),
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	assert.Empty(t, env.CustomerMail.Messages())
 }
 
@@ -144,12 +137,11 @@ func TestExternalEmailsSendMissingTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "emails:send")
 
-	res, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  999999,
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // emails:send is required.
@@ -158,12 +150,11 @@ func TestExternalEmailsSendScope(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:read")
 	tmpl := variablesTemplate(env.DB)
 
-	res, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // A successful send writes a durable record (the trace), resolves the destination
@@ -177,12 +168,11 @@ func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 
 	contact := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 
-	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: fixtures.ContactAliceEmail,
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.SendTransactionalEmailResponse{}, res)
 
 	rec, err := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.KindEQ(outboundmessage.KindTransactional), outboundmessage.Destination(fixtures.ContactAliceEmail)).Only(ctx)
@@ -212,9 +202,7 @@ func TestExternalEmailsSendIdempotentReplay(t *testing.T) {
 			Destination: "once@example.com",
 		}, externalapi.EmailsSendParams{IdempotencyKey: externalapi.NewOptString("key-1")})
 		require.NoError(t, err)
-		ok, isOK := res.(*externalapi.SendTransactionalEmailResponse)
-		require.Truef(t, isOK, "got %T", res)
-		return ok
+		return res
 	}
 
 	first := send()
@@ -243,8 +231,7 @@ func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 		Destination: fixtures.SuppressionGhostBounceDestination,
 	}, externalapi.EmailsSendParams{IdempotencyKey: externalapi.NewOptString("sup-1")})
 	require.NoError(t, err)
-	ok := res.(*externalapi.SendTransactionalEmailResponse)
-	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, ok.Status)
+	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, res.Status)
 
 	rec, err := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.Destination(fixtures.SuppressionGhostBounceDestination)).Only(ctx)
@@ -266,11 +253,10 @@ func TestExternalEmailsSendConflictOnPending(t *testing.T) {
 	// pending message, its claim moved to now.
 	env.ClaimOutbound(ctx, fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, time.Now())
 
-	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
+	_, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId:  templateID(tmpl),
 		Destination: "busy@example.com",
 	}, externalapi.EmailsSendParams{IdempotencyKey: externalapi.NewOptString("fixture-stale-claim")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendConflict{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 	assert.Empty(t, env.CustomerMail.Messages())
 }

@@ -5,13 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // An unsubscribe is NOT a suppression (ADR 0001): it is a separate, per-source
@@ -115,7 +117,7 @@ func TestSuppressOnHardBounce(t *testing.T) {
 
 	s, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),
-			suppression.ChannelEQ(suppression.ChannelEmail),
+			suppression.ChannelEQ(channels.Email),
 			suppression.DestinationEQ("hardbounce@example.com")).
 		Only(ctx)
 	require.NoError(t, err)
@@ -172,7 +174,7 @@ func TestSuppressOnComplaint(t *testing.T) {
 
 	s, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),
-			suppression.ChannelEQ(suppression.ChannelEmail),
+			suppression.ChannelEQ(channels.Email),
 			suppression.DestinationEQ("complaint@example.com")).
 		Only(ctx)
 	require.NoError(t, err)
@@ -201,7 +203,7 @@ func TestSuppressIsIdempotent(t *testing.T) {
 
 	n, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),
-			suppression.ChannelEQ(suppression.ChannelEmail),
+			suppression.ChannelEQ(channels.Email),
 			suppression.DestinationEQ("dupe@example.com")).
 		Count(ctx)
 	require.NoError(t, err)

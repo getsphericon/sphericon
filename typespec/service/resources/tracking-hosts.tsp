@@ -69,10 +69,5 @@ namespace ServiceTrackingHostFeed {
     @minValue(1)
     @maxValue(200)
     limit?: int32 = 100,
-  ):
-    | ServiceTrackingHostFeedPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  ): ServiceTrackingHostFeedPage | Problem;
 }

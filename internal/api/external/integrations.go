@@ -19,7 +19,7 @@ import (
 
 // IntegrationsList returns the Workspace's sending-provider Integrations with the Send
 // rate limit as enforced and the last 24 hours of usage.
-func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.IntegrationsListParams) (externalapi.IntegrationsListRes, error) {
+func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.IntegrationsListParams) (*externalapi.IntegrationsListOK, error) {
 	s := auth.TokenScoped(ctx)
 	page, err := h.integrations.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
@@ -39,7 +39,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 }
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.
-func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.CreateIntegrationInput) (externalapi.IntegrationsCreateRes, error) {
+func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.CreateIntegrationInput) (*externalapi.IntegrationResource, error) {
 	in, err := inputs.IntegrationCreate(req)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 }
 
 // IntegrationsGet returns one Integration with secrets redacted.
-func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.IntegrationsGetParams) (externalapi.IntegrationsGetRes, error) {
+func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.IntegrationsGetParams) (*externalapi.IntegrationResource, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	row, err := h.integrations.Get(ctx, s, id)
@@ -73,7 +73,7 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 
 // IntegrationsUpdate edits an Integration. Omitting config keeps the stored credentials;
 // blank secret fields inside a supplied config keep the stored secret.
-func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.UpdateIntegrationInput, params externalapi.IntegrationsUpdateParams) (externalapi.IntegrationsUpdateRes, error) {
+func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.UpdateIntegrationInput, params externalapi.IntegrationsUpdateParams) (*externalapi.IntegrationResource, error) {
 	id := int64(params.ID)
 	in, err := inputs.IntegrationUpdate(req)
 	if err != nil {
@@ -93,7 +93,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 
 // IntegrationsRegenerateKey gives the Integration a new hook key: the old hook URL stops
 // working at once. Hidden from MCP, because it breaks a working URL and needs a person.
-func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externalapi.IntegrationsRegenerateKeyParams) (externalapi.IntegrationsRegenerateKeyRes, error) {
+func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externalapi.IntegrationsRegenerateKeyParams) (*externalapi.IntegrationResource, error) {
 	s := auth.TokenScoped(ctx)
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
 	if err != nil {
@@ -108,7 +108,7 @@ func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externa
 
 // PresetsList returns the Presets the Instance offers with the params schema of each:
 // how an agent learns what an Integration's `params` takes.
-func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, error) {
+func (h *Handlers) PresetsList(_ context.Context) (*externalapi.PresetsListOK, error) {
 	choosable := h.integrations.Choosable()
 	items := make([]externalapi.PresetResource, 0, len(choosable))
 	for _, p := range choosable {
@@ -122,11 +122,8 @@ func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, e
 
 // IntegrationsDelete deletes an Integration for good (ADR 0049): it leaves the list and gives up
 // the default, unless live work uses it (409).
-func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.IntegrationsDeleteParams) (externalapi.IntegrationsDeleteRes, error) {
-	if err := h.integrations.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &externalapi.IntegrationsDeleteNoContent{}, nil
+func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.IntegrationsDeleteParams) error {
+	return h.integrations.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 }
 
 // integrationOne renders a single row with its 24-hour usage.

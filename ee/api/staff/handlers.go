@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/internal/problem"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
@@ -49,6 +50,12 @@ type Handlers struct {
 
 var _ staffeeapi.Handler = (*Handlers)(nil)
 
+// NewError answers a refused or failed request with the contract's Problem: the status and
+// the body are decided once for every surface (internal/problem).
+func (*Handlers) NewError(ctx context.Context, err error) *staffeeapi.ProblemDetailsStatusCode {
+	return problem.Staffee(ctx, err)
+}
+
 // SecurityHandler implements staffeeapi.SecurityHandler: the core Staff member cookie.
 type SecurityHandler struct{ sessions *staffmembers.Sessions }
 
@@ -62,7 +69,7 @@ func (h *SecurityHandler) HandleApiKeyAuth(ctx context.Context, _ staffeeapi.Ope
 
 // StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name
 // search. Metadata only: no Contacts, content or Events.
-func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.StaffWorkspacesListParams) (staffeeapi.StaffWorkspacesListRes, error) {
+func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.StaffWorkspacesListParams) (*staffeeapi.StaffWorkspacesListOK, error) {
 	page, err := h.module.ListWorkspaces(ctx, review(params.Review), strings.TrimSpace(params.Search.Value), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -80,7 +87,7 @@ func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
 }
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
-func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.StaffWorkspacesGetParams) (staffeeapi.StaffWorkspacesGetRes, error) {
+func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.StaffWorkspacesGetParams) (*staffeeapi.StaffWorkspaceDetailResource, error) {
 	w, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
 	if err != nil {
 		return nil, err
@@ -115,13 +122,13 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 }
 
 // StaffWorkspacesSetSendCap sets a Workspace's Send cap as the signed-in Staff member.
-func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (staffeeapi.StaffWorkspacesSetSendCapRes, error) {
+func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (*staffeeapi.StaffSendCapChange, error) {
 	perDay := int(req.PerDay)
 	return h.setSendCap(ctx, params.WorkspaceId, &perDay)
 }
 
 // StaffWorkspacesClearSendCap removes a Workspace's Send cap as the signed-in Staff member.
-func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (staffeeapi.StaffWorkspacesClearSendCapRes, error) {
+func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (*staffeeapi.StaffSendCapChange, error) {
 	return h.setSendCap(ctx, params.WorkspaceId, nil)
 }
 
@@ -155,7 +162,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
-func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (staffeeapi.StaffWorkspacesSuspendRes, error) {
+func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
 	w, changed, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx), req.Reason)
 	if err != nil {
 		return nil, err
@@ -164,7 +171,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 }
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
-func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (staffeeapi.StaffWorkspacesUnsuspendRes, error) {
+func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
 	w, changed, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
 	if err != nil {
 		return nil, err
@@ -174,12 +181,12 @@ func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeea
 
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
 // Staff member.
-func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (staffeeapi.StaffWorkspacesExemptRes, error) {
+func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (*staffeeapi.StaffExemptionChange, error) {
 	return h.setExempt(ctx, params.WorkspaceId, true)
 }
 
 // StaffWorkspacesUnexempt puts a Workspace back under the abuse detector.
-func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (staffeeapi.StaffWorkspacesUnexemptRes, error) {
+func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (*staffeeapi.StaffExemptionChange, error) {
 	return h.setExempt(ctx, params.WorkspaceId, false)
 }
 

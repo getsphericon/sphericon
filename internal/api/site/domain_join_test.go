@@ -20,19 +20,17 @@ import (
 
 const joinerPassword = "joiner-password-1"
 
-// setDomainJoin switches Acme's domain join as its Owner and returns the answer.
-func setDomainJoin(t *testing.T, c *siteapi.Client, enabled bool) siteapi.SiteDomainJoinSetRes {
-	t.Helper()
-	res, err := c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Enabled: enabled},
+// setDomainJoin switches Acme's domain join as c and returns the answer.
+func setDomainJoin(c *siteapi.Client, enabled bool) (*siteapi.SiteDomainJoinResource, error) {
+	return c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Enabled: enabled},
 		siteapi.SiteDomainJoinSetParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	return res
 }
 
 // enableAcmeJoin has Acme's Owner switch domain join on; acme.com is already verified there.
 func enableAcmeJoin(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setDomainJoin(t, env.SiteActor(t, fixtures.OwnerJohnEmail), true))
+	_, err := setDomainJoin(env.SiteActor(t, fixtures.OwnerJohnEmail), true)
+	require.NoError(t, err)
 }
 
 // signedUp is a person who signed up and followed the verify link: the client holds their
@@ -45,9 +43,11 @@ type signedUp struct {
 // signUp takes a new person through Sign-up and the verify link.
 func signUp(t *testing.T, env *testhelper.TestEnv, email string) signedUp {
 	t.Helper()
-	res := verify(t, env, signUpLink(t, env, "New Colleague", email), joinerPassword)
-	ok, isOK := res.(*siteapi.SiteVerifyEmailResultHeaders)
-	require.Truef(t, isOK, "got %T", res)
+	ok, err := env.SiteAnonymous(t).SiteAuthVerifyEmail(t.Context(), &siteapi.SiteVerifyEmailInput{
+		Token:    signUpLink(t, env, "New Colleague", email),
+		Password: siteapi.NewOptString(joinerPassword),
+	}, siteapi.SiteAuthVerifyEmailParams{})
+	require.NoError(t, err)
 	cookie, err := http.ParseSetCookie(ok.SetCookie)
 	require.NoError(t, err)
 	return signedUp{client: env.SiteWithToken(t, cookie.Value), landing: ok.Response.LandingWorkspaceId}
@@ -67,11 +67,9 @@ func (n signedUp) workspaceNames(t *testing.T) []string {
 
 func acmeMembers(t *testing.T, owner *siteapi.Client) []siteapi.SiteMembershipResource {
 	t.Helper()
-	res, err := owner.SiteMembershipsList(context.Background(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := owner.SiteMembershipsList(context.Background(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteMembershipsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	return *list
+	return list
 }
 
 func acmeMembersNamed(members []siteapi.SiteMembershipResource, email string) []siteapi.SiteMembershipResource {
@@ -134,7 +132,8 @@ func TestSwitchingJoinOffStopsNewJoinsAndRemovesNobody(t *testing.T) {
 	enableAcmeJoin(t, env)
 	early := signUp(t, env, "early@acme.com")
 
-	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setDomainJoin(t, owner, false))
+	_, err := setDomainJoin(owner, false)
+	require.NoError(t, err)
 	late := signUp(t, env, "late@acme.com")
 
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), early.landing)
@@ -181,10 +180,9 @@ func TestARemovedJoinDomainAdmitsNobodyAndKeepsItsMembers(t *testing.T) {
 	enableAcmeJoin(t, env)
 	early := signUp(t, env, "early@acme.com")
 
-	res, err := owner.SiteJoinDomainsRemove(context.Background(),
+	err := owner.SiteJoinDomainsRemove(context.Background(),
 		siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.JoinDomainVerifiedID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteJoinDomainsRemoveNoContent{}, res)
 	late := signUp(t, env, "late@acme.com")
 
 	assert.Contains(t, early.workspaceNames(t), fixtures.AcmeName)
@@ -196,7 +194,7 @@ func TestARemovedJoinDomainAdmitsNobodyAndKeepsItsMembers(t *testing.T) {
 func TestADomainHandedOverJoinsItsNewHolderOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
-	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setGlobexJoin(t, env.SiteActor(t, fixtures.OwnerJaneEmail)))
+	setGlobexJoin(t, env.SiteActor(t, fixtures.OwnerJaneEmail))
 	// handed-over.test moved to Globex: Acme keeps only a pending claim of it.
 	address := "newbie@" + fixtures.JoinDomainGlobexHandedOverDomain
 
@@ -206,7 +204,7 @@ func TestADomainHandedOverJoinsItsNewHolderOnly(t *testing.T) {
 	assert.Empty(t, acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), address))
 }
 
-func setGlobexJoin(t *testing.T, c *siteapi.Client) siteapi.SiteDomainJoinSetRes {
+func setGlobexJoin(t *testing.T, c *siteapi.Client) *siteapi.SiteDomainJoinResource {
 	t.Helper()
 	res, err := c.SiteDomainJoinSet(context.Background(), &siteapi.SiteSetDomainJoinInput{Enabled: true},
 		siteapi.SiteDomainJoinSetParams{WorkspaceId: fixtures.GlobexPublicID})
@@ -226,10 +224,9 @@ func TestAWorkspaceInItsDeletionWindowAdmitsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	enableAcmeJoin(t, env)
-	deleted, err := owner.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: fixtures.AcmeName},
+	_, err := owner.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: fixtures.AcmeName},
 		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleted)
 
 	joiner := signUp(t, env, "newbie@acme.com")
 
@@ -240,7 +237,7 @@ func TestTheWorkspacesTwoFactorRequirementAppliesToAJoinerWithTheUsualGrace(t *t
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	enableAcmeJoin(t, env)
-	require.IsType(t, &siteapi.SiteWorkspaceResource{}, requireSecondFactor(t, owner, fixtures.AcmePublicID))
+	requireSecondFactor(t, owner, fixtures.AcmePublicID)
 
 	joiner := signUp(t, env, "newbie@acme.com")
 
@@ -295,7 +292,9 @@ func TestAnAdminReadsAndSwitchesDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
 	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, setDomainJoin(t, admin, true))
+	set, err := setDomainJoin(admin, true)
+	require.NoError(t, err)
+	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, set)
 	read, err := admin.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, read)
@@ -305,10 +304,10 @@ func TestAMemberCannotReadOrSwitchDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteDomainJoinGetForbidden{}, read)
-	assert.IsType(t, &siteapi.SiteDomainJoinSetForbidden{}, setDomainJoin(t, c, true))
+	_, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = setDomainJoin(c, true)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 }
 
 func TestAnOwnerReadsDomainJoin(t *testing.T) {

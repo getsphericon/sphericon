@@ -83,7 +83,7 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{TriggerEvent: siteapi.NewOptString("signup_edited")},
 		siteapi.SiteAutomationsUpdateParams(params))
 	require.NoError(t, err)
-	draft := edited.(*siteapi.SiteAutomationResource).Draft.Value
+	draft := edited.Draft.Value
 	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams(params))
 	require.NoError(t, err)
 

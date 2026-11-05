@@ -111,11 +111,7 @@ interface Webhooks
   @requiresScopes(#[ApiTokenScope.webhooksRegenerate])
   regenerateSecret(...ResourceParameters<WebhookResource>):
     | WebhookResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Does not change the endpoint's failure state. Needs the webhooks:test scope. */
   @action("test")
@@ -123,10 +119,5 @@ interface Webhooks
   @requiresScopes(#[ApiTokenScope.webhooksTest])
   test(...ResourceParameters<WebhookResource>, @body body: TestWebhookInput):
     | WebhookTestResult
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

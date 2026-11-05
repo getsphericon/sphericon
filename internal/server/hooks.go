@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // hooksHandler serves inbound provider callbacks (ADR 0037): POST /hooks/{key}. The key
@@ -91,7 +92,7 @@ func presetNameOf(row *ent.Integration) string {
 	switch {
 	case row.Preset != nil:
 		return *row.Preset
-	case row.Provider == integration.ProviderSes:
+	case row.Provider == providers.SES:
 		return "ses"
 	}
 	return ""

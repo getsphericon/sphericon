@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -22,21 +23,16 @@ func TestExternalSegmentsRead(t *testing.T) {
 
 	list, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	require.NoError(t, err)
-	ok, isOK := list.(*externalapi.SegmentsListOK)
-	require.Truef(t, isOK, "got %T", list)
-	names := lo.Map(ok.Items, func(s externalapi.SegmentResource, _ int) string { return s.Name })
+	names := lo.Map(list.Items, func(s externalapi.SegmentResource, _ int) string { return s.Name })
 	assert.Contains(t, names, fixtures.SegmentActiveName)
 	assert.NotContains(t, names, fixtures.SegmentGlobexName)
 
-	got, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	seg, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	seg, isSeg := got.(*externalapi.SegmentResource)
-	require.Truef(t, isSeg, "got %T", got)
 	assert.Equal(t, "Active subscribers", seg.Name)
 
-	missing, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsGetNotFound{}, missing)
+	_, err = c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // Create and update go through the segments module: a definition that does not fit
@@ -46,31 +42,27 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "segments:read", "segments:write")
 
-	bad, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
+	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Bad",
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsCreateUnprocessableEntity{}, bad)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
-	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
+	seg, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name: "Pros", Condition: testhelper.ExternalRuleGroup(t, def),
 	})
 	require.NoError(t, err)
-	seg, isSeg := created.(*externalapi.SegmentResource)
-	require.Truef(t, isSeg, "got %T", created)
 	assert.Equal(t, "Pros", seg.Name)
 
 	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("Pros 2")},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	require.NoError(t, err)
-	assert.Equal(t, "Pros 2", upd.(*externalapi.SegmentResource).Name)
+	assert.Equal(t, "Pros 2", upd.Name)
 
-	badUpd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsUpdateUnprocessableEntity{}, badUpd)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // Preview matches the segments module's count for the same definition.
@@ -84,13 +76,10 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	require.NoError(t, err)
 	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.PreviewSegmentResult)
-	require.Truef(t, isOK, "got %T", res)
-	assert.EqualValues(t, want, ok.Count)
+	assert.EqualValues(t, want, res.Count)
 
-	bad, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, bad)
+	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // An event count leaf is evaluated, and refused out of range, as on /site: a count or a window
@@ -98,29 +87,29 @@ func TestExternalSegmentsPreview(t *testing.T) {
 func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "segments:read")
-	preview := func(leaf string) externalapi.SegmentsPreviewRes {
+	preview := func(leaf string) (*externalapi.PreviewSegmentResult, error) {
 		t.Helper()
 		// Liam did rule_url three times yesterday.
 		def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"eq","value":"` +
 			fixtures.ContactLiamEmail + `"},` + leaf + `]}`
-		out, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
+		return c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
 			Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def)),
 		})
-		require.NoError(t, err)
-		return out
 	}
 
-	three := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":3,"withinDays":7}`)
-	four := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":4}`)
-	negative := preview(`{"kind":"event","action":"rule_url","operator":"atMost","times":-1}`)
-	noWindow := preview(`{"kind":"event","action":"rule_url","operator":"atMost","times":1,"withinDays":0}`)
-	atLeastNone := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":0}`)
+	three, err := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":3,"withinDays":7}`)
+	require.NoError(t, err)
+	four, err := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":4}`)
+	require.NoError(t, err)
+	_, negative := preview(`{"kind":"event","action":"rule_url","operator":"atMost","times":-1}`)
+	_, noWindow := preview(`{"kind":"event","action":"rule_url","operator":"atMost","times":1,"withinDays":0}`)
+	_, atLeastNone := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":0}`)
 
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 1}, three)
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0}, four)
-	assert.IsType(t, &externalapi.SegmentsPreviewBadRequest{}, negative)
-	assert.IsType(t, &externalapi.SegmentsPreviewBadRequest{}, noWindow)
-	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, atLeastNone)
+	testhelper.ExternalRefusal(t, negative, http.StatusBadRequest)
+	testhelper.ExternalRefusal(t, noWindow, http.StatusBadRequest)
+	testhelper.ExternalRefusal(t, atLeastNone, http.StatusUnprocessableEntity)
 }
 
 // A Segment created with an event count reads back as it was sent.
@@ -130,14 +119,10 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:read", "segments:write")
 	sent := testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"pricing_viewed","operator":"atMost","times":0,"withinDays":30}]}`)
 
-	out, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Never priced", Condition: sent})
+	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Never priced", Condition: sent})
 	require.NoError(t, err)
-	created, ok := out.(*externalapi.SegmentResource)
-	require.Truef(t, ok, "got %T", out)
-	got, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
+	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
-	stored, ok := got.(*externalapi.SegmentResource)
-	require.Truef(t, ok, "got %T", got)
 
 	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
 }
@@ -147,22 +132,21 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "segments:read")
-	preview := func(leaf string) externalapi.SegmentsPreviewRes {
+	preview := func(leaf string) error {
 		t.Helper()
-		out, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
+		_, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
 			Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[`+leaf+`]}`)),
 		})
-		require.NoError(t, err)
-		return out
+		return err
 	}
 
 	onNumber := preview(`{"kind":"number","field":"custom:courses_completed","operator":"gte","value":3}`)
 	numberOnText := preview(`{"kind":"number","field":"custom:plan","operator":"gte","value":3}`)
 	dateOnNumber := preview(`{"kind":"dateWithin","field":"custom:courses_completed","withinDays":7}`)
 
-	assert.IsType(t, &externalapi.PreviewSegmentResult{}, onNumber)
-	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, numberOnText)
-	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, dateOnNumber)
+	require.NoError(t, onNumber)
+	testhelper.ExternalRefusal(t, numberOnText, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, dateOnNumber, http.StatusUnprocessableEntity)
 }
 
 // A Segment created with a number leaf reads back as it was sent.
@@ -172,14 +156,10 @@ func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:read", "segments:write")
 	sent := testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"number","field":"custom:courses_completed","operator":"lt","value":1.5}]}`)
 
-	out, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Barely started", Condition: sent})
+	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Barely started", Condition: sent})
 	require.NoError(t, err)
-	created, ok := out.(*externalapi.SegmentResource)
-	require.Truef(t, ok, "got %T", out)
-	got, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
+	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
-	stored, ok := got.(*externalapi.SegmentResource)
-	require.Truef(t, ok, "got %T", got)
 
 	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
 }
@@ -189,33 +169,27 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	ctx := context.Background()
 
 	none := env.ExternalScoped(t, "contacts:read")
-	list, err := none.SegmentsList(ctx, externalapi.SegmentsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsListForbidden{}, list)
-	prev, err := none.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsPreviewForbidden{}, prev)
+	_, err := none.SegmentsList(ctx, externalapi.SegmentsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = none.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// Read scope cannot write.
 	ro := env.ExternalScoped(t, "segments:read")
-	cr, err := ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
+	_, err = ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "x",
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsCreateForbidden{}, cr)
-	up, err := ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsUpdateForbidden{}, up)
-	del, err := ro.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentActiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsArchiveForbidden{}, del)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = ro.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	// Write scope cannot read.
 	wo := env.ExternalScoped(t, "segments:write")
-	get, err := wo.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsGetForbidden{}, get)
+	_, err = wo.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // Another tenant's segment is invisible and immutable through this token.
@@ -229,19 +203,16 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 
 	list, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	require.NoError(t, err)
-	for _, s := range list.(*externalapi.SegmentsListOK).Items {
+	for _, s := range list.Items {
 		assert.NotEqual(t, fixtures.SegmentGlobexName, s.Name, "another tenant's segment leaked")
 	}
-	get, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsGetNotFound{}, get)
-	upd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("pwned")},
+	_, err = c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Name: externalapi.NewOptString("pwned")},
 		externalapi.SegmentsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsUpdateNotFound{}, upd)
-	del, err := c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsArchiveNotFound{}, del)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // The "can be texted" condition is accepted on /api: a Segment stores it, and a preview counts the
@@ -252,21 +223,20 @@ func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 	c := env.ExternalScoped(t, "segments:read", "segments:write", "contacts:write")
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"eq","value":"` +
 		fixtures.ContactTexterEmail + `"},{"kind":"rule","field":"sms","operator":"has"}]}`
-	preview := func() externalapi.SegmentsPreviewRes {
+	preview := func() *externalapi.PreviewSegmentResult {
 		t.Helper()
 		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
 		require.NoError(t, err)
 		return out
 	}
 
-	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Texter", Condition: testhelper.ExternalRuleGroup(t, def)})
+	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Texter", Condition: testhelper.ExternalRuleGroup(t, def)})
 	require.NoError(t, err)
 	before := preview()
 	_, err = c.ConfirmationsCreate(ctx, smsConsent(fixtures.ContactTexterPhone))
 	require.NoError(t, err)
 	after := preview()
 
-	assert.IsType(t, &externalapi.SegmentResource{}, created)
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0}, before)
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 1}, after)
 }

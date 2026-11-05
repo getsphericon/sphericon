@@ -8,7 +8,7 @@ import (
 
 // SiteAutomationsDryRunHttpStep renders an HTTP step's body for a Contact and
 // validates it; nothing is called.
-func (h *Handlers) SiteAutomationsDryRunHttpStep(ctx context.Context, req *siteapi.SiteDryRunHttpStepInput, _ siteapi.SiteAutomationsDryRunHttpStepParams) (siteapi.SiteAutomationsDryRunHttpStepRes, error) {
+func (h *Handlers) SiteAutomationsDryRunHttpStep(ctx context.Context, req *siteapi.SiteDryRunHttpStepInput, _ siteapi.SiteAutomationsDryRunHttpStepParams) (*siteapi.SiteDryRunHttpStepResult, error) {
 	ws := workspaceScope(ctx)
 
 	res, err := h.automations.DryRun(ctx, ws, int64(req.ContactId), req.Body)

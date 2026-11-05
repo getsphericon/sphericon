@@ -1,10 +1,6 @@
 import { ProblemCode } from '../generated/site/types.gen.ts'
 import type { ProblemDetails } from '../generated/site/types.gen.ts'
-import {
-  zInUseProblemDetails,
-  zProblemDetails,
-  zSiteDeleteUserProblemDetails,
-} from '../generated/site/zod.gen.ts'
+import { zProblemDetails } from '../generated/site/zod.gen.ts'
 
 // What a failed call of the generated client rejects with: a problem body (RFC 7807) as the
 // contract describes it. Anything else (a network failure, a page that threw) is not one.
@@ -109,21 +105,21 @@ export function getProblemDebug(error: unknown) {
 // The rows that use the one a refused removal named (the `usedBy` member of a 409, ADR 0049),
 // or undefined when the error is not such a refusal.
 export function getUsedBy(error: unknown) {
-  const parsed = zInUseProblemDetails.safeParse(error)
-  if (!parsed.success || parsed.data.status !== 409 || parsed.data.usedBy.length === 0) {
+  const problem = asProblem(error)
+  if (problem?.status !== 409 || !problem.usedBy?.length) {
     return undefined
   }
-  return parsed.data.usedBy
+  return problem.usedBy
 }
 
 // The Workspaces a refused User deletion named (the `workspaces` member of its 422, ADR 0050):
 // the ones the User is the only Owner of. Undefined when the error is not such a refusal.
 export function getSoleOwnedWorkspaces(error: unknown) {
-  const parsed = zSiteDeleteUserProblemDetails.safeParse(error)
-  if (!parsed.success || parsed.data.status !== 422 || parsed.data.workspaces.length === 0) {
+  const problem = asProblem(error)
+  if (problem?.status !== 422 || !problem.workspaces?.length) {
     return undefined
   }
-  return parsed.data.workspaces
+  return problem.workspaces
 }
 
 // Every message a 422 problem lists, by field (its `errors` member); undefined when it lists none.

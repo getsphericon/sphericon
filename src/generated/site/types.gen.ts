@@ -1000,64 +1000,6 @@ export type HoldReason = typeof HoldReason[keyof typeof HoldReason];
 export type ImageUrl = string;
 
 /**
- * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
- */
-export type InUseProblemDetails = {
-  /**
-   * Why the request was refused, when the client should act on it
-   */
-  code?: ProblemCode;
-  /**
-   * A URI reference that identifies the problem type
-   */
-  type?: string;
-  /**
-   * A short, human-readable summary of the problem type
-   */
-  title?: string;
-  /**
-   * HTTP status code
-   */
-  status?: number;
-  /**
-   * A human-readable explanation specific to this occurrence
-   */
-  detail?: string;
-  /**
-   * A URI reference that identifies the specific occurrence
-   */
-  instance?: string;
-  /**
-   * Validation errors grouped by field
-   */
-  errors?: {
-    [key: string]: Array<string>;
-  };
-  /**
-   * Form-level validation error
-   */
-  form?: string;
-  /**
-   * Field validation errors
-   */
-  fields?: {
-    [key: string]: string;
-  };
-  /**
-   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
-   */
-  retryAfter?: number;
-  /**
-   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
-   */
-  debug?: ProblemDebug;
-  /**
-   * The live rows that use the one a removal was refused for, never empty
-   */
-  usedBy: Array<UsedBy>;
-};
-
-/**
  * The Test inbox takes no credentials: a Workspace has at most one
  */
 export type InboxConfigInput = {
@@ -1371,6 +1313,16 @@ export type ProblemDetails = {
    * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
    */
   debug?: ProblemDebug;
+  /**
+   * A removal refused because live work still uses the row (a 409, ADR 0049): the rows that
+   * use it, never empty
+   */
+  usedBy?: Array<UsedBy>;
+  /**
+   * A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each
+   * handed over or deleted first; empty when the refusal is another rule's
+   */
+  workspaces?: Array<SoleOwnedWorkspace>;
 };
 
 /**
@@ -3915,65 +3867,6 @@ export type SiteDeleteUserLinkInput = {
 };
 
 /**
- * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
- * of Workspaces, the list of them (empty when the typed email did not match)
- */
-export type SiteDeleteUserProblemDetails = {
-  /**
-   * Why the request was refused, when the client should act on it
-   */
-  code?: ProblemCode;
-  /**
-   * A URI reference that identifies the problem type
-   */
-  type?: string;
-  /**
-   * A short, human-readable summary of the problem type
-   */
-  title?: string;
-  /**
-   * HTTP status code
-   */
-  status?: number;
-  /**
-   * A human-readable explanation specific to this occurrence
-   */
-  detail?: string;
-  /**
-   * A URI reference that identifies the specific occurrence
-   */
-  instance?: string;
-  /**
-   * Validation errors grouped by field
-   */
-  errors?: {
-    [key: string]: Array<string>;
-  };
-  /**
-   * Form-level validation error
-   */
-  form?: string;
-  /**
-   * Field validation errors
-   */
-  fields?: {
-    [key: string]: string;
-  };
-  /**
-   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
-   */
-  retryAfter?: number;
-  /**
-   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
-   */
-  debug?: ProblemDebug;
-  /**
-   * The live Workspaces the User is the only Owner of; each is handed over or deleted first
-   */
-  workspaces: Array<SiteSoleOwnedWorkspace>;
-};
-
-/**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
 export type SiteDeleteWorkspaceInput = {
@@ -6320,20 +6213,6 @@ export type SiteSmtpConfig = {
 };
 
 /**
- * A Workspace the User is the only Owner of, which blocks User deletion
- */
-export type SiteSoleOwnedWorkspace = {
-  /**
-   * The Workspace id
-   */
-  id: WorkspaceId;
-  /**
-   * Display name
-   */
-  name: string;
-};
-
-/**
  * The channel a suppression applies to
  */
 export const SiteSuppressionChannel = {
@@ -7311,6 +7190,20 @@ export type SmtpConfigInput = {
 };
 
 /**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export type SoleOwnedWorkspace = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
+};
+
+/**
  * Direction of a list's order. Only the surfaces with a sortable list import this file, so the
  * others do not carry an unused schema.
  */
@@ -8135,9 +8028,14 @@ export type SiteAuthConfirmEmailChangeData = {
 
 export type SiteAuthConfirmEmailChangeErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthConfirmEmailChangeError = SiteAuthConfirmEmailChangeErrors[keyof SiteAuthConfirmEmailChangeErrors];
@@ -8158,13 +8056,14 @@ export type SiteAuthForgotPasswordData = {
 
 export type SiteAuthForgotPasswordErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthForgotPasswordError = SiteAuthForgotPasswordErrors[keyof SiteAuthForgotPasswordErrors];
@@ -8185,21 +8084,14 @@ export type SiteAuthLoginData = {
 
 export type SiteAuthLoginErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthLoginError = SiteAuthLoginErrors[keyof SiteAuthLoginErrors];
@@ -8220,6 +8112,20 @@ export type SiteAuthLogoutData = {
   url: '/auth/logout';
 };
 
+export type SiteAuthLogoutErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteAuthLogoutError = SiteAuthLogoutErrors[keyof SiteAuthLogoutErrors];
+
 export type SiteAuthLogoutResponses = {
   /**
    * There is no content to send for this request, but the headers may be useful.
@@ -8238,9 +8144,14 @@ export type SitePasskeyLoginBeginData = {
 
 export type SitePasskeyLoginBeginErrors = {
   /**
-   * RFC 7807 not found response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeyLoginBeginError = SitePasskeyLoginBeginErrors[keyof SitePasskeyLoginBeginErrors];
@@ -8263,17 +8174,14 @@ export type SitePasskeyLoginFinishData = {
 
 export type SitePasskeyLoginFinishErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeyLoginFinishError = SitePasskeyLoginFinishErrors[keyof SitePasskeyLoginFinishErrors];
@@ -8296,13 +8204,14 @@ export type SiteAuthResendVerificationData = {
 
 export type SiteAuthResendVerificationErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthResendVerificationError = SiteAuthResendVerificationErrors[keyof SiteAuthResendVerificationErrors];
@@ -8323,13 +8232,14 @@ export type SiteAuthResetPasswordData = {
 
 export type SiteAuthResetPasswordErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthResetPasswordError = SiteAuthResetPasswordErrors[keyof SiteAuthResetPasswordErrors];
@@ -8350,17 +8260,14 @@ export type SiteAuthSecondFactorData = {
 
 export type SiteAuthSecondFactorErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSecondFactorError = SiteAuthSecondFactorErrors[keyof SiteAuthSecondFactorErrors];
@@ -8383,21 +8290,14 @@ export type SiteAuthSignUpData = {
 
 export type SiteAuthSignUpErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSignUpError = SiteAuthSignUpErrors[keyof SiteAuthSignUpErrors];
@@ -8418,9 +8318,14 @@ export type SiteAuthSigninNotMeData = {
 
 export type SiteAuthSigninNotMeErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninNotMeError = SiteAuthSigninNotMeErrors[keyof SiteAuthSigninNotMeErrors];
@@ -8443,9 +8348,14 @@ export type SiteAuthSigninPendingData = {
 
 export type SiteAuthSigninPendingErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninPendingError = SiteAuthSigninPendingErrors[keyof SiteAuthSigninPendingErrors];
@@ -8468,13 +8378,14 @@ export type SiteAuthSigninPendingSubmitData = {
 
 export type SiteAuthSigninPendingSubmitErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninPendingSubmitError = SiteAuthSigninPendingSubmitErrors[keyof SiteAuthSigninPendingSubmitErrors];
@@ -8497,9 +8408,14 @@ export type SiteAuthSigninPendingDeclineData = {
 
 export type SiteAuthSigninPendingDeclineErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninPendingDeclineError = SiteAuthSigninPendingDeclineErrors[keyof SiteAuthSigninPendingDeclineErrors];
@@ -8519,6 +8435,20 @@ export type SiteAuthSigninProvidersData = {
   query?: never;
   url: '/auth/signin-providers';
 };
+
+export type SiteAuthSigninProvidersErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteAuthSigninProvidersError = SiteAuthSigninProvidersErrors[keyof SiteAuthSigninProvidersErrors];
 
 export type SiteAuthSigninProvidersResponses = {
   /**
@@ -8553,12 +8483,31 @@ export type SiteAuthSigninCallbackData = {
 
 export type SiteAuthSigninCallbackErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninCallbackError = SiteAuthSigninCallbackErrors[keyof SiteAuthSigninCallbackErrors];
+
+export type SiteAuthSigninCallbackResponses = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteAuthSigninCallbackResponse = SiteAuthSigninCallbackResponses[keyof SiteAuthSigninCallbackResponses];
 
 export type SiteAuthSigninStartData = {
   body?: never;
@@ -8582,16 +8531,31 @@ export type SiteAuthSigninStartData = {
 
 export type SiteAuthSigninStartErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthSigninStartError = SiteAuthSigninStartErrors[keyof SiteAuthSigninStartErrors];
+
+export type SiteAuthSigninStartResponses = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteAuthSigninStartResponse = SiteAuthSigninStartResponses[keyof SiteAuthSigninStartResponses];
 
 export type SiteAuthVerifyEmailData = {
   body: SiteVerifyEmailInput;
@@ -8602,22 +8566,14 @@ export type SiteAuthVerifyEmailData = {
 
 export type SiteAuthVerifyEmailErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 precondition required response: the request needs something it did not carry
-   * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
-   */
-  428: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuthVerifyEmailError = SiteAuthVerifyEmailErrors[keyof SiteAuthVerifyEmailErrors];
@@ -8642,17 +8598,14 @@ export type SitePublicConfirmationsPerformData = {
 
 export type SitePublicConfirmationsPerformErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 gone response: the resource existed but is no longer available (an expired link)
-   */
-  410: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePublicConfirmationsPerformError = SitePublicConfirmationsPerformErrors[keyof SitePublicConfirmationsPerformErrors];
@@ -8675,9 +8628,14 @@ export type SiteInstanceGetReleaseData = {
 
 export type SiteInstanceGetReleaseErrors = {
   /**
-   * RFC 7807 forbidden response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  403: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteInstanceGetReleaseError = SiteInstanceGetReleaseErrors[keyof SiteInstanceGetReleaseErrors];
@@ -8702,13 +8660,14 @@ export type SitePublicInvitationsLookupData = {
 
 export type SitePublicInvitationsLookupErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePublicInvitationsLookupError = SitePublicInvitationsLookupErrors[keyof SitePublicInvitationsLookupErrors];
@@ -8733,29 +8692,14 @@ export type SitePublicInvitationsAcceptData = {
 
 export type SitePublicInvitationsAcceptErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePublicInvitationsAcceptError = SitePublicInvitationsAcceptErrors[keyof SitePublicInvitationsAcceptErrors];
@@ -8778,13 +8722,14 @@ export type SiteLegalDocumentsGetData = {
 
 export type SiteLegalDocumentsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteLegalDocumentsGetError = SiteLegalDocumentsGetErrors[keyof SiteLegalDocumentsGetErrors];
@@ -8805,6 +8750,20 @@ export type SiteUserGetMeData = {
   url: '/me';
 };
 
+export type SiteUserGetMeErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteUserGetMeError = SiteUserGetMeErrors[keyof SiteUserGetMeErrors];
+
 export type SiteUserGetMeResponses = {
   /**
    * The request has succeeded.
@@ -8823,21 +8782,14 @@ export type SiteUserUpdateMeData = {
 
 export type SiteUserUpdateMeErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteUserUpdateMeError = SiteUserUpdateMeErrors[keyof SiteUserUpdateMeErrors];
@@ -8860,13 +8812,14 @@ export type SiteUserAcceptPendingData = {
 
 export type SiteUserAcceptPendingErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteUserAcceptPendingError = SiteUserAcceptPendingErrors[keyof SiteUserAcceptPendingErrors];
@@ -8889,21 +8842,14 @@ export type SiteUserDeleteUserData = {
 
 export type SiteUserDeleteUserErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 validation response of User deletion
-   */
-  422: SiteDeleteUserProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteUserDeleteUserError = SiteUserDeleteUserErrors[keyof SiteUserDeleteUserErrors];
@@ -8926,13 +8872,14 @@ export type SiteUserDeleteUserLinkData = {
 
 export type SiteUserDeleteUserLinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 validation response of User deletion
-   */
-  422: SiteDeleteUserProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteUserDeleteUserLinkError = SiteUserDeleteUserLinkErrors[keyof SiteUserDeleteUserLinkErrors];
@@ -8953,21 +8900,14 @@ export type SiteUserEmailChangeData = {
 
 export type SiteUserEmailChangeErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteUserEmailChangeError = SiteUserEmailChangeErrors[keyof SiteUserEmailChangeErrors];
@@ -8985,6 +8925,20 @@ export type SiteIdentitiesListData = {
   query?: never;
   url: '/me/identities';
 };
+
+export type SiteIdentitiesListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteIdentitiesListError = SiteIdentitiesListErrors[keyof SiteIdentitiesListErrors];
 
 export type SiteIdentitiesListResponses = {
   /**
@@ -9006,17 +8960,14 @@ export type SiteIdentitiesUnlinkData = {
 
 export type SiteIdentitiesUnlinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIdentitiesUnlinkError = SiteIdentitiesUnlinkErrors[keyof SiteIdentitiesUnlinkErrors];
@@ -9046,16 +8997,31 @@ export type SiteIdentitiesLinkData = {
 
 export type SiteIdentitiesLinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIdentitiesLinkError = SiteIdentitiesLinkErrors[keyof SiteIdentitiesLinkErrors];
+
+export type SiteIdentitiesLinkResponses = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteIdentitiesLinkResponse = SiteIdentitiesLinkResponses[keyof SiteIdentitiesLinkResponses];
 
 export type SiteOptionalConsentsListData = {
   body?: never;
@@ -9063,6 +9029,20 @@ export type SiteOptionalConsentsListData = {
   query?: never;
   url: '/me/optional-consents';
 };
+
+export type SiteOptionalConsentsListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteOptionalConsentsListError = SiteOptionalConsentsListErrors[keyof SiteOptionalConsentsListErrors];
 
 export type SiteOptionalConsentsListResponses = {
   /**
@@ -9084,17 +9064,14 @@ export type SiteOptionalConsentsSetData = {
 
 export type SiteOptionalConsentsSetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteOptionalConsentsSetError = SiteOptionalConsentsSetErrors[keyof SiteOptionalConsentsSetErrors];
@@ -9115,6 +9092,20 @@ export type SitePasskeysListData = {
   url: '/me/passkeys';
 };
 
+export type SitePasskeysListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SitePasskeysListError = SitePasskeysListErrors[keyof SitePasskeysListErrors];
+
 export type SitePasskeysListResponses = {
   /**
    * The request has succeeded.
@@ -9133,9 +9124,14 @@ export type SitePasskeysBeginCheckData = {
 
 export type SitePasskeysBeginCheckErrors = {
   /**
-   * RFC 7807 not found response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysBeginCheckError = SitePasskeysBeginCheckErrors[keyof SitePasskeysBeginCheckErrors];
@@ -9158,17 +9154,14 @@ export type SitePasskeysFinishCheckData = {
 
 export type SitePasskeysFinishCheckErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysFinishCheckError = SitePasskeysFinishCheckErrors[keyof SitePasskeysFinishCheckErrors];
@@ -9191,9 +9184,14 @@ export type SitePasskeysBeginRegistrationData = {
 
 export type SitePasskeysBeginRegistrationErrors = {
   /**
-   * RFC 7807 not found response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysBeginRegistrationError = SitePasskeysBeginRegistrationErrors[keyof SitePasskeysBeginRegistrationErrors];
@@ -9216,25 +9214,14 @@ export type SitePasskeysFinishRegistrationData = {
 
 export type SitePasskeysFinishRegistrationErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysFinishRegistrationError = SitePasskeysFinishRegistrationErrors[keyof SitePasskeysFinishRegistrationErrors];
@@ -9259,25 +9246,14 @@ export type SitePasskeysRemoveData = {
 
 export type SitePasskeysRemoveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysRemoveError = SitePasskeysRemoveErrors[keyof SitePasskeysRemoveErrors];
@@ -9302,17 +9278,14 @@ export type SitePasskeysRenameData = {
 
 export type SitePasskeysRenameErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePasskeysRenameError = SitePasskeysRenameErrors[keyof SitePasskeysRenameErrors];
@@ -9333,6 +9306,20 @@ export type SiteSecondFactorGetStatusData = {
   url: '/me/second-factor';
 };
 
+export type SiteSecondFactorGetStatusErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteSecondFactorGetStatusError = SiteSecondFactorGetStatusErrors[keyof SiteSecondFactorGetStatusErrors];
+
 export type SiteSecondFactorGetStatusResponses = {
   /**
    * The request has succeeded.
@@ -9351,25 +9338,14 @@ export type SiteSecondFactorDisableData = {
 
 export type SiteSecondFactorDisableErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSecondFactorDisableError = SiteSecondFactorDisableErrors[keyof SiteSecondFactorDisableErrors];
@@ -9392,21 +9368,14 @@ export type SiteSecondFactorStartEnrollmentData = {
 
 export type SiteSecondFactorStartEnrollmentErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSecondFactorStartEnrollmentError = SiteSecondFactorStartEnrollmentErrors[keyof SiteSecondFactorStartEnrollmentErrors];
@@ -9429,25 +9398,14 @@ export type SiteSecondFactorConfirmEnrollmentData = {
 
 export type SiteSecondFactorConfirmEnrollmentErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSecondFactorConfirmEnrollmentError = SiteSecondFactorConfirmEnrollmentErrors[keyof SiteSecondFactorConfirmEnrollmentErrors];
@@ -9470,21 +9428,14 @@ export type SiteSecondFactorRegenerateRecoveryCodesData = {
 
 export type SiteSecondFactorRegenerateRecoveryCodesErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSecondFactorRegenerateRecoveryCodesError = SiteSecondFactorRegenerateRecoveryCodesErrors[keyof SiteSecondFactorRegenerateRecoveryCodesErrors];
@@ -9505,6 +9456,20 @@ export type SiteUserSignOutEverywhereData = {
   url: '/me/sign-out-everywhere';
 };
 
+export type SiteUserSignOutEverywhereErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteUserSignOutEverywhereError = SiteUserSignOutEverywhereErrors[keyof SiteUserSignOutEverywhereErrors];
+
 export type SiteUserSignOutEverywhereResponses = {
   /**
    * There is no content to send for this request, but the headers may be useful.
@@ -9523,21 +9488,14 @@ export type SiteSignupSurveySubmitData = {
 
 export type SiteSignupSurveySubmitErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSignupSurveySubmitError = SiteSignupSurveySubmitErrors[keyof SiteSignupSurveySubmitErrors];
@@ -9564,17 +9522,14 @@ export type SiteOAuthDescribeData = {
 
 export type SiteOAuthDescribeErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteOAuthDescribeError = SiteOAuthDescribeErrors[keyof SiteOAuthDescribeErrors];
@@ -9597,21 +9552,14 @@ export type SiteOAuthDecideData = {
 
 export type SiteOAuthDecideErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteOAuthDecideError = SiteOAuthDecideErrors[keyof SiteOAuthDecideErrors];
@@ -9632,6 +9580,20 @@ export type SitePresetsListData = {
   url: '/presets';
 };
 
+export type SitePresetsListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SitePresetsListError = SitePresetsListErrors[keyof SitePresetsListErrors];
+
 export type SitePresetsListResponses = {
   /**
    * The request has succeeded.
@@ -9650,9 +9612,14 @@ export type SiteSchemaApplyMigrationsData = {
 
 export type SiteSchemaApplyMigrationsErrors = {
   /**
-   * RFC 7807 not found response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSchemaApplyMigrationsError = SiteSchemaApplyMigrationsErrors[keyof SiteSchemaApplyMigrationsErrors];
@@ -9672,6 +9639,20 @@ export type SiteLegalDocumentsSignupItemsData = {
   query?: never;
   url: '/signup-items';
 };
+
+export type SiteLegalDocumentsSignupItemsErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteLegalDocumentsSignupItemsError = SiteLegalDocumentsSignupItemsErrors[keyof SiteLegalDocumentsSignupItemsErrors];
 
 export type SiteLegalDocumentsSignupItemsResponses = {
   /**
@@ -9693,9 +9674,14 @@ export type SitePublicUnsubscribesPerformData = {
 
 export type SitePublicUnsubscribesPerformErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePublicUnsubscribesPerformError = SitePublicUnsubscribesPerformErrors[keyof SitePublicUnsubscribesPerformErrors];
@@ -9716,6 +9702,20 @@ export type SiteWorkspacesListData = {
   url: '/workspaces';
 };
 
+export type SiteWorkspacesListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesListError = SiteWorkspacesListErrors[keyof SiteWorkspacesListErrors];
+
 export type SiteWorkspacesListResponses = {
   /**
    * The request has succeeded.
@@ -9734,17 +9734,14 @@ export type SiteWorkspacesCreateData = {
 
 export type SiteWorkspacesCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesCreateError = SiteWorkspacesCreateErrors[keyof SiteWorkspacesCreateErrors];
@@ -9764,6 +9761,20 @@ export type SiteWorkspacesListDeletedData = {
   query?: never;
   url: '/workspaces/deleted';
 };
+
+export type SiteWorkspacesListDeletedErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesListDeletedError = SiteWorkspacesListDeletedErrors[keyof SiteWorkspacesListDeletedErrors];
 
 export type SiteWorkspacesListDeletedResponses = {
   /**
@@ -9785,17 +9796,14 @@ export type SiteWorkspacesRestoreData = {
 
 export type SiteWorkspacesRestoreErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
@@ -9820,21 +9828,14 @@ export type SiteWorkspacesUpdateData = {
 
 export type SiteWorkspacesUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesUpdateError = SiteWorkspacesUpdateErrors[keyof SiteWorkspacesUpdateErrors];
@@ -9859,17 +9860,14 @@ export type SiteWorkspacesAccountLinkData = {
 
 export type SiteWorkspacesAccountLinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesAccountLinkError = SiteWorkspacesAccountLinkErrors[keyof SiteWorkspacesAccountLinkErrors];
@@ -9899,13 +9897,14 @@ export type SiteAnalyticsClicksByLinkData = {
 
 export type SiteAnalyticsClicksByLinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsClicksByLinkError = SiteAnalyticsClicksByLinkErrors[keyof SiteAnalyticsClicksByLinkErrors];
@@ -9935,13 +9934,14 @@ export type SiteAnalyticsDeliverabilityData = {
 
 export type SiteAnalyticsDeliverabilityErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsDeliverabilityError = SiteAnalyticsDeliverabilityErrors[keyof SiteAnalyticsDeliverabilityErrors];
@@ -9971,13 +9971,14 @@ export type SiteAnalyticsEventsData = {
 
 export type SiteAnalyticsEventsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsEventsError = SiteAnalyticsEventsErrors[keyof SiteAnalyticsEventsErrors];
@@ -10007,13 +10008,14 @@ export type SiteAnalyticsNewPeopleData = {
 
 export type SiteAnalyticsNewPeopleErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsNewPeopleError = SiteAnalyticsNewPeopleErrors[keyof SiteAnalyticsNewPeopleErrors];
@@ -10043,13 +10045,14 @@ export type SiteAnalyticsOpensByHourData = {
 
 export type SiteAnalyticsOpensByHourErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsOpensByHourError = SiteAnalyticsOpensByHourErrors[keyof SiteAnalyticsOpensByHourErrors];
@@ -10079,13 +10082,14 @@ export type SiteAnalyticsOverviewData = {
 
 export type SiteAnalyticsOverviewErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsOverviewError = SiteAnalyticsOverviewErrors[keyof SiteAnalyticsOverviewErrors];
@@ -10115,13 +10119,14 @@ export type SiteAnalyticsRevenueData = {
 
 export type SiteAnalyticsRevenueErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsRevenueError = SiteAnalyticsRevenueErrors[keyof SiteAnalyticsRevenueErrors];
@@ -10151,13 +10156,14 @@ export type SiteAnalyticsSubscribedPeopleData = {
 
 export type SiteAnalyticsSubscribedPeopleErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAnalyticsSubscribedPeopleError = SiteAnalyticsSubscribedPeopleErrors[keyof SiteAnalyticsSubscribedPeopleErrors];
@@ -10182,13 +10188,14 @@ export type SiteAttentionGetData = {
 
 export type SiteAttentionGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAttentionGetError = SiteAttentionGetErrors[keyof SiteAttentionGetErrors];
@@ -10258,21 +10265,14 @@ export type SiteAuditListData = {
 
 export type SiteAuditListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 payment required response: the feature needs an Enterprise license
-   */
-  402: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuditListError = SiteAuditListErrors[keyof SiteAuditListErrors];
@@ -10334,21 +10334,14 @@ export type SiteAuditExportData = {
 
 export type SiteAuditExportErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 payment required response: the feature needs an Enterprise license
-   */
-  402: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuditExportError = SiteAuditExportErrors[keyof SiteAuditExportErrors];
@@ -10373,21 +10366,14 @@ export type SiteAuditFacetsData = {
 
 export type SiteAuditFacetsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 payment required response: the feature needs an Enterprise license
-   */
-  402: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuditFacetsError = SiteAuditFacetsErrors[keyof SiteAuditFacetsErrors];
@@ -10412,21 +10398,14 @@ export type SiteAuditGetRetentionData = {
 
 export type SiteAuditGetRetentionErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 payment required response: the feature needs an Enterprise license
-   */
-  402: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuditGetRetentionError = SiteAuditGetRetentionErrors[keyof SiteAuditGetRetentionErrors];
@@ -10451,25 +10430,14 @@ export type SiteAuditSetRetentionData = {
 
 export type SiteAuditSetRetentionErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 payment required response: the feature needs an Enterprise license
-   */
-  402: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAuditSetRetentionError = SiteAuditSetRetentionErrors[keyof SiteAuditSetRetentionErrors];
@@ -10527,17 +10495,14 @@ export type SiteAutomationsListData = {
 
 export type SiteAutomationsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsListError = SiteAutomationsListErrors[keyof SiteAutomationsListErrors];
@@ -10587,17 +10552,14 @@ export type SiteAutomationsCreateData = {
 
 export type SiteAutomationsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsCreateError = SiteAutomationsCreateErrors[keyof SiteAutomationsCreateErrors];
@@ -10626,17 +10588,14 @@ export type SiteAutomationsDryRunHttpStepData = {
 
 export type SiteAutomationsDryRunHttpStepErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsDryRunHttpStepError = SiteAutomationsDryRunHttpStepErrors[keyof SiteAutomationsDryRunHttpStepErrors];
@@ -10675,13 +10634,14 @@ export type SiteEnrollmentsListData = {
 
 export type SiteEnrollmentsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteEnrollmentsListError = SiteEnrollmentsListErrors[keyof SiteEnrollmentsListErrors];
@@ -10729,13 +10689,14 @@ export type SiteEnrollmentsGetData = {
 
 export type SiteEnrollmentsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteEnrollmentsGetError = SiteEnrollmentsGetErrors[keyof SiteEnrollmentsGetErrors];
@@ -10766,13 +10727,14 @@ export type SiteAutomationReportsGetData = {
 
 export type SiteAutomationReportsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationReportsGetError = SiteAutomationReportsGetErrors[keyof SiteAutomationReportsGetErrors];
@@ -10805,13 +10767,14 @@ export type SiteAutomationsGetData = {
 
 export type SiteAutomationsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsGetError = SiteAutomationsGetErrors[keyof SiteAutomationsGetErrors];
@@ -10844,21 +10807,14 @@ export type SiteAutomationsUpdateData = {
 
 export type SiteAutomationsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsUpdateError = SiteAutomationsUpdateErrors[keyof SiteAutomationsUpdateErrors];
@@ -10891,19 +10847,14 @@ export type SiteAutomationsArchiveData = {
 
 export type SiteAutomationsArchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsArchiveError = SiteAutomationsArchiveErrors[keyof SiteAutomationsArchiveErrors];
@@ -10936,17 +10887,14 @@ export type SiteAutomationsDeactivateData = {
 
 export type SiteAutomationsDeactivateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsDeactivateError = SiteAutomationsDeactivateErrors[keyof SiteAutomationsDeactivateErrors];
@@ -10979,21 +10927,14 @@ export type SiteAutomationsPublishData = {
 
 export type SiteAutomationsPublishErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsPublishError = SiteAutomationsPublishErrors[keyof SiteAutomationsPublishErrors];
@@ -11026,21 +10967,14 @@ export type SiteAutomationsRevertData = {
 
 export type SiteAutomationsRevertErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsRevertError = SiteAutomationsRevertErrors[keyof SiteAutomationsRevertErrors];
@@ -11073,13 +11007,14 @@ export type SiteAutomationsUnarchiveData = {
 
 export type SiteAutomationsUnarchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteAutomationsUnarchiveError = SiteAutomationsUnarchiveErrors[keyof SiteAutomationsUnarchiveErrors];
@@ -11104,13 +11039,14 @@ export type SiteBrandKitGetData = {
 
 export type SiteBrandKitGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBrandKitGetError = SiteBrandKitGetErrors[keyof SiteBrandKitGetErrors];
@@ -11135,21 +11071,14 @@ export type SiteBrandKitSaveData = {
 
 export type SiteBrandKitSaveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBrandKitSaveError = SiteBrandKitSaveErrors[keyof SiteBrandKitSaveErrors];
@@ -11174,21 +11103,14 @@ export type SiteBrandKitRecreateStarterTemplatesData = {
 
 export type SiteBrandKitRecreateStarterTemplatesErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBrandKitRecreateStarterTemplatesError = SiteBrandKitRecreateStarterTemplatesErrors[keyof SiteBrandKitRecreateStarterTemplatesErrors];
@@ -11242,17 +11164,14 @@ export type SiteBroadcastsListData = {
 
 export type SiteBroadcastsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsListError = SiteBroadcastsListErrors[keyof SiteBroadcastsListErrors];
@@ -11302,17 +11221,14 @@ export type SiteBroadcastsCreateData = {
 
 export type SiteBroadcastsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsCreateError = SiteBroadcastsCreateErrors[keyof SiteBroadcastsCreateErrors];
@@ -11338,13 +11254,14 @@ export type SiteBroadcastLinksListData = {
 
 export type SiteBroadcastLinksListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastLinksListError = SiteBroadcastLinksListErrors[keyof SiteBroadcastLinksListErrors];
@@ -11377,13 +11294,14 @@ export type SiteBroadcastsGetData = {
 
 export type SiteBroadcastsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsGetError = SiteBroadcastsGetErrors[keyof SiteBroadcastsGetErrors];
@@ -11416,21 +11334,14 @@ export type SiteBroadcastsUpdateData = {
 
 export type SiteBroadcastsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsUpdateError = SiteBroadcastsUpdateErrors[keyof SiteBroadcastsUpdateErrors];
@@ -11463,17 +11374,14 @@ export type SiteBroadcastsArchiveData = {
 
 export type SiteBroadcastsArchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsArchiveError = SiteBroadcastsArchiveErrors[keyof SiteBroadcastsArchiveErrors];
@@ -11506,21 +11414,14 @@ export type SiteBroadcastsScheduleData = {
 
 export type SiteBroadcastsScheduleErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsScheduleError = SiteBroadcastsScheduleErrors[keyof SiteBroadcastsScheduleErrors];
@@ -11553,21 +11454,14 @@ export type SiteBroadcastsSendData = {
 
 export type SiteBroadcastsSendErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsSendError = SiteBroadcastsSendErrors[keyof SiteBroadcastsSendErrors];
@@ -11600,21 +11494,14 @@ export type SiteBroadcastsTestSendData = {
 
 export type SiteBroadcastsTestSendErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsTestSendError = SiteBroadcastsTestSendErrors[keyof SiteBroadcastsTestSendErrors];
@@ -11647,13 +11534,14 @@ export type SiteBroadcastsUnarchiveData = {
 
 export type SiteBroadcastsUnarchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteBroadcastsUnarchiveError = SiteBroadcastsUnarchiveErrors[keyof SiteBroadcastsUnarchiveErrors];
@@ -11691,17 +11579,14 @@ export type SiteCapturedMessagesListData = {
 
 export type SiteCapturedMessagesListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCapturedMessagesListError = SiteCapturedMessagesListErrors[keyof SiteCapturedMessagesListErrors];
@@ -11751,13 +11636,14 @@ export type SiteCapturedMessagesDeleteAllData = {
 
 export type SiteCapturedMessagesDeleteAllErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCapturedMessagesDeleteAllError = SiteCapturedMessagesDeleteAllErrors[keyof SiteCapturedMessagesDeleteAllErrors];
@@ -11790,13 +11676,14 @@ export type SiteCapturedMessagesDeleteData = {
 
 export type SiteCapturedMessagesDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCapturedMessagesDeleteError = SiteCapturedMessagesDeleteErrors[keyof SiteCapturedMessagesDeleteErrors];
@@ -11829,13 +11716,14 @@ export type SiteCapturedMessagesGetData = {
 
 export type SiteCapturedMessagesGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCapturedMessagesGetError = SiteCapturedMessagesGetErrors[keyof SiteCapturedMessagesGetErrors];
@@ -11864,13 +11752,14 @@ export type SiteConnectionsListData = {
 
 export type SiteConnectionsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteConnectionsListError = SiteConnectionsListErrors[keyof SiteConnectionsListErrors];
@@ -11903,13 +11792,14 @@ export type SiteConnectionsDeleteData = {
 
 export type SiteConnectionsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteConnectionsDeleteError = SiteConnectionsDeleteErrors[keyof SiteConnectionsDeleteErrors];
@@ -11959,17 +11849,14 @@ export type SiteContactsListData = {
 
 export type SiteContactsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsListError = SiteContactsListErrors[keyof SiteContactsListErrors];
@@ -12019,21 +11906,14 @@ export type SiteContactsCreateData = {
 
 export type SiteContactsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsCreateError = SiteContactsCreateErrors[keyof SiteContactsCreateErrors];
@@ -12067,21 +11947,14 @@ export type SiteContactsEraseData = {
 
 export type SiteContactsEraseErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsEraseError = SiteContactsEraseErrors[keyof SiteContactsEraseErrors];
@@ -12119,21 +11992,14 @@ export type SiteContactsExportData = {
 
 export type SiteContactsExportErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsExportError = SiteContactsExportErrors[keyof SiteContactsExportErrors];
@@ -12167,21 +12033,14 @@ export type SiteContactsLookupData = {
 
 export type SiteContactsLookupErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsLookupError = SiteContactsLookupErrors[keyof SiteContactsLookupErrors];
@@ -12207,13 +12066,14 @@ export type SiteTelegramListBindingsData = {
 
 export type SiteTelegramListBindingsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTelegramListBindingsError = SiteTelegramListBindingsErrors[keyof SiteTelegramListBindingsErrors];
@@ -12239,17 +12099,14 @@ export type SiteSmsConsentsConfirmData = {
 
 export type SiteSmsConsentsConfirmErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSmsConsentsConfirmError = SiteSmsConsentsConfirmErrors[keyof SiteSmsConsentsConfirmErrors];
@@ -12275,13 +12132,14 @@ export type SiteSmsConsentsGetData = {
 
 export type SiteSmsConsentsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSmsConsentsGetError = SiteSmsConsentsGetErrors[keyof SiteSmsConsentsGetErrors];
@@ -12307,17 +12165,14 @@ export type SiteSmsConsentsOptOutData = {
 
 export type SiteSmsConsentsOptOutErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSmsConsentsOptOutError = SiteSmsConsentsOptOutErrors[keyof SiteSmsConsentsOptOutErrors];
@@ -12352,17 +12207,14 @@ export type SiteTagsListForContactData = {
 
 export type SiteTagsListForContactErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTagsListForContactError = SiteTagsListForContactErrors[keyof SiteTagsListForContactErrors];
@@ -12409,17 +12261,14 @@ export type SiteTagsApplyData = {
 
 export type SiteTagsApplyErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTagsApplyError = SiteTagsApplyErrors[keyof SiteTagsApplyErrors];
@@ -12446,13 +12295,14 @@ export type SiteTagsRemoveData = {
 
 export type SiteTagsRemoveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTagsRemoveError = SiteTagsRemoveErrors[keyof SiteTagsRemoveErrors];
@@ -12478,17 +12328,14 @@ export type SiteTelegramIssueStartLinkData = {
 
 export type SiteTelegramIssueStartLinkErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTelegramIssueStartLinkError = SiteTelegramIssueStartLinkErrors[keyof SiteTelegramIssueStartLinkErrors];
@@ -12521,17 +12368,14 @@ export type SiteContactsDeleteData = {
 
 export type SiteContactsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsDeleteError = SiteContactsDeleteErrors[keyof SiteContactsDeleteErrors];
@@ -12564,13 +12408,14 @@ export type SiteContactsGetData = {
 
 export type SiteContactsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsGetError = SiteContactsGetErrors[keyof SiteContactsGetErrors];
@@ -12603,21 +12448,14 @@ export type SiteContactsUpdateData = {
 
 export type SiteContactsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteContactsUpdateError = SiteContactsUpdateErrors[keyof SiteContactsUpdateErrors];
@@ -12646,13 +12484,14 @@ export type SiteCustomFieldsListData = {
 
 export type SiteCustomFieldsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCustomFieldsListError = SiteCustomFieldsListErrors[keyof SiteCustomFieldsListErrors];
@@ -12706,27 +12545,14 @@ export type SiteCustomFieldsUpdateData = {
 
 export type SiteCustomFieldsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteCustomFieldsUpdateError = SiteCustomFieldsUpdateErrors[keyof SiteCustomFieldsUpdateErrors];
@@ -12751,21 +12577,14 @@ export type SiteWorkspacesDeleteData = {
 
 export type SiteWorkspacesDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesDeleteError = SiteWorkspacesDeleteErrors[keyof SiteWorkspacesDeleteErrors];
@@ -12790,17 +12609,14 @@ export type SiteDomainJoinGetData = {
 
 export type SiteDomainJoinGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteDomainJoinGetError = SiteDomainJoinGetErrors[keyof SiteDomainJoinGetErrors];
@@ -12825,17 +12641,14 @@ export type SiteDomainJoinSetData = {
 
 export type SiteDomainJoinSetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteDomainJoinSetError = SiteDomainJoinSetErrors[keyof SiteDomainJoinSetErrors];
@@ -12889,13 +12702,14 @@ export type SiteEventsListData = {
 
 export type SiteEventsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteEventsListError = SiteEventsListErrors[keyof SiteEventsListErrors];
@@ -12945,13 +12759,14 @@ export type SiteEventsActionsData = {
 
 export type SiteEventsActionsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteEventsActionsError = SiteEventsActionsErrors[keyof SiteEventsActionsErrors];
@@ -12980,13 +12795,14 @@ export type SiteIntegrationsListData = {
 
 export type SiteIntegrationsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsListError = SiteIntegrationsListErrors[keyof SiteIntegrationsListErrors];
@@ -13015,25 +12831,14 @@ export type SiteIntegrationsCreateData = {
 
 export type SiteIntegrationsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsCreateError = SiteIntegrationsCreateErrors[keyof SiteIntegrationsCreateErrors];
@@ -13066,23 +12871,14 @@ export type SiteIntegrationsDeleteData = {
 
 export type SiteIntegrationsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsDeleteError = SiteIntegrationsDeleteErrors[keyof SiteIntegrationsDeleteErrors];
@@ -13115,13 +12911,14 @@ export type SiteIntegrationsGetData = {
 
 export type SiteIntegrationsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsGetError = SiteIntegrationsGetErrors[keyof SiteIntegrationsGetErrors];
@@ -13154,25 +12951,14 @@ export type SiteIntegrationsUpdateData = {
 
 export type SiteIntegrationsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsUpdateError = SiteIntegrationsUpdateErrors[keyof SiteIntegrationsUpdateErrors];
@@ -13205,21 +12991,14 @@ export type SiteIntegrationsRegenerateKeyData = {
 
 export type SiteIntegrationsRegenerateKeyErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteIntegrationsRegenerateKeyError = SiteIntegrationsRegenerateKeyErrors[keyof SiteIntegrationsRegenerateKeyErrors];
@@ -13248,13 +13027,14 @@ export type SiteInvitationsListData = {
 
 export type SiteInvitationsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteInvitationsListError = SiteInvitationsListErrors[keyof SiteInvitationsListErrors];
@@ -13283,25 +13063,14 @@ export type SiteInvitationsCreateData = {
 
 export type SiteInvitationsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteInvitationsCreateError = SiteInvitationsCreateErrors[keyof SiteInvitationsCreateErrors];
@@ -13334,17 +13103,14 @@ export type SiteInvitationsDeleteData = {
 
 export type SiteInvitationsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteInvitationsDeleteError = SiteInvitationsDeleteErrors[keyof SiteInvitationsDeleteErrors];
@@ -13369,17 +13135,14 @@ export type SiteJoinDomainsListData = {
 
 export type SiteJoinDomainsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteJoinDomainsListError = SiteJoinDomainsListErrors[keyof SiteJoinDomainsListErrors];
@@ -13404,25 +13167,14 @@ export type SiteJoinDomainsAddData = {
 
 export type SiteJoinDomainsAddErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteJoinDomainsAddError = SiteJoinDomainsAddErrors[keyof SiteJoinDomainsAddErrors];
@@ -13448,17 +13200,14 @@ export type SiteJoinDomainsRemoveData = {
 
 export type SiteJoinDomainsRemoveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteJoinDomainsRemoveError = SiteJoinDomainsRemoveErrors[keyof SiteJoinDomainsRemoveErrors];
@@ -13484,25 +13233,14 @@ export type SiteJoinDomainsVerifyData = {
 
 export type SiteJoinDomainsVerifyErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteJoinDomainsVerifyError = SiteJoinDomainsVerifyErrors[keyof SiteJoinDomainsVerifyErrors];
@@ -13527,17 +13265,14 @@ export type SiteWorkspacesLeaveData = {
 
 export type SiteWorkspacesLeaveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesLeaveError = SiteWorkspacesLeaveErrors[keyof SiteWorkspacesLeaveErrors];
@@ -13566,13 +13301,14 @@ export type SiteMembershipsListData = {
 
 export type SiteMembershipsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteMembershipsListError = SiteMembershipsListErrors[keyof SiteMembershipsListErrors];
@@ -13605,21 +13341,14 @@ export type SiteMembershipsDeleteData = {
 
 export type SiteMembershipsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteMembershipsDeleteError = SiteMembershipsDeleteErrors[keyof SiteMembershipsDeleteErrors];
@@ -13652,21 +13381,14 @@ export type SiteMembershipsUpdateData = {
 
 export type SiteMembershipsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteMembershipsUpdateError = SiteMembershipsUpdateErrors[keyof SiteMembershipsUpdateErrors];
@@ -13699,21 +13421,14 @@ export type SiteMembershipsResetSecondFactorData = {
 
 export type SiteMembershipsResetSecondFactorErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteMembershipsResetSecondFactorError = SiteMembershipsResetSecondFactorErrors[keyof SiteMembershipsResetSecondFactorErrors];
@@ -13738,13 +13453,14 @@ export type SitePersonalTokensGrantableScopesData = {
 
 export type SitePersonalTokensGrantableScopesErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePersonalTokensGrantableScopesError = SitePersonalTokensGrantableScopesErrors[keyof SitePersonalTokensGrantableScopesErrors];
@@ -13773,13 +13489,14 @@ export type SitePersonalTokensListData = {
 
 export type SitePersonalTokensListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePersonalTokensListError = SitePersonalTokensListErrors[keyof SitePersonalTokensListErrors];
@@ -13808,21 +13525,14 @@ export type SitePersonalTokensCreateData = {
 
 export type SitePersonalTokensCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePersonalTokensCreateError = SitePersonalTokensCreateErrors[keyof SitePersonalTokensCreateErrors];
@@ -13855,13 +13565,14 @@ export type SitePersonalTokensDeleteData = {
 
 export type SitePersonalTokensDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SitePersonalTokensDeleteError = SitePersonalTokensDeleteErrors[keyof SitePersonalTokensDeleteErrors];
@@ -13886,13 +13597,14 @@ export type SiteWorkspacesGetRevenueSettingsData = {
 
 export type SiteWorkspacesGetRevenueSettingsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesGetRevenueSettingsError = SiteWorkspacesGetRevenueSettingsErrors[keyof SiteWorkspacesGetRevenueSettingsErrors];
@@ -13917,21 +13629,14 @@ export type SiteWorkspacesUpdateRevenueSettingsData = {
 
 export type SiteWorkspacesUpdateRevenueSettingsErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesUpdateRevenueSettingsError = SiteWorkspacesUpdateRevenueSettingsErrors[keyof SiteWorkspacesUpdateRevenueSettingsErrors];
@@ -13969,17 +13674,14 @@ export type SiteRulesListData = {
 
 export type SiteRulesListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesListError = SiteRulesListErrors[keyof SiteRulesListErrors];
@@ -14029,17 +13731,14 @@ export type SiteRulesCreateData = {
 
 export type SiteRulesCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesCreateError = SiteRulesCreateErrors[keyof SiteRulesCreateErrors];
@@ -14072,13 +13771,14 @@ export type SiteRulesDeleteData = {
 
 export type SiteRulesDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesDeleteError = SiteRulesDeleteErrors[keyof SiteRulesDeleteErrors];
@@ -14111,13 +13811,14 @@ export type SiteRulesGetData = {
 
 export type SiteRulesGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesGetError = SiteRulesGetErrors[keyof SiteRulesGetErrors];
@@ -14150,17 +13851,14 @@ export type SiteRulesUpdateData = {
 
 export type SiteRulesUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesUpdateError = SiteRulesUpdateErrors[keyof SiteRulesUpdateErrors];
@@ -14193,13 +13891,14 @@ export type SiteRulesDeactivateData = {
 
 export type SiteRulesDeactivateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesDeactivateError = SiteRulesDeactivateErrors[keyof SiteRulesDeactivateErrors];
@@ -14232,13 +13931,14 @@ export type SiteRulesDryRunData = {
 
 export type SiteRulesDryRunErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesDryRunError = SiteRulesDryRunErrors[keyof SiteRulesDryRunErrors];
@@ -14271,17 +13971,14 @@ export type SiteRulesPublishData = {
 
 export type SiteRulesPublishErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesPublishError = SiteRulesPublishErrors[keyof SiteRulesPublishErrors];
@@ -14314,17 +14011,14 @@ export type SiteRulesRevertData = {
 
 export type SiteRulesRevertErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRulesRevertError = SiteRulesRevertErrors[keyof SiteRulesRevertErrors];
@@ -14359,13 +14053,14 @@ export type SiteRuleFiringsListData = {
 
 export type SiteRuleFiringsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteRuleFiringsListError = SiteRuleFiringsListErrors[keyof SiteRuleFiringsListErrors];
@@ -14411,17 +14106,14 @@ export type SiteWorkspacesLiftSecondFactorRequirementData = {
 
 export type SiteWorkspacesLiftSecondFactorRequirementErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesLiftSecondFactorRequirementError = SiteWorkspacesLiftSecondFactorRequirementErrors[keyof SiteWorkspacesLiftSecondFactorRequirementErrors];
@@ -14446,17 +14138,14 @@ export type SiteWorkspacesRequireSecondFactorData = {
 
 export type SiteWorkspacesRequireSecondFactorErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesRequireSecondFactorError = SiteWorkspacesRequireSecondFactorErrors[keyof SiteWorkspacesRequireSecondFactorErrors];
@@ -14498,17 +14187,14 @@ export type SiteSegmentsListData = {
 
 export type SiteSegmentsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsListError = SiteSegmentsListErrors[keyof SiteSegmentsListErrors];
@@ -14558,17 +14244,14 @@ export type SiteSegmentsCreateData = {
 
 export type SiteSegmentsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsCreateError = SiteSegmentsCreateErrors[keyof SiteSegmentsCreateErrors];
@@ -14597,17 +14280,14 @@ export type SiteSegmentsPreviewData = {
 
 export type SiteSegmentsPreviewErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsPreviewError = SiteSegmentsPreviewErrors[keyof SiteSegmentsPreviewErrors];
@@ -14640,13 +14320,14 @@ export type SiteSegmentsGetData = {
 
 export type SiteSegmentsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsGetError = SiteSegmentsGetErrors[keyof SiteSegmentsGetErrors];
@@ -14679,21 +14360,14 @@ export type SiteSegmentsUpdateData = {
 
 export type SiteSegmentsUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsUpdateError = SiteSegmentsUpdateErrors[keyof SiteSegmentsUpdateErrors];
@@ -14726,19 +14400,14 @@ export type SiteSegmentsArchiveData = {
 
 export type SiteSegmentsArchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsArchiveError = SiteSegmentsArchiveErrors[keyof SiteSegmentsArchiveErrors];
@@ -14771,13 +14440,14 @@ export type SiteSegmentsUnarchiveData = {
 
 export type SiteSegmentsUnarchiveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentsUnarchiveError = SiteSegmentsUnarchiveErrors[keyof SiteSegmentsUnarchiveErrors];
@@ -14812,17 +14482,14 @@ export type SiteSegmentContactsListData = {
 
 export type SiteSegmentContactsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSegmentContactsListError = SiteSegmentContactsListErrors[keyof SiteSegmentContactsListErrors];
@@ -14881,17 +14548,14 @@ export type SiteSendingDomainsListData = {
 
 export type SiteSendingDomainsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSendingDomainsListError = SiteSendingDomainsListErrors[keyof SiteSendingDomainsListErrors];
@@ -14941,25 +14605,14 @@ export type SiteSendingDomainsCreateData = {
 
 export type SiteSendingDomainsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSendingDomainsCreateError = SiteSendingDomainsCreateErrors[keyof SiteSendingDomainsCreateErrors];
@@ -14992,23 +14645,14 @@ export type SiteSendingDomainsDeleteData = {
 
 export type SiteSendingDomainsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSendingDomainsDeleteError = SiteSendingDomainsDeleteErrors[keyof SiteSendingDomainsDeleteErrors];
@@ -15041,13 +14685,14 @@ export type SiteSendingDomainsGetData = {
 
 export type SiteSendingDomainsGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSendingDomainsGetError = SiteSendingDomainsGetErrors[keyof SiteSendingDomainsGetErrors];
@@ -15080,17 +14725,14 @@ export type SiteSendingDomainsVerifyData = {
 
 export type SiteSendingDomainsVerifyErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSendingDomainsVerifyError = SiteSendingDomainsVerifyErrors[keyof SiteSendingDomainsVerifyErrors];
@@ -15115,13 +14757,14 @@ export type SiteSetupChecklistGetData = {
 
 export type SiteSetupChecklistGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSetupChecklistGetError = SiteSetupChecklistGetErrors[keyof SiteSetupChecklistGetErrors];
@@ -15163,17 +14806,14 @@ export type SiteSuppressionsListData = {
 
 export type SiteSuppressionsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSuppressionsListError = SiteSuppressionsListErrors[keyof SiteSuppressionsListErrors];
@@ -15223,21 +14863,14 @@ export type SiteSuppressionsCreateData = {
 
 export type SiteSuppressionsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSuppressionsCreateError = SiteSuppressionsCreateErrors[keyof SiteSuppressionsCreateErrors];
@@ -15270,17 +14903,14 @@ export type SiteSuppressionsDeleteData = {
 
 export type SiteSuppressionsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteSuppressionsDeleteError = SiteSuppressionsDeleteErrors[keyof SiteSuppressionsDeleteErrors];
@@ -15314,17 +14944,14 @@ export type SiteTagsListData = {
 
 export type SiteTagsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTagsListError = SiteTagsListErrors[keyof SiteTagsListErrors];
@@ -15371,19 +14998,14 @@ export type SiteTagsDeleteData = {
 
 export type SiteTagsDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response for a removal refused because live work still uses the row
-   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
-   * Integration, Sending domain or Automation answers it.
-   */
-  409: InUseProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTagsDeleteError = SiteTagsDeleteErrors[keyof SiteTagsDeleteErrors];
@@ -15421,17 +15043,14 @@ export type SiteTemplatesListData = {
 
 export type SiteTemplatesListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTemplatesListError = SiteTemplatesListErrors[keyof SiteTemplatesListErrors];
@@ -15481,17 +15100,14 @@ export type SiteTemplatesCreateData = {
 
 export type SiteTemplatesCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTemplatesCreateError = SiteTemplatesCreateErrors[keyof SiteTemplatesCreateErrors];
@@ -15524,13 +15140,14 @@ export type SiteTemplatesDeleteData = {
 
 export type SiteTemplatesDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTemplatesDeleteError = SiteTemplatesDeleteErrors[keyof SiteTemplatesDeleteErrors];
@@ -15563,13 +15180,14 @@ export type SiteTemplatesGetData = {
 
 export type SiteTemplatesGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTemplatesGetError = SiteTemplatesGetErrors[keyof SiteTemplatesGetErrors];
@@ -15602,17 +15220,14 @@ export type SiteTemplatesUpdateData = {
 
 export type SiteTemplatesUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTemplatesUpdateError = SiteTemplatesUpdateErrors[keyof SiteTemplatesUpdateErrors];
@@ -15637,21 +15252,14 @@ export type SiteWorkspacesSetTimezoneData = {
 
 export type SiteWorkspacesSetTimezoneErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWorkspacesSetTimezoneError = SiteWorkspacesSetTimezoneErrors[keyof SiteWorkspacesSetTimezoneErrors];
@@ -15680,13 +15288,14 @@ export type SiteTokensListData = {
 
 export type SiteTokensListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTokensListError = SiteTokensListErrors[keyof SiteTokensListErrors];
@@ -15715,21 +15324,14 @@ export type SiteTokensCreateData = {
 
 export type SiteTokensCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTokensCreateError = SiteTokensCreateErrors[keyof SiteTokensCreateErrors];
@@ -15762,17 +15364,14 @@ export type SiteTokensDeleteData = {
 
 export type SiteTokensDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTokensDeleteError = SiteTokensDeleteErrors[keyof SiteTokensDeleteErrors];
@@ -15805,21 +15404,14 @@ export type SiteTokensUpdateData = {
 
 export type SiteTokensUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTokensUpdateError = SiteTokensUpdateErrors[keyof SiteTokensUpdateErrors];
@@ -15844,13 +15436,14 @@ export type SiteTrackingDomainsListData = {
 
 export type SiteTrackingDomainsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTrackingDomainsListError = SiteTrackingDomainsListErrors[keyof SiteTrackingDomainsListErrors];
@@ -15875,21 +15468,14 @@ export type SiteTrackingDomainsSetData = {
 
 export type SiteTrackingDomainsSetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTrackingDomainsSetError = SiteTrackingDomainsSetErrors[keyof SiteTrackingDomainsSetErrors];
@@ -15915,17 +15501,14 @@ export type SiteTrackingDomainsRemoveData = {
 
 export type SiteTrackingDomainsRemoveErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTrackingDomainsRemoveError = SiteTrackingDomainsRemoveErrors[keyof SiteTrackingDomainsRemoveErrors];
@@ -15951,17 +15534,14 @@ export type SiteTrackingDomainsVerifyData = {
 
 export type SiteTrackingDomainsVerifyErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTrackingDomainsVerifyError = SiteTrackingDomainsVerifyErrors[keyof SiteTrackingDomainsVerifyErrors];
@@ -15999,17 +15579,14 @@ export type SiteTransactionalEmailsListData = {
 
 export type SiteTransactionalEmailsListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteTransactionalEmailsListError = SiteTransactionalEmailsListErrors[keyof SiteTransactionalEmailsListErrors];
@@ -16068,21 +15645,14 @@ export type SiteWebhooksListData = {
 
 export type SiteWebhooksListErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksListError = SiteWebhooksListErrors[keyof SiteWebhooksListErrors];
@@ -16132,21 +15702,14 @@ export type SiteWebhooksCreateData = {
 
 export type SiteWebhooksCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksCreateError = SiteWebhooksCreateErrors[keyof SiteWebhooksCreateErrors];
@@ -16179,17 +15742,14 @@ export type SiteWebhooksDeleteData = {
 
 export type SiteWebhooksDeleteErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksDeleteError = SiteWebhooksDeleteErrors[keyof SiteWebhooksDeleteErrors];
@@ -16222,17 +15782,14 @@ export type SiteWebhooksGetData = {
 
 export type SiteWebhooksGetErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksGetError = SiteWebhooksGetErrors[keyof SiteWebhooksGetErrors];
@@ -16265,21 +15822,14 @@ export type SiteWebhooksUpdateData = {
 
 export type SiteWebhooksUpdateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksUpdateError = SiteWebhooksUpdateErrors[keyof SiteWebhooksUpdateErrors];
@@ -16312,17 +15862,14 @@ export type SiteWebhooksRegenerateSecretData = {
 
 export type SiteWebhooksRegenerateSecretErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksRegenerateSecretError = SiteWebhooksRegenerateSecretErrors[keyof SiteWebhooksRegenerateSecretErrors];
@@ -16355,21 +15902,14 @@ export type SiteWebhooksTestData = {
 
 export type SiteWebhooksTestErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type SiteWebhooksTestError = SiteWebhooksTestErrors[keyof SiteWebhooksTestErrors];

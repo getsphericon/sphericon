@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 	c := env.ExternalScoped(t, "automations:read", "automations:write")
 	ctx := context.Background()
 
-	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Notify", TriggerEvent: "signup",
 		Steps: []externalapi.AutomationStep{{
 			Type: externalapi.AutomationStepTypeHTTP, Body: externalapi.NewOptString(`{"a":1}`),
@@ -27,8 +28,6 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	res, ok := created.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", created)
 	step := res.Draft.Value.Steps[0]
 	assert.True(t, step.HasSecret.Or(false))
 	assert.False(t, step.URL.Set)
@@ -42,13 +41,10 @@ func TestExternalHTTPStepDryRunNeedsAutomationsWriteAndContactsRead(t *testing.T
 	ctx := context.Background()
 	in := &externalapi.DryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: externalapi.EntityId(fixtures.ContactAliceID)}
 
-	denied, err := env.ExternalScoped(t, "automations:write").AutomationsDryRunHttpStep(ctx, in)
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.AutomationsDryRunHttpStepForbidden), denied)
+	_, err := env.ExternalScoped(t, "automations:write").AutomationsDryRunHttpStep(ctx, in)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	ok, err := env.ExternalScoped(t, "automations:write", "contacts:read").AutomationsDryRunHttpStep(ctx, in)
+	res, err := env.ExternalScoped(t, "automations:write", "contacts:read").AutomationsDryRunHttpStep(ctx, in)
 	require.NoError(t, err)
-	res, isResult := ok.(*externalapi.DryRunHttpStepResult)
-	require.Truef(t, isResult, "got %T", ok)
 	assert.JSONEq(t, `{"name":"Alice"}`, res.Body.Or(""))
 }

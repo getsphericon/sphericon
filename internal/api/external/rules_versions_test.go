@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,14 +24,12 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	author := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsRead), string(externalapi.ApiTokenScopeAutomationsWrite))
 	id := entityIDString(fixtures.RuleVipOnlyID)
 
-	updated, err := author.RulesUpdate(ctx, &externalapi.UpdateRuleInput{
+	res, err := author.RulesUpdate(ctx, &externalapi.UpdateRuleInput{
 		TriggerEvents: []string{"rule_vip", "anything"},
 		Condition:     externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
 		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("hijacked")}},
 	}, externalapi.RulesUpdateParams{ID: id})
 	require.NoError(t, err)
-	res, ok := updated.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", updated)
 	live, _ := res.Live.Get()
 	draft, drafted := res.Draft.Get()
 	require.True(t, drafted)
@@ -51,15 +50,12 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "rule-vip-seen", runs[0].Tag, "the Firing runs the live Actions")
 
-	byAuthor, err := author.RulesPublish(ctx, externalapi.RulesPublishParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesPublishForbidden{}, byAuthor)
+	_, err = author.RulesPublish(ctx, externalapi.RulesPublishParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	publisher := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsPublish))
-	published, err := publisher.RulesPublish(ctx, externalapi.RulesPublishParams{ID: id})
+	now, err := publisher.RulesPublish(ctx, externalapi.RulesPublishParams{ID: id})
 	require.NoError(t, err)
-	now, ok := published.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", published)
 	newLive, _ := now.Live.Get()
 	assert.EqualValues(t, 2, newLive.Number)
 	assert.Equal(t, "hijacked", newLive.Actions[0].Tag.Or(""))
@@ -74,20 +70,16 @@ func TestExternalRevertDropsTheDraft(t *testing.T) {
 	id := entityIDString(fixtures.RuleTagClickedID)
 
 	reader := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsRead))
-	denied, err := reader.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesRevertForbidden{}, denied)
+	_, err := reader.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	author := env.ExternalScoped(t, string(externalapi.ApiTokenScopeAutomationsWrite))
-	reverted, err := author.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
+	res, err := author.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
 	require.NoError(t, err)
-	res, ok := reverted.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", reverted)
 	assert.True(t, res.Draft.Null)
 	live, _ := res.Live.Get()
 	assert.Equal(t, "rule-clicked", live.Actions[0].Tag.Or(""))
 
-	again, err := author.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesRevertUnprocessableEntity{}, again)
+	_, err = author.RulesRevert(ctx, externalapi.RulesRevertParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

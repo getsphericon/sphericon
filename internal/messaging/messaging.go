@@ -17,34 +17,6 @@ import (
 	"github.com/wneessen/go-mail"
 )
 
-// Channel identifies a delivery medium. Values mirror the ent Integration.channel enum.
-type Channel string
-
-const (
-	ChannelEmail Channel = "email"
-	// ChannelSMS reaches a person at their phone number through a Workspace's own SMS provider
-	// account (Twilio).
-	ChannelSMS Channel = "sms"
-	// ChannelTelegram reaches a person through a Workspace's own Telegram bot.
-	ChannelTelegram Channel = "telegram"
-)
-
-// Provider identifies a concrete provider implementation. Values mirror the ent
-// Integration.provider enum.
-type Provider string
-
-const (
-	ProviderSMTP Provider = "smtp"
-	ProviderSES  Provider = "ses"
-	// ProviderInbox is the Test inbox: it keeps what it is sent as Captured messages and
-	// delivers nothing outside (ADR 0058).
-	ProviderInbox Provider = "inbox"
-	// ProviderTelegram is a Workspace's own Telegram bot, reached through the Bot API.
-	ProviderTelegram Provider = "telegram"
-	// ProviderTwilio is a Workspace's own Twilio account, on the SMS Channel.
-	ProviderTwilio Provider = "twilio"
-)
-
 // EmailMessage is the channel-specific payload for email sends. HTML is used
 // when set, otherwise Text (the provider libraries take a single body).
 type EmailMessage struct {

@@ -9,10 +9,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -180,13 +180,13 @@ func TestRefreshQuotaStoresTheAccountStanding(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := envCipher(t), ses.Catalog()
-	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementProbation, Sandbox: true})
+	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementProbation, Sandbox: true})
 
 	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	require.NotNil(t, row.ProviderEnforcement)
-	assert.Equal(t, integration.ProviderEnforcementProbation, *row.ProviderEnforcement)
+	assert.Equal(t, providers.EnforcementProbation, *row.ProviderEnforcement)
 	assert.True(t, row.ProviderSandbox)
 	assert.Equal(t, []providerlimit.Warning{
 		providerlimit.WarningUnlimited, providerlimit.WarningProviderProbation, providerlimit.WarningProviderSandbox,
@@ -198,7 +198,7 @@ func TestRefreshQuotaClearsTheStandingWhenTheAccountRecovers(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := envCipher(t), ses.Catalog()
-	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementShutdown, Sandbox: true})
 	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	ses.SetQuota(messaging.Quota{})
@@ -214,7 +214,7 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ses := &testhelper.FakeSES{}
 	cipher, catalog := envCipher(t), ses.Catalog()
-	ses.SetQuota(messaging.Quota{Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+	ses.SetQuota(messaging.Quota{Enforcement: providers.EnforcementShutdown, Sandbox: true})
 	require.NoError(t, providerlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	ses.SetQuotaErr(errors.New("timeout"))
@@ -222,6 +222,6 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
-	assert.Equal(t, integration.ProviderEnforcementShutdown, *row.ProviderEnforcement)
+	assert.Equal(t, providers.EnforcementShutdown, *row.ProviderEnforcement)
 	assert.True(t, row.ProviderSandbox)
 }

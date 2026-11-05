@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -28,7 +29,7 @@ type SMSContent struct {
 }
 
 // Channel is SMS.
-func (SMSContent) Channel() messaging.Channel { return messaging.ChannelSMS }
+func (SMSContent) Channel() channels.Channel { return channels.SMS }
 
 // SMSSenders builds the sender an SMS Integration is, for the Integration a Send route resolved.
 // *messaging.Resolver satisfies it.
@@ -75,7 +76,7 @@ func (smsChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, 
 // send on the Channel goes to it again, and the message is Skipped as suppressed.
 func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, _ *ent.Integration, req Request, to target, _ int64) (string, error) {
 	err := suppression.Add(ctx, s, suppression.Entry{
-		Channel: entsuppression.ChannelSms, Destination: to.dest, Reason: entsuppression.ReasonBounce, ContactID: req.contactID(),
+		Channel: channels.SMS, Destination: to.dest, Reason: entsuppression.ReasonBounce, ContactID: req.contactID(),
 	})
 	if err != nil {
 		return "", fmt.Errorf("outbound: suppress a dead number: %w", err)
@@ -105,7 +106,7 @@ func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, mess
 		return nil, fmt.Errorf("outbound: %T is no SMS content", req.Content)
 	}
 	vars := Bindings(req.Contact, req.Variables)
-	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, messaging.ChannelSMS, content.Text, vars); err != nil {
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, channels.SMS, content.Text, vars); err != nil {
 		return nil, err
 	}
 	body, err := smsrender.Render(content.Text, vars)

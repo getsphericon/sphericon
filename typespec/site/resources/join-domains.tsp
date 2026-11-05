@@ -44,11 +44,7 @@ namespace SiteJoinDomains {
   /** List the Workspace's Join domains (owner and admin only), pending and verified. */
   @get
   @requiresPermissions(#[Permission.joinDomainsManage])
-  op list(@path workspaceId: WorkspaceId):
-    | SiteJoinDomainResource[]
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op list(@path workspaceId: WorkspaceId): SiteJoinDomainResource[] | Problem;
 
   /** Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
    * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
@@ -60,11 +56,7 @@ namespace SiteJoinDomains {
         @statusCode statusCode: 201;
         @body body: SiteJoinDomainResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Check the TXT record now (owner and admin only) and verify the domain when it is published. A
    * domain another Workspace has verified is re-checked at that Workspace first: 409 while
@@ -75,11 +67,7 @@ namespace SiteJoinDomains {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op verify(@path workspaceId: WorkspaceId, @path id: EntityId):
     | SiteJoinDomainResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched. */
   @delete
@@ -87,9 +75,7 @@ namespace SiteJoinDomains {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op remove(@path workspaceId: WorkspaceId, @path id: EntityId):
     | NoContentResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 }
 
 /** Whether the Workspace admits Users by Join domain */
@@ -111,11 +97,7 @@ namespace SiteDomainJoin {
   /** Read the domain join switch (owner and admin only). */
   @get
   @requiresPermissions(#[Permission.joinDomainsManage])
-  op get(@path workspaceId: WorkspaceId):
-    | SiteDomainJoinResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId): SiteDomainJoinResource | Problem;
 
   /** Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already
    * a User: only an address proven afterwards joins. Recorded as an Audit entry. */
@@ -123,7 +105,5 @@ namespace SiteDomainJoin {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op set(@path workspaceId: WorkspaceId, @body body: SiteSetDomainJoinInput):
     | SiteDomainJoinResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 }

@@ -17,6 +17,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -84,7 +85,7 @@ func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
-	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
+	assert.Equal(t, channels.SMS, msg.Channel)
 	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, msg.Destination)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID), "Twilio's SID is the provider reference")
 	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{
@@ -98,14 +99,12 @@ func TestAnSMSStepThroughAMessagingServiceSendsFromTheService(t *testing.T) {
 	env := testhelper.Setup(t)
 	account := env.Twilio.AddAccount()
 	service := env.Twilio.AddMessagingService(account)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
+	row, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 		Name:   "Acme service",
 		Config: testhelper.SiteTwilio(account.SID, "", account.AuthToken, service),
 		Params: siteapi.NewOptJsonObject(testhelper.TwilioAuthToken(account.AuthToken)),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	row, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	automationID := smsAutomation(t, env, smsStep(testhelper.TwilioAccount{Integration: row}, "Hello"))
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
 	enrollVia(t, env, automationID, fixtures.ContactTexterID)
@@ -146,7 +145,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 			assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment moves on")
 			skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 			assert.Equal(t, outboundmessage.StatusSkipped, skipped.Status)
-			assert.Equal(t, outboundmessage.ChannelSms, skipped.Channel)
+			assert.Equal(t, channels.SMS, skipped.Channel)
 			assert.Equal(t, tc.reason, lo.FromPtr(skipped.Reason))
 			smsSent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, smsSent)
@@ -187,14 +186,13 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	link := regexp.MustCompile(`/e/u/(\S+)$`).FindStringSubmatch(sent[0].Body)
 	require.Len(t, link, 2, "the text carries the unsubscribe link, appended to nothing")
 
-	out, err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
 	// The number's opt-out of SMS Broadcasts (UnsubscribeTexterConfirmedBroadcasts) stays beside it.
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactTexterConfirmedPhone),
 		unsubscribe.SendingSource(eligibility.SourceEverything)).OnlyX(ctx)
-	assert.Equal(t, unsubscribe.ChannelSms, optOut.Channel)
+	assert.Equal(t, channels.SMS, optOut.Channel)
 	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
 	dec, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterConfirmedPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)

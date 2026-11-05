@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -139,7 +140,7 @@ func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integr
 	if id != nil {
 		q = q.Where(integration.ID(*id))
 	} else {
-		q = q.Where(integration.ChannelEQ(integration.ChannelTelegram), integration.IsDefault(true))
+		q = q.Where(integration.ChannelEQ(channels.Telegram), integration.IsDefault(true))
 	}
 	row, err := q.Only(ctx)
 	switch {
@@ -150,7 +151,7 @@ func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integr
 	case err != nil:
 		return nil, fmt.Errorf("find integration: %w", err)
 	}
-	if row.Channel != integration.ChannelTelegram {
+	if row.Channel != channels.Telegram {
 		return nil, ErrNotTelegram
 	}
 	if !row.Enabled {

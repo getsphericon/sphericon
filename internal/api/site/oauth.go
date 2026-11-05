@@ -13,7 +13,7 @@ import (
 
 // SiteOAuthDescribe validates an OAuth authorization request for the consent
 // screen (the client is untrusted: only its registered redirect URIs are honored).
-func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAuthDescribeParams) (siteapi.SiteOAuthDescribeRes, error) {
+func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAuthDescribeParams) (*siteapi.SiteOAuthAuthorizationRequest, error) {
 	req, err := h.oauth.Describe(ctx, params.ClientId, params.RedirectUri, params.Scope.Or(""))
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 // refusal (403 permission_required). The Workspace is named in the body, not the path, so Access
 // does not resolve it: the handler loads the Membership itself and admits it as Access admits
 // the Membership of any operation of a Workspace.
-func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (siteapi.SiteOAuthDecideRes, error) {
+func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (*siteapi.SiteOAuthDecisionResult, error) {
 	session := auth.GetSiteAuth(ctx)
 	if session == nil {
 		return nil, accounts.ErrWorkspaceNotFound

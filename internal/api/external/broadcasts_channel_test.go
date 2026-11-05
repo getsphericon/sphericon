@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -26,16 +27,13 @@ func TestExternalBroadcastIsCreatedOnTheChannelOfItsContent(t *testing.T) {
 		delete(body, "content")
 	}))
 
-	created, err := c.BroadcastsCreate(ctx, in)
+	b, err := c.BroadcastsCreate(ctx, in)
 	require.NoError(t, err)
-	refused, err := noChannel.BroadcastsCreate(ctx, in)
-	require.NoError(t, err)
+	_, refused := noChannel.BroadcastsCreate(ctx, in)
 
-	b, ok := created.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.BroadcastChannelEmail, b.Channel)
 	assert.Equal(t, "Hello", testhelper.ExternalEmailOf(b).Subject)
-	assert.IsType(t, &externalapi.BroadcastsCreateBadRequest{}, refused)
+	testhelper.ExternalRefusal(t, refused, http.StatusBadRequest)
 }
 
 // An Integration of another Channel is refused over the API too.
@@ -43,14 +41,13 @@ func TestExternalBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)
 
-	got, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
+	_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
 		Name:          "Through SMS",
 		Content:       testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{}),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeSmsID)),
 	})
-	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, got)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // The API's list filters by Channel: email lists the email Broadcasts, telegram the Telegram one,
@@ -61,10 +58,8 @@ func TestExternalBroadcastsListFiltersByChannel(t *testing.T) {
 	ctx := t.Context()
 	list := func(channel externalapi.OptBroadcastChannel) *externalapi.BroadcastsListOK {
 		t.Helper()
-		got, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{Channel: channel})
+		page, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{Channel: channel})
 		require.NoError(t, err)
-		page, ok := got.(*externalapi.BroadcastsListOK)
-		require.Truef(t, ok, "got %T", got)
 		return page
 	}
 

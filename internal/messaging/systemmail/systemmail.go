@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // defaultFromName is the display name of system mail when SPHERICON_SYSTEM_EMAIL_FROM_NAME is unset.
@@ -22,7 +23,7 @@ const defaultFromName = "sphericon"
 func Sender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
 	from := cfg.SystemEmailFrom
 	fromName := cmp.Or(cfg.SystemEmailFromName, defaultFromName)
-	if cfg.SystemEmailProvider == string(messaging.ProviderSES) {
+	if cfg.SystemEmailProvider == string(providers.SES) {
 		blob, err := json.Marshal(map[string]any{
 			"region":          cfg.SESRegion,
 			"accessKeyId":     cfg.SESAccessKeyID,
@@ -34,7 +35,7 @@ func Sender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSend
 		if err != nil {
 			return nil, err
 		}
-		return catalog.BuildEmail(messaging.ProviderSES, blob, messaging.Deps{})
+		return catalog.BuildEmail(providers.SES, blob, messaging.Deps{})
 	}
 	blob, err := json.Marshal(map[string]any{
 		"host":     cfg.SMTPHost,
@@ -48,5 +49,5 @@ func Sender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSend
 	if err != nil {
 		return nil, err
 	}
-	return catalog.BuildEmail(messaging.ProviderSMTP, blob, messaging.Deps{})
+	return catalog.BuildEmail(providers.SMTP, blob, messaging.Deps{})
 }

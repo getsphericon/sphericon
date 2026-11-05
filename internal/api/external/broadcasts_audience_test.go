@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -39,28 +40,25 @@ func recipientEmails(t *testing.T, env *testhelper.TestEnv, broadcastID int64) [
 
 func scheduleBroadcast(t *testing.T, c *externalapi.Client, id externalapi.EntityId) {
 	t.Helper()
-	res, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: id})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.BroadcastResource{}, res, "got %T", res)
 }
 
 func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.EntityId, def string) {
 	t.Helper()
-	res, err := c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))},
+	_, err := c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))},
 		externalapi.SegmentsUpdateParams{ID: id})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.SegmentResource{}, res, "got %T", res)
 }
 
 // moveToPro puts the Contact on the pro plan.
 func moveToPro(t *testing.T, c *externalapi.Client, contactID int64) {
 	t.Helper()
-	res, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{
+	_, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),
 	}, externalapi.ContactsUpdateParams{ID: externalapi.EntityId(contactID)})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactResource{}, res, "got %T", res)
 }
 
 // A scheduled Broadcast keeps the Condition its Segment had when it was scheduled (ADR 0065): a
@@ -88,16 +86,13 @@ func TestExternalTagNamedInAScheduledBroadcastsCopyIsInUse(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write", "segments:write")
 
-	res, err := c.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: entityIDString(fixtures.TagRenewalDueID)})
-	require.NoError(t, err)
-	refused, ok := res.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", res)
+	err := c.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: entityIDString(fixtures.TagRenewalDueID)})
+	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)
 	users := lo.Map(refused.UsedBy, func(u externalapi.UsedBy, _ int) string { return string(u.Kind) + ":" + u.Name })
 	assert.Equal(t, []string{string(externalapi.UsedByKindBroadcast) + ":" + fixtures.BroadcastScheduledRenewalName}, users)
 
-	archived, err := c.SegmentsArchive(t.Context(), externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentRenewalAudienceID)})
+	_, err = c.SegmentsArchive(t.Context(), externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentRenewalAudienceID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentResource{}, archived)
 }
 
 // An archived Segment takes no part in new work (ADR 0049): a Broadcast unscheduled after its
@@ -107,17 +102,14 @@ func TestExternalBroadcastOfAnArchivedSegmentIsNotScheduledAgain(t *testing.T) {
 	c := env.ExternalScoped(t, audienceScopes...)
 	id := entityIDString(fixtures.BroadcastScheduledRenewalID)
 
-	archived, err := c.SegmentsArchive(t.Context(), externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentRenewalAudienceID)})
+	_, err := c.SegmentsArchive(t.Context(), externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentRenewalAudienceID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.SegmentResource{}, archived)
-	back, err := c.BroadcastsUnschedule(t.Context(), externalapi.BroadcastsUnscheduleParams{ID: id})
+	_, err = c.BroadcastsUnschedule(t.Context(), externalapi.BroadcastsUnscheduleParams{ID: id})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.BroadcastResource{}, back)
 
-	res, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // Unscheduling drops the copy, and scheduling again takes the Segment's current Condition.
@@ -128,9 +120,9 @@ func TestExternalRescheduledBroadcastTakesTheSegmentsCurrentCondition(t *testing
 
 	scheduleBroadcast(t, c, id)
 	setSegmentCondition(t, c, proSegment, freePlanCondition)
-	res, err := c.BroadcastsUnschedule(t.Context(), externalapi.BroadcastsUnscheduleParams{ID: id})
+	_, err := c.BroadcastsUnschedule(t.Context(), externalapi.BroadcastsUnscheduleParams{ID: id})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.BroadcastResource{}, res, "got %T", res)
+
 	scheduleBroadcast(t, c, id)
 	setSegmentCondition(t, c, proSegment, proPlanCondition)
 	env.DeliverQueuedBroadcasts(t)

@@ -37,8 +37,7 @@ func linkClicks(t *testing.T, env *testhelper.TestEnv) map[string]int32 {
 		BroadcastId: siteapi.EntityId(fixtures.BroadcastSentUntrackedID),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteBroadcastLinkClicksList)
-	require.True(t, ok, "got %T", res)
+	list := res
 	out := map[string]int32{}
 	for _, l := range list.Items {
 		out[l.URL] = l.Clicks

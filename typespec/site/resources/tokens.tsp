@@ -68,8 +68,7 @@ namespace SiteTokens {
         @statusCode statusCode: 200;
         @body body: SiteApiTokenResource[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Create an API token; the full secret is returned once. Owners and admins only. */
   @createsResource(SiteApiTokenResource)
@@ -84,10 +83,7 @@ namespace SiteTokens {
         @statusCode statusCode: 201;
         @body body: SiteCreateTokenResponse;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Rename an active API token. Owners and admins only. */
   @updatesResource(SiteApiTokenResource)
@@ -97,12 +93,7 @@ namespace SiteTokens {
   op update(
     ...ResourceParameters<SiteApiTokenResource>,
     @body body: SiteUpdateTokenInput,
-  ):
-    | SiteApiTokenResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteApiTokenResource | Problem;
 
   /** Revoke an API token. Owners and admins only. */
   @deletesResource(SiteApiTokenResource)
@@ -111,7 +102,5 @@ namespace SiteTokens {
   @requiresPermissions(#[Permission.tokensManage])
   op delete(...ResourceParameters<SiteApiTokenResource>):
     | NoContentResponse
-    | ForbiddenProblem
-    | NotFoundProblem
-    | BadRequestProblem;
+    | Problem;
 }

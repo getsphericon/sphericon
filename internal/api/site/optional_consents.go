@@ -23,7 +23,7 @@ func (h *Handlers) SiteOptionalConsentsList(ctx context.Context) (*siteapi.SiteO
 }
 
 // SiteOptionalConsentsSet gives or withdraws one of the authenticated User's optional consents.
-func (h *Handlers) SiteOptionalConsentsSet(ctx context.Context, req *siteapi.SiteOptionalConsentChange, params siteapi.SiteOptionalConsentsSetParams) (siteapi.SiteOptionalConsentsSetRes, error) {
+func (h *Handlers) SiteOptionalConsentsSet(ctx context.Context, req *siteapi.SiteOptionalConsentChange, params siteapi.SiteOptionalConsentsSetParams) (*siteapi.SiteOptionalConsent, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
 		return nil, auth.ErrUnauthorized

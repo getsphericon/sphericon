@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -25,59 +25,52 @@ func (h *harness) holdClient(t *testing.T) *serviceapi.Client {
 	return h.env.ServiceClient(t, primary)
 }
 
-// setHold sets key on Acme expiring in d from the harness clock.
-func (h *harness) setHold(t *testing.T, key string, d time.Duration) serviceapi.ServiceHoldsSetRes {
+// trySetHold sets key on Acme expiring in d from the harness clock.
+func (h *harness) trySetHold(t *testing.T, key string, d time.Duration) (*serviceapi.HoldSetResult, error) {
 	t.Helper()
-	return h.setHoldFor(t, key, "review", d)
+	return h.trySetHoldFor(t, key, "review", d)
 }
 
-// setHoldFor is setHold under a stated reason code.
-func (h *harness) setHoldFor(t *testing.T, key, reasonCode string, d time.Duration) serviceapi.ServiceHoldsSetRes {
+// trySetHoldFor is trySetHold under a stated reason code.
+func (h *harness) trySetHoldFor(t *testing.T, key, reasonCode string, d time.Duration) (*serviceapi.HoldSetResult, error) {
 	t.Helper()
-	res, err := h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
+	return h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: reasonCode, Message: "Sending is paused for now.", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(d)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: key})
-	require.NoError(t, err)
-	return res
 }
 
-// setHoldResult is setHold for a call that is expected to succeed.
-func (h *harness) setHoldResult(t *testing.T, key string, d time.Duration) *serviceapi.HoldSetResult {
+// setHold is trySetHold for a call that is expected to succeed.
+func (h *harness) setHold(t *testing.T, key string, d time.Duration) *serviceapi.HoldSetResult {
 	t.Helper()
-	res, ok := h.setHold(t, key, d).(*serviceapi.HoldSetResult)
-	require.Truef(t, ok, "got %T", res)
+	res, err := h.trySetHold(t, key, d)
+	require.NoError(t, err)
 	return res
 }
 
 func (h *harness) clearHold(t *testing.T, key string) bool {
 	t.Helper()
-	res, err := h.holdClient(t).ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: acme, Key: key})
+	cleared, err := h.holdClient(t).ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: acme, Key: key})
 	require.NoError(t, err)
-	cleared, ok := res.(*serviceapi.HoldClearResult)
-	require.Truef(t, ok, "got %T", res)
 	return cleared.Changed
 }
 
 func (h *harness) listHolds(t *testing.T) []serviceapi.HoldResource {
 	t.Helper()
-	res, err := h.holdClient(t).ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: acme})
+	list, err := h.holdClient(t).ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
-	list, ok := res.(*serviceapi.HoldList)
-	require.Truef(t, ok, "got %T", res)
 	return list.Items
 }
 
 func (h *harness) requireHeld(t *testing.T, to string) {
 	t.Helper()
-	held, ok := h.sendOnAPI(t, to).(*externalapi.EmailsSendUnprocessableEntity)
-	require.True(t, ok, "a send is refused with a 4xx")
+	held := h.refusedSendOnAPI(t, to, "a send is refused with a 4xx")
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonStaff), held.Detail.Value)
 }
 
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {
 	h := newHarness(t)
 
-	set := h.setHoldResult(t, "k1", time.Hour).Hold
+	set := h.setHold(t, "k1", time.Hour).Hold
 	assert.Equal(t, "k1", set.Key)
 	assert.Equal(t, "review", set.ReasonCode)
 	assert.Equal(t, "Sending is paused for now.", set.Message)
@@ -89,7 +82,7 @@ func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {
 
 	h.clearHold(t, "k1")
 	assert.Empty(t, h.listHolds(t))
-	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "after@example.com"), "sending resumes")
+	h.sendOnAPI(t, "after@example.com")
 }
 
 func TestSettingTheSameHoldTwiceIsHarmlessAndRenewingMovesItsExpiry(t *testing.T) {
@@ -113,7 +106,7 @@ func TestAHoldPastItsExpiryIsIgnoredAtOnceWithNoCleanup(t *testing.T) {
 
 	h.clock.t = h.clock.t.Add(time.Hour + time.Second)
 
-	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "lapsed@example.com"), "sending resumes at the expiry")
+	h.sendOnAPI(t, "lapsed@example.com")
 	assert.Empty(t, h.listHolds(t), "a lapsed hold is not listed")
 	assert.Equal(t, 1, h.env.DB.Hold.Query().Where(enthold.Key("k1")).CountX(t.Context()), "the row stays: nothing depends on a sweep")
 }
@@ -127,7 +120,7 @@ func TestASecondHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
 	h.requireHeld(t, "still@example.com")
 
 	h.clearHold(t, fixtures.HoldAcmeSecondLapsedKey)
-	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "free@example.com"))
+	h.sendOnAPI(t, "free@example.com")
 }
 
 func TestClearingAMissingHoldSucceeds(t *testing.T) {
@@ -146,22 +139,23 @@ func TestAHoldNeedsAFutureExpiryWithinTheMaximum(t *testing.T) {
 		"far beyond":      5 * 365 * 24 * time.Hour,
 		"exactly lapsing": 0,
 	} {
-		res := h.setHold(t, "k", d)
-		refused, ok := res.(*serviceapi.ServiceHoldsSetUnprocessableEntity)
-		require.Truef(t, ok, "%s: got %T", name, res)
+		_, err := h.trySetHold(t, "k", d)
+		refused := testhelper.ServiceRefusal(t, err, http.StatusUnprocessableEntity, name)
 		assert.NotEmpty(t, refused.Detail.Value, name)
 	}
 	assert.Zero(t, h.env.DB.Hold.Query().Where(enthold.Key("k")).CountX(t.Context()), "a refused hold stores nothing")
 
-	_, ok := h.setHold(t, "k", 30*24*time.Hour).(*serviceapi.HoldSetResult)
-	assert.True(t, ok, "the maximum itself is accepted")
+	_, err := h.trySetHold(t, "k", 30*24*time.Hour)
+	assert.NoError(t, err, "the maximum itself is accepted")
 }
 
 func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 	h := newHarness(t, testhelper.WithConfig(func(c *config.Config) { c.StaffHoldMaxExpiry = 2 * time.Hour }))
 
-	assert.IsType(t, &serviceapi.ServiceHoldsSetUnprocessableEntity{}, h.setHold(t, "k", 3*time.Hour))
-	assert.IsType(t, &serviceapi.HoldSetResult{}, h.setHold(t, "k", time.Hour))
+	_, err := h.trySetHold(t, "k", 3*time.Hour)
+	testhelper.ServiceRefusal(t, err, http.StatusUnprocessableEntity)
+	_, err = h.trySetHold(t, "k", time.Hour)
+	assert.NoError(t, err)
 }
 
 // Workspace deletion (ADR 0043) is a Hold source of its own: the holds readers report it
@@ -188,17 +182,14 @@ func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.holdClient(t)
 
-	list, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: "NoSuchId"})
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceHoldsListNotFound{}, list)
-	set, err := c.ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
+	_, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: "NoSuchId"})
+	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
+	_, err = c.ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: "NoSuchId", Key: "k"})
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceHoldsSetNotFound{}, set)
-	cleared, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceHoldsClearNotFound{}, cleared)
+	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
+	_, err = c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
+	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
 }
 
 func TestHoldsNeedTheWriteHoldsScope(t *testing.T) {
@@ -246,5 +237,5 @@ func TestWithoutALicenseHoldsFreezeNothing(t *testing.T) {
 	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 	h := &harness{env: env}
 
-	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "free@example.com"))
+	h.sendOnAPI(t, "free@example.com")
 }

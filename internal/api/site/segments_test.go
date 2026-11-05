@@ -34,42 +34,33 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	ctx := context.Background()
 
 	// A seeded segment of the owned workspace is fetchable by id (selection by key).
-	seeded, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
+	seededRes, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	seededRes, ok := seeded.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", seeded)
 	assert.Equal(t, "Active subscribers", seededRes.Name)
 
 	// Create scopes the segment to the workspace and returns the resource.
-	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	res, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name:      "VIP customers",
 		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"vip"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, "VIP customers", res.Name)
 
 	// The new segment is readable by id.
-	got, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
+	gotRes, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update changes mutable fields.
-	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
+	updRes, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
 		Name: siteapi.NewOptString("VIP renamed"),
 	}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
-	updRes, ok := updated.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", updated)
 	assert.Equal(t, "VIP renamed", updRes.Name)
 
 	// An unknown / non-owned workspace workspaceID resolves to 404, not a data leak.
-	missing, err := c.SiteSegmentsList(ctx, siteapi.SiteSegmentsListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsListNotFound{}, missing)
+	_, err = c.SiteSegmentsList(ctx, siteapi.SiteSegmentsListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // bodyCapture records the raw response bodies so tests can assert on the wire

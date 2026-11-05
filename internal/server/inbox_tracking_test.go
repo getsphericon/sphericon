@@ -28,20 +28,20 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	chosen, err := jane.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	_, err := jane.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, chosen)
-	edited, err := jane.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+
+	_, err = jane.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(`<p>Read <a href="https://dest.test/a">this</a>.</p>`)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.BroadcastGlobexID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastResource{}, edited)
-	sent, err := jane.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{
+
+	_, err = jane.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastResource{}, sent)
+
 	env.DeliverQueuedBroadcasts(t)
 	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.Recipient(fixtures.ContactGlobexReaderEmail)).OnlyX(ctx)
 	pixel := capturedPixel.FindString(kept.HTML)

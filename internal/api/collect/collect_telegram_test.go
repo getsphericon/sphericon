@@ -1,6 +1,7 @@
 package collect_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,10 +19,8 @@ import (
 
 func startLink(t *testing.T, env *testhelper.TestEnv, visitorID string) *collectapi.CollectTelegramStartLink {
 	t.Helper()
-	res, err := env.CollectAcme(t).CollectTelegramStartLinksCreate(t.Context(), &collectapi.CollectTelegramStartLinkInput{VisitorId: visitorID})
+	link, err := env.CollectAcme(t).CollectTelegramStartLinksCreate(t.Context(), &collectapi.CollectTelegramStartLinkInput{VisitorId: visitorID})
 	require.NoError(t, err)
-	link, ok := res.(*collectapi.CollectTelegramStartLink)
-	require.Truef(t, ok, "got %T", res)
 	return link
 }
 
@@ -57,14 +56,12 @@ func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *test
 	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("tracker.person@example.com")).OnlyX(t.Context())
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": contact.ID, "integrationId": bot.Integration.ID}),
 		"announced for the Contact once")
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
+	chats, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
 		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(contact.ID),
 	})
 	require.NoError(t, err)
-	chats, ok := res.(*siteapi.SiteTelegramListBindingsOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	require.Len(t, *chats, 1, "the Contact is reached through its Visitor")
-	assert.Equal(t, testhelper.AcmeTelegramUsername, (*chats)[0].BotUsername.Or(""))
+	require.Len(t, chats, 1, "the Contact is reached through its Visitor")
+	assert.Equal(t, testhelper.AcmeTelegramUsername, chats[0].BotUsername.Or(""))
 }
 
 // A Visitor's chat is announced to the next Contact the Visitor resolves to as well.
@@ -85,10 +82,9 @@ func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
 
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
-	res, err := env.CollectAcme(t).CollectTelegramStartLinksCreate(t.Context(), &collectapi.CollectTelegramStartLinkInput{VisitorId: "dev-nobot"})
+	_, err := env.CollectAcme(t).CollectTelegramStartLinksCreate(t.Context(), &collectapi.CollectTelegramStartLinkInput{VisitorId: "dev-nobot"})
 
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectTelegramStartLinksCreateUnprocessableEntity{}, res)
+	testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, before, env.DB.StartToken.Query().CountX(t.Context()), "no token is issued")
 }
 

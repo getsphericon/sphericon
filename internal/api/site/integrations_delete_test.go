@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -16,28 +17,24 @@ import (
 
 func listIntegrations(t *testing.T, c *siteapi.Client) []siteapi.SiteIntegrationResource {
 	t.Helper()
-	res, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
+	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteIntegrationsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	return *list
+	return list
 }
 
 func integrationIDs(items []siteapi.SiteIntegrationResource) []int64 {
 	return lo.Map(items, func(i siteapi.SiteIntegrationResource, _ int) int64 { return int64(i.ID) })
 }
 
-func deleteIntegration(t *testing.T, c *siteapi.Client, id int64) siteapi.SiteIntegrationsDeleteRes {
+func deleteIntegration(t *testing.T, c *siteapi.Client, id int64) error {
 	t.Helper()
 	return deleteIntegrationOf(t, c, fixtures.AcmePublicID, id)
 }
 
-// deleteIntegrationOf deletes the Integration id of the Workspace as c.
-func deleteIntegrationOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteIntegrationsDeleteRes {
+// deleteIntegrationOf deletes the Integration id of the Workspace as c: nil, or the refusal.
+func deleteIntegrationOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) error {
 	t.Helper()
-	got, err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
-	require.NoError(t, err)
-	return got
+	return c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
 }
 
 // A deleted Integration is discarded, not removed physically (ADR 0049): it leaves the list for
@@ -48,21 +45,19 @@ func TestSiteIntegrationsDelete(t *testing.T) {
 	ctx := context.Background()
 	id := int64(fixtures.IntegrationAcmeSesID)
 
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, id))
+	require.NoError(t, deleteIntegration(t, c, id))
 
 	listed := integrationIDs(listIntegrations(t, c))
 	assert.NotContains(t, listed, id)
 	assert.NotContains(t, listed, int64(fixtures.IntegrationAcmeArchivedID))
 	assert.Contains(t, listed, int64(fixtures.IntegrationAcmeDefaultID))
 
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+	opened, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 	require.NoError(t, err)
-	opened, ok := got.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "a deleted Integration can still be read by id, got %T", got)
 	assert.True(t, opened.DiscardedAt.IsSet())
 
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, id), "deleting it again changes nothing")
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, deleteIntegration(t, c, 999999))
+	require.NoError(t, deleteIntegration(t, c, id), "deleting it again changes nothing")
+	testhelper.SiteRefusal(t, deleteIntegration(t, c, 999999), http.StatusNotFound)
 }
 
 // Deleting the default Integration clears its default flag: the channel is left with no default
@@ -75,21 +70,16 @@ func TestSiteIntegrationsDeletingTheDefaultLeavesTheChannelWithout(t *testing.T)
 	id := idStr(fixtures.IntegrationUmbrellaDefaultID)
 	const workspace = fixtures.UmbrellaPublicID
 
-	out, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: workspace, ID: id})
+	err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: workspace, ID: id})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, out)
 
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: workspace, ID: id})
+	deleted, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: workspace, ID: id})
 	require.NoError(t, err)
-	deleted, ok := got.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.False(t, deleted.IsDefault)
 
-	listed, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: workspace})
+	list, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: workspace})
 	require.NoError(t, err)
-	list, ok := listed.(*siteapi.SiteIntegrationsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", listed)
-	defaults := lo.Filter(*list, func(i siteapi.SiteIntegrationResource, _ int) bool { return i.IsDefault })
+	defaults := lo.Filter(list, func(i siteapi.SiteIntegrationResource, _ int) bool { return i.IsDefault })
 	assert.Empty(t, defaults)
 }
 
@@ -102,22 +92,17 @@ func TestSiteIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	id := idStr(fixtures.IntegrationAcmeArchivedID)
 	path := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
-	renamed, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}, path)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, renamed)
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}, path)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	promoted, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)}, path)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, promoted)
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)}, path)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	rekeyed, err := c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsRegenerateKeyNotFound{}, rekeyed)
+	_, err = c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	row, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	row, ok := got.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "Old relay (archived)", row.Name, "the refused edit left it as it was")
 }
 
@@ -128,18 +113,14 @@ func TestSiteSentBroadcastStillNamesItsDeletedIntegration(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastSentViaArchivedIntegrationID})
+	b, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastSentViaArchivedIntegrationID})
 	require.NoError(t, err)
-	b, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
 	id, named := b.IntegrationId.Get()
 	require.True(t, named)
 	assert.EqualValues(t, fixtures.IntegrationAcmeArchivedID, id)
 
-	integ, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	row, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	row, ok := integ.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", integ)
 	assert.Equal(t, "Old relay (archived)", row.Name)
 	assert.True(t, row.DiscardedAt.IsSet())
 }
@@ -149,7 +130,7 @@ func TestSiteIntegrationsDeleteIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, fixtures.IntegrationAcmeSesID))
+	require.NoError(t, deleteIntegration(t, c, fixtures.IntegrationAcmeSesID))
 
 	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		entry, ok := ev.(*events.AuditEntry)
@@ -166,7 +147,7 @@ func TestSiteIntegrationsDeleteNeedsAnOwnerOrAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	assert.IsType(t, new(siteapi.SiteIntegrationsDeleteForbidden), deleteIntegration(t, member, fixtures.IntegrationAcmeSesID))
+	testhelper.SiteRefusal(t, deleteIntegration(t, member, fixtures.IntegrationAcmeSesID), http.StatusForbidden)
 }
 
 // A stored empty definition means no Steps to Publish and Needs attention. Removal must make
@@ -177,11 +158,10 @@ func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(
 	s := env.DB.Scoped(fixtures.MeridianID)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	published, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{
+	_, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{
 		WorkspaceId: fixtures.MeridianPublicID, ID: idStr(fixtures.AutomationMeridianEmptyID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAutomationResource{}, published)
 	items := attentionOf(t, c, fixtures.MeridianPublicID)
 	_, needsAttention := cannotSendOf(items, fixtures.AutomationMeridianEmptyID)
 	assert.False(t, needsAttention, "no Step sends through the disabled Integration")

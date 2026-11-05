@@ -25,8 +25,7 @@ func automationReport(t *testing.T, env *testhelper.TestEnv, automationID int64)
 		AutomationId: siteapi.EntityId(automationID),
 	})
 	require.NoError(t, err)
-	report, ok := res.(*siteapi.SiteAutomationReport)
-	require.True(t, ok, "got %T", res)
+	report := res
 	return report
 }
 

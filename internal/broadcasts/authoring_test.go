@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -64,7 +65,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	assert.Equal(t, "N", b.Name)
-	assert.Equal(t, broadcast.ChannelEmail, b.Channel)
+	assert.Equal(t, channels.Email, b.Channel)
 	assert.Equal(t, "S", *b.Subject)
 	assert.Equal(t, "<p></p>", *b.Body)
 	require.NotNil(t, b.FromEmail)

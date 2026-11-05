@@ -152,11 +152,7 @@ interface Integrations {
   @requiresScopes(#[ApiTokenScope.integrationsRead])
   list(...ResourceCollectionParameters<IntegrationResource>, ...PageQuery):
     | Page<IntegrationResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Create an integration */
   @createsResource(IntegrationResource)
@@ -171,12 +167,7 @@ interface Integrations {
         @statusCode statusCode: 201;
         @body body: IntegrationResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get an integration by ID, deleted or not */
   @readsResource(IntegrationResource)
@@ -185,11 +176,7 @@ interface Integrations {
   @requiresScopes(#[ApiTokenScope.integrationsRead])
   get(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Update an integration; a deleted one is read-only and answers 404 */
   @updatesResource(IntegrationResource)
@@ -199,15 +186,7 @@ interface Integrations {
   update(
     ...ResourceParameters<IntegrationResource>,
     @body body: UpdateIntegrationInput,
-  ):
-    | IntegrationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): IntegrationResource | Problem;
 
   /** Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort. */
   @deletesResource(IntegrationResource)
@@ -216,12 +195,7 @@ interface Integrations {
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
   delete(...ResourceParameters<IntegrationResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP. */
   @action("regenerate-key")
@@ -229,12 +203,7 @@ interface Integrations {
   @requiresScopes(#[ApiTokenScope.integrationsWrite])
   regenerateKey(...ResourceParameters<IntegrationResource>):
     | IntegrationResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 // --- Presets (ADR 0037) ---
@@ -263,9 +232,5 @@ namespace Presets {
   /** List the Presets the Instance offers, with the params schema of each */
   @get
   @requiresScopes(#[ApiTokenScope.integrationsRead])
-  op list():
-    | Page<PresetResource>
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  op list(): Page<PresetResource> | Problem;
 }

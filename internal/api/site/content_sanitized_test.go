@@ -26,16 +26,14 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	tpl, ok := created.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", created)
+	tpl := created
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, tpl.Body)
 
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
 		Body: siteapi.NewOptString(`<img src="x" onerror="alert(1)">{{ first_name }}`),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: tpl.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.NotContains(t, upd.Body, "onerror")
 	assert.Contains(t, upd.Body, "{{ first_name }}")
 
@@ -44,15 +42,13 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(hostileBody)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	created2, ok := bc.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", bc)
+	created2 := bc
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, testhelper.SiteEmailOf(created2).Body)
 
 	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(hostileBody)}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
-	updated2, ok := bu.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", bu)
+	updated2 := bu
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, testhelper.SiteEmailOf(updated2).Body)
 }

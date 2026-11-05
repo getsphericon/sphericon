@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -15,10 +16,8 @@ import (
 
 func listedIntegrationIDs(t *testing.T, c *externalapi.Client) []externalapi.EntityId {
 	t.Helper()
-	res, err := c.IntegrationsList(context.Background(), externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(100)})
+	list, err := c.IntegrationsList(context.Background(), externalapi.IntegrationsListParams{PageSize: externalapi.NewOptInt32(100)})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.IntegrationsListOK)
-	require.Truef(t, ok, "got %T", res)
 	return lo.Map(list.Items, func(i externalapi.IntegrationResource, _ int) externalapi.EntityId { return i.ID })
 }
 
@@ -30,28 +29,24 @@ func TestExternalIntegrationsDelete(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	ctx := context.Background()
 
-	busy, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.InUseProblemDetails{}, busy)
+	err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
+	busy := testhelper.ExternalRefusal(t, err, http.StatusConflict)
+	assert.NotEmpty(t, busy.UsedBy)
 
 	id := entityIDString(fixtures.IntegrationAcmeSesID)
-	out, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNoContent{}, out)
 	listed := listedIntegrationIDs(t, c)
 	assert.NotContains(t, listed, id)
 	assert.NotContains(t, listed, entityIDString(fixtures.IntegrationAcmeArchivedID))
 
-	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
+	deleted, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
 	require.NoError(t, err)
-	deleted, ok := got.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "a deleted Integration is still readable by id, got %T", got)
 	assert.True(t, deleted.DiscardedAt.IsSet())
 	assert.False(t, deleted.IsDefault)
 
-	missing, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, missing)
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationGlobexID)})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // A deleted Integration is read, never changed (ADR 0100): an edit and a new hook key answer 404,
@@ -62,28 +57,22 @@ func TestExternalIntegrationsDeletedOneIsReadOnly(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.IntegrationAcmeArchivedID)
 
-	renamed, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("Renamed")},
+	_, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("Renamed")},
 		externalapi.IntegrationsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateNotFound{}, renamed)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	rekeyed, err := c.IntegrationsRegenerateKey(ctx, externalapi.IntegrationsRegenerateKeyParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsRegenerateKeyNotFound{}, rekeyed)
+	_, err = c.IntegrationsRegenerateKey(ctx, externalapi.IntegrationsRegenerateKeyParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
+	row, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
 	require.NoError(t, err)
-	row, ok := got.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "Old relay (archived)", row.Name, "the refused edit left it as it was")
 }
 
 // usersOfRefusal are the (kind, id) pairs a delete refusal names.
-func usersOfRefusal(t *testing.T, got externalapi.IntegrationsDeleteRes) []externalapi.UsedBy {
+func usersOfRefusal(t *testing.T, err error) []externalapi.UsedBy {
 	t.Helper()
-	refused, ok := got.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", got)
-	return refused.UsedBy
+	return testhelper.ExternalRefusal(t, err, http.StatusConflict).UsedBy
 }
 
 func automationUsers(users []externalapi.UsedBy, id int64) []externalapi.UsedBy {
@@ -99,10 +88,8 @@ func TestExternalIntegrationDeleteIsRefusedWhileAnAutomationNamesIt(t *testing.T
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	ctx := context.Background()
-	del := func(id int64) externalapi.IntegrationsDeleteRes {
-		out, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(id)})
-		require.NoError(t, err)
-		return out
+	del := func(id int64) error {
+		return c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(id)})
 	}
 
 	users := usersOfRefusal(t, del(fixtures.IntegrationAcmeMailgunID))
@@ -117,9 +104,8 @@ func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *te
 	env := testhelper.Setup(t)
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.MeridianID, "integrations:read", "integrations:write"))
 
-	out, err := c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationMeridianDefaultID)})
-	require.NoError(t, err)
-	users := usersOfRefusal(t, out)
+	err := c.IntegrationsDelete(t.Context(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationMeridianDefaultID)})
+	users := usersOfRefusal(t, err)
 
 	assert.Len(t, automationUsers(users, fixtures.AutomationMeridianWelcomeID), 1, "naming none, it uses the default")
 	assert.Empty(t, automationUsers(users, fixtures.AutomationMeridianViaRelayID))
@@ -129,7 +115,6 @@ func TestExternalIntegrationsDeleteNeedsTheWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	reader := env.ExternalScoped(t, "integrations:read")
 
-	del, err := reader.IntegrationsDelete(context.Background(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeSesID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteForbidden{}, del)
+	err := reader.IntegrationsDelete(context.Background(), externalapi.IntegrationsDeleteParams{ID: entityIDString(fixtures.IntegrationAcmeSesID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

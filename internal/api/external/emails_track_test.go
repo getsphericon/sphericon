@@ -26,7 +26,7 @@ var (
 	openSrc   = regexp.MustCompile(`/e/o/[A-Za-z0-9._-]+`)
 )
 
-func sendLinked(t *testing.T, env *testhelper.TestEnv, dest string, track externalapi.OptBool) externalapi.EmailsSendRes {
+func sendLinked(t *testing.T, env *testhelper.TestEnv, dest string, track externalapi.OptBool) *externalapi.SendTransactionalEmailResponse {
 	t.Helper()
 	res, err := env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId:  externalapi.EntityId(fixtures.TemplateWithLinkID),
@@ -47,8 +47,7 @@ func get(t *testing.T, env *testhelper.TestEnv, path string) *httptest.ResponseR
 func TestTransactionalSendWithoutTrackIsNotRewritten(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := sendLinked(t, env, fixtures.ContactLiamEmail, externalapi.OptBool{})
-	require.IsType(t, &externalapi.SendTransactionalEmailResponse{}, res)
+	sendLinked(t, env, fixtures.ContactLiamEmail, externalapi.OptBool{})
 
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)
@@ -60,8 +59,7 @@ func TestTransactionalSendWithoutTrackIsNotRewritten(t *testing.T) {
 func TestTrackedTransactionalSendRecordsOpenAndClickAndStaysTransactional(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := sendLinked(t, env, fixtures.ContactLiamEmail, externalapi.NewOptBool(true))
-	require.IsType(t, &externalapi.SendTransactionalEmailResponse{}, res)
+	sendLinked(t, env, fixtures.ContactLiamEmail, externalapi.NewOptBool(true))
 
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)
@@ -92,7 +90,7 @@ func TestTrackedTransactionalSendToAnAddressWithNoContactRecordsByAddress(t *tes
 	env := testhelper.Setup(t)
 	dest := fixtures.UnsubscribeEverythingNoContactDestination
 
-	require.IsType(t, &externalapi.SendTransactionalEmailResponse{}, sendLinked(t, env, dest, externalapi.NewOptBool(true)))
+	sendLinked(t, env, dest, externalapi.NewOptBool(true))
 	pixel := openSrc.FindString(env.CustomerMail.Messages()[0].HTML)
 	require.NotEmpty(t, pixel)
 	assert.Equal(t, http.StatusOK, get(t, env, pixel).Code)
@@ -108,8 +106,6 @@ func TestTrackedTransactionalSendToASuppressedAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	res := sendLinked(t, env, fixtures.SuppressionGhostBounceDestination, externalapi.NewOptBool(true))
-	ok, isOK := res.(*externalapi.SendTransactionalEmailResponse)
-	require.True(t, isOK)
-	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, ok.Status)
+	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, res.Status)
 	assert.Empty(t, env.CustomerMail.Messages())
 }

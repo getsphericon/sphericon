@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,8 +22,7 @@ func reread(t *testing.T, c *siteapi.Client, id siteapi.EntityId) siteapi.SitePr
 	t.Helper()
 	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	res, ok := got.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", got)
+	res := got
 	return res.ProviderLimit
 }
 
@@ -41,7 +41,7 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 		MaxPerDay: siteapi.NewOptNilMaxPerDay(1000),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	status := reread(t, c, created.(*siteapi.SiteIntegrationResource).ID)
+	status := reread(t, c, created.ID)
 
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
 	assert.Equal(t, siteapi.SiteProviderLimitSourceProvider, status.PerSecond.Source.Or(""))
@@ -64,8 +64,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "the save succeeds although the lookup failed, got %T", created)
+	res := created
 	status := reread(t, c, res.ID)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
 		siteapi.SiteProviderLimitWarningUnlimited, siteapi.SiteProviderLimitWarningProviderQuotaUnavailable,
@@ -110,7 +109,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	env.SES.SetQuota(messaging.Quota{PerSecond: new(1), Enforcement: messaging.EnforcementShutdown, Sandbox: true})
+	env.SES.SetQuota(messaging.Quota{PerSecond: new(1), Enforcement: providers.EnforcementShutdown, Sandbox: true})
 
 	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
@@ -118,7 +117,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	id := created.(*siteapi.SiteIntegrationResource).ID
+	id := created.ID
 	status := reread(t, c, id)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
 		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
@@ -146,5 +145,5 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningUnlimited},
-		created.(*siteapi.SiteIntegrationResource).ProviderLimit.Warnings)
+		created.ProviderLimit.Warnings)
 }

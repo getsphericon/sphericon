@@ -3,12 +3,17 @@
 package externalapi
 
 import (
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
+
+func (s *ProblemDetailsStatusCode) Error() string {
+	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
+}
 
 // Ref: #/components/schemas/ApiTokenInfo
 type ApiTokenInfo struct {
@@ -102,8 +107,6 @@ func (s *ApiTokenInfo) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*ApiTokenInfo) authMeGetRes() {}
-
 // Ref: #/components/schemas/ApiTokenListResponse
 type ApiTokenListResponse struct {
 	Items []ApiTokenInfo `json:"items"`
@@ -118,8 +121,6 @@ func (s *ApiTokenListResponse) GetItems() []ApiTokenInfo {
 func (s *ApiTokenListResponse) SetItems(val []ApiTokenInfo) {
 	s.Items = val
 }
-
-func (*ApiTokenListResponse) authTokensListRes() {}
 
 // Every API token scope: the one vocabulary of the external API.
 // Ref: #/components/schemas/ApiTokenScope
@@ -1163,22 +1164,6 @@ func (s *AuditActorKind) UnmarshalText(data []byte) error {
 	}
 }
 
-type AuditEntriesListBadRequest ProblemDetails
-
-func (*AuditEntriesListBadRequest) auditEntriesListRes() {}
-
-type AuditEntriesListForbidden ProblemDetails
-
-func (*AuditEntriesListForbidden) auditEntriesListRes() {}
-
-type AuditEntriesListPaymentRequired ProblemDetails
-
-func (*AuditEntriesListPaymentRequired) auditEntriesListRes() {}
-
-type AuditEntriesListUnauthorized ProblemDetails
-
-func (*AuditEntriesListUnauthorized) auditEntriesListRes() {}
-
 // A page of Audit entries, newest first.
 // Ref: #/components/schemas/AuditEntryList
 type AuditEntryList struct {
@@ -1206,8 +1191,6 @@ func (s *AuditEntryList) SetItems(val []AuditEntryResource) {
 func (s *AuditEntryList) SetNextCursor(val OptNilString) {
 	s.NextCursor = val
 }
-
-func (*AuditEntryList) auditEntriesListRes() {}
 
 // One immutable Audit entry (Enterprise).
 // Ref: #/components/schemas/AuditEntryResource
@@ -1363,74 +1346,8 @@ func (s *AuditTarget) SetName(val OptNilString) {
 	s.Name = val
 }
 
-type AuthMeGetNotFound ProblemDetails
-
-func (*AuthMeGetNotFound) authMeGetRes() {}
-
-type AuthMeGetUnauthorized ProblemDetails
-
-func (*AuthMeGetUnauthorized) authMeGetRes() {}
-
-type AuthTokensBootstrapBadRequest ProblemDetails
-
-func (*AuthTokensBootstrapBadRequest) authTokensBootstrapRes() {}
-
-type AuthTokensBootstrapForbidden ProblemDetails
-
-func (*AuthTokensBootstrapForbidden) authTokensBootstrapRes() {}
-
-type AuthTokensBootstrapUnauthorized ProblemDetails
-
-func (*AuthTokensBootstrapUnauthorized) authTokensBootstrapRes() {}
-
-type AuthTokensBootstrapUnprocessableEntity ProblemDetails
-
-func (*AuthTokensBootstrapUnprocessableEntity) authTokensBootstrapRes() {}
-
-type AuthTokensCreateBadRequest ProblemDetails
-
-func (*AuthTokensCreateBadRequest) authTokensCreateRes() {}
-
-type AuthTokensCreateForbidden ProblemDetails
-
-func (*AuthTokensCreateForbidden) authTokensCreateRes() {}
-
-type AuthTokensCreateUnauthorized ProblemDetails
-
-func (*AuthTokensCreateUnauthorized) authTokensCreateRes() {}
-
-type AuthTokensCreateUnprocessableEntity ProblemDetails
-
-func (*AuthTokensCreateUnprocessableEntity) authTokensCreateRes() {}
-
-type AuthTokensDeleteBadRequest ProblemDetails
-
-func (*AuthTokensDeleteBadRequest) authTokensDeleteRes() {}
-
-type AuthTokensDeleteForbidden ProblemDetails
-
-func (*AuthTokensDeleteForbidden) authTokensDeleteRes() {}
-
 // AuthTokensDeleteNoContent is response for AuthTokensDelete operation.
 type AuthTokensDeleteNoContent struct{}
-
-func (*AuthTokensDeleteNoContent) authTokensDeleteRes() {}
-
-type AuthTokensDeleteNotFound ProblemDetails
-
-func (*AuthTokensDeleteNotFound) authTokensDeleteRes() {}
-
-type AuthTokensDeleteUnauthorized ProblemDetails
-
-func (*AuthTokensDeleteUnauthorized) authTokensDeleteRes() {}
-
-type AuthTokensListForbidden ProblemDetails
-
-func (*AuthTokensListForbidden) authTokensListRes() {}
-
-type AuthTokensListUnauthorized ProblemDetails
-
-func (*AuthTokensListUnauthorized) authTokensListRes() {}
 
 // Closed error kind of an HTTP step's body.
 // Ref: #/components/schemas/AutomationHttpErrorKind
@@ -1744,8 +1661,6 @@ func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
 	s.Steps = val
 }
 
-func (*AutomationReport) automationsReportRes() {}
-
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
 // included.
 // Ref: #/components/schemas/AutomationReportPeriod
@@ -1906,15 +1821,6 @@ func (s *AutomationResource) SetCreatedAt(val Timestamp) {
 func (s *AutomationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
-
-func (*AutomationResource) automationsArchiveRes()    {}
-func (*AutomationResource) automationsCreateRes()     {}
-func (*AutomationResource) automationsDeactivateRes() {}
-func (*AutomationResource) automationsGetRes()        {}
-func (*AutomationResource) automationsPublishRes()    {}
-func (*AutomationResource) automationsRevertRes()     {}
-func (*AutomationResource) automationsUnarchiveRes()  {}
-func (*AutomationResource) automationsUpdateRes()     {}
 
 // An automation's results over a period of Report days, read from its enrollments, with the period
 // just before it to compare with.
@@ -2547,102 +2453,6 @@ func (s *AutomationVersion) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
-type AutomationsArchiveBadRequest ProblemDetails
-
-func (*AutomationsArchiveBadRequest) automationsArchiveRes() {}
-
-type AutomationsArchiveForbidden ProblemDetails
-
-func (*AutomationsArchiveForbidden) automationsArchiveRes() {}
-
-type AutomationsArchiveNotFound ProblemDetails
-
-func (*AutomationsArchiveNotFound) automationsArchiveRes() {}
-
-type AutomationsArchiveUnauthorized ProblemDetails
-
-func (*AutomationsArchiveUnauthorized) automationsArchiveRes() {}
-
-type AutomationsCreateBadRequest ProblemDetails
-
-func (*AutomationsCreateBadRequest) automationsCreateRes() {}
-
-type AutomationsCreateForbidden ProblemDetails
-
-func (*AutomationsCreateForbidden) automationsCreateRes() {}
-
-type AutomationsCreateUnauthorized ProblemDetails
-
-func (*AutomationsCreateUnauthorized) automationsCreateRes() {}
-
-type AutomationsCreateUnprocessableEntity ProblemDetails
-
-func (*AutomationsCreateUnprocessableEntity) automationsCreateRes() {}
-
-type AutomationsDeactivateBadRequest ProblemDetails
-
-func (*AutomationsDeactivateBadRequest) automationsDeactivateRes() {}
-
-type AutomationsDeactivateConflict ProblemDetails
-
-func (*AutomationsDeactivateConflict) automationsDeactivateRes() {}
-
-type AutomationsDeactivateForbidden ProblemDetails
-
-func (*AutomationsDeactivateForbidden) automationsDeactivateRes() {}
-
-type AutomationsDeactivateNotFound ProblemDetails
-
-func (*AutomationsDeactivateNotFound) automationsDeactivateRes() {}
-
-type AutomationsDeactivateUnauthorized ProblemDetails
-
-func (*AutomationsDeactivateUnauthorized) automationsDeactivateRes() {}
-
-type AutomationsDryRunHttpStepBadRequest ProblemDetails
-
-func (*AutomationsDryRunHttpStepBadRequest) automationsDryRunHttpStepRes() {}
-
-type AutomationsDryRunHttpStepForbidden ProblemDetails
-
-func (*AutomationsDryRunHttpStepForbidden) automationsDryRunHttpStepRes() {}
-
-type AutomationsDryRunHttpStepNotFound ProblemDetails
-
-func (*AutomationsDryRunHttpStepNotFound) automationsDryRunHttpStepRes() {}
-
-type AutomationsDryRunHttpStepUnauthorized ProblemDetails
-
-func (*AutomationsDryRunHttpStepUnauthorized) automationsDryRunHttpStepRes() {}
-
-type AutomationsDryRunHttpStepUnprocessableEntity ProblemDetails
-
-func (*AutomationsDryRunHttpStepUnprocessableEntity) automationsDryRunHttpStepRes() {}
-
-type AutomationsGetBadRequest ProblemDetails
-
-func (*AutomationsGetBadRequest) automationsGetRes() {}
-
-type AutomationsGetForbidden ProblemDetails
-
-func (*AutomationsGetForbidden) automationsGetRes() {}
-
-type AutomationsGetNotFound ProblemDetails
-
-func (*AutomationsGetNotFound) automationsGetRes() {}
-
-type AutomationsGetUnauthorized ProblemDetails
-
-func (*AutomationsGetUnauthorized) automationsGetRes() {}
-
-type AutomationsListBadRequest ProblemDetails
-
-func (*AutomationsListBadRequest) automationsListRes() {}
-
-type AutomationsListForbidden ProblemDetails
-
-func (*AutomationsListForbidden) automationsListRes() {}
-
 // Paginated response.
 type AutomationsListOK struct {
 	// List of items.
@@ -2707,52 +2517,6 @@ func (s *AutomationsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*AutomationsListOK) automationsListRes() {}
-
-type AutomationsListUnauthorized ProblemDetails
-
-func (*AutomationsListUnauthorized) automationsListRes() {}
-
-type AutomationsListUnprocessableEntity ProblemDetails
-
-func (*AutomationsListUnprocessableEntity) automationsListRes() {}
-
-type AutomationsPublishBadRequest ProblemDetails
-
-func (*AutomationsPublishBadRequest) automationsPublishRes() {}
-
-type AutomationsPublishConflict ProblemDetails
-
-func (*AutomationsPublishConflict) automationsPublishRes() {}
-
-type AutomationsPublishForbidden ProblemDetails
-
-func (*AutomationsPublishForbidden) automationsPublishRes() {}
-
-type AutomationsPublishNotFound ProblemDetails
-
-func (*AutomationsPublishNotFound) automationsPublishRes() {}
-
-type AutomationsPublishUnauthorized ProblemDetails
-
-func (*AutomationsPublishUnauthorized) automationsPublishRes() {}
-
-type AutomationsPublishUnprocessableEntity ProblemDetails
-
-func (*AutomationsPublishUnprocessableEntity) automationsPublishRes() {}
-
-type AutomationsReportBadRequest ProblemDetails
-
-func (*AutomationsReportBadRequest) automationsReportRes() {}
-
-type AutomationsReportForbidden ProblemDetails
-
-func (*AutomationsReportForbidden) automationsReportRes() {}
-
-type AutomationsReportNotFound ProblemDetails
-
-func (*AutomationsReportNotFound) automationsReportRes() {}
-
 // Merged schema.
 type AutomationsReportPeriod string
 
@@ -2809,74 +2573,6 @@ func (s *AutomationsReportPeriod) UnmarshalText(data []byte) error {
 	}
 }
 
-type AutomationsReportUnauthorized ProblemDetails
-
-func (*AutomationsReportUnauthorized) automationsReportRes() {}
-
-type AutomationsRevertBadRequest ProblemDetails
-
-func (*AutomationsRevertBadRequest) automationsRevertRes() {}
-
-type AutomationsRevertConflict ProblemDetails
-
-func (*AutomationsRevertConflict) automationsRevertRes() {}
-
-type AutomationsRevertForbidden ProblemDetails
-
-func (*AutomationsRevertForbidden) automationsRevertRes() {}
-
-type AutomationsRevertNotFound ProblemDetails
-
-func (*AutomationsRevertNotFound) automationsRevertRes() {}
-
-type AutomationsRevertUnauthorized ProblemDetails
-
-func (*AutomationsRevertUnauthorized) automationsRevertRes() {}
-
-type AutomationsRevertUnprocessableEntity ProblemDetails
-
-func (*AutomationsRevertUnprocessableEntity) automationsRevertRes() {}
-
-type AutomationsUnarchiveBadRequest ProblemDetails
-
-func (*AutomationsUnarchiveBadRequest) automationsUnarchiveRes() {}
-
-type AutomationsUnarchiveForbidden ProblemDetails
-
-func (*AutomationsUnarchiveForbidden) automationsUnarchiveRes() {}
-
-type AutomationsUnarchiveNotFound ProblemDetails
-
-func (*AutomationsUnarchiveNotFound) automationsUnarchiveRes() {}
-
-type AutomationsUnarchiveUnauthorized ProblemDetails
-
-func (*AutomationsUnarchiveUnauthorized) automationsUnarchiveRes() {}
-
-type AutomationsUpdateBadRequest ProblemDetails
-
-func (*AutomationsUpdateBadRequest) automationsUpdateRes() {}
-
-type AutomationsUpdateConflict ProblemDetails
-
-func (*AutomationsUpdateConflict) automationsUpdateRes() {}
-
-type AutomationsUpdateForbidden ProblemDetails
-
-func (*AutomationsUpdateForbidden) automationsUpdateRes() {}
-
-type AutomationsUpdateNotFound ProblemDetails
-
-func (*AutomationsUpdateNotFound) automationsUpdateRes() {}
-
-type AutomationsUpdateUnauthorized ProblemDetails
-
-func (*AutomationsUpdateUnauthorized) automationsUpdateRes() {}
-
-type AutomationsUpdateUnprocessableEntity ProblemDetails
-
-func (*AutomationsUpdateUnprocessableEntity) automationsUpdateRes() {}
-
 type BearerAuth struct {
 	Token string
 	Roles []string
@@ -2901,14 +2597,6 @@ func (s *BearerAuth) SetToken(val string) {
 func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
-
-type BrandKitGetForbidden ProblemDetails
-
-func (*BrandKitGetForbidden) brandKitGetRes() {}
-
-type BrandKitGetUnauthorized ProblemDetails
-
-func (*BrandKitGetUnauthorized) brandKitGetRes() {}
 
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
 // message in these values. A Workspace that has not saved one has the defaults and `saved` false.
@@ -3047,8 +2735,6 @@ func (s *BrandKitResource) SetFooterText(val string) {
 func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 	s.UpdatedAt = val
 }
-
-func (*BrandKitResource) brandKitGetRes() {}
 
 // The Channel a Broadcast sends on, fixed when it is created (ADR 0080).
 // Ref: #/components/schemas/BroadcastChannel
@@ -3543,8 +3229,6 @@ func (s *BroadcastReport) SetClickRate(val float32) {
 	s.ClickRate = val
 }
 
-func (*BroadcastReport) broadcastsReportRes() {}
-
 // Broadcast resource.
 // Ref: #/components/schemas/BroadcastResource
 type BroadcastResource struct {
@@ -3697,15 +3381,6 @@ func (s *BroadcastResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*BroadcastResource) broadcastsArchiveRes()    {}
-func (*BroadcastResource) broadcastsCreateRes()     {}
-func (*BroadcastResource) broadcastsGetRes()        {}
-func (*BroadcastResource) broadcastsScheduleRes()   {}
-func (*BroadcastResource) broadcastsSetSegmentRes() {}
-func (*BroadcastResource) broadcastsUnarchiveRes()  {}
-func (*BroadcastResource) broadcastsUnscheduleRes() {}
-func (*BroadcastResource) broadcastsUpdateRes()     {}
-
 // Broadcast lifecycle status.
 // Ref: #/components/schemas/BroadcastStatus
 type BroadcastStatus string
@@ -3769,66 +3444,6 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type BroadcastsArchiveBadRequest ProblemDetails
-
-func (*BroadcastsArchiveBadRequest) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveConflict ProblemDetails
-
-func (*BroadcastsArchiveConflict) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveForbidden ProblemDetails
-
-func (*BroadcastsArchiveForbidden) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveNotFound ProblemDetails
-
-func (*BroadcastsArchiveNotFound) broadcastsArchiveRes() {}
-
-type BroadcastsArchiveUnauthorized ProblemDetails
-
-func (*BroadcastsArchiveUnauthorized) broadcastsArchiveRes() {}
-
-type BroadcastsCreateBadRequest ProblemDetails
-
-func (*BroadcastsCreateBadRequest) broadcastsCreateRes() {}
-
-type BroadcastsCreateForbidden ProblemDetails
-
-func (*BroadcastsCreateForbidden) broadcastsCreateRes() {}
-
-type BroadcastsCreateUnauthorized ProblemDetails
-
-func (*BroadcastsCreateUnauthorized) broadcastsCreateRes() {}
-
-type BroadcastsCreateUnprocessableEntity ProblemDetails
-
-func (*BroadcastsCreateUnprocessableEntity) broadcastsCreateRes() {}
-
-type BroadcastsGetBadRequest ProblemDetails
-
-func (*BroadcastsGetBadRequest) broadcastsGetRes() {}
-
-type BroadcastsGetForbidden ProblemDetails
-
-func (*BroadcastsGetForbidden) broadcastsGetRes() {}
-
-type BroadcastsGetNotFound ProblemDetails
-
-func (*BroadcastsGetNotFound) broadcastsGetRes() {}
-
-type BroadcastsGetUnauthorized ProblemDetails
-
-func (*BroadcastsGetUnauthorized) broadcastsGetRes() {}
-
-type BroadcastsListBadRequest ProblemDetails
-
-func (*BroadcastsListBadRequest) broadcastsListRes() {}
-
-type BroadcastsListForbidden ProblemDetails
-
-func (*BroadcastsListForbidden) broadcastsListRes() {}
 
 // Paginated response.
 type BroadcastsListOK struct {
@@ -3894,164 +3509,8 @@ func (s *BroadcastsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*BroadcastsListOK) broadcastsListRes() {}
-
-type BroadcastsListUnauthorized ProblemDetails
-
-func (*BroadcastsListUnauthorized) broadcastsListRes() {}
-
-type BroadcastsListUnprocessableEntity ProblemDetails
-
-func (*BroadcastsListUnprocessableEntity) broadcastsListRes() {}
-
-type BroadcastsReportBadRequest ProblemDetails
-
-func (*BroadcastsReportBadRequest) broadcastsReportRes() {}
-
-type BroadcastsReportForbidden ProblemDetails
-
-func (*BroadcastsReportForbidden) broadcastsReportRes() {}
-
-type BroadcastsReportNotFound ProblemDetails
-
-func (*BroadcastsReportNotFound) broadcastsReportRes() {}
-
-type BroadcastsReportUnauthorized ProblemDetails
-
-func (*BroadcastsReportUnauthorized) broadcastsReportRes() {}
-
-type BroadcastsScheduleBadRequest ProblemDetails
-
-func (*BroadcastsScheduleBadRequest) broadcastsScheduleRes() {}
-
-type BroadcastsScheduleConflict ProblemDetails
-
-func (*BroadcastsScheduleConflict) broadcastsScheduleRes() {}
-
-type BroadcastsScheduleForbidden ProblemDetails
-
-func (*BroadcastsScheduleForbidden) broadcastsScheduleRes() {}
-
-type BroadcastsScheduleNotFound ProblemDetails
-
-func (*BroadcastsScheduleNotFound) broadcastsScheduleRes() {}
-
-type BroadcastsScheduleUnauthorized ProblemDetails
-
-func (*BroadcastsScheduleUnauthorized) broadcastsScheduleRes() {}
-
-type BroadcastsScheduleUnprocessableEntity ProblemDetails
-
-func (*BroadcastsScheduleUnprocessableEntity) broadcastsScheduleRes() {}
-
-type BroadcastsSetSegmentBadRequest ProblemDetails
-
-func (*BroadcastsSetSegmentBadRequest) broadcastsSetSegmentRes() {}
-
-type BroadcastsSetSegmentConflict ProblemDetails
-
-func (*BroadcastsSetSegmentConflict) broadcastsSetSegmentRes() {}
-
-type BroadcastsSetSegmentForbidden ProblemDetails
-
-func (*BroadcastsSetSegmentForbidden) broadcastsSetSegmentRes() {}
-
-type BroadcastsSetSegmentNotFound ProblemDetails
-
-func (*BroadcastsSetSegmentNotFound) broadcastsSetSegmentRes() {}
-
-type BroadcastsSetSegmentUnauthorized ProblemDetails
-
-func (*BroadcastsSetSegmentUnauthorized) broadcastsSetSegmentRes() {}
-
-type BroadcastsSetSegmentUnprocessableEntity ProblemDetails
-
-func (*BroadcastsSetSegmentUnprocessableEntity) broadcastsSetSegmentRes() {}
-
-type BroadcastsTestSendBadRequest ProblemDetails
-
-func (*BroadcastsTestSendBadRequest) broadcastsTestSendRes() {}
-
-type BroadcastsTestSendForbidden ProblemDetails
-
-func (*BroadcastsTestSendForbidden) broadcastsTestSendRes() {}
-
 // BroadcastsTestSendNoContent is response for BroadcastsTestSend operation.
 type BroadcastsTestSendNoContent struct{}
-
-func (*BroadcastsTestSendNoContent) broadcastsTestSendRes() {}
-
-type BroadcastsTestSendNotFound ProblemDetails
-
-func (*BroadcastsTestSendNotFound) broadcastsTestSendRes() {}
-
-type BroadcastsTestSendUnauthorized ProblemDetails
-
-func (*BroadcastsTestSendUnauthorized) broadcastsTestSendRes() {}
-
-type BroadcastsTestSendUnprocessableEntity ProblemDetails
-
-func (*BroadcastsTestSendUnprocessableEntity) broadcastsTestSendRes() {}
-
-type BroadcastsUnarchiveBadRequest ProblemDetails
-
-func (*BroadcastsUnarchiveBadRequest) broadcastsUnarchiveRes() {}
-
-type BroadcastsUnarchiveForbidden ProblemDetails
-
-func (*BroadcastsUnarchiveForbidden) broadcastsUnarchiveRes() {}
-
-type BroadcastsUnarchiveNotFound ProblemDetails
-
-func (*BroadcastsUnarchiveNotFound) broadcastsUnarchiveRes() {}
-
-type BroadcastsUnarchiveUnauthorized ProblemDetails
-
-func (*BroadcastsUnarchiveUnauthorized) broadcastsUnarchiveRes() {}
-
-type BroadcastsUnscheduleBadRequest ProblemDetails
-
-func (*BroadcastsUnscheduleBadRequest) broadcastsUnscheduleRes() {}
-
-type BroadcastsUnscheduleForbidden ProblemDetails
-
-func (*BroadcastsUnscheduleForbidden) broadcastsUnscheduleRes() {}
-
-type BroadcastsUnscheduleNotFound ProblemDetails
-
-func (*BroadcastsUnscheduleNotFound) broadcastsUnscheduleRes() {}
-
-type BroadcastsUnscheduleUnauthorized ProblemDetails
-
-func (*BroadcastsUnscheduleUnauthorized) broadcastsUnscheduleRes() {}
-
-type BroadcastsUnscheduleUnprocessableEntity ProblemDetails
-
-func (*BroadcastsUnscheduleUnprocessableEntity) broadcastsUnscheduleRes() {}
-
-type BroadcastsUpdateBadRequest ProblemDetails
-
-func (*BroadcastsUpdateBadRequest) broadcastsUpdateRes() {}
-
-type BroadcastsUpdateConflict ProblemDetails
-
-func (*BroadcastsUpdateConflict) broadcastsUpdateRes() {}
-
-type BroadcastsUpdateForbidden ProblemDetails
-
-func (*BroadcastsUpdateForbidden) broadcastsUpdateRes() {}
-
-type BroadcastsUpdateNotFound ProblemDetails
-
-func (*BroadcastsUpdateNotFound) broadcastsUpdateRes() {}
-
-type BroadcastsUpdateUnauthorized ProblemDetails
-
-func (*BroadcastsUpdateUnauthorized) broadcastsUpdateRes() {}
-
-type BroadcastsUpdateUnprocessableEntity ProblemDetails
-
-func (*BroadcastsUpdateUnprocessableEntity) broadcastsUpdateRes() {}
 
 // One header line of a Captured message.
 // Ref: #/components/schemas/CapturedMessageHeader
@@ -4266,8 +3725,6 @@ func (s *CapturedMessageResource) SetLinks(val []string) {
 	s.Links = val
 }
 
-func (*CapturedMessageResource) capturedMessagesGetRes() {}
-
 // A Captured message as the list shows it: without the content.
 // Ref: #/components/schemas/CapturedMessageSummary
 type CapturedMessageSummary struct {
@@ -4463,63 +3920,11 @@ func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
 	}
 }
 
-type CapturedMessagesDeleteAllForbidden ProblemDetails
-
-func (*CapturedMessagesDeleteAllForbidden) capturedMessagesDeleteAllRes() {}
-
 // CapturedMessagesDeleteAllNoContent is response for CapturedMessagesDeleteAll operation.
 type CapturedMessagesDeleteAllNoContent struct{}
 
-func (*CapturedMessagesDeleteAllNoContent) capturedMessagesDeleteAllRes() {}
-
-type CapturedMessagesDeleteAllUnauthorized ProblemDetails
-
-func (*CapturedMessagesDeleteAllUnauthorized) capturedMessagesDeleteAllRes() {}
-
-type CapturedMessagesDeleteBadRequest ProblemDetails
-
-func (*CapturedMessagesDeleteBadRequest) capturedMessagesDeleteRes() {}
-
-type CapturedMessagesDeleteForbidden ProblemDetails
-
-func (*CapturedMessagesDeleteForbidden) capturedMessagesDeleteRes() {}
-
 // CapturedMessagesDeleteNoContent is response for CapturedMessagesDelete operation.
 type CapturedMessagesDeleteNoContent struct{}
-
-func (*CapturedMessagesDeleteNoContent) capturedMessagesDeleteRes() {}
-
-type CapturedMessagesDeleteNotFound ProblemDetails
-
-func (*CapturedMessagesDeleteNotFound) capturedMessagesDeleteRes() {}
-
-type CapturedMessagesDeleteUnauthorized ProblemDetails
-
-func (*CapturedMessagesDeleteUnauthorized) capturedMessagesDeleteRes() {}
-
-type CapturedMessagesGetBadRequest ProblemDetails
-
-func (*CapturedMessagesGetBadRequest) capturedMessagesGetRes() {}
-
-type CapturedMessagesGetForbidden ProblemDetails
-
-func (*CapturedMessagesGetForbidden) capturedMessagesGetRes() {}
-
-type CapturedMessagesGetNotFound ProblemDetails
-
-func (*CapturedMessagesGetNotFound) capturedMessagesGetRes() {}
-
-type CapturedMessagesGetUnauthorized ProblemDetails
-
-func (*CapturedMessagesGetUnauthorized) capturedMessagesGetRes() {}
-
-type CapturedMessagesListBadRequest ProblemDetails
-
-func (*CapturedMessagesListBadRequest) capturedMessagesListRes() {}
-
-type CapturedMessagesListForbidden ProblemDetails
-
-func (*CapturedMessagesListForbidden) capturedMessagesListRes() {}
 
 // Paginated response.
 type CapturedMessagesListOK struct {
@@ -4584,16 +3989,6 @@ func (s *CapturedMessagesListOK) SetTotalItems(val int32) {
 func (s *CapturedMessagesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*CapturedMessagesListOK) capturedMessagesListRes() {}
-
-type CapturedMessagesListUnauthorized ProblemDetails
-
-func (*CapturedMessagesListUnauthorized) capturedMessagesListRes() {}
-
-type CapturedMessagesListUnprocessableEntity ProblemDetails
-
-func (*CapturedMessagesListUnprocessableEntity) capturedMessagesListRes() {}
 
 // The CNAME record to publish: `host` must point at `target`.
 // Ref: #/components/schemas/CnameRecord
@@ -5834,24 +5229,6 @@ func (s *ConfirmationResource) SetBrand(val OptNilString) {
 func (s *ConfirmationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
-
-func (*ConfirmationResource) confirmationsCreateRes() {}
-
-type ConfirmationsCreateBadRequest ProblemDetails
-
-func (*ConfirmationsCreateBadRequest) confirmationsCreateRes() {}
-
-type ConfirmationsCreateForbidden ProblemDetails
-
-func (*ConfirmationsCreateForbidden) confirmationsCreateRes() {}
-
-type ConfirmationsCreateUnauthorized ProblemDetails
-
-func (*ConfirmationsCreateUnauthorized) confirmationsCreateRes() {}
-
-type ConfirmationsCreateUnprocessableEntity ProblemDetails
-
-func (*ConfirmationsCreateUnprocessableEntity) confirmationsCreateRes() {}
 
 // A Channel a destination can opt out on or confirm on.
 // Ref: #/components/schemas/ConsentChannel
@@ -7456,107 +6833,11 @@ func (s *ContactResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*ContactResource) contactsCreateRes() {}
-func (*ContactResource) contactsGetRes()    {}
-func (*ContactResource) contactsUpdateRes() {}
-
-type ContactsBatchUpsertBadRequest ProblemDetails
-
-func (*ContactsBatchUpsertBadRequest) contactsBatchUpsertRes() {}
-
-type ContactsBatchUpsertForbidden ProblemDetails
-
-func (*ContactsBatchUpsertForbidden) contactsBatchUpsertRes() {}
-
-type ContactsBatchUpsertUnauthorized ProblemDetails
-
-func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
-
-type ContactsBatchUpsertUnprocessableEntity ProblemDetails
-
-func (*ContactsBatchUpsertUnprocessableEntity) contactsBatchUpsertRes() {}
-
-type ContactsCreateBadRequest ProblemDetails
-
-func (*ContactsCreateBadRequest) contactsCreateRes() {}
-
-type ContactsCreateConflict ProblemDetails
-
-func (*ContactsCreateConflict) contactsCreateRes() {}
-
-type ContactsCreateForbidden ProblemDetails
-
-func (*ContactsCreateForbidden) contactsCreateRes() {}
-
-type ContactsCreateUnauthorized ProblemDetails
-
-func (*ContactsCreateUnauthorized) contactsCreateRes() {}
-
-type ContactsCreateUnprocessableEntity ProblemDetails
-
-func (*ContactsCreateUnprocessableEntity) contactsCreateRes() {}
-
-type ContactsDeleteBadRequest ProblemDetails
-
-func (*ContactsDeleteBadRequest) contactsDeleteRes() {}
-
-type ContactsDeleteForbidden ProblemDetails
-
-func (*ContactsDeleteForbidden) contactsDeleteRes() {}
-
 // ContactsDeleteNoContent is response for ContactsDelete operation.
 type ContactsDeleteNoContent struct{}
 
-func (*ContactsDeleteNoContent) contactsDeleteRes() {}
-
-type ContactsDeleteNotFound ProblemDetails
-
-func (*ContactsDeleteNotFound) contactsDeleteRes() {}
-
-type ContactsDeleteUnauthorized ProblemDetails
-
-func (*ContactsDeleteUnauthorized) contactsDeleteRes() {}
-
-type ContactsDeleteUnprocessableEntity ProblemDetails
-
-func (*ContactsDeleteUnprocessableEntity) contactsDeleteRes() {}
-
-type ContactsEraseByBadRequest ProblemDetails
-
-func (*ContactsEraseByBadRequest) contactsEraseByRes() {}
-
-type ContactsEraseByForbidden ProblemDetails
-
-func (*ContactsEraseByForbidden) contactsEraseByRes() {}
-
 // ContactsEraseByNoContent is response for ContactsEraseBy operation.
 type ContactsEraseByNoContent struct{}
-
-func (*ContactsEraseByNoContent) contactsEraseByRes() {}
-
-type ContactsEraseByNotFound ProblemDetails
-
-func (*ContactsEraseByNotFound) contactsEraseByRes() {}
-
-type ContactsEraseByUnauthorized ProblemDetails
-
-func (*ContactsEraseByUnauthorized) contactsEraseByRes() {}
-
-type ContactsEraseByUnprocessableEntity ProblemDetails
-
-func (*ContactsEraseByUnprocessableEntity) contactsEraseByRes() {}
-
-type ContactsExportBadRequest ProblemDetails
-
-func (*ContactsExportBadRequest) contactsExportRes() {}
-
-type ContactsExportForbidden ProblemDetails
-
-func (*ContactsExportForbidden) contactsExportRes() {}
-
-type ContactsExportNotFound ProblemDetails
-
-func (*ContactsExportNotFound) contactsExportRes() {}
 
 type ContactsExportOKApplicationOctetStream struct {
 	Data io.Reader
@@ -7599,38 +6880,6 @@ func (s *ContactsExportOKApplicationOctetStreamHeaders) SetResponse(val Contacts
 }
 
 func (*ContactsExportOKApplicationOctetStreamHeaders) contactsExportRes() {}
-
-type ContactsExportUnauthorized ProblemDetails
-
-func (*ContactsExportUnauthorized) contactsExportRes() {}
-
-type ContactsExportUnprocessableEntity ProblemDetails
-
-func (*ContactsExportUnprocessableEntity) contactsExportRes() {}
-
-type ContactsGetBadRequest ProblemDetails
-
-func (*ContactsGetBadRequest) contactsGetRes() {}
-
-type ContactsGetForbidden ProblemDetails
-
-func (*ContactsGetForbidden) contactsGetRes() {}
-
-type ContactsGetNotFound ProblemDetails
-
-func (*ContactsGetNotFound) contactsGetRes() {}
-
-type ContactsGetUnauthorized ProblemDetails
-
-func (*ContactsGetUnauthorized) contactsGetRes() {}
-
-type ContactsListBadRequest ProblemDetails
-
-func (*ContactsListBadRequest) contactsListRes() {}
-
-type ContactsListForbidden ProblemDetails
-
-func (*ContactsListForbidden) contactsListRes() {}
 
 // Paginated response.
 type ContactsListOK struct {
@@ -7696,40 +6945,6 @@ func (s *ContactsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*ContactsListOK) contactsListRes() {}
-
-type ContactsListUnauthorized ProblemDetails
-
-func (*ContactsListUnauthorized) contactsListRes() {}
-
-type ContactsListUnprocessableEntity ProblemDetails
-
-func (*ContactsListUnprocessableEntity) contactsListRes() {}
-
-type ContactsUpdateBadRequest ProblemDetails
-
-func (*ContactsUpdateBadRequest) contactsUpdateRes() {}
-
-type ContactsUpdateConflict ProblemDetails
-
-func (*ContactsUpdateConflict) contactsUpdateRes() {}
-
-type ContactsUpdateForbidden ProblemDetails
-
-func (*ContactsUpdateForbidden) contactsUpdateRes() {}
-
-type ContactsUpdateNotFound ProblemDetails
-
-func (*ContactsUpdateNotFound) contactsUpdateRes() {}
-
-type ContactsUpdateUnauthorized ProblemDetails
-
-func (*ContactsUpdateUnauthorized) contactsUpdateRes() {}
-
-type ContactsUpdateUnprocessableEntity ProblemDetails
-
-func (*ContactsUpdateUnprocessableEntity) contactsUpdateRes() {}
-
 type CountryCode string
 
 // Ref: #/components/schemas/CreateApiTokenInput
@@ -7794,9 +7009,6 @@ func (s *CreateApiTokenResponse) SetToken(val string) {
 func (s *CreateApiTokenResponse) SetTokenInfo(val ApiTokenInfo) {
 	s.TokenInfo = val
 }
-
-func (*CreateApiTokenResponse) authTokensBootstrapRes() {}
-func (*CreateApiTokenResponse) authTokensCreateRes()    {}
 
 // Request body for creating an automation (always created inactive).
 // Ref: #/components/schemas/CreateAutomationInput
@@ -8616,8 +7828,6 @@ func (s *CustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*CustomFieldResource) customFieldsUpdateRes() {}
-
 // A Custom field's value type.
 // Ref: #/components/schemas/CustomFieldType
 type CustomFieldType string
@@ -8674,10 +7884,6 @@ func (s *CustomFieldType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type CustomFieldsListForbidden ProblemDetails
-
-func (*CustomFieldsListForbidden) customFieldsListRes() {}
 
 // Paginated response.
 type CustomFieldsListOK struct {
@@ -8742,32 +7948,6 @@ func (s *CustomFieldsListOK) SetTotalItems(val int32) {
 func (s *CustomFieldsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*CustomFieldsListOK) customFieldsListRes() {}
-
-type CustomFieldsListUnauthorized ProblemDetails
-
-func (*CustomFieldsListUnauthorized) customFieldsListRes() {}
-
-type CustomFieldsUpdateBadRequest ProblemDetails
-
-func (*CustomFieldsUpdateBadRequest) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateForbidden ProblemDetails
-
-func (*CustomFieldsUpdateForbidden) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateNotFound ProblemDetails
-
-func (*CustomFieldsUpdateNotFound) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateUnauthorized ProblemDetails
-
-func (*CustomFieldsUpdateUnauthorized) customFieldsUpdateRes() {}
-
-type CustomFieldsUpdateUnprocessableEntity ProblemDetails
-
-func (*CustomFieldsUpdateUnprocessableEntity) customFieldsUpdateRes() {}
 
 // A DNS record the caller publishes to authenticate a Sending domain.
 // Ref: #/components/schemas/DnsRecord
@@ -8914,8 +8094,6 @@ func (s *DryRunHttpStepResult) SetErrorKind(val OptAutomationHttpErrorKind) {
 func (s *DryRunHttpStepResult) SetDetail(val OptString) {
 	s.Detail = val
 }
-
-func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
 
 // Request body for dry-running a Rule on a stored Event.
 // Ref: #/components/schemas/DryRunRuleInput
@@ -9193,22 +8371,6 @@ func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
 	}
 }
 
-type EmailLintLintBadRequest ProblemDetails
-
-func (*EmailLintLintBadRequest) emailLintLintRes() {}
-
-type EmailLintLintForbidden ProblemDetails
-
-func (*EmailLintLintForbidden) emailLintLintRes() {}
-
-type EmailLintLintUnauthorized ProblemDetails
-
-func (*EmailLintLintUnauthorized) emailLintLintRes() {}
-
-type EmailLintLintUnprocessableEntity ProblemDetails
-
-func (*EmailLintLintUnprocessableEntity) emailLintLintRes() {}
-
 // One attribute of a node or mark in the editor's document.
 // Ref: #/components/schemas/EmailSchemaAttribute
 type EmailSchemaAttribute struct {
@@ -9261,14 +8423,6 @@ func (s *EmailSchemaAttribute) SetAllowed(val []string) {
 func (s *EmailSchemaAttribute) SetRule(val string) {
 	s.Rule = val
 }
-
-type EmailSchemaGetForbidden ProblemDetails
-
-func (*EmailSchemaGetForbidden) emailSchemaGetRes() {}
-
-type EmailSchemaGetUnauthorized ProblemDetails
-
-func (*EmailSchemaGetUnauthorized) emailSchemaGetRes() {}
 
 // The editor's document format: what an agent writes as `doc`.
 // Ref: #/components/schemas/EmailSchemaResult
@@ -9334,8 +8488,6 @@ func (s *EmailSchemaResult) SetRules(val []string) {
 func (s *EmailSchemaResult) SetExample(val EditorDocument) {
 	s.Example = val
 }
-
-func (*EmailSchemaResult) emailSchemaGetRes() {}
 
 // Mark types by name (bold, link ...), put in a text node's `marks`.
 type EmailSchemaResultMarks map[string]EmailSchemaType
@@ -9413,30 +8565,6 @@ func (s *EmailSchemaTypeAttrs) init() EmailSchemaTypeAttrs {
 	}
 	return m
 }
-
-type EmailsSendBadRequest ProblemDetails
-
-func (*EmailsSendBadRequest) emailsSendRes() {}
-
-type EmailsSendConflict ProblemDetails
-
-func (*EmailsSendConflict) emailsSendRes() {}
-
-type EmailsSendForbidden ProblemDetails
-
-func (*EmailsSendForbidden) emailsSendRes() {}
-
-type EmailsSendNotFound ProblemDetails
-
-func (*EmailsSendNotFound) emailsSendRes() {}
-
-type EmailsSendUnauthorized ProblemDetails
-
-func (*EmailsSendUnauthorized) emailsSendRes() {}
-
-type EmailsSendUnprocessableEntity ProblemDetails
-
-func (*EmailsSendUnprocessableEntity) emailsSendRes() {}
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/EnrollmentFailure
@@ -9660,8 +8788,6 @@ func (s *EnrollmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*EnrollmentResource) enrollmentsGetRes() {}
-
 // Where a Contact is in an Automation.
 // Ref: #/components/schemas/EnrollmentStatus
 type EnrollmentStatus string
@@ -9725,34 +8851,6 @@ func (s *EnrollmentStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type EnrollmentsGetBadRequest ProblemDetails
-
-func (*EnrollmentsGetBadRequest) enrollmentsGetRes() {}
-
-type EnrollmentsGetForbidden ProblemDetails
-
-func (*EnrollmentsGetForbidden) enrollmentsGetRes() {}
-
-type EnrollmentsGetNotFound ProblemDetails
-
-func (*EnrollmentsGetNotFound) enrollmentsGetRes() {}
-
-type EnrollmentsGetUnauthorized ProblemDetails
-
-func (*EnrollmentsGetUnauthorized) enrollmentsGetRes() {}
-
-type EnrollmentsListBadRequest ProblemDetails
-
-func (*EnrollmentsListBadRequest) enrollmentsListRes() {}
-
-type EnrollmentsListForbidden ProblemDetails
-
-func (*EnrollmentsListForbidden) enrollmentsListRes() {}
-
-type EnrollmentsListNotFound ProblemDetails
-
-func (*EnrollmentsListNotFound) enrollmentsListRes() {}
 
 // Paginated response.
 type EnrollmentsListOK struct {
@@ -9818,12 +8916,6 @@ func (s *EnrollmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*EnrollmentsListOK) enrollmentsListRes() {}
-
-type EnrollmentsListUnauthorized ProblemDetails
-
-func (*EnrollmentsListUnauthorized) enrollmentsListRes() {}
-
 type EntityId int64
 
 // Distinct event action.
@@ -9842,14 +8934,6 @@ func (s *EventActionResource) GetAction() string {
 func (s *EventActionResource) SetAction(val string) {
 	s.Action = val
 }
-
-type EventActionsListBadRequest ProblemDetails
-
-func (*EventActionsListBadRequest) eventActionsListRes() {}
-
-type EventActionsListForbidden ProblemDetails
-
-func (*EventActionsListForbidden) eventActionsListRes() {}
 
 // Paginated response.
 type EventActionsListOK struct {
@@ -9914,16 +8998,6 @@ func (s *EventActionsListOK) SetTotalItems(val int32) {
 func (s *EventActionsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*EventActionsListOK) eventActionsListRes() {}
-
-type EventActionsListUnauthorized ProblemDetails
-
-func (*EventActionsListUnauthorized) eventActionsListRes() {}
-
-type EventActionsListUnprocessableEntity ProblemDetails
-
-func (*EventActionsListUnprocessableEntity) eventActionsListRes() {}
 
 // Per-item result of an events batch, in request order.
 // Ref: #/components/schemas/EventBatchItemResult
@@ -10100,54 +9174,8 @@ func (s *EventInput) SetClientEventId(val OptNilString) {
 	s.ClientEventId = val
 }
 
-type EventsBatchSubmitBadRequest ProblemDetails
-
-func (*EventsBatchSubmitBadRequest) eventsBatchSubmitRes() {}
-
-type EventsBatchSubmitForbidden ProblemDetails
-
-func (*EventsBatchSubmitForbidden) eventsBatchSubmitRes() {}
-
-type EventsBatchSubmitUnauthorized ProblemDetails
-
-func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
-
-type EventsBatchSubmitUnprocessableEntity ProblemDetails
-
-func (*EventsBatchSubmitUnprocessableEntity) eventsBatchSubmitRes() {}
-
-type EventsCreateBadRequest ProblemDetails
-
-func (*EventsCreateBadRequest) eventsCreateRes() {}
-
-type EventsCreateForbidden ProblemDetails
-
-func (*EventsCreateForbidden) eventsCreateRes() {}
-
 // EventsCreateNoContent is response for EventsCreate operation.
 type EventsCreateNoContent struct{}
-
-func (*EventsCreateNoContent) eventsCreateRes() {}
-
-type EventsCreateUnauthorized ProblemDetails
-
-func (*EventsCreateUnauthorized) eventsCreateRes() {}
-
-type EventsCreateUnprocessableEntity ProblemDetails
-
-func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
-
-type ExportAuditBadRequest ProblemDetails
-
-func (*ExportAuditBadRequest) exportAuditRes() {}
-
-type ExportAuditForbidden ProblemDetails
-
-func (*ExportAuditForbidden) exportAuditRes() {}
-
-type ExportAuditNotFound ProblemDetails
-
-func (*ExportAuditNotFound) exportAuditRes() {}
 
 type ExportAuditOK struct {
 	Data io.Reader
@@ -10189,24 +9217,6 @@ func (s *ExportAuditOKHeaders) SetResponse(val ExportAuditOK) {
 	s.Response = val
 }
 
-func (*ExportAuditOKHeaders) exportAuditRes() {}
-
-type ExportAuditUnauthorized ProblemDetails
-
-func (*ExportAuditUnauthorized) exportAuditRes() {}
-
-type ExportContactsBadRequest ProblemDetails
-
-func (*ExportContactsBadRequest) exportContactsRes() {}
-
-type ExportContactsForbidden ProblemDetails
-
-func (*ExportContactsForbidden) exportContactsRes() {}
-
-type ExportContactsNotFound ProblemDetails
-
-func (*ExportContactsNotFound) exportContactsRes() {}
-
 type ExportContactsOK struct {
 	Data io.Reader
 }
@@ -10246,24 +9256,6 @@ func (s *ExportContactsOKHeaders) SetXNextCursor(val string) {
 func (s *ExportContactsOKHeaders) SetResponse(val ExportContactsOK) {
 	s.Response = val
 }
-
-func (*ExportContactsOKHeaders) exportContactsRes() {}
-
-type ExportContactsUnauthorized ProblemDetails
-
-func (*ExportContactsUnauthorized) exportContactsRes() {}
-
-type ExportErasuresBadRequest ProblemDetails
-
-func (*ExportErasuresBadRequest) exportErasuresRes() {}
-
-type ExportErasuresForbidden ProblemDetails
-
-func (*ExportErasuresForbidden) exportErasuresRes() {}
-
-type ExportErasuresNotFound ProblemDetails
-
-func (*ExportErasuresNotFound) exportErasuresRes() {}
 
 type ExportErasuresOK struct {
 	Data io.Reader
@@ -10305,24 +9297,6 @@ func (s *ExportErasuresOKHeaders) SetResponse(val ExportErasuresOK) {
 	s.Response = val
 }
 
-func (*ExportErasuresOKHeaders) exportErasuresRes() {}
-
-type ExportErasuresUnauthorized ProblemDetails
-
-func (*ExportErasuresUnauthorized) exportErasuresRes() {}
-
-type ExportEventsBadRequest ProblemDetails
-
-func (*ExportEventsBadRequest) exportEventsRes() {}
-
-type ExportEventsForbidden ProblemDetails
-
-func (*ExportEventsForbidden) exportEventsRes() {}
-
-type ExportEventsNotFound ProblemDetails
-
-func (*ExportEventsNotFound) exportEventsRes() {}
-
 type ExportEventsOK struct {
 	Data io.Reader
 }
@@ -10363,24 +9337,6 @@ func (s *ExportEventsOKHeaders) SetResponse(val ExportEventsOK) {
 	s.Response = val
 }
 
-func (*ExportEventsOKHeaders) exportEventsRes() {}
-
-type ExportEventsUnauthorized ProblemDetails
-
-func (*ExportEventsUnauthorized) exportEventsRes() {}
-
-type ExportMessagesBadRequest ProblemDetails
-
-func (*ExportMessagesBadRequest) exportMessagesRes() {}
-
-type ExportMessagesForbidden ProblemDetails
-
-func (*ExportMessagesForbidden) exportMessagesRes() {}
-
-type ExportMessagesNotFound ProblemDetails
-
-func (*ExportMessagesNotFound) exportMessagesRes() {}
-
 type ExportMessagesOK struct {
 	Data io.Reader
 }
@@ -10420,12 +9376,6 @@ func (s *ExportMessagesOKHeaders) SetXNextCursor(val string) {
 func (s *ExportMessagesOKHeaders) SetResponse(val ExportMessagesOK) {
 	s.Response = val
 }
-
-func (*ExportMessagesOKHeaders) exportMessagesRes() {}
-
-type ExportMessagesUnauthorized ProblemDetails
-
-func (*ExportMessagesUnauthorized) exportMessagesRes() {}
 
 // Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
 // status and its remaining recipients send once it lifts, and an Automation's email steps wait.
@@ -10507,186 +9457,6 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 }
 
 type ImageUrl string
-
-// The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it.
-// Ref: #/components/schemas/InUseProblemDetails
-type InUseProblemDetails struct {
-	// Why the request was refused, when the client should act on it.
-	Code OptProblemCode `json:"code"`
-	// A URI reference that identifies the problem type.
-	Type OptString `json:"type"`
-	// A short, human-readable summary of the problem type.
-	Title OptString `json:"title"`
-	// HTTP status code.
-	Status OptInt32 `json:"status"`
-	// A human-readable explanation specific to this occurrence.
-	Detail OptString `json:"detail"`
-	// A URI reference that identifies the specific occurrence.
-	Instance OptString `json:"instance"`
-	// Validation errors grouped by field.
-	Errors OptInUseProblemDetailsErrors `json:"errors"`
-	// Form-level validation error.
-	Form OptString `json:"form"`
-	// Field validation errors.
-	Fields OptInUseProblemDetailsFields `json:"fields"`
-	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
-	RetryAfter OptInt32 `json:"retryAfter"`
-	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
-	Debug OptProblemDebug `json:"debug"`
-	// The live rows that use the one a removal was refused for, never empty.
-	UsedBy []UsedBy `json:"usedBy"`
-}
-
-// GetCode returns the value of Code.
-func (s *InUseProblemDetails) GetCode() OptProblemCode {
-	return s.Code
-}
-
-// GetType returns the value of Type.
-func (s *InUseProblemDetails) GetType() OptString {
-	return s.Type
-}
-
-// GetTitle returns the value of Title.
-func (s *InUseProblemDetails) GetTitle() OptString {
-	return s.Title
-}
-
-// GetStatus returns the value of Status.
-func (s *InUseProblemDetails) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// GetDetail returns the value of Detail.
-func (s *InUseProblemDetails) GetDetail() OptString {
-	return s.Detail
-}
-
-// GetInstance returns the value of Instance.
-func (s *InUseProblemDetails) GetInstance() OptString {
-	return s.Instance
-}
-
-// GetErrors returns the value of Errors.
-func (s *InUseProblemDetails) GetErrors() OptInUseProblemDetailsErrors {
-	return s.Errors
-}
-
-// GetForm returns the value of Form.
-func (s *InUseProblemDetails) GetForm() OptString {
-	return s.Form
-}
-
-// GetFields returns the value of Fields.
-func (s *InUseProblemDetails) GetFields() OptInUseProblemDetailsFields {
-	return s.Fields
-}
-
-// GetRetryAfter returns the value of RetryAfter.
-func (s *InUseProblemDetails) GetRetryAfter() OptInt32 {
-	return s.RetryAfter
-}
-
-// GetDebug returns the value of Debug.
-func (s *InUseProblemDetails) GetDebug() OptProblemDebug {
-	return s.Debug
-}
-
-// GetUsedBy returns the value of UsedBy.
-func (s *InUseProblemDetails) GetUsedBy() []UsedBy {
-	return s.UsedBy
-}
-
-// SetCode sets the value of Code.
-func (s *InUseProblemDetails) SetCode(val OptProblemCode) {
-	s.Code = val
-}
-
-// SetType sets the value of Type.
-func (s *InUseProblemDetails) SetType(val OptString) {
-	s.Type = val
-}
-
-// SetTitle sets the value of Title.
-func (s *InUseProblemDetails) SetTitle(val OptString) {
-	s.Title = val
-}
-
-// SetStatus sets the value of Status.
-func (s *InUseProblemDetails) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// SetDetail sets the value of Detail.
-func (s *InUseProblemDetails) SetDetail(val OptString) {
-	s.Detail = val
-}
-
-// SetInstance sets the value of Instance.
-func (s *InUseProblemDetails) SetInstance(val OptString) {
-	s.Instance = val
-}
-
-// SetErrors sets the value of Errors.
-func (s *InUseProblemDetails) SetErrors(val OptInUseProblemDetailsErrors) {
-	s.Errors = val
-}
-
-// SetForm sets the value of Form.
-func (s *InUseProblemDetails) SetForm(val OptString) {
-	s.Form = val
-}
-
-// SetFields sets the value of Fields.
-func (s *InUseProblemDetails) SetFields(val OptInUseProblemDetailsFields) {
-	s.Fields = val
-}
-
-// SetRetryAfter sets the value of RetryAfter.
-func (s *InUseProblemDetails) SetRetryAfter(val OptInt32) {
-	s.RetryAfter = val
-}
-
-// SetDebug sets the value of Debug.
-func (s *InUseProblemDetails) SetDebug(val OptProblemDebug) {
-	s.Debug = val
-}
-
-// SetUsedBy sets the value of UsedBy.
-func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
-	s.UsedBy = val
-}
-
-func (*InUseProblemDetails) automationsArchiveRes()   {}
-func (*InUseProblemDetails) customFieldsUpdateRes()   {}
-func (*InUseProblemDetails) integrationsDeleteRes()   {}
-func (*InUseProblemDetails) segmentsArchiveRes()      {}
-func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
-func (*InUseProblemDetails) tagsDeleteRes()           {}
-
-// Validation errors grouped by field.
-type InUseProblemDetailsErrors map[string][]string
-
-func (s *InUseProblemDetailsErrors) init() InUseProblemDetailsErrors {
-	m := *s
-	if m == nil {
-		m = map[string][]string{}
-		*s = m
-	}
-	return m
-}
-
-// Field validation errors.
-type InUseProblemDetailsFields map[string]string
-
-func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
-	m := *s
-	if m == nil {
-		m = map[string]string{}
-		*s = m
-	}
-	return m
-}
 
 // The Test inbox has no settings.
 // Ref: #/components/schemas/InboxConfig
@@ -11450,75 +10220,8 @@ func (s *IntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*IntegrationResource) integrationsCreateRes()        {}
-func (*IntegrationResource) integrationsGetRes()           {}
-func (*IntegrationResource) integrationsRegenerateKeyRes() {}
-func (*IntegrationResource) integrationsUpdateRes()        {}
-
-type IntegrationsCreateBadRequest ProblemDetails
-
-func (*IntegrationsCreateBadRequest) integrationsCreateRes() {}
-
-type IntegrationsCreateConflict ProblemDetails
-
-func (*IntegrationsCreateConflict) integrationsCreateRes() {}
-
-type IntegrationsCreateForbidden ProblemDetails
-
-func (*IntegrationsCreateForbidden) integrationsCreateRes() {}
-
-type IntegrationsCreateUnauthorized ProblemDetails
-
-func (*IntegrationsCreateUnauthorized) integrationsCreateRes() {}
-
-type IntegrationsCreateUnprocessableEntity ProblemDetails
-
-func (*IntegrationsCreateUnprocessableEntity) integrationsCreateRes() {}
-
-type IntegrationsDeleteBadRequest ProblemDetails
-
-func (*IntegrationsDeleteBadRequest) integrationsDeleteRes() {}
-
-type IntegrationsDeleteForbidden ProblemDetails
-
-func (*IntegrationsDeleteForbidden) integrationsDeleteRes() {}
-
 // IntegrationsDeleteNoContent is response for IntegrationsDelete operation.
 type IntegrationsDeleteNoContent struct{}
-
-func (*IntegrationsDeleteNoContent) integrationsDeleteRes() {}
-
-type IntegrationsDeleteNotFound ProblemDetails
-
-func (*IntegrationsDeleteNotFound) integrationsDeleteRes() {}
-
-type IntegrationsDeleteUnauthorized ProblemDetails
-
-func (*IntegrationsDeleteUnauthorized) integrationsDeleteRes() {}
-
-type IntegrationsGetBadRequest ProblemDetails
-
-func (*IntegrationsGetBadRequest) integrationsGetRes() {}
-
-type IntegrationsGetForbidden ProblemDetails
-
-func (*IntegrationsGetForbidden) integrationsGetRes() {}
-
-type IntegrationsGetNotFound ProblemDetails
-
-func (*IntegrationsGetNotFound) integrationsGetRes() {}
-
-type IntegrationsGetUnauthorized ProblemDetails
-
-func (*IntegrationsGetUnauthorized) integrationsGetRes() {}
-
-type IntegrationsListBadRequest ProblemDetails
-
-func (*IntegrationsListBadRequest) integrationsListRes() {}
-
-type IntegrationsListForbidden ProblemDetails
-
-func (*IntegrationsListForbidden) integrationsListRes() {}
 
 // Paginated response.
 type IntegrationsListOK struct {
@@ -11583,60 +10286,6 @@ func (s *IntegrationsListOK) SetTotalItems(val int32) {
 func (s *IntegrationsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*IntegrationsListOK) integrationsListRes() {}
-
-type IntegrationsListUnauthorized ProblemDetails
-
-func (*IntegrationsListUnauthorized) integrationsListRes() {}
-
-type IntegrationsListUnprocessableEntity ProblemDetails
-
-func (*IntegrationsListUnprocessableEntity) integrationsListRes() {}
-
-type IntegrationsRegenerateKeyBadRequest ProblemDetails
-
-func (*IntegrationsRegenerateKeyBadRequest) integrationsRegenerateKeyRes() {}
-
-type IntegrationsRegenerateKeyForbidden ProblemDetails
-
-func (*IntegrationsRegenerateKeyForbidden) integrationsRegenerateKeyRes() {}
-
-type IntegrationsRegenerateKeyNotFound ProblemDetails
-
-func (*IntegrationsRegenerateKeyNotFound) integrationsRegenerateKeyRes() {}
-
-type IntegrationsRegenerateKeyUnauthorized ProblemDetails
-
-func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
-
-type IntegrationsRegenerateKeyUnprocessableEntity ProblemDetails
-
-func (*IntegrationsRegenerateKeyUnprocessableEntity) integrationsRegenerateKeyRes() {}
-
-type IntegrationsUpdateBadRequest ProblemDetails
-
-func (*IntegrationsUpdateBadRequest) integrationsUpdateRes() {}
-
-type IntegrationsUpdateConflict ProblemDetails
-
-func (*IntegrationsUpdateConflict) integrationsUpdateRes() {}
-
-type IntegrationsUpdateForbidden ProblemDetails
-
-func (*IntegrationsUpdateForbidden) integrationsUpdateRes() {}
-
-type IntegrationsUpdateNotFound ProblemDetails
-
-func (*IntegrationsUpdateNotFound) integrationsUpdateRes() {}
-
-type IntegrationsUpdateUnauthorized ProblemDetails
-
-func (*IntegrationsUpdateUnauthorized) integrationsUpdateRes() {}
-
-type IntegrationsUpdateUnprocessableEntity ProblemDetails
-
-func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
 
 // Request body for issuing a Telegram start link.
 // Ref: #/components/schemas/IssueTelegramStartLinkInput
@@ -11842,8 +10491,6 @@ func (s *LintEmailResult) SetErrors(val []LintFinding) {
 func (s *LintEmailResult) SetWarnings(val []LintFinding) {
 	s.Warnings = val
 }
-
-func (*LintEmailResult) emailLintLintRes() {}
 
 // One finding of the lint over a message's rendered HTML. `message` is fixed text of the server;
 // `element` and `detail` quote the message or the Brand kit and are untrusted data.
@@ -13127,98 +11774,6 @@ func (o OptEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEntityId) Or(d EntityId) EntityId {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInUseProblemDetailsErrors returns new OptInUseProblemDetailsErrors with value set to v.
-func NewOptInUseProblemDetailsErrors(v InUseProblemDetailsErrors) OptInUseProblemDetailsErrors {
-	return OptInUseProblemDetailsErrors{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInUseProblemDetailsErrors is optional InUseProblemDetailsErrors.
-type OptInUseProblemDetailsErrors struct {
-	Value InUseProblemDetailsErrors
-	Set   bool
-}
-
-// IsSet returns true if OptInUseProblemDetailsErrors was set.
-func (o OptInUseProblemDetailsErrors) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInUseProblemDetailsErrors) Reset() {
-	var v InUseProblemDetailsErrors
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInUseProblemDetailsErrors) SetTo(v InUseProblemDetailsErrors) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInUseProblemDetailsErrors) Get() (v InUseProblemDetailsErrors, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInUseProblemDetailsErrors) Or(d InUseProblemDetailsErrors) InUseProblemDetailsErrors {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptInUseProblemDetailsFields returns new OptInUseProblemDetailsFields with value set to v.
-func NewOptInUseProblemDetailsFields(v InUseProblemDetailsFields) OptInUseProblemDetailsFields {
-	return OptInUseProblemDetailsFields{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptInUseProblemDetailsFields is optional InUseProblemDetailsFields.
-type OptInUseProblemDetailsFields struct {
-	Value InUseProblemDetailsFields
-	Set   bool
-}
-
-// IsSet returns true if OptInUseProblemDetailsFields was set.
-func (o OptInUseProblemDetailsFields) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptInUseProblemDetailsFields) Reset() {
-	var v InUseProblemDetailsFields
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptInUseProblemDetailsFields) SetTo(v InUseProblemDetailsFields) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptInUseProblemDetailsFields) Get() (v InUseProblemDetailsFields, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptInUseProblemDetailsFields) Or(d InUseProblemDetailsFields) InUseProblemDetailsFields {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -15345,10 +13900,6 @@ func (s *PresetResource) SetParamsSchema(val JsonObject) {
 	s.ParamsSchema = val
 }
 
-type PresetsListForbidden ProblemDetails
-
-func (*PresetsListForbidden) presetsListRes() {}
-
 // Paginated response.
 type PresetsListOK struct {
 	// List of items.
@@ -15413,12 +13964,6 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*PresetsListOK) presetsListRes() {}
-
-type PresetsListUnauthorized ProblemDetails
-
-func (*PresetsListUnauthorized) presetsListRes() {}
-
 // Request body for previewing a condition's segment.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
@@ -15452,8 +13997,6 @@ func (s *PreviewSegmentResult) GetCount() int32 {
 func (s *PreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
 }
-
-func (*PreviewSegmentResult) segmentsPreviewRes() {}
 
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
@@ -15610,6 +14153,12 @@ type ProblemDetails struct {
 	RetryAfter OptInt32 `json:"retryAfter"`
 	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
 	Debug OptProblemDebug `json:"debug"`
+	// A removal refused because live work still uses the row (a 409, ADR 0049): the rows that use it,
+	// never empty.
+	UsedBy []UsedBy `json:"usedBy"`
+	// A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each handed
+	// over or deleted first; empty when the refusal is another rule's.
+	Workspaces []SoleOwnedWorkspace `json:"workspaces"`
 }
 
 // GetCode returns the value of Code.
@@ -15667,6 +14216,16 @@ func (s *ProblemDetails) GetDebug() OptProblemDebug {
 	return s.Debug
 }
 
+// GetUsedBy returns the value of UsedBy.
+func (s *ProblemDetails) GetUsedBy() []UsedBy {
+	return s.UsedBy
+}
+
+// GetWorkspaces returns the value of Workspaces.
+func (s *ProblemDetails) GetWorkspaces() []SoleOwnedWorkspace {
+	return s.Workspaces
+}
+
 // SetCode sets the value of Code.
 func (s *ProblemDetails) SetCode(val OptProblemCode) {
 	s.Code = val
@@ -15722,7 +14281,15 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) workspaceGetRes() {}
+// SetUsedBy sets the value of UsedBy.
+func (s *ProblemDetails) SetUsedBy(val []UsedBy) {
+	s.UsedBy = val
+}
+
+// SetWorkspaces sets the value of Workspaces.
+func (s *ProblemDetails) SetWorkspaces(val []SoleOwnedWorkspace) {
+	s.Workspaces = val
+}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -15748,174 +14315,31 @@ func (s *ProblemDetailsFields) init() ProblemDetailsFields {
 	return m
 }
 
-// ProblemDetailsHeaders wraps ProblemDetails with response headers.
-type ProblemDetailsHeaders struct {
-	RetryAfter          int32
-	XRateLimitLimit     int32
-	XRateLimitRemaining int32
-	XRateLimitReset     int64
-	Response            ProblemDetails
+// ProblemDetailsStatusCode wraps ProblemDetails with StatusCode.
+type ProblemDetailsStatusCode struct {
+	StatusCode int
+	Response   ProblemDetails
 }
 
-// GetRetryAfter returns the value of RetryAfter.
-func (s *ProblemDetailsHeaders) GetRetryAfter() int32 {
-	return s.RetryAfter
-}
-
-// GetXRateLimitLimit returns the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) GetXRateLimitLimit() int32 {
-	return s.XRateLimitLimit
-}
-
-// GetXRateLimitRemaining returns the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) GetXRateLimitRemaining() int32 {
-	return s.XRateLimitRemaining
-}
-
-// GetXRateLimitReset returns the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) GetXRateLimitReset() int64 {
-	return s.XRateLimitReset
+// GetStatusCode returns the value of StatusCode.
+func (s *ProblemDetailsStatusCode) GetStatusCode() int {
+	return s.StatusCode
 }
 
 // GetResponse returns the value of Response.
-func (s *ProblemDetailsHeaders) GetResponse() ProblemDetails {
+func (s *ProblemDetailsStatusCode) GetResponse() ProblemDetails {
 	return s.Response
 }
 
-// SetRetryAfter sets the value of RetryAfter.
-func (s *ProblemDetailsHeaders) SetRetryAfter(val int32) {
-	s.RetryAfter = val
-}
-
-// SetXRateLimitLimit sets the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) SetXRateLimitLimit(val int32) {
-	s.XRateLimitLimit = val
-}
-
-// SetXRateLimitRemaining sets the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) SetXRateLimitRemaining(val int32) {
-	s.XRateLimitRemaining = val
-}
-
-// SetXRateLimitReset sets the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) SetXRateLimitReset(val int64) {
-	s.XRateLimitReset = val
+// SetStatusCode sets the value of StatusCode.
+func (s *ProblemDetailsStatusCode) SetStatusCode(val int) {
+	s.StatusCode = val
 }
 
 // SetResponse sets the value of Response.
-func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
+func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
-
-func (*ProblemDetailsHeaders) auditEntriesListRes()          {}
-func (*ProblemDetailsHeaders) authMeGetRes()                 {}
-func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
-func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
-func (*ProblemDetailsHeaders) authTokensDeleteRes()          {}
-func (*ProblemDetailsHeaders) authTokensListRes()            {}
-func (*ProblemDetailsHeaders) automationsArchiveRes()        {}
-func (*ProblemDetailsHeaders) automationsCreateRes()         {}
-func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
-func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
-func (*ProblemDetailsHeaders) automationsGetRes()            {}
-func (*ProblemDetailsHeaders) automationsListRes()           {}
-func (*ProblemDetailsHeaders) automationsPublishRes()        {}
-func (*ProblemDetailsHeaders) automationsReportRes()         {}
-func (*ProblemDetailsHeaders) automationsRevertRes()         {}
-func (*ProblemDetailsHeaders) automationsUnarchiveRes()      {}
-func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
-func (*ProblemDetailsHeaders) brandKitGetRes()               {}
-func (*ProblemDetailsHeaders) broadcastsArchiveRes()         {}
-func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
-func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
-func (*ProblemDetailsHeaders) broadcastsListRes()            {}
-func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
-func (*ProblemDetailsHeaders) broadcastsScheduleRes()        {}
-func (*ProblemDetailsHeaders) broadcastsSetSegmentRes()      {}
-func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
-func (*ProblemDetailsHeaders) broadcastsUnarchiveRes()       {}
-func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
-func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
-func (*ProblemDetailsHeaders) capturedMessagesDeleteAllRes() {}
-func (*ProblemDetailsHeaders) capturedMessagesDeleteRes()    {}
-func (*ProblemDetailsHeaders) capturedMessagesGetRes()       {}
-func (*ProblemDetailsHeaders) capturedMessagesListRes()      {}
-func (*ProblemDetailsHeaders) confirmationsCreateRes()       {}
-func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
-func (*ProblemDetailsHeaders) contactsCreateRes()            {}
-func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
-func (*ProblemDetailsHeaders) contactsEraseByRes()           {}
-func (*ProblemDetailsHeaders) contactsExportRes()            {}
-func (*ProblemDetailsHeaders) contactsGetRes()               {}
-func (*ProblemDetailsHeaders) contactsListRes()              {}
-func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
-func (*ProblemDetailsHeaders) customFieldsListRes()          {}
-func (*ProblemDetailsHeaders) customFieldsUpdateRes()        {}
-func (*ProblemDetailsHeaders) emailLintLintRes()             {}
-func (*ProblemDetailsHeaders) emailSchemaGetRes()            {}
-func (*ProblemDetailsHeaders) emailsSendRes()                {}
-func (*ProblemDetailsHeaders) enrollmentsGetRes()            {}
-func (*ProblemDetailsHeaders) enrollmentsListRes()           {}
-func (*ProblemDetailsHeaders) eventActionsListRes()          {}
-func (*ProblemDetailsHeaders) eventsBatchSubmitRes()         {}
-func (*ProblemDetailsHeaders) eventsCreateRes()              {}
-func (*ProblemDetailsHeaders) integrationsCreateRes()        {}
-func (*ProblemDetailsHeaders) integrationsDeleteRes()        {}
-func (*ProblemDetailsHeaders) integrationsGetRes()           {}
-func (*ProblemDetailsHeaders) integrationsListRes()          {}
-func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
-func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
-func (*ProblemDetailsHeaders) presetsListRes()               {}
-func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
-func (*ProblemDetailsHeaders) rulesCreateRes()               {}
-func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
-func (*ProblemDetailsHeaders) rulesDeleteRes()               {}
-func (*ProblemDetailsHeaders) rulesDryRunRes()               {}
-func (*ProblemDetailsHeaders) rulesGetRes()                  {}
-func (*ProblemDetailsHeaders) rulesListRes()                 {}
-func (*ProblemDetailsHeaders) rulesPublishRes()              {}
-func (*ProblemDetailsHeaders) rulesRevertRes()               {}
-func (*ProblemDetailsHeaders) rulesUpdateRes()               {}
-func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
-func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
-func (*ProblemDetailsHeaders) segmentsGetRes()               {}
-func (*ProblemDetailsHeaders) segmentsListRes()              {}
-func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
-func (*ProblemDetailsHeaders) segmentsUnarchiveRes()         {}
-func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
-func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
-func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
-func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
-func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
-func (*ProblemDetailsHeaders) smsConsentsGetRes()            {}
-func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
-func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
-func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
-func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
-func (*ProblemDetailsHeaders) tagsListRes()                  {}
-func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
-func (*ProblemDetailsHeaders) telegramStartLinksIssueRes()   {}
-func (*ProblemDetailsHeaders) templatesCreateRes()           {}
-func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
-func (*ProblemDetailsHeaders) templatesGetRes()              {}
-func (*ProblemDetailsHeaders) templatesListRes()             {}
-func (*ProblemDetailsHeaders) templatesUpdateRes()           {}
-func (*ProblemDetailsHeaders) trackingDomainsListRes()       {}
-func (*ProblemDetailsHeaders) trackingDomainsRemoveRes()     {}
-func (*ProblemDetailsHeaders) trackingDomainsSetRes()        {}
-func (*ProblemDetailsHeaders) trackingDomainsVerifyRes()     {}
-func (*ProblemDetailsHeaders) unsubscribesCreateRes()        {}
-func (*ProblemDetailsHeaders) webhooksCreateRes()            {}
-func (*ProblemDetailsHeaders) webhooksDeleteRes()            {}
-func (*ProblemDetailsHeaders) webhooksGetRes()               {}
-func (*ProblemDetailsHeaders) webhooksListRes()              {}
-func (*ProblemDetailsHeaders) webhooksRegenerateSecretRes()  {}
-func (*ProblemDetailsHeaders) webhooksTestRes()              {}
-func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
-func (*ProblemDetailsHeaders) workspaceGetRes()              {}
 
 // Where an effective Provider limit comes from.
 // Ref: #/components/schemas/ProviderLimitSource
@@ -16195,8 +14619,6 @@ func (s *RecordEventsBatchResult) GetResults() []EventBatchItemResult {
 func (s *RecordEventsBatchResult) SetResults(val []EventBatchItemResult) {
 	s.Results = val
 }
-
-func (*RecordEventsBatchResult) eventsBatchSubmitRes() {}
 
 // Request body for recording events.
 // Ref: #/components/schemas/RecordEventsInput
@@ -16628,8 +15050,6 @@ func (s *RuleDryRunResource) SetActions(val []RuleDryRunAction) {
 	s.Actions = val
 }
 
-func (*RuleDryRunResource) rulesDryRunRes() {}
-
 // One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
 // Ref: #/components/schemas/RuleFiringResource
 type RuleFiringResource struct {
@@ -16731,18 +15151,6 @@ func (s *RuleFiringResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-type RuleFiringsListBadRequest ProblemDetails
-
-func (*RuleFiringsListBadRequest) ruleFiringsListRes() {}
-
-type RuleFiringsListForbidden ProblemDetails
-
-func (*RuleFiringsListForbidden) ruleFiringsListRes() {}
-
-type RuleFiringsListNotFound ProblemDetails
-
-func (*RuleFiringsListNotFound) ruleFiringsListRes() {}
-
 // Paginated response.
 type RuleFiringsListOK struct {
 	// List of items.
@@ -16806,12 +15214,6 @@ func (s *RuleFiringsListOK) SetTotalItems(val int32) {
 func (s *RuleFiringsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*RuleFiringsListOK) ruleFiringsListRes() {}
-
-type RuleFiringsListUnauthorized ProblemDetails
-
-func (*RuleFiringsListUnauthorized) ruleFiringsListRes() {}
 
 // A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a Contact
 // and its condition holds, its Actions run at once, in order. Its definition is versioned (ADR 0065):
@@ -16930,13 +15332,6 @@ func (s *RuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*RuleResource) rulesCreateRes()     {}
-func (*RuleResource) rulesDeactivateRes() {}
-func (*RuleResource) rulesGetRes()        {}
-func (*RuleResource) rulesPublishRes()    {}
-func (*RuleResource) rulesRevertRes()     {}
-func (*RuleResource) rulesUpdateRes()     {}
-
 // Rule lifecycle status: active reacts to Events, inactive acts on nothing.
 // Ref: #/components/schemas/RuleStatus
 type RuleStatus string
@@ -17033,102 +15428,8 @@ func (s *RuleVersion) SetActions(val []RuleAction) {
 	s.Actions = val
 }
 
-type RulesCreateBadRequest ProblemDetails
-
-func (*RulesCreateBadRequest) rulesCreateRes() {}
-
-type RulesCreateForbidden ProblemDetails
-
-func (*RulesCreateForbidden) rulesCreateRes() {}
-
-type RulesCreateUnauthorized ProblemDetails
-
-func (*RulesCreateUnauthorized) rulesCreateRes() {}
-
-type RulesCreateUnprocessableEntity ProblemDetails
-
-func (*RulesCreateUnprocessableEntity) rulesCreateRes() {}
-
-type RulesDeactivateBadRequest ProblemDetails
-
-func (*RulesDeactivateBadRequest) rulesDeactivateRes() {}
-
-type RulesDeactivateForbidden ProblemDetails
-
-func (*RulesDeactivateForbidden) rulesDeactivateRes() {}
-
-type RulesDeactivateNotFound ProblemDetails
-
-func (*RulesDeactivateNotFound) rulesDeactivateRes() {}
-
-type RulesDeactivateUnauthorized ProblemDetails
-
-func (*RulesDeactivateUnauthorized) rulesDeactivateRes() {}
-
-type RulesDeleteBadRequest ProblemDetails
-
-func (*RulesDeleteBadRequest) rulesDeleteRes() {}
-
-type RulesDeleteForbidden ProblemDetails
-
-func (*RulesDeleteForbidden) rulesDeleteRes() {}
-
 // RulesDeleteNoContent is response for RulesDelete operation.
 type RulesDeleteNoContent struct{}
-
-func (*RulesDeleteNoContent) rulesDeleteRes() {}
-
-type RulesDeleteNotFound ProblemDetails
-
-func (*RulesDeleteNotFound) rulesDeleteRes() {}
-
-type RulesDeleteUnauthorized ProblemDetails
-
-func (*RulesDeleteUnauthorized) rulesDeleteRes() {}
-
-type RulesDeleteUnprocessableEntity ProblemDetails
-
-func (*RulesDeleteUnprocessableEntity) rulesDeleteRes() {}
-
-type RulesDryRunBadRequest ProblemDetails
-
-func (*RulesDryRunBadRequest) rulesDryRunRes() {}
-
-type RulesDryRunForbidden ProblemDetails
-
-func (*RulesDryRunForbidden) rulesDryRunRes() {}
-
-type RulesDryRunNotFound ProblemDetails
-
-func (*RulesDryRunNotFound) rulesDryRunRes() {}
-
-type RulesDryRunUnauthorized ProblemDetails
-
-func (*RulesDryRunUnauthorized) rulesDryRunRes() {}
-
-type RulesGetBadRequest ProblemDetails
-
-func (*RulesGetBadRequest) rulesGetRes() {}
-
-type RulesGetForbidden ProblemDetails
-
-func (*RulesGetForbidden) rulesGetRes() {}
-
-type RulesGetNotFound ProblemDetails
-
-func (*RulesGetNotFound) rulesGetRes() {}
-
-type RulesGetUnauthorized ProblemDetails
-
-func (*RulesGetUnauthorized) rulesGetRes() {}
-
-type RulesListBadRequest ProblemDetails
-
-func (*RulesListBadRequest) rulesListRes() {}
-
-type RulesListForbidden ProblemDetails
-
-func (*RulesListForbidden) rulesListRes() {}
 
 // Paginated response.
 type RulesListOK struct {
@@ -17193,76 +15494,6 @@ func (s *RulesListOK) SetTotalItems(val int32) {
 func (s *RulesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*RulesListOK) rulesListRes() {}
-
-type RulesListUnauthorized ProblemDetails
-
-func (*RulesListUnauthorized) rulesListRes() {}
-
-type RulesListUnprocessableEntity ProblemDetails
-
-func (*RulesListUnprocessableEntity) rulesListRes() {}
-
-type RulesPublishBadRequest ProblemDetails
-
-func (*RulesPublishBadRequest) rulesPublishRes() {}
-
-type RulesPublishForbidden ProblemDetails
-
-func (*RulesPublishForbidden) rulesPublishRes() {}
-
-type RulesPublishNotFound ProblemDetails
-
-func (*RulesPublishNotFound) rulesPublishRes() {}
-
-type RulesPublishUnauthorized ProblemDetails
-
-func (*RulesPublishUnauthorized) rulesPublishRes() {}
-
-type RulesPublishUnprocessableEntity ProblemDetails
-
-func (*RulesPublishUnprocessableEntity) rulesPublishRes() {}
-
-type RulesRevertBadRequest ProblemDetails
-
-func (*RulesRevertBadRequest) rulesRevertRes() {}
-
-type RulesRevertForbidden ProblemDetails
-
-func (*RulesRevertForbidden) rulesRevertRes() {}
-
-type RulesRevertNotFound ProblemDetails
-
-func (*RulesRevertNotFound) rulesRevertRes() {}
-
-type RulesRevertUnauthorized ProblemDetails
-
-func (*RulesRevertUnauthorized) rulesRevertRes() {}
-
-type RulesRevertUnprocessableEntity ProblemDetails
-
-func (*RulesRevertUnprocessableEntity) rulesRevertRes() {}
-
-type RulesUpdateBadRequest ProblemDetails
-
-func (*RulesUpdateBadRequest) rulesUpdateRes() {}
-
-type RulesUpdateForbidden ProblemDetails
-
-func (*RulesUpdateForbidden) rulesUpdateRes() {}
-
-type RulesUpdateNotFound ProblemDetails
-
-func (*RulesUpdateNotFound) rulesUpdateRes() {}
-
-type RulesUpdateUnauthorized ProblemDetails
-
-func (*RulesUpdateUnauthorized) rulesUpdateRes() {}
-
-type RulesUpdateUnprocessableEntity ProblemDetails
-
-func (*RulesUpdateUnprocessableEntity) rulesUpdateRes() {}
 
 // Request body for scheduling a broadcast.
 // Ref: #/components/schemas/ScheduleBroadcastInput
@@ -17358,68 +15589,6 @@ func (s *SegmentResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SegmentResource) segmentsArchiveRes()   {}
-func (*SegmentResource) segmentsCreateRes()    {}
-func (*SegmentResource) segmentsGetRes()       {}
-func (*SegmentResource) segmentsUnarchiveRes() {}
-func (*SegmentResource) segmentsUpdateRes()    {}
-
-type SegmentsArchiveBadRequest ProblemDetails
-
-func (*SegmentsArchiveBadRequest) segmentsArchiveRes() {}
-
-type SegmentsArchiveForbidden ProblemDetails
-
-func (*SegmentsArchiveForbidden) segmentsArchiveRes() {}
-
-type SegmentsArchiveNotFound ProblemDetails
-
-func (*SegmentsArchiveNotFound) segmentsArchiveRes() {}
-
-type SegmentsArchiveUnauthorized ProblemDetails
-
-func (*SegmentsArchiveUnauthorized) segmentsArchiveRes() {}
-
-type SegmentsCreateBadRequest ProblemDetails
-
-func (*SegmentsCreateBadRequest) segmentsCreateRes() {}
-
-type SegmentsCreateForbidden ProblemDetails
-
-func (*SegmentsCreateForbidden) segmentsCreateRes() {}
-
-type SegmentsCreateUnauthorized ProblemDetails
-
-func (*SegmentsCreateUnauthorized) segmentsCreateRes() {}
-
-type SegmentsCreateUnprocessableEntity ProblemDetails
-
-func (*SegmentsCreateUnprocessableEntity) segmentsCreateRes() {}
-
-type SegmentsGetBadRequest ProblemDetails
-
-func (*SegmentsGetBadRequest) segmentsGetRes() {}
-
-type SegmentsGetForbidden ProblemDetails
-
-func (*SegmentsGetForbidden) segmentsGetRes() {}
-
-type SegmentsGetNotFound ProblemDetails
-
-func (*SegmentsGetNotFound) segmentsGetRes() {}
-
-type SegmentsGetUnauthorized ProblemDetails
-
-func (*SegmentsGetUnauthorized) segmentsGetRes() {}
-
-type SegmentsListBadRequest ProblemDetails
-
-func (*SegmentsListBadRequest) segmentsListRes() {}
-
-type SegmentsListForbidden ProblemDetails
-
-func (*SegmentsListForbidden) segmentsListRes() {}
-
 // Paginated response.
 type SegmentsListOK struct {
 	// List of items.
@@ -17483,72 +15652,6 @@ func (s *SegmentsListOK) SetTotalItems(val int32) {
 func (s *SegmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SegmentsListOK) segmentsListRes() {}
-
-type SegmentsListUnauthorized ProblemDetails
-
-func (*SegmentsListUnauthorized) segmentsListRes() {}
-
-type SegmentsListUnprocessableEntity ProblemDetails
-
-func (*SegmentsListUnprocessableEntity) segmentsListRes() {}
-
-type SegmentsPreviewBadRequest ProblemDetails
-
-func (*SegmentsPreviewBadRequest) segmentsPreviewRes() {}
-
-type SegmentsPreviewForbidden ProblemDetails
-
-func (*SegmentsPreviewForbidden) segmentsPreviewRes() {}
-
-type SegmentsPreviewUnauthorized ProblemDetails
-
-func (*SegmentsPreviewUnauthorized) segmentsPreviewRes() {}
-
-type SegmentsPreviewUnprocessableEntity ProblemDetails
-
-func (*SegmentsPreviewUnprocessableEntity) segmentsPreviewRes() {}
-
-type SegmentsUnarchiveBadRequest ProblemDetails
-
-func (*SegmentsUnarchiveBadRequest) segmentsUnarchiveRes() {}
-
-type SegmentsUnarchiveForbidden ProblemDetails
-
-func (*SegmentsUnarchiveForbidden) segmentsUnarchiveRes() {}
-
-type SegmentsUnarchiveNotFound ProblemDetails
-
-func (*SegmentsUnarchiveNotFound) segmentsUnarchiveRes() {}
-
-type SegmentsUnarchiveUnauthorized ProblemDetails
-
-func (*SegmentsUnarchiveUnauthorized) segmentsUnarchiveRes() {}
-
-type SegmentsUpdateBadRequest ProblemDetails
-
-func (*SegmentsUpdateBadRequest) segmentsUpdateRes() {}
-
-type SegmentsUpdateConflict ProblemDetails
-
-func (*SegmentsUpdateConflict) segmentsUpdateRes() {}
-
-type SegmentsUpdateForbidden ProblemDetails
-
-func (*SegmentsUpdateForbidden) segmentsUpdateRes() {}
-
-type SegmentsUpdateNotFound ProblemDetails
-
-func (*SegmentsUpdateNotFound) segmentsUpdateRes() {}
-
-type SegmentsUpdateUnauthorized ProblemDetails
-
-func (*SegmentsUpdateUnauthorized) segmentsUpdateRes() {}
-
-type SegmentsUpdateUnprocessableEntity ProblemDetails
-
-func (*SegmentsUpdateUnprocessableEntity) segmentsUpdateRes() {}
 
 // The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
 // its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
@@ -17678,16 +15781,6 @@ func (s *SendTransactionalEmailResponse) SetDestination(val string) {
 	s.Destination = val
 }
 
-func (*SendTransactionalEmailResponse) emailsSendRes() {}
-
-type SendingDomainRatesListBadRequest ProblemDetails
-
-func (*SendingDomainRatesListBadRequest) sendingDomainRatesListRes() {}
-
-type SendingDomainRatesListForbidden ProblemDetails
-
-func (*SendingDomainRatesListForbidden) sendingDomainRatesListRes() {}
-
 // Paginated response.
 type SendingDomainRatesListOK struct {
 	// List of items.
@@ -17751,12 +15844,6 @@ func (s *SendingDomainRatesListOK) SetTotalItems(val int32) {
 func (s *SendingDomainRatesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SendingDomainRatesListOK) sendingDomainRatesListRes() {}
-
-type SendingDomainRatesListUnauthorized ProblemDetails
-
-func (*SendingDomainRatesListUnauthorized) sendingDomainRatesListRes() {}
 
 // Complaint and bounce rates of one Sending domain over a trailing window (ADR 0011). Complaint rate
 // is complaints / delivered (ADR 0053), undefined with no delivery notice in the window; bounce rate
@@ -18016,75 +16103,8 @@ func (s *SendingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SendingDomainResource) sendingDomainsCreateRes() {}
-func (*SendingDomainResource) sendingDomainsGetRes()    {}
-func (*SendingDomainResource) sendingDomainsUpdateRes() {}
-func (*SendingDomainResource) sendingDomainsVerifyRes() {}
-
-type SendingDomainsCreateBadRequest ProblemDetails
-
-func (*SendingDomainsCreateBadRequest) sendingDomainsCreateRes() {}
-
-type SendingDomainsCreateConflict ProblemDetails
-
-func (*SendingDomainsCreateConflict) sendingDomainsCreateRes() {}
-
-type SendingDomainsCreateForbidden ProblemDetails
-
-func (*SendingDomainsCreateForbidden) sendingDomainsCreateRes() {}
-
-type SendingDomainsCreateUnauthorized ProblemDetails
-
-func (*SendingDomainsCreateUnauthorized) sendingDomainsCreateRes() {}
-
-type SendingDomainsCreateUnprocessableEntity ProblemDetails
-
-func (*SendingDomainsCreateUnprocessableEntity) sendingDomainsCreateRes() {}
-
-type SendingDomainsDeleteBadRequest ProblemDetails
-
-func (*SendingDomainsDeleteBadRequest) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteForbidden ProblemDetails
-
-func (*SendingDomainsDeleteForbidden) sendingDomainsDeleteRes() {}
-
 // SendingDomainsDeleteNoContent is response for SendingDomainsDelete operation.
 type SendingDomainsDeleteNoContent struct{}
-
-func (*SendingDomainsDeleteNoContent) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteNotFound ProblemDetails
-
-func (*SendingDomainsDeleteNotFound) sendingDomainsDeleteRes() {}
-
-type SendingDomainsDeleteUnauthorized ProblemDetails
-
-func (*SendingDomainsDeleteUnauthorized) sendingDomainsDeleteRes() {}
-
-type SendingDomainsGetBadRequest ProblemDetails
-
-func (*SendingDomainsGetBadRequest) sendingDomainsGetRes() {}
-
-type SendingDomainsGetForbidden ProblemDetails
-
-func (*SendingDomainsGetForbidden) sendingDomainsGetRes() {}
-
-type SendingDomainsGetNotFound ProblemDetails
-
-func (*SendingDomainsGetNotFound) sendingDomainsGetRes() {}
-
-type SendingDomainsGetUnauthorized ProblemDetails
-
-func (*SendingDomainsGetUnauthorized) sendingDomainsGetRes() {}
-
-type SendingDomainsListBadRequest ProblemDetails
-
-func (*SendingDomainsListBadRequest) sendingDomainsListRes() {}
-
-type SendingDomainsListForbidden ProblemDetails
-
-func (*SendingDomainsListForbidden) sendingDomainsListRes() {}
 
 // Paginated response.
 type SendingDomainsListOK struct {
@@ -18149,56 +16169,6 @@ func (s *SendingDomainsListOK) SetTotalItems(val int32) {
 func (s *SendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*SendingDomainsListOK) sendingDomainsListRes() {}
-
-type SendingDomainsListUnauthorized ProblemDetails
-
-func (*SendingDomainsListUnauthorized) sendingDomainsListRes() {}
-
-type SendingDomainsListUnprocessableEntity ProblemDetails
-
-func (*SendingDomainsListUnprocessableEntity) sendingDomainsListRes() {}
-
-type SendingDomainsUpdateBadRequest ProblemDetails
-
-func (*SendingDomainsUpdateBadRequest) sendingDomainsUpdateRes() {}
-
-type SendingDomainsUpdateConflict ProblemDetails
-
-func (*SendingDomainsUpdateConflict) sendingDomainsUpdateRes() {}
-
-type SendingDomainsUpdateForbidden ProblemDetails
-
-func (*SendingDomainsUpdateForbidden) sendingDomainsUpdateRes() {}
-
-type SendingDomainsUpdateNotFound ProblemDetails
-
-func (*SendingDomainsUpdateNotFound) sendingDomainsUpdateRes() {}
-
-type SendingDomainsUpdateUnauthorized ProblemDetails
-
-func (*SendingDomainsUpdateUnauthorized) sendingDomainsUpdateRes() {}
-
-type SendingDomainsUpdateUnprocessableEntity ProblemDetails
-
-func (*SendingDomainsUpdateUnprocessableEntity) sendingDomainsUpdateRes() {}
-
-type SendingDomainsVerifyBadRequest ProblemDetails
-
-func (*SendingDomainsVerifyBadRequest) sendingDomainsVerifyRes() {}
-
-type SendingDomainsVerifyForbidden ProblemDetails
-
-func (*SendingDomainsVerifyForbidden) sendingDomainsVerifyRes() {}
-
-type SendingDomainsVerifyNotFound ProblemDetails
-
-func (*SendingDomainsVerifyNotFound) sendingDomainsVerifyRes() {}
-
-type SendingDomainsVerifyUnauthorized ProblemDetails
-
-func (*SendingDomainsVerifyUnauthorized) sendingDomainsVerifyRes() {}
 
 // SES config without the secret access key.
 // Ref: #/components/schemas/SesConfig
@@ -18723,24 +16693,6 @@ func (s *SmsConsent) SetOptOut(val OptNilSmsOptOut) {
 	s.OptOut = val
 }
 
-func (*SmsConsent) smsConsentsGetRes() {}
-
-type SmsConsentsGetBadRequest ProblemDetails
-
-func (*SmsConsentsGetBadRequest) smsConsentsGetRes() {}
-
-type SmsConsentsGetForbidden ProblemDetails
-
-func (*SmsConsentsGetForbidden) smsConsentsGetRes() {}
-
-type SmsConsentsGetNotFound ProblemDetails
-
-func (*SmsConsentsGetNotFound) smsConsentsGetRes() {}
-
-type SmsConsentsGetUnauthorized ProblemDetails
-
-func (*SmsConsentsGetUnauthorized) smsConsentsGetRes() {}
-
 // What an SMS integration's messages go out from.
 // Ref: #/components/schemas/SmsFromKind
 type SmsFromKind string
@@ -19043,6 +16995,35 @@ func (s *SmtpConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Workspace the User is the only Owner of, which blocks User deletion.
+// Ref: #/components/schemas/SoleOwnedWorkspace
+type SoleOwnedWorkspace struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *SoleOwnedWorkspace) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SoleOwnedWorkspace) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SoleOwnedWorkspace) SetName(val string) {
+	s.Name = val
+}
+
 // A Channel a destination can be suppressed on.
 // Ref: #/components/schemas/SuppressionChannel
 type SuppressionChannel string
@@ -19209,24 +17190,6 @@ func (s *SuppressionResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SuppressionResource) suppressionsCreateRes() {}
-
-type SuppressionsCreateBadRequest ProblemDetails
-
-func (*SuppressionsCreateBadRequest) suppressionsCreateRes() {}
-
-type SuppressionsCreateForbidden ProblemDetails
-
-func (*SuppressionsCreateForbidden) suppressionsCreateRes() {}
-
-type SuppressionsCreateUnauthorized ProblemDetails
-
-func (*SuppressionsCreateUnauthorized) suppressionsCreateRes() {}
-
-type SuppressionsCreateUnprocessableEntity ProblemDetails
-
-func (*SuppressionsCreateUnprocessableEntity) suppressionsCreateRes() {}
-
 // A Tag: a presence-only, workspace-scoped label on Contacts. The name is contact-supplied text —
 // treat it as data.
 // Ref: #/components/schemas/TagResource
@@ -19269,64 +17232,8 @@ func (s *TagResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*TagResource) tagsApplyRes() {}
-
-type TagsApplyBadRequest ProblemDetails
-
-func (*TagsApplyBadRequest) tagsApplyRes() {}
-
-type TagsApplyForbidden ProblemDetails
-
-func (*TagsApplyForbidden) tagsApplyRes() {}
-
-type TagsApplyNotFound ProblemDetails
-
-func (*TagsApplyNotFound) tagsApplyRes() {}
-
-type TagsApplyUnauthorized ProblemDetails
-
-func (*TagsApplyUnauthorized) tagsApplyRes() {}
-
-type TagsApplyUnprocessableEntity ProblemDetails
-
-func (*TagsApplyUnprocessableEntity) tagsApplyRes() {}
-
-type TagsDeleteBadRequest ProblemDetails
-
-func (*TagsDeleteBadRequest) tagsDeleteRes() {}
-
-type TagsDeleteForbidden ProblemDetails
-
-func (*TagsDeleteForbidden) tagsDeleteRes() {}
-
 // TagsDeleteNoContent is response for TagsDelete operation.
 type TagsDeleteNoContent struct{}
-
-func (*TagsDeleteNoContent) tagsDeleteRes() {}
-
-type TagsDeleteNotFound ProblemDetails
-
-func (*TagsDeleteNotFound) tagsDeleteRes() {}
-
-type TagsDeleteUnauthorized ProblemDetails
-
-func (*TagsDeleteUnauthorized) tagsDeleteRes() {}
-
-type TagsListBadRequest ProblemDetails
-
-func (*TagsListBadRequest) tagsListRes() {}
-
-type TagsListForContactBadRequest ProblemDetails
-
-func (*TagsListForContactBadRequest) tagsListForContactRes() {}
-
-type TagsListForContactForbidden ProblemDetails
-
-func (*TagsListForContactForbidden) tagsListForContactRes() {}
-
-type TagsListForContactNotFound ProblemDetails
-
-func (*TagsListForContactNotFound) tagsListForContactRes() {}
 
 // Paginated response.
 type TagsListForContactOK struct {
@@ -19392,20 +17299,6 @@ func (s *TagsListForContactOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*TagsListForContactOK) tagsListForContactRes() {}
-
-type TagsListForContactUnauthorized ProblemDetails
-
-func (*TagsListForContactUnauthorized) tagsListForContactRes() {}
-
-type TagsListForContactUnprocessableEntity ProblemDetails
-
-func (*TagsListForContactUnprocessableEntity) tagsListForContactRes() {}
-
-type TagsListForbidden ProblemDetails
-
-func (*TagsListForbidden) tagsListRes() {}
-
 // Paginated response.
 type TagsListOK struct {
 	// List of items.
@@ -19470,36 +17363,8 @@ func (s *TagsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*TagsListOK) tagsListRes() {}
-
-type TagsListUnauthorized ProblemDetails
-
-func (*TagsListUnauthorized) tagsListRes() {}
-
-type TagsListUnprocessableEntity ProblemDetails
-
-func (*TagsListUnprocessableEntity) tagsListRes() {}
-
-type TagsRemoveBadRequest ProblemDetails
-
-func (*TagsRemoveBadRequest) tagsRemoveRes() {}
-
-type TagsRemoveForbidden ProblemDetails
-
-func (*TagsRemoveForbidden) tagsRemoveRes() {}
-
 // TagsRemoveNoContent is response for TagsRemove operation.
 type TagsRemoveNoContent struct{}
-
-func (*TagsRemoveNoContent) tagsRemoveRes() {}
-
-type TagsRemoveNotFound ProblemDetails
-
-func (*TagsRemoveNotFound) tagsRemoveRes() {}
-
-type TagsRemoveUnauthorized ProblemDetails
-
-func (*TagsRemoveUnauthorized) tagsRemoveRes() {}
 
 // Telegram's content of a Broadcast as stored.
 // Ref: #/components/schemas/TelegramBroadcastContent
@@ -19929,28 +17794,6 @@ func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
 	s.ExpiresAt = val
 }
 
-func (*TelegramStartLinkResource) telegramStartLinksIssueRes() {}
-
-type TelegramStartLinksIssueBadRequest ProblemDetails
-
-func (*TelegramStartLinksIssueBadRequest) telegramStartLinksIssueRes() {}
-
-type TelegramStartLinksIssueForbidden ProblemDetails
-
-func (*TelegramStartLinksIssueForbidden) telegramStartLinksIssueRes() {}
-
-type TelegramStartLinksIssueNotFound ProblemDetails
-
-func (*TelegramStartLinksIssueNotFound) telegramStartLinksIssueRes() {}
-
-type TelegramStartLinksIssueUnauthorized ProblemDetails
-
-func (*TelegramStartLinksIssueUnauthorized) telegramStartLinksIssueRes() {}
-
-type TelegramStartLinksIssueUnprocessableEntity ProblemDetails
-
-func (*TelegramStartLinksIssueUnprocessableEntity) telegramStartLinksIssueRes() {}
-
 // Reusable email template.
 // Ref: #/components/schemas/TemplateResource
 type TemplateResource struct {
@@ -20052,74 +17895,8 @@ func (s *TemplateResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*TemplateResource) templatesCreateRes() {}
-func (*TemplateResource) templatesGetRes()    {}
-func (*TemplateResource) templatesUpdateRes() {}
-
-type TemplatesCreateBadRequest ProblemDetails
-
-func (*TemplatesCreateBadRequest) templatesCreateRes() {}
-
-type TemplatesCreateForbidden ProblemDetails
-
-func (*TemplatesCreateForbidden) templatesCreateRes() {}
-
-type TemplatesCreateUnauthorized ProblemDetails
-
-func (*TemplatesCreateUnauthorized) templatesCreateRes() {}
-
-type TemplatesCreateUnprocessableEntity ProblemDetails
-
-func (*TemplatesCreateUnprocessableEntity) templatesCreateRes() {}
-
-type TemplatesDeleteBadRequest ProblemDetails
-
-func (*TemplatesDeleteBadRequest) templatesDeleteRes() {}
-
-type TemplatesDeleteForbidden ProblemDetails
-
-func (*TemplatesDeleteForbidden) templatesDeleteRes() {}
-
 // TemplatesDeleteNoContent is response for TemplatesDelete operation.
 type TemplatesDeleteNoContent struct{}
-
-func (*TemplatesDeleteNoContent) templatesDeleteRes() {}
-
-type TemplatesDeleteNotFound ProblemDetails
-
-func (*TemplatesDeleteNotFound) templatesDeleteRes() {}
-
-type TemplatesDeleteUnauthorized ProblemDetails
-
-func (*TemplatesDeleteUnauthorized) templatesDeleteRes() {}
-
-type TemplatesDeleteUnprocessableEntity ProblemDetails
-
-func (*TemplatesDeleteUnprocessableEntity) templatesDeleteRes() {}
-
-type TemplatesGetBadRequest ProblemDetails
-
-func (*TemplatesGetBadRequest) templatesGetRes() {}
-
-type TemplatesGetForbidden ProblemDetails
-
-func (*TemplatesGetForbidden) templatesGetRes() {}
-
-type TemplatesGetNotFound ProblemDetails
-
-func (*TemplatesGetNotFound) templatesGetRes() {}
-
-type TemplatesGetUnauthorized ProblemDetails
-
-func (*TemplatesGetUnauthorized) templatesGetRes() {}
-
-type TemplatesListBadRequest ProblemDetails
-
-func (*TemplatesListBadRequest) templatesListRes() {}
-
-type TemplatesListForbidden ProblemDetails
-
-func (*TemplatesListForbidden) templatesListRes() {}
 
 // Paginated response.
 type TemplatesListOK struct {
@@ -20184,36 +17961,6 @@ func (s *TemplatesListOK) SetTotalItems(val int32) {
 func (s *TemplatesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
-
-func (*TemplatesListOK) templatesListRes() {}
-
-type TemplatesListUnauthorized ProblemDetails
-
-func (*TemplatesListUnauthorized) templatesListRes() {}
-
-type TemplatesListUnprocessableEntity ProblemDetails
-
-func (*TemplatesListUnprocessableEntity) templatesListRes() {}
-
-type TemplatesUpdateBadRequest ProblemDetails
-
-func (*TemplatesUpdateBadRequest) templatesUpdateRes() {}
-
-type TemplatesUpdateForbidden ProblemDetails
-
-func (*TemplatesUpdateForbidden) templatesUpdateRes() {}
-
-type TemplatesUpdateNotFound ProblemDetails
-
-func (*TemplatesUpdateNotFound) templatesUpdateRes() {}
-
-type TemplatesUpdateUnauthorized ProblemDetails
-
-func (*TemplatesUpdateUnauthorized) templatesUpdateRes() {}
-
-type TemplatesUpdateUnprocessableEntity ProblemDetails
-
-func (*TemplatesUpdateUnprocessableEntity) templatesUpdateRes() {}
 
 // Request body for a test send: where the preview goes, in the field of the broadcast's Channel. The
 // field of the other Channel is not read.
@@ -20405,9 +18152,6 @@ func (s *TrackingDomainResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*TrackingDomainResource) trackingDomainsSetRes()    {}
-func (*TrackingDomainResource) trackingDomainsVerifyRes() {}
-
 // What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
 // snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
 // the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
@@ -20460,74 +18204,8 @@ func (s *TrackingDomainRole) UnmarshalText(data []byte) error {
 	}
 }
 
-type TrackingDomainsListForbidden ProblemDetails
-
-func (*TrackingDomainsListForbidden) trackingDomainsListRes() {}
-
-type TrackingDomainsListOKApplicationJSON []TrackingDomainResource
-
-func (*TrackingDomainsListOKApplicationJSON) trackingDomainsListRes() {}
-
-type TrackingDomainsListUnauthorized ProblemDetails
-
-func (*TrackingDomainsListUnauthorized) trackingDomainsListRes() {}
-
-type TrackingDomainsRemoveBadRequest ProblemDetails
-
-func (*TrackingDomainsRemoveBadRequest) trackingDomainsRemoveRes() {}
-
-type TrackingDomainsRemoveForbidden ProblemDetails
-
-func (*TrackingDomainsRemoveForbidden) trackingDomainsRemoveRes() {}
-
 // TrackingDomainsRemoveNoContent is response for TrackingDomainsRemove operation.
 type TrackingDomainsRemoveNoContent struct{}
-
-func (*TrackingDomainsRemoveNoContent) trackingDomainsRemoveRes() {}
-
-type TrackingDomainsRemoveNotFound ProblemDetails
-
-func (*TrackingDomainsRemoveNotFound) trackingDomainsRemoveRes() {}
-
-type TrackingDomainsRemoveUnauthorized ProblemDetails
-
-func (*TrackingDomainsRemoveUnauthorized) trackingDomainsRemoveRes() {}
-
-type TrackingDomainsSetBadRequest ProblemDetails
-
-func (*TrackingDomainsSetBadRequest) trackingDomainsSetRes() {}
-
-type TrackingDomainsSetForbidden ProblemDetails
-
-func (*TrackingDomainsSetForbidden) trackingDomainsSetRes() {}
-
-type TrackingDomainsSetNotFound ProblemDetails
-
-func (*TrackingDomainsSetNotFound) trackingDomainsSetRes() {}
-
-type TrackingDomainsSetUnauthorized ProblemDetails
-
-func (*TrackingDomainsSetUnauthorized) trackingDomainsSetRes() {}
-
-type TrackingDomainsSetUnprocessableEntity ProblemDetails
-
-func (*TrackingDomainsSetUnprocessableEntity) trackingDomainsSetRes() {}
-
-type TrackingDomainsVerifyBadRequest ProblemDetails
-
-func (*TrackingDomainsVerifyBadRequest) trackingDomainsVerifyRes() {}
-
-type TrackingDomainsVerifyForbidden ProblemDetails
-
-func (*TrackingDomainsVerifyForbidden) trackingDomainsVerifyRes() {}
-
-type TrackingDomainsVerifyNotFound ProblemDetails
-
-func (*TrackingDomainsVerifyNotFound) trackingDomainsVerifyRes() {}
-
-type TrackingDomainsVerifyUnauthorized ProblemDetails
-
-func (*TrackingDomainsVerifyUnauthorized) trackingDomainsVerifyRes() {}
 
 // Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
@@ -20941,24 +18619,6 @@ func (s *UnsubscribeResource) SetSendingSource(val string) {
 func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
-
-func (*UnsubscribeResource) unsubscribesCreateRes() {}
-
-type UnsubscribesCreateBadRequest ProblemDetails
-
-func (*UnsubscribesCreateBadRequest) unsubscribesCreateRes() {}
-
-type UnsubscribesCreateForbidden ProblemDetails
-
-func (*UnsubscribesCreateForbidden) unsubscribesCreateRes() {}
-
-type UnsubscribesCreateUnauthorized ProblemDetails
-
-func (*UnsubscribesCreateUnauthorized) unsubscribesCreateRes() {}
-
-type UnsubscribesCreateUnprocessableEntity ProblemDetails
-
-func (*UnsubscribesCreateUnprocessableEntity) unsubscribesCreateRes() {}
 
 // Request body for updating an automation. The name changes at once; the trigger, exit and goal events
 // and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
@@ -21776,8 +19436,6 @@ func (s *UpsertContactsResult) SetResults(val []ContactBatchItemResult) {
 	s.Results = val
 }
 
-func (*UpsertContactsResult) contactsBatchUpsertRes() {}
-
 // A row that uses the one a removal was refused for: what a client shows to say what to change first.
 // Ref: #/components/schemas/UsedBy
 type UsedBy struct {
@@ -22187,11 +19845,6 @@ func (s *WebhookResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*WebhookResource) webhooksCreateRes()           {}
-func (*WebhookResource) webhooksGetRes()              {}
-func (*WebhookResource) webhooksRegenerateSecretRes() {}
-func (*WebhookResource) webhooksUpdateRes()           {}
-
 // What the receiver answered to a test delivery. The endpoint's failure state is not touched.
 // Ref: #/components/schemas/WebhookTestResult
 type WebhookTestResult struct {
@@ -22233,72 +19886,8 @@ func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
 	s.Kind = val
 }
 
-func (*WebhookTestResult) webhooksTestRes() {}
-
-type WebhooksCreateBadRequest ProblemDetails
-
-func (*WebhooksCreateBadRequest) webhooksCreateRes() {}
-
-type WebhooksCreateForbidden ProblemDetails
-
-func (*WebhooksCreateForbidden) webhooksCreateRes() {}
-
-type WebhooksCreateUnauthorized ProblemDetails
-
-func (*WebhooksCreateUnauthorized) webhooksCreateRes() {}
-
-type WebhooksCreateUnprocessableEntity ProblemDetails
-
-func (*WebhooksCreateUnprocessableEntity) webhooksCreateRes() {}
-
-type WebhooksDeleteBadRequest ProblemDetails
-
-func (*WebhooksDeleteBadRequest) webhooksDeleteRes() {}
-
-type WebhooksDeleteForbidden ProblemDetails
-
-func (*WebhooksDeleteForbidden) webhooksDeleteRes() {}
-
 // WebhooksDeleteNoContent is response for WebhooksDelete operation.
 type WebhooksDeleteNoContent struct{}
-
-func (*WebhooksDeleteNoContent) webhooksDeleteRes() {}
-
-type WebhooksDeleteNotFound ProblemDetails
-
-func (*WebhooksDeleteNotFound) webhooksDeleteRes() {}
-
-type WebhooksDeleteUnauthorized ProblemDetails
-
-func (*WebhooksDeleteUnauthorized) webhooksDeleteRes() {}
-
-type WebhooksDeleteUnprocessableEntity ProblemDetails
-
-func (*WebhooksDeleteUnprocessableEntity) webhooksDeleteRes() {}
-
-type WebhooksGetBadRequest ProblemDetails
-
-func (*WebhooksGetBadRequest) webhooksGetRes() {}
-
-type WebhooksGetForbidden ProblemDetails
-
-func (*WebhooksGetForbidden) webhooksGetRes() {}
-
-type WebhooksGetNotFound ProblemDetails
-
-func (*WebhooksGetNotFound) webhooksGetRes() {}
-
-type WebhooksGetUnauthorized ProblemDetails
-
-func (*WebhooksGetUnauthorized) webhooksGetRes() {}
-
-type WebhooksListBadRequest ProblemDetails
-
-func (*WebhooksListBadRequest) webhooksListRes() {}
-
-type WebhooksListForbidden ProblemDetails
-
-func (*WebhooksListForbidden) webhooksListRes() {}
 
 // Paginated response.
 type WebhooksListOK struct {
@@ -22364,72 +19953,6 @@ func (s *WebhooksListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*WebhooksListOK) webhooksListRes() {}
-
-type WebhooksListUnauthorized ProblemDetails
-
-func (*WebhooksListUnauthorized) webhooksListRes() {}
-
-type WebhooksListUnprocessableEntity ProblemDetails
-
-func (*WebhooksListUnprocessableEntity) webhooksListRes() {}
-
-type WebhooksRegenerateSecretBadRequest ProblemDetails
-
-func (*WebhooksRegenerateSecretBadRequest) webhooksRegenerateSecretRes() {}
-
-type WebhooksRegenerateSecretForbidden ProblemDetails
-
-func (*WebhooksRegenerateSecretForbidden) webhooksRegenerateSecretRes() {}
-
-type WebhooksRegenerateSecretNotFound ProblemDetails
-
-func (*WebhooksRegenerateSecretNotFound) webhooksRegenerateSecretRes() {}
-
-type WebhooksRegenerateSecretUnauthorized ProblemDetails
-
-func (*WebhooksRegenerateSecretUnauthorized) webhooksRegenerateSecretRes() {}
-
-type WebhooksTestBadRequest ProblemDetails
-
-func (*WebhooksTestBadRequest) webhooksTestRes() {}
-
-type WebhooksTestForbidden ProblemDetails
-
-func (*WebhooksTestForbidden) webhooksTestRes() {}
-
-type WebhooksTestNotFound ProblemDetails
-
-func (*WebhooksTestNotFound) webhooksTestRes() {}
-
-type WebhooksTestUnauthorized ProblemDetails
-
-func (*WebhooksTestUnauthorized) webhooksTestRes() {}
-
-type WebhooksTestUnprocessableEntity ProblemDetails
-
-func (*WebhooksTestUnprocessableEntity) webhooksTestRes() {}
-
-type WebhooksUpdateBadRequest ProblemDetails
-
-func (*WebhooksUpdateBadRequest) webhooksUpdateRes() {}
-
-type WebhooksUpdateForbidden ProblemDetails
-
-func (*WebhooksUpdateForbidden) webhooksUpdateRes() {}
-
-type WebhooksUpdateNotFound ProblemDetails
-
-func (*WebhooksUpdateNotFound) webhooksUpdateRes() {}
-
-type WebhooksUpdateUnauthorized ProblemDetails
-
-func (*WebhooksUpdateUnauthorized) webhooksUpdateRes() {}
-
-type WebhooksUpdateUnprocessableEntity ProblemDetails
-
-func (*WebhooksUpdateUnprocessableEntity) webhooksUpdateRes() {}
-
 type WorkspaceId string
 
 // The Workspace the token acts in.
@@ -22485,5 +20008,3 @@ func (s *WorkspaceResource) SetTimezone(val TimeZoneName) {
 func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
 	s.SendCap = val
 }
-
-func (*WorkspaceResource) workspaceGetRes() {}

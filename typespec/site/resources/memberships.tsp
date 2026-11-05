@@ -66,8 +66,7 @@ namespace SiteMemberships {
         @statusCode statusCode: 200;
         @body body: SiteMembershipResource[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Change a member's role (owner/admin only; owner-only to grant owner) */
   @updatesResource(SiteMembershipResource)
@@ -77,12 +76,7 @@ namespace SiteMemberships {
   op update(
     ...ResourceParameters<SiteMembershipResource>,
     @body body: SiteUpdateMembershipInput,
-  ):
-    | SiteMembershipResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem;
+  ): SiteMembershipResource | Problem;
 
   /** Remove a member (owner/admin only; the last owner cannot be removed) */
   @deletesResource(SiteMembershipResource)
@@ -91,10 +85,7 @@ namespace SiteMemberships {
   @requiresPermissions(#[Permission.membersManage])
   op delete(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Reset the member's Second factor (owner/admin only; owner-only for an owner):
    * clears the factor and its Recovery codes and ends every session of theirs. The
@@ -105,8 +96,5 @@ namespace SiteMemberships {
   @requiresPermissions(#[Permission.secondFactorManage])
   op resetSecondFactor(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

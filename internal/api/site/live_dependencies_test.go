@@ -19,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func usedBy(refused *siteapi.InUseProblemDetails) map[siteapi.UsedByKind][]string {
+func usedBy(refused siteapi.ProblemDetails) map[siteapi.UsedByKind][]string {
 	out := map[siteapi.UsedByKind][]string{}
 	for _, u := range refused.UsedBy {
 		out[u.Kind] = append(out[u.Kind], u.Name)
@@ -35,16 +35,12 @@ func TestSiteTagDeleteRefusedWhileARuleOrAStepNamesIt(t *testing.T) {
 	ctx := context.Background()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	byRule, err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.TagNewsletterID)})
-	require.NoError(t, err)
-	refused, ok := byRule.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", byRule)
+	err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.TagNewsletterID)})
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindSegment: {fixtures.SegmentNewsletterReadersName}}, usedBy(refused))
 
-	byStep, err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.TagVipID)})
-	require.NoError(t, err)
-	refused, ok = byStep.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", byStep)
+	err = c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.TagVipID)})
+	refused = testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{
 		siteapi.UsedByKindAutomation: {fixtures.AutomationTagOnEngagementName},
 		// An active Rule names the Tag in its Condition (RuleVipOnly) or in an Action (RuleMultiTrigger).
@@ -61,13 +57,11 @@ func TestSiteTagDeleteUnusedTag(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	got, err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TagUnusedID)})
+	err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TagUnusedID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsDeleteNoContent{}, got)
 
-	again, err := c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TagUnusedID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsDeleteNotFound{}, again)
+	err = c.SiteTagsDelete(ctx, siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TagUnusedID)})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // The default Integration is used by a scheduled or sending Broadcast that names none, and by an
@@ -78,12 +72,11 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := context.Background()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
-	del := func() siteapi.SiteIntegrationsDeleteRes {
+	del := func() error {
 		return deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID)
 	}
 
-	refused, ok := del().(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, del(), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{
 		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianScheduledName, fixtures.BroadcastMeridianSendingName},
 		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName},
@@ -94,7 +87,7 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	sendMeridianBroadcasts(t, meridian)
 	require.NoError(t, meridian.Automation().UpdateOneID(fixtures.AutomationMeridianWelcomeID).SetStatus(automation.StatusInactive).Exec(ctx))
 
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
+	require.NoError(t, del())
 }
 
 // sendMeridianBroadcasts finishes the scheduled and the sending Broadcast of Meridian's default: they
@@ -113,13 +106,12 @@ func TestSiteIntegrationArchiveNamedByALiveBroadcast(t *testing.T) {
 	ctx := context.Background()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
 
-	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianNamedName}}, usedBy(refused))
 
 	_, err := meridian.Broadcast().UpdateOneID(fixtures.BroadcastMeridianNamedID).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID))
+	require.NoError(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianNamedID))
 }
 
 // A Sending domain is used through the domain of a From address, not an id: a scheduled Broadcast
@@ -129,11 +121,10 @@ func TestSiteSendingDomainDeleteRefusedThroughAFromAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianNewsID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianNewsID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianFromNewsName}}, usedBy(refused))
 
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianMailID))
+	require.NoError(t, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianMailID))
 }
 
 // A Broadcast with no From and an active Automation send from the default Integration's configured
@@ -143,12 +134,11 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	ctx := context.Background()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
-	del := func() siteapi.SiteSendingDomainsDeleteRes {
+	del := func() error {
 		return deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID)
 	}
 
-	refused, ok := del().(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, del(), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{
 		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianScheduledName, fixtures.BroadcastMeridianSendingName},
 		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName},
@@ -156,7 +146,7 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 
 	sendMeridianBroadcasts(t, meridian)
 	require.NoError(t, meridian.Automation().UpdateOneID(fixtures.AutomationMeridianWelcomeID).SetStatus(automation.StatusInactive).Exec(ctx))
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del())
+	require.NoError(t, del())
 }
 
 func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
@@ -186,17 +176,15 @@ func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
 		SetSteps(`[{"type":"email"},`).Exec(ctx)
 	require.NoError(t, err)
 
-	_, err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{
+	err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
 	})
 
 	require.Error(t, err, "the unreadable definition must fail the removal check")
-	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{
+	kept, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
 	})
 	require.NoError(t, err)
-	kept, ok := got.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", got)
 	deleted := kept.DiscardedAt.IsSet()
 	assert.False(t, deleted)
 }
@@ -235,12 +223,11 @@ func TestSiteTelegramBroadcastUsesTheTelegramDefaultOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianTelegramID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianTelegramID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastMeridianTelegramName}}, usedBy(refused))
 
-	refused, ok = deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok, "the email default is still used by the email Broadcasts")
+	refused = testhelper.SiteRefusal(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID), http.StatusConflict,
+		"the email default is still used by the email Broadcasts")
 	assert.NotContains(t, usedBy(refused)[siteapi.UsedByKindBroadcast], fixtures.BroadcastMeridianTelegramName)
 }
 
@@ -251,15 +238,14 @@ func TestSiteSendingDomainIsUsedThroughTheFromOfTheIntegrationASendGoesThrough(t
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 
-	refused, ok := deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianRelayID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianRelayID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{
 		siteapi.UsedByKindBroadcast:  {fixtures.BroadcastMeridianViaRelayName},
 		siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianViaRelayName},
 	}, usedBy(refused))
 
-	refused, ok = deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok, "the default's domain is still used by the Broadcasts through the default")
+	refused = testhelper.SiteRefusal(t, deleteSendingDomainOf(t, c, fixtures.MeridianPublicID, fixtures.SendingDomainMeridianID), http.StatusConflict,
+		"the default's domain is still used by the Broadcasts through the default")
 	users := usedBy(refused)
 	assert.NotContains(t, users[siteapi.UsedByKindBroadcast], fixtures.BroadcastMeridianViaRelayName)
 	assert.NotContains(t, users[siteapi.UsedByKindAutomation], fixtures.AutomationMeridianViaRelayName)
@@ -273,11 +259,10 @@ func TestSiteIntegrationIsUsedByTheVersionAnUnfinishedEnrollmentStandsOn(t *test
 	ctx := t.Context()
 	meridian := env.DB.Scoped(fixtures.MeridianID)
 
-	refused, ok := deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianEnrolledName}}, usedBy(refused))
 
 	require.NoError(t, meridian.AutomationRun().UpdateOneID(fixtures.AutomationRunMeridianEnrolledID).
 		SetStatus(automationrun.StatusCompleted).SetEndedAt(time.Now()).Exec(ctx))
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID))
+	require.NoError(t, deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianEnrolledID))
 }

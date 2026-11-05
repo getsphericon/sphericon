@@ -7,7 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTemplatesListParams) (siteapi.SiteTemplatesListRes, error) {
+func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTemplatesListParams) (*siteapi.SiteTemplatesListOK, error) {
 	scoped := workspaceScope(ctx)
 
 	page, err := h.templates.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
@@ -18,7 +18,7 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 	return mapper.TemplatesListPage(page), nil
 }
 
-func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {
+func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (*siteapi.SiteEmailTemplateResource, error) {
 	scoped := workspaceScope(ctx)
 
 	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
@@ -32,7 +32,7 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateT
 	return &res, nil
 }
 
-func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemplatesGetParams) (siteapi.SiteTemplatesGetRes, error) {
+func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemplatesGetParams) (*siteapi.SiteEmailTemplateResource, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -44,7 +44,7 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 	return &res, nil
 }
 
-func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateTemplateInput, params siteapi.SiteTemplatesUpdateParams) (siteapi.SiteTemplatesUpdateRes, error) {
+func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateTemplateInput, params siteapi.SiteTemplatesUpdateParams) (*siteapi.SiteEmailTemplateResource, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -60,13 +60,13 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateT
 	return &res, nil
 }
 
-func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteTemplatesDeleteParams) (siteapi.SiteTemplatesDeleteRes, error) {
+func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteTemplatesDeleteParams) error {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	err := h.templates.Delete(ctx, scoped, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteTemplatesDeleteNoContent{}, nil
+	return nil
 }

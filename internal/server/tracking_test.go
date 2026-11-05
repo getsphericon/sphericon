@@ -10,19 +10,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/samber/lo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // unsubPath turns a tracker UnsubscribeURL into the local "/e/u/<token>" path the
@@ -78,7 +79,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	confirmed := func() bool {
 		ok, err := env.DB.Confirmation.Query().Where(
 			confirmation.WorkspaceID(fixtures.AcmeID),
-			confirmation.ChannelEQ(confirmation.ChannelEmail),
+			confirmation.ChannelEQ(channels.Email),
 			confirmation.DestinationEQ(*c.Email),
 		).Exist(ctx)
 		require.NoError(t, err)
@@ -146,14 +147,14 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 
 	// A per-source (broadcasts) opt-out must NOT invalidate the confirmation.
 	post(unsubPath(t, tr, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.True(t, confExists(), "per-source opt-out leaves the confirmation")
 
 	// The everything opt-out deletes the confirmation row.
 	post(unsubPath(t, tr, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceEverything, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.False(t, confExists(), "everything opt-out invalidates the confirmation")
@@ -214,14 +215,14 @@ func TestTrackingEndpoints(t *testing.T) {
 	// page and records nothing (a link scanner's GET must not opt anyone out); only
 	// POST performs the opt-out.
 	uPath := unsubPath(t, tr, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
 	})
 	optedOut := func() bool {
 		ok, err := env.DB.Unsubscribe.Query().Where(
 			unsubscribe.WorkspaceID(fixtures.AcmeID),
-			unsubscribe.ChannelEQ(unsubscribe.ChannelEmail),
+			unsubscribe.ChannelEQ(channels.Email),
 			unsubscribe.DestinationEQ(*c.Email),
 			unsubscribe.SendingSourceEQ(eligibility.SourceBroadcasts),
 		).Exist(ctx)
@@ -268,7 +269,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	target := tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
+		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, OutboundMessageID: fixtures.OutboundMessageWelcomeID,
 	}
 
@@ -309,7 +310,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 
 	// POST performs the opt-out (GET only renders the confirm page — ADR 0012).
 	resp := post(unsubPath(t, tr, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.AutomationSource(a.ID), Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
@@ -356,7 +357,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	// GET the source unsubscribe → confirm-page redirect carrying the escalation
 	// URL in ?all=.
 	srcPath := unsubPath(t, tr, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
 	})

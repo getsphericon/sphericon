@@ -21,10 +21,7 @@ func TestSiteContactsLookupCountsTheCapturedMessagesOfAnAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	assert.Equal(t, int32(1), got.CapturedMessages)
 }
 
@@ -34,10 +31,7 @@ func TestSiteContactsLookupAddressHeldOnlyByACapturedMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	res := lookup(t, c, fixtures.GlobexPublicID, capturedOnlyAddress)
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.GlobexPublicID, capturedOnlyAddress)
 	assert.Equal(t, siteapi.SiteContactHoldings{CapturedMessages: 1}, *got)
 }
 
@@ -47,15 +41,16 @@ func TestSiteContactsEraseByEmailDeletesAnAddressHeldOnlyByACapturedMessage(t *t
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	res := eraseByEmail(t, c, fixtures.GlobexPublicID, capturedOnlyAddress)
+	err := c.SiteContactsErase(t.Context(), siteapi.SiteContactsEraseParams{
+		WorkspaceId: fixtures.GlobexPublicID, Email: capturedOnlyAddress,
+	})
 
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
+	require.NoError(t, err)
 	gone := env.DB.CapturedMessage.Query().Where(capturedmessage.ID(fixtures.CapturedMessageGlobexWelcomeID)).ExistX(t.Context())
 	assert.False(t, gone)
 	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.ID(fixtures.CapturedMessageGlobexNewsletterID)).ExistX(t.Context())
 	assert.True(t, kept, "another address's message stays")
-	got, ok := lookup(t, c, fixtures.GlobexPublicID, capturedOnlyAddress).(*siteapi.SiteContactHoldings)
-	require.True(t, ok)
+	got := lookup(t, c, fixtures.GlobexPublicID, capturedOnlyAddress)
 	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
@@ -67,12 +62,11 @@ func TestSiteContactsDeleteErasesTheCapturedMessagesOfTheContact(t *testing.T) {
 	globex := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 	require.NotZero(t, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(t.Context()))
 
-	res, err := c.SiteContactsDelete(t.Context(), siteapi.SiteContactsDeleteParams{
+	err := c.SiteContactsDelete(t.Context(), siteapi.SiteContactsDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactExportSubjectID),
 	})
 
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, res)
 	assert.Zero(t, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(t.Context()))
 	assert.Equal(t, globex, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context()))
 }
@@ -83,11 +77,10 @@ func TestDeletingATestInboxKeepsItsCapturedMessages(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	out, err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{
+	err := c.SiteIntegrationsDelete(t.Context(), siteapi.SiteIntegrationsDeleteParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID),
 	})
 
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, out)
 	assert.Equal(t, 2, env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context()))
 }

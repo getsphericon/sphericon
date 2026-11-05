@@ -52,9 +52,5 @@ namespace BrandKit {
    * instructions. Read-only: an agent never changes the Brand kit. */
   @get
   @requiresScopes(#[ApiTokenScope.templatesRead])
-  op get():
-    | BrandKitResource
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  op get(): BrandKitResource | Problem;
 }

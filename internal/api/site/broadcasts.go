@@ -7,10 +7,10 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -44,7 +44,7 @@ func (h *Handlers) broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.
 	return res, nil
 }
 
-func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (siteapi.SiteBroadcastsListRes, error) {
+func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (*siteapi.SiteBroadcastsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
@@ -66,7 +66,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	})), nil
 }
 
-func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
+func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.BroadcastCreate(req)
@@ -90,14 +90,14 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.Create
 // broadcastWarnings is the lint of a saved Broadcast's content on its Channel (ADR 0040), over the
 // body as written when the save wrote one: on email the subject and the body.
 func (h *Handlers) broadcastWarnings(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, written siteapi.BroadcastContentInputSum) ([]siteapi.LintFinding, error) {
-	if b.Channel == broadcast.ChannelEmail {
+	if b.Channel == channels.Email {
 		body := written.EmailBroadcastContentInput.Body
 		return h.lintWarnings(ctx, s, lo.FromPtr(b.Subject), body, lo.FromPtr(b.Body))
 	}
 	return nil, nil
 }
 
-func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (siteapi.SiteBroadcastsGetRes, error) {
+func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -112,7 +112,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 	return &res, nil
 }
 
-func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.UpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (siteapi.SiteBroadcastsUpdateRes, error) {
+func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.UpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -137,7 +137,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.Update
 
 // SiteBroadcastsArchive archives a draft, sent or failed broadcast (ADR 0100): it leaves the list
 // but keeps its report, tracking and figures.
-func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (siteapi.SiteBroadcastsArchiveRes, error) {
+func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -153,7 +153,7 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 }
 
 // SiteBroadcastsUnarchive brings an archived broadcast back to the list.
-func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (siteapi.SiteBroadcastsUnarchiveRes, error) {
+func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -170,7 +170,7 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 
 // SiteBroadcastsSend sends a draft or scheduled broadcast immediately. The state
 // machine lives in the broadcasts module; this is the HTTP adapter.
-func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBroadcastsSendParams) (siteapi.SiteBroadcastsSendRes, error) {
+func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBroadcastsSendParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -187,7 +187,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 }
 
 // SiteBroadcastsSchedule schedules a draft broadcast to send at a future time.
-func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.ScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (siteapi.SiteBroadcastsScheduleRes, error) {
+func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.ScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (*siteapi.SiteBroadcastResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -206,7 +206,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
 // at a nonexistent recipient). Used to preview the rendered email or text.
-func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
+func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (*siteapi.SiteTestSendBroadcastResult, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)

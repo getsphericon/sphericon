@@ -23,16 +23,14 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": []byte(`"gold"`)}),
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.JSONEq(t, `"gold"`, string(res.CustomFields.Value["plan"]))
 
 	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
 		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": []byte(`"platinum"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.JSONEq(t, `"platinum"`, string(upd.CustomFields.Value["plan"]))
 }
 
@@ -43,14 +41,13 @@ func TestSiteEventsListFiltersByContact(t *testing.T) {
 
 	all, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)
-	allPage := all.(*siteapi.SiteEventsListOK)
+	allPage := all
 
 	res, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(idStr(fixtures.ContactAliceID)),
 	})
 	require.NoError(t, err)
-	page, ok := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, ok, "got %T", res)
+	page := res
 	assert.Less(t, page.TotalItems, allPage.TotalItems, "the contact filter narrows the list")
 	want, err := env.DB.Event.Query().Where(event.WorkspaceID(fixtures.AcmeID), event.ContactID(fixtures.ContactAliceID)).Count(ctx)
 	require.NoError(t, err)

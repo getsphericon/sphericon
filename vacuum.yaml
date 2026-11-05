@@ -1,14 +1,15 @@
 # vacuum's recommended ruleset (mise run check:openapi), with the rules of our own contract.
 extends: [[vacuum:oas, recommended]]
 rules:
-  # The Go servers decode an operation's parameters and body before its handler runs, and refuse
-  # one that does not decode (a malformed id, a body that is no JSON) with a 400. An operation that
-  # takes either declares that answer, or a client and the contract fuzz meet an undocumented status.
-  input-declares-bad-request:
-    description: An operation that takes a parameter or a body declares its 400 (BadRequestProblem)
+  # Every refusal or failure of an operation (a body that does not decode, a missing scope, a
+  # module's refusal, a fault) is answered with the one Problem, declared as the operation's
+  # `default` response; ogen reduces it to the surfaces' error type (ogen.yml) and fails the
+  # generation without it, and this says so on the contract itself.
+  operation-declares-problem:
+    description: Every operation declares the Problem as its default response
     severity: error
     recommended: true
-    given: $.paths[*][?(@.requestBody || @.parameters.length > 0)].responses
+    given: $.paths[*][get,put,post,delete,patch].responses
     then:
-      field: '400'
+      field: default
       function: truthy

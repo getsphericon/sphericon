@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -22,12 +21,11 @@ func TestATokenWithoutTheScopeOfItsOperationAnswers403(t *testing.T) {
 	var got answer
 	reader := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead)), capture(&got))
 
-	res, err := reader.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
+	_, err := reader.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("scopeless@example.com"),
 	})
-	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.ContactsCreateForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, http.StatusForbidden, got.status)
 	assert.JSONEq(t, `{"status":403,"title":"Forbidden","detail":"the API token lacks the scope contacts:write"}`, got.body)
 	assert.Zero(t, env.DB.Contact.Query().Where(contact.Email("scopeless@example.com")).CountX(t.Context()), "the refused call created nothing")
@@ -39,12 +37,11 @@ func TestATokenWithoutEveryScopeOfItsOperationAnswers403NamingThem(t *testing.T)
 	var got answer
 	bare := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeTemplatesRead)), capture(&got))
 
-	res, err := bare.AutomationsDryRunHttpStep(t.Context(), &externalapi.DryRunHttpStepInput{
+	_, err := bare.AutomationsDryRunHttpStep(t.Context(), &externalapi.DryRunHttpStepInput{
 		Body: `{}`, ContactId: externalapi.EntityId(fixtures.ContactAliceID),
 	})
-	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.AutomationsDryRunHttpStepForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.JSONEq(t, `{"status":403,"title":"Forbidden","detail":"the API token lacks the scopes automations:write, contacts:read"}`, got.body)
 }
 
@@ -62,10 +59,9 @@ func TestAnUnusableTokenAnswers401WhateverItsScopes(t *testing.T) {
 		var got answer
 		c := env.ExternalVia(t, bearer, capture(&got))
 
-		res, err := c.ContactsList(t.Context(), externalapi.ContactsListParams{})
-		require.NoError(t, err, name)
+		_, err := c.ContactsList(t.Context(), externalapi.ContactsListParams{})
 
-		assert.IsType(t, &externalapi.ContactsListUnauthorized{}, res, name)
+		testhelper.ExternalRefusal(t, err, http.StatusUnauthorized, name)
 		assert.Equal(t, http.StatusUnauthorized, got.status, name)
 	}
 }

@@ -12,8 +12,7 @@ namespace SiteSmsConsents {
   @requiresPermissions(#[])
   op get(@path workspaceId: WorkspaceId, @path contactId: EntityId):
     | SmsConsent
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /**
    * Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation
@@ -27,11 +26,7 @@ namespace SiteSmsConsents {
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     @body body: ConsentEvidence,
-  ):
-    | SmsConsent
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SmsConsent | Problem;
 
   /**
    * Record an SMS opt-out that reached you by another route (an email, a call): the contact's
@@ -42,7 +37,5 @@ namespace SiteSmsConsents {
   @requiresPermissions(#[])
   op optOut(@path workspaceId: WorkspaceId, @path contactId: EntityId):
     | SmsConsent
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

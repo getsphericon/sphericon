@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -58,7 +58,7 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 	b := env.DB.Broadcast.GetX(ctx, id)
 	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.LacunaID), b)
 	require.NoError(t, err)
-	assert.Equal(t, broadcasts.Stats{Channel: broadcast.ChannelSms, Recipients: 4, Sent: 4, Delivered: 1, Undelivered: 1}, st[id],
+	assert.Equal(t, broadcasts.Stats{Channel: channels.SMS, Recipients: 4, Sent: 4, Delivered: 1, Undelivered: 1}, st[id],
 		"Cyd's and Dot's texts have no final report: they are neither")
 	figures := st[id].Figures()
 	assert.Equal(t, 1, *figures.Delivered)

@@ -35,8 +35,7 @@ func readUsage(t *testing.T, c *serviceapi.Client, params serviceapi.ServiceUsag
 	t.Helper()
 	res, err := c.ServiceUsageList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*serviceapi.ServiceUsageListOK)
-	require.Truef(t, ok, "the usage is answered, got %T", res)
+	page := res
 	return page
 }
 

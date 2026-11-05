@@ -1,6 +1,7 @@
 package jobs_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -51,7 +52,7 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	require.True(t, env.RunNextStep(t, mod))
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), asked)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: rotated,
@@ -59,7 +60,6 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 		}),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: bot.Integration.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
 
 	env.RunQueuedSteps(t, mod)
 
@@ -72,11 +72,18 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 // goes and the waiting step sends.
 func TestAHeldTelegramIntegrationSavedWithTheSameTokenSendsAgain(t *testing.T) {
 	cases := map[string]struct {
-		save  func(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) any
-		saved any
+		save func(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) error
 	}{
-		"site":     {save: saveTelegramToken, saved: &siteapi.SiteIntegrationResource{}},
-		"external": {save: saveTelegramTokenExternal, saved: &externalapi.IntegrationResource{}},
+		"site": {save: func(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) error {
+			t.Helper()
+			_, err := saveTelegramToken(t, env, bot)
+			return err
+		}},
+		"external": {save: func(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) error {
+			t.Helper()
+			_, err := saveTelegramTokenExternal(t, env, bot)
+			return err
+		}},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -84,9 +91,9 @@ func TestAHeldTelegramIntegrationSavedWithTheSameTokenSendsAgain(t *testing.T) {
 			bot, runID, mod := heldTelegram(t, env)
 			env.Telegram.Clear()
 
-			res := tc.save(t, env, bot)
+			err := tc.save(t, env, bot)
 
-			require.IsType(t, tc.saved, res)
+			require.NoError(t, err)
 			hold := holdOf(t, env, bot)
 			assert.Empty(t, hold, "the hold is lifted")
 			env.RunQueuedSteps(t, mod)
@@ -106,10 +113,9 @@ func TestAHeldTelegramIntegrationSavedWithATokenTelegramStillRefusesStaysHeld(t 
 	env.Telegram.Clear()
 	env.Telegram.Revoke(bot.Token)
 
-	res := saveTelegramToken(t, env, bot)
+	_, err := saveTelegramToken(t, env, bot)
 
-	refused, ok := res.(*siteapi.SiteIntegrationsUpdateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value, "config.token")
 	hold := holdOf(t, env, bot)
 	assert.Equal(t, outbound.HoldProviderRefused, hold)
@@ -127,10 +133,9 @@ func TestATelegramIntegrationNotHeldSavedWithTheSameTokenChangesNothing(t *testi
 	bot := env.AcmeTelegram(t)
 	env.Telegram.Fail(telegramtest.GetMe, telegramtest.Unauthorized)
 
-	res := saveTelegramToken(t, env, bot)
+	saved, err := saveTelegramToken(t, env, bot)
 
-	saved, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", res)
+	require.NoError(t, err)
 	assert.Equal(t, bot.Integration.Config, saved.Config, "the bot is the one connected")
 	hold := holdOf(t, env, bot)
 	assert.Empty(t, hold)
@@ -162,31 +167,27 @@ func holdOf(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) s
 
 // saveTelegramToken saves the Integration with its same token through the Site API, as an Owner
 // does once the bot works again, and returns the answer.
-func saveTelegramToken(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) any {
+func saveTelegramToken(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
+	return env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: bot.Token,
 			}),
 		}),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: bot.Integration.ID})
-	require.NoError(t, err)
-	return res
 }
 
 // saveTelegramTokenExternal is saveTelegramToken through the External API.
-func saveTelegramTokenExternal(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) any {
+func saveTelegramTokenExternal(t *testing.T, env *testhelper.TestEnv, bot testhelper.TelegramBot) (*externalapi.IntegrationResource, error) {
 	t.Helper()
-	res, err := env.ExternalScoped(t, "integrations:write").IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{
+	return env.ExternalScoped(t, "integrations:write").IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{
 		Config: externalapi.NewOptIntegrationConfigInput(externalapi.IntegrationConfigInput{
 			OneOf: externalapi.NewTelegramConfigInputIntegrationConfigInputSum(externalapi.TelegramConfigInput{
 				Kind: externalapi.TelegramConfigInputKindTelegram, Token: bot.Token,
 			}),
 		}),
 	}, externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(bot.Integration.ID)})
-	require.NoError(t, err)
-	return res
 }
 
 // A 429 is a Deferral of at least retry_after: the message is not failed, the step is asked again

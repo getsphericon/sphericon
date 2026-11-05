@@ -6,12 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -162,17 +163,16 @@ func TestAZeroCollectLimitNeverThrottles(t *testing.T) {
 	}
 }
 
-// The generated collect client types the 429, so a caller needs no string matching.
+// The generated collect client types the 429, so a caller needs no string matching: the problem
+// repeats the wait (the rate limit headers are asserted on the raw answer above).
 func TestTheGeneratedCollectClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{Collect: 1}))
 	client := env.CollectAcme(t)
 
-	_, err := client.CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
+	err := client.CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
 	require.NoError(t, err)
-	res, err := client.CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
-	require.NoError(t, err)
+	err = client.CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
 
-	limited, ok := res.(*collectapi.ProblemDetailsHeaders)
-	require.True(t, ok, "got %T", res)
-	assert.Equal(t, int32(60), limited.RetryAfter)
+	limited := testhelper.CollectRefusal(t, err, http.StatusTooManyRequests)
+	assert.Equal(t, int32(60), limited.RetryAfter.Value)
 }

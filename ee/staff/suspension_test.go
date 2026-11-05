@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -16,39 +17,65 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string) staffeeapi.StaffWorkspacesSuspendRes {
+func (h *harness) trySuspend(t *testing.T, c *staffeeapi.Client, id, reason string) (*staffeeapi.StaffSuspensionChange, error) {
 	t.Helper()
-	res, err := c.StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: reason},
+	return c.StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: reason},
 		staffeeapi.StaffWorkspacesSuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
-	require.NoError(t, err)
-	return res
 }
 
-func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) staffeeapi.StaffWorkspacesUnsuspendRes {
+func (h *harness) tryUnsuspend(t *testing.T, c *staffeeapi.Client, id string) (*staffeeapi.StaffSuspensionChange, error) {
 	t.Helper()
-	res, err := c.StaffWorkspacesUnsuspend(t.Context(),
+	return c.StaffWorkspacesUnsuspend(t.Context(),
 		staffeeapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
+}
+
+// suspend is trySuspend for a call that is expected to succeed.
+func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string) *staffeeapi.StaffSuspensionChange {
+	t.Helper()
+	res, err := h.trySuspend(t, c, id, reason)
 	require.NoError(t, err)
 	return res
 }
 
-func (h *harness) sendOnAPI(t *testing.T, to string) externalapi.EmailsSendRes {
+// unsuspend is tryUnsuspend for a call that is expected to succeed.
+func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) *staffeeapi.StaffSuspensionChange {
 	t.Helper()
-	res, err := h.env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
+	res, err := h.tryUnsuspend(t, c, id)
+	require.NoError(t, err)
+	return res
+}
+
+// trySendOnAPI sends the welcome template to on /api.
+func (h *harness) trySendOnAPI(t *testing.T, to string) (*externalapi.SendTransactionalEmailResponse, error) {
+	t.Helper()
+	return h.env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(int64(fixtures.TemplateWelcomeID)), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
+}
+
+// sendOnAPI is trySendOnAPI for a send that is expected to go through.
+func (h *harness) sendOnAPI(t *testing.T, to string) *externalapi.SendTransactionalEmailResponse {
+	t.Helper()
+	res, err := h.trySendOnAPI(t, to)
 	require.NoError(t, err)
 	return res
+}
+
+// refusedSendOnAPI is trySendOnAPI for a send that is expected to be refused with a 4xx.
+func (h *harness) refusedSendOnAPI(t *testing.T, to string, msgAndArgs ...any) externalapi.ProblemDetails {
+	t.Helper()
+	_, err := h.trySendOnAPI(t, to)
+	return testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, msgAndArgs...)
 }
 
 func TestAnStaffSuspendsAndUnsuspendsAWorkspace(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, ok := h.suspend(t, c, fixtures.AcmePublicID, "abuse report").(*staffeeapi.StaffSuspensionChange)
-	require.True(t, ok)
+	res := h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	assert.True(t, res.Changed)
 	require.True(t, res.Workspace.Suspension.IsSet())
 	s := res.Workspace.Suspension.Value
@@ -56,8 +83,7 @@ func TestAnStaffSuspendsAndUnsuspendsAWorkspace(t *testing.T) {
 	assert.Equal(t, strconv.Itoa(fixtures.StaffEnrolledID), s.Actor.ID.Value, "the session's StaffMember id is the actor")
 	assert.Equal(t, "abuse report", s.Reason.Value)
 
-	res, ok = h.unsuspend(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSuspensionChange)
-	require.True(t, ok)
+	res = h.unsuspend(t, c, fixtures.AcmePublicID)
 	assert.True(t, res.Changed)
 	assert.False(t, res.Workspace.Suspension.IsSet())
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
@@ -67,13 +93,11 @@ func TestSuspendingTwiceAndUnsuspendingAnActiveWorkspaceChangeNothing(t *testing
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	again, ok := h.unsuspend(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSuspensionChange)
-	require.True(t, ok)
+	again := h.unsuspend(t, c, fixtures.AcmePublicID)
 	assert.False(t, again.Changed, "an active Workspace stays as it was")
 
 	h.suspend(t, c, fixtures.AcmePublicID, "first")
-	second, ok := h.suspend(t, c, fixtures.AcmePublicID, "second").(*staffeeapi.StaffSuspensionChange)
-	require.True(t, ok)
+	second := h.suspend(t, c, fixtures.AcmePublicID, "second")
 	assert.False(t, second.Changed)
 	assert.Equal(t, "first", second.Workspace.Suspension.Value.Reason.Value, "the first reason stands")
 	assert.Len(t, h.env.SystemMail.Messages(), 1, "the owner is told once")
@@ -83,8 +107,8 @@ func TestSuspendRequiresAReason(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res := h.suspend(t, c, fixtures.AcmePublicID, "   ")
-	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{}, res)
+	_, err := h.trySuspend(t, c, fixtures.AcmePublicID, "   ")
+	testhelper.StaffeeRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 
@@ -92,17 +116,18 @@ func TestSuspendAndUnsuspendAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendNotFound{}, h.suspend(t, c, "NoSuchId", "abuse"))
-	assert.IsType(t, &staffeeapi.StaffWorkspacesUnsuspendNotFound{}, h.unsuspend(t, c, "NoSuchId"))
+	_, err := h.trySuspend(t, c, "NoSuchId", "abuse")
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
+	_, err = h.tryUnsuspend(t, c, "NoSuchId")
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSuspensionActionsNeedAnStaffSession(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.StaffEnterpriseWithToken(t, "").StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: "x"},
+	_, err := h.env.StaffEnterpriseWithToken(t, "").StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: "x"},
 		staffeeapi.StaffWorkspacesSuspendParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendUnauthorized{}, res)
+	testhelper.StaffeeRefusal(t, err, http.StatusUnauthorized)
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 
@@ -126,20 +151,17 @@ func TestSuspendingFreezesSendsThroughOutboundAndNothingElse(t *testing.T) {
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 
-	held, ok := h.sendOnAPI(t, "held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
-	require.True(t, ok, "a send is refused with a 4xx")
+	held := h.refusedSendOnAPI(t, "held@example.com", "a send is refused with a 4xx")
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.Empty(t, h.env.CustomerMail.Messages())
 
-	collected, err := h.env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
+	err := h.env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})
+	require.NoError(t, err, "/collect keeps working")
+	_, err = h.env.ExternalAnchor(t).ContactsList(t.Context(), externalapi.ContactsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, collected, "/collect keeps working")
-	read, err := h.env.ExternalAnchor(t).ContactsList(t.Context(), externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListOK{}, read, "reads keep working")
 
 	h.unsuspend(t, c, fixtures.AcmePublicID)
-	assert.IsType(t, &externalapi.SendTransactionalEmailResponse{}, h.sendOnAPI(t, "resumed@example.com"), "sending resumes")
+	h.sendOnAPI(t, "resumed@example.com")
 }
 
 func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
@@ -148,10 +170,8 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	h.env.WorkEditionJobs(t)
 
-	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
+	page, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	page, ok := res.(*siteapi.SiteAuditEntryList)
-	require.Truef(t, ok, "got %T", res)
 	got := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Action == events.ActionWorkspaceSuspend })
 	require.Len(t, got, 1)
 	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)

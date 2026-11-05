@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -49,9 +50,8 @@ func (s shop) completed(id, total, currency string) {
 
 func (s shop) send(in externalapi.EventInput) {
 	s.t.Helper()
-	res, err := s.api.EventsCreate(s.t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{in}})
+	err := s.api.EventsCreate(s.t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{in}})
 	require.NoError(s.t, err)
-	require.IsType(s.t, &externalapi.EventsCreateNoContent{}, res)
 }
 
 func revenue(t *testing.T, c *siteapi.Client, rng siteapi.OptSiteAnalyticsRevenueRange) *siteapi.SiteAnalyticsRevenue {
@@ -62,20 +62,17 @@ func revenue(t *testing.T, c *siteapi.Client, rng siteapi.OptSiteAnalyticsRevenu
 // revenueOf is the revenue overview of the Workspace with the public id ws.
 func revenueOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, rng siteapi.OptSiteAnalyticsRevenueRange) *siteapi.SiteAnalyticsRevenue {
 	t.Helper()
-	res, err := c.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: ws, Range: rng})
+	got, err := c.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: ws, Range: rng})
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteAnalyticsRevenue)
-	require.Truef(t, ok, "got %T", res)
 	return got
 }
 
 func chooseCurrency(t *testing.T, c *siteapi.Client, code string) {
 	t.Helper()
-	res, err := c.SiteWorkspacesUpdateRevenueSettings(t.Context(),
+	_, err := c.SiteWorkspacesUpdateRevenueSettings(t.Context(),
 		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode(siteapi.CurrencyCode(code))},
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteRevenueSettingsResource{}, res)
 }
 
 func TestACompletedOrderIsRevenueInTheMinorUnitOfTheReportingCurrency(t *testing.T) {
@@ -177,16 +174,13 @@ func TestAChosenCurrencyIsKeptWhateverTheFirstOrderIsIn(t *testing.T) {
 func TestACurrencyChosenBeforeAnyOrderLeavesFirstOrderAtNull(t *testing.T) {
 	env := testhelper.Setup(t)
 	art := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
-	res, err := art.SiteWorkspacesUpdateRevenueSettings(t.Context(),
+	_, err := art.SiteWorkspacesUpdateRevenueSettings(t.Context(),
 		&siteapi.SiteUpdateRevenueSettingsInput{ReportingCurrency: siteapi.NewOptCurrencyCode("EUR")},
 		siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteRevenueSettingsResource{}, res)
 
-	read, err := art.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.VandelayPublicID})
+	got, err := art.SiteAnalyticsRevenue(t.Context(), siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
-	got, ok := read.(*siteapi.SiteAnalyticsRevenue)
-	require.Truef(t, ok, "got %T", read)
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
 	assert.True(t, got.FirstOrderAt.Null, "a chosen currency is not an Order")
 }
@@ -230,9 +224,8 @@ func TestErasingTheContactUnlinksItsOrdersAndTheAmountsStay(t *testing.T) {
 	linked := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-1")).OnlyX(t.Context())
 	require.NotNil(t, linked.ContactID)
 
-	res, err := s.api.ContactsEraseBy(t.Context(), externalapi.ContactsEraseByParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactAliceEmail)})
+	err := s.api.ContactsEraseBy(t.Context(), externalapi.ContactsEraseByParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.ContactsEraseByNoContent{}, res)
 
 	kept := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-1")).OnlyX(t.Context())
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
@@ -248,9 +241,8 @@ func backfillCompleted(t *testing.T, env *testhelper.TestEnv, old externalapi.Ti
 	in := orderInput("alice", "Order Completed", map[string]string{"order_id": `"H-1"`, "total": `30.00`, "currency": `"USD"`})
 	in.OccurredAt = externalapi.NewOptNilTimestamp(old)
 
-	res, err := newShop(t, env).api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
+	_, err := newShop(t, env).api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.RecordEventsBatchResult{}, res)
 	env.WorkOrderJobs(t)
 }
 
@@ -296,9 +288,8 @@ func TestAResentBackfillLoadChangesNothing(t *testing.T) {
 		in := orderInput("alice", "Order Completed", map[string]string{"order_id": `"` + orderID + `"`, "total": `30.00`, "currency": `"USD"`})
 		in.OccurredAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(time.Now().AddDate(0, 0, -40)))
 		in.ClientEventId = externalapi.NewOptNilString(clientEventID)
-		res, err := api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
+		_, err := api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 		require.NoError(t, err)
-		require.IsType(t, &externalapi.RecordEventsBatchResult{}, res)
 		env.WorkOrderJobs(t)
 	}
 
@@ -319,8 +310,7 @@ func TestALiveOrderEventOlderThanTheLiveWindowIsRefusedNamingBackfill(t *testing
 
 	res, err := newShop(t, env).api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
-	batch, ok := res.(*externalapi.RecordEventsBatchResult)
-	require.Truef(t, ok, "got %T", res)
+	batch := res
 	require.Len(t, batch.Results, 1)
 	assert.Equal(t, externalapi.EventBatchStatusFailed, batch.Results[0].Status)
 	assert.Contains(t, batch.Results[0].Error.Or(""), "backfill")
@@ -333,11 +323,10 @@ func TestALiveOrderEventOlderThanTheLiveWindowIsRefusedNamingBackfill(t *testing
 func TestOnlyAMemberOfTheWorkspaceReadsItsRevenue(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SiteAnalyticsRevenue(t.Context(),
+	_, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SiteAnalyticsRevenue(t.Context(),
 		siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.AcmePublicID})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAnalyticsRevenueNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestAChangeWithoutACurrencyThatArrivesFirstIsReadInTheCurrencyOfItsOrder(t *testing.T) {

@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -36,10 +37,8 @@ func userPage(t *testing.T, c *serviceapi.Client, cursor string, limit int32) *s
 	if limit > 0 {
 		params.Limit = serviceapi.NewOptInt32(limit)
 	}
-	res, err := c.ServiceUserFeedList(t.Context(), params)
+	page, err := c.ServiceUserFeedList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*serviceapi.ServiceUserFeedPage)
-	require.Truef(t, ok, "the feed is answered, got %T", res)
 	return page
 }
 
@@ -304,18 +303,16 @@ func TestAPrunedUnverifiedUserIsATombstone(t *testing.T) {
 func TestTheUserFeedNeedsTheReadUsersScope(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.ServiceClient(t, primary).ServiceUserFeedList(t.Context(), serviceapi.ServiceUserFeedListParams{})
+	_, err := h.env.ServiceClient(t, primary).ServiceUserFeedList(t.Context(), serviceapi.ServiceUserFeedListParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceUserFeedListForbidden{}, res, "a credential for Workspaces does not read Users")
+	testhelper.ServiceRefusal(t, err, http.StatusForbidden, "a credential for Workspaces does not read Users")
 }
 
 func TestAMalformedUserFeedCursorIsRefused(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := controlPlane(t, h).ServiceUserFeedList(t.Context(),
+	_, err := controlPlane(t, h).ServiceUserFeedList(t.Context(),
 		serviceapi.ServiceUserFeedListParams{Cursor: serviceapi.NewOptString("not-a-cursor")})
 
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceUserFeedListBadRequest{}, res)
+	testhelper.ServiceRefusal(t, err, http.StatusBadRequest)
 }

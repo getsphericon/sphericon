@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
@@ -69,7 +70,7 @@ func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.
 		assert.Nilf(t, e.URL, "%s keeps no url", e.Action)
 		assert.Emptyf(t, e.Properties, "%s keeps no Destination or url", e.Action)
 	}
-	kept := env.DB.Unsubscribe.Query().Where(unsubscribe.Destination("801001"), unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram)).AllX(ctx)
+	kept := env.DB.Unsubscribe.Query().Where(unsubscribe.Destination("801001"), unsubscribe.ChannelEQ(channels.Telegram)).AllX(ctx)
 	require.Len(t, kept, 1, "the opt-out stays")
 	assert.Nil(t, kept[0].ContactID, "detached from the Contact")
 

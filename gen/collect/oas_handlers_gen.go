@@ -118,8 +118,9 @@ func (s *Server) handleCollectEventsCreateRequest(args [0]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -146,8 +147,9 @@ func (s *Server) handleCollectEventsCreateRequest(args [0]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -169,7 +171,7 @@ func (s *Server) handleCollectEventsCreateRequest(args [0]string, argsEscaped bo
 		}
 	}()
 
-	var response CollectEventsCreateRes
+	var response *CollectEventsCreateNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -185,7 +187,7 @@ func (s *Server) handleCollectEventsCreateRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = *CollectEventsInput
 			Params   = struct{}
-			Response = CollectEventsCreateRes
+			Response = *CollectEventsCreateNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -196,16 +198,27 @@ func (s *Server) handleCollectEventsCreateRequest(args [0]string, argsEscaped bo
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.CollectEventsCreate(ctx, request)
+				err = s.h.CollectEventsCreate(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.CollectEventsCreate(ctx, request)
+		err = s.h.CollectEventsCreate(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -303,8 +316,9 @@ func (s *Server) handleCollectIdentifyCreateRequest(args [0]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -331,8 +345,9 @@ func (s *Server) handleCollectIdentifyCreateRequest(args [0]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -354,7 +369,7 @@ func (s *Server) handleCollectIdentifyCreateRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response CollectIdentifyCreateRes
+	var response *CollectOkResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -370,7 +385,7 @@ func (s *Server) handleCollectIdentifyCreateRequest(args [0]string, argsEscaped 
 		type (
 			Request  = *CollectIdentifyInput
 			Params   = struct{}
-			Response = CollectIdentifyCreateRes
+			Response = *CollectOkResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -389,8 +404,19 @@ func (s *Server) handleCollectIdentifyCreateRequest(args [0]string, argsEscaped 
 		response, err = s.h.CollectIdentifyCreate(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -491,8 +517,9 @@ func (s *Server) handleCollectTelegramStartLinksCreateRequest(args [0]string, ar
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -519,8 +546,9 @@ func (s *Server) handleCollectTelegramStartLinksCreateRequest(args [0]string, ar
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -542,7 +570,7 @@ func (s *Server) handleCollectTelegramStartLinksCreateRequest(args [0]string, ar
 		}
 	}()
 
-	var response CollectTelegramStartLinksCreateRes
+	var response *CollectTelegramStartLink
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -558,7 +586,7 @@ func (s *Server) handleCollectTelegramStartLinksCreateRequest(args [0]string, ar
 		type (
 			Request  = *CollectTelegramStartLinkInput
 			Params   = struct{}
-			Response = CollectTelegramStartLinksCreateRes
+			Response = *CollectTelegramStartLink
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -577,8 +605,19 @@ func (s *Server) handleCollectTelegramStartLinksCreateRequest(args [0]string, ar
 		response, err = s.h.CollectTelegramStartLinksCreate(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 

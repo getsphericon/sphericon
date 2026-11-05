@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Confirmation is the model entity for the Confirmation schema.
@@ -26,7 +27,7 @@ type Confirmation struct {
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel confirmation.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
 	// Provenance holds the value of the "provenance" field.
@@ -132,7 +133,7 @@ func (_m *Confirmation) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = confirmation.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case confirmation.FieldDestination:
 			if value, ok := values[i].(*sql.NullString); !ok {

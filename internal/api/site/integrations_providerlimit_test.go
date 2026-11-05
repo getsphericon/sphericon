@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"maps"
+	"net/http"
 	"slices"
 	"testing"
 
@@ -20,9 +21,8 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	ctx := context.Background()
 
 	// Unlimited by default: both limits read back as null.
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
+	def, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
-	def := got.(*siteapi.SiteIntegrationResource)
 	assert.True(t, def.MaxPerSecond.Null)
 	assert.True(t, def.MaxPerDay.Null)
 
@@ -32,7 +32,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(50000),
 	}, upd)
 	require.NoError(t, err)
-	res := updated.(*siteapi.SiteIntegrationResource)
+	res := updated
 	assert.Equal(t, int32(14), res.MaxPerSecond.Or(0))
 	assert.Equal(t, int32(50000), res.MaxPerDay.Or(0))
 
@@ -41,7 +41,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, upd)
 	require.NoError(t, err)
-	partialRes := partial.(*siteapi.SiteIntegrationResource)
+	partialRes := partial
 	assert.Equal(t, int32(14), partialRes.MaxPerSecond.Or(0), "omitted: unchanged")
 	assert.True(t, partialRes.MaxPerDay.Null, "null: cleared")
 
@@ -51,7 +51,7 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(2),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Equal(t, int32(2), created.(*siteapi.SiteIntegrationResource).MaxPerSecond.Or(0))
+	assert.Equal(t, int32(2), created.MaxPerSecond.Or(0))
 }
 
 // The contract bounds a limit to 1..10 000 per second and 1..100 000 000 per day:
@@ -69,22 +69,20 @@ func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 		"too many in a day": {MaxPerDay: siteapi.NewOptNilMaxPerDay(100000001)},
 	} {
 		t.Run(name, func(t *testing.T) {
-			res, err := c.SiteIntegrationsUpdate(ctx, in, upd)
-			require.NoError(t, err)
-			assert.IsType(t, &siteapi.SiteIntegrationsUpdateBadRequest{}, res)
+			_, err := c.SiteIntegrationsUpdate(ctx, in, upd)
+			testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 		})
 	}
 
 	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
-	assert.True(t, got.(*siteapi.SiteIntegrationResource).MaxPerSecond.Null, "a rejected update changed nothing")
+	assert.True(t, got.MaxPerSecond.Null, "a rejected update changed nothing")
 
-	edge, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(10000),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(100000000),
 	}, upd)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, edge, "the bounds themselves are allowed")
+	require.NoError(t, err, "the bounds themselves are allowed")
 }
 
 func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
@@ -97,7 +95,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	// fixture sends of the last 24 hours (a third is older, SES's is another row).
 	got, err := c.SiteIntegrationsGet(ctx, params)
 	require.NoError(t, err)
-	status := got.(*siteapi.SiteIntegrationResource).ProviderLimit
+	status := got.ProviderLimit
 	assert.True(t, status.PerSecond.Limit.Null)
 	assert.True(t, status.PerSecond.Source.Null)
 	assert.True(t, status.PerDay.Limit.Null)
@@ -109,7 +107,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(14),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
-	status = upd.(*siteapi.SiteIntegrationResource).ProviderLimit
+	status = upd.ProviderLimit
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
 	assert.Equal(t, siteapi.SiteProviderLimitSourceManual, status.PerSecond.Source.Or(""))
 	assert.True(t, status.PerDay.Limit.Null, "an unset window stays unlimited")
@@ -119,7 +117,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	list, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	usage := map[siteapi.EntityId]int32{}
-	for _, row := range *list.(*siteapi.SiteIntegrationsListOKApplicationJSON) {
+	for _, row := range list {
 		usage[row.ID] = row.ProviderLimit.SentLast24h
 	}
 	assert.Equal(t, int32(2), usage[1])
@@ -139,17 +137,9 @@ func postboxInput() siteapi.IntegrationConfigInput {
 }
 
 // refusedFields is the fields a 422 names.
-func refusedFields(t *testing.T, res any) []string {
+func refusedFields(t *testing.T, err error) []string {
 	t.Helper()
-	var problem siteapi.ProblemDetails
-	switch r := res.(type) {
-	case *siteapi.SiteIntegrationsCreateUnprocessableEntity:
-		problem = siteapi.ProblemDetails(*r)
-	case *siteapi.SiteIntegrationsUpdateUnprocessableEntity:
-		problem = siteapi.ProblemDetails(*r)
-	default:
-		require.Failf(t, "not a 422", "%T", res)
-	}
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	return slices.Sorted(maps.Keys(problem.Errors.Value))
 }
 
@@ -177,19 +167,17 @@ func TestSiteIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			in := tc.in
 			in.Name, in.Params, in.Config = "Postbox", sesTopicParams, postboxInput()
-			res, err := c.SiteIntegrationsCreate(ctx, &in, params)
-			require.NoError(t, err)
-			assert.Equal(t, tc.missing, refusedFields(t, res))
+			_, err := c.SiteIntegrationsCreate(ctx, &in, params)
+			assert.Equal(t, tc.missing, refusedFields(t, err))
 		})
 	}
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
+	_, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Postbox", Params: sesTopicParams, Config: postboxInput(),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, created, "both values: saved")
+	require.NoError(t, err, "both values: saved")
 }
 
 // An edit is judged by what it leaves: an Integration that gains an endpoint gets both values
@@ -201,29 +189,25 @@ func TestSiteIntegrationsSesCompatibleKeepsTheProviderLimit(t *testing.T) {
 	// The fixture's AWS SES Integration has no endpoint and no limit.
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSesID}
 
-	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(postboxInput()),
 	}, params)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"maxPerDay", "maxPerSecond"}, refusedFields(t, moved))
+	assert.Equal(t, []string{"maxPerDay", "maxPerSecond"}, refusedFields(t, err))
 
-	movedWithLimits, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config:       siteapi.NewOptIntegrationConfigInput(postboxInput()),
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
 		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 	}, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, movedWithLimits)
 
-	cleared, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, params)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"maxPerDay"}, refusedFields(t, cleared))
+	assert.Equal(t, []string{"maxPerDay"}, refusedFields(t, err))
 
-	renamed, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Name: siteapi.NewOptString("Postbox (prod)"),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationResource{}, renamed, "the stored values still apply")
+	require.NoError(t, err, "the stored values still apply")
 }

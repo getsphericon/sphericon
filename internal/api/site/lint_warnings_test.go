@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,8 +40,7 @@ func TestSiteTemplateSaveReturnsWarningsAndStoresTheContent(t *testing.T) {
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 
 	got := findings(res.Warnings)
 	require.Len(t, got[siteapi.LintCodeMissingAlt], 1)
@@ -71,8 +71,7 @@ func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 
 	got := findings(res.Warnings)
 	assert.Len(t, got[siteapi.LintCodeMissingAlt], 1)
@@ -88,11 +87,10 @@ func TestSiteTemplateSaveRefusesOnlyWhatCannotRender(t *testing.T) {
 	ctx := context.Background()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
-	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
+	_, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Broken", Body: siteapi.NewOptString("<div><span>unclosed</div>"),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesCreateUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, before, env.DB.EmailTemplate.Query().CountX(ctx), "nothing stored")
 }
 
@@ -106,8 +104,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	got := findings(res.Warnings)
 	assert.Len(t, got[siteapi.LintCodeMissingAlt], 1)
 	assert.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
@@ -116,8 +113,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")})},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
-	upd, ok := updated.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", updated)
+	upd := updated
 	assert.Len(t, findings(upd.Warnings)[siteapi.LintCodeMissingAlt], 1)
 }
 
@@ -130,7 +126,6 @@ func TestSiteTemplateSaveOfACleanMessageHasNoWarnings(t *testing.T) {
 			`<p style="color:#202124;font-family:Arial, sans-serif">Hi</p><img src="https://cdn.example.com/a.png" alt="A">`),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.Empty(t, res.Warnings)
 }

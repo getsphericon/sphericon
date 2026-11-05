@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 )
 
@@ -167,24 +168,10 @@ var (
 	DefaultLinkTracking bool
 )
 
-// Channel defines the type for the "channel" enum field.
-type Channel string
-
-// Channel values.
-const (
-	ChannelEmail    Channel = "email"
-	ChannelTelegram Channel = "telegram"
-	ChannelSms      Channel = "sms"
-)
-
-func (c Channel) String() string {
-	return string(c)
-}
-
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
-func ChannelValidator(c Channel) error {
+func ChannelValidator(c channels.Channel) error {
 	switch c {
-	case ChannelEmail, ChannelTelegram, ChannelSms:
+	case "email", "telegram", "sms":
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for channel field: %q", c)

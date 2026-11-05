@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -19,37 +20,29 @@ func TestSiteTemplatesCRUD(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
+	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name:    "Welcome",
 		Subject: siteapi.NewOptString("Welcome {{ first_name }}"),
 		Body:    siteapi.NewOptString("<p>Hi</p>"),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, "Welcome", res.Name)
 
-	got, err := c.SiteTemplatesGet(ctx, siteapi.SiteTemplatesGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	gotRes, err := c.SiteTemplatesGet(ctx, siteapi.SiteTemplatesGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, res.ID, gotRes.ID)
 
-	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
+	updRes, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
 		Name: siteapi.NewOptString("Welcome v2"),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	updRes, ok := updated.(*siteapi.SiteEmailTemplateResource)
-	require.Truef(t, ok, "got %T", updated)
 	assert.Equal(t, "Welcome v2", updRes.Name)
 
-	del, err := c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesDeleteNoContent{}, del)
 
-	gone, err := c.SiteTemplatesGet(ctx, siteapi.SiteTemplatesGetParams{WorkspaceId: workspaceID, ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesGetNotFound{}, gone)
+	_, err = c.SiteTemplatesGet(ctx, siteapi.SiteTemplatesGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // A test-send that is held (here: a suspended Workspace) is rejected with 422.
@@ -60,11 +53,10 @@ func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 
 	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
-	out, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{
+	_, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{
 		Email: siteapi.NewOptEmailAddress("qa@test.dev"),
 	}, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, out)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // Mapping only: the blank-name rule itself is tested at the templates module.
@@ -73,10 +65,9 @@ func TestSiteTemplatesMapABlankNameTo422(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	upd, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Name: siteapi.NewOptString("")},
+	_, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Name: siteapi.NewOptString("")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.TemplateWelcomeID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesUpdateUnprocessableEntity{}, upd)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }
 
@@ -84,8 +75,7 @@ func TestSiteTemplatesCreateMapsABlankNameTo422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{Name: ""},
+	_, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{Name: ""},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesCreateUnprocessableEntity{}, created)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

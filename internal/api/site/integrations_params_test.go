@@ -1,11 +1,11 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -19,14 +19,12 @@ func TestSiteIntegrationsRefuseParamsOnTheirOwnField(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	create := func(params siteapi.JsonObject) siteapi.ProblemDetailsErrors {
 		t.Helper()
-		res, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
+		_, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 			Name:   "SES",
 			Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 			Params: siteapi.NewOptJsonObject(params),
 		}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		refused, ok := res.(*siteapi.SiteIntegrationsCreateUnprocessableEntity)
-		require.Truef(t, ok, "got %T", res)
+		refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 		return refused.Errors.Value
 	}
 

@@ -250,11 +250,7 @@ interface SiteSegments
   preview(
     ...ResourceCollectionParameters<SiteSegmentResource>,
     @body body: SitePreviewSegmentInput,
-  ):
-    | SitePreviewSegmentResult
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SitePreviewSegmentResult | Problem;
 }
 
 @route("/workspaces/{workspaceId}/segments/{segmentId}/contacts")
@@ -270,11 +266,7 @@ namespace SiteSegmentContacts {
     @path workspaceId: WorkspaceId,
     @path segmentId: EntityId,
     ...PageQuery,
-  ):
-    | Page<SiteContactResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteContactResource> | Problem;
 }
 
 @@requiresPermissions(SiteSegments.archive, #[]);

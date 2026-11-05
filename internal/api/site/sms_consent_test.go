@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := t.Context()
 
-	initial, err := member.SiteSmsConsentsGet(ctx, smsParams(fixtures.ContactTexterID))
+	before, err := member.SiteSmsConsentsGet(ctx, smsParams(fixtures.ContactTexterID))
 	require.NoError(t, err)
 	confirmed, err := member.SiteSmsConsentsConfirm(ctx, &siteapi.ConsentEvidence{
 		Wording: "Text me about orders and offers", Source: "phone call", Brand: "Acme",
@@ -32,17 +33,14 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	require.NoError(t, err)
 	eligible, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelSMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
-	optedOut, err := member.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
+	stopped, err := member.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)
 
-	before, ok := initial.(*siteapi.SmsConsent)
-	require.Truef(t, ok, "got %T", initial)
 	assert.Equal(t, fixtures.ContactTexterPhone, before.Phone.Value)
 	assert.False(t, before.Confirmation.Set, "no consent yet")
 	assert.False(t, before.OptOut.Set, "no opt-out yet")
 
-	after, ok := confirmed.(*siteapi.SmsConsent)
-	require.Truef(t, ok, "got %T", confirmed)
+	after := confirmed
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
 	assert.True(t, eligible.Eligible)
@@ -53,8 +51,6 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 
-	stopped, ok := optedOut.(*siteapi.SmsConsent)
-	require.Truef(t, ok, "got %T", optedOut)
 	require.True(t, stopped.OptOut.Set, "opted out")
 	assert.Equal(t, siteapi.OptOutViaManual, stopped.OptOut.Value.Via, "recorded by hand: an off-channel opt-out")
 	assert.False(t, stopped.Confirmation.Set, "the opt-out drops the stale consent")
@@ -65,16 +61,12 @@ func TestSMSConsentIsRefusedForAContactWithoutAPhoneAndNotFoundInAnotherWorkspac
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := t.Context()
 
-	noPhone, err := owner.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactAliceID)})
-	require.NoError(t, err)
-	foreign, err := owner.SiteSmsConsentsGet(ctx, smsParams(fixtures.TyrellMatrixConfirmedID))
-	require.NoError(t, err)
-	read, err := owner.SiteSmsConsentsGet(ctx, smsParams(fixtures.ContactAliceID))
+	_, noPhone := owner.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactAliceID)})
+	_, foreign := owner.SiteSmsConsentsGet(ctx, smsParams(fixtures.TyrellMatrixConfirmedID))
+	none, err := owner.SiteSmsConsentsGet(ctx, smsParams(fixtures.ContactAliceID))
 	require.NoError(t, err)
 
-	assert.IsType(t, new(siteapi.SiteSmsConsentsOptOutUnprocessableEntity), noPhone)
-	assert.IsType(t, new(siteapi.SiteSmsConsentsGetNotFound), foreign)
-	none, ok := read.(*siteapi.SmsConsent)
-	require.Truef(t, ok, "got %T", read)
+	testhelper.SiteRefusal(t, noPhone, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, foreign, http.StatusNotFound)
 	assert.False(t, none.Phone.Set, "no phone")
 }

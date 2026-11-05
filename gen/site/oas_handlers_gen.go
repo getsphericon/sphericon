@@ -120,8 +120,9 @@ func (s *Server) handleSiteAnalyticsClicksByLinkRequest(args [1]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -148,8 +149,9 @@ func (s *Server) handleSiteAnalyticsClicksByLinkRequest(args [1]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -166,7 +168,7 @@ func (s *Server) handleSiteAnalyticsClicksByLinkRequest(args [1]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteAnalyticsClicksByLinkRes
+	var response *SiteAnalyticsClicksByLink
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -191,7 +193,7 @@ func (s *Server) handleSiteAnalyticsClicksByLinkRequest(args [1]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsClicksByLinkParams
-			Response = SiteAnalyticsClicksByLinkRes
+			Response = *SiteAnalyticsClicksByLink
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -210,8 +212,19 @@ func (s *Server) handleSiteAnalyticsClicksByLinkRequest(args [1]string, argsEsca
 		response, err = s.h.SiteAnalyticsClicksByLink(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -311,8 +324,9 @@ func (s *Server) handleSiteAnalyticsDeliverabilityRequest(args [1]string, argsEs
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -339,8 +353,9 @@ func (s *Server) handleSiteAnalyticsDeliverabilityRequest(args [1]string, argsEs
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -357,7 +372,7 @@ func (s *Server) handleSiteAnalyticsDeliverabilityRequest(args [1]string, argsEs
 
 	var rawBody []byte
 
-	var response SiteAnalyticsDeliverabilityRes
+	var response *SiteAnalyticsDeliverability
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -382,7 +397,7 @@ func (s *Server) handleSiteAnalyticsDeliverabilityRequest(args [1]string, argsEs
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsDeliverabilityParams
-			Response = SiteAnalyticsDeliverabilityRes
+			Response = *SiteAnalyticsDeliverability
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -401,8 +416,19 @@ func (s *Server) handleSiteAnalyticsDeliverabilityRequest(args [1]string, argsEs
 		response, err = s.h.SiteAnalyticsDeliverability(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -502,8 +528,9 @@ func (s *Server) handleSiteAnalyticsEventsRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -530,8 +557,9 @@ func (s *Server) handleSiteAnalyticsEventsRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -548,7 +576,7 @@ func (s *Server) handleSiteAnalyticsEventsRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteAnalyticsEventsRes
+	var response *SiteAnalyticsEvents
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -573,7 +601,7 @@ func (s *Server) handleSiteAnalyticsEventsRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsEventsParams
-			Response = SiteAnalyticsEventsRes
+			Response = *SiteAnalyticsEvents
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -592,8 +620,19 @@ func (s *Server) handleSiteAnalyticsEventsRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteAnalyticsEvents(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -693,8 +732,9 @@ func (s *Server) handleSiteAnalyticsNewPeopleRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -721,8 +761,9 @@ func (s *Server) handleSiteAnalyticsNewPeopleRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -739,7 +780,7 @@ func (s *Server) handleSiteAnalyticsNewPeopleRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteAnalyticsNewPeopleRes
+	var response *SiteNewPeopleReport
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -764,7 +805,7 @@ func (s *Server) handleSiteAnalyticsNewPeopleRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsNewPeopleParams
-			Response = SiteAnalyticsNewPeopleRes
+			Response = *SiteNewPeopleReport
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -783,8 +824,19 @@ func (s *Server) handleSiteAnalyticsNewPeopleRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteAnalyticsNewPeople(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -884,8 +936,9 @@ func (s *Server) handleSiteAnalyticsOpensByHourRequest(args [1]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -912,8 +965,9 @@ func (s *Server) handleSiteAnalyticsOpensByHourRequest(args [1]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -930,7 +984,7 @@ func (s *Server) handleSiteAnalyticsOpensByHourRequest(args [1]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteAnalyticsOpensByHourRes
+	var response *SiteAnalyticsOpensByHour
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -955,7 +1009,7 @@ func (s *Server) handleSiteAnalyticsOpensByHourRequest(args [1]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsOpensByHourParams
-			Response = SiteAnalyticsOpensByHourRes
+			Response = *SiteAnalyticsOpensByHour
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -974,8 +1028,19 @@ func (s *Server) handleSiteAnalyticsOpensByHourRequest(args [1]string, argsEscap
 		response, err = s.h.SiteAnalyticsOpensByHour(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1075,8 +1140,9 @@ func (s *Server) handleSiteAnalyticsOverviewRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1103,8 +1169,9 @@ func (s *Server) handleSiteAnalyticsOverviewRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1121,7 +1188,7 @@ func (s *Server) handleSiteAnalyticsOverviewRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteAnalyticsOverviewRes
+	var response *SiteAnalyticsOverview
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1146,7 +1213,7 @@ func (s *Server) handleSiteAnalyticsOverviewRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsOverviewParams
-			Response = SiteAnalyticsOverviewRes
+			Response = *SiteAnalyticsOverview
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1165,8 +1232,19 @@ func (s *Server) handleSiteAnalyticsOverviewRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteAnalyticsOverview(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1267,8 +1345,9 @@ func (s *Server) handleSiteAnalyticsRevenueRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1295,8 +1374,9 @@ func (s *Server) handleSiteAnalyticsRevenueRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1313,7 +1393,7 @@ func (s *Server) handleSiteAnalyticsRevenueRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response SiteAnalyticsRevenueRes
+	var response *SiteAnalyticsRevenue
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1338,7 +1418,7 @@ func (s *Server) handleSiteAnalyticsRevenueRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsRevenueParams
-			Response = SiteAnalyticsRevenueRes
+			Response = *SiteAnalyticsRevenue
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1357,8 +1437,19 @@ func (s *Server) handleSiteAnalyticsRevenueRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteAnalyticsRevenue(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1459,8 +1550,9 @@ func (s *Server) handleSiteAnalyticsSubscribedPeopleRequest(args [1]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1487,8 +1579,9 @@ func (s *Server) handleSiteAnalyticsSubscribedPeopleRequest(args [1]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1505,7 +1598,7 @@ func (s *Server) handleSiteAnalyticsSubscribedPeopleRequest(args [1]string, args
 
 	var rawBody []byte
 
-	var response SiteAnalyticsSubscribedPeopleRes
+	var response *SiteAnalyticsSubscribedPeople
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1530,7 +1623,7 @@ func (s *Server) handleSiteAnalyticsSubscribedPeopleRequest(args [1]string, args
 		type (
 			Request  = struct{}
 			Params   = SiteAnalyticsSubscribedPeopleParams
-			Response = SiteAnalyticsSubscribedPeopleRes
+			Response = *SiteAnalyticsSubscribedPeople
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1549,8 +1642,19 @@ func (s *Server) handleSiteAnalyticsSubscribedPeopleRequest(args [1]string, args
 		response, err = s.h.SiteAnalyticsSubscribedPeople(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1650,8 +1754,9 @@ func (s *Server) handleSiteAttentionGetRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1678,8 +1783,9 @@ func (s *Server) handleSiteAttentionGetRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1696,7 +1802,7 @@ func (s *Server) handleSiteAttentionGetRequest(args [1]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteAttentionGetRes
+	var response *SiteAttentionList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1717,7 +1823,7 @@ func (s *Server) handleSiteAttentionGetRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteAttentionGetParams
-			Response = SiteAttentionGetRes
+			Response = *SiteAttentionList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1736,8 +1842,19 @@ func (s *Server) handleSiteAttentionGetRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteAttentionGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1838,8 +1955,9 @@ func (s *Server) handleSiteAuditExportRequest(args [1]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1866,8 +1984,9 @@ func (s *Server) handleSiteAuditExportRequest(args [1]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1884,7 +2003,7 @@ func (s *Server) handleSiteAuditExportRequest(args [1]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteAuditExportRes
+	var response *SiteAuditExportOKHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1941,7 +2060,7 @@ func (s *Server) handleSiteAuditExportRequest(args [1]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteAuditExportParams
-			Response = SiteAuditExportRes
+			Response = *SiteAuditExportOKHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1960,8 +2079,19 @@ func (s *Server) handleSiteAuditExportRequest(args [1]string, argsEscaped bool, 
 		response, err = s.h.SiteAuditExport(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2062,8 +2192,9 @@ func (s *Server) handleSiteAuditFacetsRequest(args [1]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2090,8 +2221,9 @@ func (s *Server) handleSiteAuditFacetsRequest(args [1]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2108,7 +2240,7 @@ func (s *Server) handleSiteAuditFacetsRequest(args [1]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteAuditFacetsRes
+	var response *SiteAuditFacets
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2129,7 +2261,7 @@ func (s *Server) handleSiteAuditFacetsRequest(args [1]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteAuditFacetsParams
-			Response = SiteAuditFacetsRes
+			Response = *SiteAuditFacets
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2148,8 +2280,19 @@ func (s *Server) handleSiteAuditFacetsRequest(args [1]string, argsEscaped bool, 
 		response, err = s.h.SiteAuditFacets(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2249,8 +2392,9 @@ func (s *Server) handleSiteAuditGetRetentionRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2277,8 +2421,9 @@ func (s *Server) handleSiteAuditGetRetentionRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2295,7 +2440,7 @@ func (s *Server) handleSiteAuditGetRetentionRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteAuditGetRetentionRes
+	var response *SiteAuditRetention
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2316,7 +2461,7 @@ func (s *Server) handleSiteAuditGetRetentionRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteAuditGetRetentionParams
-			Response = SiteAuditGetRetentionRes
+			Response = *SiteAuditRetention
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2335,8 +2480,19 @@ func (s *Server) handleSiteAuditGetRetentionRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteAuditGetRetention(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2436,8 +2592,9 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2464,8 +2621,9 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2482,7 +2640,7 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 
 	var rawBody []byte
 
-	var response SiteAuditListRes
+	var response *SiteAuditEntryList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2547,7 +2705,7 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 		type (
 			Request  = struct{}
 			Params   = SiteAuditListParams
-			Response = SiteAuditListRes
+			Response = *SiteAuditEntryList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2566,8 +2724,19 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 		response, err = s.h.SiteAuditList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2668,8 +2837,9 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2696,8 +2866,9 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2729,7 +2900,7 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 		}
 	}()
 
-	var response SiteAuditSetRetentionRes
+	var response *SiteAuditRetention
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2750,7 +2921,7 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 		type (
 			Request  = *SiteAuditRetention
 			Params   = SiteAuditSetRetentionParams
-			Response = SiteAuditSetRetentionRes
+			Response = *SiteAuditRetention
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2769,8 +2940,19 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteAuditSetRetention(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2890,7 +3072,7 @@ func (s *Server) handleSiteAuthConfirmEmailChangeRequest(args [0]string, argsEsc
 		}
 	}()
 
-	var response SiteAuthConfirmEmailChangeRes
+	var response *SiteAuthConfirmEmailChangeOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2911,7 +3093,7 @@ func (s *Server) handleSiteAuthConfirmEmailChangeRequest(args [0]string, argsEsc
 		type (
 			Request  = *SiteConfirmEmailChangeInput
 			Params   = SiteAuthConfirmEmailChangeParams
-			Response = SiteAuthConfirmEmailChangeRes
+			Response = *SiteAuthConfirmEmailChangeOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2930,8 +3112,19 @@ func (s *Server) handleSiteAuthConfirmEmailChangeRequest(args [0]string, argsEsc
 		response, err = s.h.SiteAuthConfirmEmailChange(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3040,7 +3233,7 @@ func (s *Server) handleSiteAuthForgotPasswordRequest(args [0]string, argsEscaped
 		}
 	}()
 
-	var response SiteAuthForgotPasswordRes
+	var response *SiteAuthForgotPasswordAccepted
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3056,7 +3249,7 @@ func (s *Server) handleSiteAuthForgotPasswordRequest(args [0]string, argsEscaped
 		type (
 			Request  = *SiteForgotPasswordInput
 			Params   = struct{}
-			Response = SiteAuthForgotPasswordRes
+			Response = *SiteAuthForgotPasswordAccepted
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3067,16 +3260,27 @@ func (s *Server) handleSiteAuthForgotPasswordRequest(args [0]string, argsEscaped
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthForgotPassword(ctx, request)
+				err = s.h.SiteAuthForgotPassword(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthForgotPassword(ctx, request)
+		err = s.h.SiteAuthForgotPassword(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3189,7 +3393,7 @@ func (s *Server) handleSiteAuthLoginRequest(args [0]string, argsEscaped bool, w 
 		}
 	}()
 
-	var response SiteAuthLoginRes
+	var response *SiteLoginResultHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3205,7 +3409,7 @@ func (s *Server) handleSiteAuthLoginRequest(args [0]string, argsEscaped bool, w 
 		type (
 			Request  = *SiteLoginInput
 			Params   = struct{}
-			Response = SiteAuthLoginRes
+			Response = *SiteLoginResultHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3224,8 +3428,19 @@ func (s *Server) handleSiteAuthLoginRequest(args [0]string, argsEscaped bool, w 
 		response, err = s.h.SiteAuthLogin(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3349,8 +3564,19 @@ func (s *Server) handleSiteAuthLogoutRequest(args [0]string, argsEscaped bool, w
 		response, err = s.h.SiteAuthLogout(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3469,7 +3695,7 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 		}
 	}()
 
-	var response SiteAuthResendVerificationRes
+	var response *SiteAuthResendVerificationAccepted
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3490,7 +3716,7 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 		type (
 			Request  = *SiteResendVerificationInput
 			Params   = SiteAuthResendVerificationParams
-			Response = SiteAuthResendVerificationRes
+			Response = *SiteAuthResendVerificationAccepted
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3501,16 +3727,27 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			mreq,
 			unpackSiteAuthResendVerificationParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthResendVerification(ctx, request, params)
+				err = s.h.SiteAuthResendVerification(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthResendVerification(ctx, request, params)
+		err = s.h.SiteAuthResendVerification(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3618,7 +3855,7 @@ func (s *Server) handleSiteAuthResetPasswordRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response SiteAuthResetPasswordRes
+	var response *SiteAuthResetPasswordOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3634,7 +3871,7 @@ func (s *Server) handleSiteAuthResetPasswordRequest(args [0]string, argsEscaped 
 		type (
 			Request  = *SiteResetPasswordInput
 			Params   = struct{}
-			Response = SiteAuthResetPasswordRes
+			Response = *SiteAuthResetPasswordOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3645,16 +3882,27 @@ func (s *Server) handleSiteAuthResetPasswordRequest(args [0]string, argsEscaped 
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthResetPassword(ctx, request)
+				err = s.h.SiteAuthResetPassword(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthResetPassword(ctx, request)
+		err = s.h.SiteAuthResetPassword(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3764,7 +4012,7 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 		}
 	}()
 
-	var response SiteAuthSecondFactorRes
+	var response *SiteLoginResultHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3780,7 +4028,7 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 		type (
 			Request  = *SiteLoginSecondFactorInput
 			Params   = struct{}
-			Response = SiteAuthSecondFactorRes
+			Response = *SiteLoginResultHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3799,8 +4047,19 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 		response, err = s.h.SiteAuthSecondFactor(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3915,7 +4174,7 @@ func (s *Server) handleSiteAuthSignUpRequest(args [0]string, argsEscaped bool, w
 		}
 	}()
 
-	var response SiteAuthSignUpRes
+	var response *SiteAuthSignUpAccepted
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3931,7 +4190,7 @@ func (s *Server) handleSiteAuthSignUpRequest(args [0]string, argsEscaped bool, w
 		type (
 			Request  = *SiteSignUpInput
 			Params   = struct{}
-			Response = SiteAuthSignUpRes
+			Response = *SiteAuthSignUpAccepted
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3950,8 +4209,19 @@ func (s *Server) handleSiteAuthSignUpRequest(args [0]string, argsEscaped bool, w
 		response, err = s.h.SiteAuthSignUp(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4063,7 +4333,7 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteAuthSigninCallbackRes
+	var response *SiteAuthSigninCallbackFound
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4104,7 +4374,7 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteAuthSigninCallbackParams
-			Response = SiteAuthSigninCallbackRes
+			Response = *SiteAuthSigninCallbackFound
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4123,8 +4393,19 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteAuthSigninCallback(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4233,7 +4514,7 @@ func (s *Server) handleSiteAuthSigninNotMeRequest(args [0]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteAuthSigninNotMeRes
+	var response *SiteAuthSigninNotMeOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4249,7 +4530,7 @@ func (s *Server) handleSiteAuthSigninNotMeRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = *SiteSigninNotMeInput
 			Params   = struct{}
-			Response = SiteAuthSigninNotMeRes
+			Response = *SiteAuthSigninNotMeOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4260,16 +4541,27 @@ func (s *Server) handleSiteAuthSigninNotMeRequest(args [0]string, argsEscaped bo
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthSigninNotMe(ctx, request)
+				err = s.h.SiteAuthSigninNotMe(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthSigninNotMe(ctx, request)
+		err = s.h.SiteAuthSigninNotMe(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4373,7 +4665,7 @@ func (s *Server) handleSiteAuthSigninPendingRequest(args [0]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteAuthSigninPendingRes
+	var response *SitePendingSignup
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4394,7 +4686,7 @@ func (s *Server) handleSiteAuthSigninPendingRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteAuthSigninPendingParams
-			Response = SiteAuthSigninPendingRes
+			Response = *SitePendingSignup
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4413,8 +4705,19 @@ func (s *Server) handleSiteAuthSigninPendingRequest(args [0]string, argsEscaped 
 		response, err = s.h.SiteAuthSigninPending(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4522,7 +4825,7 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 		}
 	}()
 
-	var response SiteAuthSigninPendingDeclineRes
+	var response *SiteAuthSigninPendingDeclineNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4538,7 +4841,7 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 		type (
 			Request  = *SiteSigninPendingDeclineInput
 			Params   = struct{}
-			Response = SiteAuthSigninPendingDeclineRes
+			Response = *SiteAuthSigninPendingDeclineNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4549,16 +4852,27 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthSigninPendingDecline(ctx, request)
+				err = s.h.SiteAuthSigninPendingDecline(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteAuthSigninPendingDecline(ctx, request)
+		err = s.h.SiteAuthSigninPendingDecline(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4671,7 +4985,7 @@ func (s *Server) handleSiteAuthSigninPendingSubmitRequest(args [0]string, argsEs
 		}
 	}()
 
-	var response SiteAuthSigninPendingSubmitRes
+	var response *SiteAuthSigninPendingSubmitNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4687,7 +5001,7 @@ func (s *Server) handleSiteAuthSigninPendingSubmitRequest(args [0]string, argsEs
 		type (
 			Request  = *SiteSigninPendingSubmitInput
 			Params   = struct{}
-			Response = SiteAuthSigninPendingSubmitRes
+			Response = *SiteAuthSigninPendingSubmitNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4706,8 +5020,19 @@ func (s *Server) handleSiteAuthSigninPendingSubmitRequest(args [0]string, argsEs
 		response, err = s.h.SiteAuthSigninPendingSubmit(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4831,8 +5156,19 @@ func (s *Server) handleSiteAuthSigninProvidersRequest(args [0]string, argsEscape
 		response, err = s.h.SiteAuthSigninProviders(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -4937,7 +5273,7 @@ func (s *Server) handleSiteAuthSigninStartRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteAuthSigninStartRes
+	var response *SiteAuthSigninStartFound
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -4966,7 +5302,7 @@ func (s *Server) handleSiteAuthSigninStartRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteAuthSigninStartParams
-			Response = SiteAuthSigninStartRes
+			Response = *SiteAuthSigninStartFound
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -4985,8 +5321,19 @@ func (s *Server) handleSiteAuthSigninStartRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteAuthSigninStart(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -5110,7 +5457,7 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteAuthVerifyEmailRes
+	var response *SiteVerifyEmailResultHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5131,7 +5478,7 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = *SiteVerifyEmailInput
 			Params   = SiteAuthVerifyEmailParams
-			Response = SiteAuthVerifyEmailRes
+			Response = *SiteVerifyEmailResultHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5150,8 +5497,19 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 		response, err = s.h.SiteAuthVerifyEmail(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -5254,8 +5612,9 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -5282,8 +5641,9 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -5300,7 +5660,7 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteAutomationReportsGetRes
+	var response *SiteAutomationReport
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5329,7 +5689,7 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationReportsGetParams
-			Response = SiteAutomationReportsGetRes
+			Response = *SiteAutomationReport
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5348,8 +5708,19 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 		response, err = s.h.SiteAutomationReportsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -5451,8 +5822,9 @@ func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -5479,8 +5851,9 @@ func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -5497,7 +5870,7 @@ func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteAutomationsArchiveRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5522,7 +5895,7 @@ func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsArchiveParams
-			Response = SiteAutomationsArchiveRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5541,8 +5914,19 @@ func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteAutomationsArchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -5642,8 +6026,9 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -5670,8 +6055,9 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -5703,7 +6089,7 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 		}
 	}()
 
-	var response SiteAutomationsCreateRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5724,7 +6110,7 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 		type (
 			Request  = *SiteCreateAutomationInput
 			Params   = SiteAutomationsCreateParams
-			Response = SiteAutomationsCreateRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5743,8 +6129,19 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteAutomationsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -5844,8 +6241,9 @@ func (s *Server) handleSiteAutomationsDeactivateRequest(args [2]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -5872,8 +6270,9 @@ func (s *Server) handleSiteAutomationsDeactivateRequest(args [2]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -5890,7 +6289,7 @@ func (s *Server) handleSiteAutomationsDeactivateRequest(args [2]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteAutomationsDeactivateRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5915,7 +6314,7 @@ func (s *Server) handleSiteAutomationsDeactivateRequest(args [2]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsDeactivateParams
-			Response = SiteAutomationsDeactivateRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -5934,8 +6333,19 @@ func (s *Server) handleSiteAutomationsDeactivateRequest(args [2]string, argsEsca
 		response, err = s.h.SiteAutomationsDeactivate(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -6035,8 +6445,9 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -6063,8 +6474,9 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -6096,7 +6508,7 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 		}
 	}()
 
-	var response SiteAutomationsDryRunHttpStepRes
+	var response *SiteDryRunHttpStepResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6117,7 +6529,7 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 		type (
 			Request  = *SiteDryRunHttpStepInput
 			Params   = SiteAutomationsDryRunHttpStepParams
-			Response = SiteAutomationsDryRunHttpStepRes
+			Response = *SiteDryRunHttpStepResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6136,8 +6548,19 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 		response, err = s.h.SiteAutomationsDryRunHttpStep(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -6237,8 +6660,9 @@ func (s *Server) handleSiteAutomationsGetRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -6265,8 +6689,9 @@ func (s *Server) handleSiteAutomationsGetRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -6283,7 +6708,7 @@ func (s *Server) handleSiteAutomationsGetRequest(args [2]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteAutomationsGetRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6308,7 +6733,7 @@ func (s *Server) handleSiteAutomationsGetRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsGetParams
-			Response = SiteAutomationsGetRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6327,8 +6752,19 @@ func (s *Server) handleSiteAutomationsGetRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteAutomationsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -6428,8 +6864,9 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -6456,8 +6893,9 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -6474,7 +6912,7 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteAutomationsListRes
+	var response *SiteAutomationsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6523,7 +6961,7 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsListParams
-			Response = SiteAutomationsListRes
+			Response = *SiteAutomationsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6542,8 +6980,19 @@ func (s *Server) handleSiteAutomationsListRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteAutomationsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -6647,8 +7096,9 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -6675,8 +7125,9 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -6693,7 +7144,7 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteAutomationsPublishRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6718,7 +7169,7 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsPublishParams
-			Response = SiteAutomationsPublishRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6737,8 +7188,19 @@ func (s *Server) handleSiteAutomationsPublishRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteAutomationsPublish(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -6839,8 +7301,9 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -6867,8 +7330,9 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -6885,7 +7349,7 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteAutomationsRevertRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6910,7 +7374,7 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsRevertParams
-			Response = SiteAutomationsRevertRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6929,8 +7393,19 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteAutomationsRevert(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -7031,8 +7506,9 @@ func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -7059,8 +7535,9 @@ func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -7077,7 +7554,7 @@ func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteAutomationsUnarchiveRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7102,7 +7579,7 @@ func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationsUnarchiveParams
-			Response = SiteAutomationsUnarchiveRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7121,8 +7598,19 @@ func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscap
 		response, err = s.h.SiteAutomationsUnarchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -7223,8 +7711,9 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -7251,8 +7740,9 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -7284,7 +7774,7 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 		}
 	}()
 
-	var response SiteAutomationsUpdateRes
+	var response *SiteAutomationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7309,7 +7799,7 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 		type (
 			Request  = *SiteUpdateAutomationInput
 			Params   = SiteAutomationsUpdateParams
-			Response = SiteAutomationsUpdateRes
+			Response = *SiteAutomationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7328,8 +7818,19 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteAutomationsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -7429,8 +7930,9 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -7457,8 +7959,9 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -7475,7 +7978,7 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteBrandKitGetRes
+	var response *SiteBrandKitResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7496,7 +7999,7 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteBrandKitGetParams
-			Response = SiteBrandKitGetRes
+			Response = *SiteBrandKitResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7515,8 +8018,19 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 		response, err = s.h.SiteBrandKitGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -7618,8 +8132,9 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -7646,8 +8161,9 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -7664,7 +8180,7 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 
 	var rawBody []byte
 
-	var response SiteBrandKitRecreateStarterTemplatesRes
+	var response []SiteEmailTemplateResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7685,7 +8201,7 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 		type (
 			Request  = struct{}
 			Params   = SiteBrandKitRecreateStarterTemplatesParams
-			Response = SiteBrandKitRecreateStarterTemplatesRes
+			Response = []SiteEmailTemplateResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7704,8 +8220,19 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 		response, err = s.h.SiteBrandKitRecreateStarterTemplates(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -7807,8 +8334,9 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -7835,8 +8363,9 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -7868,7 +8397,7 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 		}
 	}()
 
-	var response SiteBrandKitSaveRes
+	var response *SiteBrandKitResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7889,7 +8418,7 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = *SiteSaveBrandKitInput
 			Params   = SiteBrandKitSaveParams
-			Response = SiteBrandKitSaveRes
+			Response = *SiteBrandKitResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7908,8 +8437,19 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteBrandKitSave(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -8011,8 +8551,9 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -8039,8 +8580,9 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -8057,7 +8599,7 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteBroadcastLinksListRes
+	var response *SiteBroadcastLinkClicksList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8082,7 +8624,7 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastLinksListParams
-			Response = SiteBroadcastLinksListRes
+			Response = *SiteBroadcastLinkClicksList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8101,8 +8643,19 @@ func (s *Server) handleSiteBroadcastLinksListRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteBroadcastLinksList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -8204,8 +8757,9 @@ func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -8232,8 +8786,9 @@ func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -8250,7 +8805,7 @@ func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteBroadcastsArchiveRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8275,7 +8830,7 @@ func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastsArchiveParams
-			Response = SiteBroadcastsArchiveRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8294,8 +8849,19 @@ func (s *Server) handleSiteBroadcastsArchiveRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteBroadcastsArchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -8395,8 +8961,9 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -8423,8 +8990,9 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -8456,7 +9024,7 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 		}
 	}()
 
-	var response SiteBroadcastsCreateRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8477,7 +9045,7 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 		type (
 			Request  = *CreateBroadcastInput
 			Params   = SiteBroadcastsCreateParams
-			Response = SiteBroadcastsCreateRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8496,8 +9064,19 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteBroadcastsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -8597,8 +9176,9 @@ func (s *Server) handleSiteBroadcastsGetRequest(args [2]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -8625,8 +9205,9 @@ func (s *Server) handleSiteBroadcastsGetRequest(args [2]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -8643,7 +9224,7 @@ func (s *Server) handleSiteBroadcastsGetRequest(args [2]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteBroadcastsGetRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8668,7 +9249,7 @@ func (s *Server) handleSiteBroadcastsGetRequest(args [2]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastsGetParams
-			Response = SiteBroadcastsGetRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8687,8 +9268,19 @@ func (s *Server) handleSiteBroadcastsGetRequest(args [2]string, argsEscaped bool
 		response, err = s.h.SiteBroadcastsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -8788,8 +9380,9 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -8816,8 +9409,9 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -8834,7 +9428,7 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteBroadcastsListRes
+	var response *SiteBroadcastsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8879,7 +9473,7 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastsListParams
-			Response = SiteBroadcastsListRes
+			Response = *SiteBroadcastsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8898,8 +9492,19 @@ func (s *Server) handleSiteBroadcastsListRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteBroadcastsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -9003,8 +9608,9 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -9031,8 +9637,9 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -9064,7 +9671,7 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 		}
 	}()
 
-	var response SiteBroadcastsScheduleRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9089,7 +9696,7 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 		type (
 			Request  = *ScheduleBroadcastInput
 			Params   = SiteBroadcastsScheduleParams
-			Response = SiteBroadcastsScheduleRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9108,8 +9715,19 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteBroadcastsSchedule(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -9210,8 +9828,9 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -9238,8 +9857,9 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -9256,7 +9876,7 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteBroadcastsSendRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9281,7 +9901,7 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastsSendParams
-			Response = SiteBroadcastsSendRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9300,8 +9920,19 @@ func (s *Server) handleSiteBroadcastsSendRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteBroadcastsSend(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -9406,8 +10037,9 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -9434,8 +10066,9 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -9467,7 +10100,7 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 		}
 	}()
 
-	var response SiteBroadcastsTestSendRes
+	var response *SiteTestSendBroadcastResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9492,7 +10125,7 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 		type (
 			Request  = *TestSendBroadcastInput
 			Params   = SiteBroadcastsTestSendParams
-			Response = SiteBroadcastsTestSendRes
+			Response = *SiteTestSendBroadcastResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9511,8 +10144,19 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteBroadcastsTestSend(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -9612,8 +10256,9 @@ func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -9640,8 +10285,9 @@ func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -9658,7 +10304,7 @@ func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscape
 
 	var rawBody []byte
 
-	var response SiteBroadcastsUnarchiveRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9683,7 +10329,7 @@ func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteBroadcastsUnarchiveParams
-			Response = SiteBroadcastsUnarchiveRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9702,8 +10348,19 @@ func (s *Server) handleSiteBroadcastsUnarchiveRequest(args [2]string, argsEscape
 		response, err = s.h.SiteBroadcastsUnarchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -9803,8 +10460,9 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -9831,8 +10489,9 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -9864,7 +10523,7 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 		}
 	}()
 
-	var response SiteBroadcastsUpdateRes
+	var response *SiteBroadcastResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9889,7 +10548,7 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 		type (
 			Request  = *UpdateBroadcastInput
 			Params   = SiteBroadcastsUpdateParams
-			Response = SiteBroadcastsUpdateRes
+			Response = *SiteBroadcastResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9908,8 +10567,19 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 		response, err = s.h.SiteBroadcastsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10009,8 +10679,9 @@ func (s *Server) handleSiteCapturedMessagesDeleteRequest(args [2]string, argsEsc
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10037,8 +10708,9 @@ func (s *Server) handleSiteCapturedMessagesDeleteRequest(args [2]string, argsEsc
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -10055,7 +10727,7 @@ func (s *Server) handleSiteCapturedMessagesDeleteRequest(args [2]string, argsEsc
 
 	var rawBody []byte
 
-	var response SiteCapturedMessagesDeleteRes
+	var response *SiteCapturedMessagesDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10080,7 +10752,7 @@ func (s *Server) handleSiteCapturedMessagesDeleteRequest(args [2]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = SiteCapturedMessagesDeleteParams
-			Response = SiteCapturedMessagesDeleteRes
+			Response = *SiteCapturedMessagesDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10091,16 +10763,27 @@ func (s *Server) handleSiteCapturedMessagesDeleteRequest(args [2]string, argsEsc
 			mreq,
 			unpackSiteCapturedMessagesDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteCapturedMessagesDelete(ctx, params)
+				err = s.h.SiteCapturedMessagesDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteCapturedMessagesDelete(ctx, params)
+		err = s.h.SiteCapturedMessagesDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10200,8 +10883,9 @@ func (s *Server) handleSiteCapturedMessagesDeleteAllRequest(args [1]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10228,8 +10912,9 @@ func (s *Server) handleSiteCapturedMessagesDeleteAllRequest(args [1]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -10246,7 +10931,7 @@ func (s *Server) handleSiteCapturedMessagesDeleteAllRequest(args [1]string, args
 
 	var rawBody []byte
 
-	var response SiteCapturedMessagesDeleteAllRes
+	var response *SiteCapturedMessagesDeleteAllNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10267,7 +10952,7 @@ func (s *Server) handleSiteCapturedMessagesDeleteAllRequest(args [1]string, args
 		type (
 			Request  = struct{}
 			Params   = SiteCapturedMessagesDeleteAllParams
-			Response = SiteCapturedMessagesDeleteAllRes
+			Response = *SiteCapturedMessagesDeleteAllNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10278,16 +10963,27 @@ func (s *Server) handleSiteCapturedMessagesDeleteAllRequest(args [1]string, args
 			mreq,
 			unpackSiteCapturedMessagesDeleteAllParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteCapturedMessagesDeleteAll(ctx, params)
+				err = s.h.SiteCapturedMessagesDeleteAll(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteCapturedMessagesDeleteAll(ctx, params)
+		err = s.h.SiteCapturedMessagesDeleteAll(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10387,8 +11083,9 @@ func (s *Server) handleSiteCapturedMessagesGetRequest(args [2]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10415,8 +11112,9 @@ func (s *Server) handleSiteCapturedMessagesGetRequest(args [2]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -10433,7 +11131,7 @@ func (s *Server) handleSiteCapturedMessagesGetRequest(args [2]string, argsEscape
 
 	var rawBody []byte
 
-	var response SiteCapturedMessagesGetRes
+	var response *SiteCapturedMessageResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10458,7 +11156,7 @@ func (s *Server) handleSiteCapturedMessagesGetRequest(args [2]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteCapturedMessagesGetParams
-			Response = SiteCapturedMessagesGetRes
+			Response = *SiteCapturedMessageResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10477,8 +11175,19 @@ func (s *Server) handleSiteCapturedMessagesGetRequest(args [2]string, argsEscape
 		response, err = s.h.SiteCapturedMessagesGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10579,8 +11288,9 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10607,8 +11317,9 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -10625,7 +11336,7 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteCapturedMessagesListRes
+	var response *SiteCapturedMessagesListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10654,7 +11365,7 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteCapturedMessagesListParams
-			Response = SiteCapturedMessagesListRes
+			Response = *SiteCapturedMessagesListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10673,8 +11384,19 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 		response, err = s.h.SiteCapturedMessagesList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10774,8 +11496,9 @@ func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10802,8 +11525,9 @@ func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -10820,7 +11544,7 @@ func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteConnectionsDeleteRes
+	var response *SiteConnectionsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10845,7 +11569,7 @@ func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteConnectionsDeleteParams
-			Response = SiteConnectionsDeleteRes
+			Response = *SiteConnectionsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10856,16 +11580,27 @@ func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped 
 			mreq,
 			unpackSiteConnectionsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteConnectionsDelete(ctx, params)
+				err = s.h.SiteConnectionsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteConnectionsDelete(ctx, params)
+		err = s.h.SiteConnectionsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -10965,8 +11700,9 @@ func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -10993,8 +11729,9 @@ func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11011,7 +11748,7 @@ func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteConnectionsListRes
+	var response []SiteConnectionResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11032,7 +11769,7 @@ func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteConnectionsListParams
-			Response = SiteConnectionsListRes
+			Response = []SiteConnectionResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11051,8 +11788,19 @@ func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteConnectionsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -11152,8 +11900,9 @@ func (s *Server) handleSiteContactsCreateRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -11180,8 +11929,9 @@ func (s *Server) handleSiteContactsCreateRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11213,7 +11963,7 @@ func (s *Server) handleSiteContactsCreateRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteContactsCreateRes
+	var response *SiteContactResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11234,7 +11984,7 @@ func (s *Server) handleSiteContactsCreateRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *SiteCreateContactInput
 			Params   = SiteContactsCreateParams
-			Response = SiteContactsCreateRes
+			Response = *SiteContactResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11253,8 +12003,19 @@ func (s *Server) handleSiteContactsCreateRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteContactsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -11355,8 +12116,9 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -11383,8 +12145,9 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11401,7 +12164,7 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteContactsDeleteRes
+	var response *SiteContactsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11426,7 +12189,7 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteContactsDeleteParams
-			Response = SiteContactsDeleteRes
+			Response = *SiteContactsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11437,16 +12200,27 @@ func (s *Server) handleSiteContactsDeleteRequest(args [2]string, argsEscaped boo
 			mreq,
 			unpackSiteContactsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteContactsDelete(ctx, params)
+				err = s.h.SiteContactsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteContactsDelete(ctx, params)
+		err = s.h.SiteContactsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -11549,8 +12323,9 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -11577,8 +12352,9 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11595,7 +12371,7 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteContactsEraseRes
+	var response *SiteContactsEraseNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11620,7 +12396,7 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteContactsEraseParams
-			Response = SiteContactsEraseRes
+			Response = *SiteContactsEraseNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11631,16 +12407,27 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 			mreq,
 			unpackSiteContactsEraseParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteContactsErase(ctx, params)
+				err = s.h.SiteContactsErase(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteContactsErase(ctx, params)
+		err = s.h.SiteContactsErase(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -11741,8 +12528,9 @@ func (s *Server) handleSiteContactsExportRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -11769,8 +12557,9 @@ func (s *Server) handleSiteContactsExportRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11835,8 +12624,19 @@ func (s *Server) handleSiteContactsExportRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteContactsExport(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -11936,8 +12736,9 @@ func (s *Server) handleSiteContactsGetRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -11964,8 +12765,9 @@ func (s *Server) handleSiteContactsGetRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -11982,7 +12784,7 @@ func (s *Server) handleSiteContactsGetRequest(args [2]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteContactsGetRes
+	var response *SiteContactResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12007,7 +12809,7 @@ func (s *Server) handleSiteContactsGetRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteContactsGetParams
-			Response = SiteContactsGetRes
+			Response = *SiteContactResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12026,8 +12828,19 @@ func (s *Server) handleSiteContactsGetRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteContactsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -12127,8 +12940,9 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -12155,8 +12969,9 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -12173,7 +12988,7 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteContactsListRes
+	var response *SiteContactsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12214,7 +13029,7 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteContactsListParams
-			Response = SiteContactsListRes
+			Response = *SiteContactsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12233,8 +13048,19 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteContactsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -12336,8 +13162,9 @@ func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -12364,8 +13191,9 @@ func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -12382,7 +13210,7 @@ func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteContactsLookupRes
+	var response *SiteContactHoldings
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12407,7 +13235,7 @@ func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteContactsLookupParams
-			Response = SiteContactsLookupRes
+			Response = *SiteContactHoldings
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12426,8 +13254,19 @@ func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteContactsLookup(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -12527,8 +13366,9 @@ func (s *Server) handleSiteContactsUpdateRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -12555,8 +13395,9 @@ func (s *Server) handleSiteContactsUpdateRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -12588,7 +13429,7 @@ func (s *Server) handleSiteContactsUpdateRequest(args [2]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteContactsUpdateRes
+	var response *SiteContactResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12613,7 +13454,7 @@ func (s *Server) handleSiteContactsUpdateRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = *SiteUpdateContactInput
 			Params   = SiteContactsUpdateParams
-			Response = SiteContactsUpdateRes
+			Response = *SiteContactResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12632,8 +13473,19 @@ func (s *Server) handleSiteContactsUpdateRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteContactsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -12733,8 +13585,9 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -12761,8 +13614,9 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -12779,7 +13633,7 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response SiteCustomFieldsListRes
+	var response *SiteCustomFieldsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -12800,7 +13654,7 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = SiteCustomFieldsListParams
-			Response = SiteCustomFieldsListRes
+			Response = *SiteCustomFieldsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -12819,8 +13673,19 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteCustomFieldsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -12922,8 +13787,9 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -12950,8 +13816,9 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -12983,7 +13850,7 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 		}
 	}()
 
-	var response SiteCustomFieldsUpdateRes
+	var response *SiteCustomFieldResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13008,7 +13875,7 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 		type (
 			Request  = *SiteUpdateCustomFieldInput
 			Params   = SiteCustomFieldsUpdateParams
-			Response = SiteCustomFieldsUpdateRes
+			Response = *SiteCustomFieldResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13027,8 +13894,19 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteCustomFieldsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -13128,8 +14006,9 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -13156,8 +14035,9 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -13174,7 +14054,7 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteDomainJoinGetRes
+	var response *SiteDomainJoinResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13195,7 +14075,7 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteDomainJoinGetParams
-			Response = SiteDomainJoinGetRes
+			Response = *SiteDomainJoinResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13214,8 +14094,19 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 		response, err = s.h.SiteDomainJoinGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -13316,8 +14207,9 @@ func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -13344,8 +14236,9 @@ func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -13377,7 +14270,7 @@ func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool
 		}
 	}()
 
-	var response SiteDomainJoinSetRes
+	var response *SiteDomainJoinResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13398,7 +14291,7 @@ func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool
 		type (
 			Request  = *SiteSetDomainJoinInput
 			Params   = SiteDomainJoinSetParams
-			Response = SiteDomainJoinSetRes
+			Response = *SiteDomainJoinResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13417,8 +14310,19 @@ func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool
 		response, err = s.h.SiteDomainJoinSet(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -13518,8 +14422,9 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -13546,8 +14451,9 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -13564,7 +14470,7 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteEnrollmentsGetRes
+	var response *SiteEnrollmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13593,7 +14499,7 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteEnrollmentsGetParams
-			Response = SiteEnrollmentsGetRes
+			Response = *SiteEnrollmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13612,8 +14518,19 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 		response, err = s.h.SiteEnrollmentsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -13713,8 +14630,9 @@ func (s *Server) handleSiteEnrollmentsListRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -13741,8 +14659,9 @@ func (s *Server) handleSiteEnrollmentsListRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -13759,7 +14678,7 @@ func (s *Server) handleSiteEnrollmentsListRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteEnrollmentsListRes
+	var response *SiteEnrollmentsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13796,7 +14715,7 @@ func (s *Server) handleSiteEnrollmentsListRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteEnrollmentsListParams
-			Response = SiteEnrollmentsListRes
+			Response = *SiteEnrollmentsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -13815,8 +14734,19 @@ func (s *Server) handleSiteEnrollmentsListRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteEnrollmentsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -13916,8 +14846,9 @@ func (s *Server) handleSiteEventsActionsRequest(args [1]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -13944,8 +14875,9 @@ func (s *Server) handleSiteEventsActionsRequest(args [1]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -13962,7 +14894,7 @@ func (s *Server) handleSiteEventsActionsRequest(args [1]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteEventsActionsRes
+	var response *SiteEventActionsResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -13983,7 +14915,7 @@ func (s *Server) handleSiteEventsActionsRequest(args [1]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteEventsActionsParams
-			Response = SiteEventsActionsRes
+			Response = *SiteEventActionsResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14002,8 +14934,19 @@ func (s *Server) handleSiteEventsActionsRequest(args [1]string, argsEscaped bool
 		response, err = s.h.SiteEventsActions(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -14103,8 +15046,9 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -14131,8 +15075,9 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -14149,7 +15094,7 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response SiteEventsListRes
+	var response *SiteEventsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14194,7 +15139,7 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = SiteEventsListParams
-			Response = SiteEventsListRes
+			Response = *SiteEventsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14213,8 +15158,19 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 		response, err = s.h.SiteEventsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -14318,8 +15274,9 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -14346,8 +15303,9 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -14364,7 +15322,7 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteIdentitiesLinkRes
+	var response *SiteIdentitiesLinkFound
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14389,7 +15347,7 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteIdentitiesLinkParams
-			Response = SiteIdentitiesLinkRes
+			Response = *SiteIdentitiesLinkFound
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14408,8 +15366,19 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteIdentitiesLink(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -14509,8 +15478,9 @@ func (s *Server) handleSiteIdentitiesListRequest(args [0]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -14537,8 +15507,9 @@ func (s *Server) handleSiteIdentitiesListRequest(args [0]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -14580,8 +15551,19 @@ func (s *Server) handleSiteIdentitiesListRequest(args [0]string, argsEscaped boo
 		response, err = s.h.SiteIdentitiesList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -14682,8 +15664,9 @@ func (s *Server) handleSiteIdentitiesUnlinkRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -14710,8 +15693,9 @@ func (s *Server) handleSiteIdentitiesUnlinkRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -14728,7 +15712,7 @@ func (s *Server) handleSiteIdentitiesUnlinkRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response SiteIdentitiesUnlinkRes
+	var response *SiteIdentitiesUnlinkNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14749,7 +15733,7 @@ func (s *Server) handleSiteIdentitiesUnlinkRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = SiteIdentitiesUnlinkParams
-			Response = SiteIdentitiesUnlinkRes
+			Response = *SiteIdentitiesUnlinkNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14768,8 +15752,19 @@ func (s *Server) handleSiteIdentitiesUnlinkRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteIdentitiesUnlink(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -14870,8 +15865,9 @@ func (s *Server) handleSiteInstanceGetReleaseRequest(args [0]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -14898,15 +15894,16 @@ func (s *Server) handleSiteInstanceGetReleaseRequest(args [0]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response SiteInstanceGetReleaseRes
+	var response *SiteInstanceRelease
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14922,7 +15919,7 @@ func (s *Server) handleSiteInstanceGetReleaseRequest(args [0]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = SiteInstanceGetReleaseRes
+			Response = *SiteInstanceRelease
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14941,8 +15938,19 @@ func (s *Server) handleSiteInstanceGetReleaseRequest(args [0]string, argsEscaped
 		response, err = s.h.SiteInstanceGetRelease(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -15042,8 +16050,9 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -15070,8 +16079,9 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -15103,7 +16113,7 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response SiteIntegrationsCreateRes
+	var response *SiteIntegrationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -15124,7 +16134,7 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 		type (
 			Request  = *CreateIntegrationInput
 			Params   = SiteIntegrationsCreateParams
-			Response = SiteIntegrationsCreateRes
+			Response = *SiteIntegrationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15143,8 +16153,19 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteIntegrationsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -15247,8 +16268,9 @@ func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -15275,8 +16297,9 @@ func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -15293,7 +16316,7 @@ func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteIntegrationsDeleteRes
+	var response *SiteIntegrationsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -15318,7 +16341,7 @@ func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteIntegrationsDeleteParams
-			Response = SiteIntegrationsDeleteRes
+			Response = *SiteIntegrationsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15329,16 +16352,27 @@ func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped
 			mreq,
 			unpackSiteIntegrationsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteIntegrationsDelete(ctx, params)
+				err = s.h.SiteIntegrationsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteIntegrationsDelete(ctx, params)
+		err = s.h.SiteIntegrationsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -15438,8 +16472,9 @@ func (s *Server) handleSiteIntegrationsGetRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -15466,8 +16501,9 @@ func (s *Server) handleSiteIntegrationsGetRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -15484,7 +16520,7 @@ func (s *Server) handleSiteIntegrationsGetRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteIntegrationsGetRes
+	var response *SiteIntegrationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -15509,7 +16545,7 @@ func (s *Server) handleSiteIntegrationsGetRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteIntegrationsGetParams
-			Response = SiteIntegrationsGetRes
+			Response = *SiteIntegrationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15528,8 +16564,19 @@ func (s *Server) handleSiteIntegrationsGetRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteIntegrationsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -15629,8 +16676,9 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -15657,8 +16705,9 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -15675,7 +16724,7 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response SiteIntegrationsListRes
+	var response []SiteIntegrationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -15696,7 +16745,7 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = SiteIntegrationsListParams
-			Response = SiteIntegrationsListRes
+			Response = []SiteIntegrationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15715,8 +16764,19 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteIntegrationsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -15818,8 +16878,9 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -15846,8 +16907,9 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -15864,7 +16926,7 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 
 	var rawBody []byte
 
-	var response SiteIntegrationsRegenerateKeyRes
+	var response *SiteIntegrationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -15889,7 +16951,7 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 		type (
 			Request  = struct{}
 			Params   = SiteIntegrationsRegenerateKeyParams
-			Response = SiteIntegrationsRegenerateKeyRes
+			Response = *SiteIntegrationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15908,8 +16970,19 @@ func (s *Server) handleSiteIntegrationsRegenerateKeyRequest(args [2]string, args
 		response, err = s.h.SiteIntegrationsRegenerateKey(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16009,8 +17082,9 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -16037,8 +17111,9 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -16070,7 +17145,7 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 		}
 	}()
 
-	var response SiteIntegrationsUpdateRes
+	var response *SiteIntegrationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16095,7 +17170,7 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 		type (
 			Request  = *UpdateIntegrationInput
 			Params   = SiteIntegrationsUpdateParams
-			Response = SiteIntegrationsUpdateRes
+			Response = *SiteIntegrationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16114,8 +17189,19 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteIntegrationsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16215,8 +17301,9 @@ func (s *Server) handleSiteInvitationsCreateRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -16243,8 +17330,9 @@ func (s *Server) handleSiteInvitationsCreateRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -16276,7 +17364,7 @@ func (s *Server) handleSiteInvitationsCreateRequest(args [1]string, argsEscaped 
 		}
 	}()
 
-	var response SiteInvitationsCreateRes
+	var response *SiteCreateInvitationResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16297,7 +17385,7 @@ func (s *Server) handleSiteInvitationsCreateRequest(args [1]string, argsEscaped 
 		type (
 			Request  = *SiteCreateInvitationInput
 			Params   = SiteInvitationsCreateParams
-			Response = SiteInvitationsCreateRes
+			Response = *SiteCreateInvitationResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16316,8 +17404,19 @@ func (s *Server) handleSiteInvitationsCreateRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteInvitationsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16417,8 +17516,9 @@ func (s *Server) handleSiteInvitationsDeleteRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -16445,8 +17545,9 @@ func (s *Server) handleSiteInvitationsDeleteRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -16463,7 +17564,7 @@ func (s *Server) handleSiteInvitationsDeleteRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteInvitationsDeleteRes
+	var response *SiteInvitationsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16488,7 +17589,7 @@ func (s *Server) handleSiteInvitationsDeleteRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteInvitationsDeleteParams
-			Response = SiteInvitationsDeleteRes
+			Response = *SiteInvitationsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16499,16 +17600,27 @@ func (s *Server) handleSiteInvitationsDeleteRequest(args [2]string, argsEscaped 
 			mreq,
 			unpackSiteInvitationsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteInvitationsDelete(ctx, params)
+				err = s.h.SiteInvitationsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteInvitationsDelete(ctx, params)
+		err = s.h.SiteInvitationsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16608,8 +17720,9 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -16636,8 +17749,9 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -16654,7 +17768,7 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteInvitationsListRes
+	var response []SiteInvitationResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16675,7 +17789,7 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteInvitationsListParams
-			Response = SiteInvitationsListRes
+			Response = []SiteInvitationResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16694,8 +17808,19 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteInvitationsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16797,8 +17922,9 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -16825,8 +17951,9 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -16858,7 +17985,7 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteJoinDomainsAddRes
+	var response *SiteJoinDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -16879,7 +18006,7 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *SiteAddJoinDomainInput
 			Params   = SiteJoinDomainsAddParams
-			Response = SiteJoinDomainsAddRes
+			Response = *SiteJoinDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -16898,8 +18025,19 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteJoinDomainsAdd(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -16999,8 +18137,9 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -17027,8 +18166,9 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -17045,7 +18185,7 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteJoinDomainsListRes
+	var response []SiteJoinDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17066,7 +18206,7 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteJoinDomainsListParams
-			Response = SiteJoinDomainsListRes
+			Response = []SiteJoinDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17085,8 +18225,19 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteJoinDomainsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -17186,8 +18337,9 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -17214,8 +18366,9 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -17232,7 +18385,7 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteJoinDomainsRemoveRes
+	var response *SiteJoinDomainsRemoveNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17257,7 +18410,7 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteJoinDomainsRemoveParams
-			Response = SiteJoinDomainsRemoveRes
+			Response = *SiteJoinDomainsRemoveNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17268,16 +18421,27 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 			mreq,
 			unpackSiteJoinDomainsRemoveParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteJoinDomainsRemove(ctx, params)
+				err = s.h.SiteJoinDomainsRemove(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteJoinDomainsRemove(ctx, params)
+		err = s.h.SiteJoinDomainsRemove(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -17379,8 +18543,9 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -17407,8 +18572,9 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -17425,7 +18591,7 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteJoinDomainsVerifyRes
+	var response *SiteJoinDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17450,7 +18616,7 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteJoinDomainsVerifyParams
-			Response = SiteJoinDomainsVerifyRes
+			Response = *SiteJoinDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17469,8 +18635,19 @@ func (s *Server) handleSiteJoinDomainsVerifyRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteJoinDomainsVerify(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -17574,7 +18751,7 @@ func (s *Server) handleSiteLegalDocumentsGetRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteLegalDocumentsGetRes
+	var response *SiteLegalDocument
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17595,7 +18772,7 @@ func (s *Server) handleSiteLegalDocumentsGetRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteLegalDocumentsGetParams
-			Response = SiteLegalDocumentsGetRes
+			Response = *SiteLegalDocument
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17614,8 +18791,19 @@ func (s *Server) handleSiteLegalDocumentsGetRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteLegalDocumentsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -17739,8 +18927,19 @@ func (s *Server) handleSiteLegalDocumentsSignupItemsRequest(args [0]string, args
 		response, err = s.h.SiteLegalDocumentsSignupItems(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -17840,8 +19039,9 @@ func (s *Server) handleSiteMembershipsDeleteRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -17868,8 +19068,9 @@ func (s *Server) handleSiteMembershipsDeleteRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -17886,7 +19087,7 @@ func (s *Server) handleSiteMembershipsDeleteRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteMembershipsDeleteRes
+	var response *SiteMembershipsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -17911,7 +19112,7 @@ func (s *Server) handleSiteMembershipsDeleteRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteMembershipsDeleteParams
-			Response = SiteMembershipsDeleteRes
+			Response = *SiteMembershipsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -17922,16 +19123,27 @@ func (s *Server) handleSiteMembershipsDeleteRequest(args [2]string, argsEscaped 
 			mreq,
 			unpackSiteMembershipsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteMembershipsDelete(ctx, params)
+				err = s.h.SiteMembershipsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteMembershipsDelete(ctx, params)
+		err = s.h.SiteMembershipsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -18031,8 +19243,9 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -18059,8 +19272,9 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -18077,7 +19291,7 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteMembershipsListRes
+	var response []SiteMembershipResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18098,7 +19312,7 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteMembershipsListParams
-			Response = SiteMembershipsListRes
+			Response = []SiteMembershipResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18117,8 +19331,19 @@ func (s *Server) handleSiteMembershipsListRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteMembershipsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -18220,8 +19445,9 @@ func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, a
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -18248,8 +19474,9 @@ func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, a
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -18266,7 +19493,7 @@ func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, a
 
 	var rawBody []byte
 
-	var response SiteMembershipsResetSecondFactorRes
+	var response *SiteMembershipsResetSecondFactorNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18291,7 +19518,7 @@ func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, a
 		type (
 			Request  = struct{}
 			Params   = SiteMembershipsResetSecondFactorParams
-			Response = SiteMembershipsResetSecondFactorRes
+			Response = *SiteMembershipsResetSecondFactorNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18302,16 +19529,27 @@ func (s *Server) handleSiteMembershipsResetSecondFactorRequest(args [2]string, a
 			mreq,
 			unpackSiteMembershipsResetSecondFactorParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteMembershipsResetSecondFactor(ctx, params)
+				err = s.h.SiteMembershipsResetSecondFactor(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteMembershipsResetSecondFactor(ctx, params)
+		err = s.h.SiteMembershipsResetSecondFactor(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -18411,8 +19649,9 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -18439,8 +19678,9 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -18472,7 +19712,7 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 		}
 	}()
 
-	var response SiteMembershipsUpdateRes
+	var response *SiteMembershipResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18497,7 +19737,7 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 		type (
 			Request  = *SiteUpdateMembershipInput
 			Params   = SiteMembershipsUpdateParams
-			Response = SiteMembershipsUpdateRes
+			Response = *SiteMembershipResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18516,8 +19756,19 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteMembershipsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -18619,8 +19870,9 @@ func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -18647,8 +19899,9 @@ func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -18670,7 +19923,7 @@ func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, 
 		}
 	}()
 
-	var response SiteOAuthDecideRes
+	var response *SiteOAuthDecisionResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18686,7 +19939,7 @@ func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, 
 		type (
 			Request  = *SiteOAuthDecisionInput
 			Params   = struct{}
-			Response = SiteOAuthDecideRes
+			Response = *SiteOAuthDecisionResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18705,8 +19958,19 @@ func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, 
 		response, err = s.h.SiteOAuthDecide(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -18806,8 +20070,9 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -18834,8 +20099,9 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -18852,7 +20118,7 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteOAuthDescribeRes
+	var response *SiteOAuthAuthorizationRequest
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18881,7 +20147,7 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteOAuthDescribeParams
-			Response = SiteOAuthDescribeRes
+			Response = *SiteOAuthAuthorizationRequest
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18900,8 +20166,19 @@ func (s *Server) handleSiteOAuthDescribeRequest(args [0]string, argsEscaped bool
 		response, err = s.h.SiteOAuthDescribe(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19003,8 +20280,9 @@ func (s *Server) handleSiteOptionalConsentsListRequest(args [0]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -19031,8 +20309,9 @@ func (s *Server) handleSiteOptionalConsentsListRequest(args [0]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -19074,8 +20353,19 @@ func (s *Server) handleSiteOptionalConsentsListRequest(args [0]string, argsEscap
 		response, err = s.h.SiteOptionalConsentsList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19179,8 +20469,9 @@ func (s *Server) handleSiteOptionalConsentsSetRequest(args [1]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -19207,8 +20498,9 @@ func (s *Server) handleSiteOptionalConsentsSetRequest(args [1]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -19240,7 +20532,7 @@ func (s *Server) handleSiteOptionalConsentsSetRequest(args [1]string, argsEscape
 		}
 	}()
 
-	var response SiteOptionalConsentsSetRes
+	var response *SiteOptionalConsent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19261,7 +20553,7 @@ func (s *Server) handleSiteOptionalConsentsSetRequest(args [1]string, argsEscape
 		type (
 			Request  = *SiteOptionalConsentChange
 			Params   = SiteOptionalConsentsSetParams
-			Response = SiteOptionalConsentsSetRes
+			Response = *SiteOptionalConsent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19280,8 +20572,19 @@ func (s *Server) handleSiteOptionalConsentsSetRequest(args [1]string, argsEscape
 		response, err = s.h.SiteOptionalConsentsSet(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19371,7 +20674,7 @@ func (s *Server) handleSitePasskeyLoginBeginRequest(args [0]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SitePasskeyLoginBeginRes
+	var response *SitePasskeyLoginBegunHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19387,7 +20690,7 @@ func (s *Server) handleSitePasskeyLoginBeginRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = SitePasskeyLoginBeginRes
+			Response = *SitePasskeyLoginBegunHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19406,8 +20709,19 @@ func (s *Server) handleSitePasskeyLoginBeginRequest(args [0]string, argsEscaped 
 		response, err = s.h.SitePasskeyLoginBegin(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19529,7 +20843,7 @@ func (s *Server) handleSitePasskeyLoginFinishRequest(args [0]string, argsEscaped
 		}
 	}()
 
-	var response SitePasskeyLoginFinishRes
+	var response *SiteLoginResultHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19550,7 +20864,7 @@ func (s *Server) handleSitePasskeyLoginFinishRequest(args [0]string, argsEscaped
 		type (
 			Request  = *SitePasskeyLoginInput
 			Params   = SitePasskeyLoginFinishParams
-			Response = SitePasskeyLoginFinishRes
+			Response = *SiteLoginResultHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19569,8 +20883,19 @@ func (s *Server) handleSitePasskeyLoginFinishRequest(args [0]string, argsEscaped
 		response, err = s.h.SitePasskeyLoginFinish(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19673,8 +20998,9 @@ func (s *Server) handleSitePasskeysBeginCheckRequest(args [0]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -19701,15 +21027,16 @@ func (s *Server) handleSitePasskeysBeginCheckRequest(args [0]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response SitePasskeysBeginCheckRes
+	var response *SitePasskeyCheckBegunHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19725,7 +21052,7 @@ func (s *Server) handleSitePasskeysBeginCheckRequest(args [0]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = SitePasskeysBeginCheckRes
+			Response = *SitePasskeyCheckBegunHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19744,8 +21071,19 @@ func (s *Server) handleSitePasskeysBeginCheckRequest(args [0]string, argsEscaped
 		response, err = s.h.SitePasskeysBeginCheck(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -19847,8 +21185,9 @@ func (s *Server) handleSitePasskeysBeginRegistrationRequest(args [0]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -19875,15 +21214,16 @@ func (s *Server) handleSitePasskeysBeginRegistrationRequest(args [0]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response SitePasskeysBeginRegistrationRes
+	var response *SitePasskeyRegistrationBegunHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19899,7 +21239,7 @@ func (s *Server) handleSitePasskeysBeginRegistrationRequest(args [0]string, args
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = SitePasskeysBeginRegistrationRes
+			Response = *SitePasskeyRegistrationBegunHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19918,8 +21258,19 @@ func (s *Server) handleSitePasskeysBeginRegistrationRequest(args [0]string, args
 		response, err = s.h.SitePasskeysBeginRegistration(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -20022,8 +21373,9 @@ func (s *Server) handleSitePasskeysFinishCheckRequest(args [0]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -20050,8 +21402,9 @@ func (s *Server) handleSitePasskeysFinishCheckRequest(args [0]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -20083,7 +21436,7 @@ func (s *Server) handleSitePasskeysFinishCheckRequest(args [0]string, argsEscape
 		}
 	}()
 
-	var response SitePasskeysFinishCheckRes
+	var response *SitePasskeysFinishCheckNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20104,7 +21457,7 @@ func (s *Server) handleSitePasskeysFinishCheckRequest(args [0]string, argsEscape
 		type (
 			Request  = *SitePasskeyCheckInput
 			Params   = SitePasskeysFinishCheckParams
-			Response = SitePasskeysFinishCheckRes
+			Response = *SitePasskeysFinishCheckNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20123,8 +21476,19 @@ func (s *Server) handleSitePasskeysFinishCheckRequest(args [0]string, argsEscape
 		response, err = s.h.SitePasskeysFinishCheck(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -20229,8 +21593,9 @@ func (s *Server) handleSitePasskeysFinishRegistrationRequest(args [0]string, arg
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -20257,8 +21622,9 @@ func (s *Server) handleSitePasskeysFinishRegistrationRequest(args [0]string, arg
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -20290,7 +21656,7 @@ func (s *Server) handleSitePasskeysFinishRegistrationRequest(args [0]string, arg
 		}
 	}()
 
-	var response SitePasskeysFinishRegistrationRes
+	var response *SitePasskey
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20311,7 +21677,7 @@ func (s *Server) handleSitePasskeysFinishRegistrationRequest(args [0]string, arg
 		type (
 			Request  = *SitePasskeyRegistrationInput
 			Params   = SitePasskeysFinishRegistrationParams
-			Response = SitePasskeysFinishRegistrationRes
+			Response = *SitePasskey
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20330,8 +21696,19 @@ func (s *Server) handleSitePasskeysFinishRegistrationRequest(args [0]string, arg
 		response, err = s.h.SitePasskeysFinishRegistration(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -20431,8 +21808,9 @@ func (s *Server) handleSitePasskeysListRequest(args [0]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -20459,8 +21837,9 @@ func (s *Server) handleSitePasskeysListRequest(args [0]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -20502,8 +21881,19 @@ func (s *Server) handleSitePasskeysListRequest(args [0]string, argsEscaped bool,
 		response, err = s.h.SitePasskeysList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -20607,8 +21997,9 @@ func (s *Server) handleSitePasskeysRemoveRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -20635,8 +22026,9 @@ func (s *Server) handleSitePasskeysRemoveRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -20668,7 +22060,7 @@ func (s *Server) handleSitePasskeysRemoveRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SitePasskeysRemoveRes
+	var response *SitePasskeysRemoveNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20689,7 +22081,7 @@ func (s *Server) handleSitePasskeysRemoveRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *SitePasskeyRemoveInput
 			Params   = SitePasskeysRemoveParams
-			Response = SitePasskeysRemoveRes
+			Response = *SitePasskeysRemoveNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20708,8 +22100,19 @@ func (s *Server) handleSitePasskeysRemoveRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SitePasskeysRemove(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -20810,8 +22213,9 @@ func (s *Server) handleSitePasskeysRenameRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -20838,8 +22242,9 @@ func (s *Server) handleSitePasskeysRenameRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -20871,7 +22276,7 @@ func (s *Server) handleSitePasskeysRenameRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SitePasskeysRenameRes
+	var response *SitePasskey
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20892,7 +22297,7 @@ func (s *Server) handleSitePasskeysRenameRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *SitePasskeyRenameInput
 			Params   = SitePasskeysRenameParams
-			Response = SitePasskeysRenameRes
+			Response = *SitePasskey
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20911,8 +22316,19 @@ func (s *Server) handleSitePasskeysRenameRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SitePasskeysRename(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21015,8 +22431,9 @@ func (s *Server) handleSitePersonalTokensCreateRequest(args [1]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -21043,8 +22460,9 @@ func (s *Server) handleSitePersonalTokensCreateRequest(args [1]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -21076,7 +22494,7 @@ func (s *Server) handleSitePersonalTokensCreateRequest(args [1]string, argsEscap
 		}
 	}()
 
-	var response SitePersonalTokensCreateRes
+	var response *SiteCreatePersonalTokenResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21097,7 +22515,7 @@ func (s *Server) handleSitePersonalTokensCreateRequest(args [1]string, argsEscap
 		type (
 			Request  = *SiteCreatePersonalTokenInput
 			Params   = SitePersonalTokensCreateParams
-			Response = SitePersonalTokensCreateRes
+			Response = *SiteCreatePersonalTokenResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21116,8 +22534,19 @@ func (s *Server) handleSitePersonalTokensCreateRequest(args [1]string, argsEscap
 		response, err = s.h.SitePersonalTokensCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21217,8 +22646,9 @@ func (s *Server) handleSitePersonalTokensDeleteRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -21245,8 +22675,9 @@ func (s *Server) handleSitePersonalTokensDeleteRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -21263,7 +22694,7 @@ func (s *Server) handleSitePersonalTokensDeleteRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SitePersonalTokensDeleteRes
+	var response *SitePersonalTokensDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21288,7 +22719,7 @@ func (s *Server) handleSitePersonalTokensDeleteRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SitePersonalTokensDeleteParams
-			Response = SitePersonalTokensDeleteRes
+			Response = *SitePersonalTokensDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21299,16 +22730,27 @@ func (s *Server) handleSitePersonalTokensDeleteRequest(args [2]string, argsEscap
 			mreq,
 			unpackSitePersonalTokensDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SitePersonalTokensDelete(ctx, params)
+				err = s.h.SitePersonalTokensDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SitePersonalTokensDelete(ctx, params)
+		err = s.h.SitePersonalTokensDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21409,8 +22851,9 @@ func (s *Server) handleSitePersonalTokensGrantableScopesRequest(args [1]string, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -21437,8 +22880,9 @@ func (s *Server) handleSitePersonalTokensGrantableScopesRequest(args [1]string, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -21455,7 +22899,7 @@ func (s *Server) handleSitePersonalTokensGrantableScopesRequest(args [1]string, 
 
 	var rawBody []byte
 
-	var response SitePersonalTokensGrantableScopesRes
+	var response []PersonalScope
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21476,7 +22920,7 @@ func (s *Server) handleSitePersonalTokensGrantableScopesRequest(args [1]string, 
 		type (
 			Request  = struct{}
 			Params   = SitePersonalTokensGrantableScopesParams
-			Response = SitePersonalTokensGrantableScopesRes
+			Response = []PersonalScope
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21495,8 +22939,19 @@ func (s *Server) handleSitePersonalTokensGrantableScopesRequest(args [1]string, 
 		response, err = s.h.SitePersonalTokensGrantableScopes(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21596,8 +23051,9 @@ func (s *Server) handleSitePersonalTokensListRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -21624,8 +23080,9 @@ func (s *Server) handleSitePersonalTokensListRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -21642,7 +23099,7 @@ func (s *Server) handleSitePersonalTokensListRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SitePersonalTokensListRes
+	var response []SitePersonalTokenResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21663,7 +23120,7 @@ func (s *Server) handleSitePersonalTokensListRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SitePersonalTokensListParams
-			Response = SitePersonalTokensListRes
+			Response = []SitePersonalTokenResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21682,8 +23139,19 @@ func (s *Server) handleSitePersonalTokensListRequest(args [1]string, argsEscaped
 		response, err = s.h.SitePersonalTokensList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21783,8 +23251,9 @@ func (s *Server) handleSitePresetsListRequest(args [0]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -21811,8 +23280,9 @@ func (s *Server) handleSitePresetsListRequest(args [0]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -21854,8 +23324,19 @@ func (s *Server) handleSitePresetsListRequest(args [0]string, argsEscaped bool, 
 		response, err = s.h.SitePresetsList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -21959,7 +23440,7 @@ func (s *Server) handleSitePublicConfirmationsPerformRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response SitePublicConfirmationsPerformRes
+	var response *SitePublicConfirmationsPerformNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21980,7 +23461,7 @@ func (s *Server) handleSitePublicConfirmationsPerformRequest(args [1]string, arg
 		type (
 			Request  = struct{}
 			Params   = SitePublicConfirmationsPerformParams
-			Response = SitePublicConfirmationsPerformRes
+			Response = *SitePublicConfirmationsPerformNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21991,16 +23472,27 @@ func (s *Server) handleSitePublicConfirmationsPerformRequest(args [1]string, arg
 			mreq,
 			unpackSitePublicConfirmationsPerformParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SitePublicConfirmationsPerform(ctx, params)
+				err = s.h.SitePublicConfirmationsPerform(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SitePublicConfirmationsPerform(ctx, params)
+		err = s.h.SitePublicConfirmationsPerform(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22102,8 +23594,9 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -22131,8 +23624,9 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -22164,7 +23658,7 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 		}
 	}()
 
-	var response SitePublicInvitationsAcceptRes
+	var response *SitePublicInvitationsAcceptOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22185,7 +23679,7 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 		type (
 			Request  = *SiteAcceptInvitationInput
 			Params   = SitePublicInvitationsAcceptParams
-			Response = SitePublicInvitationsAcceptRes
+			Response = *SitePublicInvitationsAcceptOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22196,16 +23690,27 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 			mreq,
 			unpackSitePublicInvitationsAcceptParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SitePublicInvitationsAccept(ctx, request, params)
+				err = s.h.SitePublicInvitationsAccept(ctx, request, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SitePublicInvitationsAccept(ctx, request, params)
+		err = s.h.SitePublicInvitationsAccept(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22307,7 +23812,7 @@ func (s *Server) handleSitePublicInvitationsLookupRequest(args [1]string, argsEs
 
 	var rawBody []byte
 
-	var response SitePublicInvitationsLookupRes
+	var response *SiteInvitationLookupResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22328,7 +23833,7 @@ func (s *Server) handleSitePublicInvitationsLookupRequest(args [1]string, argsEs
 		type (
 			Request  = struct{}
 			Params   = SitePublicInvitationsLookupParams
-			Response = SitePublicInvitationsLookupRes
+			Response = *SiteInvitationLookupResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22347,8 +23852,19 @@ func (s *Server) handleSitePublicInvitationsLookupRequest(args [1]string, argsEs
 		response, err = s.h.SitePublicInvitationsLookup(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22451,7 +23967,7 @@ func (s *Server) handleSitePublicUnsubscribesPerformRequest(args [1]string, args
 
 	var rawBody []byte
 
-	var response SitePublicUnsubscribesPerformRes
+	var response *SitePublicUnsubscribesPerformNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22472,7 +23988,7 @@ func (s *Server) handleSitePublicUnsubscribesPerformRequest(args [1]string, args
 		type (
 			Request  = struct{}
 			Params   = SitePublicUnsubscribesPerformParams
-			Response = SitePublicUnsubscribesPerformRes
+			Response = *SitePublicUnsubscribesPerformNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22483,16 +23999,27 @@ func (s *Server) handleSitePublicUnsubscribesPerformRequest(args [1]string, args
 			mreq,
 			unpackSitePublicUnsubscribesPerformParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SitePublicUnsubscribesPerform(ctx, params)
+				err = s.h.SitePublicUnsubscribesPerform(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SitePublicUnsubscribesPerform(ctx, params)
+		err = s.h.SitePublicUnsubscribesPerform(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22592,8 +24119,9 @@ func (s *Server) handleSiteRuleFiringsListRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -22620,8 +24148,9 @@ func (s *Server) handleSiteRuleFiringsListRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -22638,7 +24167,7 @@ func (s *Server) handleSiteRuleFiringsListRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteRuleFiringsListRes
+	var response *SiteRuleFiringsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22671,7 +24200,7 @@ func (s *Server) handleSiteRuleFiringsListRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteRuleFiringsListParams
-			Response = SiteRuleFiringsListRes
+			Response = *SiteRuleFiringsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22690,8 +24219,19 @@ func (s *Server) handleSiteRuleFiringsListRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteRuleFiringsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22791,8 +24331,9 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -22819,8 +24360,9 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -22852,7 +24394,7 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 		}
 	}()
 
-	var response SiteRulesCreateRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22873,7 +24415,7 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 		type (
 			Request  = *SiteCreateRuleInput
 			Params   = SiteRulesCreateParams
-			Response = SiteRulesCreateRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22892,8 +24434,19 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 		response, err = s.h.SiteRulesCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -22993,8 +24546,9 @@ func (s *Server) handleSiteRulesDeactivateRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23021,8 +24575,9 @@ func (s *Server) handleSiteRulesDeactivateRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -23039,7 +24594,7 @@ func (s *Server) handleSiteRulesDeactivateRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteRulesDeactivateRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23064,7 +24619,7 @@ func (s *Server) handleSiteRulesDeactivateRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteRulesDeactivateParams
-			Response = SiteRulesDeactivateRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23083,8 +24638,19 @@ func (s *Server) handleSiteRulesDeactivateRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteRulesDeactivate(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -23184,8 +24750,9 @@ func (s *Server) handleSiteRulesDeleteRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23212,8 +24779,9 @@ func (s *Server) handleSiteRulesDeleteRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -23230,7 +24798,7 @@ func (s *Server) handleSiteRulesDeleteRequest(args [2]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteRulesDeleteRes
+	var response *SiteRulesDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23255,7 +24823,7 @@ func (s *Server) handleSiteRulesDeleteRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteRulesDeleteParams
-			Response = SiteRulesDeleteRes
+			Response = *SiteRulesDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23266,16 +24834,27 @@ func (s *Server) handleSiteRulesDeleteRequest(args [2]string, argsEscaped bool, 
 			mreq,
 			unpackSiteRulesDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteRulesDelete(ctx, params)
+				err = s.h.SiteRulesDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteRulesDelete(ctx, params)
+		err = s.h.SiteRulesDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -23376,8 +24955,9 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23404,8 +24984,9 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -23437,7 +25018,7 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 		}
 	}()
 
-	var response SiteRulesDryRunRes
+	var response *SiteRuleDryRunResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23462,7 +25043,7 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = *SiteDryRunRuleInput
 			Params   = SiteRulesDryRunParams
-			Response = SiteRulesDryRunRes
+			Response = *SiteRuleDryRunResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23481,8 +25062,19 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteRulesDryRun(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -23582,8 +25174,9 @@ func (s *Server) handleSiteRulesGetRequest(args [2]string, argsEscaped bool, w h
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23610,8 +25203,9 @@ func (s *Server) handleSiteRulesGetRequest(args [2]string, argsEscaped bool, w h
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -23628,7 +25222,7 @@ func (s *Server) handleSiteRulesGetRequest(args [2]string, argsEscaped bool, w h
 
 	var rawBody []byte
 
-	var response SiteRulesGetRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23653,7 +25247,7 @@ func (s *Server) handleSiteRulesGetRequest(args [2]string, argsEscaped bool, w h
 		type (
 			Request  = struct{}
 			Params   = SiteRulesGetParams
-			Response = SiteRulesGetRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23672,8 +25266,19 @@ func (s *Server) handleSiteRulesGetRequest(args [2]string, argsEscaped bool, w h
 		response, err = s.h.SiteRulesGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -23773,8 +25378,9 @@ func (s *Server) handleSiteRulesListRequest(args [1]string, argsEscaped bool, w 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23801,8 +25407,9 @@ func (s *Server) handleSiteRulesListRequest(args [1]string, argsEscaped bool, w 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -23819,7 +25426,7 @@ func (s *Server) handleSiteRulesListRequest(args [1]string, argsEscaped bool, w 
 
 	var rawBody []byte
 
-	var response SiteRulesListRes
+	var response *SiteRulesListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23848,7 +25455,7 @@ func (s *Server) handleSiteRulesListRequest(args [1]string, argsEscaped bool, w 
 		type (
 			Request  = struct{}
 			Params   = SiteRulesListParams
-			Response = SiteRulesListRes
+			Response = *SiteRulesListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23867,8 +25474,19 @@ func (s *Server) handleSiteRulesListRequest(args [1]string, argsEscaped bool, w 
 		response, err = s.h.SiteRulesList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -23970,8 +25588,9 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -23998,8 +25617,9 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -24016,7 +25636,7 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteRulesPublishRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24041,7 +25661,7 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteRulesPublishParams
-			Response = SiteRulesPublishRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24060,8 +25680,19 @@ func (s *Server) handleSiteRulesPublishRequest(args [2]string, argsEscaped bool,
 		response, err = s.h.SiteRulesPublish(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -24161,8 +25792,9 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -24189,8 +25821,9 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -24207,7 +25840,7 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteRulesRevertRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24232,7 +25865,7 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteRulesRevertParams
-			Response = SiteRulesRevertRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24251,8 +25884,19 @@ func (s *Server) handleSiteRulesRevertRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteRulesRevert(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -24352,8 +25996,9 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -24380,8 +26025,9 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -24413,7 +26059,7 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 		}
 	}()
 
-	var response SiteRulesUpdateRes
+	var response *SiteRuleResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24438,7 +26084,7 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = *SiteUpdateRuleInput
 			Params   = SiteRulesUpdateParams
-			Response = SiteRulesUpdateRes
+			Response = *SiteRuleResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24457,8 +26103,19 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteRulesUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -24547,7 +26204,7 @@ func (s *Server) handleSiteSchemaApplyMigrationsRequest(args [0]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteSchemaApplyMigrationsRes
+	var response *SiteSchemaApplyMigrationsNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24563,7 +26220,7 @@ func (s *Server) handleSiteSchemaApplyMigrationsRequest(args [0]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = SiteSchemaApplyMigrationsRes
+			Response = *SiteSchemaApplyMigrationsNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24574,16 +26231,27 @@ func (s *Server) handleSiteSchemaApplyMigrationsRequest(args [0]string, argsEsca
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteSchemaApplyMigrations(ctx)
+				err = s.h.SiteSchemaApplyMigrations(ctx)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteSchemaApplyMigrations(ctx)
+		err = s.h.SiteSchemaApplyMigrations(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -24687,8 +26355,9 @@ func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -24715,8 +26384,9 @@ func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -24738,7 +26408,7 @@ func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, 
 		}
 	}()
 
-	var response SiteSecondFactorConfirmEnrollmentRes
+	var response *SiteRecoveryCodesHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24754,7 +26424,7 @@ func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, 
 		type (
 			Request  = *SiteSecondFactorConfirmInput
 			Params   = struct{}
-			Response = SiteSecondFactorConfirmEnrollmentRes
+			Response = *SiteRecoveryCodesHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24773,8 +26443,19 @@ func (s *Server) handleSiteSecondFactorConfirmEnrollmentRequest(args [0]string, 
 		response, err = s.h.SiteSecondFactorConfirmEnrollment(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -24876,8 +26557,9 @@ func (s *Server) handleSiteSecondFactorDisableRequest(args [0]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -24904,8 +26586,9 @@ func (s *Server) handleSiteSecondFactorDisableRequest(args [0]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -24927,7 +26610,7 @@ func (s *Server) handleSiteSecondFactorDisableRequest(args [0]string, argsEscape
 		}
 	}()
 
-	var response SiteSecondFactorDisableRes
+	var response *SiteSecondFactorDisableNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24943,7 +26626,7 @@ func (s *Server) handleSiteSecondFactorDisableRequest(args [0]string, argsEscape
 		type (
 			Request  = *SiteSecondFactorDisableInput
 			Params   = struct{}
-			Response = SiteSecondFactorDisableRes
+			Response = *SiteSecondFactorDisableNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24962,8 +26645,19 @@ func (s *Server) handleSiteSecondFactorDisableRequest(args [0]string, argsEscape
 		response, err = s.h.SiteSecondFactorDisable(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -25064,8 +26758,9 @@ func (s *Server) handleSiteSecondFactorGetStatusRequest(args [0]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -25092,8 +26787,9 @@ func (s *Server) handleSiteSecondFactorGetStatusRequest(args [0]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -25135,8 +26831,19 @@ func (s *Server) handleSiteSecondFactorGetStatusRequest(args [0]string, argsEsca
 		response, err = s.h.SiteSecondFactorGetStatus(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -25239,8 +26946,9 @@ func (s *Server) handleSiteSecondFactorRegenerateRecoveryCodesRequest(args [0]st
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -25267,8 +26975,9 @@ func (s *Server) handleSiteSecondFactorRegenerateRecoveryCodesRequest(args [0]st
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -25290,7 +26999,7 @@ func (s *Server) handleSiteSecondFactorRegenerateRecoveryCodesRequest(args [0]st
 		}
 	}()
 
-	var response SiteSecondFactorRegenerateRecoveryCodesRes
+	var response *SiteRecoveryCodesHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25306,7 +27015,7 @@ func (s *Server) handleSiteSecondFactorRegenerateRecoveryCodesRequest(args [0]st
 		type (
 			Request  = *SiteRecoveryCodesInput
 			Params   = struct{}
-			Response = SiteSecondFactorRegenerateRecoveryCodesRes
+			Response = *SiteRecoveryCodesHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25325,8 +27034,19 @@ func (s *Server) handleSiteSecondFactorRegenerateRecoveryCodesRequest(args [0]st
 		response, err = s.h.SiteSecondFactorRegenerateRecoveryCodes(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -25430,8 +27150,9 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -25458,8 +27179,9 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -25481,7 +27203,7 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 		}
 	}()
 
-	var response SiteSecondFactorStartEnrollmentRes
+	var response *SiteSecondFactorEnrollment
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25497,7 +27219,7 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 		type (
 			Request  = *SiteSecondFactorStartInput
 			Params   = struct{}
-			Response = SiteSecondFactorStartEnrollmentRes
+			Response = *SiteSecondFactorEnrollment
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25516,8 +27238,19 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 		response, err = s.h.SiteSecondFactorStartEnrollment(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -25618,8 +27351,9 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -25646,8 +27380,9 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -25664,7 +27399,7 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 
 	var rawBody []byte
 
-	var response SiteSegmentContactsListRes
+	var response *SiteSegmentContactsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25697,7 +27432,7 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentContactsListParams
-			Response = SiteSegmentContactsListRes
+			Response = *SiteSegmentContactsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25716,8 +27451,19 @@ func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscape
 		response, err = s.h.SiteSegmentContactsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -25818,8 +27564,9 @@ func (s *Server) handleSiteSegmentsArchiveRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -25846,8 +27593,9 @@ func (s *Server) handleSiteSegmentsArchiveRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -25864,7 +27612,7 @@ func (s *Server) handleSiteSegmentsArchiveRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteSegmentsArchiveRes
+	var response *SiteSegmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25889,7 +27637,7 @@ func (s *Server) handleSiteSegmentsArchiveRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentsArchiveParams
-			Response = SiteSegmentsArchiveRes
+			Response = *SiteSegmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25908,8 +27656,19 @@ func (s *Server) handleSiteSegmentsArchiveRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteSegmentsArchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26009,8 +27768,9 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -26037,8 +27797,9 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -26070,7 +27831,7 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteSegmentsCreateRes
+	var response *SiteSegmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26091,7 +27852,7 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *SiteCreateSegmentInput
 			Params   = SiteSegmentsCreateParams
-			Response = SiteSegmentsCreateRes
+			Response = *SiteSegmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26110,8 +27871,19 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteSegmentsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26211,8 +27983,9 @@ func (s *Server) handleSiteSegmentsGetRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -26239,8 +28012,9 @@ func (s *Server) handleSiteSegmentsGetRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -26257,7 +28031,7 @@ func (s *Server) handleSiteSegmentsGetRequest(args [2]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteSegmentsGetRes
+	var response *SiteSegmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26282,7 +28056,7 @@ func (s *Server) handleSiteSegmentsGetRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentsGetParams
-			Response = SiteSegmentsGetRes
+			Response = *SiteSegmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26301,8 +28075,19 @@ func (s *Server) handleSiteSegmentsGetRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteSegmentsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26402,8 +28187,9 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -26430,8 +28216,9 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -26448,7 +28235,7 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteSegmentsListRes
+	var response *SiteSegmentsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26481,7 +28268,7 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentsListParams
-			Response = SiteSegmentsListRes
+			Response = *SiteSegmentsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26500,8 +28287,19 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteSegmentsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26601,8 +28399,9 @@ func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -26629,8 +28428,9 @@ func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -26662,7 +28462,7 @@ func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteSegmentsPreviewRes
+	var response *SitePreviewSegmentResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26683,7 +28483,7 @@ func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = *SitePreviewSegmentInput
 			Params   = SiteSegmentsPreviewParams
-			Response = SiteSegmentsPreviewRes
+			Response = *SitePreviewSegmentResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26702,8 +28502,19 @@ func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteSegmentsPreview(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26803,8 +28614,9 @@ func (s *Server) handleSiteSegmentsUnarchiveRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -26831,8 +28643,9 @@ func (s *Server) handleSiteSegmentsUnarchiveRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -26849,7 +28662,7 @@ func (s *Server) handleSiteSegmentsUnarchiveRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteSegmentsUnarchiveRes
+	var response *SiteSegmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26874,7 +28687,7 @@ func (s *Server) handleSiteSegmentsUnarchiveRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteSegmentsUnarchiveParams
-			Response = SiteSegmentsUnarchiveRes
+			Response = *SiteSegmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26893,8 +28706,19 @@ func (s *Server) handleSiteSegmentsUnarchiveRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteSegmentsUnarchive(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -26994,8 +28818,9 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -27022,8 +28847,9 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -27055,7 +28881,7 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteSegmentsUpdateRes
+	var response *SiteSegmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27080,7 +28906,7 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = *SiteUpdateSegmentInput
 			Params   = SiteSegmentsUpdateParams
-			Response = SiteSegmentsUpdateRes
+			Response = *SiteSegmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27099,8 +28925,19 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteSegmentsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -27200,8 +29037,9 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -27228,8 +29066,9 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -27261,7 +29100,7 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		}
 	}()
 
-	var response SiteSendingDomainsCreateRes
+	var response *SiteSendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27282,7 +29121,7 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		type (
 			Request  = *CreateSendingDomainInput
 			Params   = SiteSendingDomainsCreateParams
-			Response = SiteSendingDomainsCreateRes
+			Response = *SiteSendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27301,8 +29140,19 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		response, err = s.h.SiteSendingDomainsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -27404,8 +29254,9 @@ func (s *Server) handleSiteSendingDomainsDeleteRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -27432,8 +29283,9 @@ func (s *Server) handleSiteSendingDomainsDeleteRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -27450,7 +29302,7 @@ func (s *Server) handleSiteSendingDomainsDeleteRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteSendingDomainsDeleteRes
+	var response *SiteSendingDomainsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27475,7 +29327,7 @@ func (s *Server) handleSiteSendingDomainsDeleteRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsDeleteParams
-			Response = SiteSendingDomainsDeleteRes
+			Response = *SiteSendingDomainsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27486,16 +29338,27 @@ func (s *Server) handleSiteSendingDomainsDeleteRequest(args [2]string, argsEscap
 			mreq,
 			unpackSiteSendingDomainsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteSendingDomainsDelete(ctx, params)
+				err = s.h.SiteSendingDomainsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteSendingDomainsDelete(ctx, params)
+		err = s.h.SiteSendingDomainsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -27595,8 +29458,9 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -27623,8 +29487,9 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -27641,7 +29506,7 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteSendingDomainsGetRes
+	var response *SiteSendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27666,7 +29531,7 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsGetParams
-			Response = SiteSendingDomainsGetRes
+			Response = *SiteSendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27685,8 +29550,19 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteSendingDomainsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -27786,8 +29662,9 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -27814,8 +29691,9 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -27832,7 +29710,7 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteSendingDomainsListRes
+	var response *SiteSendingDomainsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27861,7 +29739,7 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsListParams
-			Response = SiteSendingDomainsListRes
+			Response = *SiteSendingDomainsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27880,8 +29758,19 @@ func (s *Server) handleSiteSendingDomainsListRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteSendingDomainsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -27983,8 +29872,9 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28011,8 +29901,9 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28029,7 +29920,7 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteSendingDomainsVerifyRes
+	var response *SiteSendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28054,7 +29945,7 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsVerifyParams
-			Response = SiteSendingDomainsVerifyRes
+			Response = *SiteSendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28073,8 +29964,19 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 		response, err = s.h.SiteSendingDomainsVerify(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -28174,8 +30076,9 @@ func (s *Server) handleSiteSetupChecklistGetRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28202,8 +30105,9 @@ func (s *Server) handleSiteSetupChecklistGetRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28220,7 +30124,7 @@ func (s *Server) handleSiteSetupChecklistGetRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteSetupChecklistGetRes
+	var response *SiteSetupProgress
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28241,7 +30145,7 @@ func (s *Server) handleSiteSetupChecklistGetRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteSetupChecklistGetParams
-			Response = SiteSetupChecklistGetRes
+			Response = *SiteSetupProgress
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28260,8 +30164,19 @@ func (s *Server) handleSiteSetupChecklistGetRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteSetupChecklistGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -28366,8 +30281,9 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28394,8 +30310,9 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28417,7 +30334,7 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 		}
 	}()
 
-	var response SiteSignupSurveySubmitRes
+	var response *SiteSignupSurveySubmitNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28433,7 +30350,7 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 		type (
 			Request  = *SiteSignupSurveyInput
 			Params   = struct{}
-			Response = SiteSignupSurveySubmitRes
+			Response = *SiteSignupSurveySubmitNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28444,16 +30361,27 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteSignupSurveySubmit(ctx, request)
+				err = s.h.SiteSignupSurveySubmit(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteSignupSurveySubmit(ctx, request)
+		err = s.h.SiteSignupSurveySubmit(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -28555,8 +30483,9 @@ func (s *Server) handleSiteSmsConsentsConfirmRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28583,8 +30512,9 @@ func (s *Server) handleSiteSmsConsentsConfirmRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28616,7 +30546,7 @@ func (s *Server) handleSiteSmsConsentsConfirmRequest(args [2]string, argsEscaped
 		}
 	}()
 
-	var response SiteSmsConsentsConfirmRes
+	var response *SmsConsent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28641,7 +30571,7 @@ func (s *Server) handleSiteSmsConsentsConfirmRequest(args [2]string, argsEscaped
 		type (
 			Request  = *ConsentEvidence
 			Params   = SiteSmsConsentsConfirmParams
-			Response = SiteSmsConsentsConfirmRes
+			Response = *SmsConsent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28660,8 +30590,19 @@ func (s *Server) handleSiteSmsConsentsConfirmRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteSmsConsentsConfirm(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -28761,8 +30702,9 @@ func (s *Server) handleSiteSmsConsentsGetRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28789,8 +30731,9 @@ func (s *Server) handleSiteSmsConsentsGetRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28807,7 +30750,7 @@ func (s *Server) handleSiteSmsConsentsGetRequest(args [2]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteSmsConsentsGetRes
+	var response *SmsConsent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -28832,7 +30775,7 @@ func (s *Server) handleSiteSmsConsentsGetRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteSmsConsentsGetParams
-			Response = SiteSmsConsentsGetRes
+			Response = *SmsConsent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -28851,8 +30794,19 @@ func (s *Server) handleSiteSmsConsentsGetRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteSmsConsentsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -28953,8 +30907,9 @@ func (s *Server) handleSiteSmsConsentsOptOutRequest(args [2]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -28981,8 +30936,9 @@ func (s *Server) handleSiteSmsConsentsOptOutRequest(args [2]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -28999,7 +30955,7 @@ func (s *Server) handleSiteSmsConsentsOptOutRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteSmsConsentsOptOutRes
+	var response *SmsConsent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29024,7 +30980,7 @@ func (s *Server) handleSiteSmsConsentsOptOutRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteSmsConsentsOptOutParams
-			Response = SiteSmsConsentsOptOutRes
+			Response = *SmsConsent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29043,8 +30999,19 @@ func (s *Server) handleSiteSmsConsentsOptOutRequest(args [2]string, argsEscaped 
 		response, err = s.h.SiteSmsConsentsOptOut(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -29144,8 +31111,9 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -29172,8 +31140,9 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -29205,7 +31174,7 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response SiteSuppressionsCreateRes
+	var response *SiteSuppressionResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29226,7 +31195,7 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 		type (
 			Request  = *SiteCreateSuppressionInput
 			Params   = SiteSuppressionsCreateParams
-			Response = SiteSuppressionsCreateRes
+			Response = *SiteSuppressionResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29245,8 +31214,19 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteSuppressionsCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -29347,8 +31327,9 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -29375,8 +31356,9 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -29393,7 +31375,7 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteSuppressionsDeleteRes
+	var response *SiteSuppressionsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29418,7 +31400,7 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteSuppressionsDeleteParams
-			Response = SiteSuppressionsDeleteRes
+			Response = *SiteSuppressionsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29429,16 +31411,27 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 			mreq,
 			unpackSiteSuppressionsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteSuppressionsDelete(ctx, params)
+				err = s.h.SiteSuppressionsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteSuppressionsDelete(ctx, params)
+		err = s.h.SiteSuppressionsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -29538,8 +31531,9 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -29566,8 +31560,9 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -29584,7 +31579,7 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response SiteSuppressionsListRes
+	var response *SiteSuppressionsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29617,7 +31612,7 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = SiteSuppressionsListParams
-			Response = SiteSuppressionsListRes
+			Response = *SiteSuppressionsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29636,8 +31631,19 @@ func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteSuppressionsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -29737,8 +31743,9 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -29765,8 +31772,9 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -29798,7 +31806,7 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 		}
 	}()
 
-	var response SiteTagsApplyRes
+	var response *SiteTagResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29823,7 +31831,7 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 		type (
 			Request  = *ApplyTagInput
 			Params   = SiteTagsApplyParams
-			Response = SiteTagsApplyRes
+			Response = *SiteTagResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -29842,8 +31850,19 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 		response, err = s.h.SiteTagsApply(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -29943,8 +31962,9 @@ func (s *Server) handleSiteTagsDeleteRequest(args [2]string, argsEscaped bool, w
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -29971,8 +31991,9 @@ func (s *Server) handleSiteTagsDeleteRequest(args [2]string, argsEscaped bool, w
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -29989,7 +32010,7 @@ func (s *Server) handleSiteTagsDeleteRequest(args [2]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response SiteTagsDeleteRes
+	var response *SiteTagsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30014,7 +32035,7 @@ func (s *Server) handleSiteTagsDeleteRequest(args [2]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = SiteTagsDeleteParams
-			Response = SiteTagsDeleteRes
+			Response = *SiteTagsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30025,16 +32046,27 @@ func (s *Server) handleSiteTagsDeleteRequest(args [2]string, argsEscaped bool, w
 			mreq,
 			unpackSiteTagsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteTagsDelete(ctx, params)
+				err = s.h.SiteTagsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteTagsDelete(ctx, params)
+		err = s.h.SiteTagsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -30134,8 +32166,9 @@ func (s *Server) handleSiteTagsListRequest(args [1]string, argsEscaped bool, w h
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -30162,8 +32195,9 @@ func (s *Server) handleSiteTagsListRequest(args [1]string, argsEscaped bool, w h
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -30180,7 +32214,7 @@ func (s *Server) handleSiteTagsListRequest(args [1]string, argsEscaped bool, w h
 
 	var rawBody []byte
 
-	var response SiteTagsListRes
+	var response *SiteTagsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30209,7 +32243,7 @@ func (s *Server) handleSiteTagsListRequest(args [1]string, argsEscaped bool, w h
 		type (
 			Request  = struct{}
 			Params   = SiteTagsListParams
-			Response = SiteTagsListRes
+			Response = *SiteTagsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30228,8 +32262,19 @@ func (s *Server) handleSiteTagsListRequest(args [1]string, argsEscaped bool, w h
 		response, err = s.h.SiteTagsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -30329,8 +32374,9 @@ func (s *Server) handleSiteTagsListForContactRequest(args [2]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -30357,8 +32403,9 @@ func (s *Server) handleSiteTagsListForContactRequest(args [2]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -30375,7 +32422,7 @@ func (s *Server) handleSiteTagsListForContactRequest(args [2]string, argsEscaped
 
 	var rawBody []byte
 
-	var response SiteTagsListForContactRes
+	var response *SiteTagsListForContactOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30408,7 +32455,7 @@ func (s *Server) handleSiteTagsListForContactRequest(args [2]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteTagsListForContactParams
-			Response = SiteTagsListForContactRes
+			Response = *SiteTagsListForContactOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30427,8 +32474,19 @@ func (s *Server) handleSiteTagsListForContactRequest(args [2]string, argsEscaped
 		response, err = s.h.SiteTagsListForContact(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -30528,8 +32586,9 @@ func (s *Server) handleSiteTagsRemoveRequest(args [3]string, argsEscaped bool, w
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -30556,8 +32615,9 @@ func (s *Server) handleSiteTagsRemoveRequest(args [3]string, argsEscaped bool, w
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -30574,7 +32634,7 @@ func (s *Server) handleSiteTagsRemoveRequest(args [3]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response SiteTagsRemoveRes
+	var response *SiteTagsRemoveNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30603,7 +32663,7 @@ func (s *Server) handleSiteTagsRemoveRequest(args [3]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = SiteTagsRemoveParams
-			Response = SiteTagsRemoveRes
+			Response = *SiteTagsRemoveNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30614,16 +32674,27 @@ func (s *Server) handleSiteTagsRemoveRequest(args [3]string, argsEscaped bool, w
 			mreq,
 			unpackSiteTagsRemoveParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteTagsRemove(ctx, params)
+				err = s.h.SiteTagsRemove(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteTagsRemove(ctx, params)
+		err = s.h.SiteTagsRemove(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -30723,8 +32794,9 @@ func (s *Server) handleSiteTelegramIssueStartLinkRequest(args [2]string, argsEsc
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -30751,8 +32823,9 @@ func (s *Server) handleSiteTelegramIssueStartLinkRequest(args [2]string, argsEsc
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -30784,7 +32857,7 @@ func (s *Server) handleSiteTelegramIssueStartLinkRequest(args [2]string, argsEsc
 		}
 	}()
 
-	var response SiteTelegramIssueStartLinkRes
+	var response *TelegramStartLinkResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30809,7 +32882,7 @@ func (s *Server) handleSiteTelegramIssueStartLinkRequest(args [2]string, argsEsc
 		type (
 			Request  = *IssueTelegramStartLinkInput
 			Params   = SiteTelegramIssueStartLinkParams
-			Response = SiteTelegramIssueStartLinkRes
+			Response = *TelegramStartLinkResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30828,8 +32901,19 @@ func (s *Server) handleSiteTelegramIssueStartLinkRequest(args [2]string, argsEsc
 		response, err = s.h.SiteTelegramIssueStartLink(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -30929,8 +33013,9 @@ func (s *Server) handleSiteTelegramListBindingsRequest(args [2]string, argsEscap
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -30957,8 +33042,9 @@ func (s *Server) handleSiteTelegramListBindingsRequest(args [2]string, argsEscap
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -30975,7 +33061,7 @@ func (s *Server) handleSiteTelegramListBindingsRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response SiteTelegramListBindingsRes
+	var response []SiteBindingResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31000,7 +33086,7 @@ func (s *Server) handleSiteTelegramListBindingsRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteTelegramListBindingsParams
-			Response = SiteTelegramListBindingsRes
+			Response = []SiteBindingResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31019,8 +33105,19 @@ func (s *Server) handleSiteTelegramListBindingsRequest(args [2]string, argsEscap
 		response, err = s.h.SiteTelegramListBindings(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -31120,8 +33217,9 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -31148,8 +33246,9 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -31181,7 +33280,7 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteTemplatesCreateRes
+	var response *SiteEmailTemplateResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31202,7 +33301,7 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = *CreateTemplateInput
 			Params   = SiteTemplatesCreateParams
-			Response = SiteTemplatesCreateRes
+			Response = *SiteEmailTemplateResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31221,8 +33320,19 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 		response, err = s.h.SiteTemplatesCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -31322,8 +33432,9 @@ func (s *Server) handleSiteTemplatesDeleteRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -31350,8 +33461,9 @@ func (s *Server) handleSiteTemplatesDeleteRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -31368,7 +33480,7 @@ func (s *Server) handleSiteTemplatesDeleteRequest(args [2]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteTemplatesDeleteRes
+	var response *SiteTemplatesDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31393,7 +33505,7 @@ func (s *Server) handleSiteTemplatesDeleteRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteTemplatesDeleteParams
-			Response = SiteTemplatesDeleteRes
+			Response = *SiteTemplatesDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31404,16 +33516,27 @@ func (s *Server) handleSiteTemplatesDeleteRequest(args [2]string, argsEscaped bo
 			mreq,
 			unpackSiteTemplatesDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteTemplatesDelete(ctx, params)
+				err = s.h.SiteTemplatesDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteTemplatesDelete(ctx, params)
+		err = s.h.SiteTemplatesDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -31513,8 +33636,9 @@ func (s *Server) handleSiteTemplatesGetRequest(args [2]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -31541,8 +33665,9 @@ func (s *Server) handleSiteTemplatesGetRequest(args [2]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -31559,7 +33684,7 @@ func (s *Server) handleSiteTemplatesGetRequest(args [2]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteTemplatesGetRes
+	var response *SiteEmailTemplateResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31584,7 +33709,7 @@ func (s *Server) handleSiteTemplatesGetRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteTemplatesGetParams
-			Response = SiteTemplatesGetRes
+			Response = *SiteEmailTemplateResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31603,8 +33728,19 @@ func (s *Server) handleSiteTemplatesGetRequest(args [2]string, argsEscaped bool,
 		response, err = s.h.SiteTemplatesGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -31704,8 +33840,9 @@ func (s *Server) handleSiteTemplatesListRequest(args [1]string, argsEscaped bool
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -31732,8 +33869,9 @@ func (s *Server) handleSiteTemplatesListRequest(args [1]string, argsEscaped bool
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -31750,7 +33888,7 @@ func (s *Server) handleSiteTemplatesListRequest(args [1]string, argsEscaped bool
 
 	var rawBody []byte
 
-	var response SiteTemplatesListRes
+	var response *SiteTemplatesListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31779,7 +33917,7 @@ func (s *Server) handleSiteTemplatesListRequest(args [1]string, argsEscaped bool
 		type (
 			Request  = struct{}
 			Params   = SiteTemplatesListParams
-			Response = SiteTemplatesListRes
+			Response = *SiteTemplatesListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -31798,8 +33936,19 @@ func (s *Server) handleSiteTemplatesListRequest(args [1]string, argsEscaped bool
 		response, err = s.h.SiteTemplatesList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -31899,8 +34048,9 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -31927,8 +34077,9 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -31960,7 +34111,7 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteTemplatesUpdateRes
+	var response *SiteEmailTemplateResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -31985,7 +34136,7 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 		type (
 			Request  = *UpdateTemplateInput
 			Params   = SiteTemplatesUpdateParams
-			Response = SiteTemplatesUpdateRes
+			Response = *SiteEmailTemplateResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32004,8 +34155,19 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 		response, err = s.h.SiteTemplatesUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -32105,8 +34267,9 @@ func (s *Server) handleSiteTokensCreateRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -32133,8 +34296,9 @@ func (s *Server) handleSiteTokensCreateRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -32166,7 +34330,7 @@ func (s *Server) handleSiteTokensCreateRequest(args [1]string, argsEscaped bool,
 		}
 	}()
 
-	var response SiteTokensCreateRes
+	var response *SiteCreateTokenResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32187,7 +34351,7 @@ func (s *Server) handleSiteTokensCreateRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = *SiteCreateTokenInput
 			Params   = SiteTokensCreateParams
-			Response = SiteTokensCreateRes
+			Response = *SiteCreateTokenResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32206,8 +34370,19 @@ func (s *Server) handleSiteTokensCreateRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteTokensCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -32307,8 +34482,9 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -32335,8 +34511,9 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -32353,7 +34530,7 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteTokensDeleteRes
+	var response *SiteTokensDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32378,7 +34555,7 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteTokensDeleteParams
-			Response = SiteTokensDeleteRes
+			Response = *SiteTokensDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32389,16 +34566,27 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 			mreq,
 			unpackSiteTokensDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteTokensDelete(ctx, params)
+				err = s.h.SiteTokensDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteTokensDelete(ctx, params)
+		err = s.h.SiteTokensDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -32498,8 +34686,9 @@ func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -32526,8 +34715,9 @@ func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -32544,7 +34734,7 @@ func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response SiteTokensListRes
+	var response []SiteApiTokenResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32565,7 +34755,7 @@ func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = SiteTokensListParams
-			Response = SiteTokensListRes
+			Response = []SiteApiTokenResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32584,8 +34774,19 @@ func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w
 		response, err = s.h.SiteTokensList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -32685,8 +34886,9 @@ func (s *Server) handleSiteTokensUpdateRequest(args [2]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -32713,8 +34915,9 @@ func (s *Server) handleSiteTokensUpdateRequest(args [2]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -32746,7 +34949,7 @@ func (s *Server) handleSiteTokensUpdateRequest(args [2]string, argsEscaped bool,
 		}
 	}()
 
-	var response SiteTokensUpdateRes
+	var response *SiteApiTokenResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32771,7 +34974,7 @@ func (s *Server) handleSiteTokensUpdateRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = *SiteUpdateTokenInput
 			Params   = SiteTokensUpdateParams
-			Response = SiteTokensUpdateRes
+			Response = *SiteApiTokenResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32790,8 +34993,19 @@ func (s *Server) handleSiteTokensUpdateRequest(args [2]string, argsEscaped bool,
 		response, err = s.h.SiteTokensUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -32892,8 +35106,9 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -32920,8 +35135,9 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -32938,7 +35154,7 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 
 	var rawBody []byte
 
-	var response SiteTrackingDomainsListRes
+	var response []SiteTrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -32959,7 +35175,7 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteTrackingDomainsListParams
-			Response = SiteTrackingDomainsListRes
+			Response = []SiteTrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -32978,8 +35194,19 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 		response, err = s.h.SiteTrackingDomainsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -33082,8 +35309,9 @@ func (s *Server) handleSiteTrackingDomainsRemoveRequest(args [2]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -33110,8 +35338,9 @@ func (s *Server) handleSiteTrackingDomainsRemoveRequest(args [2]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -33128,7 +35357,7 @@ func (s *Server) handleSiteTrackingDomainsRemoveRequest(args [2]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteTrackingDomainsRemoveRes
+	var response *SiteTrackingDomainsRemoveNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -33153,7 +35382,7 @@ func (s *Server) handleSiteTrackingDomainsRemoveRequest(args [2]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteTrackingDomainsRemoveParams
-			Response = SiteTrackingDomainsRemoveRes
+			Response = *SiteTrackingDomainsRemoveNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33164,16 +35393,27 @@ func (s *Server) handleSiteTrackingDomainsRemoveRequest(args [2]string, argsEsca
 			mreq,
 			unpackSiteTrackingDomainsRemoveParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteTrackingDomainsRemove(ctx, params)
+				err = s.h.SiteTrackingDomainsRemove(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteTrackingDomainsRemove(ctx, params)
+		err = s.h.SiteTrackingDomainsRemove(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -33277,8 +35517,9 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -33305,8 +35546,9 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -33338,7 +35580,7 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response SiteTrackingDomainsSetRes
+	var response *SiteTrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -33359,7 +35601,7 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 		type (
 			Request  = *SetTrackingDomainInput
 			Params   = SiteTrackingDomainsSetParams
-			Response = SiteTrackingDomainsSetRes
+			Response = *SiteTrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33378,8 +35620,19 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 		response, err = s.h.SiteTrackingDomainsSet(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -33480,8 +35733,9 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -33508,8 +35762,9 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -33526,7 +35781,7 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteTrackingDomainsVerifyRes
+	var response *SiteTrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -33551,7 +35806,7 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteTrackingDomainsVerifyParams
-			Response = SiteTrackingDomainsVerifyRes
+			Response = *SiteTrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33570,8 +35825,19 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 		response, err = s.h.SiteTrackingDomainsVerify(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -33671,8 +35937,9 @@ func (s *Server) handleSiteTransactionalEmailsListRequest(args [1]string, argsEs
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -33699,8 +35966,9 @@ func (s *Server) handleSiteTransactionalEmailsListRequest(args [1]string, argsEs
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -33717,7 +35985,7 @@ func (s *Server) handleSiteTransactionalEmailsListRequest(args [1]string, argsEs
 
 	var rawBody []byte
 
-	var response SiteTransactionalEmailsListRes
+	var response *SiteTransactionalEmailsListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -33746,7 +36014,7 @@ func (s *Server) handleSiteTransactionalEmailsListRequest(args [1]string, argsEs
 		type (
 			Request  = struct{}
 			Params   = SiteTransactionalEmailsListParams
-			Response = SiteTransactionalEmailsListRes
+			Response = *SiteTransactionalEmailsListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33765,8 +36033,19 @@ func (s *Server) handleSiteTransactionalEmailsListRequest(args [1]string, argsEs
 		response, err = s.h.SiteTransactionalEmailsList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -33870,8 +36149,9 @@ func (s *Server) handleSiteUserAcceptPendingRequest(args [0]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -33898,8 +36178,9 @@ func (s *Server) handleSiteUserAcceptPendingRequest(args [0]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -33921,7 +36202,7 @@ func (s *Server) handleSiteUserAcceptPendingRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response SiteUserAcceptPendingRes
+	var response *SiteUserResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -33937,7 +36218,7 @@ func (s *Server) handleSiteUserAcceptPendingRequest(args [0]string, argsEscaped 
 		type (
 			Request  = *SiteAcceptPendingInput
 			Params   = struct{}
-			Response = SiteUserAcceptPendingRes
+			Response = *SiteUserResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -33956,8 +36237,19 @@ func (s *Server) handleSiteUserAcceptPendingRequest(args [0]string, argsEscaped 
 		response, err = s.h.SiteUserAcceptPending(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34065,8 +36357,9 @@ func (s *Server) handleSiteUserDeleteUserRequest(args [0]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -34093,8 +36386,9 @@ func (s *Server) handleSiteUserDeleteUserRequest(args [0]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -34116,7 +36410,7 @@ func (s *Server) handleSiteUserDeleteUserRequest(args [0]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteUserDeleteUserRes
+	var response *SiteUserDeleteUserNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -34132,7 +36426,7 @@ func (s *Server) handleSiteUserDeleteUserRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = *SiteDeleteUserInput
 			Params   = struct{}
-			Response = SiteUserDeleteUserRes
+			Response = *SiteUserDeleteUserNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -34151,8 +36445,19 @@ func (s *Server) handleSiteUserDeleteUserRequest(args [0]string, argsEscaped boo
 		response, err = s.h.SiteUserDeleteUser(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34255,8 +36560,9 @@ func (s *Server) handleSiteUserDeleteUserLinkRequest(args [0]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -34283,8 +36589,9 @@ func (s *Server) handleSiteUserDeleteUserLinkRequest(args [0]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -34306,7 +36613,7 @@ func (s *Server) handleSiteUserDeleteUserLinkRequest(args [0]string, argsEscaped
 		}
 	}()
 
-	var response SiteUserDeleteUserLinkRes
+	var response *SiteUserDeleteUserLinkAccepted
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -34322,7 +36629,7 @@ func (s *Server) handleSiteUserDeleteUserLinkRequest(args [0]string, argsEscaped
 		type (
 			Request  = *SiteDeleteUserLinkInput
 			Params   = struct{}
-			Response = SiteUserDeleteUserLinkRes
+			Response = *SiteUserDeleteUserLinkAccepted
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -34333,16 +36640,27 @@ func (s *Server) handleSiteUserDeleteUserLinkRequest(args [0]string, argsEscaped
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteUserDeleteUserLink(ctx, request)
+				err = s.h.SiteUserDeleteUserLink(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteUserDeleteUserLink(ctx, request)
+		err = s.h.SiteUserDeleteUserLink(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34444,8 +36762,9 @@ func (s *Server) handleSiteUserEmailChangeRequest(args [0]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -34472,8 +36791,9 @@ func (s *Server) handleSiteUserEmailChangeRequest(args [0]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -34495,7 +36815,7 @@ func (s *Server) handleSiteUserEmailChangeRequest(args [0]string, argsEscaped bo
 		}
 	}()
 
-	var response SiteUserEmailChangeRes
+	var response *SiteUserEmailChangeAccepted
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -34511,7 +36831,7 @@ func (s *Server) handleSiteUserEmailChangeRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = *SiteEmailChangeInput
 			Params   = struct{}
-			Response = SiteUserEmailChangeRes
+			Response = *SiteUserEmailChangeAccepted
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -34522,16 +36842,27 @@ func (s *Server) handleSiteUserEmailChangeRequest(args [0]string, argsEscaped bo
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteUserEmailChange(ctx, request)
+				err = s.h.SiteUserEmailChange(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteUserEmailChange(ctx, request)
+		err = s.h.SiteUserEmailChange(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34631,8 +36962,9 @@ func (s *Server) handleSiteUserGetMeRequest(args [0]string, argsEscaped bool, w 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -34659,8 +36991,9 @@ func (s *Server) handleSiteUserGetMeRequest(args [0]string, argsEscaped bool, w 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -34702,8 +37035,19 @@ func (s *Server) handleSiteUserGetMeRequest(args [0]string, argsEscaped bool, w 
 		response, err = s.h.SiteUserGetMe(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34804,8 +37148,9 @@ func (s *Server) handleSiteUserSignOutEverywhereRequest(args [0]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -34832,8 +37177,9 @@ func (s *Server) handleSiteUserSignOutEverywhereRequest(args [0]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -34875,8 +37221,19 @@ func (s *Server) handleSiteUserSignOutEverywhereRequest(args [0]string, argsEsca
 		response, err = s.h.SiteUserSignOutEverywhere(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -34979,8 +37336,9 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35007,8 +37365,9 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35030,7 +37389,7 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 		}
 	}()
 
-	var response SiteUserUpdateMeRes
+	var response *SiteUserResourceHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35046,7 +37405,7 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 		type (
 			Request  = *SiteUpdateMeInput
 			Params   = struct{}
-			Response = SiteUserUpdateMeRes
+			Response = *SiteUserResourceHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35065,8 +37424,19 @@ func (s *Server) handleSiteUserUpdateMeRequest(args [0]string, argsEscaped bool,
 		response, err = s.h.SiteUserUpdateMe(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -35166,8 +37536,9 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35194,8 +37565,9 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35227,7 +37599,7 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteWebhooksCreateRes
+	var response *SiteWebhookEndpointResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35248,7 +37620,7 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 		type (
 			Request  = *CreateWebhookInput
 			Params   = SiteWebhooksCreateParams
-			Response = SiteWebhooksCreateRes
+			Response = *SiteWebhookEndpointResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35267,8 +37639,19 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 		response, err = s.h.SiteWebhooksCreate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -35368,8 +37751,9 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35396,8 +37780,9 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35414,7 +37799,7 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response SiteWebhooksDeleteRes
+	var response *SiteWebhooksDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35439,7 +37824,7 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteWebhooksDeleteParams
-			Response = SiteWebhooksDeleteRes
+			Response = *SiteWebhooksDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35450,16 +37835,27 @@ func (s *Server) handleSiteWebhooksDeleteRequest(args [2]string, argsEscaped boo
 			mreq,
 			unpackSiteWebhooksDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteWebhooksDelete(ctx, params)
+				err = s.h.SiteWebhooksDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteWebhooksDelete(ctx, params)
+		err = s.h.SiteWebhooksDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -35559,8 +37955,9 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35587,8 +37984,9 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35605,7 +38003,7 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response SiteWebhooksGetRes
+	var response *SiteWebhookEndpointResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35630,7 +38028,7 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteWebhooksGetParams
-			Response = SiteWebhooksGetRes
+			Response = *SiteWebhookEndpointResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35649,8 +38047,19 @@ func (s *Server) handleSiteWebhooksGetRequest(args [2]string, argsEscaped bool, 
 		response, err = s.h.SiteWebhooksGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -35750,8 +38159,9 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35778,8 +38188,9 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35796,7 +38207,7 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response SiteWebhooksListRes
+	var response *SiteWebhooksListOK
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35825,7 +38236,7 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = SiteWebhooksListParams
-			Response = SiteWebhooksListRes
+			Response = *SiteWebhooksListOK
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35844,8 +38255,19 @@ func (s *Server) handleSiteWebhooksListRequest(args [1]string, argsEscaped bool,
 		response, err = s.h.SiteWebhooksList(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -35946,8 +38368,9 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -35974,8 +38397,9 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -35992,7 +38416,7 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 
 	var rawBody []byte
 
-	var response SiteWebhooksRegenerateSecretRes
+	var response *SiteWebhookEndpointResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36017,7 +38441,7 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 		type (
 			Request  = struct{}
 			Params   = SiteWebhooksRegenerateSecretParams
-			Response = SiteWebhooksRegenerateSecretRes
+			Response = *SiteWebhookEndpointResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36036,8 +38460,19 @@ func (s *Server) handleSiteWebhooksRegenerateSecretRequest(args [2]string, argsE
 		response, err = s.h.SiteWebhooksRegenerateSecret(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -36138,8 +38573,9 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -36166,8 +38602,9 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -36199,7 +38636,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		}
 	}()
 
-	var response SiteWebhooksTestRes
+	var response *SiteWebhookTestResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36224,7 +38661,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = *TestWebhookInput
 			Params   = SiteWebhooksTestParams
-			Response = SiteWebhooksTestRes
+			Response = *SiteWebhookTestResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36243,8 +38680,19 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		response, err = s.h.SiteWebhooksTest(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -36344,8 +38792,9 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -36372,8 +38821,9 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -36405,7 +38855,7 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 		}
 	}()
 
-	var response SiteWebhooksUpdateRes
+	var response *SiteWebhookEndpointResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36430,7 +38880,7 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 		type (
 			Request  = *UpdateWebhookInput
 			Params   = SiteWebhooksUpdateParams
-			Response = SiteWebhooksUpdateRes
+			Response = *SiteWebhookEndpointResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36449,8 +38899,19 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 		response, err = s.h.SiteWebhooksUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -36551,8 +39012,9 @@ func (s *Server) handleSiteWorkspacesAccountLinkRequest(args [1]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -36579,8 +39041,9 @@ func (s *Server) handleSiteWorkspacesAccountLinkRequest(args [1]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -36597,7 +39060,7 @@ func (s *Server) handleSiteWorkspacesAccountLinkRequest(args [1]string, argsEsca
 
 	var rawBody []byte
 
-	var response SiteWorkspacesAccountLinkRes
+	var response *SiteAccountLinkResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36618,7 +39081,7 @@ func (s *Server) handleSiteWorkspacesAccountLinkRequest(args [1]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesAccountLinkParams
-			Response = SiteWorkspacesAccountLinkRes
+			Response = *SiteAccountLinkResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36637,8 +39100,19 @@ func (s *Server) handleSiteWorkspacesAccountLinkRequest(args [1]string, argsEsca
 		response, err = s.h.SiteWorkspacesAccountLink(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -36740,8 +39214,9 @@ func (s *Server) handleSiteWorkspacesCreateRequest(args [0]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -36768,8 +39243,9 @@ func (s *Server) handleSiteWorkspacesCreateRequest(args [0]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -36791,7 +39267,7 @@ func (s *Server) handleSiteWorkspacesCreateRequest(args [0]string, argsEscaped b
 		}
 	}()
 
-	var response SiteWorkspacesCreateRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36807,7 +39283,7 @@ func (s *Server) handleSiteWorkspacesCreateRequest(args [0]string, argsEscaped b
 		type (
 			Request  = *SiteCreateWorkspaceInput
 			Params   = struct{}
-			Response = SiteWorkspacesCreateRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36826,8 +39302,19 @@ func (s *Server) handleSiteWorkspacesCreateRequest(args [0]string, argsEscaped b
 		response, err = s.h.SiteWorkspacesCreate(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -36931,8 +39418,9 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -36959,8 +39447,9 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -36992,7 +39481,7 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 		}
 	}()
 
-	var response SiteWorkspacesDeleteRes
+	var response *SiteDeletedWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -37013,7 +39502,7 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 		type (
 			Request  = *SiteDeleteWorkspaceInput
 			Params   = SiteWorkspacesDeleteParams
-			Response = SiteWorkspacesDeleteRes
+			Response = *SiteDeletedWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -37032,8 +39521,19 @@ func (s *Server) handleSiteWorkspacesDeleteRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteWorkspacesDelete(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -37134,8 +39634,9 @@ func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, a
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -37162,8 +39663,9 @@ func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, a
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -37180,7 +39682,7 @@ func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, a
 
 	var rawBody []byte
 
-	var response SiteWorkspacesGetRevenueSettingsRes
+	var response *SiteRevenueSettingsResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -37201,7 +39703,7 @@ func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, a
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesGetRevenueSettingsParams
-			Response = SiteWorkspacesGetRevenueSettingsRes
+			Response = *SiteRevenueSettingsResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -37220,8 +39722,19 @@ func (s *Server) handleSiteWorkspacesGetRevenueSettingsRequest(args [1]string, a
 		response, err = s.h.SiteWorkspacesGetRevenueSettings(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -37323,8 +39836,9 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -37351,8 +39865,9 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -37369,7 +39884,7 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response SiteWorkspacesLeaveRes
+	var response *SiteWorkspacesLeaveNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -37390,7 +39905,7 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesLeaveParams
-			Response = SiteWorkspacesLeaveRes
+			Response = *SiteWorkspacesLeaveNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -37401,16 +39916,27 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 			mreq,
 			unpackSiteWorkspacesLeaveParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteWorkspacesLeave(ctx, params)
+				err = s.h.SiteWorkspacesLeave(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteWorkspacesLeave(ctx, params)
+		err = s.h.SiteWorkspacesLeave(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -37512,8 +40038,9 @@ func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -37540,8 +40067,9 @@ func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -37558,7 +40086,7 @@ func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]
 
 	var rawBody []byte
 
-	var response SiteWorkspacesLiftSecondFactorRequirementRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -37579,7 +40107,7 @@ func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesLiftSecondFactorRequirementParams
-			Response = SiteWorkspacesLiftSecondFactorRequirementRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -37598,8 +40126,19 @@ func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]
 		response, err = s.h.SiteWorkspacesLiftSecondFactorRequirement(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -37699,8 +40238,9 @@ func (s *Server) handleSiteWorkspacesListRequest(args [0]string, argsEscaped boo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -37727,8 +40267,9 @@ func (s *Server) handleSiteWorkspacesListRequest(args [0]string, argsEscaped boo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -37770,8 +40311,19 @@ func (s *Server) handleSiteWorkspacesListRequest(args [0]string, argsEscaped boo
 		response, err = s.h.SiteWorkspacesList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -37873,8 +40425,9 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -37901,8 +40454,9 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -37944,8 +40498,19 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 		response, err = s.h.SiteWorkspacesListDeleted(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -38047,8 +40612,9 @@ func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -38075,8 +40641,9 @@ func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -38093,7 +40660,7 @@ func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, 
 
 	var rawBody []byte
 
-	var response SiteWorkspacesRequireSecondFactorRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -38114,7 +40681,7 @@ func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, 
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesRequireSecondFactorParams
-			Response = SiteWorkspacesRequireSecondFactorRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -38133,8 +40700,19 @@ func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, 
 		response, err = s.h.SiteWorkspacesRequireSecondFactor(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -38238,8 +40816,9 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -38266,8 +40845,9 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -38284,7 +40864,7 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response SiteWorkspacesRestoreRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -38305,7 +40885,7 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteWorkspacesRestoreParams
-			Response = SiteWorkspacesRestoreRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -38324,8 +40904,19 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 		response, err = s.h.SiteWorkspacesRestore(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -38427,8 +41018,9 @@ func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -38455,8 +41047,9 @@ func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -38488,7 +41081,7 @@ func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEsca
 		}
 	}()
 
-	var response SiteWorkspacesSetTimezoneRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -38509,7 +41102,7 @@ func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEsca
 		type (
 			Request  = *SiteWorkspaceTimezoneInput
 			Params   = SiteWorkspacesSetTimezoneParams
-			Response = SiteWorkspacesSetTimezoneRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -38528,8 +41121,19 @@ func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEsca
 		response, err = s.h.SiteWorkspacesSetTimezone(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -38629,8 +41233,9 @@ func (s *Server) handleSiteWorkspacesUpdateRequest(args [1]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -38657,8 +41262,9 @@ func (s *Server) handleSiteWorkspacesUpdateRequest(args [1]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -38690,7 +41296,7 @@ func (s *Server) handleSiteWorkspacesUpdateRequest(args [1]string, argsEscaped b
 		}
 	}()
 
-	var response SiteWorkspacesUpdateRes
+	var response *SiteWorkspaceResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -38711,7 +41317,7 @@ func (s *Server) handleSiteWorkspacesUpdateRequest(args [1]string, argsEscaped b
 		type (
 			Request  = *SiteUpdateWorkspaceInput
 			Params   = SiteWorkspacesUpdateParams
-			Response = SiteWorkspacesUpdateRes
+			Response = *SiteWorkspaceResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -38730,8 +41336,19 @@ func (s *Server) handleSiteWorkspacesUpdateRequest(args [1]string, argsEscaped b
 		response, err = s.h.SiteWorkspacesUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -38833,8 +41450,9 @@ func (s *Server) handleSiteWorkspacesUpdateRevenueSettingsRequest(args [1]string
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -38861,8 +41479,9 @@ func (s *Server) handleSiteWorkspacesUpdateRevenueSettingsRequest(args [1]string
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -38894,7 +41513,7 @@ func (s *Server) handleSiteWorkspacesUpdateRevenueSettingsRequest(args [1]string
 		}
 	}()
 
-	var response SiteWorkspacesUpdateRevenueSettingsRes
+	var response *SiteRevenueSettingsResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -38915,7 +41534,7 @@ func (s *Server) handleSiteWorkspacesUpdateRevenueSettingsRequest(args [1]string
 		type (
 			Request  = *SiteUpdateRevenueSettingsInput
 			Params   = SiteWorkspacesUpdateRevenueSettingsParams
-			Response = SiteWorkspacesUpdateRevenueSettingsRes
+			Response = *SiteRevenueSettingsResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -38934,8 +41553,19 @@ func (s *Server) handleSiteWorkspacesUpdateRevenueSettingsRequest(args [1]string
 		response, err = s.h.SiteWorkspacesUpdateRevenueSettings(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 

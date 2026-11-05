@@ -6,20 +6,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -180,15 +178,11 @@ type Inputs interface {
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
-	BroadcastChannel(source externalapi.BroadcastChannel) broadcast.Channel
-	// goverter:enum:map SuppressionChannelEmail ChannelEmail
-	// goverter:enum:map SuppressionChannelTelegram ChannelTelegram
-	// goverter:enum:map SuppressionChannelSMS ChannelSms
-	SuppressionChannel(source externalapi.SuppressionChannel) suppression.Channel
-	// goverter:enum:map ConsentChannelEmail ChannelEmail
-	// goverter:enum:map ConsentChannelTelegram ChannelTelegram
-	// goverter:enum:map ConsentChannelSMS ChannelSMS
-	ConsentChannel(source externalapi.ConsentChannel) messaging.Channel
+	BroadcastChannel(source externalapi.BroadcastChannel) channels.Channel
+	// goverter:enum:transform value
+	SuppressionChannel(source externalapi.SuppressionChannel) channels.Channel
+	// goverter:enum:transform value
+	ConsentChannel(source externalapi.ConsentChannel) channels.Channel
 
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
 	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
@@ -407,7 +401,7 @@ func broadcastContentPatch(c Inputs, o externalapi.OptBroadcastContentInput) (br
 }
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
-func broadcastChannelPtrIn(c Inputs, o externalapi.OptBroadcastChannel) *broadcast.Channel {
+func broadcastChannelPtrIn(c Inputs, o externalapi.OptBroadcastChannel) *channels.Channel {
 	v, ok := o.Get()
 	if !ok {
 		return nil

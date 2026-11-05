@@ -128,14 +128,10 @@ model StaffSignupSurveyCounts {
 namespace StaffSignupSurvey {
   /** The Sign-up survey answers, counted per question. Read only. */
   @get
-  op counts(): StaffSignupSurveyCounts | UnauthorizedProblem;
+  op counts(): StaffSignupSurveyCounts | Problem;
 
   /** One User's answers. 404 when the User is unknown or has not answered the survey. */
   @get
   @route("/users/{userId}")
-  op get(@path userId: EntityId):
-    | StaffSignupSurveyResponseResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op get(@path userId: EntityId): StaffSignupSurveyResponseResource | Problem;
 }

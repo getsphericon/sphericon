@@ -1,0 +1,32 @@
+id: no-hand-written-problem-in-handlers
+snapshots:
+  "func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (*externalapi.ContactResource, error) {\n\treturn nil, &problem.Error{Status: http.StatusNotFound, Detail: \"contact not found\"}\n}\n":
+    labels:
+      - source: 'problem.Error{Status: http.StatusNotFound, Detail: "contact not found"}'
+        style: primary
+        start: 144
+        end: 215
+      - source: problem.Error
+        style: secondary
+        start: 144
+        end: 157
+  "func (h *Handlers) NewError(ctx context.Context, err error) *siteapi.ProblemDetailsStatusCode {\n\treturn &siteapi.ProblemDetailsStatusCode{StatusCode: 404}\n}\n":
+    labels:
+      - source: 'siteapi.ProblemDetailsStatusCode{StatusCode: 404}'
+        style: primary
+        start: 105
+        end: 154
+      - source: siteapi.ProblemDetailsStatusCode
+        style: secondary
+        start: 105
+        end: 137
+  "func notFoundProblem() staffeeapi.ProblemDetails {\n\treturn staffeeapi.ProblemDetails{Detail: staffeeapi.NewOptString(\"not found\")}\n}\n":
+    labels:
+      - source: 'staffeeapi.ProblemDetails{Detail: staffeeapi.NewOptString("not found")}'
+        style: primary
+        start: 59
+        end: 130
+      - source: staffeeapi.ProblemDetails
+        style: secondary
+        start: 59
+        end: 84

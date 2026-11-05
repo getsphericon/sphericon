@@ -33,7 +33,7 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 
 // SiteSecondFactorStartEnrollment creates a pending TOTP secret (ADR 0020) once the
 // password is proven: a hijacked session alone cannot enroll a factor of its own.
-func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorStartInput) (siteapi.SiteSecondFactorStartEnrollmentRes, error) {
+func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorStartInput) (*siteapi.SiteSecondFactorEnrollment, error) {
 	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *sit
 // SiteSecondFactorConfirmEnrollment activates the pending secret with the password
 // and a valid code, returns the Recovery codes once and reissues the acting session
 // (the epoch moved).
-func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorConfirmInput) (siteapi.SiteSecondFactorConfirmEnrollmentRes, error) {
+func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *siteapi.SiteSecondFactorConfirmInput) (*siteapi.SiteRecoveryCodesHeaders, error) {
 	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 
 // SiteSecondFactorRegenerateRecoveryCodes replaces the Recovery codes after the
 // password is proven, and reissues the acting session.
-func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *siteapi.SiteRecoveryCodesInput) (siteapi.SiteSecondFactorRegenerateRecoveryCodesRes, error) {
+func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *siteapi.SiteRecoveryCodesInput) (*siteapi.SiteRecoveryCodesHeaders, error) {
 	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (h *Handlers) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, 
 
 // SiteSecondFactorDisable removes the Second factor after the password and a
 // current code are proven, and reissues the acting session.
-func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.SiteSecondFactorDisableInput) (siteapi.SiteSecondFactorDisableRes, error) {
+func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.SiteSecondFactorDisableInput) (*siteapi.SiteSecondFactorDisableNoContent, error) {
 	userID, err := h.proveIdentity(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err

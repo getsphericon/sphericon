@@ -31,8 +31,7 @@ namespace SiteTelegram {
   @requiresPermissions(#[])
   op listBindings(@path workspaceId: WorkspaceId, @path contactId: EntityId):
     | SiteBindingResource[]
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Issue a Telegram start link for a contact. Each call issues a new link. */
   @route("/contacts/{contactId}/telegram-start-links")
@@ -42,9 +41,5 @@ namespace SiteTelegram {
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     @body body: IssueTelegramStartLinkInput,
-  ):
-    | TelegramStartLinkResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): TelegramStartLinkResource | Problem;
 }

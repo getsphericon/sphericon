@@ -134,11 +134,10 @@ model SiteContactsListFilter {
 
 @tag("Site Contacts")
 interface SiteContacts
-  extends WorkspaceCrudUnique<
+  extends WorkspaceCrud<
       SiteContactResource,
       SiteCreateContactInput,
       SiteUpdateContactInput,
-      ForbiddenProblem,
       SiteContactsListFilter
     > {
   /**
@@ -156,13 +155,7 @@ interface SiteContacts
 
     /** The contact's email address */
     @query email?: EmailAddress,
-  ):
-    | SiteContactExportDownload
-    | SiteContactExportTypedDownload
-    | BadRequestProblem
-    | UnprocessableEntityProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  ): SiteContactExportDownload | SiteContactExportTypedDownload | Problem;
 
   /**
    * Look up what the Workspace holds for one email address (a Privacy request):
@@ -178,12 +171,7 @@ interface SiteContacts
 
     /** The email address, as typed: trimmed and validated by the erasure module, not by the format check */
     @maxLength(320) @query email: string,
-  ):
-    | SiteContactHoldings
-    | BadRequestProblem
-    | UnprocessableEntityProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  ): SiteContactHoldings | Problem;
 
   /**
    * Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as
@@ -201,12 +189,7 @@ interface SiteContacts
 
     /** The email address to erase, as typed: trimmed and validated by the erasure module */
     @maxLength(320) @query email: string,
-  ):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnprocessableEntityProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  ): NoContentResponse | Problem;
 }
 
 @@doc(

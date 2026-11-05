@@ -10,13 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const metadataRedirectURI = "https://claude.example/callback"
@@ -175,15 +176,13 @@ func TestConsentScreenRefusesAMetadataClientWithAWrongDocument(t *testing.T) {
 	env := setupWithFetcher(t, m)
 	actor := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	described, err := actor.SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{ClientId: m.ClientID, RedirectUri: metadataRedirectURI})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteOAuthDescribeUnprocessableEntity), described)
+	_, err := actor.SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{ClientId: m.ClientID, RedirectUri: metadataRedirectURI})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	decision := approval("contacts:read", false)
 	decision.ClientId, decision.RedirectUri = m.ClientID, metadataRedirectURI
-	decided, err := actor.SiteOAuthDecide(t.Context(), &decision)
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteOAuthDecideUnprocessableEntity), decided)
+	_, err = actor.SiteOAuthDecide(t.Context(), &decision)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	codes, err := env.DB.OAuthCode.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, codes, "no authorization code is minted for a refused client")
@@ -249,23 +248,19 @@ func TestConsentScreenNamesTheMetadataClientHostAndWarnsAboutLocalhost(t *testin
 	require.NoError(t, err)
 
 	for redirect, local := range map[string]bool{"http://localhost:3000/cb": true, metadataRedirectURI: false} {
-		res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
+		got, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 			ClientId: m.ClientID, RedirectUri: redirect,
 		})
 		require.NoError(t, err)
-		got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
-		require.Truef(t, ok, "got %T", res)
 		assert.Equal(t, "Local tool", got.ClientName)
 		assert.Equal(t, siteapi.NewOptString(host.Host), got.ClientHost)
 		assert.Equal(t, local, got.LocalRedirect, redirect)
 	}
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
+	registered, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 		ClientId: fixtureClientID, RedirectUri: fixtureRedirectURI,
 	})
 	require.NoError(t, err)
-	registered, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
-	require.Truef(t, ok, "got %T", res)
 	assert.False(t, registered.ClientHost.Set, "a registered client has no host to show")
 	assert.False(t, registered.LocalRedirect)
 }

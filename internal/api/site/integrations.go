@@ -12,7 +12,7 @@ import (
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
-func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
+func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteIntegrationsListParams) ([]siteapi.SiteIntegrationResource, error) {
 	s := workspaceScope(ctx)
 
 	rows, err := h.integrations.All(ctx, s)
@@ -24,7 +24,7 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteInteg
 	if err != nil {
 		return nil, err
 	}
-	items := make(siteapi.SiteIntegrationsListOKApplicationJSON, len(rows))
+	items := make([]siteapi.SiteIntegrationResource, len(rows))
 	for i, row := range rows {
 		res, err := h.integrationToResource(row, limits[row.ID])
 		if err != nil {
@@ -32,12 +32,12 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, _ siteapi.SiteInteg
 		}
 		items[i] = res
 	}
-	return &items, nil
+	return items, nil
 }
 
 // SiteIntegrationsCreate stores a new provider integration; credentials are
 // encrypted at rest and never returned. Owners and admins only.
-func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.CreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
+func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.CreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (*siteapi.SiteIntegrationResource, error) {
 	s := workspaceScope(ctx)
 
 	in, err := inputs.IntegrationCreate(req)
@@ -56,7 +56,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Crea
 }
 
 // SiteIntegrationsGet returns one integration with secrets redacted.
-func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (siteapi.SiteIntegrationsGetRes, error) {
+func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (*siteapi.SiteIntegrationResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -76,7 +76,7 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // Within a supplied config, blank secret fields (password, secret access key)
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
-func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.UpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
+func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.UpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (*siteapi.SiteIntegrationResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -98,7 +98,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Upda
 
 // SiteIntegrationsRegenerateKey gives the integration a new hook key; the old hook URL
 // stops working at once. Owners and admins only.
-func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (siteapi.SiteIntegrationsRegenerateKeyRes, error) {
+func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (*siteapi.SiteIntegrationResource, error) {
 	s := workspaceScope(ctx)
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
 	if err != nil {
@@ -126,11 +126,8 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 
 // SiteIntegrationsDelete deletes an integration for good (ADR 0049): it leaves the list and gives
 // up the default, unless live work uses it (409). Owners and admins only.
-func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) (siteapi.SiteIntegrationsDeleteRes, error) {
-	if err := h.integrations.Delete(ctx, workspaceScope(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteIntegrationsDeleteNoContent{}, nil
+func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) error {
+	return h.integrations.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
 // integrationToResource maps the row with goverter, then attaches what the mapper cannot

@@ -1,30 +1,37 @@
 package staff_test
 
 import (
-	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/samber/lo"
+	"net/http"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const resolveURL = "https://account.sphericon.test/acme/resolve"
 
-// setHoldWithURL sets a hold that carries an action URL.
-func (h *harness) setHoldWithURL(t *testing.T, key, actionURL string) serviceapi.ServiceHoldsSetRes {
+// trySetHoldWithURL sets a hold that carries an action URL.
+func (h *harness) trySetHoldWithURL(t *testing.T, key, actionURL string) (*serviceapi.HoldSetResult, error) {
 	t.Helper()
-	res, err := h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
+	return h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: "review", Message: "Sending is paused for now.", ActionUrl: serviceapi.NewOptNilString(actionURL),
 		ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: key})
+}
+
+// setHoldWithURL is trySetHoldWithURL for a call that is expected to succeed.
+func (h *harness) setHoldWithURL(t *testing.T, key, actionURL string) *serviceapi.HoldSetResult {
+	t.Helper()
+	res, err := h.trySetHoldWithURL(t, key, actionURL)
 	require.NoError(t, err)
 	return res
 }
@@ -38,8 +45,7 @@ func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 
 	assert.True(t, h.clearHold(t, fixtures.HoldAcmeLapsedKey))
 
-	held, ok := h.sendOnAPI(t, "still-held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
-	require.True(t, ok, "the suspension still refuses sends")
+	held := h.refusedSendOnAPI(t, "still-held@example.com", "the suspension still refuses sends")
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.NotNil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
@@ -70,16 +76,15 @@ func TestTheActionURLReachesTheConsoleAndTheOwnerAndRenewingWithoutItRemovesIt(t
 func TestSettingAHoldWithItsActionURLAgainChangesNothing(t *testing.T) {
 	h := newHarness(t)
 	h.setHoldWithURL(t, "same", resolveURL)
-	again, ok := h.setHoldWithURL(t, "same", resolveURL).(*serviceapi.HoldSetResult)
-	require.True(t, ok)
+	again := h.setHoldWithURL(t, "same", resolveURL)
 	assert.False(t, again.Changed)
 }
 
 func TestAnActionURLMustBeAnAbsoluteHTTPSURLWithoutCredentials(t *testing.T) {
 	h := newHarness(t)
 	for _, bad := range []string{"https://user:pass@account.sphericon.test/", "https:///no-host"} {
-		_, ok := h.setHoldWithURL(t, "bad", bad).(*serviceapi.ServiceHoldsSetUnprocessableEntity)
-		assert.Truef(t, ok, "%q is refused", bad)
+		_, err := h.trySetHoldWithURL(t, "bad", bad)
+		testhelper.ServiceRefusal(t, err, http.StatusUnprocessableEntity, "%q is refused", bad)
 	}
 	assert.Empty(t, h.listHolds(t))
 }

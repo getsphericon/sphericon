@@ -148,8 +148,7 @@ func TestAMachineOpenOrClickIsNoMatchOfASegmentCondition(t *testing.T) {
 			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
-		res, ok := out.(*siteapi.SitePreviewSegmentResult)
-		require.Truef(t, ok, "got %T", out)
+		res := out
 		return res.Count
 	}
 
@@ -176,8 +175,7 @@ func TestTheEventListLeavesOutMachineEventsUnlessAskedFor(t *testing.T) {
 			IncludeMachine: siteapi.NewOptBool(includeMachine),
 		})
 		require.NoError(t, err)
-		res, ok := out.(*siteapi.SiteEventsListOK)
-		require.Truef(t, ok, "got %T", out)
+		res := out
 		return res
 	}
 

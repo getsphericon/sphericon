@@ -14,7 +14,6 @@ import (
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
-	integration "github.com/getsphericon/sphericon/ent/integration"
 	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
@@ -28,6 +27,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	channels "github.com/getsphericon/sphericon/internal/channels"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
@@ -38,6 +38,7 @@ import (
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
+	providers "github.com/getsphericon/sphericon/internal/providers"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -335,14 +336,14 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKi
 	externalapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return externalapiBrandKitResource
 }
-func (c *ConverterImpl) BroadcastChannelToResource(source broadcast.Channel) external.BroadcastChannel {
+func (c *ConverterImpl) BroadcastChannelToResource(source channels.Channel) external.BroadcastChannel {
 	var externalapiBroadcastChannel external.BroadcastChannel
 	switch source {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		externalapiBroadcastChannel = external.BroadcastChannelEmail
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		externalapiBroadcastChannel = external.BroadcastChannelSMS
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 		externalapiBroadcastChannel = external.BroadcastChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -522,21 +523,6 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) ext
 	externalapiCnameRecord.Target = source.Target
 	return externalapiCnameRecord
 }
-func (c *ConverterImpl) ConfirmationChannelToResource(source confirmation.Channel) external.ConsentChannel {
-	var externalapiConsentChannel external.ConsentChannel
-	switch source {
-	case confirmation.ChannelEmail:
-		externalapiConsentChannel = external.ConsentChannelEmail
-	case confirmation.ChannelSms:
-		externalapiConsentChannel = external.ConsentChannelSMS
-	case confirmation.ChannelTelegram:
-		externalapiConsentChannel = external.ConsentChannelTelegram
-	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return externalapiConsentChannel
-}
 func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) external.ConfirmationProvenance {
 	var externalapiConfirmationProvenance external.ConfirmationProvenance
 	switch source {
@@ -571,7 +557,7 @@ func (c *ConverterImpl) ConfirmationToResource(source *ent.Confirmation) externa
 	var externalapiConfirmationResource external.ConfirmationResource
 	if source != nil {
 		externalapiConfirmationResource.ID = external.EntityId((*source).ID)
-		externalapiConfirmationResource.Channel = c.ConfirmationChannelToResource((*source).Channel)
+		externalapiConfirmationResource.Channel = c.ConsentChannelToResource((*source).Channel)
 		externalapiConfirmationResource.Destination = (*source).Destination
 		externalapiConfirmationResource.Provenance = c.ConfirmationProvenanceToResource((*source).Provenance)
 		externalapiConfirmationResource.Wording = optNilString((*source).Wording)
@@ -580,6 +566,20 @@ func (c *ConverterImpl) ConfirmationToResource(source *ent.Confirmation) externa
 		externalapiConfirmationResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiConfirmationResource
+}
+func (c *ConverterImpl) ConsentChannelToResource(source channels.Channel) external.ConsentChannel {
+	var externalapiConsentChannel external.ConsentChannel
+	switch source {
+	case channels.Email:
+		externalapiConsentChannel = external.ConsentChannelEmail
+	case channels.SMS:
+		externalapiConsentChannel = external.ConsentChannelSMS
+	case channels.Telegram:
+		externalapiConsentChannel = external.ConsentChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiConsentChannel
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource
@@ -701,22 +701,6 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []ext
 		externalapiCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
 	}
 	return externalapiCustomFieldResourceList
-}
-func (c *ConverterImpl) DeliveryErrorKindToResource(source webhook.ErrorKind) external.WebhookErrorKind {
-	var externalapiWebhookErrorKind external.WebhookErrorKind
-	switch source {
-	case webhook.KindBlockedAddress:
-		externalapiWebhookErrorKind = external.WebhookErrorKindBlockedAddress
-	case webhook.KindHTTPStatus:
-		externalapiWebhookErrorKind = external.WebhookErrorKindHTTPStatus
-	case webhook.KindNetwork:
-		externalapiWebhookErrorKind = external.WebhookErrorKindNetwork
-	case webhook.KindTimeout:
-		externalapiWebhookErrorKind = external.WebhookErrorKindTimeout
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return externalapiWebhookErrorKind
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
@@ -905,33 +889,32 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.
 	}
 	return externalapiHoldReason
 }
-func (c *ConverterImpl) IntegrationChannelToResource(source integration.Channel) external.IntegrationChannel {
+func (c *ConverterImpl) IntegrationChannelToResource(source channels.Channel) external.IntegrationChannel {
 	var externalapiIntegrationChannel external.IntegrationChannel
 	switch source {
-	case integration.ChannelEmail:
+	case channels.Email:
 		externalapiIntegrationChannel = external.IntegrationChannelEmail
-	case integration.ChannelSms:
+	case channels.SMS:
 		externalapiIntegrationChannel = external.IntegrationChannelSMS
-	case integration.ChannelTelegram:
+	case channels.Telegram:
 		externalapiIntegrationChannel = external.IntegrationChannelTelegram
-	// Skipped DefaultChannel(email) -> IntegrationChannelEmail(email) because it duplicates ChannelEmail(email) -> IntegrationChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiIntegrationChannel
 }
-func (c *ConverterImpl) IntegrationProviderToResource(source integration.Provider) external.IntegrationProvider {
+func (c *ConverterImpl) IntegrationProviderToResource(source providers.Provider) external.IntegrationProvider {
 	var externalapiIntegrationProvider external.IntegrationProvider
 	switch source {
-	case integration.ProviderInbox:
+	case providers.Inbox:
 		externalapiIntegrationProvider = external.IntegrationProviderInbox
-	case integration.ProviderSMTP:
-		externalapiIntegrationProvider = external.IntegrationProviderSMTP
-	case integration.ProviderSes:
+	case providers.SES:
 		externalapiIntegrationProvider = external.IntegrationProviderSes
-	case integration.ProviderTelegram:
+	case providers.SMTP:
+		externalapiIntegrationProvider = external.IntegrationProviderSMTP
+	case providers.Telegram:
 		externalapiIntegrationProvider = external.IntegrationProviderTelegram
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		externalapiIntegrationProvider = external.IntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1449,16 +1432,15 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.
 	externalapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return externalapiTelegramStartLinkResource
 }
-func (c *ConverterImpl) SuppressionChannelToResource(source suppression.Channel) external.SuppressionChannel {
+func (c *ConverterImpl) SuppressionChannelToResource(source channels.Channel) external.SuppressionChannel {
 	var externalapiSuppressionChannel external.SuppressionChannel
 	switch source {
-	case suppression.ChannelEmail:
+	case channels.Email:
 		externalapiSuppressionChannel = external.SuppressionChannelEmail
-	case suppression.ChannelSms:
+	case channels.SMS:
 		externalapiSuppressionChannel = external.SuppressionChannelSMS
-	case suppression.ChannelTelegram:
+	case channels.Telegram:
 		externalapiSuppressionChannel = external.SuppressionChannelTelegram
-	// Skipped DefaultChannel(email) -> SuppressionChannelEmail(email) because it duplicates ChannelEmail(email) -> SuppressionChannelEmail(email)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1665,21 +1647,6 @@ func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwili
 	externalapiTwilioConfig.CallbacksSet = source.CallbacksSet
 	return externalapiTwilioConfig
 }
-func (c *ConverterImpl) UnsubscribeChannelToResource(source unsubscribe.Channel) external.ConsentChannel {
-	var externalapiConsentChannel external.ConsentChannel
-	switch source {
-	case unsubscribe.ChannelEmail:
-		externalapiConsentChannel = external.ConsentChannelEmail
-	case unsubscribe.ChannelSms:
-		externalapiConsentChannel = external.ConsentChannelSMS
-	case unsubscribe.ChannelTelegram:
-		externalapiConsentChannel = external.ConsentChannelTelegram
-	// Skipped DefaultChannel(email) -> ConsentChannelEmail(email) because it duplicates ChannelEmail(email) -> ConsentChannelEmail(email)
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return externalapiConsentChannel
-}
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
 	if source != nil {
@@ -1696,7 +1663,7 @@ func (c *ConverterImpl) UnsubscribeToResource(source *ent.Unsubscribe) external.
 	var externalapiUnsubscribeResource external.UnsubscribeResource
 	if source != nil {
 		externalapiUnsubscribeResource.ID = external.EntityId((*source).ID)
-		externalapiUnsubscribeResource.Channel = c.UnsubscribeChannelToResource((*source).Channel)
+		externalapiUnsubscribeResource.Channel = c.ConsentChannelToResource((*source).Channel)
 		externalapiUnsubscribeResource.Destination = (*source).Destination
 		externalapiUnsubscribeResource.SendingSource = (*source).SendingSource
 		externalapiUnsubscribeResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -1727,16 +1694,16 @@ func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.D
 	}
 	return externalapiWebhookDisabledReason
 }
-func (c *ConverterImpl) WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) external.WebhookErrorKind {
+func (c *ConverterImpl) WebhookErrorKindToResource(source webhook.ErrorKind) external.WebhookErrorKind {
 	var externalapiWebhookErrorKind external.WebhookErrorKind
 	switch source {
-	case webhookendpoint.LastErrorKindBlockedAddress:
+	case webhook.KindBlockedAddress:
 		externalapiWebhookErrorKind = external.WebhookErrorKindBlockedAddress
-	case webhookendpoint.LastErrorKindHTTPStatus:
+	case webhook.KindHTTPStatus:
 		externalapiWebhookErrorKind = external.WebhookErrorKindHTTPStatus
-	case webhookendpoint.LastErrorKindNetwork:
+	case webhook.KindNetwork:
 		externalapiWebhookErrorKind = external.WebhookErrorKindNetwork
-	case webhookendpoint.LastErrorKindTimeout:
+	case webhook.KindTimeout:
 		externalapiWebhookErrorKind = external.WebhookErrorKindTimeout
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
