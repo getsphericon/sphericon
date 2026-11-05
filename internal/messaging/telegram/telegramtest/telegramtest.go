@@ -190,6 +190,15 @@ func (s *Server) AddBot(id int64, username string) string {
 	return token
 }
 
+// AddBotToken makes the fake know a bot with id and username under a token the test names, such
+// as the one a fixture Integration stores.
+func (s *Server) AddBotToken(id int64, username, token string) {
+	s.serving()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.bots[token] = Bot{ID: id, Username: username}
+}
+
 // Rotate issues another token of the bot with id, as @BotFather's /revoke does: the old tokens
 // stop working. It panics when the fake knows no such bot.
 func (s *Server) Rotate(id int64) string {

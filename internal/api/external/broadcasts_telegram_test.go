@@ -17,7 +17,7 @@ import (
 func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliveryFigures(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7501, "acme_api_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write")
 
 	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
@@ -50,7 +50,7 @@ func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliver
 func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndForAnOverLongText(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7502, "acme_sched_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send")
 	create := func(text string, integrationID *int64) externalapi.EntityId {
 		in := &externalapi.CreateBroadcastInput{Name: "News", Content: testhelper.ExternalTelegram(text)}
@@ -83,7 +83,7 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 func TestExternalTelegramBroadcastHasNoTestSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7503, "acme_test_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, authorScopes...)
 	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "News", Content: testhelper.ExternalTelegram("Hello"),

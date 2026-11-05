@@ -59,14 +59,14 @@ func bindingsOf(t *testing.T, env *testhelper.TestEnv, destination string) []str
 
 func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7100, "acme_start_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
 	token, link := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	posted := env.PostTelegramUpdate(t, bot, startUpdate(900, 555, "/start "+token))
 	redelivered := env.PostTelegramUpdate(t, bot, startUpdate(900, 555, "/start "+token))
 
-	assert.Equal(t, "https://t.me/acme_start_bot?start="+token, link.URL)
+	assert.Equal(t, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start="+token, link.URL)
 	assert.Regexp(t, `^[A-Za-z0-9_-]{1,64}$`, token)
 	assert.Equal(t, http.StatusOK, posted.Code)
 	assert.Equal(t, http.StatusOK, redelivered.Code)
@@ -77,7 +77,7 @@ func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 
 func TestAStartLinkUsesTheDefaultBotWhenNoneIsNamed(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7108, "acme_default_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write", "integrations:write")
 	made, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{IsDefault: externalapi.NewOptBool(true)},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(bot.Integration.ID)})
@@ -86,13 +86,13 @@ func TestAStartLinkUsesTheDefaultBotWhenNoneIsNamed(t *testing.T) {
 
 	_, link := issue(t, c, fixtures.ContactBobID, nil)
 
-	assert.Contains(t, link.URL, "https://t.me/acme_default_bot?start=")
+	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 }
 
 func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 	now := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return now }))
-	bot := env.ConnectTelegram(t, 7101, "acme_lapse_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	token, link := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	assert.WithinDuration(t, now.Add(30*24*time.Hour), time.Time(link.ExpiresAt), time.Second)
@@ -106,7 +106,7 @@ func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 
 func TestAStartLinkWorksOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7102, "acme_once_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	token, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 
@@ -119,7 +119,7 @@ func TestAStartLinkWorksOnce(t *testing.T) {
 
 func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	first := env.ConnectTelegram(t, 7103, "acme_first_bot")
+	first := env.AcmeTelegram(t)
 	second := env.ConnectTelegram(t, 7104, "acme_second_bot")
 	c := env.ExternalScoped(t, "contacts:write")
 	firstID := int64(first.Integration.ID)
@@ -133,7 +133,7 @@ func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 
 func TestABareStartBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7105, "acme_bare_bot")
+	bot := env.AcmeTelegram(t)
 
 	env.PostTelegramUpdate(t, bot, startUpdate(905, 560, "/start"))
 	env.PostTelegramUpdate(t, bot, startUpdate(906, 560, "/start not-a-token"))
@@ -144,7 +144,7 @@ func TestABareStartBindsNothing(t *testing.T) {
 
 func TestAStartInAGroupBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7106, "acme_group_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	token, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	inGroup := fmt.Sprintf(`{"update_id":907,"message":{"message_id":1,"date":1767225600,"chat":{"id":-1001,"type":"supergroup"},"from":{"id":561,"is_bot":false},"text":"/start %s"}}`, token)
@@ -158,7 +158,7 @@ func TestAStartInAGroupBindsNothing(t *testing.T) {
 
 func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7107, "acme_move_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	bobs, _ := issue(t, c, fixtures.ContactBobID, onBot(bot))
 	carols, _ := issue(t, c, fixtures.ContactCarolID, onBot(bot))

@@ -16,7 +16,7 @@ import (
 func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	twilio := env.ConnectTwilio(t).Integration.ID
+	twilio := env.AcmeTwilio(t).Integration.ID
 	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish", "integrations:read", "integrations:write")
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{

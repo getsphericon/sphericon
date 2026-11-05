@@ -61,7 +61,7 @@ func runSteps(t *testing.T, env *testhelper.TestEnv) {
 
 func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7301, "acme_step_bot")
+	bot := env.AcmeTelegram(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName("<i>Bob</i> & co").ExecX(t.Context())
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hi {{ first_name }}, <b>welcome</b><script>x()</script>"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555001, 555001)
@@ -87,7 +87,7 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 
 func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7302, "acme_two_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555011, 555011)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555012, 555012)
@@ -105,7 +105,7 @@ func TestAContactWithTwoBindingsGetsTwoCallsAndOneOutboundMessage(t *testing.T) 
 
 func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoBinding(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7303, "acme_mixed_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env,
 		automationsteps.Step{Type: automationsteps.Email, Subject: "First", Body: "<p>one</p>"},
 		telegramStep(bot, "Telegram"),
@@ -127,7 +127,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoB
 
 func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7304, "acme_long_bot")
+	bot := env.AcmeTelegram(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName(strings.Repeat("x", 300)).ExecX(t.Context())
 	automationID := telegramAutomation(t, env, telegramStep(bot, strings.Repeat("a", 4000)+"{{ first_name }}"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555021, 555021)
@@ -146,7 +146,7 @@ func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
 
 func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7305, "acme_photo_bot")
+	bot := env.AcmeTelegram(t)
 	step := telegramStep(bot, "Look <b>here</b>")
 	step.ImageURL = "https://cdn.example.com/a.png"
 	step.Buttons = []telegramrender.Button{{Label: "Open", URL: "https://example.com/a"}, {Label: "More", URL: "https://example.com/b"}}
@@ -169,7 +169,7 @@ func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.
 
 func TestTurningTheLinkPreviewOffSetsTheOption(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7306, "acme_preview_bot")
+	bot := env.AcmeTelegram(t)
 	off := telegramStep(bot, "See https://example.com")
 	off.LinkPreview = new(false)
 	automationID := telegramAutomation(t, env, off, telegramStep(bot, "See https://example.com"))
@@ -186,7 +186,7 @@ func TestTurningTheLinkPreviewOffSetsTheOption(t *testing.T) {
 
 func TestARenderedCaptionOverTheCaptionLimitFails(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7307, "acme_caption_bot")
+	bot := env.AcmeTelegram(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName(strings.Repeat("x", 100)).ExecX(t.Context())
 	step := telegramStep(bot, strings.Repeat("a", 950)+"{{ first_name }}")
 	step.ImageURL = "https://cdn.example.com/a.png"
@@ -203,7 +203,7 @@ func TestARenderedCaptionOverTheCaptionLimitFails(t *testing.T) {
 func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7308, "acme_unsub_bot")
+	bot := env.AcmeTelegram(t)
 	emailOptOuts := func() int {
 		return env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelEmail), unsubscribe.ContactID(fixtures.ContactBobID)).CountX(ctx)
 	}

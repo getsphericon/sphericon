@@ -52,7 +52,7 @@ func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	confirmNumber(t, env, fixtures.ContactTexterPhone)
 	seg, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
@@ -116,7 +116,7 @@ func TestSiteSMSBroadcastIsRefusedWithoutAnSMSIntegration(t *testing.T) {
 func TestSiteSMSBroadcastTestSendGoesToTheTypedNumberAndLeavesNoMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	b := createSMSBroadcast(t, c, account, "Hi {{ first_name }}, stop: {{ unsubscribe_url }}", nil)
 	testSend := func(in siteapi.TestSendBroadcastInput) siteapi.SiteBroadcastsTestSendRes {
@@ -167,7 +167,7 @@ func TestSiteEmailBroadcastTestSendWithoutAnEmailIsRefused(t *testing.T) {
 func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	b := createSMSBroadcast(t, c, account, "Hello", nil)
 	testSend := func() siteapi.SiteBroadcastsTestSendRes {
@@ -199,7 +199,7 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	b := createSMSBroadcast(t, c, account, strings.Repeat("a", 1600), nil)
 
@@ -227,7 +227,7 @@ func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	spaces, err := c.SiteWorkspacesList(ctx)
 	require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 
 func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	schedule := func(text string) siteapi.SiteBroadcastsScheduleRes {
 		b := createSMSBroadcast(t, c, account, text, nil)
@@ -274,7 +274,7 @@ func TestSiteSMSBroadcastScheduleRefusesABlankText(t *testing.T) {
 
 func TestSiteBroadcastListFiltersSMSBroadcasts(t *testing.T) {
 	env := testhelper.Setup(t)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	made := createSMSBroadcast(t, c, account, "Hello", nil)
 

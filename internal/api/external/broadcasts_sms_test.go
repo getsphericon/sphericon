@@ -19,7 +19,7 @@ import (
 func TestExternalSMSBroadcastIsCreatedTestSentScheduledAndKeepsItsIntegrationInUse(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	twilio := int64(account.Integration.ID)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send", "integrations:read", "integrations:write")
 

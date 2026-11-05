@@ -278,7 +278,7 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 func TestSiteSegmentsPreviewCountsTheRecipientsOfATelegramBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	bot := env.ConnectTelegram(t, 7501, "acme_preview_bot")
+	bot := env.AcmeTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700001, 1)
 	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700002, 2)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 700003, 3)
@@ -291,8 +291,8 @@ func TestSiteSegmentsPreviewCountsTheRecipientsOfATelegramBroadcast(t *testing.T
 
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)
-	assert.Equal(t, siteapi.NewOptInt32(2), res.Recipients, "Alice and Bob, whatever the chats each has")
-	assert.Greater(t, res.Count, int32(2), "the Segment matches more contacts than are bound")
+	assert.Equal(t, siteapi.NewOptInt32(4), res.Recipients, "Alice and Bob, whatever the chats each has, and the fixture bot's Liam and Emma")
+	assert.Greater(t, res.Count, int32(4), "the Segment matches more contacts than are bound")
 }
 
 func TestSiteSegmentsPreviewLeavesRecipientsOutWithoutAChannel(t *testing.T) {

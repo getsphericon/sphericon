@@ -22,7 +22,7 @@ var startLinkIn = regexp.MustCompile(`https://t\.me/[A-Za-z0-9_]+\?start=[A-Za-z
 // binds their chat to the recipient.
 func TestAnEmailWithTheStartTagCarriesALinkThatBindsItsRecipient(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7700, "acme_merge_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	req := withBody(marketing(t, env, "bc:start-link", fixtures.ContactAliceID), startLinkBody)
 
@@ -34,7 +34,7 @@ func TestAnEmailWithTheStartTagCarriesALinkThatBindsItsRecipient(t *testing.T) {
 	require.Len(t, msgs, 1)
 	link := startLinkIn.FindString(msgs[0].HTML)
 	require.NotEmpty(t, link, msgs[0].HTML)
-	assert.Contains(t, link, "https://t.me/acme_merge_bot?start=")
+	assert.Contains(t, link, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 	assert.Contains(t, msgs[0].Text, link, "the text part carries it too")
 	env.StartTelegram(t, bot, 10, 6100, link)
 	bound := env.DB.Binding.Query().Where(binding.Destination("6100")).OnlyX(t.Context())
@@ -45,7 +45,7 @@ func TestAnEmailWithTheStartTagCarriesALinkThatBindsItsRecipient(t *testing.T) {
 
 func TestAnEmailWithoutTheStartTagIssuesNoToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.MakeDefaultTelegram(t, env.ConnectTelegram(t, 7701, "acme_untagged_bot"))
+	env.MakeDefaultTelegram(t, env.AcmeTelegram(t))
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
 	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:no-tag", fixtures.ContactAliceID))
@@ -58,7 +58,7 @@ func TestAnEmailWithoutTheStartTagIssuesNoToken(t *testing.T) {
 // Each send, each render attempt, is a link of its own.
 func TestEachSendIssuesAFreshToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.MakeDefaultTelegram(t, env.ConnectTelegram(t, 7702, "acme_fresh_bot"))
+	env.MakeDefaultTelegram(t, env.AcmeTelegram(t))
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
 	for _, key := range []string{"bc:fresh-1", "bc:fresh-2"} {
@@ -92,7 +92,7 @@ func TestTheStartTagRendersEmptyWithoutADefaultTelegramBot(t *testing.T) {
 // A Test send is a preview: a placeholder link, and nothing is issued.
 func TestAPreviewRendersAPlaceholderAndIssuesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.MakeDefaultTelegram(t, env.ConnectTelegram(t, 7703, "acme_preview_bot"))
+	env.MakeDefaultTelegram(t, env.AcmeTelegram(t))
 	before := env.DB.StartToken.Query().CountX(t.Context())
 
 	_, err := env.OutboundModule().SendTest(t.Context(), env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{

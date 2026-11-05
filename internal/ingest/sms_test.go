@@ -42,7 +42,7 @@ func textingContact(t *testing.T, env *testhelper.TestEnv) *externalapi.ContactR
 
 func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	c := textingContact(t, env)
 
 	posted := env.PostTwilioCallback(t, sms.Integration.HookUrl, sms.Account.AuthToken,
@@ -65,7 +65,7 @@ func TestAReplyFromAKnownNumberIsRecordedAsSmsReceivedOnItsContact(t *testing.T)
 // A sender Twilio names in a local format is read with the country Twilio says it is in.
 func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	c := textingContact(t, env)
 	form := inbound(sms, "SM0004", "(415) 555-0177", "See you at 5")
 	form.Set("FromCountry", "US")
@@ -81,7 +81,7 @@ func TestAReplyFromAKnownNumberInALocalFormatIsRecordedOnItsContact(t *testing.T
 
 func TestATextFromAnUnknownNumberCreatesNoContactAndNoEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	sms := env.ConnectTwilio(t)
+	sms := env.AcmeTwilio(t)
 	contacts := env.DB.Contact.Query().CountX(t.Context())
 	before := len(env.QueuedEnvelopes(t))
 

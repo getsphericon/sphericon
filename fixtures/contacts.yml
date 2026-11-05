@@ -36,7 +36,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
-- id: 101
+- id: 101 # fixture: ContactEmma
   email: emma.sql@codebasics.dev
   first_name: Emma
   last_name: Johnson

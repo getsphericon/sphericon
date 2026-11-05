@@ -87,7 +87,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	number := fixtures.ContactTexterPhone
 	automationID := smsAutomation(t, env, smsStep(account, "Hello"), smsStep(account, "See "+smsOffer))
 	confirmSMS(t, env, number)
@@ -173,7 +173,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 func TestErasingAContactRemovesTheConsentItsNumberGaveBeforeItWasAContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	const number = "+14155550177"
 	confirmSMS(t, env, number)
 	textIn(t, env, account, "SM0401", number, "START")

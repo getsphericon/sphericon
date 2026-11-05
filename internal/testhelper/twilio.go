@@ -44,6 +44,24 @@ func TwilioAuthToken(token string) siteapi.JsonObject {
 	return siteapi.JsonObject{"auth_token": []byte(`"` + token + `"`)}
 }
 
+// The account of the fixture Integration IntegrationAcmeSms, as fixtures/integrations.yml stores
+// it: it calls Twilio with its Auth Token, and sends from TwilioNumber.
+const (
+	AcmeTwilioAccountSID = "AC00000000000000000000000000000001"
+	AcmeTwilioAuthToken  = "fixtureacmetwilioauthtoken000001"
+)
+
+// AcmeTwilio adds the account of the fixture Integration IntegrationAcmeSms and its TwilioNumber
+// to the fake REST API and returns it: the SMS Integration of Acme a test sends through or posts
+// callbacks to. It has no API key. A test of connecting an account connects one of its own
+// (ConnectTwilio).
+func (env *TestEnv) AcmeTwilio(t *testing.T) TwilioAccount {
+	t.Helper()
+	account := env.Twilio.AddAccountOf(AcmeTwilioAccountSID, AcmeTwilioAuthToken)
+	number := env.Twilio.AddNumber(account, TwilioNumber)
+	return TwilioAccount{Integration: env.acmeIntegration(t, fixtures.IntegrationAcmeSmsID), Account: account, NumberSID: number}
+}
+
 // ConnectTwilio adds an account with an API key and TwilioNumber to the fake REST API and connects
 // it as an SMS Integration of Acme, as its owner does in the app.
 func (env *TestEnv) ConnectTwilio(t *testing.T) TwilioAccount {

@@ -28,7 +28,7 @@ import (
 func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7311, "acme_revoked_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555101, 555101)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -124,7 +124,7 @@ func TestAHeldTelegramIntegrationSavedWithATokenTelegramStillRefusesStaysHeld(t 
 // Telegram: the save succeeds even while Telegram would refuse the token.
 func TestATelegramIntegrationNotHeldSavedWithTheSameTokenChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7312, "acme_steady_bot")
+	bot := env.AcmeTelegram(t)
 	env.Telegram.Fail(telegramtest.GetMe, telegramtest.Unauthorized)
 
 	res := saveTelegramToken(t, env, bot)
@@ -140,7 +140,7 @@ func TestATelegramIntegrationNotHeldSavedWithTheSameTokenChangesNothing(t *testi
 // the token itself stays known to Telegram, which refuses sends until the test clears the script.
 func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot, int64, *stepping.Module) {
 	t.Helper()
-	bot := env.ConnectTelegram(t, 7311, "acme_blocked_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555101, 555101)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -194,7 +194,7 @@ func saveTelegramTokenExternal(t *testing.T, env *testhelper.TestEnv, bot testhe
 func TestATelegramTooManyRequestsDefersTheStepAndItSendsLater(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7312, "acme_slow_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555111, 555111)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -220,7 +220,7 @@ func TestATelegramTooManyRequestsDefersTheStepAndItSendsLater(t *testing.T) {
 func TestATelegramContentRefusalFailsThatMessageWithTelegramsReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7313, "acme_bad_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555121, 555121)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -241,7 +241,7 @@ func TestATelegramContentRefusalFailsThatMessageWithTelegramsReason(t *testing.T
 func TestATelegramForbiddenThatIsNeitherBlockNorDeactivationFailsTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7315, "acme_forbidden_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555141, 555141)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -262,7 +262,7 @@ func TestATelegramForbiddenThatIsNeitherBlockNorDeactivationFailsTheMessage(t *t
 func TestATelegramForbiddenChatDoesNotKeepTheContactsOtherChatFromTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7316, "acme_chat_forbidden_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555151, 555151)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555152, 555152)
@@ -280,7 +280,7 @@ func TestATelegramForbiddenChatDoesNotKeepTheContactsOtherChatFromTheMessage(t *
 func TestATelegramMessageFailsWhenEveryChatForbidsIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7317, "acme_all_forbidden_bot")
+	bot := env.AcmeTelegram(t)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555161, 555161)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555162, 555162)
@@ -306,7 +306,7 @@ func TestATelegramDeadChatLosesItsBinding(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			bot := env.ConnectTelegram(t, 7314, "acme_gone_bot")
+			bot := env.AcmeTelegram(t)
 			automationID := telegramAutomation(t, env, telegramStep(bot, "Hello"), telegramStep(bot, "Again"))
 			env.BindTelegram(t, bot, fixtures.ContactBobID, 555131, 555131)
 			env.BindTelegram(t, bot, fixtures.ContactBobID, 555132, 555132)

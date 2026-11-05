@@ -42,7 +42,7 @@ func textTo(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAcco
 // phone.
 func connectConfirmedTexter(t *testing.T, env *testhelper.TestEnv) testhelper.TwilioAccount {
 	t.Helper()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
 		Wording: "Text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",

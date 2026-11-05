@@ -29,7 +29,7 @@ import (
 // the text as Twilio received it and its Outbound message.
 func sentText(t *testing.T, env *testhelper.TestEnv) (testhelper.TwilioAccount, twiliotest.Message, *ent.OutboundMessage) {
 	t.Helper()
-	account := env.ConnectTwilio(t)
+	account := env.AcmeTwilio(t)
 	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
 		Wording: "Text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",

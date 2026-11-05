@@ -40,7 +40,7 @@ func identifyAs(t *testing.T, env *testhelper.TestEnv, visitorID, email string) 
 // tied them together.
 func TestATelegramStepReachesTheContactAfterIdentifyOfTheVisitorThatStartedTheBot(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7310, "acme_visitor_step_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	visitorChat(t, env, bot, "dev-step", 555031)
 	identifyAs(t, env, "dev-step", fixtures.ContactBobEmail)
@@ -59,7 +59,7 @@ func TestATelegramStepReachesTheContactAfterIdentifyOfTheVisitorThatStartedTheBo
 // A Visitor's chat with no Contact is nobody's to send to.
 func TestAVisitorBindingWithNoContactReachesNobody(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7311, "acme_visitor_nobody_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	visitorChat(t, env, bot, "dev-nobody", 555032)
 	require.Nil(t, env.DB.Binding.Query().Where(binding.Destination("555032")).OnlyX(t.Context()).ContactID)
@@ -78,7 +78,7 @@ func TestAVisitorBindingWithNoContactReachesNobody(t *testing.T) {
 // the chat that starts the bot with it to the recipient.
 func TestTheStartTagInATelegramTextIsAPersonalLinkOfTheDefaultBot(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7312, "acme_tag_text_bot")
+	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	automationID := telegramAutomation(t, env, telegramStep(bot, "Another chat: {{ telegram_start_url }}"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555033, 555033)
@@ -94,7 +94,7 @@ func TestTheStartTagInATelegramTextIsAPersonalLinkOfTheDefaultBot(t *testing.T) 
 	assert.Equal(t, before+1, env.DB.StartToken.Query().CountX(t.Context()))
 	u, err := url.Parse(link)
 	require.NoError(t, err)
-	assert.Equal(t, "/acme_tag_text_bot", u.Path)
+	assert.Equal(t, "/"+testhelper.AcmeTelegramUsername, u.Path)
 	env.StartTelegram(t, bot, 90, 555034, link)
 	bound := env.DB.Binding.Query().Where(binding.Destination("555034")).OnlyX(t.Context())
 	require.NotNil(t, bound.ContactID)
@@ -104,7 +104,7 @@ func TestTheStartTagInATelegramTextIsAPersonalLinkOfTheDefaultBot(t *testing.T) 
 // Without a default bot the tag renders empty, and a text with no tag issues no token.
 func TestTheStartTagInATelegramTextIsEmptyWithoutADefaultBotAndUntaggedTextIssuesNoToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	bot := env.ConnectTelegram(t, 7313, "acme_tag_nodefault_bot")
+	bot := env.AcmeTelegram(t)
 	tagged := telegramAutomation(t, env, telegramStep(bot, "Join: [{{ telegram_start_url }}]"))
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555035, 555035)
 	enrollVia(t, env, tagged, fixtures.ContactBobID)

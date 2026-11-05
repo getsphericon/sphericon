@@ -21,7 +21,7 @@ func buttonsOf(b ...siteapi.TelegramButton) []siteapi.TelegramButton { return b 
 func TestSiteTelegramBroadcastIsCreatedWithItsTextAndReportsFiguresPerChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7601, "acme_site_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
@@ -55,7 +55,7 @@ func TestSiteTelegramBroadcastIsCreatedWithItsTextAndReportsFiguresPerChannel(t 
 func TestSiteTelegramBroadcastRefusesAnEmailIntegrationAndAContentOfTheOtherChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7602, "acme_fixed_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
@@ -83,7 +83,7 @@ func TestSiteTelegramBroadcastRefusesAnEmailIntegrationAndAContentOfTheOtherChan
 func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoTestSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7603, "acme_guard_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	botID := idStr(int64(bot.Integration.ID))
 	create := func(text string, integration *siteapi.EntityId) siteapi.EntityId {
@@ -127,7 +127,7 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7604, "acme_content_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	botID := idStr(int64(bot.Integration.ID))
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
@@ -191,7 +191,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 func TestSiteTelegramBroadcastScheduleKnowsTheCaptionLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.ConnectTelegram(t, 7605, "acme_caption_bot")
+	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	scheduled := func(text, image string) siteapi.SiteBroadcastsScheduleRes {
 		in := siteapi.TelegramBroadcastContentInput{Text: siteapi.NewOptString(text)}
