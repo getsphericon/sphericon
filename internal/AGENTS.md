@@ -47,9 +47,6 @@ it is how a test puts a row into the state it needs at a chosen moment: the fixt
 and the pending Outbound message are lapsed and stale, and `env.ExtendHold`, `env.ClaimOutbound`,
 `env.ClaimRecipient`, `env.PlaceRecipient` (parked recipients), `env.SuppressDestination` and
 `env.UnsubscribeFromBroadcasts` (the lifted Suppression and a per-Automation opt-out) move them.
-A test that sends through Telegram or Twilio uses the fixture Integrations: `env.AcmeTelegram` and
-`env.AcmeTwilio` add their bot and account to the fakes. `ConnectTelegram` and `ConnectTwilio`
-connect one through the API, for a test of connecting or one that needs a second bot or an API key.
 
 **`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
 carries the Guards of `internal/workspacefeed`, `internal/userfeed` and `internal/trackinghostlog`
