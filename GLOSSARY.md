@@ -87,11 +87,14 @@ Events onto the Contact, so pre-identify behavior becomes visible to segmentatio
 _Avoid_: Alias, merge, reconcile
 
 **Event**:
-An immutable, append-only record that something happened (an `action`, optional properties,
-at a time). Attached to a Contact by **stable identity resolved at ingest** — not by email —
-and carries denormalized identity snapshot fields for debugging. The link is a nullable
-foreign key that is set to null when the Contact is deleted: an Event outlives the mutable
-Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
+An append-only record that something happened (an `action`, optional properties, at a time).
+What happened never changes: its action, its time and whether it was a Backfill or Machine
+engagement are fixed when it is recorded. Who it was about may: it is attached to a Contact by
+**stable identity resolved at ingest** — not by email — and carries denormalized identity
+snapshot fields for debugging; **Identify** later stitches an anonymous Event onto its Contact,
+and **Erasure** strips the identity and the personal data from the Events it keeps. The link is a
+nullable foreign key that is set to null when the Contact is deleted: an Event outlives the
+mutable Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and engagement facts (`email.sent`, `email.delivered`, `email.delayed`, `email.dropped`, `email.bounced`,
 `email.complained`, `email.opened`, `email.clicked`, `email.unsubscribed`) are Events too — **System
 events** — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
