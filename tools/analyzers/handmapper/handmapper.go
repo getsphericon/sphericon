@@ -8,15 +8,14 @@
 // attaches the fields the converter ignores. Whatever the function takes, a composite literal of a
 // generated API type that copies a field of an ent entity (directly, through a conversion or a helper
 // call, or through a loaded edge) is a hand-written mapping too, in the API packages: the handlers
-// of every surface, internal/server (which renders the refusals) and the handler types' methods of ee/staff. A handler
+// of every surface (ee/api/staff too), and internal/server, which renders the refusals. A handler
 // that loops over the entities a module returned takes no entity, so only the literal shows it. A
 // value handed to a converter method is mapped by goverter, and a fact decided from a field (a
 // comparison, a negation) copies none.
 //
 // Input: a request becomes a module's input only through the generated goverter Inputs of its
 // surface (resources/inputs.go). A struct literal of a module input type in a handler package (/site,
-// /api, /staff, and the methods of the handler types of ee/staff, which holds its domain module too)
-// is a hand-written mapping. A field the request does not carry (the actor) is a
+// /api, /staff and the Enterprise /staff and /service in ee/api/staff) is a hand-written mapping. A field the request does not carry (the actor) is a
 // `goverter:ignore` with its reason, and the handler assigns it after the call; an assignment is not
 // a literal and is not reported.
 //
@@ -36,7 +35,6 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
-	"github.com/getsphericon/sphericon/tools/analyzers/mixed"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -61,9 +59,8 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
 	via := viaConverter(pass, insp)
-	recvs, isMixed := mixed.Receivers(pass.Pkg.Path())
-	if isMixed || isHandlerPackage(pass.Pkg.Path()) {
-		reportInputLiterals(pass, insp, recvs)
+	if isHandlerPackage(pass.Pkg.Path()) {
+		reportInputLiterals(pass, insp)
 	}
 	reported := map[*ast.FuncDecl]bool{}
 	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
@@ -93,8 +90,8 @@ func run(pass *analysis.Pass) (any, error) {
 			fn.Name.Name+" maps an ent entity to an API resource by hand",
 			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it"))
 	})
-	if isMixed || isLiteralPackage(pass.Pkg.Path()) {
-		reportEntityLiterals(pass, insp, recvs, func(fn *ast.FuncDecl) bool {
+	if isLiteralPackage(pass.Pkg.Path()) {
+		reportEntityLiterals(pass, insp, func(fn *ast.FuncDecl) bool {
 			return reported[fn] || registered[fn.Name.Name]
 		}, via)
 	}
@@ -121,15 +118,11 @@ func isLiteralPackage(path string) bool {
 // (a handler that loops over the entities a module returned takes none). A value handed to a converter
 // method, or to a function of the package that maps through one, is not read by hand; a function
 // literal is a function of its own (its literals are visited on their own), and so is a nested literal
-// of an API type. In a mixed package (recvs not nil) only the methods of the handler types are read,
-// and a function the function-level check already reported (skip) is not reported twice.
-func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, recvs []string, skip func(*ast.FuncDecl) bool, via map[types.Object]bool) {
+// of an API type. A function the function-level check already reported (skip) is not reported twice.
+func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, skip func(*ast.FuncDecl) bool, via map[types.Object]bool) {
 	insp.WithStack([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		lit, isLit := n.(*ast.CompositeLit)
 		if !isLit || !push || skippedFile(pass, lit.Pos()) {
-			return true
-		}
-		if recvs != nil && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
 			return true
 		}
 		if fn := enclosingFunc(stack); fn != nil && skip(fn) {
@@ -225,12 +218,11 @@ func deref(t types.Type) types.Type {
 
 func qualified(n *types.Named) string { return n.Obj().Pkg().Name() + "." + n.Obj().Name() }
 
-// handlerPackages are the packages of the /site, /api and core /staff handlers, which hand a module
-// what the request says. Their subpackages are not handlers: resources holds the goverter Inputs and
-// its extend helpers, the one place a module input is built by hand (a oneOf is beyond goverter). The
-// handlers of the Enterprise Staff and service APIs share ee/staff with their domain module: that
-// package is mixed (tools/analyzers/mixed), and only its handler types' methods are checked.
-var handlerPackages = []string{"/internal/api/site", "/internal/api/external", "/internal/api/staff"}
+// handlerPackages are the packages of the /site, /api, core /staff and Enterprise /staff and /service
+// handlers, which hand a module what the request says. Their subpackages are not handlers: resources
+// holds the goverter Inputs and its extend helpers, the one place a module input is built by hand (a
+// oneOf is beyond goverter).
+var handlerPackages = []string{"/internal/api/site", "/internal/api/external", "/internal/api/staff", "/ee/api/staff"}
 
 func isHandlerPackage(path string) bool {
 	for _, p := range handlerPackages {
@@ -241,26 +233,21 @@ func isHandlerPackage(path string) bool {
 	return false
 }
 
-// reportInputLiterals reports each struct literal of a module input type in a handler package; in a
-// mixed package (recvs not nil), only those inside a method of one of the handler types recvs.
-func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector, recvs []string) {
-	insp.WithStack([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
+// reportInputLiterals reports each struct literal of a module input type in a handler package.
+func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
+	insp.Preorder([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node) {
 		lit, isLit := n.(*ast.CompositeLit)
-		if !isLit || !push || skippedFile(pass, lit.Pos()) {
-			return true
-		}
-		if recvs != nil && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
-			return true
+		if !isLit || skippedFile(pass, lit.Pos()) {
+			return
 		}
 		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
 		if !ok || !isModuleInput(pass.Pkg, named) {
-			return true
+			return
 		}
 		name := named.Obj().Pkg().Name() + "." + named.Obj().Name()
 		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
 			name+" is built by hand from the request",
 			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores"))
-		return true
 	})
 }
 

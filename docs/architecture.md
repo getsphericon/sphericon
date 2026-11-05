@@ -43,7 +43,8 @@ coding standards in `CODING_STANDARDS.md`.
     handler in `internal/api/staff` over the Staff member module `internal/staffmembers` (store, login adapter,
     sessions, `Current`) and the Sign-up items module `internal/signupitems` (ADR 0062), whose two anonymous reads
     `/site` serves for the sign-up form and the public Legal document pages; and the Enterprise
-    sections (`typespec/staffee`: Workspaces, holds, audit, Sign-up survey readout), handlers in `ee/staff`, served
+    sections (`typespec/staffee`: Workspaces, holds, audit, Sign-up survey readout), handlers in `ee/api/staff`
+    over the Enterprise Staff module `ee/staff`, served
     only with the license feature `staff` and otherwise 404. `server.NewStaffAPI` mounts the core ogen server
     with the Enterprise one as its not-found handler, so each contract routes its own paths.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
@@ -51,7 +52,7 @@ coding standards in `CODING_STANDARDS.md`.
     `workspaces:read`, `domains:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
-    Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
+    Handlers and security handler in `ee/api/staff` (`service.go`) over the module `ee/staff`; every operation names its scopes in
     `ServiceOperationScopes`, generated from the `@requiresServiceScopes(#[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails `tsp compile`; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
 - **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
@@ -90,7 +91,7 @@ coding standards in `CODING_STANDARDS.md`.
   its ogen package, whose own imports are not checked. The same file also holds the raw
   `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
-  `Converter` (`internal/api/{site,external,staff}/resources`, `ee/staff/resources`) with
+  `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
   (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
   (`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,

@@ -42,11 +42,17 @@ components:
         cmd/server,
       ]
 
+  # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
+  # endpoints), over their domain module in ee/staff. The Edition (ee/ee.go) builds them.
+  ee-api:
+    in: 'ee/api/**'
+    allow_importers: [ee]
+    because: an Enterprise surface is built by the Edition, which the wiring mounts
   # Enterprise Edition, one binary gated by the license key.
   ee:
     in: 'ee/**'
-    allow_importers: [wiring]
-    because: the core never imports the Enterprise Edition; only the wiring assembles it
+    allow_importers: [wiring, ee-api]
+    because: the core never imports the Enterprise Edition; only the wiring assembles it, and an Enterprise surface calls its module
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
   # never imports it, so a page may import its route's `Route` without a cycle.
@@ -149,10 +155,15 @@ rules:
     may_depend_on: [core]
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
-  ee:
-    may_depend_on: [core, core-raw]
+  ee-api:
+    <<: *no-raw-client
+    may_depend_on: [core, core-raw, ee]
     forbid_external: *no-container
-    because: the Enterprise Edition builds on the core and never on the open surfaces' handlers
+    because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
+  ee:
+    may_depend_on: [core, core-raw, ee-api]
+    forbid_external: *no-container
+    because: the Enterprise Edition builds on the core and never on the open surfaces' handlers; the Edition builds its own surfaces
   wiring:
     may_depend_on: [core, core-raw, ee, api-site, api-external, api-collect, api-staff, api-auth]
     because: wiring is where the program is assembled

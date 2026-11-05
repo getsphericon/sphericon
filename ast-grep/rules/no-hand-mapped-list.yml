@@ -21,7 +21,7 @@ constraints:
     regex: '^(mapper|[a-z]+Mapper)$'
 files:
   - internal/api/**/*.go
-  - ee/staff/**/*.go
+  - ee/api/**/*.go
 ignores:
   - '**/*_test.go'
   - '**/*_gen.go'

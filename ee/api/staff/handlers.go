@@ -1,3 +1,10 @@
+// Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
+// console's Enterprise sections under /staff, with the core Staff member's session check
+// (internal/staffmembers), and the service endpoints under /service, with the Service credential's.
+// A handler receives the request, calls the domain module ee/staff and maps what it returns; the
+// Edition (ee) builds the surfaces and the composition root mounts them.
+//
+// Governed by ee/LICENSE, not the AGPL.
 package staff
 
 import (
@@ -5,6 +12,8 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	eestaff "github.com/getsphericon/sphericon/ee/staff"
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
@@ -25,7 +34,7 @@ type Surface struct {
 }
 
 // NewSurface builds the surface.
-func NewSurface(m *Module, s *staffmembers.Sessions) *Surface {
+func NewSurface(m *eestaff.Module, s *staffmembers.Sessions) *Surface {
 	return &Surface{handlers: &Handlers{module: m}, security: &SecurityHandler{sessions: s}}
 }
 
@@ -38,7 +47,7 @@ func (s *Surface) Server(opts ...staffeeapi.ServerOption) (http.Handler, error) 
 
 // Handlers implements staffeeapi.Handler.
 type Handlers struct {
-	module *Module
+	module *eestaff.Module
 }
 
 var _ staffeeapi.Handler = (*Handlers)(nil)
@@ -183,7 +192,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (staffeeapi.StaffWorkspacesSuspendRes, error) {
 	id := string(params.WorkspaceId)
 	w, changed, err := h.module.SuspendWorkspace(ctx, id, staffmembers.Current(ctx), req.Reason)
-	if errors.Is(err, ErrReasonRequired) {
+	if errors.Is(err, eestaff.ErrReasonRequired) {
 		p := staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{
 			Status: staffeeapi.NewOptInt32(http.StatusUnprocessableEntity),
 			Title:  staffeeapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),

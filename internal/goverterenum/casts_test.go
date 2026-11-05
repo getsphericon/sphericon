@@ -21,11 +21,11 @@ var apiPackages = []string{
 	"github.com/getsphericon/sphericon/internal/api/site/resources",
 	"github.com/getsphericon/sphericon/internal/api/external/resources",
 	"github.com/getsphericon/sphericon/internal/api/staff/resources",
-	"github.com/getsphericon/sphericon/ee/staff/resources",
+	"github.com/getsphericon/sphericon/ee/api/staff/resources",
 	"github.com/getsphericon/sphericon/internal/api/site",
 	"github.com/getsphericon/sphericon/internal/api/external",
 	"github.com/getsphericon/sphericon/internal/api/staff",
-	"github.com/getsphericon/sphericon/ee/staff",
+	"github.com/getsphericon/sphericon/ee/api/staff",
 }
 
 // An enum crosses into another enum only through a converter's enum method, whose switch goverter

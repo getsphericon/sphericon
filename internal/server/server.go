@@ -197,7 +197,7 @@ func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHan
 // staffPrefix mounts the Staff surface (ADR 0026).
 const staffPrefix = paths.Staff
 
-// StaffSections is the Enterprise part of the Staff member API (ee/staff), served under the
+// StaffSections is the Enterprise part of the Staff member API (ee/api/staff), served under the
 // same prefix behind the core one.
 type StaffSections interface {
 	Server(opts ...staffeeapi.ServerOption) (http.Handler, error)
@@ -235,7 +235,7 @@ func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *
 	return mux, nil
 }
 
-// ServiceSurface is the service endpoints of the Staff surface (ee/staff), built
+// ServiceSurface is the service endpoints of the Staff surface (ee/api/staff), built
 // into an ogen server here so it renders errors like the other surfaces.
 type ServiceSurface interface {
 	Server(opts ...serviceapi.ServerOption) (http.Handler, error)

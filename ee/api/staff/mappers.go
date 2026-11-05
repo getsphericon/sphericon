@@ -1,7 +1,7 @@
 package staff
 
 import (
-	"github.com/getsphericon/sphericon/ee/staff/resources"
+	"github.com/getsphericon/sphericon/ee/api/staff/resources"
 )
 
 // staffMapper, serviceMapper and serviceInputs are the generated converters of ee/staff/resources.
