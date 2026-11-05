@@ -18,7 +18,7 @@ var _ Handler = UnimplementedHandler{}
 // Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
 //
 // GET /workspaces/{workspaceId}/analytics/clicks-by-link
-func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (r SiteAnalyticsClicksByLinkRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (r *SiteAnalyticsClicksByLink, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -27,7 +27,7 @@ func (UnimplementedHandler) SiteAnalyticsClicksByLink(ctx context.Context, param
 // Deliverability report: the Complaint and Bounce rates of each Sending domain over the range.
 //
 // GET /workspaces/{workspaceId}/analytics/deliverability
-func (UnimplementedHandler) SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (r SiteAnalyticsDeliverabilityRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (r *SiteAnalyticsDeliverability, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -36,7 +36,7 @@ func (UnimplementedHandler) SiteAnalyticsDeliverability(ctx context.Context, par
 // Events in the range, grouped by action.
 //
 // GET /workspaces/{workspaceId}/analytics/events
-func (UnimplementedHandler) SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (r SiteAnalyticsEventsRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (r *SiteAnalyticsEvents, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -45,7 +45,7 @@ func (UnimplementedHandler) SiteAnalyticsEvents(ctx context.Context, params Site
 // New people report: Contacts created per Report day, split by Contact source.
 //
 // GET /workspaces/{workspaceId}/analytics/new-people
-func (UnimplementedHandler) SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (r SiteAnalyticsNewPeopleRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (r *SiteNewPeopleReport, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -54,7 +54,7 @@ func (UnimplementedHandler) SiteAnalyticsNewPeople(ctx context.Context, params S
 // Human opens by hour of day and day of week in the Workspace time zone.
 //
 // GET /workspaces/{workspaceId}/analytics/opens-by-hour
-func (UnimplementedHandler) SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (r SiteAnalyticsOpensByHourRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (r *SiteAnalyticsOpensByHour, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -63,7 +63,7 @@ func (UnimplementedHandler) SiteAnalyticsOpensByHour(ctx context.Context, params
 // Aggregate metrics for the workspace dashboard.
 //
 // GET /workspaces/{workspaceId}/analytics/overview
-func (UnimplementedHandler) SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (r SiteAnalyticsOverviewRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (r *SiteAnalyticsOverview, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -73,7 +73,7 @@ func (UnimplementedHandler) SiteAnalyticsOverview(ctx context.Context, params Si
 // every member.
 //
 // GET /workspaces/{workspaceId}/analytics/revenue
-func (UnimplementedHandler) SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (r SiteAnalyticsRevenueRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (r *SiteAnalyticsRevenue, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -83,7 +83,7 @@ func (UnimplementedHandler) SiteAnalyticsRevenue(ctx context.Context, params Sit
 // subscribed now.
 //
 // GET /workspaces/{workspaceId}/analytics/subscribed-people
-func (UnimplementedHandler) SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (r SiteAnalyticsSubscribedPeopleRes, _ error) {
+func (UnimplementedHandler) SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (r *SiteAnalyticsSubscribedPeople, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -92,7 +92,7 @@ func (UnimplementedHandler) SiteAnalyticsSubscribedPeople(ctx context.Context, p
 // What needs attention in the Workspace. Open to every member.
 //
 // GET /workspaces/{workspaceId}/attention
-func (UnimplementedHandler) SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (r SiteAttentionGetRes, _ error) {
+func (UnimplementedHandler) SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (r *SiteAttentionList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -102,7 +102,7 @@ func (UnimplementedHandler) SiteAttentionGet(ctx context.Context, params SiteAtt
 // owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/export
-func (UnimplementedHandler) SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (r SiteAuditExportRes, _ error) {
+func (UnimplementedHandler) SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (r *SiteAuditExportOKHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -112,7 +112,7 @@ func (UnimplementedHandler) SiteAuditExport(ctx context.Context, params SiteAudi
 // and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/facets
-func (UnimplementedHandler) SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (r SiteAuditFacetsRes, _ error) {
+func (UnimplementedHandler) SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (r *SiteAuditFacets, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -121,7 +121,7 @@ func (UnimplementedHandler) SiteAuditFacets(ctx context.Context, params SiteAudi
 // Read the Audit log retention window (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/retention
-func (UnimplementedHandler) SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (r SiteAuditGetRetentionRes, _ error) {
+func (UnimplementedHandler) SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (r *SiteAuditRetention, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -130,7 +130,7 @@ func (UnimplementedHandler) SiteAuditGetRetention(ctx context.Context, params Si
 // List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditListParams) (r SiteAuditListRes, _ error) {
+func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditListParams) (r *SiteAuditEntryList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -140,7 +140,7 @@ func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditL
 // only).
 //
 // PUT /workspaces/{workspaceId}/audit-entries/retention
-func (UnimplementedHandler) SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetention, params SiteAuditSetRetentionParams) (r SiteAuditSetRetentionRes, _ error) {
+func (UnimplementedHandler) SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetention, params SiteAuditSetRetentionParams) (r *SiteAuditRetention, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -152,7 +152,7 @@ func (UnimplementedHandler) SiteAuditSetRetention(ctx context.Context, req *Site
 // The link alone never starts a session.
 //
 // POST /auth/confirm-email-change
-func (UnimplementedHandler) SiteAuthConfirmEmailChange(ctx context.Context, req *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (r SiteAuthConfirmEmailChangeRes, _ error) {
+func (UnimplementedHandler) SiteAuthConfirmEmailChange(ctx context.Context, req *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (r *SiteAuthConfirmEmailChangeOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -163,8 +163,8 @@ func (UnimplementedHandler) SiteAuthConfirmEmailChange(ctx context.Context, req 
 // Answers 429 over the per-IP limit.
 //
 // POST /auth/forgot-password
-func (UnimplementedHandler) SiteAuthForgotPassword(ctx context.Context, req *SiteForgotPasswordInput) (r SiteAuthForgotPasswordRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthForgotPassword(ctx context.Context, req *SiteForgotPasswordInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteAuthLogin implements SiteAuth_login operation.
@@ -178,7 +178,7 @@ func (UnimplementedHandler) SiteAuthForgotPassword(ctx context.Context, req *Sit
 // and no session.
 //
 // POST /auth/login
-func (UnimplementedHandler) SiteAuthLogin(ctx context.Context, req *SiteLoginInput) (r SiteAuthLoginRes, _ error) {
+func (UnimplementedHandler) SiteAuthLogin(ctx context.Context, req *SiteLoginInput) (r *SiteLoginResultHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -199,8 +199,8 @@ func (UnimplementedHandler) SiteAuthLogout(ctx context.Context) (r *SiteAuthLogo
 // a mail. Rate limited per IP like Sign-up.
 //
 // POST /auth/resend-verification
-func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (r SiteAuthResendVerificationRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput, params SiteAuthResendVerificationParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteAuthResetPassword implements SiteAuth_resetPassword operation.
@@ -209,8 +209,8 @@ func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req 
 // error; an invalid or expired token answers 400.
 //
 // POST /auth/reset-password
-func (UnimplementedHandler) SiteAuthResetPassword(ctx context.Context, req *SiteResetPasswordInput) (r SiteAuthResetPasswordRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthResetPassword(ctx context.Context, req *SiteResetPasswordInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteAuthSecondFactor implements SiteAuth_secondFactor operation.
@@ -221,7 +221,7 @@ func (UnimplementedHandler) SiteAuthResetPassword(ctx context.Context, req *Site
 // correct code while its delay runs (ADR 0020, ADR 0025).
 //
 // POST /auth/second-factor
-func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteLoginSecondFactorInput) (r SiteAuthSecondFactorRes, _ error) {
+func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteLoginSecondFactorInput) (r *SiteLoginResultHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -238,7 +238,7 @@ func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteL
 // address answers 409. Sign-up is open on every Instance (ADR 0063).
 //
 // POST /auth/sign-up
-func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpInput) (r SiteAuthSignUpRes, _ error) {
+func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpInput) (r *SiteAuthSignUpAccepted, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -257,7 +257,7 @@ func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpI
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
-func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (r SiteAuthSigninCallbackRes, _ error) {
+func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (r *SiteAuthSigninCallbackFound, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -268,8 +268,8 @@ func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params S
 // opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 //
 // POST /auth/signin-not-me
-func (UnimplementedHandler) SiteAuthSigninNotMe(ctx context.Context, req *SiteSigninNotMeInput) (r SiteAuthSigninNotMeRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthSigninNotMe(ctx context.Context, req *SiteSigninNotMeInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteAuthSigninPending implements SiteAuth_signinPending operation.
@@ -279,7 +279,7 @@ func (UnimplementedHandler) SiteAuthSigninNotMe(ctx context.Context, req *SiteSi
 // completed, declined or forged one answers 400.
 //
 // GET /auth/signin-pending
-func (UnimplementedHandler) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (r SiteAuthSigninPendingRes, _ error) {
+func (UnimplementedHandler) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (r *SitePendingSignup, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -289,8 +289,8 @@ func (UnimplementedHandler) SiteAuthSigninPending(ctx context.Context, params Si
 // names nothing any more.
 //
 // POST /auth/signin-pending/decline
-func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) (r SiteAuthSigninPendingDeclineRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteAuthSigninPendingSubmit implements SiteAuth_signinPendingSubmit operation.
@@ -304,7 +304,7 @@ func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, re
 // was taken meanwhile.
 //
 // POST /auth/signin-pending
-func (UnimplementedHandler) SiteAuthSigninPendingSubmit(ctx context.Context, req *SiteSigninPendingSubmitInput) (r SiteAuthSigninPendingSubmitRes, _ error) {
+func (UnimplementedHandler) SiteAuthSigninPendingSubmit(ctx context.Context, req *SiteSigninPendingSubmitInput) (r *SiteAuthSigninPendingSubmitNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -326,7 +326,7 @@ func (UnimplementedHandler) SiteAuthSigninProviders(ctx context.Context) (r *Sit
 // as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
 //
 // GET /auth/signin/{provider}/start
-func (UnimplementedHandler) SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (r SiteAuthSigninStartRes, _ error) {
+func (UnimplementedHandler) SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (r *SiteAuthSigninStartFound, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -342,7 +342,7 @@ func (UnimplementedHandler) SiteAuthSigninStart(ctx context.Context, params Site
 // address it was sent to. Rate limited like Sign-up.
 //
 // POST /auth/verify-email
-func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (r SiteAuthVerifyEmailRes, _ error) {
+func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (r *SiteVerifyEmailResultHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -354,7 +354,7 @@ func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVe
 // read from its enrollments for the chosen period and the one before it.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/report
-func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (r SiteAutomationReportsGetRes, _ error) {
+func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (r *SiteAutomationReport, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -365,7 +365,7 @@ func (UnimplementedHandler) SiteAutomationReportsGet(ctx context.Context, params
 // an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
-func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (r SiteAutomationsArchiveRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -374,7 +374,7 @@ func (UnimplementedHandler) SiteAutomationsArchive(ctx context.Context, params S
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/automations
-func (UnimplementedHandler) SiteAutomationsCreate(ctx context.Context, req *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (r SiteAutomationsCreateRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsCreate(ctx context.Context, req *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -383,7 +383,7 @@ func (UnimplementedHandler) SiteAutomationsCreate(ctx context.Context, req *Site
 // Deactivate an automation (stops new enrollments). 409 when it is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/deactivate
-func (UnimplementedHandler) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (r SiteAutomationsDeactivateRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -392,7 +392,7 @@ func (UnimplementedHandler) SiteAutomationsDeactivate(ctx context.Context, param
 // Render an HTTP step's body for a Contact and validate it, calling nothing.
 //
 // POST /workspaces/{workspaceId}/automations/dry-run-http-step
-func (UnimplementedHandler) SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (r SiteAutomationsDryRunHttpStepRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (r *SiteDryRunHttpStepResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -401,7 +401,7 @@ func (UnimplementedHandler) SiteAutomationsDryRunHttpStep(ctx context.Context, r
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/automations/{id}
-func (UnimplementedHandler) SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (r SiteAutomationsGetRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -410,7 +410,7 @@ func (UnimplementedHandler) SiteAutomationsGet(ctx context.Context, params SiteA
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/automations
-func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (r SiteAutomationsListRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (r *SiteAutomationsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -423,7 +423,7 @@ func (UnimplementedHandler) SiteAutomationsList(ctx context.Context, params Site
 // refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
-func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (r SiteAutomationsPublishRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -433,7 +433,7 @@ func (UnimplementedHandler) SiteAutomationsPublish(ctx context.Context, params S
 // 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
-func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (r SiteAutomationsRevertRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -443,7 +443,7 @@ func (UnimplementedHandler) SiteAutomationsRevert(ctx context.Context, params Si
 // again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
-func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (r SiteAutomationsUnarchiveRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -453,7 +453,7 @@ func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params
 // archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
-func (UnimplementedHandler) SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (r SiteAutomationsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (r *SiteAutomationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -462,7 +462,7 @@ func (UnimplementedHandler) SiteAutomationsUpdate(ctx context.Context, req *Site
 // Read the Brand kit. Every member may read it.
 //
 // GET /workspaces/{workspaceId}/brand-kit
-func (UnimplementedHandler) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (r SiteBrandKitGetRes, _ error) {
+func (UnimplementedHandler) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (r *SiteBrandKitResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -473,7 +473,7 @@ func (UnimplementedHandler) SiteBrandKitGet(ctx context.Context, params SiteBran
 // Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
-func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (r SiteBrandKitRecreateStarterTemplatesRes, _ error) {
+func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (r []SiteEmailTemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -484,7 +484,7 @@ func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Con
 // changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
-func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (r SiteBrandKitSaveRes, _ error) {
+func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (r *SiteBrandKitResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -495,7 +495,7 @@ func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveB
 // in the broadcast's stats does not.
 //
 // GET /workspaces/{workspaceId}/broadcasts/{broadcastId}/links
-func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (r SiteBroadcastLinksListRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (r *SiteBroadcastLinkClicksList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -506,7 +506,7 @@ func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params S
 // archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
-func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r SiteBroadcastsArchiveRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -515,7 +515,7 @@ func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params Si
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/broadcasts
-func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (r SiteBroadcastsCreateRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -524,7 +524,7 @@ func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *Creat
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/broadcasts/{id}
-func (UnimplementedHandler) SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (r SiteBroadcastsGetRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -533,7 +533,7 @@ func (UnimplementedHandler) SiteBroadcastsGet(ctx context.Context, params SiteBr
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/broadcasts
-func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (r SiteBroadcastsListRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (r *SiteBroadcastsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -546,7 +546,7 @@ func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteB
 // scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
-func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r SiteBroadcastsScheduleRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -556,7 +556,7 @@ func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *Sch
 // resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
-func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (r SiteBroadcastsSendRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -570,7 +570,7 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 // another address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
-func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r *SiteTestSendBroadcastResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -579,7 +579,7 @@ func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *Tes
 // Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
-func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (r SiteBroadcastsUnarchiveRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -588,7 +588,7 @@ func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params 
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/broadcasts/{id}
-func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (r SiteBroadcastsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -597,8 +597,8 @@ func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *Updat
 // Delete one Captured message. Every member may delete.
 //
 // DELETE /workspaces/{workspaceId}/captured-messages/{id}
-func (UnimplementedHandler) SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (r SiteCapturedMessagesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteCapturedMessagesDeleteAll implements SiteCapturedMessages_deleteAll operation.
@@ -606,8 +606,8 @@ func (UnimplementedHandler) SiteCapturedMessagesDelete(ctx context.Context, para
 // Delete every Captured message of the workspace. Every member may delete.
 //
 // DELETE /workspaces/{workspaceId}/captured-messages/all
-func (UnimplementedHandler) SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (r SiteCapturedMessagesDeleteAllRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteCapturedMessagesGet implements SiteCapturedMessages_get operation.
@@ -615,7 +615,7 @@ func (UnimplementedHandler) SiteCapturedMessagesDeleteAll(ctx context.Context, p
 // Read one Captured message in full: headers, HTML, text and links. Every member may read.
 //
 // GET /workspaces/{workspaceId}/captured-messages/{id}
-func (UnimplementedHandler) SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (r SiteCapturedMessagesGetRes, _ error) {
+func (UnimplementedHandler) SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (r *SiteCapturedMessageResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -625,7 +625,7 @@ func (UnimplementedHandler) SiteCapturedMessagesGet(ctx context.Context, params 
 // Every member may read.
 //
 // GET /workspaces/{workspaceId}/captured-messages
-func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (r SiteCapturedMessagesListRes, _ error) {
+func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (r *SiteCapturedMessagesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -634,8 +634,8 @@ func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params
 // Revoke a Connection: the caller's own, or anyone's with members:manage.
 //
 // DELETE /workspaces/{workspaceId}/connections/{id}
-func (UnimplementedHandler) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (r SiteConnectionsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteConnectionsList implements SiteConnections_list operation.
@@ -643,7 +643,7 @@ func (UnimplementedHandler) SiteConnectionsDelete(ctx context.Context, params Si
 // List the Connections the caller may see: their own, or every member's with members:manage.
 //
 // GET /workspaces/{workspaceId}/connections
-func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (r SiteConnectionsListRes, _ error) {
+func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (r []SiteConnectionResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -652,7 +652,7 @@ func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params Site
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/contacts
-func (UnimplementedHandler) SiteContactsCreate(ctx context.Context, req *SiteCreateContactInput, params SiteContactsCreateParams) (r SiteContactsCreateRes, _ error) {
+func (UnimplementedHandler) SiteContactsCreate(ctx context.Context, req *SiteCreateContactInput, params SiteContactsCreateParams) (r *SiteContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -662,8 +662,8 @@ func (UnimplementedHandler) SiteContactsCreate(ctx context.Context, req *SiteCre
 // its opt-outs survive. Owner or admin only.
 //
 // DELETE /workspaces/{workspaceId}/contacts/{id}
-func (UnimplementedHandler) SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (r SiteContactsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteContactsErase implements SiteContacts_erase operation.
@@ -674,8 +674,8 @@ func (UnimplementedHandler) SiteContactsDelete(ctx context.Context, params SiteC
 // Owner or admin only.
 //
 // DELETE /workspaces/{workspaceId}/contacts/erase
-func (UnimplementedHandler) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (r SiteContactsEraseRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteContactsExport implements SiteContacts_export operation.
@@ -693,7 +693,7 @@ func (UnimplementedHandler) SiteContactsExport(ctx context.Context, params SiteC
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/contacts/{id}
-func (UnimplementedHandler) SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (r SiteContactsGetRes, _ error) {
+func (UnimplementedHandler) SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (r *SiteContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -702,7 +702,7 @@ func (UnimplementedHandler) SiteContactsGet(ctx context.Context, params SiteCont
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/contacts
-func (UnimplementedHandler) SiteContactsList(ctx context.Context, params SiteContactsListParams) (r SiteContactsListRes, _ error) {
+func (UnimplementedHandler) SiteContactsList(ctx context.Context, params SiteContactsListParams) (r *SiteContactsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -713,7 +713,7 @@ func (UnimplementedHandler) SiteContactsList(ctx context.Context, params SiteCon
 // zeros, not 404. Owner or admin only.
 //
 // GET /workspaces/{workspaceId}/contacts/lookup
-func (UnimplementedHandler) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (r SiteContactsLookupRes, _ error) {
+func (UnimplementedHandler) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (r *SiteContactHoldings, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -722,7 +722,7 @@ func (UnimplementedHandler) SiteContactsLookup(ctx context.Context, params SiteC
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/contacts/{id}
-func (UnimplementedHandler) SiteContactsUpdate(ctx context.Context, req *SiteUpdateContactInput, params SiteContactsUpdateParams) (r SiteContactsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteContactsUpdate(ctx context.Context, req *SiteUpdateContactInput, params SiteContactsUpdateParams) (r *SiteContactResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -731,7 +731,7 @@ func (UnimplementedHandler) SiteContactsUpdate(ctx context.Context, req *SiteUpd
 // List the workspace's custom field definitions.
 //
 // GET /workspaces/{workspaceId}/custom-fields
-func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (r SiteCustomFieldsListRes, _ error) {
+func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (r *SiteCustomFieldsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -742,7 +742,7 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 // and admins only.
 //
 // PUT /workspaces/{workspaceId}/custom-fields/{id}
-func (UnimplementedHandler) SiteCustomFieldsUpdate(ctx context.Context, req *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (r SiteCustomFieldsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteCustomFieldsUpdate(ctx context.Context, req *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (r *SiteCustomFieldResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -751,7 +751,7 @@ func (UnimplementedHandler) SiteCustomFieldsUpdate(ctx context.Context, req *Sit
 // Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
-func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r SiteDomainJoinGetRes, _ error) {
+func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r *SiteDomainJoinResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -761,7 +761,7 @@ func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDo
 // User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
-func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r SiteDomainJoinSetRes, _ error) {
+func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r *SiteDomainJoinResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -770,7 +770,7 @@ func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetD
 // Get one Enrollment of an Automation.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-func (UnimplementedHandler) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (r SiteEnrollmentsGetRes, _ error) {
+func (UnimplementedHandler) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (r *SiteEnrollmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -779,7 +779,7 @@ func (UnimplementedHandler) SiteEnrollmentsGet(ctx context.Context, params SiteE
 // List an Automation's Enrollments, newest first.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/enrollments
-func (UnimplementedHandler) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (r SiteEnrollmentsListRes, _ error) {
+func (UnimplementedHandler) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (r *SiteEnrollmentsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -788,7 +788,7 @@ func (UnimplementedHandler) SiteEnrollmentsList(ctx context.Context, params Site
 // Distinct event actions in the workspace, sorted — powers the segment builder.
 //
 // GET /workspaces/{workspaceId}/events/actions
-func (UnimplementedHandler) SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (r SiteEventsActionsRes, _ error) {
+func (UnimplementedHandler) SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (r *SiteEventActionsResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -797,7 +797,7 @@ func (UnimplementedHandler) SiteEventsActions(ctx context.Context, params SiteEv
 // List events for the site UI (most recent first).
 //
 // GET /workspaces/{workspaceId}/events
-func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEventsListParams) (r SiteEventsListRes, _ error) {
+func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEventsListParams) (r *SiteEventsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -810,7 +810,7 @@ func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEvent
 // code (see SiteSigninError). 404 for a provider that is not configured.
 //
 // GET /me/identities/{provider}/link
-func (UnimplementedHandler) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (r SiteIdentitiesLinkRes, _ error) {
+func (UnimplementedHandler) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (r *SiteIdentitiesLinkFound, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -829,7 +829,7 @@ func (UnimplementedHandler) SiteIdentitiesList(ctx context.Context) (r *SiteLink
 // identity). Every other session ends; the acting one continues under the cookie set here.
 //
 // DELETE /me/identities/{id}
-func (UnimplementedHandler) SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (r SiteIdentitiesUnlinkRes, _ error) {
+func (UnimplementedHandler) SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (r *SiteIdentitiesUnlinkNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -839,7 +839,7 @@ func (UnimplementedHandler) SiteIdentitiesUnlink(ctx context.Context, params Sit
 // `release:read` in no live Workspace.
 //
 // GET /instance/release
-func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r SiteInstanceGetReleaseRes, _ error) {
+func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r *SiteInstanceRelease, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -848,7 +848,7 @@ func (UnimplementedHandler) SiteInstanceGetRelease(ctx context.Context) (r SiteI
 // Create an integration. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations
-func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *CreateIntegrationInput, params SiteIntegrationsCreateParams) (r SiteIntegrationsCreateRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *CreateIntegrationInput, params SiteIntegrationsCreateParams) (r *SiteIntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -860,8 +860,8 @@ func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *Cre
 // effort. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/integrations/{id}
-func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (r SiteIntegrationsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteIntegrationsGet implements SiteIntegrations_get operation.
@@ -869,7 +869,7 @@ func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params S
 // Get an integration by id, deleted or not.
 //
 // GET /workspaces/{workspaceId}/integrations/{id}
-func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (r SiteIntegrationsGetRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (r *SiteIntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -878,7 +878,7 @@ func (UnimplementedHandler) SiteIntegrationsGet(ctx context.Context, params Site
 // List the workspace's sending-provider integrations; a deleted one is not listed.
 //
 // GET /workspaces/{workspaceId}/integrations
-func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (r SiteIntegrationsListRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (r []SiteIntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -889,7 +889,7 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
-func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r *SiteIntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -898,7 +898,7 @@ func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, p
 // Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
-func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r *SiteIntegrationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -907,7 +907,7 @@ func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *Upd
 // Invite an email address; the accept link is returned once.
 //
 // POST /workspaces/{workspaceId}/invitations
-func (UnimplementedHandler) SiteInvitationsCreate(ctx context.Context, req *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (r SiteInvitationsCreateRes, _ error) {
+func (UnimplementedHandler) SiteInvitationsCreate(ctx context.Context, req *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (r *SiteCreateInvitationResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -916,8 +916,8 @@ func (UnimplementedHandler) SiteInvitationsCreate(ctx context.Context, req *Site
 // Revoke a pending invitation.
 //
 // DELETE /workspaces/{workspaceId}/invitations/{id}
-func (UnimplementedHandler) SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) (r SiteInvitationsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteInvitationsList implements SiteInvitations_list operation.
@@ -925,7 +925,7 @@ func (UnimplementedHandler) SiteInvitationsDelete(ctx context.Context, params Si
 // List pending (unaccepted) invitations for the workspace.
 //
 // GET /workspaces/{workspaceId}/invitations
-func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (r SiteInvitationsListRes, _ error) {
+func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (r []SiteInvitationResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -936,7 +936,7 @@ func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params Site
 // domain the Workspace already has is 409.
 //
 // POST /workspaces/{workspaceId}/join-domains
-func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (r SiteJoinDomainsAddRes, _ error) {
+func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (r *SiteJoinDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -945,7 +945,7 @@ func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAdd
 // List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
-func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (r SiteJoinDomainsListRes, _ error) {
+func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (r []SiteJoinDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -954,8 +954,8 @@ func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params Site
 // Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
-func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (r SiteJoinDomainsRemoveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
@@ -965,7 +965,7 @@ func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params Si
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
-func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (r SiteJoinDomainsVerifyRes, _ error) {
+func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (r *SiteJoinDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -976,7 +976,7 @@ func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params Si
 // pending, for the screen that shows the new texts (ADR 0062).
 //
 // GET /legal-documents/{key}
-func (UnimplementedHandler) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (r SiteLegalDocumentsGetRes, _ error) {
+func (UnimplementedHandler) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (r *SiteLegalDocument, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -995,8 +995,8 @@ func (UnimplementedHandler) SiteLegalDocumentsSignupItems(ctx context.Context) (
 // Remove a member (owner/admin only; the last owner cannot be removed).
 //
 // DELETE /workspaces/{workspaceId}/memberships/{id}
-func (UnimplementedHandler) SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) (r SiteMembershipsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteMembershipsList implements SiteMemberships_list operation.
@@ -1004,7 +1004,7 @@ func (UnimplementedHandler) SiteMembershipsDelete(ctx context.Context, params Si
 // List the workspace's members.
 //
 // GET /workspaces/{workspaceId}/memberships
-func (UnimplementedHandler) SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (r SiteMembershipsListRes, _ error) {
+func (UnimplementedHandler) SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (r []SiteMembershipResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1015,8 +1015,8 @@ func (UnimplementedHandler) SiteMembershipsList(ctx context.Context, params Site
 // member has no Second factor or is the caller (who disables their own with a password and a code).
 //
 // POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor
-func (UnimplementedHandler) SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) (r SiteMembershipsResetSecondFactorRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteMembershipsUpdate implements SiteMemberships_update operation.
@@ -1024,7 +1024,7 @@ func (UnimplementedHandler) SiteMembershipsResetSecondFactor(ctx context.Context
 // Change a member's role (owner/admin only; owner-only to grant owner).
 //
 // PUT /workspaces/{workspaceId}/memberships/{id}
-func (UnimplementedHandler) SiteMembershipsUpdate(ctx context.Context, req *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (r SiteMembershipsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteMembershipsUpdate(ctx context.Context, req *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (r *SiteMembershipResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1035,7 +1035,7 @@ func (UnimplementedHandler) SiteMembershipsUpdate(ctx context.Context, req *Site
 // lacks is refused (403 permission_required).
 //
 // POST /oauth/authorization
-func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (r SiteOAuthDecideRes, _ error) {
+func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (r *SiteOAuthDecisionResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1044,7 +1044,7 @@ func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthD
 // Validate an OAuth authorization request for the consent screen.
 //
 // GET /oauth/authorization
-func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (r SiteOAuthDescribeRes, _ error) {
+func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (r *SiteOAuthAuthorizationRequest, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1068,7 +1068,7 @@ func (UnimplementedHandler) SiteOptionalConsentsList(ctx context.Context) (r *Si
 // (field `version`).
 //
 // PUT /me/optional-consents/{key}
-func (UnimplementedHandler) SiteOptionalConsentsSet(ctx context.Context, req *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (r SiteOptionalConsentsSetRes, _ error) {
+func (UnimplementedHandler) SiteOptionalConsentsSet(ctx context.Context, req *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (r *SiteOptionalConsent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1079,7 +1079,7 @@ func (UnimplementedHandler) SiteOptionalConsentsSet(ctx context.Context, req *Si
 // used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
 //
 // POST /auth/passkey
-func (UnimplementedHandler) SitePasskeyLoginBegin(ctx context.Context) (r SitePasskeyLoginBeginRes, _ error) {
+func (UnimplementedHandler) SitePasskeyLoginBegin(ctx context.Context) (r *SitePasskeyLoginBegunHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1093,7 +1093,7 @@ func (UnimplementedHandler) SitePasskeyLoginBegin(ctx context.Context) (r SitePa
 // one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
 //
 // POST /auth/passkey/finish
-func (UnimplementedHandler) SitePasskeyLoginFinish(ctx context.Context, req *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (r SitePasskeyLoginFinishRes, _ error) {
+func (UnimplementedHandler) SitePasskeyLoginFinish(ctx context.Context, req *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (r *SiteLoginResultHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1105,7 +1105,7 @@ func (UnimplementedHandler) SitePasskeyLoginFinish(ctx context.Context, req *Sit
 // none.
 //
 // POST /me/passkeys/check
-func (UnimplementedHandler) SitePasskeysBeginCheck(ctx context.Context) (r SitePasskeysBeginCheckRes, _ error) {
+func (UnimplementedHandler) SitePasskeysBeginCheck(ctx context.Context) (r *SitePasskeyCheckBegunHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1116,7 +1116,7 @@ func (UnimplementedHandler) SitePasskeysBeginCheck(ctx context.Context) (r SiteP
 // options exclude the Passkeys the User already holds.
 //
 // POST /me/passkeys/registration
-func (UnimplementedHandler) SitePasskeysBeginRegistration(ctx context.Context) (r SitePasskeysBeginRegistrationRes, _ error) {
+func (UnimplementedHandler) SitePasskeysBeginRegistration(ctx context.Context) (r *SitePasskeyRegistrationBegunHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1128,7 +1128,7 @@ func (UnimplementedHandler) SitePasskeysBeginRegistration(ctx context.Context) (
 // 403 for any response that does not verify.
 //
 // POST /me/passkeys/check/finish
-func (UnimplementedHandler) SitePasskeysFinishCheck(ctx context.Context, req *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (r SitePasskeysFinishCheckRes, _ error) {
+func (UnimplementedHandler) SitePasskeysFinishCheck(ctx context.Context, req *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (r *SitePasskeysFinishCheckNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1142,7 +1142,7 @@ func (UnimplementedHandler) SitePasskeysFinishCheck(ctx context.Context, req *Si
 // user, or a credential already registered.
 //
 // POST /me/passkeys/registration/finish
-func (UnimplementedHandler) SitePasskeysFinishRegistration(ctx context.Context, req *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (r SitePasskeysFinishRegistrationRes, _ error) {
+func (UnimplementedHandler) SitePasskeysFinishRegistration(ctx context.Context, req *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (r *SitePasskey, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1164,7 +1164,7 @@ func (UnimplementedHandler) SitePasskeysList(ctx context.Context) (r *SitePasske
 // in: no password, no Linked identity and no other Passkey.
 //
 // DELETE /me/passkeys/{id}
-func (UnimplementedHandler) SitePasskeysRemove(ctx context.Context, req *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (r SitePasskeysRemoveRes, _ error) {
+func (UnimplementedHandler) SitePasskeysRemove(ctx context.Context, req *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (r *SitePasskeysRemoveNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1174,7 +1174,7 @@ func (UnimplementedHandler) SitePasskeysRemove(ctx context.Context, req *SitePas
 // name that is empty or longer than 100 characters.
 //
 // PATCH /me/passkeys/{id}
-func (UnimplementedHandler) SitePasskeysRename(ctx context.Context, req *SitePasskeyRenameInput, params SitePasskeysRenameParams) (r SitePasskeysRenameRes, _ error) {
+func (UnimplementedHandler) SitePasskeysRename(ctx context.Context, req *SitePasskeyRenameInput, params SitePasskeysRenameParams) (r *SitePasskey, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1186,7 +1186,7 @@ func (UnimplementedHandler) SitePasskeysRename(ctx context.Context, req *SitePas
 // operation decodes (400).
 //
 // POST /workspaces/{workspaceId}/personal-tokens
-func (UnimplementedHandler) SitePersonalTokensCreate(ctx context.Context, req *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (r SitePersonalTokensCreateRes, _ error) {
+func (UnimplementedHandler) SitePersonalTokensCreate(ctx context.Context, req *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (r *SiteCreatePersonalTokenResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1195,8 +1195,8 @@ func (UnimplementedHandler) SitePersonalTokensCreate(ctx context.Context, req *S
 // Revoke a Personal token: the caller's own, or anyone's with members:manage.
 //
 // DELETE /workspaces/{workspaceId}/personal-tokens/{id}
-func (UnimplementedHandler) SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (r SitePersonalTokensDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SitePersonalTokensGrantableScopes implements SitePersonalTokens_grantableScopes operation.
@@ -1205,7 +1205,7 @@ func (UnimplementedHandler) SitePersonalTokensDelete(ctx context.Context, params
 // order: the mint form offers these and no other.
 //
 // GET /workspaces/{workspaceId}/personal-token-scopes
-func (UnimplementedHandler) SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (r SitePersonalTokensGrantableScopesRes, _ error) {
+func (UnimplementedHandler) SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (r []PersonalScope, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1214,7 +1214,7 @@ func (UnimplementedHandler) SitePersonalTokensGrantableScopes(ctx context.Contex
 // List the active Personal tokens the caller may see: their own, or every member's with members:manage.
 //
 // GET /workspaces/{workspaceId}/personal-tokens
-func (UnimplementedHandler) SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (r SitePersonalTokensListRes, _ error) {
+func (UnimplementedHandler) SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (r []SitePersonalTokenResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1234,8 +1234,8 @@ func (UnimplementedHandler) SitePresetsList(ctx context.Context) (r []SitePreset
 // up again; 400 is an invalid token.
 //
 // POST /confirmations/{token}
-func (UnimplementedHandler) SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (r SitePublicConfirmationsPerformRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SitePublicInvitationsAccept implements SitePublicInvitations_accept operation.
@@ -1245,8 +1245,8 @@ func (UnimplementedHandler) SitePublicConfirmationsPerform(ctx context.Context, 
 // User.
 //
 // POST /invitations/{token}/accept
-func (UnimplementedHandler) SitePublicInvitationsAccept(ctx context.Context, req *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (r SitePublicInvitationsAcceptRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SitePublicInvitationsAccept(ctx context.Context, req *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SitePublicInvitationsLookup implements SitePublicInvitations_lookup operation.
@@ -1254,7 +1254,7 @@ func (UnimplementedHandler) SitePublicInvitationsAccept(ctx context.Context, req
 // Look up a pending invite by its token to render the accept page.
 //
 // GET /invitations/{token}
-func (UnimplementedHandler) SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (r SitePublicInvitationsLookupRes, _ error) {
+func (UnimplementedHandler) SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (r *SiteInvitationLookupResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1264,8 +1264,8 @@ func (UnimplementedHandler) SitePublicInvitationsLookup(ctx context.Context, par
 // one-click POST keeps using POST /e/u/{token}. Repeating it is a no-op.
 //
 // POST /unsubscribes/{token}
-func (UnimplementedHandler) SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (r SitePublicUnsubscribesPerformRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteRuleFiringsList implements SiteRuleFirings_list operation.
@@ -1273,7 +1273,7 @@ func (UnimplementedHandler) SitePublicUnsubscribesPerform(ctx context.Context, p
 // List a Rule's Firings, newest first.
 //
 // GET /workspaces/{workspaceId}/rules/{ruleId}/firings
-func (UnimplementedHandler) SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (r SiteRuleFiringsListRes, _ error) {
+func (UnimplementedHandler) SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (r *SiteRuleFiringsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1282,7 +1282,7 @@ func (UnimplementedHandler) SiteRuleFiringsList(ctx context.Context, params Site
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/rules
-func (UnimplementedHandler) SiteRulesCreate(ctx context.Context, req *SiteCreateRuleInput, params SiteRulesCreateParams) (r SiteRulesCreateRes, _ error) {
+func (UnimplementedHandler) SiteRulesCreate(ctx context.Context, req *SiteCreateRuleInput, params SiteRulesCreateParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1291,7 +1291,7 @@ func (UnimplementedHandler) SiteRulesCreate(ctx context.Context, req *SiteCreate
 // Deactivate a Rule: it stops firing.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/deactivate
-func (UnimplementedHandler) SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (r SiteRulesDeactivateRes, _ error) {
+func (UnimplementedHandler) SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1300,8 +1300,8 @@ func (UnimplementedHandler) SiteRulesDeactivate(ctx context.Context, params Site
 // Delete a resource from the site UI.
 //
 // DELETE /workspaces/{workspaceId}/rules/{id}
-func (UnimplementedHandler) SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (r SiteRulesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteRulesDryRun implements SiteRules_dryRun operation.
@@ -1310,7 +1310,7 @@ func (UnimplementedHandler) SiteRulesDelete(ctx context.Context, params SiteRule
 // nothing.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/dry-run
-func (UnimplementedHandler) SiteRulesDryRun(ctx context.Context, req *SiteDryRunRuleInput, params SiteRulesDryRunParams) (r SiteRulesDryRunRes, _ error) {
+func (UnimplementedHandler) SiteRulesDryRun(ctx context.Context, req *SiteDryRunRuleInput, params SiteRulesDryRunParams) (r *SiteRuleDryRunResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1319,7 +1319,7 @@ func (UnimplementedHandler) SiteRulesDryRun(ctx context.Context, req *SiteDryRun
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/rules/{id}
-func (UnimplementedHandler) SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (r SiteRulesGetRes, _ error) {
+func (UnimplementedHandler) SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1328,7 +1328,7 @@ func (UnimplementedHandler) SiteRulesGet(ctx context.Context, params SiteRulesGe
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/rules
-func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesListParams) (r SiteRulesListRes, _ error) {
+func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesListParams) (r *SiteRulesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1339,7 +1339,7 @@ func (UnimplementedHandler) SiteRulesList(ctx context.Context, params SiteRulesL
 // neither draft nor live version.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/publish
-func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (r SiteRulesPublishRes, _ error) {
+func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1348,7 +1348,7 @@ func (UnimplementedHandler) SiteRulesPublish(ctx context.Context, params SiteRul
 // Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/revert
-func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (r SiteRulesRevertRes, _ error) {
+func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1357,7 +1357,7 @@ func (UnimplementedHandler) SiteRulesRevert(ctx context.Context, params SiteRule
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/rules/{id}
-func (UnimplementedHandler) SiteRulesUpdate(ctx context.Context, req *SiteUpdateRuleInput, params SiteRulesUpdateParams) (r SiteRulesUpdateRes, _ error) {
+func (UnimplementedHandler) SiteRulesUpdate(ctx context.Context, req *SiteUpdateRuleInput, params SiteRulesUpdateParams) (r *SiteRuleResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1367,8 +1367,8 @@ func (UnimplementedHandler) SiteRulesUpdate(ctx context.Context, req *SiteUpdate
 // serves it; any other answers 404. The answer comes once they ran.
 //
 // POST /schema/migrations
-func (UnimplementedHandler) SiteSchemaApplyMigrations(ctx context.Context) (r SiteSchemaApplyMigrationsRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteSchemaApplyMigrations(ctx context.Context) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteSecondFactorConfirmEnrollment implements SiteSecondFactor_confirmEnrollment operation.
@@ -1380,7 +1380,7 @@ func (UnimplementedHandler) SiteSchemaApplyMigrations(ctx context.Context) (r Si
 // its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 //
 // POST /me/second-factor/enrollment/confirm
-func (UnimplementedHandler) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *SiteSecondFactorConfirmInput) (r SiteSecondFactorConfirmEnrollmentRes, _ error) {
+func (UnimplementedHandler) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *SiteSecondFactorConfirmInput) (r *SiteRecoveryCodesHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1391,7 +1391,7 @@ func (UnimplementedHandler) SiteSecondFactorConfirmEnrollment(ctx context.Contex
 // throttle: 429 while its delay runs), 422 on a wrong code, 409 without an active Second factor.
 //
 // POST /me/second-factor/disable
-func (UnimplementedHandler) SiteSecondFactorDisable(ctx context.Context, req *SiteSecondFactorDisableInput) (r SiteSecondFactorDisableRes, _ error) {
+func (UnimplementedHandler) SiteSecondFactorDisable(ctx context.Context, req *SiteSecondFactorDisableInput) (r *SiteSecondFactorDisableNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1413,7 +1413,7 @@ func (UnimplementedHandler) SiteSecondFactorGetStatus(ctx context.Context) (r *S
 // throttle: 429 while its delay runs), 409 without an active Second factor.
 //
 // POST /me/second-factor/recovery-codes
-func (UnimplementedHandler) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *SiteRecoveryCodesInput) (r SiteSecondFactorRegenerateRecoveryCodesRes, _ error) {
+func (UnimplementedHandler) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, req *SiteRecoveryCodesInput) (r *SiteRecoveryCodesHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1426,7 +1426,7 @@ func (UnimplementedHandler) SiteSecondFactorRegenerateRecoveryCodes(ctx context.
 // for a correct one while its delay runs (ADR 0025).
 //
 // POST /me/second-factor/enrollment
-func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (r SiteSecondFactorStartEnrollmentRes, _ error) {
+func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (r *SiteSecondFactorEnrollment, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1436,7 +1436,7 @@ func (UnimplementedHandler) SiteSecondFactorStartEnrollment(ctx context.Context,
 // that no longer fits the contact schema is a 422.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (r SiteSegmentContactsListRes, _ error) {
+func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (r *SiteSegmentContactsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1446,7 +1446,7 @@ func (UnimplementedHandler) SiteSegmentContactsList(ctx context.Context, params 
 // with 409 while live work uses it.
 //
 // POST /workspaces/{workspaceId}/segments/{id}/archive
-func (UnimplementedHandler) SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (r SiteSegmentsArchiveRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (r *SiteSegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1455,7 +1455,7 @@ func (UnimplementedHandler) SiteSegmentsArchive(ctx context.Context, params Site
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/segments
-func (UnimplementedHandler) SiteSegmentsCreate(ctx context.Context, req *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (r SiteSegmentsCreateRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsCreate(ctx context.Context, req *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (r *SiteSegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1464,7 +1464,7 @@ func (UnimplementedHandler) SiteSegmentsCreate(ctx context.Context, req *SiteCre
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/segments/{id}
-func (UnimplementedHandler) SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (r SiteSegmentsGetRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (r *SiteSegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1473,7 +1473,7 @@ func (UnimplementedHandler) SiteSegmentsGet(ctx context.Context, params SiteSegm
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/segments
-func (UnimplementedHandler) SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (r SiteSegmentsListRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (r *SiteSegmentsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1482,7 +1482,7 @@ func (UnimplementedHandler) SiteSegmentsList(ctx context.Context, params SiteSeg
 // Preview how many active contacts match a rule definition.
 //
 // POST /workspaces/{workspaceId}/segments/preview
-func (UnimplementedHandler) SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (r SiteSegmentsPreviewRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (r *SitePreviewSegmentResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1491,7 +1491,7 @@ func (UnimplementedHandler) SiteSegmentsPreview(ctx context.Context, req *SitePr
 // Restore an archived resource.
 //
 // POST /workspaces/{workspaceId}/segments/{id}/unarchive
-func (UnimplementedHandler) SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (r SiteSegmentsUnarchiveRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (r *SiteSegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1500,7 +1500,7 @@ func (UnimplementedHandler) SiteSegmentsUnarchive(ctx context.Context, params Si
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/segments/{id}
-func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (r SiteSegmentsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (r *SiteSegmentResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1509,7 +1509,7 @@ func (UnimplementedHandler) SiteSegmentsUpdate(ctx context.Context, req *SiteUpd
 // Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
-func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (r SiteSendingDomainsCreateRes, _ error) {
+func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (r *SiteSendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1520,8 +1520,8 @@ func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *C
 // it. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/sending-domains/{id}
-func (UnimplementedHandler) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (r SiteSendingDomainsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteSendingDomainsGet implements SiteSendingDomains_get operation.
@@ -1529,7 +1529,7 @@ func (UnimplementedHandler) SiteSendingDomainsDelete(ctx context.Context, params
 // Get a sending domain by ID for the site UI, deleted or not.
 //
 // GET /workspaces/{workspaceId}/sending-domains/{id}
-func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (r SiteSendingDomainsGetRes, _ error) {
+func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (r *SiteSendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1538,7 +1538,7 @@ func (UnimplementedHandler) SiteSendingDomainsGet(ctx context.Context, params Si
 // List sending domains for the site UI.
 //
 // GET /workspaces/{workspaceId}/sending-domains
-func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (r SiteSendingDomainsListRes, _ error) {
+func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (r *SiteSendingDomainsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1549,7 +1549,7 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 // only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r SiteSendingDomainsVerifyRes, _ error) {
+func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r *SiteSendingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1558,7 +1558,7 @@ func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params
 // The Workspace's Setup checklist.
 //
 // GET /workspaces/{workspaceId}/setup-checklist
-func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (r SiteSetupChecklistGetRes, _ error) {
+func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (r *SiteSetupProgress, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1572,8 +1572,8 @@ func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params Si
 // request.
 //
 // POST /me/signup-survey
-func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) (r SiteSignupSurveySubmitRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteSmsConsentsConfirm implements SiteSmsConsents_confirm operation.
@@ -1583,7 +1583,7 @@ func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *Sit
 // stays. It does not lift an opt-out. 422 when the contact has no phone.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
-func (UnimplementedHandler) SiteSmsConsentsConfirm(ctx context.Context, req *ConsentEvidence, params SiteSmsConsentsConfirmParams) (r SiteSmsConsentsConfirmRes, _ error) {
+func (UnimplementedHandler) SiteSmsConsentsConfirm(ctx context.Context, req *ConsentEvidence, params SiteSmsConsentsConfirmParams) (r *SmsConsent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1592,7 +1592,7 @@ func (UnimplementedHandler) SiteSmsConsentsConfirm(ctx context.Context, req *Con
 // Read the SMS Confirmation and opt-out of a contact's phone.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
-func (UnimplementedHandler) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (r SiteSmsConsentsGetRes, _ error) {
+func (UnimplementedHandler) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (r *SmsConsent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1602,7 +1602,7 @@ func (UnimplementedHandler) SiteSmsConsentsGet(ctx context.Context, params SiteS
 // gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
-func (UnimplementedHandler) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (r SiteSmsConsentsOptOutRes, _ error) {
+func (UnimplementedHandler) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (r *SmsConsent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1611,7 +1611,7 @@ func (UnimplementedHandler) SiteSmsConsentsOptOut(ctx context.Context, params Si
 // Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
-func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (r SiteSuppressionsCreateRes, _ error) {
+func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (r *SiteSuppressionResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1621,8 +1621,8 @@ func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *Sit
 // one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
-func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (r SiteSuppressionsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteSuppressionsList implements SiteSuppressions_list operation.
@@ -1630,7 +1630,7 @@ func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params S
 // List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
-func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (r SiteSuppressionsListRes, _ error) {
+func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (r *SiteSuppressionsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1639,7 +1639,7 @@ func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params Sit
 // Apply a tag to a contact, creating the tag on first use. Idempotent.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/tags
-func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *ApplyTagInput, params SiteTagsApplyParams) (r SiteTagsApplyRes, _ error) {
+func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *ApplyTagInput, params SiteTagsApplyParams) (r *SiteTagResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1648,8 +1648,8 @@ func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *ApplyTagInpu
 // Delete a tag from the catalogue, unless a segment rule or an automation step names it.
 //
 // DELETE /workspaces/{workspaceId}/tags/{id}
-func (UnimplementedHandler) SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (r SiteTagsDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteTagsList implements SiteTags_list operation.
@@ -1657,7 +1657,7 @@ func (UnimplementedHandler) SiteTagsDelete(ctx context.Context, params SiteTagsD
 // List the workspace's tags (feeds the segment builder).
 //
 // GET /workspaces/{workspaceId}/tags
-func (UnimplementedHandler) SiteTagsList(ctx context.Context, params SiteTagsListParams) (r SiteTagsListRes, _ error) {
+func (UnimplementedHandler) SiteTagsList(ctx context.Context, params SiteTagsListParams) (r *SiteTagsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1666,7 +1666,7 @@ func (UnimplementedHandler) SiteTagsList(ctx context.Context, params SiteTagsLis
 // List the tags a contact has.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/tags
-func (UnimplementedHandler) SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (r SiteTagsListForContactRes, _ error) {
+func (UnimplementedHandler) SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (r *SiteTagsListForContactOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1675,8 +1675,8 @@ func (UnimplementedHandler) SiteTagsListForContact(ctx context.Context, params S
 // Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 //
 // DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
-func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (r SiteTagsRemoveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteTelegramIssueStartLink implements SiteTelegram_issueStartLink operation.
@@ -1684,7 +1684,7 @@ func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsR
 // Issue a Telegram start link for a contact. Each call issues a new link.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
-func (UnimplementedHandler) SiteTelegramIssueStartLink(ctx context.Context, req *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (r SiteTelegramIssueStartLinkRes, _ error) {
+func (UnimplementedHandler) SiteTelegramIssueStartLink(ctx context.Context, req *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (r *TelegramStartLinkResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1693,7 +1693,7 @@ func (UnimplementedHandler) SiteTelegramIssueStartLink(ctx context.Context, req 
 // List the Telegram chats a contact is reached through.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
-func (UnimplementedHandler) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (r SiteTelegramListBindingsRes, _ error) {
+func (UnimplementedHandler) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (r []SiteBindingResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1702,7 +1702,7 @@ func (UnimplementedHandler) SiteTelegramListBindings(ctx context.Context, params
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/templates
-func (UnimplementedHandler) SiteTemplatesCreate(ctx context.Context, req *CreateTemplateInput, params SiteTemplatesCreateParams) (r SiteTemplatesCreateRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesCreate(ctx context.Context, req *CreateTemplateInput, params SiteTemplatesCreateParams) (r *SiteEmailTemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1711,8 +1711,8 @@ func (UnimplementedHandler) SiteTemplatesCreate(ctx context.Context, req *Create
 // Delete a resource from the site UI.
 //
 // DELETE /workspaces/{workspaceId}/templates/{id}
-func (UnimplementedHandler) SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) (r SiteTemplatesDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteTemplatesGet implements SiteTemplates_get operation.
@@ -1720,7 +1720,7 @@ func (UnimplementedHandler) SiteTemplatesDelete(ctx context.Context, params Site
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/templates/{id}
-func (UnimplementedHandler) SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (r SiteTemplatesGetRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (r *SiteEmailTemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1729,7 +1729,7 @@ func (UnimplementedHandler) SiteTemplatesGet(ctx context.Context, params SiteTem
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/templates
-func (UnimplementedHandler) SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (r SiteTemplatesListRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (r *SiteTemplatesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1738,7 +1738,7 @@ func (UnimplementedHandler) SiteTemplatesList(ctx context.Context, params SiteTe
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/templates/{id}
-func (UnimplementedHandler) SiteTemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params SiteTemplatesUpdateParams) (r SiteTemplatesUpdateRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params SiteTemplatesUpdateParams) (r *SiteEmailTemplateResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1747,7 +1747,7 @@ func (UnimplementedHandler) SiteTemplatesUpdate(ctx context.Context, req *Update
 // Create an API token; the full secret is returned once. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/tokens
-func (UnimplementedHandler) SiteTokensCreate(ctx context.Context, req *SiteCreateTokenInput, params SiteTokensCreateParams) (r SiteTokensCreateRes, _ error) {
+func (UnimplementedHandler) SiteTokensCreate(ctx context.Context, req *SiteCreateTokenInput, params SiteTokensCreateParams) (r *SiteCreateTokenResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1756,8 +1756,8 @@ func (UnimplementedHandler) SiteTokensCreate(ctx context.Context, req *SiteCreat
 // Revoke an API token. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/tokens/{id}
-func (UnimplementedHandler) SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (r SiteTokensDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteTokensList implements SiteTokens_list operation.
@@ -1765,7 +1765,7 @@ func (UnimplementedHandler) SiteTokensDelete(ctx context.Context, params SiteTok
 // List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 //
 // GET /workspaces/{workspaceId}/tokens
-func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteTokensListParams) (r SiteTokensListRes, _ error) {
+func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteTokensListParams) (r []SiteApiTokenResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1774,7 +1774,7 @@ func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteToken
 // Rename an active API token. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/tokens/{id}
-func (UnimplementedHandler) SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (r SiteTokensUpdateRes, _ error) {
+func (UnimplementedHandler) SiteTokensUpdate(ctx context.Context, req *SiteUpdateTokenInput, params SiteTokensUpdateParams) (r *SiteApiTokenResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1784,7 +1784,7 @@ func (UnimplementedHandler) SiteTokensUpdate(ctx context.Context, req *SiteUpdat
 // Empty while the Instance offers none.
 //
 // GET /workspaces/{workspaceId}/tracking-domains
-func (UnimplementedHandler) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (r SiteTrackingDomainsListRes, _ error) {
+func (UnimplementedHandler) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (r []SiteTrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1796,8 +1796,8 @@ func (UnimplementedHandler) SiteTrackingDomainsList(ctx context.Context, params 
 // forgotten: links sent on it stop working.
 //
 // DELETE /workspaces/{workspaceId}/tracking-domains/{id}
-func (UnimplementedHandler) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (r SiteTrackingDomainsRemoveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteTrackingDomainsSet implements SiteTrackingDomains_set operation.
@@ -1809,7 +1809,7 @@ func (UnimplementedHandler) SiteTrackingDomainsRemove(ctx context.Context, param
 // of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 //
 // POST /workspaces/{workspaceId}/tracking-domains
-func (UnimplementedHandler) SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (r SiteTrackingDomainsSetRes, _ error) {
+func (UnimplementedHandler) SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (r *SiteTrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1819,7 +1819,7 @@ func (UnimplementedHandler) SiteTrackingDomainsSet(ctx context.Context, req *Set
 // it left it. A replacement that reaches `serving` becomes current.
 //
 // POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-func (UnimplementedHandler) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (r SiteTrackingDomainsVerifyRes, _ error) {
+func (UnimplementedHandler) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (r *SiteTrackingDomainResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1828,7 +1828,7 @@ func (UnimplementedHandler) SiteTrackingDomainsVerify(ctx context.Context, param
 // List transactional sends, most recent first.
 //
 // GET /workspaces/{workspaceId}/transactional-emails
-func (UnimplementedHandler) SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (r SiteTransactionalEmailsListRes, _ error) {
+func (UnimplementedHandler) SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (r *SiteTransactionalEmailsListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1841,7 +1841,7 @@ func (UnimplementedHandler) SiteTransactionalEmailsList(ctx context.Context, par
 // nothing.
 //
 // POST /me/acceptances
-func (UnimplementedHandler) SiteUserAcceptPending(ctx context.Context, req *SiteAcceptPendingInput) (r SiteUserAcceptPendingRes, _ error) {
+func (UnimplementedHandler) SiteUserAcceptPending(ctx context.Context, req *SiteAcceptPendingInput) (r *SiteUserResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1858,7 +1858,7 @@ func (UnimplementedHandler) SiteUserAcceptPending(ctx context.Context, req *Site
 // deleted. A Workspace in its deletion window does not block.
 //
 // POST /me/delete
-func (UnimplementedHandler) SiteUserDeleteUser(ctx context.Context, req *SiteDeleteUserInput) (r SiteUserDeleteUserRes, _ error) {
+func (UnimplementedHandler) SiteUserDeleteUser(ctx context.Context, req *SiteDeleteUserInput) (r *SiteUserDeleteUserNoContent, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1870,8 +1870,8 @@ func (UnimplementedHandler) SiteUserDeleteUser(ctx context.Context, req *SiteDel
 // the User's, or when the User has a password and confirms with it instead.
 //
 // POST /me/delete/link
-func (UnimplementedHandler) SiteUserDeleteUserLink(ctx context.Context, req *SiteDeleteUserLinkInput) (r SiteUserDeleteUserLinkRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteUserDeleteUserLink(ctx context.Context, req *SiteDeleteUserLinkInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteUserEmailChange implements SiteUser_emailChange operation.
@@ -1881,8 +1881,8 @@ func (UnimplementedHandler) SiteUserDeleteUserLink(ctx context.Context, req *Sit
 // the link (ADR 0031).
 //
 // POST /me/email-change
-func (UnimplementedHandler) SiteUserEmailChange(ctx context.Context, req *SiteEmailChangeInput) (r SiteUserEmailChangeRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteUserEmailChange(ctx context.Context, req *SiteEmailChangeInput) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteUserGetMe implements SiteUser_getMe operation.
@@ -1912,7 +1912,7 @@ func (UnimplementedHandler) SiteUserSignOutEverywhere(ctx context.Context) (r *S
 // answers 429 even for a right one while its delay runs.
 //
 // PUT /me
-func (UnimplementedHandler) SiteUserUpdateMe(ctx context.Context, req *SiteUpdateMeInput) (r SiteUserUpdateMeRes, _ error) {
+func (UnimplementedHandler) SiteUserUpdateMe(ctx context.Context, req *SiteUpdateMeInput) (r *SiteUserResourceHeaders, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1921,7 +1921,7 @@ func (UnimplementedHandler) SiteUserUpdateMe(ctx context.Context, req *SiteUpdat
 // Create a webhook endpoint. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks
-func (UnimplementedHandler) SiteWebhooksCreate(ctx context.Context, req *CreateWebhookInput, params SiteWebhooksCreateParams) (r SiteWebhooksCreateRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksCreate(ctx context.Context, req *CreateWebhookInput, params SiteWebhooksCreateParams) (r *SiteWebhookEndpointResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1930,8 +1930,8 @@ func (UnimplementedHandler) SiteWebhooksCreate(ctx context.Context, req *CreateW
 // Delete a webhook endpoint. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/webhooks/{id}
-func (UnimplementedHandler) SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (r SiteWebhooksDeleteRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteWebhooksGet implements SiteWebhooks_get operation.
@@ -1939,7 +1939,7 @@ func (UnimplementedHandler) SiteWebhooksDelete(ctx context.Context, params SiteW
 // Get a webhook endpoint by ID. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks/{id}
-func (UnimplementedHandler) SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (r SiteWebhooksGetRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (r *SiteWebhookEndpointResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1948,7 +1948,7 @@ func (UnimplementedHandler) SiteWebhooksGet(ctx context.Context, params SiteWebh
 // List webhook endpoints. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks
-func (UnimplementedHandler) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (r SiteWebhooksListRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (r *SiteWebhooksListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1958,7 +1958,7 @@ func (UnimplementedHandler) SiteWebhooksList(ctx context.Context, params SiteWeb
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
-func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (r SiteWebhooksRegenerateSecretRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (r *SiteWebhookEndpointResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1968,7 +1968,7 @@ func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, pa
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
-func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (r SiteWebhooksTestRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (r *SiteWebhookTestResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1977,7 +1977,7 @@ func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *TestWebho
 // Update a webhook endpoint. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/webhooks/{id}
-func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params SiteWebhooksUpdateParams) (r SiteWebhooksUpdateRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params SiteWebhooksUpdateParams) (r *SiteWebhookEndpointResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1987,7 +1987,7 @@ func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *UpdateW
 // configured.
 //
 // POST /workspaces/{workspaceId}/account-link
-func (UnimplementedHandler) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (r SiteWorkspacesAccountLinkRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (r *SiteAccountLinkResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1998,7 +1998,7 @@ func (UnimplementedHandler) SiteWorkspacesAccountLink(ctx context.Context, param
 // is recorded as an Audit entry.
 //
 // POST /workspaces
-func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteCreateWorkspaceInput) (r SiteWorkspacesCreateRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteCreateWorkspaceInput) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2011,7 +2011,7 @@ func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteC
 // Two-factor requirement still applies.
 //
 // POST /workspaces/{workspaceId}/delete
-func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (r SiteWorkspacesDeleteRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (r *SiteDeletedWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2021,7 +2021,7 @@ func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteD
 // window. Open to every member.
 //
 // GET /workspaces/{workspaceId}/revenue-settings
-func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (r SiteWorkspacesGetRevenueSettingsRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (r *SiteRevenueSettingsResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2032,8 +2032,8 @@ func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context
 // Workspace be deleted, first. Recorded as an Audit entry with the caller as actor.
 //
 // POST /workspaces/{workspaceId}/leave
-func (UnimplementedHandler) SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (r SiteWorkspacesLeaveRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) error {
+	return ht.ErrNotImplemented
 }
 
 // SiteWorkspacesLiftSecondFactorRequirement implements SiteWorkspaces_liftSecondFactorRequirement operation.
@@ -2043,7 +2043,7 @@ func (UnimplementedHandler) SiteWorkspacesLeave(ctx context.Context, params Site
 // Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
 //
 // DELETE /workspaces/{workspaceId}/second-factor-requirement
-func (UnimplementedHandler) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (r SiteWorkspacesLiftSecondFactorRequirementRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2074,7 +2074,7 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 // grace restarts. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/second-factor-requirement
-func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (r SiteWorkspacesRequireSecondFactorRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2087,7 +2087,7 @@ func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Contex
 // 404. Recorded as an Audit entry.
 //
 // POST /workspaces/deleted/{id}/restore
-func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (r SiteWorkspacesRestoreRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2098,7 +2098,7 @@ func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params Si
 // history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
-func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (r SiteWorkspacesSetTimezoneRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2107,7 +2107,7 @@ func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *
 // Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
 //
 // PUT /workspaces/{workspaceId}
-func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (r SiteWorkspacesUpdateRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (r *SiteWorkspaceResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -2118,6 +2118,14 @@ func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteU
 // its bounds. Every change is recorded as an Audit entry naming who changed what.
 //
 // PUT /workspaces/{workspaceId}/revenue-settings
-func (UnimplementedHandler) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (r SiteWorkspacesUpdateRevenueSettingsRes, _ error) {
+func (UnimplementedHandler) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (r *SiteRevenueSettingsResource, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

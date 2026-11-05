@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -24,18 +25,15 @@ func TestSiteTelegramBroadcastIsCreatedWithItsTextAndReportsFiguresPerChannel(t 
 	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	made, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:          "News",
 		Content:       testhelper.SiteTelegram("Hello <b>{{ first_name }}</b>"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	made, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
 	require.NoError(t, err)
-	read, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	read := got
 
 	assert.Equal(t, siteapi.BroadcastChannelTelegram, read.Channel)
 	assert.Equal(t, "Hello <b>{{ first_name }}</b>", testhelper.SiteTelegramOf(read).Text)
@@ -59,25 +57,21 @@ func TestSiteTelegramBroadcastRefusesAnEmailIntegrationAndAContentOfTheOtherChan
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	onEmail, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, onEmail := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "News", Content: testhelper.SiteTelegram("Hello"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeDefaultID)),
 	}, params)
-	require.NoError(t, err)
-	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	b, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "News", Content: testhelper.SiteTelegram("Hello"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
 	}, params)
 	require.NoError(t, err)
-	b, ok := res.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", res)
-	asEmail, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, asEmail := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Elsewhere")}),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
-	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, onEmail, "an email Integration never sends a Telegram Broadcast")
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, asEmail, "a Broadcast is never converted to another Channel")
+	testhelper.SiteRefusal(t, onEmail, http.StatusUnprocessableEntity, "an email Integration never sends a Telegram Broadcast")
+	testhelper.SiteRefusal(t, asEmail, http.StatusUnprocessableEntity, "a Broadcast is never converted to another Channel")
 }
 
 func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoTestSend(t *testing.T) {
@@ -91,17 +85,14 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 		if integration != nil {
 			in.IntegrationId = siteapi.NewOptNilEntityId(*integration)
 		}
-		res, err := c.SiteBroadcastsCreate(ctx, in, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+		b, err := c.SiteBroadcastsCreate(ctx, in, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
-		b, ok := res.(*siteapi.SiteBroadcastResource)
-		require.Truef(t, ok, "got %T", res)
 		return b.ID
 	}
-	schedule := func(id siteapi.EntityId) siteapi.SiteBroadcastsScheduleRes {
-		res, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	schedule := func(id siteapi.EntityId) error {
+		_, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-		require.NoError(t, err)
-		return res
+		return err
 	}
 
 	noDefault := schedule(create("Hello", nil))
@@ -109,15 +100,14 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 	empty := schedule(create("  ", &botID))
 	okID := create("Hello", &botID)
 	scheduled := schedule(okID)
-	test, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("john@acme.test")},
+	_, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("john@acme.test")},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: okID})
-	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleConflict{}, noDefault)
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, tooLong)
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, empty, "a blank text would fail every recipient")
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled)
-	assert.IsType(t, &siteapi.SiteBroadcastsTestSendUnprocessableEntity{}, test)
+	testhelper.SiteRefusal(t, noDefault, http.StatusConflict)
+	testhelper.SiteRefusal(t, tooLong, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, empty, http.StatusUnprocessableEntity, "a blank text would fail every recipient")
+	require.NoError(t, scheduled)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Empty(t, env.CustomerMail.Messages(), "no Test send went out")
 }
 
@@ -130,7 +120,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	botID := idStr(int64(bot.Integration.ID))
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	made, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "News", IntegrationId: siteapi.NewOptNilEntityId(botID),
 		Content: testhelper.SiteTelegramContent(siteapi.TelegramBroadcastContentInput{
 			Text:              siteapi.NewOptString("Hi"),
@@ -141,20 +131,15 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 		}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	made, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
 	read := func() siteapi.TelegramBroadcastContent {
-		got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
+		b, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
 		require.NoError(t, err)
-		b, ok := got.(*siteapi.SiteBroadcastResource)
-		require.Truef(t, ok, "got %T", got)
 		return testhelper.SiteTelegramOf(b)
 	}
-	edit := func(in siteapi.TelegramBroadcastContentInput) siteapi.SiteBroadcastsUpdateRes {
-		res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteTelegramContentEdit(in)},
+	edit := func(in siteapi.TelegramBroadcastContentInput) error {
+		_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: testhelper.SiteTelegramContentEdit(in)},
 			siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
-		require.NoError(t, err)
-		return res
+		return err
 	}
 
 	stored := read()
@@ -163,17 +148,17 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 	assert.False(t, stored.LinkPreview)
 	assert.Equal(t, "Stop", stored.UnsubscribeButton.Value)
 
-	edit(siteapi.TelegramBroadcastContentInput{Text: siteapi.NewOptString("Hello")})
+	require.NoError(t, edit(siteapi.TelegramBroadcastContentInput{Text: siteapi.NewOptString("Hello")}))
 	kept := read()
 	assert.Equal(t, "Hello", kept.Text)
 	assert.Equal(t, stored.ImageUrl, kept.ImageUrl, "a field left out keeps its value")
 	assert.Equal(t, stored.Buttons, kept.Buttons)
 	assert.False(t, kept.LinkPreview)
 
-	edit(siteapi.TelegramBroadcastContentInput{
+	require.NoError(t, edit(siteapi.TelegramBroadcastContentInput{
 		ImageUrl: siteapi.NewOptString(""), Buttons: []siteapi.TelegramButton{}, LinkPreview: siteapi.NewOptBool(true),
 		UnsubscribeButton: siteapi.NewOptString(" "),
-	})
+	}))
 	cleared := read()
 	assert.Empty(t, cleared.ImageUrl.Value, "a blank image removes it")
 	assert.Empty(t, cleared.Buttons)
@@ -182,8 +167,8 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 
 	badImage := edit(siteapi.TelegramBroadcastContentInput{ImageUrl: siteapi.NewOptString("http://example.com/a.png")})
 	badButton := edit(siteapi.TelegramBroadcastContentInput{Buttons: buttonsOf(siteapi.TelegramButton{Label: "x", URL: "javascript:1"})})
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badImage, "an image is an https URL")
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badButton, "a button URL is http or https")
+	testhelper.SiteRefusal(t, badImage, http.StatusUnprocessableEntity, "an image is an https URL")
+	testhelper.SiteRefusal(t, badButton, http.StatusUnprocessableEntity, "a button URL is http or https")
 }
 
 // Schedule applies the rule an Automation's Publish applies to a step: the text as written is
@@ -193,28 +178,25 @@ func TestSiteTelegramBroadcastScheduleKnowsTheCaptionLimit(t *testing.T) {
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	scheduled := func(text, image string) siteapi.SiteBroadcastsScheduleRes {
+	scheduled := func(text, image string) error {
 		in := siteapi.TelegramBroadcastContentInput{Text: siteapi.NewOptString(text)}
 		if image != "" {
 			in.ImageUrl = siteapi.NewOptString(image)
 		}
-		res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+		b, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 			Name: "News", IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
 			Content: testhelper.SiteTelegramContent(in),
 		}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
-		b, ok := res.(*siteapi.SiteBroadcastResource)
-		require.Truef(t, ok, "got %T", res)
-		out, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+		_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 			siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
-		require.NoError(t, err)
-		return out
+		return err
 	}
 	const image = "https://cdn.example.com/a.png"
 
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled(strings.Repeat("a", 4096), ""))
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, scheduled(strings.Repeat("a", 1025), image), "a caption is 1024 at most")
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled(strings.Repeat("a", 1024), image))
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, scheduled("", image), "an image alone is a message")
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleUnprocessableEntity{}, scheduled(" ", ""), "no text and no image")
+	require.NoError(t, scheduled(strings.Repeat("a", 4096), ""))
+	testhelper.SiteRefusal(t, scheduled(strings.Repeat("a", 1025), image), http.StatusUnprocessableEntity, "a caption is 1024 at most")
+	assert.NoError(t, scheduled(strings.Repeat("a", 1024), image))
+	assert.NoError(t, scheduled("", image), "an image alone is a message")
+	testhelper.SiteRefusal(t, scheduled(" ", ""), http.StatusUnprocessableEntity, "no text and no image")
 }

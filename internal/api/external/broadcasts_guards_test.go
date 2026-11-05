@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,10 +27,8 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			before, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 			require.NoError(t, err)
 
-			res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name, Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
-			require.NoError(t, err)
-			refused, ok := res.(*externalapi.BroadcastsCreateUnprocessableEntity)
-			require.Truef(t, ok, "got %T", res)
+			_, err = c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: name, Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)
 
 			after, err := env.DB.Broadcast.Query().Where(broadcast.WorkspaceID(fixtures.AcmeID)).Count(ctx)
@@ -41,11 +40,9 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 			ctx := context.Background()
 			c := env.ExternalScoped(t, authorScopes...)
 
-			res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString(name)},
+			_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString(name)},
 				externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
-			require.NoError(t, err)
-			refused, ok := res.(*externalapi.BroadcastsUpdateUnprocessableEntity)
-			require.Truef(t, ok, "got %T", res)
+			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)
 			assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
 		})
@@ -60,7 +57,7 @@ func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
 
-	_, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
+	err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.ErrorContains(t, err, "unexpected status code: 500")
 	assert.Empty(t, env.CustomerMail.Messages())
@@ -74,9 +71,7 @@ func TestExternalBroadcastReportCarriesTheHoldReason(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetHoldReason(holdreason.WorkspaceSuspended).ExecX(ctx)
 
-	res, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: draftBroadcast})
+	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	report, ok := res.(*externalapi.BroadcastReport)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.HoldReasonWorkspaceSuspended, report.HoldReason.Value)
 }

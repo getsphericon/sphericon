@@ -70,10 +70,5 @@ namespace ServiceWorkspaceFeed {
     @minValue(1)
     @maxValue(200)
     limit?: int32 = 100,
-  ):
-    | ServiceWorkspaceFeedPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  ): ServiceWorkspaceFeedPage | Problem;
 }

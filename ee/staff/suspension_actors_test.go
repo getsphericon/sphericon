@@ -37,8 +37,7 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	page, ok := res.(*siteapi.SiteAuditEntryList)
-	require.Truef(t, ok, "got %T", res)
+	page := res
 	suspensions := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool {
 		return e.Action == events.ActionWorkspaceSuspend || e.Action == events.ActionWorkspaceUnsuspend
 	})
@@ -61,8 +60,8 @@ func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 			h := newHarness(t)
 			c, _ := h.staffSession(t)
 
-			ws, ok := h.getWorkspace(t, c, tc.publicID).(*staffeeapi.StaffWorkspaceDetailResource)
-			require.True(t, ok)
+			ws, err := h.getWorkspace(t, c, tc.publicID)
+			require.NoError(t, err)
 			require.True(t, ws.Suspension.Set)
 			assert.Equal(t, tc.kind, ws.Suspension.Value.Actor.Kind)
 			assert.False(t, ws.Suspension.Value.Actor.ID.IsSet() && !ws.Suspension.Value.Actor.ID.IsNull(), "no actor id")

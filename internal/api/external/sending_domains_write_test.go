@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,10 +16,8 @@ import (
 
 func createDomain(t *testing.T, c *externalapi.Client, in externalapi.CreateSendingDomainInput) *externalapi.SendingDomainResource {
 	t.Helper()
-	res, err := c.SendingDomainsCreate(context.Background(), &in)
+	created, err := c.SendingDomainsCreate(context.Background(), &in)
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", res)
 	return created
 }
 
@@ -28,26 +27,21 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 	reader := env.ExternalScoped(t, "sending_domains:read")
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
-	create, err := reader.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "x.example.com"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsCreateForbidden{}, create)
+	_, err := reader.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "x.example.com"})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	upd, err := reader.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsUpdateForbidden{}, upd)
+	_, err = reader.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	ver, err := reader.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsVerifyForbidden{}, ver)
+	_, err = reader.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	del, err := reader.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteForbidden{}, del)
+	err = reader.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	writer := env.ExternalScoped(t, "sending_domains:write")
-	get, err := writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsGetForbidden{}, get, "write does not imply read")
+	_, err = writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 }
 
 func TestExternalSendingDomainsCreateReturnsRecordsNeverTheKey(t *testing.T) {
@@ -90,14 +84,12 @@ func TestExternalSendingDomainsCreateValidatesAndRefusesDuplicates(t *testing.T)
 		{Domain: "10.0.0.1"},
 		{Domain: "ok.example.com", DkimSelector: externalapi.NewOptString("bad selector!")},
 	} {
-		res, err := c.SendingDomainsCreate(ctx, &in)
-		require.NoError(t, err)
-		assert.IsTypef(t, &externalapi.SendingDomainsCreateUnprocessableEntity{}, res, "%+v", in)
+		_, err := c.SendingDomainsCreate(ctx, &in)
+		testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "%+v", in)
 	}
 
-	dup, err := c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "MAIL.acme.com"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsCreateConflict{}, dup)
+	_, err := c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "MAIL.acme.com"})
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 }
 
 func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T) {
@@ -108,12 +100,10 @@ func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T)
 
 	same, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{}, externalapi.SendingDomainsUpdateParams{ID: id})
 	require.NoError(t, err)
-	assert.True(t, same.(*externalapi.SendingDomainResource).Verified, "an empty update changes nothing")
+	assert.True(t, same.Verified, "an empty update changes nothing")
 
-	res, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: id})
+	updated, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: id})
 	require.NoError(t, err)
-	updated, ok := res.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "s2", updated.DkimSelector)
 	assert.Equal(t, "s2._domainkey.mail.acme.com", updated.DkimRecord.Host)
 	assert.False(t, updated.Verified, "the new record is not published yet")
@@ -121,9 +111,8 @@ func TestExternalSendingDomainsUpdateMovesTheSelectorAndUnverifies(t *testing.T)
 	assert.True(t, updated.VerifiedAt.Set && !updated.VerifiedAt.Null, "when it was verified is kept")
 	assert.Equal(t, fixtures.SendingDomainVerifiedDomain, updated.Domain, "the name is immutable")
 
-	bad, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("bad selector!")}, externalapi.SendingDomainsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsUpdateUnprocessableEntity{}, bad)
+	_, err = c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("bad selector!")}, externalapi.SendingDomainsUpdateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
@@ -132,15 +121,13 @@ func TestExternalSendingDomainsVerifyRunsALiveCheckAndReportsIt(t *testing.T) {
 	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
-	res, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
+	accepted, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
 	require.NoError(t, err)
-	accepted, ok := res.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.False(t, accepted.Verified, "the test DNS publishes nothing, and the caller cannot set verified")
 
 	got, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
-	_, checked := got.(*externalapi.SendingDomainResource).LastCheckedAt.Get()
+	_, checked := got.LastCheckedAt.Get()
 	assert.True(t, checked, "the live check ran and is reported")
 }
 
@@ -155,22 +142,16 @@ func TestExternalSendingDomainsSayWhenTheDMARCRecordWasFound(t *testing.T) {
 	fresh, err := c.SendingDomainsGet(t.Context(), externalapi.SendingDomainsGetParams{ID: entityIDString(fixtures.SendingDomainUnverifiedID)})
 	require.NoError(t, err)
 
-	bulkRes, ok := bulk.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", bulk)
-	freshRes, ok := fresh.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", fresh)
-	_, bulkReady := bulkRes.DmarcFoundAt.Get()
-	_, freshReady := freshRes.DmarcFoundAt.Get()
+	_, bulkReady := bulk.DmarcFoundAt.Get()
+	_, freshReady := fresh.DmarcFoundAt.Get()
 	assert.True(t, bulkReady)
 	assert.False(t, freshReady)
 }
 
 func listedSendingDomainIDs(t *testing.T, c *externalapi.Client) []externalapi.EntityId {
 	t.Helper()
-	res, err := c.SendingDomainsList(context.Background(), externalapi.SendingDomainsListParams{PageSize: externalapi.NewOptInt32(100)})
+	list, err := c.SendingDomainsList(context.Background(), externalapi.SendingDomainsListParams{PageSize: externalapi.NewOptInt32(100)})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.SendingDomainsListOK)
-	require.Truef(t, ok, "got %T", res)
 	ids := make([]externalapi.EntityId, len(list.Items))
 	for i := range list.Items {
 		ids[i] = list.Items[i].ID
@@ -186,20 +167,16 @@ func TestExternalSendingDomainsDelete(t *testing.T) {
 	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
 	id := entityIDString(fixtures.SendingDomainUnverifiedID)
 
-	out, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
+	err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteNoContent{}, out)
 	assert.NotContains(t, listedSendingDomainIDs(t, c), id)
 
-	got, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
+	deleted, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
-	deleted, ok := got.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "a deleted domain is still readable by id, got %T", got)
 	assert.True(t, deleted.DiscardedAt.IsSet())
 
-	again, err := c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain})
+	_, err = c.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainResource{}, again, "a deleted name is free again")
 }
 
 // A deleted Sending domain is read, never changed (ADR 0100): an edit, even an empty or an invalid
@@ -215,19 +192,15 @@ func TestExternalSendingDomainsDeletedOneIsReadOnly(t *testing.T) {
 		{},
 		{DkimSelector: externalapi.NewOptString("bad selector!")},
 	} {
-		res, err := c.SendingDomainsUpdate(ctx, &in, externalapi.SendingDomainsUpdateParams{ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.SendingDomainsUpdateNotFound{}, res)
+		_, err := c.SendingDomainsUpdate(ctx, &in, externalapi.SendingDomainsUpdateParams{ID: id})
+		testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	}
 
-	verified, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsVerifyNotFound{}, verified)
+	_, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	got, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
+	row, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
-	row, ok := got.(*externalapi.SendingDomainResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "sphericon", row.DkimSelector, "the refused edit left it as it was")
 	assert.False(t, row.LastCheckedAt.Set && !row.LastCheckedAt.Null, "no check ran")
 }
@@ -238,21 +211,17 @@ func TestExternalSendingDomainsStayInTheirWorkspace(t *testing.T) {
 	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
 	foreign := entityIDString(fixtures.SendingDomainGlobexID)
 
-	get, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsGetNotFound{}, get)
+	_, err := c.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	upd, err := c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsUpdateNotFound{}, upd)
+	_, err = c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	ver, err := c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsVerifyNotFound{}, ver)
+	_, err = c.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	del, err := c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsDeleteNotFound{}, del)
+	err = c.SendingDomainsDelete(ctx, externalapi.SendingDomainsDeleteParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	n, err := env.DB.Scoped(fixtures.GlobexID).SendingDomain().Query().Count(ctx)
 	require.NoError(t, err)

@@ -8,6 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // ID filters vertices based on their ID field.
@@ -366,43 +368,63 @@ func NameContainsFold(v string) predicate.Integration {
 }
 
 // ChannelEQ applies the EQ predicate on the "channel" field.
-func ChannelEQ(v Channel) predicate.Integration {
-	return predicate.Integration(sql.FieldEQ(FieldChannel, v))
+func ChannelEQ(v channels.Channel) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldEQ(FieldChannel, vc))
 }
 
 // ChannelNEQ applies the NEQ predicate on the "channel" field.
-func ChannelNEQ(v Channel) predicate.Integration {
-	return predicate.Integration(sql.FieldNEQ(FieldChannel, v))
+func ChannelNEQ(v channels.Channel) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldNEQ(FieldChannel, vc))
 }
 
 // ChannelIn applies the In predicate on the "channel" field.
-func ChannelIn(vs ...Channel) predicate.Integration {
-	return predicate.Integration(sql.FieldIn(FieldChannel, vs...))
+func ChannelIn(vs ...channels.Channel) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldIn(FieldChannel, v...))
 }
 
 // ChannelNotIn applies the NotIn predicate on the "channel" field.
-func ChannelNotIn(vs ...Channel) predicate.Integration {
-	return predicate.Integration(sql.FieldNotIn(FieldChannel, vs...))
+func ChannelNotIn(vs ...channels.Channel) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldNotIn(FieldChannel, v...))
 }
 
 // ProviderEQ applies the EQ predicate on the "provider" field.
-func ProviderEQ(v Provider) predicate.Integration {
-	return predicate.Integration(sql.FieldEQ(FieldProvider, v))
+func ProviderEQ(v providers.Provider) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldEQ(FieldProvider, vc))
 }
 
 // ProviderNEQ applies the NEQ predicate on the "provider" field.
-func ProviderNEQ(v Provider) predicate.Integration {
-	return predicate.Integration(sql.FieldNEQ(FieldProvider, v))
+func ProviderNEQ(v providers.Provider) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldNEQ(FieldProvider, vc))
 }
 
 // ProviderIn applies the In predicate on the "provider" field.
-func ProviderIn(vs ...Provider) predicate.Integration {
-	return predicate.Integration(sql.FieldIn(FieldProvider, vs...))
+func ProviderIn(vs ...providers.Provider) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldIn(FieldProvider, v...))
 }
 
 // ProviderNotIn applies the NotIn predicate on the "provider" field.
-func ProviderNotIn(vs ...Provider) predicate.Integration {
-	return predicate.Integration(sql.FieldNotIn(FieldProvider, vs...))
+func ProviderNotIn(vs ...providers.Provider) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldNotIn(FieldProvider, v...))
 }
 
 // ConfigEncryptedEQ applies the EQ predicate on the "config_encrypted" field.
@@ -906,23 +928,33 @@ func ProviderMaxPerDayNotNil() predicate.Integration {
 }
 
 // ProviderEnforcementEQ applies the EQ predicate on the "provider_enforcement" field.
-func ProviderEnforcementEQ(v ProviderEnforcement) predicate.Integration {
-	return predicate.Integration(sql.FieldEQ(FieldProviderEnforcement, v))
+func ProviderEnforcementEQ(v providers.Enforcement) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldEQ(FieldProviderEnforcement, vc))
 }
 
 // ProviderEnforcementNEQ applies the NEQ predicate on the "provider_enforcement" field.
-func ProviderEnforcementNEQ(v ProviderEnforcement) predicate.Integration {
-	return predicate.Integration(sql.FieldNEQ(FieldProviderEnforcement, v))
+func ProviderEnforcementNEQ(v providers.Enforcement) predicate.Integration {
+	vc := v
+	return predicate.Integration(sql.FieldNEQ(FieldProviderEnforcement, vc))
 }
 
 // ProviderEnforcementIn applies the In predicate on the "provider_enforcement" field.
-func ProviderEnforcementIn(vs ...ProviderEnforcement) predicate.Integration {
-	return predicate.Integration(sql.FieldIn(FieldProviderEnforcement, vs...))
+func ProviderEnforcementIn(vs ...providers.Enforcement) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldIn(FieldProviderEnforcement, v...))
 }
 
 // ProviderEnforcementNotIn applies the NotIn predicate on the "provider_enforcement" field.
-func ProviderEnforcementNotIn(vs ...ProviderEnforcement) predicate.Integration {
-	return predicate.Integration(sql.FieldNotIn(FieldProviderEnforcement, vs...))
+func ProviderEnforcementNotIn(vs ...providers.Enforcement) predicate.Integration {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Integration(sql.FieldNotIn(FieldProviderEnforcement, v...))
 }
 
 // ProviderEnforcementIsNil applies the IsNil predicate on the "provider_enforcement" field.

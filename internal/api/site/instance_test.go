@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +9,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The Instance's settings are the Staff console's (ADR 0063); a Workspace Owner sees only the
@@ -16,20 +18,16 @@ import (
 // latestRelease is the release banner as the caller reads it.
 func latestRelease(t *testing.T, c *siteapi.Client) siteapi.OptString {
 	t.Helper()
-	res, err := c.SiteInstanceGetRelease(t.Context())
+	release, err := c.SiteInstanceGetRelease(t.Context())
 	require.NoError(t, err)
-	release, ok := res.(*siteapi.SiteInstanceRelease)
-	require.True(t, ok, "expected the release, got %T", res)
 	return release.LatestRelease
 }
 
 // requireReleaseRefused asserts the caller holds release:read in no Workspace.
 func requireReleaseRefused(t *testing.T, c *siteapi.Client) {
 	t.Helper()
-	res, err := c.SiteInstanceGetRelease(t.Context())
-	require.NoError(t, err)
-	refused, ok := res.(*siteapi.ProblemDetails)
-	require.True(t, ok, "expected a refusal, got %T", res)
+	_, err := c.SiteInstanceGetRelease(t.Context())
+	refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 

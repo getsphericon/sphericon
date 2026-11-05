@@ -24,9 +24,10 @@ const (
 func TestSigningUpWithANameThatBreaksALineIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := signUpWithPassword(t, env, "Grace\r\nBcc: all@example.com", "grace@example.com", "grace-password-1")
-	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Grace\r\nBcc: all@example.com", Email: "grace@example.com", Password: siteapi.NewOptString("grace-password-1"),
+	})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -34,9 +35,10 @@ func TestSigningUpWithANameThatBreaksALineIsRefused(t *testing.T) {
 func TestSigningUpATakenAddressWithABadNameIsAnsweredAsANewOne(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := signUpWithPassword(t, env, "John\u2028Smith", fixtures.OwnerJohnEmail, "john-password-12")
-	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "John\u2028Smith", Email: fixtures.OwnerJohnEmail, Password: siteapi.NewOptString("john-password-12"),
+	})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
 	assert.Empty(t, env.SystemMail.Messages(), "nothing says the address is taken")
 }
@@ -45,12 +47,11 @@ func TestAcceptingAnInvitationWithATooLongNameIsRefusedByTheContract(t *testing.
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeNewcomerToken
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName(siteapi.UserName(strings.Repeat("a", 101))), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptBadRequest{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.InvitationAcmeNewcomerEmail, formPassword), "no account was made")
 }
 
@@ -58,12 +59,10 @@ func TestAcceptingAnInvitationWithAnInvisibleNameIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeNewcomerToken
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("\u200b\u200d"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.InvitationAcmeNewcomerEmail, formPassword), "no account was made")
 }
@@ -74,10 +73,8 @@ func TestRenamingToANameWithABidiOverrideIsRefusedAndKeepsTheOldOne(t *testing.T
 	before, err := c.SiteUserGetMe(t.Context())
 	require.NoError(t, err)
 
-	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("John \u202eetisoppo")})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SiteUserUpdateMeUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err = c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("John \u202eetisoppo")})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"name": {badNameMessage}}, problem.Errors.Value)
 	after, err := c.SiteUserGetMe(t.Context())
 	require.NoError(t, err)
@@ -87,56 +84,54 @@ func TestRenamingToANameWithABidiOverrideIsRefusedAndKeepsTheOldOne(t *testing.T
 func TestSigningUpWithAPasswordOfSpacesIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := signUpWithPassword(t, env, "Grace Hopper", "grace@example.com", "        ")
-	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Grace Hopper", Email: "grace@example.com", Password: siteapi.NewOptString("        "),
+	})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"password": {"the password must not be only spaces"}}, problem.Errors.Value)
 }
 
 func TestResettingToAShortPasswordIsRefusedAndKeepsTheLink(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
-	_, err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
+	err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
 	require.NoError(t, err)
 	_, body := lastSystemEmail(t, env)
 	token := tokenFromEmail(t, body)
 
-	res, err := c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: token, Password: "1"})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SiteAuthResetPasswordUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	err = c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: token, Password: "1"})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"password": {shortPasswordMessage}}, problem.Errors.Value)
 	assert.Equal(t, shortPasswordMessage, problem.Detail.Value, "a single failure is the detail the SPA shows")
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 
-	again, err := c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: token, Password: "brandnewpass1"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, again, "the refused request spent nothing")
+	err = c.SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: token, Password: "brandnewpass1"})
+	assert.NoError(t, err, "the refused request spent nothing")
 }
 
 func TestTheLinkInAnotherBrowserRefusesAShortPasswordAndStaysValid(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := signUpIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
 
-	res := verifyIn(t, env.SiteBrowser(t), token, "1")
-	problem, ok := res.(*siteapi.SiteAuthVerifyEmailUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	_, err := env.SiteBrowser(t).SiteAuthVerifyEmail(t.Context(),
+		&siteapi.SiteVerifyEmailInput{Token: token, Password: siteapi.NewOptString("1")}, siteapi.SiteAuthVerifyEmailParams{})
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"password": {shortPasswordMessage}}, problem.Errors.Value)
 	assert.Nil(t, userByEmail(t, env, "grace@example.com").EmailVerifiedAt)
 
-	assert.IsType(t, &siteapi.SiteVerifyEmailResultHeaders{}, verifyIn(t, env.SiteBrowser(t), token, "grace-password-2"))
+	_, err = env.SiteBrowser(t).SiteAuthVerifyEmail(t.Context(),
+		&siteapi.SiteVerifyEmailInput{Token: token, Password: siteapi.NewOptString("grace-password-2")}, siteapi.SiteAuthVerifyEmailParams{})
+	assert.NoError(t, err)
 }
 
 func TestAcceptingAnInvitationWithAShortPasswordIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeNewcomerToken
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SitePublicInvitationsAcceptUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"password": {shortPasswordMessage}}, problem.Errors.Value)
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "newcomer@example.com", "1"), "no account was made")
 }
@@ -144,12 +139,10 @@ func TestAcceptingAnInvitationWithAShortPasswordIsRefused(t *testing.T) {
 func TestChangingToAShortPasswordIsRefusedAndKeepsTheOldOne(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword), NewPassword: siteapi.NewOptString("1"),
 	})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SiteUserUpdateMeUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"newPassword": {shortPasswordMessage}}, problem.Errors.Value)
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 }
@@ -157,12 +150,10 @@ func TestChangingToAShortPasswordIsRefusedAndKeepsTheOldOne(t *testing.T) {
 func TestInvitingAnUnreachableAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
 		&siteapi.SiteCreateInvitationInput{Email: "newcomer@example", Role: siteapi.SiteInvitableRoleAdmin},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SiteInvitationsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Errors.Value, "email")
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -170,12 +161,10 @@ func TestInvitingAnUnreachableAddressIsRefused(t *testing.T) {
 func TestChangingTheEmailToAnUnreachableAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+	err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 		NewEmail: "john@example", CurrentPassword: fixtures.OwnerJohnPassword,
 	})
-	require.NoError(t, err)
-	problem, ok := res.(*siteapi.SiteUserEmailChangeUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Errors.Value, "newEmail")
 	assert.Empty(t, env.SystemMail.Messages())
 }

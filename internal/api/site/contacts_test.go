@@ -35,8 +35,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", res)
+	got := res
 	assert.Empty(t, got.FirstName.Or(""), "first name cleared by explicit null")
 	assert.Equal(t, "Smith", got.LastName.Or(""), "absent last name kept")
 	assert.Equal(t, "alice@example.com", string(got.Email.Or("")), "absent email kept")
@@ -44,8 +43,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	// The clear is persisted, not just echoed.
 	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
-	fetchedRes, ok := fetched.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", fetched)
+	fetchedRes := fetched
 	assert.Empty(t, fetchedRes.FirstName.Or(""))
 }
 
@@ -60,8 +58,7 @@ func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 	null.SetToNull()
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{CustomFields: null}, params)
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", res)
+	got := res
 	assert.Empty(t, got.CustomFields.Value)
 	assert.Equal(t, "Liam", got.FirstName.Or(""), "absent first name kept")
 }
@@ -89,8 +86,7 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 			Email:       siteapi.NewOptString(email),
 		})
 		require.NoError(t, err)
-		listed, ok := res.(*siteapi.SiteContactsListOK)
-		require.Truef(t, ok, "got %T", res)
+		listed := res
 		out := make([]string, 0, len(listed.Items))
 		for _, item := range listed.Items {
 			out = append(out, string(item.Email.Or("")))
@@ -116,8 +112,7 @@ func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
 		params.Email = siteapi.NewOptString("@filter.test")
 		res, err := c.SiteContactsList(ctx, params)
 		require.NoError(t, err)
-		listed, ok := res.(*siteapi.SiteContactsListOK)
-		require.Truef(t, ok, "got %T", res)
+		listed := res
 		out := make([]string, 0, len(listed.Items))
 		for _, item := range listed.Items {
 			out = append(out, string(item.Email.Or("")))
@@ -149,26 +144,22 @@ func TestSiteContactsCarryTheirTags(t *testing.T) {
 		Tags:  []string{"zeta", "alpha"},
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 	assert.Equal(t, []string{"alpha", "zeta"}, created.Tags)
 
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
 	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
 	require.NoError(t, err)
-	kept, ok := updated.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", updated)
+	kept := updated
 	assert.Equal(t, []string{"alpha", "zeta"}, kept.Tags, "an absent tags key keeps the set")
 
 	updated, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Tags: []string{"beta"}}, params)
 	require.NoError(t, err)
-	replaced, ok := updated.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", updated)
+	replaced := updated
 	assert.Equal(t, []string{"beta"}, replaced.Tags)
 
 	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
-	got, ok := fetched.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", fetched)
+	got := fetched
 	assert.Equal(t, []string{"beta"}, got.Tags)
 }

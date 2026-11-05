@@ -17,6 +17,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -78,7 +79,7 @@ func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T)
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
-	assert.Equal(t, outboundmessage.ChannelTelegram, msg.Channel)
+	assert.Equal(t, channels.Telegram, msg.Channel)
 	assert.Equal(t, "555001", msg.Destination)
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramSent, map[string]any{
 		"contactId": fixtures.ContactBobID, "automationId": automationID, "destination": "555001", "integrationId": bot.Integration.ID,
@@ -194,7 +195,7 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
 	emailOptOuts := func() int {
-		return env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelEmail), unsubscribe.ContactID(fixtures.ContactBobID)).CountX(ctx)
+		return env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.Email), unsubscribe.ContactID(fixtures.ContactBobID)).CountX(ctx)
 	}
 	emailBefore := emailOptOuts()
 	automationID := int64(fixtures.AutomationJobsTelegramUnsubscribeLinkID)
@@ -206,12 +207,11 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 	link := regexp.MustCompile(`/e/u/([^"]+)"`).FindStringSubmatch(sends[0].String("text"))
 	require.Len(t, link, 2, "the text carries the unsubscribe link")
 
-	out, err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicUnsubscribesPerformNoContent{}, out)
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ("555061")).OnlyX(ctx)
-	assert.Equal(t, unsubscribe.ChannelTelegram, optOut.Channel)
+	assert.Equal(t, channels.Telegram, optOut.Channel)
 	assert.Equal(t, eligibility.AutomationSource(automationID), optOut.SendingSource)
 	assert.Equal(t, emailBefore, emailOptOuts(), "email to the same Contact keeps sending")
 	recorded := env.QueuedMessages(t, events.NameTelegramUnsubscribed)
@@ -221,7 +221,7 @@ func TestTheUnsubscribeLinkOptsTheChatOutOfTheAutomationOnTelegramOnly(t *testin
 	assert.Equal(t, strconv.FormatInt(automationID, 10), fmt.Sprint(recorded[0].Data["automationId"]))
 	assert.Zero(t, env.QueuedCount(t, events.NameEmailUnsubscribed, nil), "and no email event")
 
-	_, err = env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+	err = env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil), "a second click records nothing")

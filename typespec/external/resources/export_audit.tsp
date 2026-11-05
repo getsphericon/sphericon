@@ -62,10 +62,5 @@ namespace Export {
   @get
   @route("/audit")
   @requiresScopes(#[ApiTokenScope.exportRead])
-  op audit(...ExportPageQuery):
-    | ExportPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op audit(...ExportPageQuery): ExportPage | Problem;
 }

@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,8 +22,7 @@ func TestSiteRuleReadsItsLiveVersionAndItsDraft(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	res, ok := got.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", got)
+	res := got
 	live, isLive := res.Live.Get()
 	draft, drafted := res.Draft.Get()
 	require.True(t, isLive)
@@ -51,8 +51,7 @@ func TestSiteSavingALiveRuleUnchangedMakesNoDraft(t *testing.T) {
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleMultiTriggerID)})
 
 	require.NoError(t, err)
-	res, ok := updated.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", updated)
+	res := updated
 	assert.True(t, res.Draft.Null)
 }
 
@@ -60,12 +59,10 @@ func TestSiteRevertRefusesARuleNeverPublished(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := c.SiteRulesRevert(context.Background(), siteapi.SiteRulesRevertParams{
+	_, err := c.SiteRulesRevert(context.Background(), siteapi.SiteRulesRevertParams{
 		WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleInactiveID),
 	})
 
-	require.NoError(t, err)
-	refused, ok := got.(*siteapi.SiteRulesRevertUnprocessableEntity)
-	require.Truef(t, ok, "got %T", got)
+	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, "no unpublished changes to revert", refused.Detail.Or(""))
 }

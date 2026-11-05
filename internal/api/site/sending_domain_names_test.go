@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,18 +19,17 @@ func TestSiteSendingDomainsCreateNormalizesAndValidatesNames(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	create := func(domain string) siteapi.SiteSendingDomainsCreateRes {
-		res, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: domain},
+	create := func(domain string) (*siteapi.SiteSendingDomainResource, error) {
+		return c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: domain},
 			siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		return res
 	}
 
-	res, ok := create("Почта.Пример.рф").(*siteapi.SiteSendingDomainResource)
-	require.True(t, ok, "an internationalized domain is accepted")
+	res, err := create("Почта.Пример.рф")
+	require.NoError(t, err, "an internationalized domain is accepted")
 	assert.Equal(t, "xn--80a1acny.xn--e1afmkfd.xn--p1ai", res.Domain, "stored as punycode")
 
 	for _, bad := range []string{"192.0.2.1", "-bad.example.com", "exa mple.com", "https://example.com", "under_score.example.com"} {
-		assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, create(bad), bad)
+		_, err := create(bad)
+		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, bad)
 	}
 }

@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -17,18 +18,15 @@ func TestExternalCustomFieldsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	denied, err := env.ExternalScoped(t, "contacts:read").CustomFieldsList(ctx)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.CustomFieldsListForbidden{}, denied, "custom_fields:read is required")
+	_, err := env.ExternalScoped(t, "contacts:read").CustomFieldsList(ctx)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "custom_fields:read is required")
 
 	c := env.ExternalScoped(t, "custom_fields:read")
 	res, err := c.CustomFieldsList(ctx)
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.CustomFieldsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	types := map[string]externalapi.CustomFieldType{}
-	for _, f := range ok.Items {
+	for _, f := range res.Items {
 		types[f.Key] = f.Type
 	}
 	assert.Equal(t, externalapi.CustomFieldType("string"), types["plan"])
@@ -45,19 +43,19 @@ func TestExternalReferenceDataIsWorkspaceScoped(t *testing.T) {
 
 	fields, err := c.CustomFieldsList(ctx)
 	require.NoError(t, err)
-	for _, f := range fields.(*externalapi.CustomFieldsListOK).Items {
+	for _, f := range fields.Items {
 		assert.NotEqual(t, fixtures.CustomFieldGlobexKey, f.Key)
 	}
 
 	domains, err := c.SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
 	require.NoError(t, err)
-	for _, d := range domains.(*externalapi.SendingDomainsListOK).Items {
+	for _, d := range domains.Items {
 		assert.NotEqual(t, fixtures.SendingDomainGlobexDomain, d.Domain)
 	}
 
 	rates, err := c.SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
 	require.NoError(t, err)
-	for _, r := range rates.(*externalapi.SendingDomainRatesListOK).Items {
+	for _, r := range rates.Items {
 		assert.NotEqual(t, fixtures.SendingDomainGlobexDomain, r.Domain)
 	}
 }
@@ -68,21 +66,16 @@ func TestExternalCustomFieldsUpdateNeedsTheWriteScope(t *testing.T) {
 	ctx := context.Background()
 	list, err := env.ExternalScoped(t, "custom_fields:read").CustomFieldsList(ctx)
 	require.NoError(t, err)
-	ok, isOK := list.(*externalapi.CustomFieldsListOK)
-	require.Truef(t, isOK, "got %T", list)
-	plan, found := lo.Find(ok.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
+	plan, found := lo.Find(list.Items, func(f externalapi.CustomFieldResource) bool { return f.Key == "plan" })
 	require.True(t, found)
 	rename := &externalapi.UpdateCustomFieldInput{Name: externalapi.NewOptString("Subscription plan")}
 	params := externalapi.CustomFieldsUpdateParams{ID: plan.ID}
 
-	denied, err := env.ExternalScoped(t, "custom_fields:read").CustomFieldsUpdate(ctx, rename, params)
-	require.NoError(t, err)
-	allowed, err := env.ExternalScoped(t, "custom_fields:write").CustomFieldsUpdate(ctx, rename, params)
+	_, err = env.ExternalScoped(t, "custom_fields:read").CustomFieldsUpdate(ctx, rename, params)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	renamed, err := env.ExternalScoped(t, "custom_fields:write").CustomFieldsUpdate(ctx, rename, params)
 	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.CustomFieldsUpdateForbidden{}, denied)
-	renamed, isField := allowed.(*externalapi.CustomFieldResource)
-	require.Truef(t, isField, "got %T", allowed)
 	assert.Equal(t, "Subscription plan", renamed.Name)
 	assert.Equal(t, "plan", renamed.Key)
 }
@@ -91,30 +84,25 @@ func TestExternalSendingDomainsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	denied, err := env.ExternalScoped(t, "contacts:read").
+	_, err := env.ExternalScoped(t, "contacts:read").
 		SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsListForbidden{}, denied)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	c := env.ExternalScoped(t, "sending_domains:read")
 	res, err := c.SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.SendingDomainsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	verified := map[string]bool{}
-	for _, d := range ok.Items {
+	for _, d := range res.Items {
 		verified[d.Domain] = d.Verified
 	}
 	assert.Equal(t, map[string]bool{"mail.acme.com": true, "news.acme.com": false, "codebasics.dev": true, "launch.acme.com": false, "lost.acme.com": false}, verified)
 }
 
-func ratesByDomain(t *testing.T, res externalapi.SendingDomainRatesListRes) map[string]externalapi.SendingDomainRatesResource {
+func ratesByDomain(t *testing.T, res *externalapi.SendingDomainRatesListOK) map[string]externalapi.SendingDomainRatesResource {
 	t.Helper()
-	ok, isOK := res.(*externalapi.SendingDomainRatesListOK)
-	require.Truef(t, isOK, "got %T", res)
 	out := map[string]externalapi.SendingDomainRatesResource{}
-	for _, r := range ok.Items {
+	for _, r := range res.Items {
 		out[r.Domain] = r
 	}
 	return out
@@ -126,10 +114,9 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	denied, err := env.ExternalScoped(t, "contacts:read").
+	_, err := env.ExternalScoped(t, "contacts:read").
 		SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainRatesListForbidden{}, denied)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	c := env.ExternalScoped(t, "sending_domains:read")
 

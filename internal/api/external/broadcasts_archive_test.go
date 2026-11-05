@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -15,13 +16,11 @@ import (
 
 func listedBroadcastIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
 	t.Helper()
-	res, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
+	list, err := c.BroadcastsList(context.Background(), externalapi.BroadcastsListParams{
 		PageSize: externalapi.NewOptInt32(100),
 		Archived: externalapi.NewOptBool(archived),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.BroadcastsListOK)
-	require.Truef(t, ok, "got %T", res)
 	return lo.Map(list.Items, func(b externalapi.BroadcastResource, _ int) externalapi.EntityId { return b.ID })
 }
 
@@ -32,34 +31,26 @@ func TestExternalBroadcastsArchiveAndRestore(t *testing.T) {
 	c := env.ExternalScoped(t, authorScopes...)
 	ctx := context.Background()
 
-	out, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: sentBroadcast})
+	archived, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	archived, ok := out.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", out)
 	assert.True(t, archived.ArchivedAt.IsSet())
 
 	assert.NotContains(t, listedBroadcastIDs(t, c, false), sentBroadcast)
 	assert.Contains(t, listedBroadcastIDs(t, c, true), sentBroadcast)
 
-	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
+	sr, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	sr, ok := report.(*externalapi.BroadcastReport)
-	require.Truef(t, ok, "an archived broadcast keeps its report, got %T", report)
 	assert.EqualValues(t, 11, sr.RecipientsTotal)
 
-	back, err := c.BroadcastsUnarchive(ctx, externalapi.BroadcastsUnarchiveParams{ID: sentBroadcast})
+	restored, err := c.BroadcastsUnarchive(ctx, externalapi.BroadcastsUnarchiveParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	restored, ok := back.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", back)
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Contains(t, listedBroadcastIDs(t, c, false), sentBroadcast)
 
-	draft, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
+	_, err = c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastResource{}, draft)
-	sched, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: schedBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveConflict{}, sched)
+	_, err = c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: schedBroadcast})
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 }
 
 // An archived draft is read-only through /api until it is unarchived: an edit and a change of
@@ -71,15 +62,13 @@ func TestExternalAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	_, err := c.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: draftBroadcast})
 	require.NoError(t, err)
 
-	upd, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("Renamed")},
+	_, err = c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("Renamed")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateConflict{}, upd)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
-	seg, err := c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
+	_, err = c.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentConflict{}, seg)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 }
 
 func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {
@@ -88,10 +77,8 @@ func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.BroadcastSentID)
 
-	arch, err := readOnly.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveForbidden{}, arch)
-	unarch, err := readOnly.BroadcastsUnarchive(ctx, externalapi.BroadcastsUnarchiveParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnarchiveForbidden{}, unarch)
+	_, err := readOnly.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = readOnly.BroadcastsUnarchive(ctx, externalapi.BroadcastsUnarchiveParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

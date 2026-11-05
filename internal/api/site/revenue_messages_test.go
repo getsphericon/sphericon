@@ -21,8 +21,7 @@ func broadcastRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, i
 	t.Helper()
 	res, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: ws, ID: idStr(id)})
 	require.NoError(t, err)
-	b, ok := res.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", res)
+	b := res
 	return b.Stats.Revenue
 }
 
@@ -30,8 +29,7 @@ func broadcastListRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceI
 	t.Helper()
 	res, err := c.SiteBroadcastsList(t.Context(), siteapi.SiteBroadcastsListParams{WorkspaceId: ws, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	for i := range list.Items {
 		if int64(list.Items[i].ID) == id {
 			return list.Items[i].Stats.Revenue
@@ -45,12 +43,10 @@ func automationRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, 
 	t.Helper()
 	rep, err := c.SiteAutomationReportsGet(t.Context(), siteapi.SiteAutomationReportsGetParams{WorkspaceId: ws, AutomationId: idStr(id)})
 	require.NoError(t, err)
-	r, ok := rep.(*siteapi.SiteAutomationReport)
-	require.Truef(t, ok, "got %T", rep)
+	r := rep
 	lst, err := c.SiteAutomationsList(t.Context(), siteapi.SiteAutomationsListParams{WorkspaceId: ws, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)
-	l, ok := lst.(*siteapi.SiteAutomationsListOK)
-	require.Truef(t, ok, "got %T", lst)
+	l := lst
 	for i := range l.Items {
 		if int64(l.Items[i].ID) == id {
 			listed = l.Items[i].Revenue.Value
@@ -58,8 +54,7 @@ func automationRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, 
 	}
 	one, err := c.SiteAutomationsGet(t.Context(), siteapi.SiteAutomationsGetParams{WorkspaceId: ws, ID: idStr(id)})
 	require.NoError(t, err)
-	a, ok := one.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", one)
+	a := one
 	return r.Revenue, listed, a.Revenue.Value
 }
 
@@ -103,9 +98,9 @@ func TestBeforeTheFirstOrderThereIsNoFigureAndItsOrderCountsAtOnce(t *testing.T)
 	in.Email = externalapi.NewOptNilEmailAddress(fixtures.ContactSoukBuyerEmail)
 	in.OccurredAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(noonDaysAgo(3)))
 	shop := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.SoukID, "events:write"))
-	res, err := shop.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
+	_, err := shop.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.RecordEventsBatchResult{}, res)
+
 	env.WorkOrderJobs(t)
 
 	set := broadcastRevenue(t, c, fixtures.SoukPublicID, fixtures.BroadcastSoukID)

@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"slices"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/httpcall"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
 
@@ -29,14 +29,14 @@ const (
 // Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
 // Channel); false for a kind that sends nothing. A new Channel's send step adds its kind here, and
 // Publish, the step executor and the reports take it up.
-func (k Kind) Channel() (messaging.Channel, bool) {
+func (k Kind) Channel() (channels.Channel, bool) {
 	switch k {
 	case Email:
-		return messaging.ChannelEmail, true
+		return channels.Email, true
 	case Telegram:
-		return messaging.ChannelTelegram, true
+		return channels.Telegram, true
 	case SMS:
-		return messaging.ChannelSMS, true
+		return channels.SMS, true
 	default:
 		return "", false
 	}

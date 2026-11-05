@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -235,11 +236,11 @@ func TestATelegramBroadcastsUnsubscribeLinkAndButtonOptTheChatOutOfBroadcasts(t 
 	link := regexp.MustCompile(`/e/u/([^"]+)"`).FindStringSubmatch(sends[0].String("text"))
 	require.Len(t, link, 2, "the text carries the unsubscribe link")
 
-	_, err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
+	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: link[1]})
 	require.NoError(t, err)
 
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(benChat)).OnlyX(ctx)
-	assert.Equal(t, unsubscribe.ChannelTelegram, optOut.Channel)
+	assert.Equal(t, channels.Telegram, optOut.Channel)
 	assert.Equal(t, eligibility.SourceBroadcasts, optOut.SendingSource)
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"broadcastId": id, "via": events.UnsubscribedByLink}))
 }
@@ -268,11 +269,10 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 	c := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail)
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.LacunaPublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	shown, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	shown := got
 	assert.Equal(t, siteapi.NewOptNilHoldReason(siteapi.HoldReasonProviderRefused), shown.HoldReason, "the Broadcast shows why it waits")
 
-	res, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Config: siteapi.NewOptIntegrationConfigInput(siteapi.IntegrationConfigInput{
 			OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(siteapi.TelegramConfigInput{
 				Kind: siteapi.TelegramConfigInputKindTelegram, Token: rotated,
@@ -280,7 +280,7 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 		}),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.LacunaPublicID, ID: bot.Integration.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
 	assert.False(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[0]), broadcasts.Pending()).ExistX(ctx))

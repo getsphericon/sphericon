@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/phone"
 )
@@ -25,7 +26,7 @@ func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string
 		match = append(match, unsubscribe.DestinationEQ(number))
 	}
 	rows, err := s.Unsubscribe().Query().
-		Where(unsubscribe.ChannelEQ(unsubscribe.ChannelSms), unsubscribe.Or(match...)).
+		Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Or(match...)).
 		All(ctx)
 	if err != nil {
 		return fmt.Errorf("find sms opt-outs: %w", err)
@@ -33,7 +34,7 @@ func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string
 	for _, u := range rows {
 		hashed := phone.Hash(u.Destination)
 		twin, err := s.Unsubscribe().Query().Where(
-			unsubscribe.ChannelEQ(unsubscribe.ChannelSms),
+			unsubscribe.ChannelEQ(channels.SMS),
 			unsubscribe.DestinationEQ(hashed),
 			unsubscribe.SendingSourceEQ(u.SendingSource),
 		).Exist(ctx)
@@ -69,7 +70,7 @@ func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.
 		return nil
 	}
 	create := s.Unsubscribe().Create().
-		SetChannel(unsubscribe.ChannelSms).
+		SetChannel(channels.SMS).
 		SetDestination(number).
 		SetSendingSource(eligibility.SourceEverything).
 		SetVia(via)
@@ -84,7 +85,7 @@ func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.
 		return fmt.Errorf("record opt-out: %w", err)
 	}
 	if _, err := s.Confirmation().Delete().Where(
-		confirmation.ChannelEQ(confirmation.ChannelSms),
+		confirmation.ChannelEQ(channels.SMS),
 		confirmation.DestinationEQ(number),
 	).Exec(ctx); err != nil {
 		return fmt.Errorf("drop confirmation: %w", err)
@@ -118,7 +119,7 @@ func SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscr
 // an erased person's opt-out when the number comes back.
 func smsEverything(number string) []predicate.Unsubscribe {
 	return []predicate.Unsubscribe{
-		unsubscribe.ChannelEQ(unsubscribe.ChannelSms),
+		unsubscribe.ChannelEQ(channels.SMS),
 		unsubscribe.DestinationIn(number, phone.Hash(number)),
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	}

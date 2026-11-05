@@ -16,7 +16,7 @@ func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 	return res
 }
 
-func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
+func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (*siteapi.SiteWebhooksListOK, error) {
 	scoped := workspaceScope(ctx)
 
 	page, err := h.webhooks.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
@@ -26,7 +26,7 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
 }
 
-func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWebhookInput, _ siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
+func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWebhookInput, _ siteapi.SiteWebhooksCreateParams) (*siteapi.SiteWebhookEndpointResource, error) {
 	scoped := workspaceScope(ctx)
 
 	e, err := h.webhooks.Create(ctx, scoped, inputs.WebhookCreate(req))
@@ -37,7 +37,7 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWe
 	return &res, nil
 }
 
-func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebhooksGetParams) (siteapi.SiteWebhooksGetRes, error) {
+func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebhooksGetParams) (*siteapi.SiteWebhookEndpointResource, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -49,7 +49,7 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 	return &res, nil
 }
 
-func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.UpdateWebhookInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
+func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.UpdateWebhookInput, params siteapi.SiteWebhooksUpdateParams) (*siteapi.SiteWebhookEndpointResource, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -62,13 +62,13 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.UpdateWe
 	return &res, nil
 }
 
-func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWebhooksDeleteParams) (siteapi.SiteWebhooksDeleteRes, error) {
+func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWebhooksDeleteParams) error {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	err := h.webhooks.Delete(ctx, scoped, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteWebhooksDeleteNoContent{}, nil
+	return nil
 }

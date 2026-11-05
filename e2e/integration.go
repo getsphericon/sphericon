@@ -46,7 +46,6 @@ func (w *Workspace) AddVerifiedSendingDomain() {
 		if err != nil {
 			return false
 		}
-		d, isD := got.(*externalapi.SendingDomainResource)
-		return isD && d.Verified
+		return got.Verified
 	}, EmailTimeout, 100*time.Millisecond, "Sending domain %s never became verified", w.Domain)
 }

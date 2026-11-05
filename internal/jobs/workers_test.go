@@ -439,7 +439,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	assert.Equal(t, 1, *e.ConsecutiveFailures)
 	assert.True(t, clock.Equal(*e.FailingSince))
 	assert.True(t, clock.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
+	assert.Equal(t, webhook.KindHTTPStatus, *e.LastErrorKind)
 	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
 	assert.Nil(t, e.DisabledAt, "a failure alone does not disable (that is the disable rule's job)")
 
@@ -451,7 +451,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	assert.Equal(t, 2, *e.ConsecutiveFailures)
 	assert.True(t, began.Equal(*e.FailingSince))
 	assert.True(t, clock.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhookendpoint.LastErrorKindBlockedAddress, *e.LastErrorKind)
+	assert.Equal(t, webhook.KindBlockedAddress, *e.LastErrorKind)
 	assert.Nil(t, e.LastErrorStatus)
 
 	// A receiver that does not answer in time is a timeout.
@@ -471,7 +471,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	slowAllow, err := webhook.ParseAllowlist(slowURL.Host)
 	require.NoError(t, err)
 	require.Error(t, deliver(worker(slowAllow, 50*time.Millisecond)))
-	assert.Equal(t, webhookendpoint.LastErrorKindTimeout, *state().LastErrorKind)
+	assert.Equal(t, webhook.KindTimeout, *state().LastErrorKind)
 
 	// A 2xx resets the state.
 	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)

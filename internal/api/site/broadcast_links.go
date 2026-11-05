@@ -6,7 +6,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
-func (h *Handlers) SiteBroadcastLinksList(ctx context.Context, params siteapi.SiteBroadcastLinksListParams) (siteapi.SiteBroadcastLinksListRes, error) {
+func (h *Handlers) SiteBroadcastLinksList(ctx context.Context, params siteapi.SiteBroadcastLinksListParams) (*siteapi.SiteBroadcastLinkClicksList, error) {
 	ws := workspaceScope(ctx)
 	links, err := h.broadcasts.LinkClicksOf(ctx, ws, int64(params.BroadcastId))
 	if err != nil {

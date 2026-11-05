@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -159,7 +160,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if hold != "" {
 		return Result{Outcome: Held, Reason: hold}, nil
 	}
-	route, err := m.Route(ctx, s, messaging.ChannelEmail, req.IntegrationID)
+	route, err := m.Route(ctx, s, channels.Email, req.IntegrationID)
 	if err != nil {
 		return Result{}, err
 	}

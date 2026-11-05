@@ -12,18 +12,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) auditEntries(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) staffeeapi.StaffWorkspaceAuditListRes {
+func (h *harness) auditEntries(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) (*staffeeapi.StaffAuditEntryList, error) {
 	t.Helper()
 	params.WorkspaceId = staffeeapi.WorkspaceId(workspaceID)
-	res, err := c.StaffWorkspaceAuditList(t.Context(), params)
-	require.NoError(t, err)
-	return res
+	return c.StaffWorkspaceAuditList(t.Context(), params)
 }
 
 func (h *harness) auditPage(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) *staffeeapi.StaffAuditEntryList {
 	t.Helper()
-	page, ok := h.auditEntries(t, c, workspaceID, params).(*staffeeapi.StaffAuditEntryList)
-	require.True(t, ok, "an audit page")
+	page, err := h.auditEntries(t, c, workspaceID, params)
+	require.NoError(t, err, "an audit page")
 	return page
 }
 
@@ -82,11 +80,11 @@ func TestTheWorkspaceAuditLogRefusesABadCursorAndAnUnknownWorkspace(t *testing.T
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	bad := h.auditEntries(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Cursor: staffeeapi.NewOptString("nope")})
-	assert.IsType(t, &staffeeapi.StaffWorkspaceAuditListBadRequest{}, bad)
+	_, err := h.auditEntries(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Cursor: staffeeapi.NewOptString("nope")})
+	testhelper.StaffeeRefusal(t, err, http.StatusBadRequest)
 
-	missing := h.auditEntries(t, c, "NoSuchId", staffeeapi.StaffWorkspaceAuditListParams{})
-	assert.IsType(t, &staffeeapi.StaffWorkspaceAuditListNotFound{}, missing)
+	_, err = h.auditEntries(t, c, "NoSuchId", staffeeapi.StaffWorkspaceAuditListParams{})
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
 }
 
 func TestTheWorkspaceAuditLogRequiresAnStaffSession(t *testing.T) {

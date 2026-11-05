@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,21 +22,17 @@ func TestSiteContactsScopedToWorkspace(t *testing.T) {
 
 	// Contacts of the owned workspace are listed (the workspace has seeded
 	// contacts; assert presence, not an exact count).
-	list, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
+	listed, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	listed, ok := list.(*siteapi.SiteContactsListOK)
-	require.Truef(t, ok, "got %T", list)
 	assert.NotEmpty(t, listed.Items, "owned workspace returns its contacts")
 
 	// Creating a contact scopes it to the workspace.
-	created, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("site-new@example.com")}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err = c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("site-new@example.com")}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactResource{}, created)
 
 	// An unknown / non-owned workspace workspaceID resolves to 404, not a data leak.
-	missing, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsListNotFound{}, missing)
+	_, err = c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteWorkspacesList(t *testing.T) {
@@ -63,9 +60,8 @@ func TestSiteWorkspaceRequiresMembership(t *testing.T) {
 	assert.Empty(t, got)
 
 	// And cannot reach acme's contacts — 404, not a data leak.
-	missing, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsListNotFound{}, missing)
+	_, err = c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // A member of another tenant sees only their own workspace and cannot reach Acme.
@@ -79,7 +75,6 @@ func TestSiteWorkspaceIsolatedBetweenTenants(t *testing.T) {
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.GlobexPublicID), got[0].ID)
 
-	missing, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsListNotFound{}, missing)
+	_, err = c.SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

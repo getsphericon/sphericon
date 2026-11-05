@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
-	"github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
@@ -184,10 +184,8 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRange90d Window90Days
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
-	// goverter:enum:map SiteSuppressionChannelEmail ChannelEmail
-	// goverter:enum:map SiteSuppressionChannelTelegram ChannelTelegram
-	// goverter:enum:map SiteSuppressionChannelSMS ChannelSms
-	SuppressionChannel(source siteapi.SiteSuppressionChannel) suppression.Channel
+	// goverter:enum:transform value
+	SuppressionChannel(source siteapi.SiteSuppressionChannel) channels.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
@@ -209,7 +207,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
 	// goverter:enum:transform value
-	BroadcastChannel(source siteapi.BroadcastChannel) broadcast.Channel
+	BroadcastChannel(source siteapi.BroadcastChannel) channels.Channel
 	// goverter:enum:transform value
 	AutomationState(source siteapi.SiteAutomationState) automations.State
 	// goverter:enum:transform value
@@ -452,7 +450,7 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 }
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
-func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *broadcast.Channel {
+func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *channels.Channel {
 	v, ok := o.Get()
 	if !ok {
 		return nil

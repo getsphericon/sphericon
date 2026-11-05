@@ -34,7 +34,7 @@ func subjectsOf(fs *fakeSender) []string {
 // Mailgun relay, through /api.
 func editGreeting(t *testing.T, c *externalapi.Client) {
 	t.Helper()
-	res, err := c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{
+	_, err := c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{
 		TriggerEvent: externalapi.NewOptString("job_hijacked"),
 		Steps: []externalapi.AutomationStep{{
 			Type:          externalapi.AutomationStepTypeEmail,
@@ -44,7 +44,6 @@ func editGreeting(t *testing.T, c *externalapi.Client) {
 		}},
 	}, externalapi.AutomationsUpdateParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.AutomationResource{}, res)
 }
 
 // #748: a token with only the read and write scopes edits an active Automation's Steps, Trigger
@@ -80,9 +79,8 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	editGreeting(t, env.ExternalScoped(t, "automations:read", "automations:write"))
 
 	publisher := env.ExternalScoped(t, "automations:publish")
-	res, err := publisher.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
+	_, err := publisher.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.AutomationResource{}, res)
 
 	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}, 0))
 	next := enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID)

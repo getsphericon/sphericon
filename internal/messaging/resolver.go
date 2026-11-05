@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -56,7 +57,7 @@ func (r *Resolver) Sender(_ context.Context, s *ent.Scoped, row *ent.Integration
 	if r.capturers != nil {
 		deps.Capturer = r.capturers(s, row.ID)
 	}
-	return r.catalog.Build(Channel(row.Channel), Provider(row.Provider), config, deps)
+	return r.catalog.Build(row.Channel, row.Provider, config, deps)
 }
 
 // EmailSender is Sender for an email Integration, typed: the sender of an Integration of another
@@ -104,7 +105,7 @@ func (r *Resolver) SMSSender(ctx context.Context, s *ent.Scoped, row *ent.Integr
 // DefaultEmailIntegration is the Workspace's default, enabled email Integration. It returns
 // ErrNoProvider when there is none.
 func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integration, error) {
-	return Integration(ctx, s, ChannelEmail, nil)
+	return Integration(ctx, s, channels.Email, nil)
 }
 
 // IntegrationKept reports whether the Workspace has a kept Integration with the id: new work
@@ -119,23 +120,23 @@ func IntegrationKept(ctx context.Context, s *ent.Scoped, id int64) (bool, error)
 // KeptIntegrationOn reports whether the Workspace has a kept Integration with the id on channel:
 // work on that Channel may name it (IntegrationKept), and work on another Channel never does
 // (ADR 0074). Like IntegrationKept it says nothing of whether the Integration can send.
-func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel, id int64) (bool, error) {
+func KeptIntegrationOn(ctx context.Context, s *ent.Scoped, channel channels.Channel, id int64) (bool, error) {
 	return s.Integration().Query().
-		Where(integration.ID(id), integration.ChannelEQ(integration.Channel(channel))).
+		Where(integration.ID(id), integration.ChannelEQ(channel)).
 		Exist(ctx)
 }
 
 // HasIntegrationOn reports whether the Workspace has any kept Integration on channel, enabled or
 // not: whether work on that Channel has anything it could ever send through.
-func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel Channel) (bool, error) {
-	return s.Integration().Query().Where(integration.ChannelEQ(integration.Channel(channel))).Exist(ctx)
+func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel channels.Channel) (bool, error) {
+	return s.Integration().Query().Where(integration.ChannelEQ(channel)).Exist(ctx)
 }
 
 // Integration is the enabled Integration of channel that a send on that Channel goes through
 // (Through): the one named by id, or the Channel's default when id is nil. A disabled one is
 // ErrNoProvider, never the default in its place. A send asks the Send route of outbound
 // (outbound.Module.Route), which reads it, never this directly.
-func Integration(ctx context.Context, s *ent.Scoped, channel Channel, id *int64) (*ent.Integration, error) {
+func Integration(ctx context.Context, s *ent.Scoped, channel channels.Channel, id *int64) (*ent.Integration, error) {
 	row, err := Through(ctx, s, channel, id)
 	if err != nil {
 		return nil, err
@@ -152,13 +153,13 @@ func Integration(ctx context.Context, s *ent.Scoped, channel Channel, id *int64)
 // through another Channel's Integration (ADR 0079). It is the one answer both a send (Integration)
 // and the Live use of an Integration or a Sending domain (ADR 0099) read: a disabled Integration
 // still carries the work that names it once it is enabled again.
-func Through(ctx context.Context, s *ent.Scoped, channel Channel, id *int64) (*ent.Integration, error) {
+func Through(ctx context.Context, s *ent.Scoped, channel channels.Channel, id *int64) (*ent.Integration, error) {
 	which := integration.IsDefault(true)
 	if id != nil {
 		which = integration.ID(*id)
 	}
 	row, err := s.Integration().Query().
-		Where(integration.ChannelEQ(integration.Channel(channel)), which).
+		Where(integration.ChannelEQ(channel), which).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNoProvider

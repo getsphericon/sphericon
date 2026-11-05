@@ -32,10 +32,8 @@ func issue(t *testing.T, c *externalapi.Client, contactID int64, integrationID *
 	if integrationID != nil {
 		in.IntegrationId = externalapi.NewOptNilEntityId(externalapi.EntityId(*integrationID))
 	}
-	res, err := c.TelegramStartLinksIssue(t.Context(), in, externalapi.TelegramStartLinksIssueParams{ContactId: entityIDString(contactID)})
+	link, err := c.TelegramStartLinksIssue(t.Context(), in, externalapi.TelegramStartLinksIssueParams{ContactId: entityIDString(contactID)})
 	require.NoError(t, err)
-	link, ok := res.(*externalapi.TelegramStartLinkResource)
-	require.Truef(t, ok, "got %T", res)
 	u, err := url.Parse(link.URL)
 	require.NoError(t, err)
 	return u.Query().Get("start"), link
@@ -79,10 +77,9 @@ func TestAStartLinkUsesTheDefaultBotWhenNoneIsNamed(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write", "integrations:write")
-	made, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{IsDefault: externalapi.NewOptBool(true)},
+	_, err := c.IntegrationsUpdate(t.Context(), &externalapi.UpdateIntegrationInput{IsDefault: externalapi.NewOptBool(true)},
 		externalapi.IntegrationsUpdateParams{ID: externalapi.EntityId(bot.Integration.ID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.IntegrationResource{}, made)
 
 	_, link := issue(t, c, fixtures.ContactBobID, nil)
 
@@ -177,14 +174,13 @@ func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T)
 func TestStartLinkRefusals(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
-	issueOn := func(contactID int64, integrationID *int64) any {
+	issueOn := func(contactID int64, integrationID *int64) error {
 		in := &externalapi.IssueTelegramStartLinkInput{}
 		if integrationID != nil {
 			in.IntegrationId = externalapi.NewOptNilEntityId(externalapi.EntityId(*integrationID))
 		}
-		res, err := c.TelegramStartLinksIssue(t.Context(), in, externalapi.TelegramStartLinksIssueParams{ContactId: entityIDString(contactID)})
-		require.NoError(t, err)
-		return res
+		_, err := c.TelegramStartLinksIssue(t.Context(), in, externalapi.TelegramStartLinksIssueParams{ContactId: entityIDString(contactID)})
+		return err
 	}
 	email := int64(fixtures.IntegrationAcmeDefaultID)
 
@@ -192,7 +188,7 @@ func TestStartLinkRefusals(t *testing.T) {
 	notABot := issueOn(fixtures.ContactBobID, &email)
 	noContact := issueOn(999999, nil)
 
-	assert.IsType(t, &externalapi.TelegramStartLinksIssueUnprocessableEntity{}, noBot, "no default Telegram integration")
-	assert.IsType(t, &externalapi.TelegramStartLinksIssueUnprocessableEntity{}, notABot, "an email integration is no bot")
-	assert.IsType(t, &externalapi.TelegramStartLinksIssueNotFound{}, noContact)
+	testhelper.ExternalRefusal(t, noBot, http.StatusUnprocessableEntity, "no default Telegram integration")
+	testhelper.ExternalRefusal(t, notABot, http.StatusUnprocessableEntity, "an email integration is no bot")
+	testhelper.ExternalRefusal(t, noContact, http.StatusNotFound)
 }

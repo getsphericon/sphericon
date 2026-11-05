@@ -17,12 +17,10 @@ import (
 
 func readWorkspaceUsage(t *testing.T, c *serviceapi.Client, id string, period serviceapi.OptString) *serviceapi.WorkspaceUsageResource {
 	t.Helper()
-	res, err := c.ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{
+	got, err := c.ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{
 		WorkspaceId: serviceapi.WorkspaceId(id), Period: period,
 	})
 	require.NoError(t, err)
-	got, ok := res.(*serviceapi.WorkspaceUsageResource)
-	require.Truef(t, ok, "the usage is answered, got %T", res)
 	return got
 }
 
@@ -77,9 +75,8 @@ func TestAServiceReadsOneWorkspacesClosedPeriodAsFinalSnapshots(t *testing.T) {
 func TestReadingTheUsageOfAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.ServiceClient(t, primary).ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{WorkspaceId: "NoSuchId"})
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceWorkspaceUsageGetNotFound{}, res)
+	_, err := h.env.ServiceClient(t, primary).ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{WorkspaceId: "NoSuchId"})
+	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
 }
 
 func TestReadingOneWorkspacesUsageNeedsTheReadUsageScope(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 // SiteCapturedMessagesList returns the Captured messages of the workspace's Test inbox, newest
 // first. Every member may read.
-func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.SiteCapturedMessagesListParams) (siteapi.SiteCapturedMessagesListRes, error) {
+func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.SiteCapturedMessagesListParams) (*siteapi.SiteCapturedMessagesListOK, error) {
 	s := workspaceScope(ctx)
 
 	page, err := h.captured.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
@@ -21,7 +21,7 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 }
 
 // SiteCapturedMessagesGet returns one Captured message in full. Every member may read.
-func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.SiteCapturedMessagesGetParams) (siteapi.SiteCapturedMessagesGetRes, error) {
+func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.SiteCapturedMessagesGetParams) (*siteapi.SiteCapturedMessageResource, error) {
 	s := workspaceScope(ctx)
 	row, err := h.captured.Get(ctx, s, int64(params.ID))
 	if err != nil {
@@ -32,21 +32,18 @@ func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.S
 }
 
 // SiteCapturedMessagesDelete deletes one Captured message. Every member may delete.
-func (h *Handlers) SiteCapturedMessagesDelete(ctx context.Context, params siteapi.SiteCapturedMessagesDeleteParams) (siteapi.SiteCapturedMessagesDeleteRes, error) {
+func (h *Handlers) SiteCapturedMessagesDelete(ctx context.Context, params siteapi.SiteCapturedMessagesDeleteParams) error {
 	s := workspaceScope(ctx)
 	err := h.captured.Delete(ctx, s, int64(params.ID))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteCapturedMessagesDeleteNoContent{}, nil
+	return nil
 }
 
 // SiteCapturedMessagesDeleteAll deletes every Captured message of the workspace. Every member
 // may delete.
-func (h *Handlers) SiteCapturedMessagesDeleteAll(ctx context.Context, _ siteapi.SiteCapturedMessagesDeleteAllParams) (siteapi.SiteCapturedMessagesDeleteAllRes, error) {
+func (h *Handlers) SiteCapturedMessagesDeleteAll(ctx context.Context, _ siteapi.SiteCapturedMessagesDeleteAllParams) error {
 	s := workspaceScope(ctx)
-	if err := h.captured.DeleteAll(ctx, s); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteCapturedMessagesDeleteAllNoContent{}, nil
+	return h.captured.DeleteAll(ctx, s)
 }

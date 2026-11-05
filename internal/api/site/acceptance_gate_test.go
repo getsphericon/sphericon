@@ -27,7 +27,7 @@ var (
 )
 
 // acceptPending accepts the pending acceptances named, as the screen does.
-func acceptPending(t *testing.T, c *siteapi.Client, items ...siteapi.SiteAcceptance) siteapi.SiteUserAcceptPendingRes {
+func acceptPending(t *testing.T, c *siteapi.Client, items ...siteapi.SiteAcceptance) *siteapi.SiteUserResource {
 	t.Helper()
 	res, err := c.SiteUserAcceptPending(t.Context(), &siteapi.SiteAcceptPendingInput{Items: items})
 	require.NoError(t, err)
@@ -38,8 +38,9 @@ func acceptPending(t *testing.T, c *siteapi.Client, items ...siteapi.SiteAccepta
 func acceptTermsAs(t *testing.T, env *testhelper.TestEnv, emails ...string) {
 	t.Helper()
 	for _, email := range emails {
-		res := acceptPending(t, env.SiteActor(t, email), termsAccepted)
-		require.IsTypef(t, &siteapi.SiteUserResource{}, res, "%s accepts the terms", email)
+		_, err := env.SiteActor(t, email).SiteUserAcceptPending(t.Context(),
+			&siteapi.SiteAcceptPendingInput{Items: []siteapi.SiteAcceptance{termsAccepted}})
+		require.NoErrorf(t, err, "%s accepts the terms", email)
 	}
 }
 
@@ -100,11 +101,9 @@ func TestAcceptingLiftsTheGateOnTheNextRequest(t *testing.T) {
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res := acceptPending(t, mary, termsAccepted)
+	accepted := acceptPending(t, mary, termsAccepted)
 	after := send(t, env, fixtures.MemberMaryEmail, http.MethodGet, "/site/workspaces", "")
 
-	accepted, isProfile := res.(*siteapi.SiteUserResource)
-	require.Truef(t, isProfile, "got %T", res)
 	assert.Empty(t, accepted.AcceptancesPending)
 	assert.Equal(t, ok, after)
 }
@@ -135,11 +134,11 @@ func TestAcceptingAStaleOrMissingVersionIsRefusedAndRecordsNothing(t *testing.T)
 	}
 	for name, items := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := acceptPending(t, mary, items...)
+			_, err := mary.SiteUserAcceptPending(t.Context(), &siteapi.SiteAcceptPendingInput{Items: items})
 			after := currentAnswers(t, env, fixtures.MemberMaryID)
 			pending := pendingKeys(t, mary)
 
-			assert.IsType(t, &siteapi.SiteUserAcceptPendingUnprocessableEntity{}, res)
+			testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, before, after)
 			assert.Equal(t, []string{fixtures.ServiceTermsKey}, pending)
 		})
@@ -202,14 +201,14 @@ func TestAGatedUserDeletesTheirAccount(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	res := deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
+	_, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.MemberMaryEmail,
 		CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
 	exists := userExists(t, env, fixtures.MemberMaryEmail)
 
-	assert.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
+	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
@@ -221,16 +220,18 @@ func TestAGatedSoleOwnerDeletesTheirWorkspacesThenTheirAccount(t *testing.T) {
 	dora := env.SiteActor(t, fixtures.SoleOwnerDoraEmail)
 	input := &siteapi.SiteDeleteUserInput{Email: fixtures.SoleOwnerDoraEmail, CurrentPassword: siteapi.NewOptString(fixtures.SoleOwnerDoraPassword)}
 
-	refused := deleteUser(t, dora, input)
-	piedPiper := deleteWorkspace(t, dora, fixtures.PiedPiperPublicID, fixtures.PiedPiperName)
-	aviato := deleteWorkspace(t, dora, fixtures.AviatoPublicID, fixtures.AviatoName)
-	deleted := deleteUser(t, dora, input)
+	_, refused := dora.SiteUserDeleteUser(t.Context(), input)
+	_, piedPiper := dora.SiteWorkspacesDelete(t.Context(), &siteapi.SiteDeleteWorkspaceInput{Name: fixtures.PiedPiperName},
+		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(fixtures.PiedPiperPublicID)})
+	_, aviato := dora.SiteWorkspacesDelete(t.Context(), &siteapi.SiteDeleteWorkspaceInput{Name: fixtures.AviatoName},
+		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AviatoPublicID)})
+	_, deleted := dora.SiteUserDeleteUser(t.Context(), input)
 	exists := userExists(t, env, fixtures.SoleOwnerDoraEmail)
 
-	assert.IsType(t, &siteapi.SiteDeleteUserProblemDetails{}, refused)
-	assert.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, piedPiper)
-	assert.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, aviato)
-	assert.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, deleted)
+	testhelper.SiteRefusal(t, refused, http.StatusUnprocessableEntity)
+	assert.NoError(t, piedPiper)
+	assert.NoError(t, aviato)
+	assert.NoError(t, deleted)
 	assert.False(t, exists)
 }
 

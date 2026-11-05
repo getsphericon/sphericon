@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -24,12 +25,10 @@ func TestSiteBroadcastHasTheChannelOfItsContent(t *testing.T) {
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
-	read, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	read := got
 
 	assert.Equal(t, siteapi.BroadcastChannelEmail, read.Channel)
 	assert.Equal(t, siteapi.EmailBroadcastContentBroadcastContentSum, read.Content.OneOf.Type)
@@ -48,17 +47,15 @@ func TestSiteBroadcastCreateWithoutAChannelIsRefused(t *testing.T) {
 	noContent := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
 		delete(body, "content")
 	}))
-	missing, err := noContent.SiteBroadcastsCreate(ctx, in, params)
-	require.NoError(t, err)
+	_, missing := noContent.SiteBroadcastsCreate(ctx, in, params)
 	noChannel := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
 		delete(body["content"].(map[string]any), "channel")
 	}))
-	unnamed, err := noChannel.SiteBroadcastsCreate(ctx, in, params)
-	require.NoError(t, err)
+	_, unnamed := noChannel.SiteBroadcastsCreate(ctx, in, params)
 	after := env.DB.Broadcast.Query().CountX(ctx)
 
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateBadRequest{}, missing)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateBadRequest{}, unnamed)
+	testhelper.SiteRefusal(t, missing, http.StatusBadRequest)
+	testhelper.SiteRefusal(t, unnamed, http.StatusBadRequest)
 	assert.Equal(t, before, after, "a refused create stores nothing")
 }
 
@@ -71,21 +68,18 @@ func TestSiteBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 	sms := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSmsID))
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, created := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:          "Through SMS",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: sms,
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{IntegrationId: sms},
+	_, updated := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{IntegrationId: sms},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
-	require.NoError(t, err)
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	refusedCreate, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", created)
+	refusedCreate := testhelper.SiteRefusal(t, created, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCreate.Detail.Value, "another channel")
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
+	testhelper.SiteRefusal(t, updated, http.StatusUnprocessableEntity)
 	assert.Equal(t, before.IntegrationID, after.IntegrationID, "a refused update changes nothing")
 }
 
@@ -97,13 +91,12 @@ func TestSiteBroadcastUpdateCannotChangeTheChannel(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteTelegramEdit("Elsewhere"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
-	require.NoError(t, err)
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, before.Channel, after.Channel)
 	assert.Equal(t, before.Subject, after.Subject)
 }
@@ -118,8 +111,7 @@ func TestSiteBroadcastsListFiltersByChannel(t *testing.T) {
 		t.Helper()
 		got, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID, Channel: channel})
 		require.NoError(t, err)
-		page, ok := got.(*siteapi.SiteBroadcastsListOK)
-		require.Truef(t, ok, "got %T", got)
+		page := got
 		return page
 	}
 

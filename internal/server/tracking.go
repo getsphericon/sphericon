@@ -9,8 +9,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
@@ -302,9 +302,9 @@ func (e engaged) click(dest string, software bool) events.DomainEvent {
 		OutboundMessageID: e.msg.ID, Machine: software,
 	}
 	switch e.msg.Channel {
-	case outboundmessage.ChannelTelegram:
+	case channels.Telegram:
 		return new(events.TelegramClicked(click))
-	case outboundmessage.ChannelSms:
+	case channels.SMS:
 		return new(events.SmsClicked(click))
 	default:
 		return e.engagement(events.NameEmailClicked, dest, software)

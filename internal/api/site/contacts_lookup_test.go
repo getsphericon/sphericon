@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func lookup(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) siteapi.SiteContactsLookupRes {
+func lookup(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) *siteapi.SiteContactHoldings {
 	t.Helper()
 	res, err := c.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
 		WorkspaceId: workspaceID,
@@ -27,10 +28,7 @@ func TestSiteContactsLookupCountsWhatIsHeldForAContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	assert.True(t, got.ContactHeld)
 	assert.Equal(t, int32(3), got.Events)
 	assert.Equal(t, int32(2), got.DeliveryRecords)
@@ -43,10 +41,7 @@ func TestSiteContactsLookupNormalizesTheAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, "Export.Subject@Example.com")
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, "Export.Subject@Example.com")
 	assert.True(t, got.ContactHeld)
 }
 
@@ -55,10 +50,7 @@ func TestSiteContactsLookupAddressWithoutContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 
-	res := lookup(t, c, fixtures.InitechPublicID, fixtures.OutboundMessageStrangerDestination)
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.InitechPublicID, fixtures.OutboundMessageStrangerDestination)
 	assert.False(t, got.ContactHeld)
 	assert.Equal(t, int32(1), got.DeliveryRecords)
 	assert.Equal(t, int32(0), got.Events)
@@ -69,10 +61,7 @@ func TestSiteContactsLookupUnknownAddressIsZeros(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, "nobody@nowhere.test")
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, "nobody@nowhere.test")
 	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
@@ -81,10 +70,7 @@ func TestSiteContactsLookupNeverMatchesAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, "pat@globex.test")
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, "pat@globex.test")
 	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
@@ -93,12 +79,14 @@ func TestSiteContactsLookupIsOwnerAndAdminOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
-	res := lookup(t, admin, fixtures.InitechPublicID, "erin@initech.test")
-	assert.IsType(t, &siteapi.SiteContactHoldings{}, res)
+	lookup(t, admin, fixtures.InitechPublicID, "erin@initech.test")
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	res = lookup(t, member, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
-	assert.IsType(t, &siteapi.SiteContactsLookupForbidden{}, res)
+	_, err := member.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
+		WorkspaceId: fixtures.AcmePublicID,
+		Email:       fixtures.ContactExportSubjectEmail,
+	})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 }
 
 // An invalid address is rejected before any lookup.
@@ -106,9 +94,12 @@ func TestSiteContactsLookupRejectsAnInvalidAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, "not an address")
+	_, err := c.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{
+		WorkspaceId: fixtures.AcmePublicID,
+		Email:       "not an address",
+	})
 
-	assert.IsType(t, &siteapi.SiteContactsLookupUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // A padded, mixed-case address is trimmed and lowercased, not refused by the
@@ -117,9 +108,6 @@ func TestSiteContactsLookupAcceptsAPaddedAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := lookup(t, c, fixtures.AcmePublicID, " Export.Subject@Example.com ")
-
-	got, ok := res.(*siteapi.SiteContactHoldings)
-	require.Truef(t, ok, "got %T", res)
+	got := lookup(t, c, fixtures.AcmePublicID, " Export.Subject@Example.com ")
 	assert.True(t, got.ContactHeld)
 }

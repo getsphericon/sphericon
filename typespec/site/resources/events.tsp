@@ -69,7 +69,7 @@ namespace SiteEvents {
 
     /** List the opens and clicks made by software (machine engagement) too; omitted, they are left out */
     @query includeMachine?: boolean,
-  ): Page<SiteEventResource> | BadRequestProblem | NotFoundProblem;
+  ): Page<SiteEventResource> | Problem;
 
   /** Distinct event actions in the workspace, sorted — powers the segment builder */
   @collectionAction(SiteEventResource, "actions")
@@ -78,6 +78,5 @@ namespace SiteEvents {
   @requiresPermissions(#[])
   op actions(...ResourceCollectionParameters<SiteEventResource>):
     | SiteEventActionsResult
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 }

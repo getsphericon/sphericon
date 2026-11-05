@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -22,27 +23,24 @@ func writeFields(t *testing.T, c *siteapi.Client, email string, values map[strin
 	for key, raw := range values {
 		fields[key] = jx.Raw(raw)
 	}
-	out, err := c.SiteContactsCreate(context.Background(), &siteapi.SiteCreateContactInput{
+	_, err := c.SiteContactsCreate(context.Background(), &siteapi.SiteCreateContactInput{
 		Email:        siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(email)),
 		CustomFields: siteapi.NewOptNilJsonObject(fields),
 	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactResource{}, out)
 }
 
 // fieldByKey is the Workspace's Custom field with the key, read from the catalogue.
 func fieldByKey(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, key string) siteapi.SiteCustomFieldResource {
 	t.Helper()
-	out, err := c.SiteCustomFieldsList(context.Background(), siteapi.SiteCustomFieldsListParams{WorkspaceId: workspace})
+	list, err := c.SiteCustomFieldsList(context.Background(), siteapi.SiteCustomFieldsListParams{WorkspaceId: workspace})
 	require.NoError(t, err)
-	list, ok := out.(*siteapi.SiteCustomFieldsListOK)
-	require.Truef(t, ok, "got %T", out)
 	field, found := lo.Find(list.Items, func(f siteapi.SiteCustomFieldResource) bool { return f.Key == key })
 	require.Truef(t, found, "no custom field %q", key)
 	return field
 }
 
-func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.EntityId, in *siteapi.SiteUpdateCustomFieldInput) (siteapi.SiteCustomFieldsUpdateRes, error) {
+func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.EntityId, in *siteapi.SiteUpdateCustomFieldInput) (*siteapi.SiteCustomFieldResource, error) {
 	return c.SiteCustomFieldsUpdate(context.Background(), in, siteapi.SiteCustomFieldsUpdateParams{WorkspaceId: workspace, ID: id})
 }
 
@@ -50,12 +48,10 @@ func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.En
 func previewDuff(t *testing.T, c *siteapi.Client, leaf string) int32 {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
-	out, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
+	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
-	res, ok := out.(*siteapi.SitePreviewSegmentResult)
-	require.Truef(t, ok, "got %T", out)
 	return res.Count
 }
 
@@ -111,11 +107,9 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 	field := fieldByKey(t, c, fixtures.DuffPublicID, "renewal")
 	require.Equal(t, siteapi.SiteCustomFieldTypeString, field.Type)
 
-	out, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeDatetime)})
+	updated, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeDatetime)})
 
 	require.NoError(t, err)
-	updated, ok := out.(*siteapi.SiteCustomFieldResource)
-	require.Truef(t, ok, "got %T", out)
 	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, updated.Type)
 	assert.Equal(t, field.Key, updated.Key)
 	count := previewDuff(t, c, `{"kind":"date","field":"custom:renewal","operator":"after","at":"2026-01-01T00:00:00Z"}`)
@@ -130,16 +124,13 @@ func TestChangingATypeIsRefusedWhileASegmentUsesTheField(t *testing.T) {
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
 	toString := &siteapi.SiteUpdateCustomFieldInput{Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeString)}
 
-	refused, err := updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").ID, toString)
-	require.NoError(t, err)
-	changed, err := updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "has_it").ID, toString)
+	_, err := updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").ID, toString)
+	problem := testhelper.SiteRefusal(t, err, http.StatusConflict)
+	_, err = updateField(c, fixtures.DuffPublicID, fieldByKey(t, c, fixtures.DuffPublicID, "has_it").ID, toString)
 	require.NoError(t, err)
 
-	problem, ok := refused.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", refused)
 	assert.Equal(t, []string{"Ends soon"}, lo.Map(problem.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name }))
 	assert.Equal(t, siteapi.UsedByKindSegment, problem.UsedBy[0].Kind)
-	assert.IsType(t, &siteapi.SiteCustomFieldResource{}, changed)
 	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").Type, "the refused field keeps its type")
 }
 
@@ -152,20 +143,15 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	field := fieldByKey(t, owner, fixtures.AcmePublicID, "plan")
 
-	denied, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
+	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
 	require.NoError(t, err)
-	byAdmin, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Alias")})
-	require.NoError(t, err)
-	byOwner, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Nick")})
+	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Name: siteapi.NewOptString("Nick")})
 	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteCustomFieldsUpdateForbidden{}, denied)
-	renamed, ok := byAdmin.(*siteapi.SiteCustomFieldResource)
-	require.Truef(t, ok, "got %T", byAdmin)
 	assert.Equal(t, "Alias", renamed.Name)
 	assert.Equal(t, "plan", renamed.Key)
-	final, ok := byOwner.(*siteapi.SiteCustomFieldResource)
-	require.Truef(t, ok, "got %T", byOwner)
 	assert.Equal(t, "Nick", final.Name)
 	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e := ev.(*events.AuditEntry)

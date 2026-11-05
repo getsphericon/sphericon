@@ -104,7 +104,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
-  the module's error, and `refusalProblem` in `internal/server` answers a module's sentinel refusal
+  the module's error, and `internal/problem` (the surface's `NewError`) answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
@@ -118,18 +118,16 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
-- **Rule 15, `no-hand-written-problem-in-site`, `no-hand-written-problem-in-external` and
-  `no-hand-written-problem-in-staff` (ast-grep).** A handler in `internal/api/site`,
-  `internal/api/external`, `internal/api/staff` or `ee/api/**` calls neither `problem` nor
-  `problemWithErrors`, builds no `ProblemDetails` literal of its contract (`siteapi`, `externalapi`,
-  `staffapi`, `staffeeapi`, `serviceapi`) and names no operation's error response
-  (`siteapi.Site…NotFound`, `serviceapi.…NotFound` and their kin): the module that decides a
-  refusal returns its sentinel. The rules' `ignores` are the files
-  that keep an answer no refusal kind gives (the 402 of a missing Enterprise license, the 410 of an
-  expired confirmation link), with each surface's `problem.go`, which holds the helpers they call.
-  A single answer kept by hand in a covered file carries
-  `// ast-grep-ignore: no-hand-written-problem-in-site` under a comment that says why. A batch that
-  reports each item inside a 200 words a failed item with `validation.Shown`.
+- **Rule 15, `no-hand-written-problem-in-handlers` (ast-grep).** A handler in `internal/api/**`
+  or `ee/api/**` builds no `ProblemDetails` or `ProblemDetailsStatusCode` literal of any contract
+  (`siteapi`, `externalapi`, `collectapi`, `staffapi`, `staffeeapi`, `serviceapi`) and no
+  `problem.Error`: every operation answers a refusal with the contract's one `Problem` (its
+  `default` response), the handler returns the module's sentinel as its error, and the surface's
+  `NewError` answers it through `internal/problem`. The rule's `ignores` are the files that keep an
+  answer no refusal kind gives as a `problem.Error` (the 402 of a missing Enterprise license, the
+  410 of an expired confirmation link). A single answer kept by hand in a covered file carries
+  `// ast-grep-ignore: no-hand-written-problem-in-handlers` under a comment that says why. A batch
+  that reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
@@ -35,7 +36,7 @@ type Broadcast struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel broadcast.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Subject holds the value of the "subject" field.
 	Subject *string `json:"subject,omitempty"`
 	// FromName holds the value of the "from_name" field.
@@ -212,7 +213,7 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = broadcast.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case broadcast.FieldSubject:
 			if value, ok := values[i].(*sql.NullString); !ok {

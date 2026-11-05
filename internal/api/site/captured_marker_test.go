@@ -1,13 +1,13 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -21,14 +21,15 @@ func TestATransactionalSendThroughTheTestInboxIsMarkedCapturedAndAnotherIsNot(t 
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
-	kept := sendGlobexTransactional(t, env, "ada@example.com").(*externalapi.SendTransactionalEmailResponse)
+	kept, err := sendGlobexTransactional(t, env, "ada@example.com")
+	require.NoError(t, err)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexID)
-	require.IsType(t, &externalapi.EmailsSendUnprocessableEntity{}, sendGlobexTransactional(t, env, "held@example.com"))
+	_, err = sendGlobexTransactional(t, env, "held@example.com")
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	out, err := jane.SiteTransactionalEmailsList(t.Context(), siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.GlobexPublicID})
+	page, err := jane.SiteTransactionalEmailsList(t.Context(), siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
 
-	page := out.(*siteapi.SiteTransactionalEmailsListOK)
 	captured := lo.SliceToMap(page.Items, func(item siteapi.SiteTransactionalEmailResource) (int64, bool) {
 		return int64(item.ID), item.Captured
 	})
@@ -43,11 +44,11 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 	env := testhelper.Setup(t)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
-	sent, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
+	_, err := jane.SiteBroadcastsSend(t.Context(), siteapi.SiteBroadcastsSendParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastResource{}, sent)
+
 	env.DeliverQueuedBroadcasts(t)
 
 	got, err := jane.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{
@@ -55,7 +56,7 @@ func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	stats := got.(*siteapi.SiteBroadcastResource).Stats
+	stats := got.Stats
 	assert.Equal(t, int32(1), stats.SentCount)
 	assert.Equal(t, int32(1), stats.CapturedCount.Value)
 	assert.Equal(t, int32(1), stats.DeliveredCount.Value, "captured messages are stamped delivered, so the report tells them apart")
@@ -70,7 +71,7 @@ func TestTheAutomationReportCountsTheMessagesCapturedInATestInbox(t *testing.T) 
 	})
 	require.NoError(t, err)
 
-	report := out.(*siteapi.SiteAutomationReport)
+	report := out
 	assert.Equal(t, int32(1), report.Captured)
 	assert.Equal(t, int32(1), report.Delivered)
 }

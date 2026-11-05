@@ -31,18 +31,18 @@ type Invoker interface {
 	// CollectEventsCreate invokes CollectEvents_create operation.
 	//
 	// POST /events
-	CollectEventsCreate(ctx context.Context, request *CollectEventsInput) (CollectEventsCreateRes, error)
+	CollectEventsCreate(ctx context.Context, request *CollectEventsInput) error
 	// CollectIdentifyCreate invokes CollectIdentify_create operation.
 	//
 	// POST /identify
-	CollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (CollectIdentifyCreateRes, error)
+	CollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (*CollectOkResponse, error)
 	// CollectTelegramStartLinksCreate invokes CollectTelegramStartLinks_create operation.
 	//
 	// Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the
 	// workspace has no enabled default one.
 	//
 	// POST /telegram-start-links
-	CollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (CollectTelegramStartLinksCreateRes, error)
+	CollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (*CollectTelegramStartLink, error)
 }
 
 // Client implements OAS client.
@@ -89,12 +89,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // CollectEventsCreate invokes CollectEvents_create operation.
 //
 // POST /events
-func (c *Client) CollectEventsCreate(ctx context.Context, request *CollectEventsInput) (CollectEventsCreateRes, error) {
-	res, err := c.sendCollectEventsCreate(ctx, request)
-	return res, err
+func (c *Client) CollectEventsCreate(ctx context.Context, request *CollectEventsInput) error {
+	_, err := c.sendCollectEventsCreate(ctx, request)
+	return err
 }
 
-func (c *Client) sendCollectEventsCreate(ctx context.Context, request *CollectEventsInput) (res CollectEventsCreateRes, err error) {
+func (c *Client) sendCollectEventsCreate(ctx context.Context, request *CollectEventsInput) (res *CollectEventsCreateNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CollectEvents_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -203,12 +203,12 @@ func (c *Client) sendCollectEventsCreate(ctx context.Context, request *CollectEv
 // CollectIdentifyCreate invokes CollectIdentify_create operation.
 //
 // POST /identify
-func (c *Client) CollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (CollectIdentifyCreateRes, error) {
+func (c *Client) CollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (*CollectOkResponse, error) {
 	res, err := c.sendCollectIdentifyCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (res CollectIdentifyCreateRes, err error) {
+func (c *Client) sendCollectIdentifyCreate(ctx context.Context, request *CollectIdentifyInput) (res *CollectOkResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CollectIdentify_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -320,12 +320,12 @@ func (c *Client) sendCollectIdentifyCreate(ctx context.Context, request *Collect
 // workspace has no enabled default one.
 //
 // POST /telegram-start-links
-func (c *Client) CollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (CollectTelegramStartLinksCreateRes, error) {
+func (c *Client) CollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (*CollectTelegramStartLink, error) {
 	res, err := c.sendCollectTelegramStartLinksCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendCollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (res CollectTelegramStartLinksCreateRes, err error) {
+func (c *Client) sendCollectTelegramStartLinksCreate(ctx context.Context, request *CollectTelegramStartLinkInput) (res *CollectTelegramStartLink, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CollectTelegramStartLinks_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),

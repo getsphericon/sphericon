@@ -9,1034 +9,276 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	"github.com/ogen-go/ogen/conv"
+	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/uri"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
-func encodeSiteAnalyticsClicksByLinkResponse(response SiteAnalyticsClicksByLinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsClicksByLink:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsClicksByLinkResponse(response *SiteAnalyticsClicksByLink, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsClicksByLinkBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsClicksByLinkNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsDeliverabilityResponse(response SiteAnalyticsDeliverabilityRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsDeliverability:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsDeliverabilityResponse(response *SiteAnalyticsDeliverability, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsDeliverabilityBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsDeliverabilityNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsEventsResponse(response SiteAnalyticsEventsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsEvents:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsEventsResponse(response *SiteAnalyticsEvents, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsEventsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsEventsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsNewPeopleResponse(response SiteAnalyticsNewPeopleRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteNewPeopleReport:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsNewPeopleResponse(response *SiteNewPeopleReport, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsNewPeopleBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsNewPeopleNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsOpensByHourResponse(response SiteAnalyticsOpensByHourRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsOpensByHour:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsOpensByHourResponse(response *SiteAnalyticsOpensByHour, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsOpensByHourBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsOpensByHourNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsOverviewResponse(response SiteAnalyticsOverviewRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsOverview:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsOverviewResponse(response *SiteAnalyticsOverview, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsOverviewBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsOverviewNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsRevenueResponse(response SiteAnalyticsRevenueRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsRevenue:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsRevenueResponse(response *SiteAnalyticsRevenue, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsRevenueBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsRevenueNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAnalyticsSubscribedPeopleResponse(response SiteAnalyticsSubscribedPeopleRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAnalyticsSubscribedPeople:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAnalyticsSubscribedPeopleResponse(response *SiteAnalyticsSubscribedPeople, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsSubscribedPeopleBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAnalyticsSubscribedPeopleNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAttentionGetResponse(response SiteAttentionGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAttentionList:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAttentionGetResponse(response *SiteAttentionList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAttentionGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAttentionGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAuditExportResponse(response SiteAuditExportRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuditExportOKHeaders:
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition")
-		// Encoding response headers.
+func encodeSiteAuditExportResponse(response *SiteAuditExportOKHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Disposition")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "content-disposition" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "content-disposition" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "content-disposition",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.ContentDisposition))
-				}); err != nil {
-					return errors.Wrap(err, "encode content-disposition header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "content-disposition",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.ContentDisposition))
+			}); err != nil {
+				return errors.Wrap(err, "encode content-disposition header")
 			}
 		}
-		w.WriteHeader(200)
-
-		writer := w
-		if closer, ok := response.Response.Data.(io.Closer); ok {
-			defer closer.Close()
-		}
-		if _, err := io.Copy(writer, response.Response); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditExportBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditExportPaymentRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(402)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditExportForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditExportNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	writer := w
+	if closer, ok := response.Response.Data.(io.Closer); ok {
+		defer closer.Close()
+	}
+	if _, err := io.Copy(writer, response.Response); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteAuditFacetsResponse(response SiteAuditFacetsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuditFacets:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAuditFacetsResponse(response *SiteAuditFacets, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditFacetsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditFacetsPaymentRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(402)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditFacetsForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditFacetsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAuditGetRetentionResponse(response SiteAuditGetRetentionRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuditRetention:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAuditGetRetentionResponse(response *SiteAuditRetention, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditGetRetentionBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditGetRetentionPaymentRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(402)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditGetRetentionForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditGetRetentionNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAuditListResponse(response SiteAuditListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuditEntryList:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAuditListResponse(response *SiteAuditEntryList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditListPaymentRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(402)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditListForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAuditSetRetentionResponse(response SiteAuditSetRetentionRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuditRetention:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAuditSetRetentionResponse(response *SiteAuditRetention, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditSetRetentionBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditSetRetentionPaymentRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(402)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditSetRetentionForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditSetRetentionNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuditSetRetentionUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAuthConfirmEmailChangeResponse(response SiteAuthConfirmEmailChangeRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthConfirmEmailChangeOK:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteAuthConfirmEmailChangeResponse(response *SiteAuthConfirmEmailChangeOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	return nil
 }
 
-func encodeSiteAuthForgotPasswordResponse(response SiteAuthForgotPasswordRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthForgotPasswordAccepted:
-		w.WriteHeader(202)
+func encodeSiteAuthForgotPasswordResponse(response *SiteAuthForgotPasswordAccepted, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(202)
 
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteAuthLoginResponse(response SiteAuthLoginRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteLoginResultHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteAuthLoginResponse(response *SiteLoginResultHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthLoginBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthLoginUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthLoginForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeSiteAuthLogoutResponse(response *SiteAuthLogoutNoContent, w http.ResponseWriter, span trace.Span) error {
@@ -1062,578 +304,161 @@ func encodeSiteAuthLogoutResponse(response *SiteAuthLogoutNoContent, w http.Resp
 	return nil
 }
 
-func encodeSiteAuthResendVerificationResponse(response SiteAuthResendVerificationRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthResendVerificationAccepted:
-		w.WriteHeader(202)
+func encodeSiteAuthResendVerificationResponse(response *SiteAuthResendVerificationAccepted, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(202)
 
-		return nil
+	return nil
+}
 
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
+func encodeSiteAuthResetPasswordResponse(response *SiteAuthResetPasswordOK, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteAuthSecondFactorResponse(response *SiteLoginResultHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteAuthResetPasswordResponse(response SiteAuthResetPasswordRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthResetPasswordOK:
-		w.WriteHeader(200)
-
-		return nil
-
-	case *SiteAuthResetPasswordBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthResetPasswordUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSecondFactorResponse(response SiteAuthSecondFactorRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteLoginResultHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteAuthSignUpResponse(response *SiteAuthSignUpAccepted, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
+	}
+	w.WriteHeader(202)
 
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
-
-	case *SiteAuthSecondFactorBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthSecondFactorUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteAuthSigninCallbackResponse(response *SiteAuthSigninCallbackFound, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Location" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Location",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.Location))
+			}); err != nil {
+				return errors.Wrap(err, "encode Location header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSignUpResponse(response SiteAuthSignUpRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSignUpAccepted:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(202)
+	}
+	w.WriteHeader(302)
 
-		return nil
+	return nil
+}
 
-	case *SiteAuthSignUpBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
+func encodeSiteAuthSigninNotMeResponse(response *SiteAuthSigninNotMeOK, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
+func encodeSiteAuthSigninPendingResponse(response *SitePendingSignup, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-	case *SiteAuthSignUpConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
+func encodeSiteAuthSigninPendingDeclineResponse(response *SiteAuthSigninPendingDeclineNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-	case *SiteAuthSignUpUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
+	return nil
+}
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteAuthSigninPendingSubmitResponse(response *SiteAuthSigninPendingSubmitNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
-}
+	w.WriteHeader(204)
 
-func encodeSiteAuthSigninCallbackResponse(response SiteAuthSigninCallbackRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSigninCallbackFound:
-		w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Location" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Location",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.Location))
-				}); err != nil {
-					return errors.Wrap(err, "encode Location header")
-				}
-			}
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
-		w.WriteHeader(302)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSigninNotMeResponse(response SiteAuthSigninNotMeRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSigninNotMeOK:
-		w.WriteHeader(200)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSigninPendingResponse(response SiteAuthSigninPendingRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePendingSignup:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSigninPendingDeclineResponse(response SiteAuthSigninPendingDeclineRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSigninPendingDeclineNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthSigninPendingSubmitResponse(response SiteAuthSigninPendingSubmitRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSigninPendingSubmitNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteAuthSigninPendingSubmitBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthSigninPendingSubmitUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
 func encodeSiteAuthSigninProvidersResponse(response *SiteSigninProviders, w http.ResponseWriter, span trace.Span) error {
@@ -1649,2027 +474,471 @@ func encodeSiteAuthSigninProvidersResponse(response *SiteSigninProviders, w http
 	return nil
 }
 
-func encodeSiteAuthSigninStartResponse(response SiteAuthSigninStartRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAuthSigninStartFound:
-		w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
-		// Encoding response headers.
+func encodeSiteAuthSigninStartResponse(response *SiteAuthSigninStartFound, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Location" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Location" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Location",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.Location))
-				}); err != nil {
-					return errors.Wrap(err, "encode Location header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Location",
+				Explode: false,
 			}
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.Location))
+			}); err != nil {
+				return errors.Wrap(err, "encode Location header")
 			}
 		}
-		w.WriteHeader(302)
-
-		return nil
-
-	case *SiteAuthSigninStartBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthSigninStartNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteAuthVerifyEmailResponse(response SiteAuthVerifyEmailRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteVerifyEmailResultHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
+	}
+	w.WriteHeader(302)
 
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
-
-	case *SiteAuthVerifyEmailBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthVerifyEmailUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthVerifyEmailPreconditionRequired:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(428)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteAuthVerifyEmailResponse(response *SiteVerifyEmailResultHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteAutomationReportsGetResponse(response SiteAutomationReportsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationReport:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationReportsGetResponse(response *SiteAutomationReport, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationReportsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationReportsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsArchiveResponse(response SiteAutomationsArchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsArchiveResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsArchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsArchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsCreateResponse(response SiteAutomationsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteAutomationsCreateResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsDeactivateResponse(response SiteAutomationsDeactivateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsDeactivateResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDeactivateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDeactivateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDeactivateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsDryRunHttpStepResponse(response SiteAutomationsDryRunHttpStepRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteDryRunHttpStepResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsDryRunHttpStepResponse(response *SiteDryRunHttpStepResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDryRunHttpStepBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDryRunHttpStepNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsDryRunHttpStepUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsGetResponse(response SiteAutomationsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsGetResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsListResponse(response SiteAutomationsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsListResponse(response *SiteAutomationsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsPublishResponse(response SiteAutomationsPublishRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsPublishResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsPublishBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsPublishNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsPublishConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsPublishUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsRevertResponse(response SiteAutomationsRevertRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsRevertResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsRevertBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsRevertNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsRevertConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsRevertUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsUnarchiveResponse(response SiteAutomationsUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsUnarchiveResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUnarchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUnarchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteAutomationsUpdateResponse(response SiteAutomationsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAutomationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteAutomationsUpdateResponse(response *SiteAutomationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUpdateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAutomationsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBrandKitGetResponse(response SiteBrandKitGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBrandKitResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBrandKitGetResponse(response *SiteBrandKitResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBrandKitRecreateStarterTemplatesResponse(response SiteBrandKitRecreateStarterTemplatesRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteBrandKitRecreateStarterTemplatesResponse(response []SiteEmailTemplateResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitRecreateStarterTemplatesBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitRecreateStarterTemplatesForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitRecreateStarterTemplatesNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitRecreateStarterTemplatesUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteBrandKitSaveResponse(response SiteBrandKitSaveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBrandKitResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBrandKitSaveResponse(response *SiteBrandKitResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitSaveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitSaveForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitSaveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBrandKitSaveUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastLinksListResponse(response SiteBroadcastLinksListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastLinkClicksList:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastLinksListResponse(response *SiteBroadcastLinkClicksList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastLinksListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastLinksListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsArchiveResponse(response SiteBroadcastsArchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsArchiveResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsArchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsArchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsArchiveConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsCreateResponse(response SiteBroadcastsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteBroadcastsCreateResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsGetResponse(response SiteBroadcastsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsGetResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsListResponse(response SiteBroadcastsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsListResponse(response *SiteBroadcastsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsScheduleResponse(response SiteBroadcastsScheduleRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsScheduleResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsScheduleBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsScheduleNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsScheduleConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsScheduleUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsSendResponse(response SiteBroadcastsSendRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsSendResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsSendBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsSendNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsSendConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsSendUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsTestSendResponse(response SiteBroadcastsTestSendRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTestSendBroadcastResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsTestSendResponse(response *SiteTestSendBroadcastResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsTestSendBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsTestSendNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsTestSendUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsUnarchiveResponse(response SiteBroadcastsUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsUnarchiveResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUnarchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUnarchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteBroadcastsUpdateResponse(response SiteBroadcastsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteBroadcastResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteBroadcastsUpdateResponse(response *SiteBroadcastResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUpdateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteBroadcastsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteCapturedMessagesDeleteResponse(response SiteCapturedMessagesDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCapturedMessagesDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteCapturedMessagesDeleteResponse(response *SiteCapturedMessagesDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteCapturedMessagesDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteCapturedMessagesDeleteAllResponse(response SiteCapturedMessagesDeleteAllRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCapturedMessagesDeleteAllNoContent:
-		w.WriteHeader(204)
+func encodeSiteCapturedMessagesDeleteAllResponse(response *SiteCapturedMessagesDeleteAllNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteCapturedMessagesDeleteAllBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesDeleteAllNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteCapturedMessagesGetResponse(response SiteCapturedMessagesGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCapturedMessageResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteCapturedMessagesGetResponse(response *SiteCapturedMessageResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteCapturedMessagesListResponse(response SiteCapturedMessagesListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCapturedMessagesListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteCapturedMessagesListResponse(response *SiteCapturedMessagesListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCapturedMessagesListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteConnectionsDeleteResponse(response SiteConnectionsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteConnectionsDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteConnectionsDeleteResponse(response *SiteConnectionsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteConnectionsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteConnectionsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteConnectionsListResponse(response SiteConnectionsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteConnectionsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteConnectionsListResponse(response []SiteConnectionResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteConnectionsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteConnectionsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteContactsCreateResponse(response SiteContactsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteContactsCreateResponse(response *SiteContactResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsCreateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteContactsDeleteResponse(response SiteContactsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactsDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteContactsDeleteResponse(response *SiteContactsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteContactsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteContactsEraseResponse(response SiteContactsEraseRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactsEraseNoContent:
-		w.WriteHeader(204)
+func encodeSiteContactsEraseResponse(response *SiteContactsEraseNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteContactsEraseBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsEraseForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsEraseNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsEraseUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
 func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.ResponseWriter, span trace.Span) error {
@@ -3734,758 +1003,200 @@ func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.Res
 
 		return nil
 
-	case *SiteContactsExportBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsExportForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsExportNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsExportUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
 }
 
-func encodeSiteContactsGetResponse(response SiteContactsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteContactsGetResponse(response *SiteContactResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteContactsListResponse(response SiteContactsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteContactsListResponse(response *SiteContactsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteContactsLookupResponse(response SiteContactsLookupRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactHoldings:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteContactsLookupResponse(response *SiteContactHoldings, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsLookupBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsLookupForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsLookupNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsLookupUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteContactsUpdateResponse(response SiteContactsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteContactResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteContactsUpdateResponse(response *SiteContactResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsUpdateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteContactsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteCustomFieldsListResponse(response SiteCustomFieldsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCustomFieldsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteCustomFieldsListResponse(response *SiteCustomFieldsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteCustomFieldsUpdateResponse(response SiteCustomFieldsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCustomFieldResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteCustomFieldsUpdateResponse(response *SiteCustomFieldResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteCustomFieldsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteDomainJoinGetResponse(response SiteDomainJoinGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteDomainJoinResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteDomainJoinGetResponse(response *SiteDomainJoinResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinGetForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteDomainJoinSetResponse(response SiteDomainJoinSetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteDomainJoinResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteDomainJoinSetResponse(response *SiteDomainJoinResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinSetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinSetForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDomainJoinSetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteEnrollmentsGetResponse(response SiteEnrollmentsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEnrollmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteEnrollmentsGetResponse(response *SiteEnrollmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEnrollmentsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEnrollmentsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteEnrollmentsListResponse(response SiteEnrollmentsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEnrollmentsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteEnrollmentsListResponse(response *SiteEnrollmentsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEnrollmentsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEnrollmentsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteEventsActionsResponse(response SiteEventsActionsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEventActionsResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteEventsActionsResponse(response *SiteEventActionsResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEventsActionsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEventsActionsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteEventsListResponse(response SiteEventsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEventsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteEventsListResponse(response *SiteEventsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEventsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteEventsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteIdentitiesLinkResponse(response SiteIdentitiesLinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIdentitiesLinkFound:
-		w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
-		// Encoding response headers.
+func encodeSiteIdentitiesLinkResponse(response *SiteIdentitiesLinkFound, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Location" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Location" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Location",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.Location))
-				}); err != nil {
-					return errors.Wrap(err, "encode Location header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Location",
+				Explode: false,
 			}
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.Location))
+			}); err != nil {
+				return errors.Wrap(err, "encode Location header")
 			}
 		}
-		w.WriteHeader(302)
-
-		return nil
-
-	case *SiteIdentitiesLinkBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
+		// Encode "Set-Cookie" header.
+		{
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
+			}
 		}
-
-		return nil
-
-	case *SiteIdentitiesLinkNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(302)
+
+	return nil
 }
 
 func encodeSiteIdentitiesListResponse(response *SiteLinkedIdentities, w http.ResponseWriter, span trace.Span) error {
@@ -4501,945 +1212,213 @@ func encodeSiteIdentitiesListResponse(response *SiteLinkedIdentities, w http.Res
 	return nil
 }
 
-func encodeSiteIdentitiesUnlinkResponse(response SiteIdentitiesUnlinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIdentitiesUnlinkNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteIdentitiesUnlinkResponse(response *SiteIdentitiesUnlinkNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteIdentitiesUnlinkBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIdentitiesUnlinkNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIdentitiesUnlinkConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(204)
+
+	return nil
 }
 
-func encodeSiteInstanceGetReleaseResponse(response SiteInstanceGetReleaseRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInstanceRelease:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteInstanceGetReleaseResponse(response *SiteInstanceRelease, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteIntegrationsCreateResponse(response SiteIntegrationsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteIntegrationsCreateResponse(response *SiteIntegrationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsCreateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteIntegrationsDeleteResponse(response SiteIntegrationsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationsDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteIntegrationsDeleteResponse(response *SiteIntegrationsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteIntegrationsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteIntegrationsGetResponse(response SiteIntegrationsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteIntegrationsGetResponse(response *SiteIntegrationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteIntegrationsListResponse(response SiteIntegrationsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteIntegrationsListResponse(response []SiteIntegrationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteIntegrationsRegenerateKeyResponse(response SiteIntegrationsRegenerateKeyRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteIntegrationsRegenerateKeyResponse(response *SiteIntegrationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsRegenerateKeyBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsRegenerateKeyForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsRegenerateKeyNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsRegenerateKeyUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteIntegrationsUpdateResponse(response SiteIntegrationsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteIntegrationResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteIntegrationsUpdateResponse(response *SiteIntegrationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsUpdateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteIntegrationsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteInvitationsCreateResponse(response SiteInvitationsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCreateInvitationResponse:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteInvitationsCreateResponse(response *SiteCreateInvitationResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsCreateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteInvitationsDeleteResponse(response SiteInvitationsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInvitationsDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteInvitationsDeleteResponse(response *SiteInvitationsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteInvitationsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteInvitationsListResponse(response SiteInvitationsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInvitationsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteInvitationsListResponse(response []SiteInvitationResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInvitationsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteJoinDomainsAddResponse(response SiteJoinDomainsAddRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteJoinDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteJoinDomainsAddResponse(response *SiteJoinDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsAddBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsAddForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsAddNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsAddConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsAddUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteJoinDomainsListResponse(response SiteJoinDomainsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteJoinDomainsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteJoinDomainsListResponse(response []SiteJoinDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsListForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteJoinDomainsRemoveResponse(response SiteJoinDomainsRemoveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteJoinDomainsRemoveNoContent:
-		w.WriteHeader(204)
+func encodeSiteJoinDomainsRemoveResponse(response *SiteJoinDomainsRemoveNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteJoinDomainsRemoveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsRemoveForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsRemoveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteJoinDomainsVerifyResponse(response SiteJoinDomainsVerifyRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteJoinDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteJoinDomainsVerifyResponse(response *SiteJoinDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsVerifyBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsVerifyForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsVerifyNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsVerifyConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteJoinDomainsVerifyUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteLegalDocumentsGetResponse(response SiteLegalDocumentsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteLegalDocument:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteLegalDocumentsGetResponse(response *SiteLegalDocument, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteLegalDocumentsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteLegalDocumentsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
 func encodeSiteLegalDocumentsSignupItemsResponse(response *SiteSignupItemList, w http.ResponseWriter, span trace.Span) error {
@@ -5455,356 +1434,72 @@ func encodeSiteLegalDocumentsSignupItemsResponse(response *SiteSignupItemList, w
 	return nil
 }
 
-func encodeSiteMembershipsDeleteResponse(response SiteMembershipsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteMembershipsDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteMembershipsDeleteResponse(response *SiteMembershipsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteMembershipsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsDeleteUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteMembershipsListResponse(response SiteMembershipsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteMembershipsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteMembershipsListResponse(response []SiteMembershipResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteMembershipsResetSecondFactorResponse(response SiteMembershipsResetSecondFactorRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteMembershipsResetSecondFactorNoContent:
-		w.WriteHeader(204)
+func encodeSiteMembershipsResetSecondFactorResponse(response *SiteMembershipsResetSecondFactorNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteMembershipsResetSecondFactorBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsResetSecondFactorForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsResetSecondFactorNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsResetSecondFactorUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteMembershipsUpdateResponse(response SiteMembershipsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteMembershipResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteMembershipsUpdateResponse(response *SiteMembershipResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteMembershipsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteOAuthDecideResponse(response SiteOAuthDecideRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteOAuthDecisionResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteOAuthDecideResponse(response *SiteOAuthDecisionResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDecideBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDecideForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDecideNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDecideUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteOAuthDescribeResponse(response SiteOAuthDescribeRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteOAuthAuthorizationRequest:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteOAuthDescribeResponse(response *SiteOAuthAuthorizationRequest, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDescribeBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDescribeNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOAuthDescribeUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
 func encodeSiteOptionalConsentsListResponse(response *SiteOptionalConsentList, w http.ResponseWriter, span trace.Span) error {
@@ -5820,528 +1515,176 @@ func encodeSiteOptionalConsentsListResponse(response *SiteOptionalConsentList, w
 	return nil
 }
 
-func encodeSiteOptionalConsentsSetResponse(response SiteOptionalConsentsSetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteOptionalConsent:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteOptionalConsentsSetResponse(response *SiteOptionalConsent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOptionalConsentsSetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOptionalConsentsSetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteOptionalConsentsSetUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSitePasskeyLoginBeginResponse(response SitePasskeyLoginBeginRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskeyLoginBegunHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeyLoginBeginResponse(response *SitePasskeyLoginBegunHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePasskeyLoginFinishResponse(response SitePasskeyLoginFinishRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteLoginResultHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeyLoginFinishResponse(response *SiteLoginResultHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeyLoginFinishBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeyLoginFinishUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePasskeysBeginCheckResponse(response SitePasskeysBeginCheckRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskeyCheckBegunHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeysBeginCheckResponse(response *SitePasskeyCheckBegunHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePasskeysBeginRegistrationResponse(response SitePasskeysBeginRegistrationRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskeyRegistrationBegunHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeysBeginRegistrationResponse(response *SitePasskeyRegistrationBegunHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePasskeysFinishCheckResponse(response SitePasskeysFinishCheckRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskeysFinishCheckNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeysFinishCheckResponse(response *SitePasskeysFinishCheckNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SitePasskeysFinishCheckBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishCheckForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishCheckNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(204)
+
+	return nil
 }
 
-func encodeSitePasskeysFinishRegistrationResponse(response SitePasskeysFinishRegistrationRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskey:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSitePasskeysFinishRegistrationResponse(response *SitePasskey, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishRegistrationBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishRegistrationForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishRegistrationNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysFinishRegistrationUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
 func encodeSitePasskeysListResponse(response *SitePasskeyList, w http.ResponseWriter, span trace.Span) error {
@@ -6357,390 +1700,93 @@ func encodeSitePasskeysListResponse(response *SitePasskeyList, w http.ResponseWr
 	return nil
 }
 
-func encodeSitePasskeysRemoveResponse(response SitePasskeysRemoveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskeysRemoveNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSitePasskeysRemoveResponse(response *SitePasskeysRemoveNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SitePasskeysRemoveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRemoveForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRemoveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRemoveConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(204)
+
+	return nil
 }
 
-func encodeSitePasskeysRenameResponse(response SitePasskeysRenameRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePasskey:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSitePasskeysRenameResponse(response *SitePasskey, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRenameBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRenameNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePasskeysRenameUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSitePersonalTokensCreateResponse(response SitePersonalTokensCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCreatePersonalTokenResponse:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSitePersonalTokensCreateResponse(response *SiteCreatePersonalTokenResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSitePersonalTokensDeleteResponse(response SitePersonalTokensDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePersonalTokensDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSitePersonalTokensDeleteResponse(response *SitePersonalTokensDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SitePersonalTokensDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSitePersonalTokensGrantableScopesResponse(response SitePersonalTokensGrantableScopesRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePersonalTokensGrantableScopesOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSitePersonalTokensGrantableScopesResponse(response []PersonalScope, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensGrantableScopesBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensGrantableScopesNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePersonalTokensListResponse(response SitePersonalTokensListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePersonalTokensListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSitePersonalTokensListResponse(response []SitePersonalTokenResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePersonalTokensListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
 	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeSitePresetsListResponse(response []SitePresetResource, w http.ResponseWriter, span trace.Span) error {
@@ -6760,1107 +1806,217 @@ func encodeSitePresetsListResponse(response []SitePresetResource, w http.Respons
 	return nil
 }
 
-func encodeSitePublicConfirmationsPerformResponse(response SitePublicConfirmationsPerformRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePublicConfirmationsPerformNoContent:
-		w.WriteHeader(204)
+func encodeSitePublicConfirmationsPerformResponse(response *SitePublicConfirmationsPerformNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
+	return nil
+}
 
-	case *SitePublicConfirmationsPerformBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
+func encodeSitePublicInvitationsAcceptResponse(response *SitePublicInvitationsAcceptOK, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
+func encodeSitePublicInvitationsLookupResponse(response *SiteInvitationLookupResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-	case *SitePublicConfirmationsPerformGone:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(410)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	return nil
+}
 
-		return nil
+func encodeSitePublicUnsubscribesPerformResponse(response *SitePublicUnsubscribesPerformNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+	return nil
+}
+
+func encodeSiteRuleFiringsListResponse(response *SiteRuleFiringsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesCreateResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesDeactivateResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesDeleteResponse(response *SiteRulesDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteRulesDryRunResponse(response *SiteRuleDryRunResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesGetResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesListResponse(response *SiteRulesListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesPublishResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesRevertResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteRulesUpdateResponse(response *SiteRuleResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSchemaApplyMigrationsResponse(response *SiteSchemaApplyMigrationsNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteSecondFactorConfirmEnrollmentResponse(response *SiteRecoveryCodesHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSitePublicInvitationsAcceptResponse(response SitePublicInvitationsAcceptRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePublicInvitationsAcceptOK:
-		w.WriteHeader(200)
-
-		return nil
-
-	case *SitePublicInvitationsAcceptBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsAcceptUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsAcceptForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsAcceptNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsAcceptUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteSecondFactorDisableResponse(response *SiteSecondFactorDisableNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
-}
+	w.WriteHeader(204)
 
-func encodeSitePublicInvitationsLookupResponse(response SitePublicInvitationsLookupRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInvitationLookupResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsLookupBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SitePublicInvitationsLookupNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSitePublicUnsubscribesPerformResponse(response SitePublicUnsubscribesPerformRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePublicUnsubscribesPerformNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRuleFiringsListResponse(response SiteRuleFiringsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleFiringsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRuleFiringsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRuleFiringsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesCreateResponse(response SiteRulesCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesDeactivateResponse(response SiteRulesDeactivateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesDeactivateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesDeactivateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesDeleteResponse(response SiteRulesDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRulesDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteRulesDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesDryRunResponse(response SiteRulesDryRunRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleDryRunResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesDryRunBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesDryRunNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesGetResponse(response SiteRulesGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesListResponse(response SiteRulesListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRulesListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesPublishResponse(response SiteRulesPublishRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesPublishBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesPublishNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesPublishUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesRevertResponse(response SiteRulesRevertRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesRevertBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesRevertNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesRevertUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteRulesUpdateResponse(response SiteRulesUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRuleResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteRulesUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSchemaApplyMigrationsResponse(response SiteSchemaApplyMigrationsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSchemaApplyMigrationsNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSecondFactorConfirmEnrollmentResponse(response SiteSecondFactorConfirmEnrollmentRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRecoveryCodesHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorConfirmEnrollmentBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorConfirmEnrollmentForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorConfirmEnrollmentConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorConfirmEnrollmentUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSecondFactorDisableResponse(response SiteSecondFactorDisableRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSecondFactorDisableNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteSecondFactorDisableBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorDisableForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorDisableConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorDisableUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
 func encodeSiteSecondFactorGetStatusResponse(response *SiteSecondFactorStatus, w http.ResponseWriter, span trace.Span) error {
@@ -7876,2866 +2032,597 @@ func encodeSiteSecondFactorGetStatusResponse(response *SiteSecondFactorStatus, w
 	return nil
 }
 
-func encodeSiteSecondFactorRegenerateRecoveryCodesResponse(response SiteSecondFactorRegenerateRecoveryCodesRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRecoveryCodesHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteSecondFactorRegenerateRecoveryCodesResponse(response *SiteRecoveryCodesHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
+	}
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		return nil
+	return nil
+}
 
-	case *SiteSecondFactorRegenerateRecoveryCodesBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
+func encodeSiteSecondFactorStartEnrollmentResponse(response *SiteSecondFactorEnrollment, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		return nil
+	return nil
+}
 
-	case *SiteSecondFactorRegenerateRecoveryCodesForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
+func encodeSiteSegmentContactsListResponse(response *SiteSegmentContactsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		return nil
+	return nil
+}
 
-	case *SiteSecondFactorRegenerateRecoveryCodesConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
+func encodeSiteSegmentsArchiveResponse(response *SiteSegmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
-		return nil
+	return nil
+}
 
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
+func encodeSiteSegmentsCreateResponse(response *SiteSegmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSegmentsGetResponse(response *SiteSegmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSegmentsListResponse(response *SiteSegmentsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSegmentsPreviewResponse(response *SitePreviewSegmentResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSegmentsUnarchiveResponse(response *SiteSegmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSegmentsUpdateResponse(response *SiteSegmentResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSendingDomainsCreateResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSendingDomainsDeleteResponse(response *SiteSendingDomainsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteSendingDomainsGetResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSendingDomainsListResponse(response *SiteSendingDomainsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSendingDomainsVerifyResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSetupChecklistGetResponse(response *SiteSetupProgress, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSignupSurveySubmitResponse(response *SiteSignupSurveySubmitNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteSmsConsentsConfirmResponse(response *SmsConsent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSmsConsentsGetResponse(response *SmsConsent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSmsConsentsOptOutResponse(response *SmsConsent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSuppressionsCreateResponse(response *SiteSuppressionResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteSuppressionsDeleteResponse(response *SiteSuppressionsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteSuppressionsListResponse(response *SiteSuppressionsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTagsApplyResponse(response *SiteTagResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTagsDeleteResponse(response *SiteTagsDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteTagsListResponse(response *SiteTagsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTagsListForContactResponse(response *SiteTagsListForContactOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTagsRemoveResponse(response *SiteTagsRemoveNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteTelegramIssueStartLinkResponse(response *TelegramStartLinkResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTelegramListBindingsResponse(response []SiteBindingResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTemplatesCreateResponse(response *SiteEmailTemplateResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTemplatesDeleteResponse(response *SiteTemplatesDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteTemplatesGetResponse(response *SiteEmailTemplateResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTemplatesListResponse(response *SiteTemplatesListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTemplatesUpdateResponse(response *SiteEmailTemplateResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTokensCreateResponse(response *SiteCreateTokenResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTokensDeleteResponse(response *SiteTokensDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteTokensListResponse(response []SiteApiTokenResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTokensUpdateResponse(response *SiteApiTokenResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTrackingDomainsListResponse(response []SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTrackingDomainsRemoveResponse(response *SiteTrackingDomainsRemoveNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
+
+	return nil
+}
+
+func encodeSiteTrackingDomainsSetResponse(response *SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTrackingDomainsVerifyResponse(response *SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteTransactionalEmailsListResponse(response *SiteTransactionalEmailsListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteUserAcceptPendingResponse(response *SiteUserResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteUserDeleteUserResponse(response *SiteUserDeleteUserNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
 			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				return e.EncodeValue(conv.StringToString(response.SetCookie))
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(204)
+
+	return nil
 }
 
-func encodeSiteSecondFactorStartEnrollmentResponse(response SiteSecondFactorStartEnrollmentRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSecondFactorEnrollment:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteUserDeleteUserLinkResponse(response *SiteUserDeleteUserLinkAccepted, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(202)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorStartEnrollmentBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorStartEnrollmentForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSecondFactorStartEnrollmentConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteSegmentContactsListResponse(response SiteSegmentContactsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentContactsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteUserEmailChangeResponse(response *SiteUserEmailChangeAccepted, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(202)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentContactsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentContactsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentContactsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsArchiveResponse(response SiteSegmentsArchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsArchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsArchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsCreateResponse(response SiteSegmentsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsGetResponse(response SiteSegmentsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsListResponse(response SiteSegmentsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsPreviewResponse(response SiteSegmentsPreviewRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SitePreviewSegmentResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsPreviewBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsPreviewNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsPreviewUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsUnarchiveResponse(response SiteSegmentsUnarchiveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUnarchiveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUnarchiveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSegmentsUpdateResponse(response SiteSegmentsUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSegmentResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUpdateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSegmentsUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSendingDomainsCreateResponse(response SiteSendingDomainsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSendingDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsCreateConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSendingDomainsDeleteResponse(response SiteSendingDomainsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSendingDomainsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteSendingDomainsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSendingDomainsGetResponse(response SiteSendingDomainsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSendingDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSendingDomainsListResponse(response SiteSendingDomainsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSendingDomainsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSendingDomainsVerifyResponse(response SiteSendingDomainsVerifyRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSendingDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsVerifyBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsVerifyForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSendingDomainsVerifyNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSetupChecklistGetResponse(response SiteSetupChecklistGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSetupProgress:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSetupChecklistGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSetupChecklistGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSignupSurveySubmitResponse(response SiteSignupSurveySubmitRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSignupSurveySubmitNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteSignupSurveySubmitBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSignupSurveySubmitConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSignupSurveySubmitUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSmsConsentsConfirmResponse(response SiteSmsConsentsConfirmRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SmsConsent:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsConfirmBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsConfirmNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsConfirmUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSmsConsentsGetResponse(response SiteSmsConsentsGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SmsConsent:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSmsConsentsOptOutResponse(response SiteSmsConsentsOptOutRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SmsConsent:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsOptOutBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsOptOutNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSmsConsentsOptOutUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSuppressionsCreateResponse(response SiteSuppressionsCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSuppressionResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSuppressionsDeleteResponse(response SiteSuppressionsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSuppressionsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteSuppressionsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteSuppressionsListResponse(response SiteSuppressionsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteSuppressionsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteSuppressionsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTagsApplyResponse(response SiteTagsApplyRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTagResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsApplyBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsApplyNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsApplyUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTagsDeleteResponse(response SiteTagsDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTagsDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteTagsDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *InUseProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTagsListResponse(response SiteTagsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTagsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTagsListForContactResponse(response SiteTagsListForContactRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTagsListForContactOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListForContactBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListForContactNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsListForContactUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTagsRemoveResponse(response SiteTagsRemoveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTagsRemoveNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteTagsRemoveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTagsRemoveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTelegramIssueStartLinkResponse(response SiteTelegramIssueStartLinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *TelegramStartLinkResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTelegramIssueStartLinkBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTelegramIssueStartLinkNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTelegramIssueStartLinkUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTelegramListBindingsResponse(response SiteTelegramListBindingsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTelegramListBindingsOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTelegramListBindingsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTelegramListBindingsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTemplatesCreateResponse(response SiteTemplatesCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEmailTemplateResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTemplatesDeleteResponse(response SiteTemplatesDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTemplatesDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteTemplatesDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTemplatesGetResponse(response SiteTemplatesGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEmailTemplateResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTemplatesListResponse(response SiteTemplatesListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTemplatesListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTemplatesUpdateResponse(response SiteTemplatesUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteEmailTemplateResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTemplatesUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTokensCreateResponse(response SiteTokensCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteCreateTokenResponse:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTokensDeleteResponse(response SiteTokensDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTokensDeleteNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteTokensDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTokensListResponse(response SiteTokensListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTokensListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTokensUpdateResponse(response SiteTokensUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteApiTokenResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTokensUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTrackingDomainsListResponse(response SiteTrackingDomainsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTrackingDomainsListOKApplicationJSON:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTrackingDomainsRemoveResponse(response SiteTrackingDomainsRemoveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTrackingDomainsRemoveNoContent:
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteTrackingDomainsRemoveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsRemoveForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsRemoveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTrackingDomainsSetResponse(response SiteTrackingDomainsSetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTrackingDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsSetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsSetForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsSetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsSetUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTrackingDomainsVerifyResponse(response SiteTrackingDomainsVerifyRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTrackingDomainResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsVerifyBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsVerifyForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTrackingDomainsVerifyNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteTransactionalEmailsListResponse(response SiteTransactionalEmailsListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteTransactionalEmailsListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTransactionalEmailsListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTransactionalEmailsListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteTransactionalEmailsListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteUserAcceptPendingResponse(response SiteUserAcceptPendingRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteUserResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserAcceptPendingBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserAcceptPendingUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteUserDeleteUserResponse(response SiteUserDeleteUserRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteUserDeleteUserNoContent:
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.StringToString(response.SetCookie))
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
-			}
-		}
-		w.WriteHeader(204)
-
-		return nil
-
-	case *SiteUserDeleteUserBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserDeleteUserForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDeleteUserProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteUserDeleteUserLinkResponse(response SiteUserDeleteUserLinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteUserDeleteUserLinkAccepted:
-		w.WriteHeader(202)
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteDeleteUserProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteUserEmailChangeResponse(response SiteUserEmailChangeRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteUserEmailChangeAccepted:
-		w.WriteHeader(202)
-
-		return nil
-
-	case *SiteUserEmailChangeBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserEmailChangeForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserEmailChangeUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
 func encodeSiteUserGetMeResponse(response *SiteUserResource, w http.ResponseWriter, span trace.Span) error {
@@ -10774,893 +2661,192 @@ func encodeSiteUserSignOutEverywhereResponse(response *SiteUserSignOutEverywhere
 	return nil
 }
 
-func encodeSiteUserUpdateMeResponse(response SiteUserUpdateMeRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteUserResourceHeaders:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		// Encoding response headers.
+func encodeSiteUserUpdateMeResponse(response *SiteUserResourceHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+	// Encoding response headers.
+	{
+		h := uri.NewHeaderEncoder(w.Header())
+		// Encode "Set-Cookie" header.
 		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Set-Cookie" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Set-Cookie",
-					Explode: false,
+			cfg := uri.HeaderParameterEncodingConfig{
+				Name:    "Set-Cookie",
+				Explode: false,
+			}
+			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+				if val, ok := response.SetCookie.Get(); ok {
+					return e.EncodeValue(conv.StringToString(val))
 				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					if val, ok := response.SetCookie.Get(); ok {
-						return e.EncodeValue(conv.StringToString(val))
-					}
-					return nil
-				}); err != nil {
-					return errors.Wrap(err, "encode Set-Cookie header")
-				}
+				return nil
+			}); err != nil {
+				return errors.Wrap(err, "encode Set-Cookie header")
 			}
 		}
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserUpdateMeBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserUpdateMeForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserUpdateMeUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetailsHeaders:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
-		// Encoding response headers.
-		{
-			h := uri.NewHeaderEncoder(w.Header())
-			// Encode "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.RetryAfter))
-				}); err != nil {
-					return errors.Wrap(err, "encode Retry-After header")
-				}
-			}
-			// Encode "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitLimit))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Limit header")
-				}
-			}
-			// Encode "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int32ToString(response.XRateLimitRemaining))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Remaining header")
-				}
-			}
-			// Encode "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterEncodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-					return e.EncodeValue(conv.Int64ToString(response.XRateLimitReset))
-				}); err != nil {
-					return errors.Wrap(err, "encode X-RateLimit-Reset header")
-				}
-			}
-		}
-		w.WriteHeader(429)
-
-		e := new(jx.Encoder)
-		response.Response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
 	}
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
-func encodeSiteWebhooksCreateResponse(response SiteWebhooksCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhookEndpointResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteWebhooksCreateResponse(response *SiteWebhookEndpointResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksCreateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWebhooksDeleteResponse(response SiteWebhooksDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhooksDeleteNoContent:
-		w.WriteHeader(204)
+func encodeSiteWebhooksDeleteResponse(response *SiteWebhooksDeleteNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteWebhooksDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteWebhooksGetResponse(response SiteWebhooksGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhookEndpointResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWebhooksGetResponse(response *SiteWebhookEndpointResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksGetBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksGetForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWebhooksListResponse(response SiteWebhooksListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhooksListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWebhooksListResponse(response *SiteWebhooksListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksListForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksListUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWebhooksRegenerateSecretResponse(response SiteWebhooksRegenerateSecretRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhookEndpointResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWebhooksRegenerateSecretResponse(response *SiteWebhookEndpointResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksRegenerateSecretBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksRegenerateSecretForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksRegenerateSecretNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWebhooksTestResponse(response SiteWebhooksTestRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhookTestResult:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWebhooksTestResponse(response *SiteWebhookTestResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksTestBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksTestForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksTestNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksTestUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWebhooksUpdateResponse(response SiteWebhooksUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWebhookEndpointResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWebhooksUpdateResponse(response *SiteWebhookEndpointResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWebhooksUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesAccountLinkResponse(response SiteWorkspacesAccountLinkRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteAccountLinkResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesAccountLinkResponse(response *SiteAccountLinkResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesAccountLinkBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesAccountLinkForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesAccountLinkNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesCreateResponse(response SiteWorkspacesCreateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(201)
+func encodeSiteWorkspacesCreateResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(201)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesCreateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesCreateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesCreateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesDeleteResponse(response SiteWorkspacesDeleteRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteDeletedWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesDeleteResponse(response *SiteDeletedWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesDeleteBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesDeleteForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesDeleteNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesDeleteUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesGetRevenueSettingsResponse(response SiteWorkspacesGetRevenueSettingsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRevenueSettingsResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesGetRevenueSettingsResponse(response *SiteRevenueSettingsResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesGetRevenueSettingsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesGetRevenueSettingsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesLeaveResponse(response SiteWorkspacesLeaveRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspacesLeaveNoContent:
-		w.WriteHeader(204)
+func encodeSiteWorkspacesLeaveResponse(response *SiteWorkspacesLeaveNoContent, w http.ResponseWriter, span trace.Span) error {
+	w.WriteHeader(204)
 
-		return nil
-
-	case *SiteWorkspacesLeaveBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesLeaveNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesLeaveUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
+	return nil
 }
 
-func encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response SiteWorkspacesLiftSecondFactorRequirementRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesLiftSecondFactorRequirementBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesLiftSecondFactorRequirementForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesLiftSecondFactorRequirementNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
 func encodeSiteWorkspacesListResponse(response []SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
@@ -11697,313 +2883,92 @@ func encodeSiteWorkspacesListDeletedResponse(response []SiteDeletedWorkspaceReso
 	return nil
 }
 
-func encodeSiteWorkspacesRequireSecondFactorResponse(response SiteWorkspacesRequireSecondFactorRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesRequireSecondFactorResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRequireSecondFactorBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRequireSecondFactorForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRequireSecondFactorNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesRestoreResponse(response SiteWorkspacesRestoreRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesRestoreResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRestoreBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRestoreNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRestoreConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesSetTimezoneResponse(response SiteWorkspacesSetTimezoneRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesSetTimezoneResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetTimezoneBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetTimezoneForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetTimezoneNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetTimezoneUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesUpdateResponse(response SiteWorkspacesUpdateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesUpdateResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
 }
 
-func encodeSiteWorkspacesUpdateRevenueSettingsResponse(response SiteWorkspacesUpdateRevenueSettingsRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteRevenueSettingsResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+func encodeSiteWorkspacesUpdateRevenueSettingsResponse(response *SiteRevenueSettingsResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateRevenueSettingsBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateRevenueSettingsForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateRevenueSettingsNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(422)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
 	}
+
+	return nil
+}
+
+func encodeErrorResponse(response *ProblemDetailsStatusCode, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	code := response.StatusCode
+	if code == 0 {
+		// Set default status code.
+		code = http.StatusOK
+	}
+	w.WriteHeader(code)
+	if code >= http.StatusInternalServerError {
+		span.SetStatus(codes.Error, http.StatusText(code))
+	}
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	if code >= http.StatusInternalServerError {
+		return errors.Wrapf(ht.ErrInternalServerErrorResponse, "code: %d, message: %s", code, http.StatusText(code))
+	}
+	return nil
+
 }

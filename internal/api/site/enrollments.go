@@ -7,7 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteEnrollmentsListParams) (siteapi.SiteEnrollmentsListRes, error) {
+func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteEnrollmentsListParams) (*siteapi.SiteEnrollmentsListOK, error) {
 	ws := workspaceScope(ctx)
 	status := ""
 	if v, ok := params.Status.Get(); ok {
@@ -20,7 +20,7 @@ func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteE
 	return mapper.EnrollmentsListPage(page), nil
 }
 
-func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEnrollmentsGetParams) (siteapi.SiteEnrollmentsGetRes, error) {
+func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEnrollmentsGetParams) (*siteapi.SiteEnrollmentResource, error) {
 	ws := workspaceScope(ctx)
 	r, err := h.automations.Enrollment(ctx, ws, int64(params.AutomationId), int64(params.EnrollmentId))
 	if err != nil {

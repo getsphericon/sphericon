@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,31 +24,27 @@ func TestSiteCataloguesListForMembersOnly(t *testing.T) {
 
 	automations, err := c.SiteAutomationsList(ctx, siteapi.SiteAutomationsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
-	assert.NotEmpty(t, automations.(*siteapi.SiteAutomationsListOK).Items)
-	res, err := c.SiteAutomationsList(ctx, siteapi.SiteAutomationsListParams{WorkspaceId: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsListNotFound{}, res)
+	assert.NotEmpty(t, automations.Items)
+	_, err = c.SiteAutomationsList(ctx, siteapi.SiteAutomationsListParams{WorkspaceId: foreign})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	templates, err := c.SiteTemplatesList(ctx, siteapi.SiteTemplatesListParams{WorkspaceId: acme})
 	require.NoError(t, err)
-	assert.NotEmpty(t, templates.(*siteapi.SiteTemplatesListOK).Items)
-	tres, err := c.SiteTemplatesList(ctx, siteapi.SiteTemplatesListParams{WorkspaceId: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTemplatesListNotFound{}, tres)
+	assert.NotEmpty(t, templates.Items)
+	_, err = c.SiteTemplatesList(ctx, siteapi.SiteTemplatesListParams{WorkspaceId: foreign})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	hooks, err := c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: acme})
 	require.NoError(t, err)
-	assert.NotEmpty(t, hooks.(*siteapi.SiteWebhooksListOK).Items)
-	hres, err := c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWebhooksListNotFound{}, hres)
+	assert.NotEmpty(t, hooks.Items)
+	_, err = c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{WorkspaceId: foreign})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	fields, err := c.SiteCustomFieldsList(ctx, siteapi.SiteCustomFieldsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
-	assert.NotEmpty(t, fields.(*siteapi.SiteCustomFieldsListOK).Items)
-	fres, err := c.SiteCustomFieldsList(ctx, siteapi.SiteCustomFieldsListParams{WorkspaceId: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteCustomFieldsListNotFound{}, fres)
+	assert.NotEmpty(t, fields.Items)
+	_, err = c.SiteCustomFieldsList(ctx, siteapi.SiteCustomFieldsListParams{WorkspaceId: foreign})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	anon := env.SiteAnonymous(t)
 	_, err = anon.SiteAutomationsList(ctx, siteapi.SiteAutomationsListParams{WorkspaceId: acme})
@@ -65,11 +62,10 @@ func TestSiteListsHonorPagination(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{
+	page, err := c.SiteWebhooksList(ctx, siteapi.SiteWebhooksListParams{
 		WorkspaceId: fixtures.AcmePublicID, Page: siteapi.NewOptInt32(1), PageSize: siteapi.NewOptInt32(1),
 	})
 	require.NoError(t, err)
-	page := res.(*siteapi.SiteWebhooksListOK)
 	assert.Len(t, page.Items, 1)
 	assert.EqualValues(t, 1, page.PageSize)
 	assert.Greater(t, page.TotalItems, int32(1))
@@ -79,19 +75,16 @@ func TestSiteContactsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	del := func(workspaceID siteapi.WorkspaceId, id siteapi.EntityId) siteapi.SiteContactsDeleteRes {
-		res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: workspaceID, ID: id})
-		require.NoError(t, err)
-		return res
+	del := func(workspaceID siteapi.WorkspaceId, id siteapi.EntityId) error {
+		return c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: workspaceID, ID: id})
 	}
 
-	assert.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, del(fixtures.AcmePublicID, idStr(fixtures.ContactBobID)))
-	get, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsGetNotFound{}, get)
+	require.NoError(t, del(fixtures.AcmePublicID, idStr(fixtures.ContactBobID)))
+	_, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, del(fixtures.AcmePublicID, idStr(fixtures.ContactBobID)), "already gone")
-	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, del(fixtures.GlobexPublicID, idStr(fixtures.ContactAliceID)), "foreign workspace")
+	testhelper.SiteRefusal(t, del(fixtures.AcmePublicID, idStr(fixtures.ContactBobID)), http.StatusNotFound, "already gone")
+	testhelper.SiteRefusal(t, del(fixtures.GlobexPublicID, idStr(fixtures.ContactAliceID)), http.StatusNotFound, "foreign workspace")
 }
 
 func TestSiteInvitationsDelete(t *testing.T) {
@@ -104,21 +97,18 @@ func TestSiteInvitationsDelete(t *testing.T) {
 
 	// A plain member may not revoke.
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	res, err := member.SiteInvitationsDelete(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteInvitationsDeleteForbidden{}, res)
+	err := member.SiteInvitationsDelete(ctx, params)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	res, err = owner.SiteInvitationsDelete(ctx, params)
+	err = owner.SiteInvitationsDelete(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, res)
 
 	// Revoked: deleting again and a foreign workspace are both 404.
 	for _, p := range []siteapi.SiteInvitationsDeleteParams{
 		params,
 		{WorkspaceId: fixtures.GlobexPublicID, ID: id},
 	} {
-		res, err = owner.SiteInvitationsDelete(ctx, p)
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, res)
+		err = owner.SiteInvitationsDelete(ctx, p)
+		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	}
 }

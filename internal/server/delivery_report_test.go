@@ -33,8 +33,7 @@ func broadcastStats(t *testing.T, env *testhelper.TestEnv) siteapi.SiteBroadcast
 		ID:          siteapi.EntityId(fixtures.BroadcastSentID),
 	})
 	require.NoError(t, err)
-	b, ok := res.(*siteapi.SiteBroadcastResource)
-	require.True(t, ok, "got %T", res)
+	b := res
 	return b.Stats
 }
 
@@ -59,8 +58,7 @@ func TestExternalBroadcastReportCountsTheDeliveryResult(t *testing.T) {
 
 	res, err := c.BroadcastsReport(t.Context(), externalapi.BroadcastsReportParams{ID: fixtures.BroadcastSentID})
 	require.NoError(t, err)
-	r, ok := res.(*externalapi.BroadcastReport)
-	require.True(t, ok, "got %T", res)
+	r := res
 	assert.EqualValues(t, 3, r.DeliveredCount.Value)
 	assert.EqualValues(t, 1, r.BouncedCount.Value)
 	assert.EqualValues(t, 1, r.ComplainedCount.Value)

@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,8 +27,7 @@ func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 		GoalEvent:  siteapi.NewOptNilString("invoice_paid"),
 	}, params)
 	require.NoError(t, err)
-	edited, ok := res.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", res)
+	edited := res
 	assert.Equal(t, []string{"account_closed", "plan_downgraded", "email.clicked"}, edited.Live.Value.ExitEvents)
 	assert.Equal(t, "payment_succeeded", edited.Live.Value.GoalEvent.Or(""))
 	assert.Equal(t, []string{"card_removed"}, edited.Draft.Value.ExitEvents)
@@ -37,12 +37,10 @@ func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 	noGoal.SetToNull()
 	res, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{GoalEvent: noGoal}, params)
 	require.NoError(t, err)
-	cleared, ok := res.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", res)
+	cleared := res
 	assert.True(t, cleared.Draft.Value.GoalEvent.Null, "null removes the goal event")
 	assert.Equal(t, []string{"card_removed"}, cleared.Draft.Value.ExitEvents, "an omitted list is kept")
 
-	refused, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{ExitEvents: []string{"payment_failed"}}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAutomationsUpdateUnprocessableEntity{}, refused)
+	_, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{ExitEvents: []string{"payment_failed"}}, params)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

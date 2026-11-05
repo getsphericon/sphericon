@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/bindings"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -45,7 +46,7 @@ type TelegramContent struct {
 }
 
 // Channel is Telegram.
-func (TelegramContent) Channel() messaging.Channel { return messaging.ChannelTelegram }
+func (TelegramContent) Channel() channels.Channel { return channels.Telegram }
 
 // TelegramBots builds the bot a Telegram Integration is, for the Integration a Send route resolved.
 // *messaging.Resolver satisfies it.
@@ -127,7 +128,7 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 		return nil, err
 	}
 	maps.Copy(vars, start)
-	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, messaging.ChannelTelegram, content.Text, vars); err != nil {
+	if err := c.m.bindUnsubscribeURL(ctx, s, req, dest, ws, channels.Telegram, content.Text, vars); err != nil {
 		return nil, err
 	}
 	text, err := telegramrender.Render(content.Text, vars)
@@ -167,7 +168,7 @@ const unsubscribeURLTag = "unsubscribe_url"
 // Destination (a Telegram user id, a phone number) out on the message's Channel only (ADR 0078): of
 // the message's source on Telegram, of everything on SMS, where every opt-out is Channel-wide (ADR
 // 0077). A send with no source has nothing to unsubscribe from, so the tag renders empty there.
-func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, onChannel messaging.Channel, text string, vars map[string]any) error {
+func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Request, dest string, ws *ent.Workspace, onChannel channels.Channel, text string, vars map[string]any) error {
 	if !strings.Contains(text, unsubscribeURLTag) {
 		return nil
 	}
@@ -180,7 +181,7 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 		return err
 	}
 	source := req.Source
-	if onChannel == messaging.ChannelSMS {
+	if onChannel == channels.SMS {
 		source = eligibility.SourceEverything
 	}
 	url, err := tr.UnsubscribeURL(tracking.UnsubTarget{

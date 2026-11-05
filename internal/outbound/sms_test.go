@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
@@ -90,11 +91,11 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
 	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(msg.Reason))
-	stop := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelSms), unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
+	stop := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
 	assert.Equal(t, unsubscribe.ViaRefusedSend, lo.FromPtr(stop.Via))
 	assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(stop.ContactID))
-	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
+	consented := env.DB.Confirmation.Query().Where(confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(fixtures.ContactTexterPhone)).ExistX(ctx)
 	assert.False(t, consented, "the refused number's consent ends with its stop")
 
 	again := sendText(t, env, textTo(t, env, account, "sms:2"))

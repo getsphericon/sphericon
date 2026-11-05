@@ -24,8 +24,7 @@ func TestSiteTransactionalEmailsList(t *testing.T) {
 	res, err := c.SiteTransactionalEmailsList(ctx, siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	page, ok := res.(*siteapi.SiteTransactionalEmailsListOK)
-	require.Truef(t, ok, "got %T", res)
+	page := res
 	require.NotEmpty(t, page.Items, "acme has seeded transactional sends")
 	for _, it := range page.Items {
 		assert.NotEqual(t, fixtures.ContactGlobexEmail, it.Destination, "cross-workspace row leaked")

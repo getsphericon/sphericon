@@ -25,29 +25,25 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	domain, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "audited.example.com"},
+	_, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "audited.example.com"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteSendingDomainResource{}, domain)
 
-	integration, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
+	_, err = c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:   "Audited SMTP",
 		Config: smtpInput("smtp.example.com", "integration-pass-9"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationResource{}, integration)
 
 	hook, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://user:pw-9@example.com/audited?token=url-secret-7#frag"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	hookResp, ok := hook.(*siteapi.SiteWebhookEndpointResource)
-	require.True(t, ok)
+	hookResp := hook
 
 	token, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "audited", Scopes: []siteapi.ApiTokenScope{"contacts:read"}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	tokenResp, tok := token.(*siteapi.SiteCreateTokenResponse)
-	require.True(t, tok)
+	tokenResp := token
 
 	actions := map[string]*events.AuditEntry{}
 	var all strings.Builder
@@ -106,9 +102,8 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID})
+	err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 
 	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e := ev.(*events.AuditEntry)

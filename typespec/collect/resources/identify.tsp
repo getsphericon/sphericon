@@ -51,12 +51,5 @@ model CollectOkResponse {
 @tag("Collect")
 namespace CollectIdentify {
   @post
-  op create(@body body: CollectIdentifyInput):
-    | CollectOkResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | PayloadTooLargeProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem
-    | ServiceUnavailableProblem;
+  op create(@body body: CollectIdentifyInput): CollectOkResponse | Problem;
 }

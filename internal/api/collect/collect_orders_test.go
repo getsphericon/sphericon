@@ -1,6 +1,7 @@
 package collect_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -25,13 +26,11 @@ func orderCompleted(total string) collectapi.CollectEventInput {
 func TestTheTrackerRefusesAnOrderAmountWithTooManyPlaces(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{orderCompleted("9.999")},
 	})
 
-	require.NoError(t, err)
-	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "total has more than 2 decimal places")
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }
@@ -39,12 +38,11 @@ func TestTheTrackerRefusesAnOrderAmountWithTooManyPlaces(t *testing.T) {
 func TestTheTrackerTakesAValidOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{orderCompleted("9.99")},
 	})
 
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
 }
 
@@ -53,13 +51,11 @@ func TestTheTrackerRefusesAnOrderCompletedWithoutACurrency(t *testing.T) {
 	in := orderCompleted("9.99")
 	delete(in.Properties.Value, "currency")
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{in},
 	})
 
-	require.NoError(t, err)
-	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "currency is required")
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }
@@ -69,13 +65,11 @@ func TestTheTrackerRefusesAnUnknownCurrencyCode(t *testing.T) {
 	in := orderCompleted("9.99")
 	in.Properties.Value["currency"] = jx.Raw(`"QQQ"`)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{in},
 	})
 
-	require.NoError(t, err)
-	refused, ok := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), `currency "QQQ" is not a known ISO 4217 code`)
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected))
 }

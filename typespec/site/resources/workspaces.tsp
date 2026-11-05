@@ -221,10 +221,12 @@ model SiteUpdateRevenueSettingsInput {
 namespace SiteWorkspaces {
   /** List workspaces owned by the authenticated user */
   @get
-  op list(): {
-    @statusCode statusCode: 200;
-    @body body: SiteWorkspaceResource[];
-  };
+  op list():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteWorkspaceResource[];
+      }
+    | Problem;
 
   /** Create a Workspace; the authenticated User becomes its Owner. Names are free text
    * and need not be unique. An Unverified User is refused with 403 and code
@@ -235,9 +237,7 @@ namespace SiteWorkspaces {
         @statusCode statusCode: 201;
         @body body: SiteWorkspaceResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** List the Workspaces in their deletion window that the authenticated User owns, with
    * the date their data will be erased. Answered while an acceptance is pending, for the
@@ -245,10 +245,12 @@ namespace SiteWorkspaces {
   @get
   @route("/deleted")
   @allowedWhileAcceptancePending
-  op listDeleted(): {
-    @statusCode statusCode: 200;
-    @body body: SiteDeletedWorkspaceResource[];
-  };
+  op listDeleted():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteDeletedWorkspaceResource[];
+      }
+    | Problem;
 
   /** Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
    * else 422. The Workspace is frozen at once and hidden: it answers 404 on its paths
@@ -263,12 +265,7 @@ namespace SiteWorkspaces {
   op delete(
     @path workspaceId: WorkspaceId,
     @body body: SiteDeleteWorkspaceInput,
-  ):
-    | SiteDeletedWorkspaceResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteDeletedWorkspaceResource | Problem;
 
   /** Restore a Workspace in its deletion window (Owner only). It removes only the
    * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
@@ -278,11 +275,7 @@ namespace SiteWorkspaces {
    * Recorded as an Audit entry. */
   @post
   @route("/deleted/{id}/restore")
-  op restore(@path id: WorkspaceId):
-    | SiteWorkspaceResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem;
+  op restore(@path id: WorkspaceId): SiteWorkspaceResource | Problem;
 
   /** Leave a Workspace (any Role): the caller's own Membership is removed at once, with no
    * Owner involved (Leaving, ADR 0050). 422 when the caller is the only Owner: another
@@ -291,11 +284,7 @@ namespace SiteWorkspaces {
   @post
   @route("/{workspaceId}/leave")
   @requiresPermissions(#[])
-  op leave(@path workspaceId: WorkspaceId):
-    | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  op leave(@path workspaceId: WorkspaceId): NoContentResponse | Problem;
 
   /** Rename a workspace or change its postal address (Owner and Admin only). The id
    * never changes. */
@@ -305,12 +294,7 @@ namespace SiteWorkspaces {
   op update(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateWorkspaceInput,
-  ):
-    | SiteWorkspaceResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteWorkspaceResource | Problem;
 
   /** Switch the Two-factor requirement on (owner and admin only): every User with a
    * Membership must then have a Second factor. Switching it on while it is already on keeps
@@ -320,9 +304,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.secondFactorManage])
   op requireSecondFactor(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Switch the Two-factor requirement off (owner and admin only). It is the one operation a
    * User withheld by the requirement may still perform in the Workspace, so an Owner or Admin
@@ -334,9 +316,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.secondFactorManage])
   op liftSecondFactorRequirement(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
    * a name the zone database does not know. A change is recorded as an Audit entry and applies
@@ -347,12 +327,7 @@ namespace SiteWorkspaces {
   op setTimezone(
     @path workspaceId: WorkspaceId,
     @body body: SiteWorkspaceTimezoneInput,
-  ):
-    | SiteWorkspaceResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteWorkspaceResource | Problem;
 
   /** Mint an Account link token (Owner only). Answers 404 when the installation has no
    * Account link configured. */
@@ -361,9 +336,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.accountLinkOpen])
   op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Read the Workspace's revenue settings: the Reporting currency (null until set) and the
    * Attribution window. Open to every member. */
@@ -372,8 +345,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[])
   op getRevenueSettings(@path workspaceId: WorkspaceId):
     | SiteRevenueSettingsResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
    * `revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window
@@ -384,12 +356,7 @@ namespace SiteWorkspaces {
   op updateRevenueSettings(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateRevenueSettingsInput,
-  ):
-    | SiteRevenueSettingsResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteRevenueSettingsResource | Problem;
 }
 
 /** The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2) */

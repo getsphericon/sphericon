@@ -13,7 +13,7 @@ import (
 // EmailLintLint lints a message without saving it (ADR 0040): the one lint of the save paths
 // and the send planner, with the Workspace's Brand kit. What cannot render is an error;
 // everything else is a warning. It needs only the right to read Templates, as it stores nothing.
-func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmailInput) (externalapi.EmailLintLintRes, error) {
+func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmailInput) (*externalapi.LintEmailResult, error) {
 	subject := req.Subject.Value
 	// A document is rendered as a save would render it; one that cannot be is the error finding.
 	body, err := h.templates.LintBody(ctx, &subject, convert.StringPtr(req.Body), convert.DocJSON(req.Doc.Value, req.Doc.Set))

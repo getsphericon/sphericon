@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -31,14 +32,12 @@ func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	stopped, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactKrustyOptedOutID))
 	require.NoError(t, err)
 
-	none, ok := before.(*externalapi.SmsConsent)
-	require.Truef(t, ok, "got %T", before)
+	none := before
 	assert.Equal(t, fixtures.ContactKrustyTexterPhone, none.Phone.Value)
 	assert.False(t, none.Confirmation.Set, "no consent yet")
 	assert.False(t, none.OptOut.Set, "no opt-out yet")
 
-	consent, ok := confirmed.(*externalapi.SmsConsent)
-	require.Truef(t, ok, "got %T", confirmed)
+	consent := confirmed
 	require.True(t, consent.Confirmation.Set)
 	evidence := consent.Confirmation.Value
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, evidence.Provenance)
@@ -48,8 +47,7 @@ func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	confirmedAt := time.Time(evidence.ConfirmedAt)
 	assert.False(t, confirmedAt.IsZero(), "when the number consented")
 
-	optedOut, ok := stopped.(*externalapi.SmsConsent)
-	require.Truef(t, ok, "got %T", stopped)
+	optedOut := stopped
 	require.True(t, optedOut.OptOut.Set, "opted out")
 	assert.Equal(t, externalapi.OptOutViaManual, optedOut.OptOut.Value.Via)
 	assert.False(t, optedOut.Confirmation.Set, "the opt-out ended the consent")
@@ -59,11 +57,9 @@ func TestReadingSMSConsentNeedsContactsReadAndStaysInTheWorkspace(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	writer, err := env.ExternalScoped(t, "contacts:write").SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
-	require.NoError(t, err)
-	foreign, err := env.ExternalScoped(t, "contacts:read").SmsConsentsGet(ctx, smsConsentOf(fixtures.TyrellMatrixConfirmedID))
-	require.NoError(t, err)
+	_, writer := env.ExternalScoped(t, "contacts:write").SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
+	_, foreign := env.ExternalScoped(t, "contacts:read").SmsConsentsGet(ctx, smsConsentOf(fixtures.TyrellMatrixConfirmedID))
 
-	assert.IsType(t, new(externalapi.SmsConsentsGetForbidden), writer)
-	assert.IsType(t, new(externalapi.SmsConsentsGetNotFound), foreign)
+	testhelper.ExternalRefusal(t, writer, http.StatusForbidden)
+	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound)
 }

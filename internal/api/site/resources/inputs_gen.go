@@ -9,7 +9,6 @@ import (
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
-	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	site "github.com/getsphericon/sphericon/gen/site"
 	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
@@ -18,6 +17,7 @@ import (
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	channels "github.com/getsphericon/sphericon/internal/channels"
 	consent "github.com/getsphericon/sphericon/internal/consent"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
@@ -223,19 +223,19 @@ func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.I
 	}
 	return brandkitInput
 }
-func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) broadcast.Channel {
-	var broadcastChannel broadcast.Channel
+func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) channels.Channel {
+	var channelsChannel channels.Channel
 	switch source {
 	case site.BroadcastChannelEmail:
-		broadcastChannel = broadcast.ChannelEmail
+		channelsChannel = channels.Email
 	case site.BroadcastChannelSMS:
-		broadcastChannel = broadcast.ChannelSms
+		channelsChannel = channels.SMS
 	case site.BroadcastChannelTelegram:
-		broadcastChannel = broadcast.ChannelTelegram
+		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return broadcastChannel
+	return channelsChannel
 }
 func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadcasts.CreateInput, error) {
 	var broadcastsCreateInput broadcasts.CreateInput
@@ -712,19 +712,19 @@ func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Directi
 	}
 	return paginationDirection
 }
-func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) suppression.Channel {
-	var suppressionChannel suppression.Channel
+func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) channels.Channel {
+	var channelsChannel channels.Channel
 	switch source {
 	case site.SiteSuppressionChannelEmail:
-		suppressionChannel = suppression.ChannelEmail
+		channelsChannel = channels.Email
 	case site.SiteSuppressionChannelSMS:
-		suppressionChannel = suppression.ChannelSms
+		channelsChannel = channels.SMS
 	case site.SiteSuppressionChannelTelegram:
-		suppressionChannel = suppression.ChannelTelegram
+		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return suppressionChannel
+	return channelsChannel
 }
 func (c *InputsImpl) TelegramBroadcastContentIn(source site.TelegramBroadcastContentInput) broadcasts.TelegramContentInput {
 	var broadcastsTelegramContentInput broadcasts.TelegramContentInput

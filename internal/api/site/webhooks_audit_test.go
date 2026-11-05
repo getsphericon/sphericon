@@ -2,9 +2,9 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -16,21 +16,19 @@ import (
 // (ADR 0022); without one the selection is rejected on create and update.
 func TestWebhookEndpointSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	ctx := context.Background()
-	create := func(env *testhelper.TestEnv) siteapi.SiteWebhooksCreateRes {
-		res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
+	create := func(env *testhelper.TestEnv) error {
+		_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
 			&siteapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: []string{"audit.entry"}},
 			siteapi.SiteWebhooksCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		return res
+		return err
 	}
 
-	assert.IsType(t, &siteapi.SiteWebhookEndpointResource{}, create(testhelper.Setup(t)))
-	assert.IsType(t, new(siteapi.SiteWebhooksCreateUnprocessableEntity), create(testhelper.Setup(t, testhelper.WithoutLicense())))
+	require.NoError(t, create(testhelper.Setup(t)))
+	testhelper.SiteRefusal(t, create(testhelper.Setup(t, testhelper.WithoutLicense())), http.StatusUnprocessableEntity)
 
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksUpdate(ctx,
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksUpdate(ctx,
 		&siteapi.UpdateWebhookInput{EventTypes: []string{"audit.entry"}},
 		siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksUpdateUnprocessableEntity), res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

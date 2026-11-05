@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,17 +22,14 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Invalid domain is rejected.
-	bad, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "not a domain"},
+	_, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "not a domain"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, bad)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// Create mints a keypair and returns the DNS records to publish.
-	created, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "Marketing.Example.COM"},
+	res, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "Marketing.Example.COM"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, "marketing.example.com", res.Domain, "domain is normalized")
 	assert.Equal(t, "sphericon", res.DkimSelector, "selector defaults to sphericon")
 	assert.False(t, res.Verified, "a new domain starts unverified")
@@ -54,51 +52,41 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.NotEmpty(t, row.DkimPrivateKeyEncrypted)
 
 	// Adding the same domain again conflicts.
-	dup, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "marketing.example.com"},
+	_, err = c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "marketing.example.com"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsCreateConflict{}, dup)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	// Fetch it back by id.
-	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	gotRes, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Verify answers once the DKIM check is done (NXDOMAIN stub → stays unverified).
-	ver, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: res.ID})
+	verRes, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	verRes, ok := ver.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", ver)
 	assert.False(t, verRes.Verified)
 	assert.True(t, verRes.LastCheckedAt.IsSet())
 
 	// Delete; a fetch by id still opens it, an unknown id is a 404.
-	deleted, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
+	err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleted)
 
-	kept, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
+	_, err = c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, kept)
 
-	gone, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsGetNotFound{}, gone)
+	_, err = c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: 999999})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteSendingDomainsShowALostVerification(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := c.SiteSendingDomainsGet(t.Context(), siteapi.SiteSendingDomainsGetParams{
+	res, err := c.SiteSendingDomainsGet(t.Context(), siteapi.SiteSendingDomainsGetParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainLostID),
 	})
 
 	require.NoError(t, err)
-	res, ok := got.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.False(t, res.Verified, "a lost verification is not verified")
 	assert.False(t, res.VerifiedAt.Null || !res.VerifiedAt.Set, "when it was verified is shown")
 	assert.False(t, res.VerificationLostAt.Null || !res.VerificationLostAt.Set, "when it was lost is shown")
@@ -109,10 +97,8 @@ func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	list, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
+	page, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	page, ok := list.(*siteapi.SiteSendingDomainsListOK)
-	require.Truef(t, ok, "got %T", list)
 
 	// Count matches the acme fixtures dynamically (don't hardcode dataset size).
 	want, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(fixtures.AcmeID), sendingdomain.DiscardedAtIsNil()).Count(ctx)
@@ -131,7 +117,6 @@ func TestSiteSendingDomainsRequireMembership(t *testing.T) {
 	// A real, authenticated user with no membership on acme must get 404 — never
 	// another tenant's sending domains.
 	c := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	res, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsListNotFound{}, res)
+	_, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

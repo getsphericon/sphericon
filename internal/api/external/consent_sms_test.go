@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,11 +41,9 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 	c := env.ExternalScoped(t, "contacts:write")
 	before := smsDecision(t, env, fixtures.ContactTexterPhone)
 
-	res, err := c.ConfirmationsCreate(t.Context(), smsConsent("+1 (415) 555-0810"))
+	created, err := c.ConfirmationsCreate(t.Context(), smsConsent("+1 (415) 555-0810"))
 
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.ConfirmationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, eligibility.ReasonUnconfirmed, before.Reason)
 	assert.Equal(t, fixtures.ContactTexterPhone, created.Destination)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, created.Provenance)
@@ -66,11 +65,9 @@ func TestAnImportedSMSConfirmationLeavesAStrongerOneStanding(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsKeywordDestination))
+	standing, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsKeywordDestination))
 
 	require.NoError(t, err)
-	standing, ok := res.(*externalapi.ConfirmationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceKeyword, standing.Provenance)
 	assert.False(t, standing.Wording.Set, "the START carries no wording")
 	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, nil)
@@ -82,11 +79,9 @@ func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsGrandfatheredDestination))
+	standing, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsGrandfatheredDestination))
 
 	require.NoError(t, err)
-	standing, ok := res.(*externalapi.ConfirmationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, standing.Provenance)
 	assert.Equal(t, "checkout form", standing.Source.Value)
 	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{"phone": fixtures.ConfirmationSmsGrandfatheredDestination})
@@ -101,16 +96,13 @@ func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t 
 	blankBrand := smsConsent(fixtures.ContactTexterPhone)
 	blankBrand.Brand = "  "
 
-	email, err := c.ConfirmationsCreate(t.Context(), onEmail)
-	require.NoError(t, err)
-	local, err := c.ConfirmationsCreate(t.Context(), smsConsent("(415) 555-0810"))
-	require.NoError(t, err)
-	brand, err := c.ConfirmationsCreate(t.Context(), blankBrand)
-	require.NoError(t, err)
+	_, email := c.ConfirmationsCreate(t.Context(), onEmail)
+	_, local := c.ConfirmationsCreate(t.Context(), smsConsent("(415) 555-0810"))
+	_, brand := c.ConfirmationsCreate(t.Context(), blankBrand)
 
-	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), email)
-	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), local)
-	assert.IsType(t, new(externalapi.ConfirmationsCreateUnprocessableEntity), brand)
+	testhelper.ExternalRefusal(t, email, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, local, http.StatusUnprocessableEntity)
+	testhelper.ExternalRefusal(t, brand, http.StatusUnprocessableEntity)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
 	assert.Equal(t, eligibility.ReasonUnconfirmed, decision.Reason)
 }
@@ -129,8 +121,7 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	_, err = c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ContactTexterPhone))
 	require.NoError(t, err)
 
-	created, ok := res.(*externalapi.UnsubscribeResource)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 	assert.Equal(t, externalapi.ConsentChannelSMS, created.Channel)
 	assert.Equal(t, fixtures.ContactTexterPhone, created.Destination)
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
@@ -152,8 +143,7 @@ func TestAnSMSOptOutDropsTheNumbersConfirmation(t *testing.T) {
 	res, err := c.ConfirmationsCreate(t.Context(), smsConsent(fixtures.ConfirmationSmsKeywordDestination))
 	require.NoError(t, err)
 
-	standing, ok := res.(*externalapi.ConfirmationResource)
-	require.Truef(t, ok, "got %T", res)
+	standing := res
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, standing.Provenance)
 }
 
@@ -161,14 +151,13 @@ func TestAnSMSOptOutIsForEverything(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
+	_, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Channel:       externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS),
 		Destination:   fixtures.ContactTexterPhone,
 		SendingSource: externalapi.NewOptString(eligibility.SourceBroadcasts),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.UnsubscribesCreateUnprocessableEntity), res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // The import (the batch upsert) records an imported Confirmation from an item's consent columns;
@@ -181,15 +170,13 @@ func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 		Wording: "Text me offers", Source: "store signup sheet", Brand: "Acme",
 	})
 
-	res, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+	out, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{Email: externalapi.NewOptNilEmailAddress("sms-yes@example.com"), Phone: externalapi.NewOptNilString("+14155550830"), SmsConsent: evidence},
 		{Email: externalapi.NewOptNilEmailAddress("sms-none@example.com"), Phone: externalapi.NewOptNilString("+14155550831")},
 		{Email: externalapi.NewOptNilEmailAddress("sms-nophone@example.com"), SmsConsent: evidence},
 	}})
 
 	require.NoError(t, err)
-	out, ok := res.(*externalapi.UpsertContactsResult)
-	require.Truef(t, ok, "got %T", res)
 	statuses := []externalapi.ContactBatchStatus{out.Results[0].Status, out.Results[1].Status, out.Results[2].Status}
 	assert.Equal(t, []externalapi.ContactBatchStatus{
 		externalapi.ContactBatchStatusCreated, externalapi.ContactBatchStatusCreated, externalapi.ContactBatchStatusFailed,

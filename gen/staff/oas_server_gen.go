@@ -14,14 +14,14 @@ type Handler interface {
 	// Unknown email and wrong password answer the same 401.
 	//
 	// POST /auth/login
-	StaffAuthLogin(ctx context.Context, req *StaffLoginInput) (StaffAuthLoginRes, error)
+	StaffAuthLogin(ctx context.Context, req *StaffLoginInput) (*StaffLoginResult, error)
 	// StaffAuthLogout implements StaffAuth_logout operation.
 	//
 	// End the session: bumps the Staff member's session epoch, so every session token of the Staff member
 	// (a copied one too) stops verifying, and clears the session cookie.
 	//
 	// POST /auth/logout
-	StaffAuthLogout(ctx context.Context) (StaffAuthLogoutRes, error)
+	StaffAuthLogout(ctx context.Context) (*StaffAuthLogoutNoContent, error)
 	// StaffAuthSecondFactor implements StaffAuth_secondFactor operation.
 	//
 	// The second login step: verify the challenge and a TOTP code, then start the session (the cookie is
@@ -29,14 +29,14 @@ type Handler interface {
 	// challenge and a wrong code answer the same 401.
 	//
 	// POST /auth/second-factor
-	StaffAuthSecondFactor(ctx context.Context, req *StaffSecondFactorInput) (StaffAuthSecondFactorRes, error)
+	StaffAuthSecondFactor(ctx context.Context, req *StaffSecondFactorInput) (*StaffResourceHeaders, error)
 	// StaffInstanceAcknowledgeNotice implements StaffInstance_acknowledgeNotice operation.
 	//
 	// Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
 	// acknowledgement stands, and a repeat changes nothing.
 	//
 	// POST /instance/notice/acknowledge
-	StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error)
+	StaffInstanceAcknowledgeNotice(ctx context.Context) (*StaffInstanceState, error)
 	// StaffInstanceClearDefaultSendCap implements StaffInstance_clearDefaultSendCap operation.
 	//
 	// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
@@ -44,27 +44,27 @@ type Handler interface {
 	// Send caps.
 	//
 	// DELETE /instance/default-send-cap
-	StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error)
+	StaffInstanceClearDefaultSendCap(ctx context.Context) (*StaffDefaultSendCapChange, error)
 	// StaffInstanceGetState implements StaffInstance_getState operation.
 	//
 	// The Instance's own settings and state.
 	//
 	// GET /instance
-	StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error)
+	StaffInstanceGetState(ctx context.Context) (*StaffInstanceState, error)
 	// StaffInstanceListAuditEntries implements StaffInstance_listAuditEntries operation.
 	//
 	// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
 	// own settings.
 	//
 	// GET /instance/audit-entries
-	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error)
+	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (*StaffInstanceAuditEntryList, error)
 	// StaffInstancePreviewTelemetryReport implements StaffInstance_previewTelemetryReport operation.
 	//
 	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
 	// schema describes, built by the code that sends it. Works whether or not sending is on.
 	//
 	// GET /instance/telemetry/preview
-	StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error)
+	StaffInstancePreviewTelemetryReport(ctx context.Context) (JsonObject, error)
 	// StaffInstanceSetDefaultSendCap implements StaffInstance_setDefaultSendCap operation.
 	//
 	// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
@@ -72,26 +72,26 @@ type Handler interface {
 	// Not found on an Instance that has no Send caps.
 	//
 	// PUT /instance/default-send-cap
-	StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error)
+	StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (*StaffDefaultSendCapChange, error)
 	// StaffInstanceSetTelemetry implements StaffInstance_setTelemetry operation.
 	//
 	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
 	//
 	// PUT /instance/telemetry
-	StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (StaffInstanceSetTelemetryRes, error)
+	StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (*StaffInstanceState, error)
 	// StaffMeGet implements StaffMe_get operation.
 	//
 	// The authenticated Staff member.
 	//
 	// GET /me
-	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
+	StaffMeGet(ctx context.Context) (*StaffResource, error)
 	// StaffSignupItemsCreate implements StaffSignupItems_create operation.
 	//
 	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
 	// a second mailings consent are refused (422).
 	//
 	// POST /signup-items
-	StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (StaffSignupItemsCreateRes, error)
+	StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (*StaffSignupItemResource, error)
 	// StaffSignupItemsDelete implements StaffSignupItems_delete operation.
 	//
 	// Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once, and is
@@ -100,26 +100,26 @@ type Handler interface {
 	// unmarked.
 	//
 	// DELETE /signup-items/{id}
-	StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) (StaffSignupItemsDeleteRes, error)
+	StaffSignupItemsDelete(ctx context.Context, params StaffSignupItemsDeleteParams) error
 	// StaffSignupItemsGet implements StaffSignupItems_get operation.
 	//
 	// One Sign-up item, a deleted one too.
 	//
 	// GET /signup-items/{id}
-	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error)
+	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsList implements StaffSignupItems_list operation.
 	//
 	// The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form.
 	//
 	// GET /signup-items
-	StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error)
+	StaffSignupItemsList(ctx context.Context) (*StaffSignupItemList, error)
 	// StaffSignupItemsListVersions implements StaffSignupItems_listVersions operation.
 	//
 	// Every published version of the item's Legal document with who published it and when, the latest
 	// first.
 	//
 	// GET /signup-items/{id}/versions
-	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error)
+	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (*StaffLegalDocumentVersionList, error)
 	// StaffSignupItemsPublish implements StaffSignupItems_publish operation.
 	//
 	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
@@ -127,28 +127,32 @@ type Handler interface {
 	// deleted item is not found.
 	//
 	// POST /signup-items/{id}/versions
-	StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error)
+	StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsReorder implements StaffSignupItems_reorder operation.
 	//
 	// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
 	// the id of every item that is not deleted, exactly once, is refused (422).
 	//
 	// PUT /signup-items/order
-	StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error)
+	StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (*StaffSignupItemList, error)
 	// StaffSignupItemsSaveDraft implements StaffSignupItems_saveDraft operation.
 	//
 	// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
 	// until it is published. A deleted item is not found.
 	//
 	// PUT /signup-items/{id}/draft
-	StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error)
+	StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (*StaffSignupItemResource, error)
 	// StaffSignupItemsUpdate implements StaffSignupItems_update operation.
 	//
 	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent,
 	// and a second mailings consent are refused (422); a deleted item is not found.
 	//
 	// PATCH /signup-items/{id}
-	StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error)
+	StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (*StaffSignupItemResource, error)
+	// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+	//
+	// Used for common default response.
+	NewError(ctx context.Context, err error) *ProblemDetailsStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

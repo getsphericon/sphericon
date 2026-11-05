@@ -20,6 +20,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -33,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -229,19 +231,19 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	presetName, params := in.Preset, in.Params
 	var providerPerSecond *int
 	switch provider {
-	case integration.ProviderSes:
+	case providers.SES:
 		if presetName == nil {
 			presetName = new(string)
 			*presetName = "ses"
 		}
-	case integration.ProviderSMTP, integration.ProviderInbox:
+	case providers.SMTP, providers.Inbox:
 		// The Preset the caller named, if any.
-	case integration.ProviderTelegram:
+	case providers.Telegram:
 		presetName, params = new(string), telegramParams()
 		*presetName = TelegramPreset
 		providerPerSecond = new(int)
 		*providerPerSecond = telegramPerSecond
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		presetName = new(string)
 		*presetName = TwilioPreset
 	}
@@ -253,14 +255,14 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err != nil {
 		return nil, err
 	}
-	if provider == integration.ProviderTelegram {
+	if provider == providers.Telegram {
 		// The bot is connected before the save: Telegram refuses a wrong token or a webhook it cannot
 		// reach, and the save is refused with it.
 		if plaintext, err = m.connectNew(ctx, tokenOf(in.Config.Telegram), key, currentSecret(params["secret"]), enabled); err != nil {
 			return nil, err
 		}
 	}
-	if provider == integration.ProviderTwilio {
+	if provider == providers.Twilio {
 		// The account is checked and its sender pointed at the hook before the save: Twilio refuses
 		// a wrong or revoked key, and the save is refused with it.
 		if plaintext, err = m.connectTwilio(ctx, twilioStored(in.Config.Twilio), key); err != nil {
@@ -301,7 +303,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		return err
 	})
 	if err != nil {
-		if provider == integration.ProviderTelegram && enabled {
+		if provider == providers.Telegram && enabled {
 			// The bot was pointed at a hook that was never saved.
 			m.releaseToken(ctx, 0, tokenOf(in.Config.Telegram))
 		}
@@ -330,13 +332,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	var sealed *string
 	var tg telegramEdit
-	if row.Provider == integration.ProviderTelegram {
+	if row.Provider == providers.Telegram {
 		// The bot is connected, as the edit asks, before the save commits.
 		if tg, err = m.editTelegram(ctx, row, in); err != nil {
 			return nil, err
 		}
 		sealed = tg.sealed
-	} else if row.Provider == integration.ProviderTwilio {
+	} else if row.Provider == providers.Twilio {
 		// New credentials or a new sender are checked with Twilio before the save commits.
 		if sealed, err = m.editTwilio(ctx, row, in); err != nil {
 			return nil, err
@@ -400,7 +402,7 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 	if err != nil {
 		return nil, err
 	}
-	if provider.String() != row.Provider.String() {
+	if provider != row.Provider {
 		return nil, &validation.Error{Field: fieldConfig, Message: i18n.T(i18n.ErrorsIntegrationKindMismatch, nil)}
 	}
 	prev, err := m.cipher.Decrypt(row.ConfigEncrypted)
@@ -460,7 +462,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		if row.DiscardedAt != nil {
 			return nil
 		}
-		if row.Provider == integration.ProviderTelegram && holdsWebhook(row.Enabled, nil) {
+		if row.Provider == providers.Telegram && holdsWebhook(row.Enabled, nil) {
 			released = row
 		}
 		users, err := liveUsers(ctx, ts, row)
@@ -520,7 +522,7 @@ func requireProviderLimit(endpoint string, perSecond, perDay *int) error {
 // keepsProviderLimit applies requireProviderLimit to what an Update leaves: the edited SES
 // config's endpoint or the stored one, and each limit as edited or as stored.
 func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error {
-	if row.Provider != integration.ProviderSes {
+	if row.Provider != providers.SES {
 		return nil
 	}
 	var endpoint string
@@ -561,14 +563,14 @@ func (m *Module) discoverQuota(ctx context.Context, row *ent.Integration) {
 // reportsQuota reports whether the Integration's provider can say what it allows: whether its
 // sender is a messaging.QuotaReader.
 func (m *Module) reportsQuota(row *ent.Integration) bool {
-	if row.Channel != integration.ChannelEmail {
+	if row.Channel != channels.Email {
 		return false
 	}
 	config, err := m.cipher.Decrypt(row.ConfigEncrypted)
 	if err != nil {
 		return false
 	}
-	built, err := m.catalog.BuildEmail(messaging.Provider(row.Provider), config, messaging.Deps{})
+	built, err := m.catalog.BuildEmail(row.Provider, config, messaging.Deps{})
 	if err != nil {
 		return false
 	}
@@ -577,7 +579,7 @@ func (m *Module) reportsQuota(row *ent.Integration) bool {
 }
 
 // clearDefault unsets the existing default Integration for the channel.
-func clearDefault(ctx context.Context, ts *ent.Scoped, channel integration.Channel) error {
+func clearDefault(ctx context.Context, ts *ent.Scoped, channel channels.Channel) error {
 	_, err := ts.Integration().Update().
 		Where(integration.ChannelEQ(channel), integration.IsDefault(true)).
 		SetIsDefault(false).
@@ -587,28 +589,28 @@ func clearDefault(ctx context.Context, ts *ent.Scoped, channel integration.Chann
 
 // encode validates the provider config, derives the provider and channel, and returns
 // the cleartext JSON to seal.
-func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Channel, []byte, error) {
+func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, []byte, error) {
 	var (
-		provider  integration.Provider
+		provider  providers.Provider
 		plaintext []byte
 		err       error
 	)
 	switch {
 	case in.SMTP != nil:
 		c := in.SMTP
-		provider = integration.ProviderSMTP
+		provider = providers.SMTP
 		plaintext, err = json.Marshal(smtp.Config{
 			Host: c.Host, Port: c.Port, Username: c.Username, Password: c.Password, From: c.From, FromName: c.FromName,
 		})
 	case in.SES != nil:
 		c := in.SES
-		provider = integration.ProviderSes
+		provider = providers.SES
 		plaintext, err = json.Marshal(ses.Config{
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
 			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
 		})
 	case in.Inbox != nil:
-		provider = integration.ProviderInbox
+		provider = providers.Inbox
 		plaintext = []byte("{}")
 	case in.Twilio != nil:
 		// A blank secret is an update that keeps the stored one; the rest of the config is checked
@@ -620,9 +622,9 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 		if err := validTwilio(c); err != nil {
 			return "", "", nil, err
 		}
-		channel, _ := m.catalog.ChannelOf(messaging.ProviderTwilio)
+		channel, _ := m.catalog.ChannelOf(providers.Twilio)
 		plaintext, err = json.Marshal(twilioStored(in.Twilio))
-		return integration.ProviderTwilio, integration.Channel(channel), plaintext, err
+		return providers.Twilio, channel, plaintext, err
 	case in.Telegram != nil:
 		// A blank token is an update that keeps the stored one; the bot's id and @username come from
 		// getMe when it connects.
@@ -630,9 +632,9 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 		if token != "" && !telegram.ValidToken(token) {
 			return "", "", nil, tokenFormatError()
 		}
-		channel, _ := m.catalog.ChannelOf(messaging.ProviderTelegram)
+		channel, _ := m.catalog.ChannelOf(providers.Telegram)
 		plaintext, err = json.Marshal(telegram.Config{Token: token})
-		return integration.ProviderTelegram, integration.Channel(channel), plaintext, err
+		return providers.Telegram, channel, plaintext, err
 	default:
 		return "", "", nil, configError(errUnknownProvider)
 	}
@@ -640,14 +642,14 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 		return "", "", nil, err
 	}
 
-	channel, ok := m.catalog.ChannelOf(messaging.Provider(provider))
+	channel, ok := m.catalog.ChannelOf(provider)
 	if !ok {
 		return "", "", nil, configError(errUnknownProvider)
 	}
-	if err := m.catalog.Validate(channel, messaging.Provider(provider), plaintext); err != nil {
+	if err := m.catalog.Validate(channel, provider, plaintext); err != nil {
 		return "", "", nil, configError(err)
 	}
-	return provider, integration.Channel(channel), plaintext, nil
+	return provider, channel, plaintext, nil
 }
 
 func configError(err error) *validation.Error {
@@ -662,9 +664,9 @@ func configError(err error) *validation.Error {
 // the Integration elsewhere with a blank secret is a refusal, never a silent carry-over:
 // the caller must supply the secret again. The provider kind is guaranteed to match
 // (checked before this is called).
-func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, error) {
+func mergeSecrets(provider providers.Provider, next, prev []byte) ([]byte, error) {
 	switch provider {
-	case integration.ProviderSMTP:
+	case providers.SMTP:
 		var n, p smtp.Config
 		if err := json.Unmarshal(next, &n); err != nil {
 			return nil, err
@@ -679,7 +681,7 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 			n.Password = p.Password
 		}
 		return json.Marshal(n)
-	case integration.ProviderSes:
+	case providers.SES:
 		var n, p ses.Config
 		if err := json.Unmarshal(next, &n); err != nil {
 			return nil, err
@@ -694,11 +696,11 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 			n.SecretAccessKey = p.SecretAccessKey
 		}
 		return json.Marshal(n)
-	case integration.ProviderInbox:
+	case providers.Inbox:
 		return next, nil // no secret
-	case integration.ProviderTelegram:
+	case providers.Telegram:
 		return next, nil // never merged here: editTelegram carries the token forward
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		return next, nil // never merged here: editTwilio carries the secret forward
 	}
 	return next, nil
@@ -744,7 +746,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		return RedactedConfig{}, err
 	}
 	switch row.Provider {
-	case integration.ProviderSMTP:
+	case providers.SMTP:
 		var c smtp.Config
 		if err := json.Unmarshal(plaintext, &c); err != nil {
 			return RedactedConfig{}, err
@@ -752,7 +754,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		return RedactedConfig{SMTP: &RedactedSMTP{
 			Host: c.Host, Port: c.Port, Username: c.Username, From: c.From, FromName: c.FromName,
 		}}, nil
-	case integration.ProviderSes:
+	case providers.SES:
 		var c ses.Config
 		if err := json.Unmarshal(plaintext, &c); err != nil {
 			return RedactedConfig{}, err
@@ -764,15 +766,15 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		return RedactedConfig{SES: &RedactedSES{
 			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, AccessKeyIDLast4: last4,
 		}}, nil
-	case integration.ProviderInbox:
+	case providers.Inbox:
 		return RedactedConfig{Inbox: &RedactedInbox{}}, nil
-	case integration.ProviderTelegram:
+	case providers.Telegram:
 		var c telegram.Config
 		if err := json.Unmarshal(plaintext, &c); err != nil {
 			return RedactedConfig{}, err
 		}
 		return RedactedConfig{Telegram: &RedactedTelegram{BotID: c.BotID, Username: c.Username}}, nil
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		return redactTwilio(plaintext)
 	}
 	return RedactedConfig{}, errUnknownProvider

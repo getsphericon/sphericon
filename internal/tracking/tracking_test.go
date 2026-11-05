@@ -5,12 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 func TestTokenRoundTrip(t *testing.T) {
@@ -36,7 +38,7 @@ func TestDecodeRejectsWrongSecret(t *testing.T) {
 func TestUnsubTokenRoundTrip(t *testing.T) {
 	tr := tracking.New("secret", "https://app.test")
 	target := tracking.UnsubTarget{
-		Channel:     messaging.ChannelEmail,
+		Channel:     channels.Email,
 		Source:      "automation:7",
 		Destination: "person@example.com",
 		WorkspaceID: fixtures.AcmeID,
@@ -100,7 +102,7 @@ func TestRewriteWrapsLinksAndAddsPixelAndFooter(t *testing.T) {
 	body := `<p>Hello <a href="https://dest.test/path?x=1">click</a> or <a href="mailto:a@b.test">mail</a></p>`
 
 	out, err := tr.Rewrite(body, 7, tracking.UnsubTarget{
-		Channel: messaging.ChannelEmail,
+		Channel: channels.Email,
 		Source:  "broadcasts", Destination: "x@y.test", WorkspaceID: fixtures.AcmeID, ContactID: 2, BroadcastID: 3,
 	}, "Acme Inc, 123 Main St, Springfield")
 	require.NoError(t, err)
@@ -156,7 +158,7 @@ func TestDecodeClickRefusesTokensWithoutASignedDestination(t *testing.T) {
 
 func TestUnsubscribeFooterPostalAddress(t *testing.T) {
 	tr := tracking.New("secret", "https://app.test")
-	target := tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "x@y.test", WorkspaceID: fixtures.AcmeID}
+	target := tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "x@y.test", WorkspaceID: fixtures.AcmeID}
 
 	// Empty address: the footer renders the unsubscribe line only (non-gating).
 	bare, err := tr.UnsubscribeFooter(target, "")
@@ -175,7 +177,7 @@ func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
 	old := tracking.New("old-secret", "https://app.test")
 	mailed, err := old.Token(5)
 	require.NoError(t, err)
-	unsub, err := old.UnsubscribeURL(tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: "broadcasts", Destination: "a@b.test", WorkspaceID: 2})
+	unsub, err := old.UnsubscribeURL(tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.test", WorkspaceID: 2})
 	require.NoError(t, err)
 
 	rotated := tracking.New("new-secret", "https://app.test", "old-secret")

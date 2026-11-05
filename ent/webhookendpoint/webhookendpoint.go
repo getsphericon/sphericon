@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 const (
@@ -93,25 +94,10 @@ var (
 	URLValidator func(string) error
 )
 
-// LastErrorKind defines the type for the "last_error_kind" enum field.
-type LastErrorKind string
-
-// LastErrorKind values.
-const (
-	LastErrorKindTimeout        LastErrorKind = "timeout"
-	LastErrorKindBlockedAddress LastErrorKind = "blocked_address"
-	LastErrorKindHTTPStatus     LastErrorKind = "http_status"
-	LastErrorKindNetwork        LastErrorKind = "network"
-)
-
-func (lek LastErrorKind) String() string {
-	return string(lek)
-}
-
 // LastErrorKindValidator is a validator for the "last_error_kind" field enum values. It is called by the builders before save.
-func LastErrorKindValidator(lek LastErrorKind) error {
+func LastErrorKindValidator(lek webhook.ErrorKind) error {
 	switch lek {
-	case LastErrorKindTimeout, LastErrorKindBlockedAddress, LastErrorKindHTTPStatus, LastErrorKindNetwork:
+	case "timeout", "blocked_address", "http_status", "network":
 		return nil
 	default:
 		return fmt.Errorf("webhookendpoint: invalid enum value for last_error_kind field: %q", lek)

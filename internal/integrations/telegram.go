@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -79,7 +79,7 @@ func (m *Module) bot(token string) (messaging.TelegramBot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return m.catalog.BuildTelegram(messaging.ProviderTelegram, raw)
+	return m.catalog.BuildTelegram(providers.Telegram, raw)
 }
 
 // Bot is the bot a Telegram Integration is, built from its stored token: what the Ingest hook
@@ -285,19 +285,19 @@ func tokenFormatError() error {
 // presetFits refuses a Preset or params a write names that do not fit the provider: a Telegram
 // Integration takes neither (its Preset is fixed), a Twilio Integration only its own Preset's params,
 // and no other Integration takes the telegram or the twilio Preset.
-func presetFits(provider integration.Provider, name *string, params map[string]any) error {
+func presetFits(provider providers.Provider, name *string, params map[string]any) error {
 	switch provider {
-	case integration.ProviderTelegram:
+	case providers.Telegram:
 		if name != nil || len(params) > 0 {
 			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTelegramPresetFixed, nil)}
 		}
 		return nil
-	case integration.ProviderTwilio:
+	case providers.Twilio:
 		if name != nil && *name != TwilioPreset {
 			return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationTwilioPresetFixed, nil)}
 		}
 		return nil
-	case integration.ProviderSMTP, integration.ProviderSes, integration.ProviderInbox:
+	case providers.SMTP, providers.SES, providers.Inbox:
 	}
 	if name != nil && *name == TelegramPreset {
 		return &validation.Error{Field: fieldPreset, Message: i18n.T(i18n.ErrorsIntegrationPresetTelegramOnly, nil)}

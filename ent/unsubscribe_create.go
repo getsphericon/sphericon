@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // UnsubscribeCreate is the builder for creating a Unsubscribe entity.
@@ -59,13 +60,13 @@ func (_c *UnsubscribeCreate) SetWorkspaceID(v int64) *UnsubscribeCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (_c *UnsubscribeCreate) SetChannel(v unsubscribe.Channel) *UnsubscribeCreate {
+func (_c *UnsubscribeCreate) SetChannel(v channels.Channel) *UnsubscribeCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *UnsubscribeCreate) SetNillableChannel(v *unsubscribe.Channel) *UnsubscribeCreate {
+func (_c *UnsubscribeCreate) SetNillableChannel(v *channels.Channel) *UnsubscribeCreate {
 	if v != nil {
 		_c.SetChannel(*v)
 	}
@@ -388,7 +389,7 @@ func (u *UnsubscribeUpsert) UpdateWorkspaceID() *UnsubscribeUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *UnsubscribeUpsert) SetChannel(v unsubscribe.Channel) *UnsubscribeUpsert {
+func (u *UnsubscribeUpsert) SetChannel(v channels.Channel) *UnsubscribeUpsert {
 	u.Set(unsubscribe.FieldChannel, v)
 	return u
 }
@@ -539,7 +540,7 @@ func (u *UnsubscribeUpsertOne) UpdateWorkspaceID() *UnsubscribeUpsertOne {
 }
 
 // SetChannel sets the "channel" field.
-func (u *UnsubscribeUpsertOne) SetChannel(v unsubscribe.Channel) *UnsubscribeUpsertOne {
+func (u *UnsubscribeUpsertOne) SetChannel(v channels.Channel) *UnsubscribeUpsertOne {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.SetChannel(v)
 	})
@@ -868,7 +869,7 @@ func (u *UnsubscribeUpsertBulk) UpdateWorkspaceID() *UnsubscribeUpsertBulk {
 }
 
 // SetChannel sets the "channel" field.
-func (u *UnsubscribeUpsertBulk) SetChannel(v unsubscribe.Channel) *UnsubscribeUpsertBulk {
+func (u *UnsubscribeUpsertBulk) SetChannel(v channels.Channel) *UnsubscribeUpsertBulk {
 	return u.Update(func(s *UnsubscribeUpsert) {
 		s.SetChannel(v)
 	})

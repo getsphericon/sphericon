@@ -2,8 +2,13 @@ package collect_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
+
+	"github.com/go-faster/jx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -13,22 +18,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/go-faster/jx"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCollectKeyAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.CollectAnonymous(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
+	err := env.CollectAnonymous(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)
 
-	res, err = env.CollectWithKey(t, "wrong-key").CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
+	err = env.CollectWithKey(t, "wrong-key").CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)
 }
 
 func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
@@ -36,14 +36,12 @@ func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 	ctx := context.Background()
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
+	err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
-	res, err = env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
-	require.NoError(t, err)
-	assert.NotEqual(t, &collectapi.CollectEventsCreateUnauthorized{}, res, "restored, the key works again")
+	err = env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	require.NoError(t, err, "restored, the key works again")
 }
 
 func TestCollectIdentifyAndEvents(t *testing.T) {
@@ -52,7 +50,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 	ctx := context.Background()
 
 	// Identify with typed traits — exercises map[string]jx.Raw -> map[string]any.
-	ident, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "v1",
 		Email:     collectapi.NewOptNilEmailAddress("trav@example.com"),
 		Traits: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
@@ -61,7 +59,6 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 		}),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectOkResponse{}, ident)
 
 	// Identify upserts a Contact (not a separate tracking profile) and merges the
 	// traits as typed custom field values.
@@ -83,7 +80,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 	assert.Equal(t, customfield.TypeNumber, visitsDef.Type)
 
 	// Events with properties — same conversion path.
-	evRes, err := c.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
+	err = c.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{
 			VisitorId: "v1",
 			Action:    "page_view",
@@ -94,7 +91,6 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, evRes)
 
 	// The event is published as a CollectedEvent. Decode the queued event and assert the
 	// customer's event is carried as-is, with the resolved identity.

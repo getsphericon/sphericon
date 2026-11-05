@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // ConfirmationUpdate is the builder for updating Confirmation entities.
@@ -52,13 +53,13 @@ func (_u *ConfirmationUpdate) SetNillableWorkspaceID(v *int64) *ConfirmationUpda
 }
 
 // SetChannel sets the "channel" field.
-func (_u *ConfirmationUpdate) SetChannel(v confirmation.Channel) *ConfirmationUpdate {
+func (_u *ConfirmationUpdate) SetChannel(v channels.Channel) *ConfirmationUpdate {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *ConfirmationUpdate) SetNillableChannel(v *confirmation.Channel) *ConfirmationUpdate {
+func (_u *ConfirmationUpdate) SetNillableChannel(v *channels.Channel) *ConfirmationUpdate {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -408,13 +409,13 @@ func (_u *ConfirmationUpdateOne) SetNillableWorkspaceID(v *int64) *ConfirmationU
 }
 
 // SetChannel sets the "channel" field.
-func (_u *ConfirmationUpdateOne) SetChannel(v confirmation.Channel) *ConfirmationUpdateOne {
+func (_u *ConfirmationUpdateOne) SetChannel(v channels.Channel) *ConfirmationUpdateOne {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *ConfirmationUpdateOne) SetNillableChannel(v *confirmation.Channel) *ConfirmationUpdateOne {
+func (_u *ConfirmationUpdateOne) SetNillableChannel(v *channels.Channel) *ConfirmationUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,11 +22,11 @@ import (
 func TestRealProvidersWithoutAVerifiedSendingDomainAreHeld(t *testing.T) {
 	catalog := messaging.NewCatalog(ses.Descriptor(), smtp.Descriptor())
 	cases := map[string]struct {
-		provider messaging.Provider
+		provider providers.Provider
 		config   string
 	}{
-		"SES":  {messaging.ProviderSES, `{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"s","from":"hello@globex.example"}`},
-		"SMTP": {messaging.ProviderSMTP, `{"host":"smtp.example.com","port":587,"from":"hello@globex.example"}`},
+		"SES":  {providers.SES, `{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"s","from":"hello@globex.example"}`},
+		"SMTP": {providers.SMTP, `{"host":"smtp.example.com","port":587,"from":"hello@globex.example"}`},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

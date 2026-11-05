@@ -28,10 +28,12 @@ model SiteLinkedIdentities {
 namespace SiteIdentities {
   /** List the authenticated User's Linked identities */
   @get
-  op list(): {
-    @statusCode statusCode: 200;
-    @body body: SiteLinkedIdentities;
-  };
+  op list():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteLinkedIdentities;
+      }
+    | Problem;
 
   /** Start linking another Sign-in provider account to the authenticated User. Works like
    * `start` of a sign-in, but the flow cookie also names the User, and the shared callback
@@ -56,8 +58,7 @@ namespace SiteIdentities {
         /** The flow cookie */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Unlink an identity. 409 when it would leave the User no way to sign in (no password
    * and no other identity). Every other session ends; the acting one continues under the
@@ -71,7 +72,5 @@ namespace SiteIdentities {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | NotFoundProblem
-    | ConflictProblem;
+    | Problem;
 }

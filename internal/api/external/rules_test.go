@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,10 +20,8 @@ func TestExternalRulesReadAnEnrollAction(t *testing.T) {
 	ctx := context.Background()
 	reader := env.ExternalScoped(t, "automations:read")
 
-	got, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleEnrollGreetingID)})
+	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleEnrollGreetingID)})
 	require.NoError(t, err)
-	rule, ok := got.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", got)
 	live, published := rule.Live.Get()
 	require.True(t, published)
 	require.Len(t, live.Actions, 1)
@@ -35,10 +34,8 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	ctx := context.Background()
 	reader := env.ExternalScoped(t, "automations:read")
 
-	got, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleVipOnlyID)})
+	rule, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleVipOnlyID)})
 	require.NoError(t, err)
-	rule, ok := got.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, fixtures.RuleVipOnlyName, rule.Name)
 	assert.Equal(t, externalapi.RuleStatusActive, rule.Status)
 	live, published := rule.Live.Get()
@@ -52,20 +49,16 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	require.Len(t, live.Actions, 1)
 	assert.Equal(t, "rule-vip-seen", live.Actions[0].Tag.Or(""))
 
-	firings, err := reader.RuleFiringsList(ctx, externalapi.RuleFiringsListParams{RuleId: entityIDString(fixtures.RuleTagClickedID)})
+	listed, err := reader.RuleFiringsList(ctx, externalapi.RuleFiringsListParams{RuleId: entityIDString(fixtures.RuleTagClickedID)})
 	require.NoError(t, err)
-	listed, ok := firings.(*externalapi.RuleFiringsListOK)
-	require.Truef(t, ok, "got %T", firings)
 	assert.EqualValues(t, 2, listed.TotalItems)
 
-	foreign, err := reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesGetNotFound{}, foreign)
+	_, err = reader.RulesGet(ctx, externalapi.RulesGetParams{ID: entityIDString(fixtures.RuleGlobexID)})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	denied := env.ExternalScoped(t, "contacts:read")
-	list, err := denied.RulesList(ctx, externalapi.RulesListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesListForbidden{}, list)
+	_, err = denied.RulesList(ctx, externalapi.RulesListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // Created Rules are always inactive, even for a token that may publish; publishing takes the
@@ -77,36 +70,30 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	author := env.ExternalScoped(t, "automations:read", "automations:write")
 	publisher := env.ExternalScoped(t, "automations:publish")
 
-	created, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
+	res, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Tag who clicks",
 		TriggerEvents: []string{"email.clicked"},
 		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("clicker")}},
 	})
 	require.NoError(t, err)
-	res, ok := created.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, externalapi.RuleStatusInactive, res.Status)
 
-	byAuthor, err := author.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesPublishForbidden{}, byAuthor)
+	_, err = author.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	published, err := publisher.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
+	active, err := publisher.RulesPublish(ctx, externalapi.RulesPublishParams{ID: res.ID})
 	require.NoError(t, err)
-	active, ok := published.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", published)
 	assert.Equal(t, externalapi.RuleStatusActive, active.Status)
 
-	typo, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
+	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Typo",
 		TriggerEvents: []string{"email.clicked"},
 		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`)),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesCreateUnprocessableEntity{}, typo)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	counted, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
+	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Clicked twice this week",
 		TriggerEvents: []string{"email.clicked"},
 		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
@@ -114,15 +101,11 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 			`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RuleResource{}, counted, "a Rule's Condition takes an event count")
 
-	byPublisher, err := publisher.RulesDeactivate(ctx, externalapi.RulesDeactivateParams{ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDeactivateForbidden{}, byPublisher)
+	_, err = publisher.RulesDeactivate(ctx, externalapi.RulesDeactivateParams{ID: res.ID})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	deactivated, err := author.RulesDeactivate(ctx, externalapi.RulesDeactivateParams{ID: res.ID})
+	inactive, err := author.RulesDeactivate(ctx, externalapi.RulesDeactivateParams{ID: res.ID})
 	require.NoError(t, err)
-	inactive, ok := deactivated.(*externalapi.RuleResource)
-	require.Truef(t, ok, "got %T", deactivated)
 	assert.Equal(t, externalapi.RuleStatusInactive, inactive.Status)
 }

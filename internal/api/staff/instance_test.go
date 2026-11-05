@@ -25,18 +25,14 @@ import (
 
 func instanceState(t *testing.T, c *staffapi.Client) *staffapi.StaffInstanceState {
 	t.Helper()
-	res, err := c.StaffInstanceGetState(t.Context())
+	state, err := c.StaffInstanceGetState(t.Context())
 	require.NoError(t, err)
-	state, ok := res.(*staffapi.StaffInstanceState)
-	require.Truef(t, ok, "expected the state, got %T", res)
 	return state
 }
 
-func setTelemetry(t *testing.T, c *staffapi.Client, enabled bool) staffapi.StaffInstanceSetTelemetryRes {
+func setTelemetry(t *testing.T, c *staffapi.Client, enabled bool) (*staffapi.StaffInstanceState, error) {
 	t.Helper()
-	res, err := c.StaffInstanceSetTelemetry(t.Context(), &staffapi.StaffInstanceTelemetryInput{Enabled: enabled})
-	require.NoError(t, err)
-	return res
+	return c.StaffInstanceSetTelemetry(t.Context(), &staffapi.StaffInstanceTelemetryInput{Enabled: enabled})
 }
 
 func TestTheTelemetryReportIsOnAndItsNoticeUnacknowledgedAtFirst(t *testing.T) {
@@ -59,15 +55,16 @@ func TestAStaffMemberSwitchesTheTelemetryReportOffAndOn(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	off, ok := setTelemetry(t, c, false).(*staffapi.StaffInstanceState)
-	require.True(t, ok)
+	off, err := setTelemetry(t, c, false)
+	require.NoError(t, err)
 	assert.False(t, off.Telemetry.Enabled)
 	row, err := h.env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
 	assert.False(t, row.TelemetryEnabled)
 	assert.False(t, instanceState(t, c).Telemetry.Enabled)
 
-	setTelemetry(t, c, true)
+	_, err = setTelemetry(t, c, true)
+	require.NoError(t, err)
 	assert.True(t, instanceState(t, c).Telemetry.Enabled)
 }
 
@@ -75,10 +72,8 @@ func TestAcknowledgingTheNoticeKeepsTheFirstTime(t *testing.T) {
 	h := newHarness(t)
 	first := h.clock.now()
 
-	res, err := h.console(t).StaffInstanceAcknowledgeNotice(t.Context())
+	state, err := h.console(t).StaffInstanceAcknowledgeNotice(t.Context())
 	require.NoError(t, err)
-	state, ok := res.(*staffapi.StaffInstanceState)
-	require.True(t, ok)
 	assert.True(t, state.NoticeAcknowledged)
 
 	// Two days on, past the first session: a Staff member signs in again and acknowledges again.
@@ -138,9 +133,9 @@ func TestALockedSettingIsRefusedAndShownLocked(t *testing.T) {
 	h := newLicensedHarness(t, testhelper.WithMode(config.ModeSaaS))
 	c := h.console(t)
 
-	conflict, ok := setTelemetry(t, c, true).(*staffapi.StaffInstanceSetTelemetryConflict)
+	_, err := setTelemetry(t, c, true)
 
-	require.True(t, ok, "expected a conflict")
+	conflict := testhelper.StaffRefusal(t, err, http.StatusConflict, "expected a conflict")
 	assert.NotEmpty(t, conflict.Detail.Value)
 	state := instanceState(t, c)
 	assert.False(t, state.Telemetry.Enabled)
@@ -156,17 +151,15 @@ func TestThePreviewIsTheValidReportAndWorksWithSendingOff(t *testing.T) {
 	c := h.console(t)
 	require.False(t, instanceState(t, c).Telemetry.Enabled)
 
-	res, err := c.StaffInstancePreviewTelemetryReport(t.Context())
+	preview, err := c.StaffInstancePreviewTelemetryReport(t.Context())
 
 	require.NoError(t, err)
-	preview, ok := res.(*staffapi.JsonObject)
-	require.Truef(t, ok, "expected the report, got %T", res)
 	body, err := json.Marshal(preview)
 	require.NoError(t, err)
 	require.NoError(t, telemetryschema.Validate(body))
 	row, err := h.env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
-	assert.JSONEq(t, `"`+row.InstanceID+`"`, string((*preview)["instanceId"]))
+	assert.JSONEq(t, `"`+row.InstanceID+`"`, string(preview["instanceId"]))
 }
 
 // releases is a GitHub Releases source whose latest release is tag.
@@ -224,12 +217,10 @@ func TestTheInstanceSectionNeedsASignedInStaffMember(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.StaffAnonymous(t)
 
-	state, err := c.StaffInstanceGetState(t.Context())
-	require.NoError(t, err)
-	requireProblem(t, state, 401)
-	ack, err := c.StaffInstanceAcknowledgeNotice(t.Context())
-	require.NoError(t, err)
-	requireProblem(t, ack, 401)
+	_, err := c.StaffInstanceGetState(t.Context())
+	requireProblem(t, err, 401)
+	_, err = c.StaffInstanceAcknowledgeNotice(t.Context())
+	requireProblem(t, err, 401)
 	row, err := h.env.Instance.Ensure(t.Context())
 	require.NoError(t, err)
 	assert.Nil(t, row.NoticeAcknowledgedAt)

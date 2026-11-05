@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"testing"
 	"time"
 
@@ -20,15 +21,12 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 
 	for _, scopes := range [][]string{{}, {"contacts:read", "events:read", "tokens:read"}} {
 		c := env.ExternalScoped(t, scopes...)
-		res, err := c.AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.AuditEntriesListForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 
-	res, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
+	page, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
 	require.NoError(t, err)
-	page, ok := res.(*externalapi.AuditEntryList)
-	require.Truef(t, ok, "got %T", res)
 	require.Len(t, page.Items, 1, "only the Workspace's own fixture entry")
 	e := page.Items[0]
 	assert.EqualValues(t, fixtures.AcmeAuditEntryID, e.ID)
@@ -42,9 +40,8 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 	env := testhelper.Setup(t)
 	globex := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
-	res, err := globex.AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
+	page, err := globex.AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
 	require.NoError(t, err)
-	page := res.(*externalapi.AuditEntryList)
 	require.Len(t, page.Items, 5, "Globex's own fixture entries, none of Acme's")
 	assert.EqualValues(t, fixtures.GlobexAuditEntryID, page.Items[len(page.Items)-1].ID, "oldest last")
 }
@@ -60,7 +57,7 @@ func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 	for range 3 {
 		res, err := c.AuditEntriesList(ctx, params)
 		require.NoError(t, err)
-		last = res.(*externalapi.AuditEntryList)
+		last = res
 		for _, e := range last.Items {
 			seen = append(seen, int64(e.ID))
 		}
@@ -94,9 +91,8 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := c.AuditEntriesList(context.Background(), tc.params)
+			page, err := c.AuditEntriesList(context.Background(), tc.params)
 			require.NoError(t, err)
-			page := res.(*externalapi.AuditEntryList)
 			got := make([]string, len(page.Items))
 			for i, e := range page.Items {
 				got[i] = string(e.Action)
@@ -116,7 +112,7 @@ func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 	count := func(p externalapi.AuditEntriesListParams) int {
 		res, err := c.AuditEntriesList(ctx, p)
 		require.NoError(t, err)
-		return len(res.(*externalapi.AuditEntryList).Items)
+		return len(res.Items)
 	}
 	assert.Zero(t, count(externalapi.AuditEntriesListParams{ActorId: externalapi.NewOptString("op-fixture")}))
 	assert.Equal(t, 1, count(externalapi.AuditEntriesListParams{
@@ -125,15 +121,13 @@ func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 
 func TestExternalAuditListWithoutLicenseIsPaymentRequired(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
-	res, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuditEntriesListPaymentRequired{}, res)
+	_, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(), externalapi.AuditEntriesListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusPaymentRequired)
 }
 
 func TestExternalAuditListRejectsABadCursor(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(),
+	_, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(context.Background(),
 		externalapi.AuditEntriesListParams{Cursor: externalapi.NewOptString("nope")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuditEntriesListBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"github.com/getsphericon/sphericon/internal/problem"
 	"io"
 	"net/http"
 	"time"
@@ -14,11 +15,10 @@ import (
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
 // an instance without an Enterprise license answers 402 (ADR 0014, ADR 0022).
-func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (siteapi.SiteAuditListRes, error) {
+func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (*siteapi.SiteAuditEntryList, error) {
 	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.Licensed() {
-		v := siteapi.SiteAuditListPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
-		return &v, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "the audit log needs an Enterprise license"}
 	}
 
 	filter := events.AuditFilter{
@@ -52,11 +52,10 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 // SiteAuditFacets lists the actors, actions and target types that occur in the Workspace's
 // Audit log, the choices of its filter. Same access as the list: owner and admin only, 402
 // without an Enterprise license.
-func (h *Handlers) SiteAuditFacets(ctx context.Context, _ siteapi.SiteAuditFacetsParams) (siteapi.SiteAuditFacetsRes, error) {
+func (h *Handlers) SiteAuditFacets(ctx context.Context, _ siteapi.SiteAuditFacetsParams) (*siteapi.SiteAuditFacets, error) {
 	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.Licensed() {
-		v := siteapi.SiteAuditFacetsPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
-		return &v, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "the audit log needs an Enterprise license"}
 	}
 	facets, err := h.audit.Facets(ctx, s)
 	if err != nil {
@@ -69,11 +68,10 @@ func (h *Handlers) SiteAuditFacets(ctx context.Context, _ siteapi.SiteAuditFacet
 // SiteAuditExport downloads the whole Audit log as CSV, newest first. Same access as
 // the list: owner and admin only, 402 without an Enterprise license. It takes the
 // same filter as SiteAuditList, so an export matches what the page shows.
-func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAuditExportParams) (siteapi.SiteAuditExportRes, error) {
+func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAuditExportParams) (*siteapi.SiteAuditExportOKHeaders, error) {
 	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.Licensed() {
-		v := siteapi.SiteAuditExportPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
-		return &v, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "the audit log needs an Enterprise license"}
 	}
 
 	filter := events.AuditFilter{
@@ -110,11 +108,10 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 
 // SiteAuditGetRetention reads the Audit log retention window. Owner and admin only;
 // 402 without the Enterprise retention license.
-func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAuditGetRetentionParams) (siteapi.SiteAuditGetRetentionRes, error) {
+func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAuditGetRetentionParams) (*siteapi.SiteAuditRetention, error) {
 	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.RetentionLicensed() {
-		v := siteapi.SiteAuditGetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
-		return &v, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "audit retention needs an Enterprise license"}
 	}
 	ws, err := h.accounts.Workspace(ctx, s)
 	if err != nil {
@@ -125,11 +122,10 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAudi
 
 // SiteAuditSetRetention sets or clears the Audit log retention window and records the
 // change as a `workspace.update` Audit entry. Owner and admin only.
-func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, _ siteapi.SiteAuditSetRetentionParams) (siteapi.SiteAuditSetRetentionRes, error) {
+func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, _ siteapi.SiteAuditSetRetentionParams) (*siteapi.SiteAuditRetention, error) {
 	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.RetentionLicensed() {
-		v := siteapi.SiteAuditSetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
-		return &v, nil
+		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "audit retention needs an Enterprise license"}
 	}
 	var days *int
 	if !req.RetentionDays.Null {

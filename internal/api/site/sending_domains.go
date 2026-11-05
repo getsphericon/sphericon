@@ -19,7 +19,7 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendi
 	return res
 }
 
-func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (siteapi.SiteSendingDomainsListRes, error) {
+func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (*siteapi.SiteSendingDomainsListOK, error) {
 	s := workspaceScope(ctx)
 
 	page, err := h.sendingDomains.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
@@ -30,7 +30,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	return mapper.SendingDomainsListPage(pagination.Map(page, h.sendingDomainResource)), nil
 }
 
-func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
+func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (*siteapi.SiteSendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	d, err := h.sendingDomains.Create(ctx, s, inputs.SendingDomainCreate(req))
@@ -41,7 +41,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Cr
 	return &res, nil
 }
 
-func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (siteapi.SiteSendingDomainsGetRes, error) {
+func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (*siteapi.SiteSendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -55,14 +55,11 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 
 // SiteSendingDomainsDelete deletes a sending domain for good (ADR 0049): it leaves the list. Live
 // sends from it refuse it with 409.
-func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.SiteSendingDomainsDeleteParams) (siteapi.SiteSendingDomainsDeleteRes, error) {
-	if err := h.sendingDomains.Delete(ctx, workspaceScope(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteSendingDomainsDeleteNoContent{}, nil
+func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.SiteSendingDomainsDeleteParams) error {
+	return h.sendingDomains.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
-func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (siteapi.SiteSendingDomainsVerifyRes, error) {
+func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (*siteapi.SiteSendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -57,7 +58,7 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 // Integration is not kept working (ADR 0099): nobody sends with its credential.
 func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]int64, error) {
 	return client.Integration.Query().
-		Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).
+		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
 		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).
 		IDs(ctx)

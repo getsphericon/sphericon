@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -15,27 +16,23 @@ import (
 
 func listSendingDomains(t *testing.T, c *siteapi.Client) []int64 {
 	t.Helper()
-	res, err := c.SiteSendingDomainsList(context.Background(), siteapi.SiteSendingDomainsListParams{
+	list, err := c.SiteSendingDomainsList(context.Background(), siteapi.SiteSendingDomainsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		PageSize:    siteapi.NewOptInt32(100),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteSendingDomainsListOK)
-	require.Truef(t, ok, "got %T", res)
 	return lo.Map(list.Items, func(d siteapi.SiteSendingDomainResource, _ int) int64 { return int64(d.ID) })
 }
 
-func deleteSendingDomain(t *testing.T, c *siteapi.Client, id int64) siteapi.SiteSendingDomainsDeleteRes {
+func deleteSendingDomain(t *testing.T, c *siteapi.Client, id int64) error {
 	t.Helper()
 	return deleteSendingDomainOf(t, c, fixtures.AcmePublicID, id)
 }
 
 // deleteSendingDomainOf deletes the Sending domain id of the Workspace as c.
-func deleteSendingDomainOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteSendingDomainsDeleteRes {
+func deleteSendingDomainOf(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) error {
 	t.Helper()
-	res, err := c.SiteSendingDomainsDelete(t.Context(), siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
-	require.NoError(t, err)
-	return res
+	return c.SiteSendingDomainsDelete(t.Context(), siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: ws, ID: idStr(id)})
 }
 
 // A deleted Sending domain leaves the list for good and can still be read by id, marked deleted.
@@ -48,16 +45,14 @@ func TestSiteSendingDomainsDelete(t *testing.T) {
 
 	assert.NotContains(t, listSendingDomains(t, c), int64(fixtures.SendingDomainArchivedID), "a deleted fixture row is hidden")
 
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomain(t, c, id))
+	require.NoError(t, deleteSendingDomain(t, c, id))
 
 	assert.NotContains(t, listSendingDomains(t, c), id)
-	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
+	opened, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 	require.NoError(t, err)
-	opened, ok := got.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "a deleted domain can still be read by id, got %T", got)
 	assert.True(t, opened.DiscardedAt.IsSet())
 
-	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomain(t, c, id), "deleting it again changes nothing")
+	assert.NoError(t, deleteSendingDomain(t, c, id), "deleting it again changes nothing")
 }
 
 // A domain the Workspace deleted can be added again: a deleted row does not hold its name.
@@ -65,12 +60,11 @@ func TestSiteSendingDomainsDeletedNameIsReusable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	require.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, deleteSendingDomain(t, c, fixtures.SendingDomainUnverifiedID))
+	require.NoError(t, deleteSendingDomain(t, c, fixtures.SendingDomainUnverifiedID))
 
-	again, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain},
+	_, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, again, "a deleted name is free again")
+	require.NoError(t, err, "a deleted name is free again")
 }
 
 // A deleted Sending domain is never verified again (ADR 0100): Verify answers 404 and runs no check.
@@ -80,14 +74,11 @@ func TestSiteSendingDomainsDeletedOneIsNotVerified(t *testing.T) {
 	ctx := context.Background()
 	id := idStr(fixtures.SendingDomainArchivedID)
 
-	res, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNotFound{}, res)
+	_, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	row, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	row, ok := got.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "a deleted domain is still read by id, got %T", got)
 	assert.False(t, row.LastCheckedAt.Set && !row.LastCheckedAt.Null, "no check ran")
 }
 
@@ -97,8 +88,7 @@ func TestSiteSendingDomainsDeleteRefusedWhileLiveWorkSendsFromIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	refused, ok := deleteSendingDomain(t, c, fixtures.SendingDomainLaunchID).(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, deleteSendingDomain(t, c, fixtures.SendingDomainLaunchID), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindBroadcast: {fixtures.BroadcastScheduledFromLaunchDomainName}}, usedBy(refused))
 	assert.Contains(t, listSendingDomains(t, c), int64(fixtures.SendingDomainLaunchID))
 }

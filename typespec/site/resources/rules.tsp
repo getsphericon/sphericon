@@ -195,21 +195,13 @@ interface SiteRules
   @action("publish")
   @autoRoute
   @requiresPermissions(#[])
-  publish(...ResourceParameters<SiteRuleResource>):
-    | SiteRuleResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  publish(...ResourceParameters<SiteRuleResource>): SiteRuleResource | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
   @action("revert")
   @autoRoute
   @requiresPermissions(#[])
-  revert(...ResourceParameters<SiteRuleResource>):
-    | SiteRuleResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  revert(...ResourceParameters<SiteRuleResource>): SiteRuleResource | Problem;
 
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. */
   @action("dry-run")
@@ -218,7 +210,7 @@ interface SiteRules
   dryRun(
     ...ResourceParameters<SiteRuleResource>,
     @body body: SiteDryRunRuleInput,
-  ): SiteRuleDryRunResource | BadRequestProblem | NotFoundProblem;
+  ): SiteRuleDryRunResource | Problem;
 
   /** Deactivate a Rule: it stops firing */
   @action("deactivate")
@@ -226,8 +218,7 @@ interface SiteRules
   @requiresPermissions(#[])
   deactivate(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 }
 
 /** One execution of a Rule for one Event, with what each Action did. Erased with the Contact. */
@@ -267,7 +258,7 @@ namespace SiteRuleFirings {
     @path workspaceId: WorkspaceId,
     @path ruleId: EntityId,
     ...PageQuery,
-  ): Page<SiteRuleFiringResource> | BadRequestProblem | NotFoundProblem;
+  ): Page<SiteRuleFiringResource> | Problem;
 }
 
 @@requiresPermissions(SiteRules.create, #[]);

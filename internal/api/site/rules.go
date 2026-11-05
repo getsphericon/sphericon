@@ -7,7 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
+func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (*siteapi.SiteRulesListOK, error) {
 	ws := workspaceScope(ctx)
 
 	page, err := h.rules.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize))
@@ -18,7 +18,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 }
 
 // SiteRulesCreate always stores a draft.
-func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, _ siteapi.SiteRulesCreateParams) (siteapi.SiteRulesCreateRes, error) {
+func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, _ siteapi.SiteRulesCreateParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.RuleCreate(req)
@@ -33,7 +33,7 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateR
 	return &res, nil
 }
 
-func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGetParams) (siteapi.SiteRulesGetRes, error) {
+func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGetParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	r, err := h.rules.Get(ctx, ws, int64(params.ID))
@@ -44,7 +44,7 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 	return &res, nil
 }
 
-func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (siteapi.SiteRulesUpdateRes, error) {
+func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.RuleUpdate(req)
@@ -60,18 +60,18 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 }
 
 // SiteRulesDelete removes a Rule: one with Firings is discarded so they stay as history.
-func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRulesDeleteParams) (siteapi.SiteRulesDeleteRes, error) {
+func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRulesDeleteParams) error {
 	ws := workspaceScope(ctx)
 
 	err := h.rules.Delete(ctx, ws, int64(params.ID))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &siteapi.SiteRulesDeleteNoContent{}, nil
+	return nil
 }
 
 // SiteRulesPublish makes the Rule active: it reacts to the Events recorded from now on.
-func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRulesPublishParams) (siteapi.SiteRulesPublishRes, error) {
+func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRulesPublishParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	r, err := h.rules.Publish(ctx, ws, int64(params.ID))
@@ -83,7 +83,7 @@ func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRule
 }
 
 // SiteRulesRevert drops the Rule's draft: its live version is again the latest.
-func (h *Handlers) SiteRulesRevert(ctx context.Context, params siteapi.SiteRulesRevertParams) (siteapi.SiteRulesRevertRes, error) {
+func (h *Handlers) SiteRulesRevert(ctx context.Context, params siteapi.SiteRulesRevertParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	r, err := h.rules.Revert(ctx, ws, int64(params.ID))
@@ -95,7 +95,7 @@ func (h *Handlers) SiteRulesRevert(ctx context.Context, params siteapi.SiteRules
 }
 
 // SiteRulesDeactivate makes the Rule inactive: it stops firing.
-func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteRulesDeactivateParams) (siteapi.SiteRulesDeactivateRes, error) {
+func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteRulesDeactivateParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	r, err := h.rules.Deactivate(ctx, ws, int64(params.ID))
@@ -107,7 +107,7 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 }
 
 // SiteRulesDryRun reports what a stored Event would do to the Rule, writing and running nothing.
-func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunRuleInput, params siteapi.SiteRulesDryRunParams) (siteapi.SiteRulesDryRunRes, error) {
+func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunRuleInput, params siteapi.SiteRulesDryRunParams) (*siteapi.SiteRuleDryRunResource, error) {
 	ws := workspaceScope(ctx)
 
 	dry, err := h.rules.DryRun(ctx, ws, int64(params.ID), int64(req.EventId))
@@ -119,7 +119,7 @@ func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunR
 }
 
 // SiteRuleFiringsList lists a Rule's Firings, newest first.
-func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteRuleFiringsListParams) (siteapi.SiteRuleFiringsListRes, error) {
+func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteRuleFiringsListParams) (*siteapi.SiteRuleFiringsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	page, err := h.rules.Firings(ctx, ws, int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))

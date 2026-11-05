@@ -128,7 +128,7 @@ func (s *Server) handleStaffAuthLoginRequest(args [0]string, argsEscaped bool, w
 		}
 	}()
 
-	var response StaffAuthLoginRes
+	var response *StaffLoginResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -144,7 +144,7 @@ func (s *Server) handleStaffAuthLoginRequest(args [0]string, argsEscaped bool, w
 		type (
 			Request  = *StaffLoginInput
 			Params   = struct{}
-			Response = StaffAuthLoginRes
+			Response = *StaffLoginResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -163,8 +163,19 @@ func (s *Server) handleStaffAuthLoginRequest(args [0]string, argsEscaped bool, w
 		response, err = s.h.StaffAuthLogin(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -265,8 +276,9 @@ func (s *Server) handleStaffAuthLogoutRequest(args [0]string, argsEscaped bool, 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -293,15 +305,16 @@ func (s *Server) handleStaffAuthLogoutRequest(args [0]string, argsEscaped bool, 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffAuthLogoutRes
+	var response *StaffAuthLogoutNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -317,7 +330,7 @@ func (s *Server) handleStaffAuthLogoutRequest(args [0]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffAuthLogoutRes
+			Response = *StaffAuthLogoutNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -336,8 +349,19 @@ func (s *Server) handleStaffAuthLogoutRequest(args [0]string, argsEscaped bool, 
 		response, err = s.h.StaffAuthLogout(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -446,7 +470,7 @@ func (s *Server) handleStaffAuthSecondFactorRequest(args [0]string, argsEscaped 
 		}
 	}()
 
-	var response StaffAuthSecondFactorRes
+	var response *StaffResourceHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -462,7 +486,7 @@ func (s *Server) handleStaffAuthSecondFactorRequest(args [0]string, argsEscaped 
 		type (
 			Request  = *StaffSecondFactorInput
 			Params   = struct{}
-			Response = StaffAuthSecondFactorRes
+			Response = *StaffResourceHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -481,8 +505,19 @@ func (s *Server) handleStaffAuthSecondFactorRequest(args [0]string, argsEscaped 
 		response, err = s.h.StaffAuthSecondFactor(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -583,8 +618,9 @@ func (s *Server) handleStaffInstanceAcknowledgeNoticeRequest(args [0]string, arg
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -611,15 +647,16 @@ func (s *Server) handleStaffInstanceAcknowledgeNoticeRequest(args [0]string, arg
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffInstanceAcknowledgeNoticeRes
+	var response *StaffInstanceState
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -635,7 +672,7 @@ func (s *Server) handleStaffInstanceAcknowledgeNoticeRequest(args [0]string, arg
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffInstanceAcknowledgeNoticeRes
+			Response = *StaffInstanceState
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -654,8 +691,19 @@ func (s *Server) handleStaffInstanceAcknowledgeNoticeRequest(args [0]string, arg
 		response, err = s.h.StaffInstanceAcknowledgeNotice(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -757,8 +805,9 @@ func (s *Server) handleStaffInstanceClearDefaultSendCapRequest(args [0]string, a
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -785,15 +834,16 @@ func (s *Server) handleStaffInstanceClearDefaultSendCapRequest(args [0]string, a
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffInstanceClearDefaultSendCapRes
+	var response *StaffDefaultSendCapChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -809,7 +859,7 @@ func (s *Server) handleStaffInstanceClearDefaultSendCapRequest(args [0]string, a
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffInstanceClearDefaultSendCapRes
+			Response = *StaffDefaultSendCapChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -828,8 +878,19 @@ func (s *Server) handleStaffInstanceClearDefaultSendCapRequest(args [0]string, a
 		response, err = s.h.StaffInstanceClearDefaultSendCap(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -929,8 +990,9 @@ func (s *Server) handleStaffInstanceGetStateRequest(args [0]string, argsEscaped 
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -957,15 +1019,16 @@ func (s *Server) handleStaffInstanceGetStateRequest(args [0]string, argsEscaped 
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffInstanceGetStateRes
+	var response *StaffInstanceState
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -981,7 +1044,7 @@ func (s *Server) handleStaffInstanceGetStateRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffInstanceGetStateRes
+			Response = *StaffInstanceState
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1000,8 +1063,19 @@ func (s *Server) handleStaffInstanceGetStateRequest(args [0]string, argsEscaped 
 		response, err = s.h.StaffInstanceGetState(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1102,8 +1176,9 @@ func (s *Server) handleStaffInstanceListAuditEntriesRequest(args [0]string, args
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1130,8 +1205,9 @@ func (s *Server) handleStaffInstanceListAuditEntriesRequest(args [0]string, args
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1148,7 +1224,7 @@ func (s *Server) handleStaffInstanceListAuditEntriesRequest(args [0]string, args
 
 	var rawBody []byte
 
-	var response StaffInstanceListAuditEntriesRes
+	var response *StaffInstanceAuditEntryList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1173,7 +1249,7 @@ func (s *Server) handleStaffInstanceListAuditEntriesRequest(args [0]string, args
 		type (
 			Request  = struct{}
 			Params   = StaffInstanceListAuditEntriesParams
-			Response = StaffInstanceListAuditEntriesRes
+			Response = *StaffInstanceAuditEntryList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1192,8 +1268,19 @@ func (s *Server) handleStaffInstanceListAuditEntriesRequest(args [0]string, args
 		response, err = s.h.StaffInstanceListAuditEntries(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1294,8 +1381,9 @@ func (s *Server) handleStaffInstancePreviewTelemetryReportRequest(args [0]string
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1322,15 +1410,16 @@ func (s *Server) handleStaffInstancePreviewTelemetryReportRequest(args [0]string
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffInstancePreviewTelemetryReportRes
+	var response JsonObject
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1346,7 +1435,7 @@ func (s *Server) handleStaffInstancePreviewTelemetryReportRequest(args [0]string
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffInstancePreviewTelemetryReportRes
+			Response = JsonObject
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1365,8 +1454,19 @@ func (s *Server) handleStaffInstancePreviewTelemetryReportRequest(args [0]string
 		response, err = s.h.StaffInstancePreviewTelemetryReport(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1468,8 +1568,9 @@ func (s *Server) handleStaffInstanceSetDefaultSendCapRequest(args [0]string, arg
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1496,8 +1597,9 @@ func (s *Server) handleStaffInstanceSetDefaultSendCapRequest(args [0]string, arg
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1519,7 +1621,7 @@ func (s *Server) handleStaffInstanceSetDefaultSendCapRequest(args [0]string, arg
 		}
 	}()
 
-	var response StaffInstanceSetDefaultSendCapRes
+	var response *StaffDefaultSendCapChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1535,7 +1637,7 @@ func (s *Server) handleStaffInstanceSetDefaultSendCapRequest(args [0]string, arg
 		type (
 			Request  = *StaffDefaultSendCapInput
 			Params   = struct{}
-			Response = StaffInstanceSetDefaultSendCapRes
+			Response = *StaffDefaultSendCapChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1554,8 +1656,19 @@ func (s *Server) handleStaffInstanceSetDefaultSendCapRequest(args [0]string, arg
 		response, err = s.h.StaffInstanceSetDefaultSendCap(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1655,8 +1768,9 @@ func (s *Server) handleStaffInstanceSetTelemetryRequest(args [0]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1683,8 +1797,9 @@ func (s *Server) handleStaffInstanceSetTelemetryRequest(args [0]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -1706,7 +1821,7 @@ func (s *Server) handleStaffInstanceSetTelemetryRequest(args [0]string, argsEsca
 		}
 	}()
 
-	var response StaffInstanceSetTelemetryRes
+	var response *StaffInstanceState
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1722,7 +1837,7 @@ func (s *Server) handleStaffInstanceSetTelemetryRequest(args [0]string, argsEsca
 		type (
 			Request  = *StaffInstanceTelemetryInput
 			Params   = struct{}
-			Response = StaffInstanceSetTelemetryRes
+			Response = *StaffInstanceState
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1741,8 +1856,19 @@ func (s *Server) handleStaffInstanceSetTelemetryRequest(args [0]string, argsEsca
 		response, err = s.h.StaffInstanceSetTelemetry(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -1842,8 +1968,9 @@ func (s *Server) handleStaffMeGetRequest(args [0]string, argsEscaped bool, w htt
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -1870,15 +1997,16 @@ func (s *Server) handleStaffMeGetRequest(args [0]string, argsEscaped bool, w htt
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffMeGetRes
+	var response *StaffResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1894,7 +2022,7 @@ func (s *Server) handleStaffMeGetRequest(args [0]string, argsEscaped bool, w htt
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffMeGetRes
+			Response = *StaffResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1913,8 +2041,19 @@ func (s *Server) handleStaffMeGetRequest(args [0]string, argsEscaped bool, w htt
 		response, err = s.h.StaffMeGet(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2015,8 +2154,9 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2043,8 +2183,9 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2066,7 +2207,7 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 		}
 	}()
 
-	var response StaffSignupItemsCreateRes
+	var response *StaffSignupItemResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2082,7 +2223,7 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 		type (
 			Request  = *StaffSignupItemInput
 			Params   = struct{}
-			Response = StaffSignupItemsCreateRes
+			Response = *StaffSignupItemResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2101,8 +2242,19 @@ func (s *Server) handleStaffSignupItemsCreateRequest(args [0]string, argsEscaped
 		response, err = s.h.StaffSignupItemsCreate(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2205,8 +2357,9 @@ func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2233,8 +2386,9 @@ func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2251,7 +2405,7 @@ func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response StaffSignupItemsDeleteRes
+	var response *StaffSignupItemsDeleteNoContent
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2272,7 +2426,7 @@ func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = StaffSignupItemsDeleteParams
-			Response = StaffSignupItemsDeleteRes
+			Response = *StaffSignupItemsDeleteNoContent
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2283,16 +2437,27 @@ func (s *Server) handleStaffSignupItemsDeleteRequest(args [1]string, argsEscaped
 			mreq,
 			unpackStaffSignupItemsDeleteParams,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.StaffSignupItemsDelete(ctx, params)
+				err = s.h.StaffSignupItemsDelete(ctx, params)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.StaffSignupItemsDelete(ctx, params)
+		err = s.h.StaffSignupItemsDelete(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2392,8 +2557,9 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2420,8 +2586,9 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2438,7 +2605,7 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response StaffSignupItemsGetRes
+	var response *StaffSignupItemResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2459,7 +2626,7 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = StaffSignupItemsGetParams
-			Response = StaffSignupItemsGetRes
+			Response = *StaffSignupItemResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2478,8 +2645,19 @@ func (s *Server) handleStaffSignupItemsGetRequest(args [1]string, argsEscaped bo
 		response, err = s.h.StaffSignupItemsGet(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2579,8 +2757,9 @@ func (s *Server) handleStaffSignupItemsListRequest(args [0]string, argsEscaped b
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2607,15 +2786,16 @@ func (s *Server) handleStaffSignupItemsListRequest(args [0]string, argsEscaped b
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
 
 	var rawBody []byte
 
-	var response StaffSignupItemsListRes
+	var response *StaffSignupItemList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2631,7 +2811,7 @@ func (s *Server) handleStaffSignupItemsListRequest(args [0]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = StaffSignupItemsListRes
+			Response = *StaffSignupItemList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2650,8 +2830,19 @@ func (s *Server) handleStaffSignupItemsListRequest(args [0]string, argsEscaped b
 		response, err = s.h.StaffSignupItemsList(ctx)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2752,8 +2943,9 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2780,8 +2972,9 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -2798,7 +2991,7 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 
 	var rawBody []byte
 
-	var response StaffSignupItemsListVersionsRes
+	var response *StaffLegalDocumentVersionList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2819,7 +3012,7 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 		type (
 			Request  = struct{}
 			Params   = StaffSignupItemsListVersionsParams
-			Response = StaffSignupItemsListVersionsRes
+			Response = *StaffLegalDocumentVersionList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2838,8 +3031,19 @@ func (s *Server) handleStaffSignupItemsListVersionsRequest(args [1]string, argsE
 		response, err = s.h.StaffSignupItemsListVersions(ctx, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -2941,8 +3145,9 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -2969,8 +3174,9 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -3002,7 +3208,7 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 		}
 	}()
 
-	var response StaffSignupItemsPublishRes
+	var response *StaffSignupItemResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3023,7 +3229,7 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 		type (
 			Request  = *StaffLegalDocumentPublishInput
 			Params   = StaffSignupItemsPublishParams
-			Response = StaffSignupItemsPublishRes
+			Response = *StaffSignupItemResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3042,8 +3248,19 @@ func (s *Server) handleStaffSignupItemsPublishRequest(args [1]string, argsEscape
 		response, err = s.h.StaffSignupItemsPublish(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3144,8 +3361,9 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -3172,8 +3390,9 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -3195,7 +3414,7 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 		}
 	}()
 
-	var response StaffSignupItemsReorderRes
+	var response *StaffSignupItemList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3211,7 +3430,7 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 		type (
 			Request  = *StaffSignupItemOrder
 			Params   = struct{}
-			Response = StaffSignupItemsReorderRes
+			Response = *StaffSignupItemList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3230,8 +3449,19 @@ func (s *Server) handleStaffSignupItemsReorderRequest(args [0]string, argsEscape
 		response, err = s.h.StaffSignupItemsReorder(ctx, request)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3332,8 +3562,9 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -3360,8 +3591,9 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -3393,7 +3625,7 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 		}
 	}()
 
-	var response StaffSignupItemsSaveDraftRes
+	var response *StaffSignupItemResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3414,7 +3646,7 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 		type (
 			Request  = *StaffLegalDocumentDraftInput
 			Params   = StaffSignupItemsSaveDraftParams
-			Response = StaffSignupItemsSaveDraftRes
+			Response = *StaffSignupItemResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3433,8 +3665,19 @@ func (s *Server) handleStaffSignupItemsSaveDraftRequest(args [1]string, argsEsca
 		response, err = s.h.StaffSignupItemsSaveDraft(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 
@@ -3535,8 +3778,9 @@ func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped
 					Security:         "ApiKeyAuth",
 					Err:              err,
 				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKeyAuth", err)
+				}
 				return
 			}
 			if ok {
@@ -3563,8 +3807,9 @@ func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped
 				OperationContext: opErrContext,
 				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
 			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
+			if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+				defer recordError("Security", err)
+			}
 			return
 		}
 	}
@@ -3596,7 +3841,7 @@ func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response StaffSignupItemsUpdateRes
+	var response *StaffSignupItemResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3617,7 +3862,7 @@ func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped
 		type (
 			Request  = *StaffSignupItemUpdate
 			Params   = StaffSignupItemsUpdateParams
-			Response = StaffSignupItemsUpdateRes
+			Response = *StaffSignupItemResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3636,8 +3881,19 @@ func (s *Server) handleStaffSignupItemsUpdateRequest(args [1]string, argsEscaped
 		response, err = s.h.StaffSignupItemsUpdate(ctx, request, params)
 	}
 	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
+		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {
+			if err := encodeErrorResponse(errRes, w, span); err != nil {
+				defer recordError("Internal", err)
+			}
+			return
+		}
+		if errors.Is(err, ht.ErrNotImplemented) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+		if err := encodeErrorResponse(s.h.NewError(ctx, err), w, span); err != nil {
+			defer recordError("Internal", err)
+		}
 		return
 	}
 

@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,8 +22,7 @@ func attentionOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 	t.Helper()
 	res, err := c.SiteAttentionGet(t.Context(), siteapi.SiteAttentionGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteAttentionList)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	return list.Items
 }
 
@@ -214,8 +213,7 @@ func TestAVerifiedDomainWithoutADMARCRecordIsANoticeUntilOneIsPublished(t *testi
 			WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainVerifiedID),
 		})
 		require.NoError(t, err)
-		d, ok := res.(*siteapi.SiteSendingDomainResource)
-		require.Truef(t, ok, "got %T", res)
+		d := res
 		return d
 	}
 
@@ -241,8 +239,7 @@ func TestAVerifiedDomainWithoutADMARCRecordIsANoticeUntilOneIsPublished(t *testi
 		WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.SendingDomainVerifiedID),
 	})
 	require.NoError(t, err)
-	readRes, ok := read.(*siteapi.SiteSendingDomainResource)
-	require.Truef(t, ok, "got %T", read)
+	readRes := read
 	assert.Equal(t, published.DmarcFoundAt, readRes.DmarcFoundAt, "a read of the domain shows the same moment")
 	cleared := attentionOf(t, c, fixtures.AcmePublicID)
 	_, still := itemAbout(cleared, siteapi.SiteAttentionKindSendingDomainNotBulkReady, fixtures.SendingDomainVerifiedID)
@@ -428,7 +425,7 @@ func TestAnActiveAutomationWhoseProviderStoppedTheAccountCannotSend(t *testing.T
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
+		SetProviderEnforcement(providers.EnforcementShutdown).Exec(t.Context()))
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 
@@ -470,7 +467,7 @@ func TestASuspendedWorkspaceShowsNoAutomationThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, acme.Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).Exec(t.Context()))
+		SetProviderEnforcement(providers.EnforcementShutdown).Exec(t.Context()))
 	suspended, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "abuse")
 	require.NoError(t, err)
 	require.True(t, suspended)

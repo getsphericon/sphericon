@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // WebhookEndpointCreate is the builder for creating a WebhookEndpoint entity.
@@ -118,13 +119,13 @@ func (_c *WebhookEndpointCreate) SetNillableFailingSince(v *time.Time) *WebhookE
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (_c *WebhookEndpointCreate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointCreate {
+func (_c *WebhookEndpointCreate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointCreate {
 	_c.mutation.SetLastErrorKind(v)
 	return _c
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (_c *WebhookEndpointCreate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointCreate {
+func (_c *WebhookEndpointCreate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointCreate {
 	if v != nil {
 		_c.SetLastErrorKind(*v)
 	}
@@ -541,7 +542,7 @@ func (u *WebhookEndpointUpsert) ClearFailingSince() *WebhookEndpointUpsert {
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (u *WebhookEndpointUpsert) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsert {
+func (u *WebhookEndpointUpsert) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointUpsert {
 	u.Set(webhookendpoint.FieldLastErrorKind, v)
 	return u
 }
@@ -817,7 +818,7 @@ func (u *WebhookEndpointUpsertOne) ClearFailingSince() *WebhookEndpointUpsertOne
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (u *WebhookEndpointUpsertOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsertOne {
+func (u *WebhookEndpointUpsertOne) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.SetLastErrorKind(v)
 	})
@@ -1272,7 +1273,7 @@ func (u *WebhookEndpointUpsertBulk) ClearFailingSince() *WebhookEndpointUpsertBu
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (u *WebhookEndpointUpsertBulk) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsertBulk {
+func (u *WebhookEndpointUpsertBulk) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.SetLastErrorKind(v)
 	})

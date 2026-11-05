@@ -60,8 +60,7 @@ func presetNames(t *testing.T, a *app.App) []string {
 	require.NoError(t, err)
 	res, err := client.PresetsList(t.Context())
 	require.NoError(t, err)
-	page, ok := res.(*externalapi.PresetsListOK)
-	require.True(t, ok, "%T", res)
+	page := res
 	return lo.Map(page.Items, func(p externalapi.PresetResource, _ int) string { return p.Name })
 }
 

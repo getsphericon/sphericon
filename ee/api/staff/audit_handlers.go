@@ -9,7 +9,7 @@ import (
 
 // StaffWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An
 // Staff member's entry shows as "Sphericon staff" with no id, as it does to the customer.
-func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffeeapi.StaffWorkspaceAuditListParams) (staffeeapi.StaffWorkspaceAuditListRes, error) {
+func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffeeapi.StaffWorkspaceAuditListParams) (*staffeeapi.StaffAuditEntryList, error) {
 	cursor, err := auditapi.Page(params.Cursor.Or(""))
 	if err != nil {
 		return nil, err

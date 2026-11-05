@@ -75,8 +75,7 @@ namespace SitePersonalTokens {
         @statusCode statusCode: 200;
         @body body: SitePersonalTokenResource[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Mint a Personal token of the caller's own; the full secret is returned once. Any member may
    * mint one, with the scopes their Role may grant: another is refused (403 permission_required).
@@ -94,10 +93,7 @@ namespace SitePersonalTokens {
         @statusCode statusCode: 201;
         @body body: SiteCreatePersonalTokenResponse;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Revoke a Personal token: the caller's own, or anyone's with members:manage */
   @deletesResource(SitePersonalTokenResource)
@@ -106,8 +102,7 @@ namespace SitePersonalTokens {
   @requiresPermissions(#[])
   op delete(...ResourceParameters<SitePersonalTokenResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** The scopes the caller's Role may grant to a Personal token in the Workspace, in the
    * vocabulary's order: the mint form offers these and no other. */
@@ -119,6 +114,5 @@ namespace SitePersonalTokens {
         @statusCode statusCode: 200;
         @body body: PersonalScope[];
       }
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 }

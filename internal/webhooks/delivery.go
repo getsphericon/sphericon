@@ -50,7 +50,7 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 	// The count is incremented in SQL, so workers failing at once do not lose one.
 	u := s.WebhookEndpoint().UpdateOneID(e.ID).
 		AddConsecutiveFailures(1).
-		SetLastErrorKind(webhookendpoint.LastErrorKind(failure.Kind)).
+		SetLastErrorKind(failure.Kind).
 		SetLastFailureAt(now)
 	if e.FailingSince == nil {
 		u.SetFailingSince(now)

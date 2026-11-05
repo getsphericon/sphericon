@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,19 +24,16 @@ import (
 
 func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalAnchor(t).AuthMeGet(context.Background())
+	info, err := env.ExternalAnchor(t).AuthMeGet(context.Background())
 	require.NoError(t, err)
-	info, ok := res.(*externalapi.ApiTokenInfo)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, fixtures.AnchorTokenName, info.Name)
 	assert.EqualValues(t, fixtures.AnchorTokenID, int64(info.ID))
 }
 
 func TestExternalAuthMeRequiresACredential(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalAnonymous(t).AuthMeGet(context.Background())
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthMeGetUnauthorized{}, res)
+	_, err := env.ExternalAnonymous(t).AuthMeGet(context.Background())
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 }
 
 func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
@@ -43,24 +41,20 @@ func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
 	ctx := context.Background()
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 
-	res, err := env.ExternalAnchor(t).AuthMeGet(ctx)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthMeGetUnauthorized{}, res)
+	_, err := env.ExternalAnchor(t).AuthMeGet(ctx)
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
-	res, err = env.ExternalAnchor(t).AuthMeGet(ctx)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ApiTokenInfo{}, res, "restored, the token works again")
+	_, err = env.ExternalAnchor(t).AuthMeGet(ctx)
+	require.NoError(t, err, "restored, the token works again")
 }
 
 func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.ExternalAnchor(t).AuthTokensList(ctx)
+	list, err := env.ExternalAnchor(t).AuthTokensList(ctx)
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.ApiTokenListResponse)
-	require.Truef(t, ok, "got %T", res)
 
 	acme, err := env.DB.ApiToken.Query().Where(apitoken.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 	require.NoError(t, err)
@@ -74,19 +68,16 @@ func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 		}
 	}
 
-	denied, err := env.ExternalScoped(t, "contacts:read").AuthTokensList(ctx)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensListForbidden{}, denied)
+	_, err = env.ExternalScoped(t, "contacts:read").AuthTokensList(ctx)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalAuthTokensListIsInCreationOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.ExternalAnchor(t).AuthTokensList(ctx)
+	list, err := env.ExternalAnchor(t).AuthTokensList(ctx)
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.ApiTokenListResponse)
-	require.Truef(t, ok, "got %T", res)
 	got := lo.Map(list.Items, func(it externalapi.ApiTokenInfo, _ int) int64 { return int64(it.ID) })
 
 	want, err := env.DB.ApiToken.Query().
@@ -103,14 +94,12 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 	c := env.ExternalAnchor(t)
 
 	expires := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
-	res, err := c.AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{
+	created, err := c.AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{
 		Name:      "ci",
 		Scopes:    []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead},
 		ExpiresAt: externalapi.NewOptNilTimestamp(externalapi.Timestamp(expires)),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.CreateApiTokenResponse)
-	require.Truef(t, ok, "got %T", res)
 	assert.NotEmpty(t, created.Token)
 
 	row, err := env.DB.ApiToken.Get(ctx, int64(created.TokenInfo.ID))
@@ -122,16 +111,13 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 
 	// The minted secret authenticates, within its scope only.
 	minted := env.ExternalWithToken(t, created.Token)
-	list, err := minted.ContactsList(ctx, externalapi.ContactsListParams{})
+	_, err = minted.ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListOK{}, list)
-	write, err := minted.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateForbidden{}, write)
+	_, err = minted.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{Name: "n"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensCreateForbidden{}, denied)
+	_, err = env.ExternalScoped(t, "tokens:read").AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{Name: "n"})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalAuthTokensDelete(t *testing.T) {
@@ -140,34 +126,29 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 	c := env.ExternalAnchor(t)
 	victim := entityIDString(fixtures.ContractTokenID)
 
-	res, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
+	err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteNoContent{}, res)
 
 	revoked, err := env.DB.ApiToken.Get(ctx, fixtures.ContractTokenID)
 	require.NoError(t, err)
 	assert.NotNil(t, revoked.RevokedAt, "delete revokes rather than removes")
 	bearer := credentials.TokenValue(fixtures.ContractTokenPrefix, fixtures.ContractTokenSecret)
-	after, err := env.ExternalWithToken(t, bearer).ContactsList(ctx, externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, after, "a revoked token no longer authenticates")
+	_, err = env.ExternalWithToken(t, bearer).ContactsList(ctx, externalapi.ContactsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized, "a revoked token no longer authenticates")
 
-	missing, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, missing)
+	err = c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteForbidden{}, denied)
+	err = env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: victim})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.ExternalAnchor(t).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(fixtures.TokenGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, res)
+	err := env.ExternalAnchor(t).AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(fixtures.TokenGlobexID)})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	still, err := env.DB.ApiToken.Get(ctx, fixtures.TokenGlobexID)
 	require.NoError(t, err)
@@ -186,10 +167,8 @@ func TestExternalAuthTokensBootstrap(t *testing.T) {
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
 	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 
-	res, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "bootstrap-secret"})
+	created, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "bootstrap-secret"})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.CreateApiTokenResponse)
-	require.Truef(t, ok, "got %T", res)
 	row, err := env.DB.ApiToken.Get(ctx, int64(created.TokenInfo.ID))
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, row.WorkspaceID, "the oldest workspace")
@@ -206,9 +185,8 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
 	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 	// Through the real server too.
-	res, err := env.ExternalAnonymous(t).AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensBootstrapUnauthorized{}, res)
+	_, err = env.ExternalAnonymous(t).AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 }
 
 func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
@@ -219,12 +197,11 @@ func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 	before, err := env.DB.ApiToken.Query().Count(ctx)
 	require.NoError(t, err)
 
-	res, err := c.AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{
+	_, err = c.AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{
 		Name:   "escalate",
 		Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeEmailsSend},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensCreateForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	after, err := env.DB.ApiToken.Query().Count(ctx)
 	require.NoError(t, err)
@@ -233,12 +210,11 @@ func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 
 func TestExternalAuthTokensCreateRefusesABlankNameWith422(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalAnchor(t).AuthTokensCreate(context.Background(), &externalapi.CreateApiTokenInput{
+	_, err := env.ExternalAnchor(t).AuthTokensCreate(context.Background(), &externalapi.CreateApiTokenInput{
 		Name:   "   ",
 		Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensCreateUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalAuthTokensDeleteTwiceIsNotFound(t *testing.T) {
@@ -247,11 +223,9 @@ func TestExternalAuthTokensDeleteTwiceIsNotFound(t *testing.T) {
 	c := env.ExternalAnchor(t)
 	id := entityIDString(fixtures.ContractTokenID)
 
-	first, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: id})
+	err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteNoContent{}, first)
 
-	second, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, second, "an already-revoked token is not found, as on /site")
+	err = c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound, "an already-revoked token is not found, as on /site")
 }

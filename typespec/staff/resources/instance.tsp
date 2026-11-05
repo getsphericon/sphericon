@@ -114,22 +114,20 @@ model StaffInstanceTelemetryInput {
 namespace StaffInstance {
   /** The Instance's own settings and state */
   @get
-  op getState(): StaffInstanceState | UnauthorizedProblem;
+  op getState(): StaffInstanceState | Problem;
 
   /** Switch the Telemetry report on or off. Answers 409 while the environment decides. */
   @put
   @route("/telemetry")
   op setTelemetry(@body body: StaffInstanceTelemetryInput):
     | StaffInstanceState
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ConflictProblem;
+    | Problem;
 
   /** Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
    * acknowledgement stands, and a repeat changes nothing. */
   @post
   @route("/notice/acknowledge")
-  op acknowledgeNotice(): StaffInstanceState | UnauthorizedProblem;
+  op acknowledgeNotice(): StaffInstanceState | Problem;
 
   /**
    * The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the
@@ -138,7 +136,7 @@ namespace StaffInstance {
    */
   @get
   @route("/telemetry/preview")
-  op previewTelemetryReport(): JsonObject | UnauthorizedProblem;
+  op previewTelemetryReport(): JsonObject | Problem;
 
   /** Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created
    * from now on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit
@@ -147,19 +145,14 @@ namespace StaffInstance {
   @route("/default-send-cap")
   op setDefaultSendCap(@body body: StaffDefaultSendCapInput):
     | StaffDefaultSendCapChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Remove the default Send cap: Workspaces created from now on get no Send cap; existing
    * Workspaces keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an
    * Instance that has no Send caps. */
   @delete
   @route("/default-send-cap")
-  op clearDefaultSendCap():
-    | StaffDefaultSendCapChange
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op clearDefaultSendCap(): StaffDefaultSendCapChange | Problem;
 
   /** The Instance audit log (ADR 0070), newest first: the changes Staff members made to the
    * Instance's own settings */
@@ -174,5 +167,5 @@ namespace StaffInstance {
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 25,
-  ): StaffInstanceAuditEntryList | BadRequestProblem | UnauthorizedProblem;
+  ): StaffInstanceAuditEntryList | Problem;
 }

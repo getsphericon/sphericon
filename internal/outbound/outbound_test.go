@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -331,7 +331,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
-		SetProviderEnforcement(integration.ProviderEnforcementShutdown).ExecX(ctx)
+		SetProviderEnforcement(providers.EnforcementShutdown).ExecX(ctx)
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
 	require.NoError(t, err)

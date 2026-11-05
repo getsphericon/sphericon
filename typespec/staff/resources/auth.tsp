@@ -71,9 +71,7 @@ namespace StaffAuth {
         @statusCode statusCode: 200;
         @body body: StaffLoginResult;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** The second login step: verify the challenge and a TOTP code, then start the
    * session (the cookie is set here). At first login the code also confirms the
@@ -91,9 +89,7 @@ namespace StaffAuth {
 
         @body body: StaffResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** End the session: bumps the Staff member's session epoch, so every session token of
    * the Staff member (a copied one too) stops verifying, and clears the session cookie. */
@@ -106,7 +102,7 @@ namespace StaffAuth {
         /** The expired session cookie */
         @header("Set-Cookie") setCookie: string;
       }
-    | UnauthorizedProblem;
+    | Problem;
 }
 
 @tag("StaffMember")
@@ -114,5 +110,5 @@ namespace StaffMe {
   /** The authenticated Staff member */
   @get
   @route("/me")
-  op get(): StaffResource | UnauthorizedProblem;
+  op get(): StaffResource | Problem;
 }

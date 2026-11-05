@@ -82,34 +82,35 @@ model ProblemDetails {
 
   /** Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`) */
   debug?: ProblemDebug;
+
+  /** A removal refused because live work still uses the row (a 409, ADR 0049): the rows that
+   * use it, never empty */
+  usedBy?: UsedBy[];
+
+  /** A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each
+   * handed over or deleted first; empty when the refusal is another rule's */
+  workspaces?: SoleOwnedWorkspace[];
 }
 
-/** RFC 7807 bad request response */
+/** The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+ * status is the response's and the body's `status`, and `code` tells apart the answers a client
+ * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+ * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+ * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+ * as the `default` response (ADR 0103). */
 @error
-model BadRequestProblem is Response<400> {
+model Problem {
   @header contentType: "application/problem+json";
   @body body: ProblemDetails;
 }
 
-/** RFC 7807 gone response: the resource existed but is no longer available (an expired link) */
-@error
-model GoneProblem is Response<410> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
+/** A Workspace the User is the only Owner of, which blocks User deletion */
+model SoleOwnedWorkspace {
+  /** The Workspace id */
+  id: WorkspaceId;
 
-/** RFC 7807 unauthorized response */
-@error
-model UnauthorizedProblem is Response<401> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 conflict response */
-@error
-model ConflictProblem is Response<409> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
+  /** Display name */
+  name: string;
 }
 
 /** What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
@@ -146,77 +147,4 @@ model UsedBy {
   /** How many rows the entry stands for; absent means one. An `enrollment` entry names the
    * Automation (id, name) and counts its active Enrollments. */
   count?: int32;
-}
-
-/** The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it */
-model InUseProblemDetails {
-  ...ProblemDetails;
-
-  /** The live rows that use the one a removal was refused for, never empty */
-  usedBy: UsedBy[];
-}
-
-/** RFC 7807 conflict response for a removal refused because live work still uses the row
- * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
- * Integration, Sending domain or Automation answers it. */
-@error
-model InUseProblem is Response<409> {
-  @header contentType: "application/problem+json";
-  @body body: InUseProblemDetails;
-}
-
-/** RFC 7807 not found response */
-@error
-model NotFoundProblem is Response<404> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 payment required response: the feature needs an Enterprise license */
-@error
-model PaymentRequiredProblem is Response<402> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 forbidden response */
-@error
-model ForbiddenProblem is Response<403> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 precondition required response: the request needs something it did not carry
- * (a verification link opened outside its Sign-up browser needs a password, ADR 0030) */
-@error
-model PreconditionRequiredProblem is Response<428> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025) */
-@error
-model TooManyRequestsProblem is Response<429> {
-  @header contentType: "application/problem+json";
-
-  /** Seconds to wait before retrying */
-  @header("Retry-After") retryAfter: int32;
-
-  /** The request budget of the window that was exceeded */
-  @header("X-RateLimit-Limit") rateLimitLimit: int32;
-
-  /** Requests left in the current window */
-  @header("X-RateLimit-Remaining") rateLimitRemaining: int32;
-
-  /** Unix time at which the window resets */
-  @header("X-RateLimit-Reset") rateLimitReset: int64;
-
-  @body body: ProblemDetails;
-}
-
-/** RFC 7807 validation response */
-@error
-model UnprocessableEntityProblem is Response<422> {
-  @header contentType: "application/problem+json";
-  @body body: ProblemDetails;
 }

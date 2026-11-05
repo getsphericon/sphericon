@@ -21,8 +21,8 @@ func TestAResetTOTPForcesReenrolmentAtNextLogin(t *testing.T) {
 	assert.Equal(t, staffapi.StaffLoginOutcomeEnrolment, res.Outcome, "the password alone never gives a session")
 	require.True(t, res.Enrolment.Set)
 	assert.NotEqual(t, fixtures.StaffEnrolledTotpSecret, res.Enrolment.Value.Secret, "a fresh secret")
-	done, ok := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret)).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok)
+	done, err := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret))
+	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.StaffEnrolledEmail, done.Response.Email)
 }
 
@@ -35,7 +35,7 @@ func TestAResetTOTPRefusesTheOldAuthenticator(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, h.rawSecondStep(t, old, h.code(t, fixtures.StaffEnrolledTotpSecret)).Code,
 		"a challenge minted before the reset is dead")
 	res := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword)
-	requireProblem(t, h.secondStep(t, res.Challenge, h.code(t, fixtures.StaffEnrolledTotpSecret)), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, res.Challenge, h.code(t, fixtures.StaffEnrolledTotpSecret))), http.StatusUnauthorized)
 }
 
 func TestAResetTOTPEndsTheStaffMembersSessions(t *testing.T) {
@@ -44,7 +44,7 @@ func TestAResetTOTPEndsTheStaffMembersSessions(t *testing.T) {
 
 	require.NoError(t, h.env.StaffMembers.ResetTOTP(t.Context(), fixtures.StaffEnrolledEmail))
 
-	requireProblem(t, h.me(t, cookie.Value), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, cookie.Value)), http.StatusUnauthorized)
 }
 
 func TestResettingAnUnknownStaffIsRefused(t *testing.T) {

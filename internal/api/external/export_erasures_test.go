@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,12 +72,11 @@ func TestExportErasuresNeverCarryTheAddressOrThePhone(t *testing.T) {
 func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 	env := testhelper.Setup(t)
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	res, err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
+	err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
 		WorkspaceId: fixtures.InitechPublicID,
 		Email:       " " + fixtures.OutboundMessageStrangerDestination + " ",
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
 	env.WorkEditionJobs(t)
 
 	page := readExportErasures(t, exportClient(t, env, fixtures.InitechID), "")
@@ -105,12 +105,11 @@ func TestContactErasedMessageHoldsNoAddressOrPhone(t *testing.T) {
 func TestContactErasedMessageOfAnAddressAloneHoldsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	res, err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
+	err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
 		WorkspaceId: fixtures.InitechPublicID,
 		Email:       fixtures.OutboundMessageStrangerDestination,
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
 
 	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 
@@ -148,31 +147,28 @@ func TestExportErasuresUnlicensedStoresNothing(t *testing.T) {
 func TestExportErasuresAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
-	res, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
+	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportErasuresNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportErasuresNeedTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]string{{}, {"contacts:erase"}, {"contacts:read", "events:read", "audit:read"}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		res, err := c.ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportErasuresForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
 
 func TestExportErasuresRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{
+	_, err := exportClient(t, env, fixtures.InitechID).ExportErasures(context.Background(), externalapi.ExportErasuresParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportErasuresBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }
 
 func TestExportErasuresNeverReadAnotherWorkspace(t *testing.T) {

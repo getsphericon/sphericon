@@ -18,5 +18,5 @@ namespace SiteInstance {
    * `release:read` in no live Workspace. */
   @get
   @route("/release")
-  op getRelease(): SiteInstanceRelease | ForbiddenProblem;
+  op getRelease(): SiteInstanceRelease | Problem;
 }

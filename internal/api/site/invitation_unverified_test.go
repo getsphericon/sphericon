@@ -17,12 +17,10 @@ import (
 // inviteToAcme has Acme's Owner invite the address and returns the accept token.
 func inviteToAcme(t *testing.T, env *testhelper.TestEnv, email string) string {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
+	created, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
 		&siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: siteapi.SiteInvitableRoleMember},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
-	require.Truef(t, ok, "got %T", res)
 	return created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
 }
 
@@ -30,23 +28,19 @@ func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeFreshUnverifiedToken // to FreshUnverifiedUser
 
-	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(),
+	found, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(),
 		siteapi.SitePublicInvitationsLookupParams{Token: token})
 	require.NoError(t, err)
-	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
-	require.Truef(t, ok, "got %T", lookup)
 	assert.Equal(t, fixtures.FreshUnverifiedUserEmail, string(found.Email))
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err = env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	res, err = env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err = env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Victim")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, res, "a password is required too")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "a password is required too")
 }
 
 // The reported pre-hijacking: the attacker signs up the invitee's address (VictimGmailSquatter,
@@ -56,11 +50,10 @@ func TestPreHijackingAnAttackerWhoSignedUpWithTheInviteesAddressGainsNothing(t *
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeVictimGmailToken // to the squatted address
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	// The password the attacker signed up with is gone.
 	attacker := postLogin(t, env, fixtures.VictimGmailSquatterEmail, fixtures.VictimGmailSquatterPassword)
@@ -91,11 +84,10 @@ func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+			err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 				&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Invitee"), Password: siteapi.NewOptString("invitee-password-1")},
 				siteapi.SitePublicInvitationsAcceptParams{Token: token})
 			require.NoError(t, err)
-			require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 			got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserEmailVerify)
 			require.Len(t, got, 1)

@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -27,8 +28,7 @@ func listBroadcasts(t *testing.T, c *siteapi.Client, archived bool) []siteapi.Si
 		Archived:    siteapi.NewOptBool(archived),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteBroadcastsListOK)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	return list.Items
 }
 
@@ -47,8 +47,7 @@ func TestSiteBroadcastsArchiveAndRestore(t *testing.T) {
 
 	out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
 	require.NoError(t, err)
-	archived, ok := out.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", out)
+	archived := out
 	assert.True(t, archived.ArchivedAt.IsSet())
 	assert.Equal(t, before.Stats, archived.Stats, "archiving leaves the figures alone")
 
@@ -61,14 +60,12 @@ func TestSiteBroadcastsArchiveAndRestore(t *testing.T) {
 
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	opened, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "an archived broadcast can still be opened, got %T", got)
+	opened := got
 	assert.Equal(t, before.Stats, opened.Stats)
 
 	back, err := c.SiteBroadcastsUnarchive(ctx, siteapi.SiteBroadcastsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	restored, ok := back.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", back)
+	restored := back
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
 }
@@ -81,20 +78,17 @@ func TestSiteBroadcastsArchiveRefusesWorkInFlight(t *testing.T) {
 	ctx := context.Background()
 
 	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastFailedID} {
-		out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
+		_, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastResource{}, out, "broadcast %d", id)
 	}
 
 	for _, id := range []int64{fixtures.BroadcastScheduledID, fixtures.BroadcastSendingID} {
-		out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsArchiveConflict{}, out, "broadcast %d", id)
+		_, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
+		testhelper.SiteRefusal(t, err, http.StatusConflict, "broadcast %d", id)
 	}
 
-	missing, err := c.SiteBroadcastsArchive(ctx, archiveParams(999999))
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsArchiveNotFound{}, missing)
+	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(999999))
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // A draft is archived, not deleted: it leaves the list for the archived view and comes back a
@@ -107,16 +101,14 @@ func TestSiteADraftBroadcastIsArchivedAndUnarchived(t *testing.T) {
 
 	out, err := c.SiteBroadcastsArchive(ctx, archiveParams(id))
 	require.NoError(t, err)
-	archived, ok := out.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", out)
+	archived := out
 	assert.True(t, archived.ArchivedAt.IsSet())
 	assert.NotContains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
 	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, true)), id)
 
 	back, err := c.SiteBroadcastsUnarchive(ctx, siteapi.SiteBroadcastsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	restored, ok := back.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", back)
+	restored := back
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, restored.Status)
 	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
@@ -132,24 +124,20 @@ func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	_, err := c.SiteBroadcastsArchive(ctx, archiveParams(fixtures.BroadcastDraftID))
 	require.NoError(t, err)
 
-	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateConflict{}, upd)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
-	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
 		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsScheduleConflict{}, sched)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
-	send, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsSendConflict{}, send)
+	_, err = c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	kept, ok := got.(*siteapi.SiteBroadcastResource)
-	require.Truef(t, ok, "got %T", got)
+	kept := got
 	assert.Equal(t, fixtures.BroadcastDraftName, kept.Name)
 	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, kept.Status)
 }
@@ -166,8 +154,7 @@ func TestSiteAnalyticsIgnoresArchiving(t *testing.T) {
 	read := func() *siteapi.SiteAnalyticsOverview {
 		res, err := c.SiteAnalyticsOverview(ctx, params)
 		require.NoError(t, err)
-		ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-		require.Truef(t, ok, "got %T", res)
+		ov := res
 		return ov
 	}
 	before := read()

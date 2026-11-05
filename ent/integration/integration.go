@@ -8,6 +8,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 const (
@@ -170,76 +172,32 @@ var (
 	DefaultProviderSandbox bool
 )
 
-// Channel defines the type for the "channel" enum field.
-type Channel string
-
-// ChannelEmail is the default value of the Channel enum.
-const DefaultChannel = ChannelEmail
-
-// Channel values.
-const (
-	ChannelEmail    Channel = "email"
-	ChannelSms      Channel = "sms"
-	ChannelTelegram Channel = "telegram"
-)
-
-func (c Channel) String() string {
-	return string(c)
-}
+const DefaultChannel channels.Channel = "email"
 
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
-func ChannelValidator(c Channel) error {
+func ChannelValidator(c channels.Channel) error {
 	switch c {
-	case ChannelEmail, ChannelSms, ChannelTelegram:
+	case "email", "telegram", "sms":
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for channel field: %q", c)
 	}
 }
 
-// Provider defines the type for the "provider" enum field.
-type Provider string
-
-// Provider values.
-const (
-	ProviderSMTP     Provider = "smtp"
-	ProviderSes      Provider = "ses"
-	ProviderInbox    Provider = "inbox"
-	ProviderTelegram Provider = "telegram"
-	ProviderTwilio   Provider = "twilio"
-)
-
-func (pr Provider) String() string {
-	return string(pr)
-}
-
 // ProviderValidator is a validator for the "provider" field enum values. It is called by the builders before save.
-func ProviderValidator(pr Provider) error {
+func ProviderValidator(pr providers.Provider) error {
 	switch pr {
-	case ProviderSMTP, ProviderSes, ProviderInbox, ProviderTelegram, ProviderTwilio:
+	case "smtp", "ses", "inbox", "telegram", "twilio":
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)
 	}
 }
 
-// ProviderEnforcement defines the type for the "provider_enforcement" enum field.
-type ProviderEnforcement string
-
-// ProviderEnforcement values.
-const (
-	ProviderEnforcementProbation ProviderEnforcement = "probation"
-	ProviderEnforcementShutdown  ProviderEnforcement = "shutdown"
-)
-
-func (pe ProviderEnforcement) String() string {
-	return string(pe)
-}
-
 // ProviderEnforcementValidator is a validator for the "provider_enforcement" field enum values. It is called by the builders before save.
-func ProviderEnforcementValidator(pe ProviderEnforcement) error {
+func ProviderEnforcementValidator(pe providers.Enforcement) error {
 	switch pe {
-	case ProviderEnforcementProbation, ProviderEnforcementShutdown:
+	case "probation", "shutdown":
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider_enforcement field: %q", pe)

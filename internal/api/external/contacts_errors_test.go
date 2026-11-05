@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -23,15 +24,13 @@ func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
-	res, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
+	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
 		FirstName: externalapi.NewOptNilString("Alicia"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4`),
 		}),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Alicia", got.FirstName.Value)
 
 	stored, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
@@ -50,12 +49,10 @@ func TestExternalContactsUpdateConflictNamesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
+	_, err := c.ContactsUpdate(context.Background(), &externalapi.UpdateContactInput{
 		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactBobEmail),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
-	require.NoError(t, err)
-	conflict, ok := res.(*externalapi.ContactsUpdateConflict)
-	require.Truef(t, ok, "got %T", res)
+	conflict := testhelper.ExternalRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, conflict.Errors.Value, "email")
 }
 
@@ -66,47 +63,39 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write", "contacts:erase")
 	before := env.DB.Contact.GetX(ctx, int64(foreign))
 
-	get, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsGetNotFound{}, get)
-	upd, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Hijack")}, externalapi.ContactsUpdateParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsUpdateNotFound{}, upd)
-	del, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteNotFound{}, del)
+	_, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Hijack")}, externalapi.ContactsUpdateParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: foreign})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	still, err := env.DB.Contact.Get(ctx, int64(foreign))
 	require.NoError(t, err)
 	assert.Equal(t, before.FirstName, still.FirstName, "the foreign contact is untouched")
 
-	missing, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsUpdateNotFound{}, missing)
-	gone, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: 999999})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteNotFound{}, gone)
+	_, err = c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	denied, err := env.ExternalScoped(t, "contacts:write").ContactsList(ctx, externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListForbidden{}, denied)
+	_, err := env.ExternalScoped(t, "contacts:write").ContactsList(ctx, externalapi.ContactsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	c := env.ExternalScoped(t, "contacts:read")
-	first, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1)})
+	p1, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1)})
 	require.NoError(t, err)
-	p1 := first.(*externalapi.ContactsListOK)
 	require.Len(t, p1.Items, 1)
 	assert.Greater(t, p1.TotalItems, int32(1))
 	assert.Equal(t, p1.TotalItems, p1.TotalPages, "one item per page")
 
-	second, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1), Page: externalapi.NewOptInt32(2)})
+	p2, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1), Page: externalapi.NewOptInt32(2)})
 	require.NoError(t, err)
-	p2 := second.(*externalapi.ContactsListOK)
 	require.Len(t, p2.Items, 1)
 	assert.NotEqual(t, p1.Items[0].ID, p2.Items[0].ID)
 }
@@ -116,14 +105,13 @@ func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
+	out, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
 		Email: externalapi.NewOptNilEmailAddress("batch.cf@example.com"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"tier": jx.Raw(`"gold"`),
 		}),
 	}}})
 	require.NoError(t, err)
-	out := res.(*externalapi.UpsertContactsResult)
 	require.Len(t, out.Results, 1)
 	assert.Equal(t, externalapi.ContactBatchStatusCreated, out.Results[0].Status)
 	stored, err := env.DB.Contact.Get(ctx, int64(out.Results[0].ContactId.Value))
@@ -138,15 +126,13 @@ func TestABatchItemFailureIsWordedForTheCaller(t *testing.T) {
 	taken := env.DB.Contact.GetX(t.Context(), fixtures.ContactExportSubjectID).Phone
 	require.NotNil(t, taken)
 
-	res, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+	out, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
 			{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail), Phone: externalapi.NewOptNilString(*taken)},
 			{FirstName: externalapi.NewOptNilString("Nobody")},
 		},
 	})
 	require.NoError(t, err)
-	out, ok := res.(*externalapi.UpsertContactsResult)
-	require.Truef(t, ok, "got %T", res)
 	require.Len(t, out.Results, 2)
 
 	assert.Equal(t, contacts.ErrPhoneTaken.Message(), out.Results[0].Error.Or(""))
@@ -165,12 +151,10 @@ func TestABatchItemStorageFailureHidesTheCause(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.Bus.Use(hook.If(hook.FixedError(errStorageDown), isContact))
 
-	res, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+	out, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("batch.down@example.com")}},
 	})
 	require.NoError(t, err)
-	out, ok := res.(*externalapi.UpsertContactsResult)
-	require.Truef(t, ok, "got %T", res)
 	require.Len(t, out.Results, 1)
 
 	assert.Equal(t, externalapi.ContactBatchStatusFailed, out.Results[0].Status)
@@ -186,11 +170,9 @@ func TestExternalContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 
 	var null externalapi.OptNilString
 	null.SetToNull()
-	res, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: null},
+	got, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: null},
 		externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Empty(t, got.FirstName.Value, "first name cleared by explicit null")
 
 	stored, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)

@@ -35,14 +35,12 @@ func TestARetriedEventIsCountedOnce(t *testing.T) {
 	ctx := context.Background()
 	batch := &collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{clientEvent("evt-1", "idem_after_delivery")}}
 
-	res, err := c.CollectEventsCreate(ctx, batch)
+	err := c.CollectEventsCreate(ctx, batch)
 	require.NoError(t, err)
-	require.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
 	// The client never saw the answer and sends the batch again.
-	res, err = c.CollectEventsCreate(ctx, batch)
-	require.NoError(t, err)
-	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res, "a repeat is accepted")
+	err = c.CollectEventsCreate(ctx, batch)
+	require.NoError(t, err, "a repeat is accepted")
 
 	assert.Equal(t, 1, countAction(t, env, "idem_after_delivery"))
 	assert.Len(t, env.QueuedEnvelopes(t, events.NameCollected), 1, "a repeat publishes nothing")
@@ -54,7 +52,7 @@ func TestARepeatSentBeforeDeliveryIsStillCountedOnce(t *testing.T) {
 	batch := &collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{clientEvent("evt-2", "idem_before_delivery")}}
 
 	for range 2 {
-		_, err := c.CollectEventsCreate(t.Context(), batch)
+		err := c.CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
 
@@ -66,7 +64,7 @@ func TestClientEventIdsAreUniquePerWorkspace(t *testing.T) {
 	batch := &collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{clientEvent("shared-id", "idem_two_workspaces")}}
 
 	for _, key := range []string{fixtures.AcmeCollectKey, fixtures.GlobexCollectKey} {
-		_, err := env.CollectWithKey(t, key).CollectEventsCreate(t.Context(), batch)
+		err := env.CollectWithKey(t, key).CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
 
@@ -79,7 +77,7 @@ func TestEventsWithoutAClientEventIdAreNotDeduplicated(t *testing.T) {
 	batch := &collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{{VisitorId: "v-idem", Action: "idem_no_id"}}}
 
 	for range 2 {
-		_, err := c.CollectEventsCreate(t.Context(), batch)
+		err := c.CollectEventsCreate(t.Context(), batch)
 		require.NoError(t, err)
 	}
 

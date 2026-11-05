@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,29 +19,23 @@ func TestExternalTrackingDomainLifecycle(t *testing.T) {
 	c := env.ExternalScoped(t, "tracking_domains:read", "tracking_domains:write")
 	ctx := context.Background()
 
-	res, err := c.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
+	set, err := c.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
 	require.NoError(t, err)
-	set, ok := res.(*externalapi.TrackingDomainResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.TrackingDomainRoleCurrent, set.Role)
 	assert.Equal(t, externalapi.TrackingStatePending, set.State)
 	assert.Equal(t, externalapi.CnameRecordTypeCNAME, set.Record.Type)
 	assert.Equal(t, testhelper.TrackingCNAMETarget, set.Record.Target)
 
-	listed, err := c.TrackingDomainsList(ctx)
+	list, err := c.TrackingDomainsList(ctx)
 	require.NoError(t, err)
-	list, ok := listed.(*externalapi.TrackingDomainsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", listed)
-	require.Len(t, *list, 1)
-	assert.Equal(t, "links.acme.com", (*list)[0].Host)
+	require.Len(t, list, 1)
+	assert.Equal(t, "links.acme.com", list[0].Host)
 
-	verified, err := c.TrackingDomainsVerify(ctx, externalapi.TrackingDomainsVerifyParams{ID: set.ID})
+	_, err = c.TrackingDomainsVerify(ctx, externalapi.TrackingDomainsVerifyParams{ID: set.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TrackingDomainResource{}, verified)
 
-	removed, err := c.TrackingDomainsRemove(ctx, externalapi.TrackingDomainsRemoveParams{ID: set.ID})
+	err = c.TrackingDomainsRemove(ctx, externalapi.TrackingDomainsRemoveParams{ID: set.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TrackingDomainsRemoveNoContent{}, removed)
 }
 
 func TestExternalTrackingDomainsNeedTheirScopes(t *testing.T) {
@@ -48,12 +43,10 @@ func TestExternalTrackingDomainsNeedTheirScopes(t *testing.T) {
 	ctx := context.Background()
 
 	reader := env.ExternalScoped(t, "tracking_domains:read")
-	set, err := reader.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TrackingDomainsSetForbidden{}, set)
+	_, err := reader.TrackingDomainsSet(ctx, &externalapi.SetTrackingDomainInput{Host: "links.acme.com"})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	writer := env.ExternalScoped(t, "tracking_domains:write")
-	list, err := writer.TrackingDomainsList(ctx)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TrackingDomainsListForbidden{}, list, "write does not imply read")
+	_, err = writer.TrackingDomainsList(ctx)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 }

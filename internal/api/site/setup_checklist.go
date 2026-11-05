@@ -7,7 +7,7 @@ import (
 )
 
 // SiteSetupChecklistGet maps the Workspace's Setup checklist onto the DTO.
-func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, _ siteapi.SiteSetupChecklistGetParams) (siteapi.SiteSetupChecklistGetRes, error) {
+func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, _ siteapi.SiteSetupChecklistGetParams) (*siteapi.SiteSetupProgress, error) {
 	c, err := h.setupChecklist.Read(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err

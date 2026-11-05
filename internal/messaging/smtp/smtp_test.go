@@ -12,13 +12,16 @@ import (
 	"time"
 
 	"github.com/emersion/go-sasl"
+
 	gosmtp "github.com/emersion/go-smtp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -278,8 +281,8 @@ func TestDefaultFrom(t *testing.T) {
 
 func TestDescriptorValidate(t *testing.T) {
 	d := smtp.Descriptor()
-	assert.Equal(t, messaging.ChannelEmail, d.Channel)
-	assert.Equal(t, messaging.ProviderSMTP, d.Provider)
+	assert.Equal(t, channels.Email, d.Channel)
+	assert.Equal(t, providers.SMTP, d.Provider)
 
 	cases := map[string]struct {
 		cfg     string

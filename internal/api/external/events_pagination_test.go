@@ -19,13 +19,12 @@ func TestExternalEventActionsListPageBeyondTheTotal(t *testing.T) {
 
 	first, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{})
 	require.NoError(t, err)
-	all := first.(*externalapi.EventActionsListOK)
+	all := first
 	require.NotZero(t, all.TotalItems, "the fixtures log some actions")
 
 	res, err := c.EventActionsList(ctx, externalapi.EventActionsListParams{Page: externalapi.NewOptInt32(500)})
 	require.NoError(t, err)
-	beyond, ok := res.(*externalapi.EventActionsListOK)
-	require.Truef(t, ok, "got %T", res)
+	beyond := res
 	assert.Empty(t, beyond.Items)
 	assert.Equal(t, all.TotalItems, beyond.TotalItems)
 	assert.EqualValues(t, 500, beyond.Page)

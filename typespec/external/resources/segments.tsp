@@ -235,11 +235,5 @@ interface Segments
   preview(
     ...ResourceCollectionParameters<SegmentResource>,
     @body body: PreviewSegmentInput,
-  ):
-    | PreviewSegmentResult
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+  ): PreviewSegmentResult | Problem;
 }

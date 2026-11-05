@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.AutomationsListParams) (externalapi.AutomationsListRes, error) {
+func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.AutomationsListParams) (*externalapi.AutomationsListOK, error) {
 	page, err := h.automations.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), automations.ListFilter{Archived: params.Archived.Or(false)})
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 }
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
-func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (externalapi.AutomationsCreateRes, error) {
+func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (*externalapi.AutomationResource, error) {
 	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), inputs.AutomationCreate(req))
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 	return &res, nil
 }
 
-func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.AutomationsGetParams) (externalapi.AutomationsGetRes, error) {
+func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.AutomationsGetParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -37,7 +37,7 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 	return &res, nil
 }
 
-func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.UpdateAutomationInput, params externalapi.AutomationsUpdateParams) (externalapi.AutomationsUpdateRes, error) {
+func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.UpdateAutomationInput, params externalapi.AutomationsUpdateParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
 	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, inputs.AutomationUpdate(req))
 	if err != nil {
@@ -49,7 +49,7 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 
 // AutomationsArchive archives an automation (ADR 0100); Live use (active enrollments, an active
 // rule) refuses it with 409.
-func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (externalapi.AutomationsArchiveRes, error) {
+func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (*externalapi.AutomationResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	a, err := h.automations.Archive(ctx, ws, id)
@@ -61,7 +61,7 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 }
 
 // AutomationsUnarchive brings an archived automation back, inactive.
-func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (externalapi.AutomationsUnarchiveRes, error) {
+func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (*externalapi.AutomationResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	a, err := h.automations.Unarchive(ctx, ws, id)
@@ -74,7 +74,7 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 
 // AutomationsPublish needs automations:publish, which authoring scopes never imply (ADR 0016,
 // ADR 0065). Over MCP, it additionally needs mcp:send (the x-mcp send flag).
-func (h *Handlers) AutomationsPublish(ctx context.Context, params externalapi.AutomationsPublishParams) (externalapi.AutomationsPublishRes, error) {
+func (h *Handlers) AutomationsPublish(ctx context.Context, params externalapi.AutomationsPublishParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
 	a, err := h.automations.Publish(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -85,7 +85,7 @@ func (h *Handlers) AutomationsPublish(ctx context.Context, params externalapi.Au
 }
 
 // AutomationsDeactivate only stops new Enrollments, so it is authoring: automations:write.
-func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi.AutomationsDeactivateParams) (externalapi.AutomationsDeactivateRes, error) {
+func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi.AutomationsDeactivateParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
 	a, err := h.automations.Deactivate(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -97,7 +97,7 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 
 // AutomationsReport reads the engagement of the Automation's emails and its results over the
 // period the request names; the contract's default fills it in when the request names none.
-func (h *Handlers) AutomationsReport(ctx context.Context, params externalapi.AutomationsReportParams) (externalapi.AutomationsReportRes, error) {
+func (h *Handlers) AutomationsReport(ctx context.Context, params externalapi.AutomationsReportParams) (*externalapi.AutomationReport, error) {
 	period := inputs.AutomationReportPeriod(params.Period.Value)
 	report, err := h.automations.ReportOf(ctx, auth.TokenScoped(ctx), int64(params.ID), period)
 	if err != nil {
@@ -108,7 +108,7 @@ func (h *Handlers) AutomationsReport(ctx context.Context, params externalapi.Aut
 
 // AutomationsRevert drops the draft and changes nothing that sends, so it is authoring:
 // automations:write.
-func (h *Handlers) AutomationsRevert(ctx context.Context, params externalapi.AutomationsRevertParams) (externalapi.AutomationsRevertRes, error) {
+func (h *Handlers) AutomationsRevert(ctx context.Context, params externalapi.AutomationsRevertParams) (*externalapi.AutomationResource, error) {
 	a, err := h.automations.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err

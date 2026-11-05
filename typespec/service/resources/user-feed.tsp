@@ -69,10 +69,5 @@ namespace ServiceUserFeed {
     @minValue(1)
     @maxValue(200)
     limit?: int32 = 100,
-  ):
-    | ServiceUserFeedPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  ): ServiceUserFeedPage | Problem;
 }

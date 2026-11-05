@@ -2,10 +2,8 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -16,9 +14,8 @@ func TestExternalTemplatesMapABlankNameTo422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "templates:read", "templates:write")
 
-	created, err := c.TemplatesCreate(context.Background(), &externalapi.CreateTemplateInput{Name: ""})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesCreateUnprocessableEntity{}, created)
+	_, err := c.TemplatesCreate(context.Background(), &externalapi.CreateTemplateInput{Name: ""})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalTemplatesUpdateMapsABlankNameTo422(t *testing.T) {
@@ -26,8 +23,7 @@ func TestExternalTemplatesUpdateMapsABlankNameTo422(t *testing.T) {
 	c := env.ExternalScoped(t, "templates:read", "templates:write")
 	tmpl := variablesTemplate(env.DB)
 
-	upd, err := c.TemplatesUpdate(context.Background(), &externalapi.UpdateTemplateInput{Name: externalapi.NewOptString("")},
+	_, err := c.TemplatesUpdate(context.Background(), &externalapi.UpdateTemplateInput{Name: externalapi.NewOptString("")},
 		externalapi.TemplatesUpdateParams{ID: templateID(tmpl)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesUpdateUnprocessableEntity{}, upd)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

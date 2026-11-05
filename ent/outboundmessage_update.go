@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // OutboundMessageUpdate is the builder for updating OutboundMessage entities.
@@ -59,13 +60,13 @@ func (_u *OutboundMessageUpdate) SetNillableWorkspaceID(v *int64) *OutboundMessa
 }
 
 // SetChannel sets the "channel" field.
-func (_u *OutboundMessageUpdate) SetChannel(v outboundmessage.Channel) *OutboundMessageUpdate {
+func (_u *OutboundMessageUpdate) SetChannel(v channels.Channel) *OutboundMessageUpdate {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *OutboundMessageUpdate) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageUpdate {
+func (_u *OutboundMessageUpdate) SetNillableChannel(v *channels.Channel) *OutboundMessageUpdate {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -1193,13 +1194,13 @@ func (_u *OutboundMessageUpdateOne) SetNillableWorkspaceID(v *int64) *OutboundMe
 }
 
 // SetChannel sets the "channel" field.
-func (_u *OutboundMessageUpdateOne) SetChannel(v outboundmessage.Channel) *OutboundMessageUpdateOne {
+func (_u *OutboundMessageUpdateOne) SetChannel(v channels.Channel) *OutboundMessageUpdateOne {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *OutboundMessageUpdateOne) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageUpdateOne {
+func (_u *OutboundMessageUpdateOne) SetNillableChannel(v *channels.Channel) *OutboundMessageUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
 	}

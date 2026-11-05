@@ -80,13 +80,7 @@ namespace Enrollments {
 
     /** Only Enrollments in this status */
     @query status?: EnrollmentStatus,
-  ):
-    | Page<EnrollmentResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  ): Page<EnrollmentResource> | Problem;
 
   /** Get one Enrollment of an Automation. Needs the enrollments:read scope. */
   @get
@@ -94,9 +88,5 @@ namespace Enrollments {
   @requiresScopes(#[ApiTokenScope.enrollmentsRead])
   op get(@path automationId: EntityId, @path enrollmentId: EntityId):
     | EnrollmentResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 }

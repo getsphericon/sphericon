@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,19 +16,15 @@ import (
 
 func listTrackingDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.SiteTrackingDomainResource {
 	t.Helper()
-	res, err := c.SiteTrackingDomainsList(context.Background(), siteapi.SiteTrackingDomainsListParams{WorkspaceId: ws})
+	list, err := c.SiteTrackingDomainsList(context.Background(), siteapi.SiteTrackingDomainsListParams{WorkspaceId: ws})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteTrackingDomainsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	return *list
+	return list
 }
 
-func setTrackingDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, host string) siteapi.SiteTrackingDomainsSetRes {
+func setTrackingDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, host string) (*siteapi.SiteTrackingDomainResource, error) {
 	t.Helper()
-	res, err := c.SiteTrackingDomainsSet(context.Background(), &siteapi.SetTrackingDomainInput{Host: host},
+	return c.SiteTrackingDomainsSet(context.Background(), &siteapi.SetTrackingDomainInput{Host: host},
 		siteapi.SiteTrackingDomainsSetParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	return res
 }
 
 // Any member reads the Workspace's Tracking domains, current first, each with its CNAME at the
@@ -57,8 +54,8 @@ func TestSiteTrackingDomainsSetReplacesAHostThatDoesNotServe(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, ok := setTrackingDomain(t, c, fixtures.AcmePublicID, "Links.Acme.com").(*siteapi.SiteTrackingDomainResource)
-	require.True(t, ok)
+	got, err := setTrackingDomain(t, c, fixtures.AcmePublicID, "Links.Acme.com")
+	require.NoError(t, err)
 	assert.Equal(t, "links.acme.com", got.Host)
 	assert.Equal(t, siteapi.SiteTrackingDomainRoleCurrent, got.Role)
 	assert.Equal(t, siteapi.SiteTrackingStatePending, got.State)
@@ -71,8 +68,8 @@ func TestSiteTrackingDomainsSetReplacesAHostThatDoesNotServe(t *testing.T) {
 func TestSiteTrackingDomainsSetRefusesAnApexHost(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := setTrackingDomain(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, "acme.com")
-	assert.IsType(t, &siteapi.SiteTrackingDomainsSetUnprocessableEntity{}, res)
+	_, err := setTrackingDomain(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, "acme.com")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // Removing a current host that never served deletes it and the replacement takes its place;
@@ -81,19 +78,17 @@ func TestSiteTrackingDomainsRemovePromotesTheReplacementThenCancelsIt(t *testing
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	ctx := context.Background()
-	remove := func(id int64) siteapi.SiteTrackingDomainsRemoveRes {
-		res, err := c.SiteTrackingDomainsRemove(ctx, siteapi.SiteTrackingDomainsRemoveParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(id)})
-		require.NoError(t, err)
-		return res
+	remove := func(id int64) error {
+		return c.SiteTrackingDomainsRemove(ctx, siteapi.SiteTrackingDomainsRemoveParams{WorkspaceId: fixtures.GlobexPublicID, ID: siteapi.EntityId(id)})
 	}
 
-	assert.IsType(t, &siteapi.SiteTrackingDomainsRemoveNoContent{}, remove(fixtures.TrackingDomainGlobexID))
+	require.NoError(t, remove(fixtures.TrackingDomainGlobexID))
 	list := listTrackingDomains(t, c, fixtures.GlobexPublicID)
 	require.Len(t, list, 1)
 	assert.Equal(t, fixtures.TrackingDomainGlobexReplacementHost, list[0].Host)
 	assert.Equal(t, siteapi.SiteTrackingDomainRoleCurrent, list[0].Role)
 
-	assert.IsType(t, &siteapi.SiteTrackingDomainsRemoveNoContent{}, remove(fixtures.TrackingDomainGlobexReplacementID))
+	require.NoError(t, remove(fixtures.TrackingDomainGlobexReplacementID))
 	assert.Empty(t, listTrackingDomains(t, c, fixtures.GlobexPublicID))
 }
 
@@ -104,13 +99,12 @@ func TestSiteTrackingDomainsWritesAreForOwnersAndAdmins(t *testing.T) {
 	ctx := context.Background()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	assert.IsType(t, &siteapi.SiteTrackingDomainsSetForbidden{}, setTrackingDomain(t, c, ws, "links.acme.com"))
-	verify, err := c.SiteTrackingDomainsVerify(ctx, siteapi.SiteTrackingDomainsVerifyParams{WorkspaceId: ws, ID: fixtures.TrackingDomainAcmeID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTrackingDomainsVerifyForbidden{}, verify)
-	remove, err := c.SiteTrackingDomainsRemove(ctx, siteapi.SiteTrackingDomainsRemoveParams{WorkspaceId: ws, ID: fixtures.TrackingDomainAcmeID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTrackingDomainsRemoveForbidden{}, remove)
+	_, err := setTrackingDomain(t, c, ws, "links.acme.com")
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = c.SiteTrackingDomainsVerify(ctx, siteapi.SiteTrackingDomainsVerifyParams{WorkspaceId: ws, ID: fixtures.TrackingDomainAcmeID})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	err = c.SiteTrackingDomainsRemove(ctx, siteapi.SiteTrackingDomainsRemoveParams{WorkspaceId: ws, ID: fixtures.TrackingDomainAcmeID})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 }
 
 // Without a CNAME target the Instance offers no Tracking domains: the Workspace names no
@@ -123,7 +117,8 @@ func TestSiteTrackingDomainsAreOffWithoutATarget(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, workspaces, 1)
 	assert.False(t, workspaces[0].TrackingTarget.IsSet())
-	assert.IsType(t, &siteapi.SiteTrackingDomainsSetNotFound{}, setTrackingDomain(t, c, fixtures.AcmePublicID, "links.acme.com"))
+	_, err = setTrackingDomain(t, c, fixtures.AcmePublicID, "links.acme.com")
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	on := testhelper.Setup(t)
 	workspaces, err = on.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(context.Background())

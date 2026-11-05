@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -20,12 +21,11 @@ func TestExternalUnsubscribesCreateRejectsForeignAutomation(t *testing.T) {
 	before, err := env.DB.Unsubscribe.Query().Count(context.Background())
 	require.NoError(t, err)
 
-	res, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{
+	_, err = c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{
 		Destination:   fixtures.ContactAliceEmail,
 		SendingSource: externalapi.NewOptString(eligibility.AutomationSource(fixtures.AutomationGlobexID)),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.UnsubscribesCreateUnprocessableEntity{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	after, err := env.DB.Unsubscribe.Query().Count(context.Background())
 	require.NoError(t, err)

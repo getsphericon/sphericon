@@ -14,11 +14,9 @@ import (
 
 func membersOf(t *testing.T, env *testhelper.TestEnv, asEmail string, workspace siteapi.WorkspaceId) []siteapi.SiteMembershipResource {
 	t.Helper()
-	res, err := env.SiteActor(t, asEmail).SiteMembershipsList(t.Context(), siteapi.SiteMembershipsListParams{WorkspaceId: workspace})
+	list, err := env.SiteActor(t, asEmail).SiteMembershipsList(t.Context(), siteapi.SiteMembershipsListParams{WorkspaceId: workspace})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteMembershipsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	return *list
+	return list
 }
 
 func memberWithEmail(t *testing.T, members []siteapi.SiteMembershipResource, email string) siteapi.SiteMembershipResource {
@@ -43,8 +41,7 @@ func TestAWorkspaceCreatorIsRecordedAsTheCreator(t *testing.T) {
 
 	res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Second Brand"})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, created.ID)
 	john := memberWithEmail(t, members, fixtures.OwnerJohnEmail)
@@ -55,8 +52,7 @@ func TestAnAcceptedInvitationIsRecordedAsTheMembershipsSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := fixtures.InvitationAcmeOscarToken
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), token, &siteapi.SiteAcceptInvitationInput{})
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, acceptInvitation(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), token, &siteapi.SiteAcceptInvitationInput{}))
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	oscar := memberWithEmail(t, members, fixtures.OutsiderOscarEmail)
@@ -66,8 +62,7 @@ func TestAnAcceptedInvitationIsRecordedAsTheMembershipsSource(t *testing.T) {
 func TestAnAdminInvitationRaisesAnExistingMemberToAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.MemberMaryEmail), "inv_fixture_token_acme_mary_admin", &siteapi.SiteAcceptInvitationInput{})
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, acceptInvitation(t, env.SiteActor(t, fixtures.MemberMaryEmail), "inv_fixture_token_acme_mary_admin", &siteapi.SiteAcceptInvitationInput{}))
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	mary := memberWithEmail(t, members, fixtures.MemberMaryEmail)
@@ -78,8 +73,7 @@ func TestAnAdminInvitationRaisesAnExistingMemberToAdmin(t *testing.T) {
 func TestAnInvitationNeverLowersAnAdmin(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.AdminAliceEmail), "inv_fixture_token_acme_alice_member", &siteapi.SiteAcceptInvitationInput{})
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, acceptInvitation(t, env.SiteActor(t, fixtures.AdminAliceEmail), "inv_fixture_token_acme_alice_member", &siteapi.SiteAcceptInvitationInput{}))
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	alice := memberWithEmail(t, members, fixtures.AdminAliceEmail)
@@ -89,8 +83,7 @@ func TestAnInvitationNeverLowersAnAdmin(t *testing.T) {
 func TestAnInvitationNeverLowersAnOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "inv_fixture_token_acme_john_admin", &siteapi.SiteAcceptInvitationInput{})
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+	require.NoError(t, acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "inv_fixture_token_acme_john_admin", &siteapi.SiteAcceptInvitationInput{}))
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	john := memberWithEmail(t, members, fixtures.OwnerJohnEmail)

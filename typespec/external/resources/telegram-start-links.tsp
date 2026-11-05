@@ -12,10 +12,5 @@ namespace TelegramStartLinks {
   @requiresScopes(#[ApiTokenScope.contactsWrite])
   op issue(@path contactId: EntityId, @body body: IssueTelegramStartLinkInput):
     | TelegramStartLinkResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

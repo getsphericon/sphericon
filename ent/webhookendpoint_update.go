@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // WebhookEndpointUpdate is the builder for updating WebhookEndpoint entities.
@@ -165,13 +166,13 @@ func (_u *WebhookEndpointUpdate) ClearFailingSince() *WebhookEndpointUpdate {
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (_u *WebhookEndpointUpdate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpdate {
+func (_u *WebhookEndpointUpdate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointUpdate {
 	_u.mutation.SetLastErrorKind(v)
 	return _u
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (_u *WebhookEndpointUpdate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointUpdate {
+func (_u *WebhookEndpointUpdate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointUpdate {
 	if v != nil {
 		_u.SetLastErrorKind(*v)
 	}
@@ -597,13 +598,13 @@ func (_u *WebhookEndpointUpdateOne) ClearFailingSince() *WebhookEndpointUpdateOn
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (_u *WebhookEndpointUpdateOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpdateOne {
+func (_u *WebhookEndpointUpdateOne) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointUpdateOne {
 	_u.mutation.SetLastErrorKind(v)
 	return _u
 }
 
 // SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (_u *WebhookEndpointUpdateOne) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointUpdateOne {
+func (_u *WebhookEndpointUpdateOne) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointUpdateOne {
 	if v != nil {
 		_u.SetLastErrorKind(*v)
 	}

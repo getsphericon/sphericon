@@ -12,7 +12,7 @@ import (
 // and authoring (Deactivate included) take automations:read and automations:write, and
 // publishing takes the send-class automations:publish (ADR 0016, ADR 0065).
 
-func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListParams) (externalapi.RulesListRes, error) {
+func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListParams) (*externalapi.RulesListOK, error) {
 	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 }
 
 // RulesCreate always stores an inactive Rule: publishing is the send-class operation.
-func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleInput) (externalapi.RulesCreateRes, error) {
+func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleInput) (*externalapi.RuleResource, error) {
 	in, err := inputs.RuleCreate(req)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 	return &res, nil
 }
 
-func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetParams) (externalapi.RulesGetRes, error) {
+func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetParams) (*externalapi.RuleResource, error) {
 	r, err := h.rules.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 	return &res, nil
 }
 
-func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleInput, params externalapi.RulesUpdateParams) (externalapi.RulesUpdateRes, error) {
+func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleInput, params externalapi.RulesUpdateParams) (*externalapi.RuleResource, error) {
 	in, err := inputs.RuleUpdate(req)
 	if err != nil {
 		return nil, err
@@ -57,17 +57,17 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 }
 
 // RulesDelete removes a Rule: one with Firings is discarded so they stay as history.
-func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDeleteParams) (externalapi.RulesDeleteRes, error) {
+func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDeleteParams) error {
 	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.RulesDeleteNoContent{}, nil
+	return nil
 }
 
 // RulesPublish needs automations:publish, which authoring scopes never imply (ADR 0016, ADR 0065).
 // Over MCP, it additionally needs mcp:send (the x-mcp send flag).
-func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPublishParams) (externalapi.RulesPublishRes, error) {
+func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPublishParams) (*externalapi.RuleResource, error) {
 	r, err := h.rules.Publish(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPub
 }
 
 // RulesRevert drops the Rule's draft, which changes nothing the Rule does: automations:write.
-func (h *Handlers) RulesRevert(ctx context.Context, params externalapi.RulesRevertParams) (externalapi.RulesRevertRes, error) {
+func (h *Handlers) RulesRevert(ctx context.Context, params externalapi.RulesRevertParams) (*externalapi.RuleResource, error) {
 	r, err := h.rules.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (h *Handlers) RulesRevert(ctx context.Context, params externalapi.RulesReve
 }
 
 // RulesDeactivate only stops the Rule firing, so it is authoring: automations:write.
-func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.RulesDeactivateParams) (externalapi.RulesDeactivateRes, error) {
+func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.RulesDeactivateParams) (*externalapi.RuleResource, error) {
 	r, err := h.rules.Deactivate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 
 // RulesDryRun reports what a stored Event would do to the Rule. It writes and runs nothing, so
 // reading scope is enough.
-func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleInput, params externalapi.RulesDryRunParams) (externalapi.RulesDryRunRes, error) {
+func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleInput, params externalapi.RulesDryRunParams) (*externalapi.RuleDryRunResource, error) {
 	dry, err := h.rules.DryRun(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.EventId))
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleI
 }
 
 // RuleFiringsList lists a Rule's Firings, newest first.
-func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleFiringsListParams) (externalapi.RuleFiringsListRes, error) {
+func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleFiringsListParams) (*externalapi.RuleFiringsListOK, error) {
 	page, err := h.rules.Firings(ctx, auth.TokenScoped(ctx), int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err

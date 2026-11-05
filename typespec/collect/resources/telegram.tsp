@@ -25,10 +25,5 @@ namespace CollectTelegramStartLinks {
   @post
   op create(@body body: CollectTelegramStartLinkInput):
     | CollectTelegramStartLink
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | PayloadTooLargeProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem
-    | ServiceUnavailableProblem;
+    | Problem;
 }

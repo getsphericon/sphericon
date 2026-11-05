@@ -18,7 +18,7 @@ var _ Handler = UnimplementedHandler{}
 // Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 //
 // DELETE /workspaces/{workspaceId}/holds/{key}
-func (UnimplementedHandler) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (r ServiceHoldsClearRes, _ error) {
+func (UnimplementedHandler) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (r *HoldClearResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -27,7 +27,7 @@ func (UnimplementedHandler) ServiceHoldsClear(ctx context.Context, params Servic
 // The holds of a Workspace that are active now; a lapsed one is not listed.
 //
 // GET /workspaces/{workspaceId}/holds
-func (UnimplementedHandler) ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (r ServiceHoldsListRes, _ error) {
+func (UnimplementedHandler) ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (r *HoldList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -38,7 +38,7 @@ func (UnimplementedHandler) ServiceHoldsList(ctx context.Context, params Service
 // change.
 //
 // PUT /workspaces/{workspaceId}/holds/{key}
-func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (r ServiceHoldsSetRes, _ error) {
+func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (r *HoldSetResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -47,7 +47,7 @@ func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput,
 // The calling credential's own name, scopes and expiry.
 //
 // GET /identity
-func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceIdentityGetRes, _ error) {
+func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r *ServiceIdentityResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -61,7 +61,7 @@ func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceId
 // a cursor returns the same entries, so applying one twice must change nothing.
 //
 // GET /domains/changes
-func (UnimplementedHandler) ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (r ServiceTrackingHostFeedListRes, _ error) {
+func (UnimplementedHandler) ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (r *ServiceTrackingHostFeedPage, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -71,7 +71,7 @@ func (UnimplementedHandler) ServiceTrackingHostFeedList(ctx context.Context, par
 // Usage snapshots for a closed one. Never a recount on read.
 //
 // GET /usage
-func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (r ServiceUsageListRes, _ error) {
+func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (r *ServiceUsageListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -84,7 +84,7 @@ func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params Service
 // entries, and an empty cursor starts from the beginning.
 //
 // GET /users/changes
-func (UnimplementedHandler) ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (r ServiceUserFeedListRes, _ error) {
+func (UnimplementedHandler) ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (r *ServiceUserFeedPage, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -96,7 +96,7 @@ func (UnimplementedHandler) ServiceUserFeedList(ctx context.Context, params Serv
 // same entries, and an empty cursor starts from the beginning.
 //
 // GET /workspaces/changes
-func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (r ServiceWorkspaceFeedListRes, _ error) {
+func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (r *ServiceWorkspaceFeedPage, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -107,6 +107,14 @@ func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params
 // read.
 //
 // GET /workspaces/{workspaceId}/usage
-func (UnimplementedHandler) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (r ServiceWorkspaceUsageGetRes, _ error) {
+func (UnimplementedHandler) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (r *WorkspaceUsageResource, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

@@ -1,0 +1,7 @@
+# The server surfaces (site, external, collect, staff, staffee, service). Every operation answers a
+# refusal with the contract's `Problem` as its `default` response, so ogen reduces it to one error
+# type: a handler returns its success type and an error, the error goes through the Handler's
+# NewError, and a client returns the success type or that error. `on` fails the generation when an
+# operation lacks that response (`auto` would fall back to a sum type per operation in silence).
+generator:
+  convenient_errors: 'on'

@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -12,6 +13,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // A Staff member keeps the Sign-up items in step with the market (#737): reorders, retitles and
@@ -19,63 +21,58 @@ import (
 // brought into use where a test needs them.
 
 // reorder sends the new order of the items and returns the answer.
-func reorder(t *testing.T, c *staffapi.Client, ids ...staffapi.EntityId) staffapi.StaffSignupItemsReorderRes {
+func reorder(t *testing.T, c *staffapi.Client, ids ...staffapi.EntityId) (*staffapi.StaffSignupItemList, error) {
 	t.Helper()
-	res, err := c.StaffSignupItemsReorder(t.Context(), &staffapi.StaffSignupItemOrder{Ids: ids})
-	require.NoError(t, err)
-	return res
+	return c.StaffSignupItemsReorder(t.Context(), &staffapi.StaffSignupItemOrder{Ids: ids})
 }
 
 // deleteItem deletes the item and returns the answer.
-func deleteItem(t *testing.T, c *staffapi.Client, id staffapi.EntityId) staffapi.StaffSignupItemsDeleteRes {
+func deleteItem(t *testing.T, c *staffapi.Client, id staffapi.EntityId) error {
 	t.Helper()
-	res, err := c.StaffSignupItemsDelete(t.Context(), staffapi.StaffSignupItemsDeleteParams{ID: id})
-	require.NoError(t, err)
-	return res
+	return c.StaffSignupItemsDelete(t.Context(), staffapi.StaffSignupItemsDeleteParams{ID: id})
 }
 
 // deleted deletes the item, which must succeed.
 func deleted(t *testing.T, c *staffapi.Client, id staffapi.EntityId) {
 	t.Helper()
-	res := deleteItem(t, c, id)
-	require.IsTypef(t, &staffapi.StaffSignupItemsDeleteNoContent{}, res, "the item is deleted, got %T", res)
+	require.NoError(t, deleteItem(t, c, id), "the item is deleted")
 }
 
 // listedKeys is the keys of the items the console lists, in their order.
 func listedKeys(t *testing.T, c *staffapi.Client) []staffapi.SignupItemKey {
 	t.Helper()
-	res, err := c.StaffSignupItemsList(t.Context())
+	list, err := c.StaffSignupItemsList(t.Context())
 	require.NoError(t, err)
-	list, ok := res.(*staffapi.StaffSignupItemList)
-	require.Truef(t, ok, "the items are listed, got %T", res)
 	return lo.Map(list.Items, func(it staffapi.StaffSignupItemResource, _ int) staffapi.SignupItemKey { return it.Key })
 }
 
-// update changes the item and returns the answer.
-func update(t *testing.T, c *staffapi.Client, id staffapi.EntityId, u staffapi.StaffSignupItemUpdate) staffapi.StaffSignupItemsUpdateRes {
+// tryUpdate changes the item and returns the answer.
+func tryUpdate(t *testing.T, c *staffapi.Client, id staffapi.EntityId, u staffapi.StaffSignupItemUpdate) (*staffapi.StaffSignupItemResource, error) {
 	t.Helper()
-	res, err := c.StaffSignupItemsUpdate(t.Context(), &u, staffapi.StaffSignupItemsUpdateParams{ID: id})
+	return c.StaffSignupItemsUpdate(t.Context(), &u, staffapi.StaffSignupItemsUpdateParams{ID: id})
+}
+
+// update is tryUpdate for a change that is expected to be taken.
+func update(t *testing.T, c *staffapi.Client, id staffapi.EntityId, u staffapi.StaffSignupItemUpdate) *staffapi.StaffSignupItemResource {
+	t.Helper()
+	item, err := tryUpdate(t, c, id, u)
 	require.NoError(t, err)
-	return res
+	return item
 }
 
 // getItem is the item as the console shows it.
 func getItem(t *testing.T, c *staffapi.Client, id staffapi.EntityId) *staffapi.StaffSignupItemResource {
 	t.Helper()
-	res, err := c.StaffSignupItemsGet(t.Context(), staffapi.StaffSignupItemsGetParams{ID: id})
+	item, err := c.StaffSignupItemsGet(t.Context(), staffapi.StaffSignupItemsGetParams{ID: id})
 	require.NoError(t, err)
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the item is read, got %T", res)
 	return item
 }
 
 // versions is the item's published versions as the console lists them.
 func versions(t *testing.T, c *staffapi.Client, id staffapi.EntityId) []staffapi.StaffLegalDocumentVersion {
 	t.Helper()
-	res, err := c.StaffSignupItemsListVersions(t.Context(), staffapi.StaffSignupItemsListVersionsParams{ID: id})
+	list, err := c.StaffSignupItemsListVersions(t.Context(), staffapi.StaffSignupItemsListVersionsParams{ID: id})
 	require.NoError(t, err)
-	list, ok := res.(*staffapi.StaffLegalDocumentVersionList)
-	require.Truef(t, ok, "the versions are listed, got %T", res)
 	return list.Items
 }
 
@@ -103,10 +100,9 @@ func TestReorderingChangesTheOrderTheFormAsks(t *testing.T) {
 	c := h.console(t)
 	h.allInEffect(t)
 
-	res := reorder(t, c, fixtures.DataNoticeID, fixtures.OperatorNewsID, fixtures.ServiceTermsID, fixtures.PartnerOffersID)
+	list, err := reorder(t, c, fixtures.DataNoticeID, fixtures.OperatorNewsID, fixtures.ServiceTermsID, fixtures.PartnerOffersID)
 
-	list, ok := res.(*staffapi.StaffSignupItemList)
-	require.Truef(t, ok, "the items are reordered, got %T", res)
+	require.NoError(t, err)
 	listed := lo.Map(list.Items, func(it staffapi.StaffSignupItemResource, _ int) staffapi.SignupItemKey { return it.Key })
 	assert.Equal(t, []staffapi.SignupItemKey{fixtures.DataNoticeKey, fixtures.OperatorNewsKey, fixtures.ServiceTermsKey, fixtures.PartnerOffersKey}, listed)
 	asked := h.askedKeys(t)
@@ -119,12 +115,11 @@ func TestADeletedItemIsNotPartOfTheOrder(t *testing.T) {
 	// DataNotice and PartnerOffers stay deleted, as the fixtures leave them.
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID, fixtures.OperatorNewsID)
 
-	withDeleted := reorder(t, c, fixtures.OperatorNewsID, fixtures.DataNoticeID, fixtures.ServiceTermsID)
-	res := reorder(t, c, fixtures.OperatorNewsID, fixtures.ServiceTermsID)
+	_, withDeleted := reorder(t, c, fixtures.OperatorNewsID, fixtures.DataNoticeID, fixtures.ServiceTermsID)
+	list, err := reorder(t, c, fixtures.OperatorNewsID, fixtures.ServiceTermsID)
 
 	assert.Equal(t, []string{"ids"}, refusedFields(t, withDeleted), "a deleted item is not in the order")
-	list, ok := res.(*staffapi.StaffSignupItemList)
-	require.Truef(t, ok, "the items are reordered, got %T", res)
+	require.NoError(t, err)
 	listed := lo.Map(list.Items, func(it staffapi.StaffSignupItemResource, _ int) staffapi.SignupItemKey { return it.Key })
 	assert.Equal(t, []staffapi.SignupItemKey{fixtures.OperatorNewsKey, fixtures.ServiceTermsKey}, listed)
 	asked := h.askedKeys(t)
@@ -145,9 +140,9 @@ func TestAnOrderThatIsNotEveryItemOnceIsRefused(t *testing.T) {
 
 	for name, ids := range orders {
 		t.Run(name, func(t *testing.T) {
-			res := reorder(t, c, ids...)
+			_, err := reorder(t, c, ids...)
 
-			assert.Equal(t, []string{"ids"}, refusedFields(t, res))
+			assert.Equal(t, []string{"ids"}, refusedFields(t, err))
 			asked := h.askedKeys(t)
 			assert.Equal(t, []siteapi.SignupItemKey{fixtures.ServiceTermsKey, fixtures.OperatorNewsKey, fixtures.DataNoticeKey}, asked, "the order is unchanged")
 		})
@@ -159,10 +154,8 @@ func TestRetitlingChangesTheTitleVisitorsSeeWithoutANewVersion(t *testing.T) {
 	c := h.console(t)
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	res := update(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("Terms of use")})
+	item := update(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("Terms of use")})
 
-	item, ok := res.(*staffapi.StaffSignupItemResource)
-	require.Truef(t, ok, "the item is retitled, got %T", res)
 	assert.EqualValues(t, "Terms of use", item.Title)
 	visible := h.visibleItems(t)
 	assert.Equal(t, []siteapi.SiteSignupItem{{Key: fixtures.ServiceTermsKey, Title: "Terms of use", Kind: siteapi.SignupItemKindRequiredAcceptance, Version: fixtures.ServiceTermsCurrentLabel}}, visible)
@@ -178,9 +171,9 @@ func TestABlankTitleIsRefused(t *testing.T) {
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 	before := h.visibleItems(t)
 
-	res := update(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("   ")})
+	_, err := tryUpdate(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("   ")})
 
-	assert.Equal(t, []string{"title"}, refusedFields(t, res))
+	assert.Equal(t, []string{"title"}, refusedFields(t, err))
 	after := h.visibleItems(t)
 	assert.Equal(t, before, after, "the title is unchanged")
 }
@@ -194,7 +187,7 @@ func TestADeletedItemLeavesTheFormItsPageAndTheListButKeepsItsVersionsAndAnswers
 
 	asked := h.askedKeys(t)
 	assert.Equal(t, []siteapi.SignupItemKey{fixtures.DataNoticeKey}, asked)
-	assert.IsType(t, &siteapi.SiteLegalDocumentsGetNotFound{}, h.publicDocument(t, fixtures.ServiceTermsKey), "a deleted item has no public page")
+	testhelper.SiteRefusal(t, errOf(h.publicDocument(t, fixtures.ServiceTermsKey)), http.StatusNotFound, "a deleted item has no public page")
 	assert.Equal(t, []staffapi.SignupItemKey{fixtures.DataNoticeKey}, listedKeys(t, c), "the console no longer lists it")
 	item := getItem(t, c, fixtures.ServiceTermsID)
 	assert.True(t, item.DiscardedAt.Set, "it is still read by id, deleted")
@@ -240,17 +233,15 @@ func TestADeletedItemCannotBeChanged(t *testing.T) {
 	c := h.console(t)
 	// ServiceTerms stays deleted, as the fixtures leave it.
 
-	retitled := update(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("Terms of use")})
-	marked := update(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
-	drafted, err := c.StaffSignupItemsSaveDraft(t.Context(), &staffapi.StaffLegalDocumentDraftInput{Markdown: "# Terms"}, staffapi.StaffSignupItemsSaveDraftParams{ID: fixtures.ServiceTermsID})
-	require.NoError(t, err)
-	published, err := c.StaffSignupItemsPublish(t.Context(), &staffapi.StaffLegalDocumentPublishInput{Label: "2026-11"}, staffapi.StaffSignupItemsPublishParams{ID: fixtures.ServiceTermsID})
-	require.NoError(t, err)
+	_, retitled := tryUpdate(t, c, fixtures.ServiceTermsID, staffapi.StaffSignupItemUpdate{Title: staffapi.NewOptSignupItemTitle("Terms of use")})
+	_, marked := tryUpdate(t, c, fixtures.PartnerOffersID, staffapi.StaffSignupItemUpdate{MailingsConsent: staffapi.NewOptBool(true)})
+	_, drafted := c.StaffSignupItemsSaveDraft(t.Context(), &staffapi.StaffLegalDocumentDraftInput{Markdown: "# Terms"}, staffapi.StaffSignupItemsSaveDraftParams{ID: fixtures.ServiceTermsID})
+	_, published := c.StaffSignupItemsPublish(t.Context(), &staffapi.StaffLegalDocumentPublishInput{Label: "2026-11"}, staffapi.StaffSignupItemsPublishParams{ID: fixtures.ServiceTermsID})
 
-	assert.IsType(t, &staffapi.StaffSignupItemsUpdateNotFound{}, retitled)
-	assert.IsType(t, &staffapi.StaffSignupItemsUpdateNotFound{}, marked)
-	assert.IsType(t, &staffapi.StaffSignupItemsSaveDraftNotFound{}, drafted)
-	assert.IsType(t, &staffapi.StaffSignupItemsPublishNotFound{}, published)
+	testhelper.StaffRefusal(t, retitled, http.StatusNotFound)
+	testhelper.StaffRefusal(t, marked, http.StatusNotFound)
+	testhelper.StaffRefusal(t, drafted, http.StatusNotFound)
+	testhelper.StaffRefusal(t, published, http.StatusNotFound)
 	item := getItem(t, c, fixtures.ServiceTermsID)
 	assert.EqualValues(t, "Terms of service", item.Title, "the title is unchanged")
 	listed := versions(t, c, fixtures.ServiceTermsID)
@@ -274,17 +265,16 @@ func TestTheVersionsOfAnUnknownItemAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	res, err := c.StaffSignupItemsListVersions(t.Context(), staffapi.StaffSignupItemsListVersionsParams{ID: 999999})
-	require.NoError(t, err)
+	_, err := c.StaffSignupItemsListVersions(t.Context(), staffapi.StaffSignupItemsListVersionsParams{ID: 999999})
 
-	assert.IsType(t, &staffapi.StaffSignupItemsListVersionsNotFound{}, res)
+	testhelper.StaffRefusal(t, err, http.StatusNotFound)
 }
 
 func TestDeletingAnUnknownItemIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.console(t)
 
-	res := deleteItem(t, c, 999999)
+	err := deleteItem(t, c, 999999)
 
-	assert.IsType(t, &staffapi.StaffSignupItemsDeleteNotFound{}, res)
+	testhelper.StaffRefusal(t, err, http.StatusNotFound)
 }

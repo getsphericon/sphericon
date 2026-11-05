@@ -15,9 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -36,14 +36,14 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
 	}
-	channel := unsubscribe.Channel(target.Channel)
+	channel := target.Channel
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
 
 	return settled(bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// The Workspace comes from the signed unsubscribe token (no membership or api
 		// token here), so this is a scope source outside the site/external/job list.
 		sc := events.Ingest(tx.Scoped(target.WorkspaceID))
-		if target.Channel == messaging.ChannelSMS {
+		if target.Channel == channels.SMS {
 			return recordSMSLink(ctx, sc, target, dest)
 		}
 		exists, err := sc.Unsubscribe().Query().Where(
@@ -61,7 +61,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		if target.ContactID != 0 {
 			create.SetContactID(target.ContactID)
 		}
-		if target.Channel == messaging.ChannelTelegram {
+		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			create.SetVia(unsubscribe.ViaLink)
 		}
@@ -74,9 +74,9 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		// re-confirmation (stale consent never silently reactivates). The immutable
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
-		if target.Source == eligibility.SourceEverything && target.Channel == messaging.ChannelEmail {
+		if target.Source == eligibility.SourceEverything && target.Channel == channels.Email {
 			if _, err := sc.Confirmation().Delete().Where(
-				confirmation.ChannelEQ(confirmation.ChannelEmail),
+				confirmation.ChannelEQ(channels.Email),
 				confirmation.DestinationEQ(dest),
 			).Exec(ctx); err != nil {
 				return err
@@ -97,10 +97,10 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 			}
 		}
 
-		if target.Channel == messaging.ChannelTelegram {
+		if target.Channel == channels.Telegram {
 			return publishTelegramUnsubscribed(ctx, sc, pub, target, dest)
 		}
-		if target.Channel != messaging.ChannelEmail {
+		if target.Channel != channels.Email {
 			return nil
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{

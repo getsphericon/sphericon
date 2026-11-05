@@ -9,7 +9,7 @@ import (
 
 // AutomationsDryRunHttpStep renders an HTTP step's body for a Contact and validates
 // it; nothing is called. It reads a Contact, so it needs both scopes.
-func (h *Handlers) AutomationsDryRunHttpStep(ctx context.Context, req *externalapi.DryRunHttpStepInput) (externalapi.AutomationsDryRunHttpStepRes, error) {
+func (h *Handlers) AutomationsDryRunHttpStep(ctx context.Context, req *externalapi.DryRunHttpStepInput) (*externalapi.DryRunHttpStepResult, error) {
 	res, err := h.automations.DryRun(ctx, auth.TokenScoped(ctx), int64(req.ContactId), req.Body)
 	if err != nil {
 		return nil, err

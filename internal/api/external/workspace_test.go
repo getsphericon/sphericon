@@ -19,8 +19,7 @@ func workspaceOf(t *testing.T, env *testhelper.TestEnv) *externalapi.WorkspaceRe
 	t.Helper()
 	res, err := env.ExternalScoped(t, "contacts:read").WorkspaceGet(context.Background())
 	require.NoError(t, err)
-	ws, ok := res.(*externalapi.WorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
+	ws := res
 	return ws
 }
 

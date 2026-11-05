@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
-func deleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) siteapi.SiteWorkspacesDeleteRes {
+func deleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) *siteapi.SiteDeletedWorkspaceResource {
 	t.Helper()
 	res, err := c.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
 		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(id)})
@@ -23,14 +24,20 @@ func deleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) siteapi.S
 	return res
 }
 
+// tryDeleteWorkspace is deleteWorkspace for a test that expects the refusal.
+func tryDeleteWorkspace(t *testing.T, c *siteapi.Client, id, name string) error {
+	t.Helper()
+	_, err := c.SiteWorkspacesDelete(context.Background(), &siteapi.SiteDeleteWorkspaceInput{Name: name},
+		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: siteapi.WorkspaceId(id)})
+	return err
+}
+
 func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	ctx := context.Background()
 
-	res := deleteWorkspace(t, c, fixtures.InitechPublicID, "Initech")
-	deleted, ok := res.(*siteapi.SiteDeletedWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
+	deleted := deleteWorkspace(t, c, fixtures.InitechPublicID, "Initech")
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), deleted.ID)
 	assert.WithinDuration(t, time.Now(), time.Time(deleted.DiscardedAt), time.Minute)
 	assert.Equal(t, time.Time(deleted.DiscardedAt).Add(workspacedeletion.DeletionWindow), time.Time(deleted.EraseAt),
@@ -41,9 +48,8 @@ func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	assert.Empty(t, list, "a deleted Workspace leaves the list")
 
 	// The paths of the deleted Workspace answers 404, for its Owner as well.
-	tags, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.InitechPublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTagsListNotFound{}, tags)
+	_, err = c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: fixtures.InitechPublicID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestDeleteWithWrongNameIsUnprocessable(t *testing.T) {
@@ -51,8 +57,7 @@ func TestDeleteWithWrongNameIsUnprocessable(t *testing.T) {
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 
 	for _, typed := range []string{"initech", "Initech ", "", "Acme"} {
-		assert.IsType(t, &siteapi.SiteWorkspacesDeleteUnprocessableEntity{},
-			deleteWorkspace(t, c, fixtures.InitechPublicID, typed), "typed %q", typed)
+		testhelper.SiteRefusal(t, tryDeleteWorkspace(t, c, fixtures.InitechPublicID, typed), http.StatusUnprocessableEntity, "typed %q", typed)
 	}
 	list, err := c.SiteWorkspacesList(context.Background())
 	require.NoError(t, err)
@@ -63,19 +68,17 @@ func TestOnlyAnOwnerDeletesAWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail} {
-		assert.IsType(t, &siteapi.SiteWorkspacesDeleteForbidden{},
-			deleteWorkspace(t, env.SiteActor(t, email), fixtures.InitechPublicID, "Initech"), email)
+		testhelper.SiteRefusal(t, tryDeleteWorkspace(t, env.SiteActor(t, email), fixtures.InitechPublicID, "Initech"), http.StatusForbidden, email)
 	}
 	// Not a member at all: the Workspace is not found.
-	assert.IsType(t, &siteapi.SiteWorkspacesDeleteNotFound{},
-		deleteWorkspace(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.InitechPublicID, "Initech"))
+	testhelper.SiteRefusal(t, tryDeleteWorkspace(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.InitechPublicID, "Initech"), http.StatusNotFound)
 }
 
 func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech"))
+	deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech")
 
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail, fixtures.InitechCoOwnerOwenEmail} {
 		c := env.SiteActor(t, email)
@@ -115,7 +118,7 @@ func TestDeletingOneWorkspaceLeavesTheOthers(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	dora := env.SiteActor(t, fixtures.SoleOwnerDoraEmail)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, dora, fixtures.AviatoPublicID, fixtures.AviatoName))
+	deleteWorkspace(t, dora, fixtures.AviatoPublicID, fixtures.AviatoName)
 
 	list, err := dora.SiteWorkspacesList(ctx)
 	require.NoError(t, err)
@@ -127,12 +130,10 @@ func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech"))
+	deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech")
 
-	res, err := owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID})
+	restored, err := owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID})
 	require.NoError(t, err)
-	restored, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.SiteMembershipRoleOwner, restored.Role)
 
 	deleted, err := owner.SiteWorkspacesListDeleted(ctx)
@@ -149,24 +150,20 @@ func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {
 func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{},
-		deleteWorkspace(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID, "Initech"))
+	deleteWorkspace(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID, "Initech")
 	params := siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID}
 
-	res, err := env.SiteActor(t, fixtures.InitechAdminAdaEmail).SiteWorkspacesRestore(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a Member cannot tell the deleted Workspace exists")
+	_, err := env.SiteActor(t, fixtures.InitechAdminAdaEmail).SiteWorkspacesRestore(ctx, params)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "a Member cannot tell the deleted Workspace exists")
 
-	res, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesRestore(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a stranger cannot tell it exists")
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesRestore(ctx, params)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "a stranger cannot tell it exists")
 
 	// Past the window the Workspace is no longer restorable.
 	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).
 		SetDiscardedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
-	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreConflict{}, res, "a Workspace past its window is a conflict")
+	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
+	testhelper.SiteRefusal(t, err, http.StatusConflict, "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, deleted)
@@ -176,12 +173,10 @@ func TestRestoreKeepsASuspensionInPlace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	sally := env.SiteActor(t, fixtures.OwnerSallyEmail) // Owner of Hooli, suspended by a Staff member
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, sally, fixtures.HooliPublicID, "Hooli"))
+	deleteWorkspace(t, sally, fixtures.HooliPublicID, "Hooli")
 
-	res, err := sally.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.HooliPublicID})
+	restored, err := sally.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.HooliPublicID})
 	require.NoError(t, err)
-	restored, ok := res.(*siteapi.SiteWorkspaceResource)
-	require.Truef(t, ok, "got %T", res)
 	_, suspended := restored.SuspendedAt.Get()
 	assert.True(t, suspended, "restoring never lifts a suspension")
 }
@@ -189,7 +184,7 @@ func TestRestoreKeepsASuspensionInPlace(t *testing.T) {
 func TestDeletingTheLastWorkspaceLeavesAnEmptyList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme"))
+	deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme")
 
 	list, err := c.SiteWorkspacesList(context.Background())
 	require.NoError(t, err)
@@ -200,7 +195,7 @@ func TestDeleteAndRestoreAreAuditEntries(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme"))
+	deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme")
 	_, err := c.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID})
 	require.NoError(t, err)
 

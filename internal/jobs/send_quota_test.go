@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -31,7 +32,7 @@ func envCipher(t *testing.T) *secrets.Cipher {
 
 func TestRefreshSendQuotasWorkerFansOutOneJobPerSESIntegration(t *testing.T) {
 	e := newRiverEnv(t)
-	ses, err := e.DB.Integration.Query().Where(integration.ProviderEQ(integration.ProviderSes), integration.DiscardedAtIsNil()).Count(t.Context())
+	ses, err := e.DB.Integration.Query().Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).Count(t.Context())
 	require.NoError(t, err)
 	require.Positive(t, ses)
 

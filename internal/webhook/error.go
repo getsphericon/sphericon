@@ -28,6 +28,12 @@ const (
 	KindNetwork ErrorKind = "network"
 )
 
+// Values is every ErrorKind as a string, for the ent enum column a Webhook endpoint keeps its last
+// failure in.
+func (ErrorKind) Values() []string {
+	return []string{string(KindTimeout), string(KindBlockedAddress), string(KindHTTPStatus), string(KindNetwork)}
+}
+
 // DeliveryError is a failed delivery with its closed kind. Status is set only for
 // KindHTTPStatus. RetryAfter is the receiver's Retry-After header, verbatim, when it sent one
 // (ParseRetryAfter reads it).

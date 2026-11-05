@@ -25,23 +25,19 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 	before, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
 
-	denied, err := env.ExternalScoped(t, "webhooks:read", "webhooks:write").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksRegenerateSecretForbidden), denied)
+	_, err = env.ExternalScoped(t, "webhooks:read", "webhooks:write").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	res, err := env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
+	hook, err := env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	require.NoError(t, err)
-	hook, ok := res.(*externalapi.WebhookResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "https://codebasics.dev/webhooks/sphericon", hook.URL)
 
 	after, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
 	assert.NotEqual(t, before.SecretEncrypted, after.SecretEncrypted)
 
-	missing, err := env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: entityIDString(fixtures.WebhookGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksRegenerateSecretNotFound), missing)
+	_, err = env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: entityIDString(fixtures.WebhookGlobexID)})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
@@ -61,22 +57,20 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 	params := externalapi.WebhooksTestParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)}
 	input := &externalapi.TestWebhookInput{EventType: "contact.created"}
 
-	denied, err := env.ExternalScoped(t, "webhooks:write").WebhooksTest(ctx, input, params)
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksTestForbidden), denied)
+	_, err = env.ExternalScoped(t, "webhooks:write").WebhooksTest(ctx, input, params)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	c := env.ExternalScoped(t, "webhooks:test")
 	res, err := c.WebhooksTest(ctx, input, params)
 	require.NoError(t, err)
-	ok, isResult := res.(*externalapi.WebhookTestResult)
-	require.Truef(t, isResult, "got %T", res)
+	ok := res
 	assert.True(t, ok.Delivered)
 	assert.Equal(t, int32(http.StatusAccepted), ok.Status.Value)
 
 	status = http.StatusServiceUnavailable
 	res, err = c.WebhooksTest(ctx, input, params)
 	require.NoError(t, err)
-	failed := res.(*externalapi.WebhookTestResult)
+	failed := res
 	assert.False(t, failed.Delivered)
 	assert.Equal(t, externalapi.WebhookErrorKindHTTPStatus, failed.Kind.Value)
 	assert.Equal(t, int32(http.StatusServiceUnavailable), failed.Status.Value)
@@ -85,9 +79,8 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, before.ConsecutiveFailures, after.ConsecutiveFailures, "a test never touches the failure state")
 
-	blank, err := c.WebhooksTest(ctx, &externalapi.TestWebhookInput{EventType: " "}, params)
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksTestUnprocessableEntity), blank)
+	_, err = c.WebhooksTest(ctx, &externalapi.TestWebhookInput{EventType: " "}, params)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestExternalWebhookActionsAreAuditedAsTheAPIToken(t *testing.T) {

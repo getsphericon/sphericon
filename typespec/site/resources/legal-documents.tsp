@@ -60,10 +60,12 @@ namespace SiteLegalDocuments {
   @allowedWhileAcceptancePending
   @get
   @route("/signup-items")
-  op signupItems(): {
-    @statusCode statusCode: 200;
-    @body body: SiteSignupItemList;
-  };
+  op signupItems():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteSignupItemList;
+      }
+    | Problem;
 
   /** The current version of a Sign-up item's Legal document, for its public page. Public. 404
    * for an unknown or deleted item and for one with no published version. Answered while an
@@ -72,8 +74,5 @@ namespace SiteLegalDocuments {
   @allowedWhileAcceptancePending
   @get
   @route("/legal-documents/{key}")
-  op get(@path key: SignupItemKey):
-    | SiteLegalDocument
-    | BadRequestProblem
-    | NotFoundProblem;
+  op get(@path key: SignupItemKey): SiteLegalDocument | Problem;
 }

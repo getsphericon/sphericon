@@ -76,7 +76,7 @@ model ContactExportTypedDownload {
 
 @tag("Contacts")
 interface Contacts
-  extends ExternalCrudUnique<
+  extends ExternalCrud<
       ContactResource,
       CreateContactInput,
       UpdateContactInput,
@@ -106,15 +106,7 @@ interface Contacts
 
     /** The contact's email address */
     @query email?: EmailAddress,
-  ):
-    | ContactExportDownload
-    | ContactExportTypedDownload
-    | BadRequestProblem
-    | UnprocessableEntityProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  ): ContactExportDownload | ContactExportTypedDownload | Problem;
 
   /**
    * Erase by an identifier other than the contact id (GDPR Art. 17): by `email`
@@ -134,14 +126,7 @@ interface Contacts
 
     /** The anonymous visitor id to erase */
     @query visitorId?: string,
-  ):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnprocessableEntityProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  ): NoContentResponse | Problem;
 }
 
 /**
@@ -240,13 +225,7 @@ namespace ContactsBatch {
   /** Upsert up to 1000 contacts by alias keys; a failing item does not affect the others */
   @post
   @requiresScopes(#[ApiTokenScope.contactsWrite])
-  op upsert(@body body: UpsertContactsInput):
-    | UpsertContactsResult
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+  op upsert(@body body: UpsertContactsInput): UpsertContactsResult | Problem;
 }
 
 @@doc(

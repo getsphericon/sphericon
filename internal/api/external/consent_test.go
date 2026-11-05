@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -33,10 +34,8 @@ func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible)
 
-	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: "Alice@Example.com"})
+	created, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: "Alice@Example.com"})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.SuppressionResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, fixtures.ContactAliceEmail, created.Destination)
 	assert.Equal(t, externalapi.SuppressionReasonManual, created.Reason)
 
@@ -49,12 +48,10 @@ func TestExternalSuppressionsCreateSuppressesANumberOnSMS(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "suppressions:write")
 
-	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{
+	created, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{
 		Channel: externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelSMS), Destination: "+1 415 555 0132",
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.SuppressionResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.SuppressionChannelSMS, created.Channel)
 	assert.Equal(t, "+14155550132", created.Destination)
 }
@@ -67,10 +64,8 @@ func TestExternalSuppressionsCreateIsIdempotent(t *testing.T) {
 	before, err := env.DB.Suppression.Query().Count(context.Background())
 	require.NoError(t, err)
 
-	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.SuppressionGhostBounceDestination})
+	got, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.SuppressionGhostBounceDestination})
 	require.NoError(t, err)
-	got, ok := res.(*externalapi.SuppressionResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.SuppressionReasonBounce, got.Reason, "existing reason kept")
 
 	after, err := env.DB.Suppression.Query().Count(context.Background())
@@ -88,10 +83,8 @@ func TestExternalUnsubscribesCreateDefaultsToBroadcasts(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:write")
 	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 
-	res, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: "Alice@Example.com"})
+	created, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: "Alice@Example.com"})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.UnsubscribeResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, fixtures.ContactAliceEmail, created.Destination)
 	assert.Equal(t, eligibility.SourceBroadcasts, created.SendingSource)
 
@@ -108,9 +101,8 @@ func TestExternalUnsubscribesCreateEverythingAndIdempotent(t *testing.T) {
 		SendingSource: externalapi.NewOptString(eligibility.SourceEverything),
 	}
 	for range 2 {
-		res, err := c.UnsubscribesCreate(context.Background(), in)
+		_, err := c.UnsubscribesCreate(context.Background(), in)
 		require.NoError(t, err)
-		require.IsType(t, &externalapi.UnsubscribeResource{}, res)
 	}
 	n, err := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactAliceEmail)).Count(context.Background())
 	require.NoError(t, err)
@@ -125,9 +117,8 @@ func TestExternalUnsubscribesCreateAutomationSource(t *testing.T) {
 		Destination:   fixtures.ContactAliceEmail,
 		SendingSource: externalapi.NewOptString(eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID)),
 	}
-	res, err := c.UnsubscribesCreate(context.Background(), in)
+	_, err := c.UnsubscribesCreate(context.Background(), in)
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.UnsubscribeResource{}, res)
 	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.AutomationSource(fixtures.AutomationWelcomeSeriesID)).Eligible)
 	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 }
@@ -136,23 +127,20 @@ func TestExternalUnsubscribesCreateRejectsUnknownSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	for _, src := range []string{"nonsense", "automation:999999", "automation:abc"} {
-		res, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{
+		_, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{
 			Destination: fixtures.ContactAliceEmail, SendingSource: externalapi.NewOptString(src),
 		})
-		require.NoError(t, err)
-		assert.IsTypef(t, &externalapi.UnsubscribesCreateUnprocessableEntity{}, res, src)
+		testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, src)
 	}
 }
 
 func TestExternalConsentRequiresWriteScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:read")
-	r1, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SuppressionsCreateForbidden{}, r1)
-	r2, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: fixtures.ContactAliceEmail})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.UnsubscribesCreateForbidden{}, r2)
+	_, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: fixtures.ContactAliceEmail})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 }
 
@@ -162,10 +150,8 @@ func TestExternalSuppressionsCreateNeedsTheSuppressionsWriteScope(t *testing.T) 
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
-	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
-	require.NoError(t, err)
-	refused, isRefused := res.(*externalapi.SuppressionsCreateForbidden)
-	require.Truef(t, isRefused, "got %T", res)
+	_, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
+	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, "the API token lacks the scope suppressions:write", refused.Detail.Value)
 	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "the refused call suppressed nothing")
 }

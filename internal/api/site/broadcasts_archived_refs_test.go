@@ -2,10 +2,10 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -20,21 +20,19 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
-	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "retired",
 		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, workspaceID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:          "retired",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, workspaceID)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	after := env.DB.Broadcast.Query().CountX(ctx)
 	assert.Equal(t, before, after, "a refused create stores nothing")
@@ -47,17 +45,15 @@ func TestSiteBroadcastsUpdateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, before.SegmentID, after.SegmentID, "a refused update changes nothing")

@@ -19,7 +19,7 @@ func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) siteapi.SiteTra
 }
 
 // SiteTrackingDomainsList lists the Workspace's Tracking domains. Any member.
-func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTrackingDomainsListParams) (siteapi.SiteTrackingDomainsListRes, error) {
+func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTrackingDomainsListParams) ([]siteapi.SiteTrackingDomainResource, error) {
 	rows, err := h.trackingDomains.List(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err
@@ -28,12 +28,11 @@ func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTr
 	for i, d := range rows {
 		items[i] = h.trackingDomainResource(d)
 	}
-	res := siteapi.SiteTrackingDomainsListOKApplicationJSON(items)
-	return &res, nil
+	return items, nil
 }
 
 // SiteTrackingDomainsSet sets the Workspace's Tracking domain. Permission tracking_domains:manage.
-func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetTrackingDomainInput, _ siteapi.SiteTrackingDomainsSetParams) (siteapi.SiteTrackingDomainsSetRes, error) {
+func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetTrackingDomainInput, _ siteapi.SiteTrackingDomainsSetParams) (*siteapi.SiteTrackingDomainResource, error) {
 	d, err := h.trackingDomains.Set(ctx, workspaceScope(ctx), req.Host)
 	if err != nil {
 		return nil, err
@@ -43,7 +42,7 @@ func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetT
 }
 
 // SiteTrackingDomainsVerify checks a Tracking domain now. Permission tracking_domains:manage.
-func (h *Handlers) SiteTrackingDomainsVerify(ctx context.Context, params siteapi.SiteTrackingDomainsVerifyParams) (siteapi.SiteTrackingDomainsVerifyRes, error) {
+func (h *Handlers) SiteTrackingDomainsVerify(ctx context.Context, params siteapi.SiteTrackingDomainsVerifyParams) (*siteapi.SiteTrackingDomainResource, error) {
 	d, err := h.trackingDomains.Verify(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -53,9 +52,6 @@ func (h *Handlers) SiteTrackingDomainsVerify(ctx context.Context, params siteapi
 }
 
 // SiteTrackingDomainsRemove removes a Tracking domain by its role. Permission tracking_domains:manage.
-func (h *Handlers) SiteTrackingDomainsRemove(ctx context.Context, params siteapi.SiteTrackingDomainsRemoveParams) (siteapi.SiteTrackingDomainsRemoveRes, error) {
-	if err := h.trackingDomains.Remove(ctx, workspaceScope(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteTrackingDomainsRemoveNoContent{}, nil
+func (h *Handlers) SiteTrackingDomainsRemove(ctx context.Context, params siteapi.SiteTrackingDomainsRemoveParams) error {
+	return h.trackingDomains.Remove(ctx, workspaceScope(ctx), int64(params.ID))
 }

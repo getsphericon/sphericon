@@ -144,23 +144,13 @@ namespace SiteAudit {
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 25,
-  ):
-    | SiteAuditEntryList
-    | BadRequestProblem
-    | PaymentRequiredProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  ): SiteAuditEntryList | Problem;
 
   /** The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner and admin only) */
   @get
   @route("/facets")
   @requiresPermissions(#[Permission.auditRead])
-  op facets(@path workspaceId: WorkspaceId):
-    | SiteAuditFacets
-    | BadRequestProblem
-    | PaymentRequiredProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op facets(@path workspaceId: WorkspaceId): SiteAuditFacets | Problem;
 
   /** Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise; owner and admin only) */
   @get
@@ -172,21 +162,13 @@ namespace SiteAudit {
         @header contentDisposition: string;
         @body body: string;
       }
-    | BadRequestProblem
-    | PaymentRequiredProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Read the Audit log retention window (Enterprise; owner and admin only) */
   @get
   @route("/retention")
   @requiresPermissions(#[Permission.auditConfigure])
-  op getRetention(@path workspaceId: WorkspaceId):
-    | SiteAuditRetention
-    | BadRequestProblem
-    | PaymentRequiredProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op getRetention(@path workspaceId: WorkspaceId): SiteAuditRetention | Problem;
 
   /** Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin only) */
   @put
@@ -195,11 +177,5 @@ namespace SiteAudit {
   op setRetention(
     @path workspaceId: WorkspaceId,
     @body body: SiteAuditRetention,
-  ):
-    | SiteAuditRetention
-    | BadRequestProblem
-    | PaymentRequiredProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteAuditRetention | Problem;
 }

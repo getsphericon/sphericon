@@ -120,8 +120,5 @@ namespace SiteAttention {
   /** What needs attention in the Workspace. Open to every member. */
   @get
   @requiresPermissions(#[])
-  op get(@path workspaceId: WorkspaceId):
-    | SiteAttentionList
-    | BadRequestProblem
-    | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId): SiteAttentionList | Problem;
 }

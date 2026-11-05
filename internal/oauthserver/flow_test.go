@@ -34,11 +34,9 @@ func consent(t *testing.T, env *testhelper.TestEnv, in siteapi.SiteOAuthDecision
 // consentAs plays the signed-in User email answering the consent screen.
 func consentAs(t *testing.T, env *testhelper.TestEnv, email string, in siteapi.SiteOAuthDecisionInput) *url.URL {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteOAuthDecide(t.Context(), &in)
+	decision, err := env.SiteActor(t, email).SiteOAuthDecide(t.Context(), &in)
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteOAuthDecisionResult)
-	require.Truef(t, isOK, "got %T", res)
-	u, err := url.Parse(ok.RedirectUrl)
+	u, err := url.Parse(decision.RedirectUrl)
 	require.NoError(t, err)
 	return u
 }
@@ -76,14 +74,12 @@ func tokenForm(code string) url.Values {
 func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
+	got, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 		ClientId:    fixtureClientID,
 		RedirectUri: fixtureRedirectURI,
 		Scope:       siteapi.NewOptString("contacts:read emails:send sending_domains:write bogus"),
 	})
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Fixture Connector", got.ClientName)
 	assert.Equal(t, []siteapi.GrantableScope{"contacts:read"}, got.Scopes)
 	assert.Equal(t, []siteapi.SendScope{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
@@ -95,12 +91,11 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 		ClientId:    fixtureClientID,
 		RedirectUri: "https://evil.example/cb",
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestConsentRequiresASession(t *testing.T) {
@@ -126,9 +121,8 @@ func TestConsentToAWorkspaceTheUserDoesNotBelongToIsRefused(t *testing.T) {
 	in := approval("", false)
 	in.WorkspaceId = "Someone1"
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(t.Context(), &in)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, res)
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(t.Context(), &in)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestConsentAnAdminMayApprove(t *testing.T) {
@@ -136,10 +130,9 @@ func TestConsentAnAdminMayApprove(t *testing.T) {
 	admin := fixtures.AdminAliceEmail
 	in := approval("contacts:write", false)
 
-	res, err := env.SiteActor(t, admin).SiteOAuthDecide(t.Context(), &in)
+	_, err := env.SiteActor(t, admin).SiteOAuthDecide(t.Context(), &in)
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecisionResult{}, res)
 }
 
 func TestTokenEndpointIssuesAConnectionOfTheApprovingUser(t *testing.T) {
@@ -377,7 +370,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 			}
 			q := consentURL.Query()
 
-			res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(ctx, &siteapi.SiteOAuthDecisionInput{
+			decision, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(ctx, &siteapi.SiteOAuthDecisionInput{
 				ClientId:      q.Get("client_id"),
 				RedirectUri:   q.Get("redirect_uri"),
 				State:         siteapi.NewOptString(q.Get("state")),
@@ -389,7 +382,6 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 			if err != nil {
 				return nil, err
 			}
-			decision := res.(*siteapi.SiteOAuthDecisionResult)
 			back, err := url.Parse(decision.RedirectUrl)
 			if err != nil {
 				return nil, err
@@ -426,13 +418,11 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
+	got, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 		ClientId:    fixtureClientID,
 		RedirectUri: fixtureRedirectURI,
 	})
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
-	require.Truef(t, ok, "got %T", res)
 	// contract-copy: the authoring scopes the shipped prompts use, a chosen subset of the contract's list
 	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
 		"contacts:read", "contacts:write", "events:read", "events:write",

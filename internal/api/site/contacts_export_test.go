@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -45,10 +46,9 @@ func TestSiteContactsExportIsForOwnersAndAdmins(t *testing.T) {
 	assert.Len(t, doc.OutboundMessages, 3)
 	assert.Len(t, doc.BroadcastRecipients, 1)
 
-	refused, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteContactsExport(context.Background(), params)
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteContactsExportForbidden{}, refused)
-	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.(*siteapi.SiteContactsExportForbidden).Code.Value)
+	_, err = env.SiteActor(t, fixtures.MemberMaryEmail).SiteContactsExport(context.Background(), params)
+	refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 
 func TestSiteContactsExportByEmail(t *testing.T) {
@@ -72,19 +72,17 @@ func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 
 	// A foreign Contact is not found through the caller's own Workspace.
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := owner.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
+	_, err := owner.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		ID:          siteapi.NewOptEntityId(siteapi.EntityId(900)),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	// A non-member cannot address the Workspace at all.
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	res, err = outsider.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
+	_, err = outsider.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		ID:          siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

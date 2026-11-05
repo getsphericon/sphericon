@@ -9,13 +9,11 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/ogenerrors"
-	"github.com/ogen-go/ogen/uri"
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeServiceHoldsClearResponse(resp *http.Response) (res ServiceHoldsClearRes, _ error) {
+func decodeServiceHoldsClearResponse(resp *http.Response) (res *HoldClearResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -52,140 +50,9 @@ func decodeServiceHoldsClearResponse(resp *http.Response) (res ServiceHoldsClear
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsClearBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsClearUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 404:
-		// Code 404.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsClearNotFound
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -224,146 +91,21 @@ func decodeServiceHoldsClearResponse(resp *http.Response) (res ServiceHoldsClear
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceHoldsListResponse(resp *http.Response) (res ServiceHoldsListRes, _ error) {
+func decodeServiceHoldsListResponse(resp *http.Response) (res *HoldList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -409,140 +151,9 @@ func decodeServiceHoldsListResponse(resp *http.Response) (res ServiceHoldsListRe
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsListBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsListUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 404:
-		// Code 404.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsListNotFound
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -581,146 +192,21 @@ func decodeServiceHoldsListResponse(resp *http.Response) (res ServiceHoldsListRe
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceHoldsSetResponse(resp *http.Response) (res ServiceHoldsSetRes, _ error) {
+func decodeServiceHoldsSetResponse(resp *http.Response) (res *HoldSetResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -757,184 +243,9 @@ func decodeServiceHoldsSetResponse(resp *http.Response) (res ServiceHoldsSetRes,
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsSetBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsSetUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 404:
-		// Code 404.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsSetNotFound
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 422:
-		// Code 422.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceHoldsSetUnprocessableEntity
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -973,146 +284,21 @@ func decodeServiceHoldsSetResponse(resp *http.Response) (res ServiceHoldsSetRes,
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceIdentityGetResponse(resp *http.Response) (res ServiceIdentityGetRes, _ error) {
+func decodeServiceIdentityGetResponse(resp *http.Response) (res *ServiceIdentityResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1158,230 +344,62 @@ func decodeServiceIdentityGetResponse(resp *http.Response) (res ServiceIdentityG
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ProblemDetails
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ProblemDetails
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/problem+json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
+			}
+			d := jx.DecodeBytes(buf)
+
+			var response ProblemDetails
+			if err := func() error {
+				if err := response.Decode(d); err != nil {
+					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
+				}
+				return nil
+			}(); err != nil {
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
+			}
+			// Validate response.
+			if err := func() error {
+				if err := response.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
+	}
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceTrackingHostFeedListResponse(resp *http.Response) (res ServiceTrackingHostFeedListRes, _ error) {
+func decodeServiceTrackingHostFeedListResponse(resp *http.Response) (res *ServiceTrackingHostFeedPage, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1427,140 +445,9 @@ func decodeServiceTrackingHostFeedListResponse(resp *http.Response) (res Service
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceTrackingHostFeedListBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceTrackingHostFeedListUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 403:
-		// Code 403.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceTrackingHostFeedListForbidden
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -1599,146 +486,21 @@ func decodeServiceTrackingHostFeedListResponse(resp *http.Response) (res Service
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceUsageListResponse(resp *http.Response) (res ServiceUsageListRes, _ error) {
+func decodeServiceUsageListResponse(resp *http.Response) (res *ServiceUsageListOK, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1784,140 +546,9 @@ func decodeServiceUsageListResponse(resp *http.Response) (res ServiceUsageListRe
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUsageListBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUsageListUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 403:
-		// Code 403.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUsageListForbidden
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -1956,146 +587,21 @@ func decodeServiceUsageListResponse(resp *http.Response) (res ServiceUsageListRe
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceUserFeedListResponse(resp *http.Response) (res ServiceUserFeedListRes, _ error) {
+func decodeServiceUserFeedListResponse(resp *http.Response) (res *ServiceUserFeedPage, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2141,140 +647,9 @@ func decodeServiceUserFeedListResponse(resp *http.Response) (res ServiceUserFeed
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUserFeedListBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUserFeedListUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 403:
-		// Code 403.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceUserFeedListForbidden
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -2313,146 +688,21 @@ func decodeServiceUserFeedListResponse(resp *http.Response) (res ServiceUserFeed
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceWorkspaceFeedListResponse(resp *http.Response) (res ServiceWorkspaceFeedListRes, _ error) {
+func decodeServiceWorkspaceFeedListResponse(resp *http.Response) (res *ServiceWorkspaceFeedPage, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2498,140 +748,9 @@ func decodeServiceWorkspaceFeedListResponse(resp *http.Response) (res ServiceWor
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceFeedListBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceFeedListUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 403:
-		// Code 403.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceFeedListForbidden
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -2670,146 +789,21 @@ func decodeServiceWorkspaceFeedListResponse(resp *http.Response) (res ServiceWor
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeServiceWorkspaceUsageGetResponse(resp *http.Response) (res ServiceWorkspaceUsageGetRes, _ error) {
+func decodeServiceWorkspaceUsageGetResponse(resp *http.Response) (res *WorkspaceUsageResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -2855,184 +849,9 @@ func decodeServiceWorkspaceUsageGetResponse(resp *http.Response) (res ServiceWor
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 400:
-		// Code 400.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceUsageGetBadRequest
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 401:
-		// Code 401.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceUsageGetUnauthorized
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 403:
-		// Code 403.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceUsageGetForbidden
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 404:
-		// Code 404.
-		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-		if err != nil {
-			return res, errors.Wrap(err, "parse media type")
-		}
-		switch {
-		case ct == "application/problem+json":
-			buf, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return res, err
-			}
-			d := jx.DecodeBytes(buf)
-
-			var response ServiceWorkspaceUsageGetNotFound
-			if err := func() error {
-				if err := response.Decode(d); err != nil {
-					return err
-				}
-				if err := d.Skip(); err != io.EOF {
-					return errors.New("unexpected trailing data")
-				}
-				return nil
-			}(); err != nil {
-				err = &ogenerrors.DecodeBodyError{
-					ContentType: ct,
-					Body:        buf,
-					Err:         err,
-				}
-				return res, err
-			}
-			// Validate response.
-			if err := func() error {
-				if err := response.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return &response, nil
-		default:
-			return res, validate.InvalidContentType(ct)
-		}
-	case 429:
-		// Code 429.
+	}
+	// Convenient error response.
+	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -3071,141 +890,16 @@ func decodeServiceWorkspaceUsageGetResponse(resp *http.Response) (res ServiceWor
 			}(); err != nil {
 				return res, errors.Wrap(err, "validate")
 			}
-			var wrapper ProblemDetailsHeaders
-			wrapper.Response = response
-			h := uri.NewHeaderDecoder(resp.Header)
-			// Parse "Retry-After" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "Retry-After",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.RetryAfter = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse Retry-After header")
-				}
-			}
-			// Parse "X-RateLimit-Limit" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Limit",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitLimit = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Limit header")
-				}
-			}
-			// Parse "X-RateLimit-Remaining" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Remaining",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt32(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitRemaining = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Remaining header")
-				}
-			}
-			// Parse "X-RateLimit-Reset" header.
-			{
-				cfg := uri.HeaderParameterDecodingConfig{
-					Name:    "X-RateLimit-Reset",
-					Explode: false,
-				}
-				if err := func() error {
-					if err := h.HasParam(cfg); err == nil {
-						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-							val, err := d.DecodeValue()
-							if err != nil {
-								return err
-							}
-
-							c, err := conv.ToInt64(val)
-							if err != nil {
-								return err
-							}
-
-							wrapper.XRateLimitReset = c
-							return nil
-						}); err != nil {
-							return err
-						}
-					} else {
-						return err
-					}
-					return nil
-				}(); err != nil {
-					return res, errors.Wrap(err, "parse X-RateLimit-Reset header")
-				}
-			}
-			return &wrapper, nil
+			return &ProblemDetailsStatusCode{
+				StatusCode: resp.StatusCode,
+				Response:   response,
+			}, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}()
+	if err != nil {
+		return res, errors.Wrapf(err, "default (code %d)", resp.StatusCode)
 	}
-	return res, validate.UnexpectedStatusCodeWithResponse(resp)
+	return res, errors.Wrap(defRes, "error")
 }

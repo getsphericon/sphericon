@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // ConfirmationCreate is the builder for creating a Confirmation entity.
@@ -59,13 +60,13 @@ func (_c *ConfirmationCreate) SetWorkspaceID(v int64) *ConfirmationCreate {
 }
 
 // SetChannel sets the "channel" field.
-func (_c *ConfirmationCreate) SetChannel(v confirmation.Channel) *ConfirmationCreate {
+func (_c *ConfirmationCreate) SetChannel(v channels.Channel) *ConfirmationCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *ConfirmationCreate) SetNillableChannel(v *confirmation.Channel) *ConfirmationCreate {
+func (_c *ConfirmationCreate) SetNillableChannel(v *channels.Channel) *ConfirmationCreate {
 	if v != nil {
 		_c.SetChannel(*v)
 	}
@@ -419,7 +420,7 @@ func (u *ConfirmationUpsert) UpdateWorkspaceID() *ConfirmationUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *ConfirmationUpsert) SetChannel(v confirmation.Channel) *ConfirmationUpsert {
+func (u *ConfirmationUpsert) SetChannel(v channels.Channel) *ConfirmationUpsert {
 	u.Set(confirmation.FieldChannel, v)
 	return u
 }
@@ -606,7 +607,7 @@ func (u *ConfirmationUpsertOne) UpdateWorkspaceID() *ConfirmationUpsertOne {
 }
 
 // SetChannel sets the "channel" field.
-func (u *ConfirmationUpsertOne) SetChannel(v confirmation.Channel) *ConfirmationUpsertOne {
+func (u *ConfirmationUpsertOne) SetChannel(v channels.Channel) *ConfirmationUpsertOne {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.SetChannel(v)
 	})
@@ -977,7 +978,7 @@ func (u *ConfirmationUpsertBulk) UpdateWorkspaceID() *ConfirmationUpsertBulk {
 }
 
 // SetChannel sets the "channel" field.
-func (u *ConfirmationUpsertBulk) SetChannel(v confirmation.Channel) *ConfirmationUpsertBulk {
+func (u *ConfirmationUpsertBulk) SetChannel(v channels.Channel) *ConfirmationUpsertBulk {
 	return u.Update(func(s *ConfirmationUpsert) {
 		s.SetChannel(v)
 	})

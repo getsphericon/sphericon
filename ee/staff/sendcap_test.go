@@ -2,6 +2,7 @@ package staff_test
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -18,27 +19,37 @@ import (
 // The Send cap (ADR 0067) a Staff member sets on a Workspace from the console, on an Instance that
 // has Send caps (the harness's default Mode), and its absence on a self-hosted one.
 
-func (h *harness) setSendCap(t *testing.T, c *staffeeapi.Client, id string, perDay int32) staffeeapi.StaffWorkspacesSetSendCapRes {
+func (h *harness) trySetSendCap(t *testing.T, c *staffeeapi.Client, id string, perDay int32) (*staffeeapi.StaffSendCapChange, error) {
 	t.Helper()
-	res, err := c.StaffWorkspacesSetSendCap(t.Context(), &staffeeapi.StaffSendCapInput{PerDay: staffeeapi.MaxPerDay(perDay)},
+	return c.StaffWorkspacesSetSendCap(t.Context(), &staffeeapi.StaffSendCapInput{PerDay: staffeeapi.MaxPerDay(perDay)},
 		staffeeapi.StaffWorkspacesSetSendCapParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
+}
+
+func (h *harness) tryClearSendCap(t *testing.T, c *staffeeapi.Client, id string) (*staffeeapi.StaffSendCapChange, error) {
+	t.Helper()
+	return c.StaffWorkspacesClearSendCap(t.Context(), staffeeapi.StaffWorkspacesClearSendCapParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
+}
+
+// setSendCap is trySetSendCap for a call that is expected to succeed.
+func (h *harness) setSendCap(t *testing.T, c *staffeeapi.Client, id string, perDay int32) *staffeeapi.StaffSendCapChange {
+	t.Helper()
+	res, err := h.trySetSendCap(t, c, id, perDay)
 	require.NoError(t, err)
 	return res
 }
 
-func (h *harness) clearSendCap(t *testing.T, c *staffeeapi.Client, id string) staffeeapi.StaffWorkspacesClearSendCapRes {
+// clearSendCap is tryClearSendCap for a call that is expected to succeed.
+func (h *harness) clearSendCap(t *testing.T, c *staffeeapi.Client, id string) *staffeeapi.StaffSendCapChange {
 	t.Helper()
-	res, err := c.StaffWorkspacesClearSendCap(t.Context(), staffeeapi.StaffWorkspacesClearSendCapParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
+	res, err := h.tryClearSendCap(t, c, id)
 	require.NoError(t, err)
 	return res
 }
 
 func (h *harness) workspaceDetail(t *testing.T, c *staffeeapi.Client, id string) *staffeeapi.StaffWorkspaceDetailResource {
 	t.Helper()
-	res, err := c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
+	w, err := c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 	require.NoError(t, err)
-	w, ok := res.(*staffeeapi.StaffWorkspaceDetailResource)
-	require.True(t, ok)
 	return w
 }
 
@@ -66,19 +77,16 @@ func TestAStaffMemberSetsChangesAndClearsAWorkspacesSendCap(t *testing.T) {
 	require.True(t, before.SendCap.IsSet(), "an Instance with Send caps shows the Send cap")
 	assert.True(t, before.SendCap.Value.PerDay.IsNull(), "a Workspace starts with none")
 
-	set, ok := h.setSendCap(t, c, fixtures.AcmePublicID, 500).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	set := h.setSendCap(t, c, fixtures.AcmePublicID, 500)
 	assert.True(t, set.Changed)
 	assert.Equal(t, staffeeapi.NewNilMaxPerDay(500), set.SendCap.PerDay)
 
-	changed, ok := h.setSendCap(t, c, fixtures.AcmePublicID, 2000).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	changed := h.setSendCap(t, c, fixtures.AcmePublicID, 2000)
 	afterChange := h.workspaceDetail(t, c, fixtures.AcmePublicID)
 	assert.True(t, changed.Changed)
 	assert.Equal(t, staffeeapi.NewNilMaxPerDay(2000), afterChange.SendCap.Value.PerDay)
 
-	cleared, ok := h.clearSendCap(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	cleared := h.clearSendCap(t, c, fixtures.AcmePublicID)
 	afterClear := h.workspaceDetail(t, c, fixtures.AcmePublicID)
 	assert.True(t, cleared.Changed)
 	assert.True(t, cleared.SendCap.PerDay.IsNull())
@@ -101,13 +109,11 @@ func TestSettingTheSameSendCapAndClearingNoneChangeNothing(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	none, ok := h.clearSendCap(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	none := h.clearSendCap(t, c, fixtures.AcmePublicID)
 	assert.False(t, none.Changed, "a Workspace with no Send cap stays as it was")
 
 	h.setSendCap(t, c, fixtures.AcmePublicID, 500)
-	same, ok := h.setSendCap(t, c, fixtures.AcmePublicID, 500).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	same := h.setSendCap(t, c, fixtures.AcmePublicID, 500)
 	assert.False(t, same.Changed)
 	assert.Equal(t, staffeeapi.NewNilMaxPerDay(500), same.SendCap.PerDay)
 
@@ -128,14 +134,12 @@ func TestTheSendCapShowsTheWorkspacesSendsOfTheLast24Hours(t *testing.T) {
 	uncapped := h.workspaceDetail(t, c, fixtures.AcmePublicID)
 	assert.Equal(t, int32(sent), uncapped.SendCap.Value.SentLast24h, "without a Send cap too")
 
-	set, ok := h.setSendCap(t, c, fixtures.AcmePublicID, 500).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	set := h.setSendCap(t, c, fixtures.AcmePublicID, 500)
 	capped := h.workspaceDetail(t, c, fixtures.AcmePublicID)
 	assert.Equal(t, staffeeapi.StaffSendCap{PerDay: staffeeapi.NewNilMaxPerDay(500), SentLast24h: sent}, set.SendCap)
 	assert.Equal(t, set.SendCap, capped.SendCap.Value)
 
-	cleared, ok := h.clearSendCap(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSendCapChange)
-	require.True(t, ok)
+	cleared := h.clearSendCap(t, c, fixtures.AcmePublicID)
 	assert.Equal(t, int32(sent), cleared.SendCap.SentLast24h)
 
 	globex := h.workspaceDetail(t, c, fixtures.GlobexPublicID).SendCap.Value
@@ -146,10 +150,10 @@ func TestTheSendCapOfAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	set := h.setSendCap(t, c, "Zz9Zz9Zz", 500)
-	cleared := h.clearSendCap(t, c, "Zz9Zz9Zz")
-	assert.IsType(t, &staffeeapi.StaffWorkspacesSetSendCapNotFound{}, set)
-	assert.IsType(t, &staffeeapi.StaffWorkspacesClearSendCapNotFound{}, cleared)
+	_, err := h.trySetSendCap(t, c, "Zz9Zz9Zz", 500)
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
+	_, err = h.tryClearSendCap(t, c, "Zz9Zz9Zz")
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
 }
 
 // A self-hosted Instance has no Send cap: its endpoints are not found whatever the License key
@@ -159,12 +163,12 @@ func TestASelfHostedInstanceHasNoSendCapInTheConsole(t *testing.T) {
 	c, _ := h.staffSession(t)
 	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(500).ExecX(t.Context())
 
-	set := h.setSendCap(t, c, fixtures.AcmePublicID, 1000)
-	cleared := h.clearSendCap(t, c, fixtures.AcmePublicID)
+	_, setErr := h.trySetSendCap(t, c, fixtures.AcmePublicID, 1000)
+	_, clearErr := h.tryClearSendCap(t, c, fixtures.AcmePublicID)
 	detail := h.workspaceDetail(t, c, fixtures.AcmePublicID)
 	entries, _ := sendCapChanges(t, h.env)
-	assert.IsType(t, &staffeeapi.StaffWorkspacesSetSendCapNotFound{}, set)
-	assert.IsType(t, &staffeeapi.StaffWorkspacesClearSendCapNotFound{}, cleared)
+	testhelper.StaffeeRefusal(t, setErr, http.StatusNotFound)
+	testhelper.StaffeeRefusal(t, clearErr, http.StatusNotFound)
 	assert.False(t, detail.SendCap.IsSet(), "even a stored value is not shown")
 	assert.Empty(t, entries)
 }

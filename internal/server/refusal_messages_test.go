@@ -1,13 +1,11 @@
 package server_test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -17,19 +15,7 @@ import (
 
 // A domain error of the Broadcasts and Templates modules reads the same on the site and on the
 // external API: both render the module's own message, and none shows a package prefix. The
-// response types are per operation, so each case states how to read the detail of its response.
-
-// detailOf is the problem detail of an ogen response, which every refusal carries.
-func detailOf(t *testing.T, res any, err error) string {
-	t.Helper()
-	require.NoError(t, err)
-	field := reflect.ValueOf(res).Elem().FieldByName("Detail")
-	require.Truef(t, field.IsValid(), "%T carries no problem detail", res)
-	detail, ok := reflect.TypeAssert[interface{ Get() (string, bool) }](field)
-	require.Truef(t, ok, "%T detail is not optional", res)
-	text, _ := detail.Get()
-	return text
-}
+// refusal is the surface's problem, whose detail problemDetail reads.
 
 var badDoc = map[string]jx.Raw{"type": jx.Raw(`"nope"`)}
 
@@ -43,110 +29,110 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 	cases := []struct {
 		name string
 		want string
-		site func(c *siteapi.Client) (any, error)
-		ext  func(c *externalapi.Client) (any, error)
+		site func(c *siteapi.Client) error
+		ext  func(c *externalapi.Client) error
 	}{
 		{
 			name: "not found", want: "broadcast not found",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: ws, ID: site(missing)})
-				return res, err
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: ws, ID: site(missing)})
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: ext(missing)})
-				return res, err
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: ext(missing)})
+				return err
 			},
 		},
 		{
 			name: "not a draft", want: "only draft broadcasts can be changed",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("x")},
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsUpdate(t.Context(), &externalapi.UpdateBroadcastInput{Name: externalapi.NewOptString("x")},
 					externalapi.BroadcastsUpdateParams{ID: ext(fixtures.BroadcastSentID)})
-				return res, err
+				return err
 			},
 		},
 		{
 			name: "not sendable", want: "only draft or scheduled broadcasts can be sent or scheduled",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(at)},
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(at)},
 					siteapi.SiteBroadcastsScheduleParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(at)},
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(at)},
 					externalapi.BroadcastsScheduleParams{ID: ext(fixtures.BroadcastSentID)})
-				return res, err
+				return err
 			},
 		},
 		{
 			name: "not archivable", want: "a scheduled or sending broadcast cannot be archived",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsArchive(t.Context(), siteapi.SiteBroadcastsArchiveParams{WorkspaceId: ws, ID: site(fixtures.BroadcastScheduledID)})
-				return res, err
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsArchive(t.Context(), siteapi.SiteBroadcastsArchiveParams{WorkspaceId: ws, ID: site(fixtures.BroadcastScheduledID)})
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsArchive(t.Context(), externalapi.BroadcastsArchiveParams{ID: ext(fixtures.BroadcastScheduledID)})
-				return res, err
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsArchive(t.Context(), externalapi.BroadcastsArchiveParams{ID: ext(fixtures.BroadcastScheduledID)})
+				return err
 			},
 		},
 		{
 			name: "blank name", want: "name must not be empty",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " ", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " ", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
 					siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " ", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
-				return res, err
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " ", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+				return err
 			},
 		},
 		{
 			name: "body and document together", want: "write a body or a doc, not both",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 					Name:    "x",
 					Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc)}),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
 					Name:    "x",
 					Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc)}),
 				})
-				return res, err
+				return err
 			},
 		},
 		{
 			name: "unknown segment", want: "segment not found",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 					Name:      "x",
 					Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 					SegmentId: siteapi.NewOptNilEntityId(missing),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.BroadcastsSetSegment(t.Context(), &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(missing)},
+			ext: func(c *externalapi.Client) error {
+				_, err := c.BroadcastsSetSegment(t.Context(), &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NewNilEntityId(missing)},
 					externalapi.BroadcastsSetSegmentParams{ID: ext(fixtures.BroadcastDraftID)})
-				return res, err
+				return err
 			},
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			res, err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
-			assert.Equal(t, tc.want, detailOf(t, res, err), "site")
-			res, err = tc.ext(env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send"))
-			assert.Equal(t, tc.want, detailOf(t, res, err), "external")
+			err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
+			assert.Equal(t, tc.want, problemDetail(t, err), "site")
+			err = tc.ext(env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send"))
+			assert.Equal(t, tc.want, problemDetail(t, err), "external")
 		})
 	}
 }
@@ -154,20 +140,20 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 // The site names the Integration of a Broadcast; the external API has no field for it.
 func TestBroadcastUnknownIntegrationReadsWithoutAPrefix(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+	_, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 		Name:          "x",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(99999),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	assert.Equal(t, "integration not found", detailOf(t, res, err))
+	assert.Equal(t, "integration not found", problemDetail(t, err))
 }
 
 // The site has no way to unschedule a Broadcast, so only the external API can refuse it.
 func TestBroadcastNotScheduledReadsWithoutAPrefix(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.ExternalScoped(t, "broadcasts:send").BroadcastsUnschedule(t.Context(),
+	_, err := env.ExternalScoped(t, "broadcasts:send").BroadcastsUnschedule(t.Context(),
 		externalapi.BroadcastsUnscheduleParams{ID: fixtures.BroadcastDraftID})
-	assert.Equal(t, "only scheduled broadcasts can be unscheduled", detailOf(t, res, err))
+	assert.Equal(t, "only scheduled broadcasts can be unscheduled", problemDetail(t, err))
 }
 
 func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
@@ -177,55 +163,55 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 	cases := []struct {
 		name string
 		want string
-		site func(c *siteapi.Client) (any, error)
-		ext  func(c *externalapi.Client) (any, error)
+		site func(c *siteapi.Client) error
+		ext  func(c *externalapi.Client) error
 	}{
 		{
 			name: "not found", want: "template not found",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteTemplatesGet(t.Context(), siteapi.SiteTemplatesGetParams{WorkspaceId: ws, ID: missing})
-				return res, err
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteTemplatesGet(t.Context(), siteapi.SiteTemplatesGetParams{WorkspaceId: ws, ID: missing})
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.TemplatesGet(t.Context(), externalapi.TemplatesGetParams{ID: missing})
-				return res, err
+			ext: func(c *externalapi.Client) error {
+				_, err := c.TemplatesGet(t.Context(), externalapi.TemplatesGetParams{ID: missing})
+				return err
 			},
 		},
 		{
 			name: "blank name", want: "name must not be empty",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: ""},
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: ""},
 					siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{Name: ""})
-				return res, err
+			ext: func(c *externalapi.Client) error {
+				_, err := c.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{Name: ""})
+				return err
 			},
 		},
 		{
 			name: "body and document together", want: "write a body or a doc, not both",
-			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
+			site: func(c *siteapi.Client) error {
+				_, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc),
 				}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
-				return res, err
+				return err
 			},
-			ext: func(c *externalapi.Client) (any, error) {
-				res, err := c.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
+			ext: func(c *externalapi.Client) error {
+				_, err := c.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
 					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc),
 				})
-				return res, err
+				return err
 			},
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			res, err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
-			assert.Equal(t, tc.want, detailOf(t, res, err), "site")
-			res, err = tc.ext(env.ExternalScoped(t, "templates:read", "templates:write"))
-			assert.Equal(t, tc.want, detailOf(t, res, err), "external")
+			err := tc.site(env.SiteActor(t, fixtures.OwnerJohnEmail))
+			assert.Equal(t, tc.want, problemDetail(t, err), "site")
+			err = tc.ext(env.ExternalScoped(t, "templates:read", "templates:write"))
+			assert.Equal(t, tc.want, problemDetail(t, err), "external")
 		})
 	}
 }
@@ -237,24 +223,24 @@ func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	ext := env.ExternalScoped(t, "templates:write", "broadcasts:write")
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	b1, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+	_, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 		Name:    "x",
 		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badDoc)}),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
-	b2, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
+	_, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
 		Name:    "x",
 		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badDoc)}),
 	})
-	t1, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
+	_, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
-	t2, err4 := ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
+	_, err4 := ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
 		Name: "x", Doc: externalapi.NewOptEditorDocument(badDoc),
 	})
 
-	want := detailOf(t, b1, err1)
+	want := problemDetail(t, err1)
 	assert.Contains(t, want, "cannot be rendered")
-	assert.Equal(t, want, detailOf(t, b2, err2))
-	assert.Equal(t, want, detailOf(t, t1, err3))
-	assert.Equal(t, want, detailOf(t, t2, err4))
+	assert.Equal(t, want, problemDetail(t, err2))
+	assert.Equal(t, want, problemDetail(t, err3))
+	assert.Equal(t, want, problemDetail(t, err4))
 }

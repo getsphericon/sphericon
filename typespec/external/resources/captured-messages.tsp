@@ -103,11 +103,7 @@ interface CapturedMessages {
   @requiresScopes(#[ApiTokenScope.capturedMessagesRead])
   list(...ResourceCollectionParameters<CapturedMessageResource>, ...PageQuery):
     | Page<CapturedMessageSummary>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Read one Captured message in full: headers, HTML, text and links */
   @readsResource(CapturedMessageResource)
@@ -116,11 +112,7 @@ interface CapturedMessages {
   @requiresScopes(#[ApiTokenScope.capturedMessagesRead])
   get(...ResourceParameters<CapturedMessageResource>):
     | CapturedMessageResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Delete one Captured message */
   @deletesResource(CapturedMessageResource)
@@ -129,11 +121,7 @@ interface CapturedMessages {
   @requiresScopes(#[ApiTokenScope.capturedMessagesWrite])
   delete(...ResourceParameters<CapturedMessageResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Delete every Captured message of the Workspace. Needs a person: hidden from MCP. */
   @collectionAction(CapturedMessageResource, "all")
@@ -142,7 +130,5 @@ interface CapturedMessages {
   @requiresScopes(#[ApiTokenScope.capturedMessagesWrite])
   deleteAll(...ResourceCollectionParameters<CapturedMessageResource>):
     | NoContentResponse
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

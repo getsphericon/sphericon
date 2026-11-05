@@ -18,7 +18,7 @@ var _ Handler = UnimplementedHandler{}
 // The Sign-up survey answers, counted per question. Read only.
 //
 // GET /signup-survey
-func (UnimplementedHandler) StaffSignupSurveyCounts(ctx context.Context) (r StaffSignupSurveyCountsRes, _ error) {
+func (UnimplementedHandler) StaffSignupSurveyCounts(ctx context.Context) (r *StaffSignupSurveyCounts, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -27,7 +27,7 @@ func (UnimplementedHandler) StaffSignupSurveyCounts(ctx context.Context) (r Staf
 // One User's answers. 404 when the User is unknown or has not answered the survey.
 //
 // GET /signup-survey/users/{userId}
-func (UnimplementedHandler) StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (r StaffSignupSurveyGetRes, _ error) {
+func (UnimplementedHandler) StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (r *StaffSignupSurveyResponseResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -37,7 +37,7 @@ func (UnimplementedHandler) StaffSignupSurveyGet(ctx context.Context, params Sta
 // is then recorded.
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (UnimplementedHandler) StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (r StaffWorkspaceAuditListRes, _ error) {
+func (UnimplementedHandler) StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (r *StaffAuditEntryList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -47,7 +47,7 @@ func (UnimplementedHandler) StaffWorkspaceAuditList(ctx context.Context, params 
 // Not found on an Instance that has no Send caps.
 //
 // DELETE /workspaces/{workspaceId}/send-cap
-func (UnimplementedHandler) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (r StaffWorkspacesClearSendCapRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (r *StaffSendCapChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -58,7 +58,7 @@ func (UnimplementedHandler) StaffWorkspacesClearSendCap(ctx context.Context, par
 // Idempotent.
 //
 // POST /workspaces/{workspaceId}/exempt
-func (UnimplementedHandler) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (r StaffWorkspacesExemptRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (r *StaffExemptionChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -67,7 +67,7 @@ func (UnimplementedHandler) StaffWorkspacesExempt(ctx context.Context, params St
 // One Workspace's metadata, suspension state, rates and send volume.
 //
 // GET /workspaces/{workspaceId}
-func (UnimplementedHandler) StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (r StaffWorkspacesGetRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (r *StaffWorkspaceDetailResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -76,7 +76,7 @@ func (UnimplementedHandler) StaffWorkspacesGet(ctx context.Context, params Staff
 // List all Workspaces, newest first, optionally narrowed by an id or name search.
 //
 // GET /workspaces
-func (UnimplementedHandler) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (r StaffWorkspacesListRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (r *StaffWorkspacesListOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -87,7 +87,7 @@ func (UnimplementedHandler) StaffWorkspacesList(ctx context.Context, params Staf
 // no Send caps.
 //
 // PUT /workspaces/{workspaceId}/send-cap
-func (UnimplementedHandler) StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (r StaffWorkspacesSetSendCapRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (r *StaffSendCapChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -97,7 +97,7 @@ func (UnimplementedHandler) StaffWorkspacesSetSendCap(ctx context.Context, req *
 // member. Idempotent: an already-suspended Workspace is left as it was.
 //
 // POST /workspaces/{workspaceId}/suspend
-func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (r StaffWorkspacesSuspendRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (r *StaffSuspensionChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -106,7 +106,7 @@ func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *Sta
 // Police a Workspace by the abuse detector again. Audited. Idempotent.
 //
 // POST /workspaces/{workspaceId}/unexempt
-func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (r StaffWorkspacesUnexemptRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (r *StaffExemptionChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -116,6 +116,14 @@ func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params 
 // left as it was.
 //
 // POST /workspaces/{workspaceId}/unsuspend
-func (UnimplementedHandler) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (r StaffWorkspacesUnsuspendRes, _ error) {
+func (UnimplementedHandler) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (r *StaffSuspensionChange, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

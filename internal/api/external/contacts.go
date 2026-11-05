@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (externalapi.ContactsListRes, error) {
+func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (*externalapi.ContactsListOK, error) {
 	page, err := h.contacts.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{})
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 	return mapper.ContactsListPage(page), nil
 }
 
-func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateContactInput) (externalapi.ContactsCreateRes, error) {
+func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateContactInput) (*externalapi.ContactResource, error) {
 	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactCreate(req))
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateCo
 	return &resource, nil
 }
 
-func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (externalapi.ContactsGetRes, error) {
+func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (*externalapi.ContactResource, error) {
 	id := int64(params.ID)
 
 	c, err := h.contacts.Get(ctx, auth.TokenScoped(ctx), id)
@@ -44,7 +44,7 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 	return &resource, nil
 }
 
-func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateContactInput, params externalapi.ContactsUpdateParams) (externalapi.ContactsUpdateRes, error) {
+func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateContactInput, params externalapi.ContactsUpdateParams) (*externalapi.ContactResource, error) {
 	id := int64(params.ID)
 
 	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, inputs.ContactUpdate(req))
@@ -63,33 +63,30 @@ func tokenRequester(ctx context.Context) erasure.Requester {
 
 // ContactsDelete is Erasure (ADR 0021): deleting a Contact removes its personal data.
 // It has its own scope, separate from contacts:write, because it is irreversible.
-func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) (externalapi.ContactsDeleteRes, error) {
+func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) error {
 	id := int64(params.ID)
 
 	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
 		tokenRequester(ctx))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.ContactsDeleteNoContent{}, nil
+	return nil
 }
 
 // ContactsEraseBy is Erasure by an email address or a visitor id (ADR 0021), under the
 // same scope and rules as deleting by id. Exactly one identifier is required: the erasure
 // module refuses anything else.
-func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) (externalapi.ContactsEraseByRes, error) {
+func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) error {
 	id, err := erasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx)); err != nil {
-		return nil, err
-	}
-	return &externalapi.ContactsEraseByNoContent{}, nil
+	return h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx))
 }
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
-func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (externalapi.ContactsBatchUpsertRes, error) {
+func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (*externalapi.UpsertContactsResult, error) {
 	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactUpserts(req.Contacts))
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))

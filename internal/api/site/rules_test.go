@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -32,8 +33,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 		Actions:       []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "clicker"), tagAction(siteapi.SiteRuleActionTypeRemoveTag, "cold")},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
 	assert.True(t, res.Live.Null, "a new Rule is not live")
 	draft, drafted := res.Draft.Get()
@@ -52,8 +52,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 
 	act, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	actRes, ok := act.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", act)
+	actRes := act
 	assert.Equal(t, siteapi.SiteRuleStatusActive, actRes.Status)
 	_, activated = actRes.ActivatedAt.Get()
 	assert.True(t, activated)
@@ -67,8 +66,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 		TriggerEvents: []string{"email.clicked"},
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	updRes, ok := upd.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", upd)
+	updRes := upd
 	assert.Equal(t, "Tag the clickers", updRes.Name)
 	edited, drafted := updRes.Draft.Get()
 	require.True(t, drafted, "an edit of a live Rule is a draft")
@@ -81,14 +79,12 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 
 	deact, err := c.SiteRulesDeactivate(ctx, siteapi.SiteRulesDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	deactRes, ok := deact.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", deact)
+	deactRes := deact
 	assert.Equal(t, siteapi.SiteRuleStatusInactive, deactRes.Status)
 
 	got, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	gotRes, ok := got.(*siteapi.SiteRuleResource)
-	require.Truef(t, ok, "got %T", got)
+	gotRes := got
 	assert.Equal(t, res.ID, gotRes.ID)
 }
 
@@ -99,8 +95,7 @@ func TestSiteRulesListIsTheWorkspacesOwn(t *testing.T) {
 	list, err := c.SiteRulesList(context.Background(), siteapi.SiteRulesListParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
 	require.NoError(t, err)
 
-	listed, ok := list.(*siteapi.SiteRulesListOK)
-	require.Truef(t, ok, "got %T", list)
+	listed := list
 	ids := lo.Map(listed.Items, func(r siteapi.SiteRuleResource, _ int) int64 { return int64(r.ID) })
 	assert.Contains(t, ids, int64(fixtures.RuleTagClickedID))
 	assert.NotContains(t, ids, int64(fixtures.RuleGlobexID))
@@ -114,31 +109,27 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	unknownField := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`
 	apply := []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")}
 
-	unknown, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, unknown := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Typo", TriggerEvents: []string{"a"}, Actions: apply,
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, unknownField)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, unknown, "a custom field the Workspace does not have is refused on save")
+	testhelper.SiteRefusal(t, unknown, http.StatusUnprocessableEntity, "a custom field the Workspace does not have is refused on save")
 
-	noTag, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, noTag := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "No tag", TriggerEvents: []string{"a"},
 		Actions: []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, noTag)
+	testhelper.SiteRefusal(t, noTag, http.StatusUnprocessableEntity)
 
-	blankTrigger, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, blankTrigger := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Blank trigger", TriggerEvents: []string{"  "}, Actions: apply,
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, blankTrigger)
+	testhelper.SiteRefusal(t, blankTrigger, http.StatusUnprocessableEntity)
 
-	typoUpdate, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
+	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, unknownField)),
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: fixtures.RuleTagClickedID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesUpdateUnprocessableEntity{}, typoUpdate)
+	testhelper.SiteRefusal(t, typoUpdate, http.StatusUnprocessableEntity)
 }
 
 func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
@@ -148,19 +139,17 @@ func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	leaf := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}`
 
-	rule, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Pricing", TriggerEvents: []string{"a"},
 		Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")},
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, leaf)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRuleResource{}, rule)
 
-	segment, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	_, segment := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name: "Pricing", Condition: testhelper.SiteRuleGroup(t, leaf),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, segment)
+	testhelper.SiteRefusal(t, segment, http.StatusUnprocessableEntity)
 }
 
 // A Rule compares a number property of its Event; a date leaf on a property is refused, since an
@@ -169,23 +158,22 @@ func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	create := func(leaf string) siteapi.SiteRulesCreateRes {
+	create := func(leaf string) error {
 		t.Helper()
 		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
-		out, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+		_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 			Name: "Promoters", TriggerEvents: []string{"nps_submitted"},
 			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "promoter")},
 			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		return out
+		return err
 	}
 
 	promoters := create(`{"kind":"number","field":"trigger:score","operator":"gte","value":9}`)
 	dated := create(`{"kind":"dateWithin","field":"trigger:at","withinDays":7}`)
 
-	assert.IsType(t, &siteapi.SiteRuleResource{}, promoters)
-	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, dated)
+	require.NoError(t, promoters)
+	testhelper.SiteRefusal(t, dated, http.StatusUnprocessableEntity)
 }
 
 // A Rule's Condition counts Events as a Segment's does, and refuses the same counts.
@@ -193,23 +181,22 @@ func TestSiteRuleConditionCountsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	create := func(leaf string) siteapi.SiteRulesCreateRes {
+	create := func(leaf string) error {
 		t.Helper()
 		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
-		out, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+		_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 			Name: "Pricing twice", TriggerEvents: []string{"pricing_viewed"},
 			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "keen")},
 			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-		return out
+		return err
 	}
 
 	counted := create(`{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}`)
 	atLeastNone := create(`{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":0}`)
 
-	assert.IsType(t, &siteapi.SiteRuleResource{}, counted)
-	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, atLeastNone)
+	require.NoError(t, counted)
+	testhelper.SiteRefusal(t, atLeastNone, http.StatusUnprocessableEntity)
 }
 
 func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
@@ -218,10 +205,9 @@ func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	out, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
+	_, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleNoActionsID})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesPublishUnprocessableEntity{}, out)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
@@ -230,17 +216,14 @@ func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	get, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesGetNotFound{}, get)
+	_, get := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
+	testhelper.SiteRefusal(t, get, http.StatusNotFound)
 
-	published, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesPublishNotFound{}, published)
+	_, published := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
+	testhelper.SiteRefusal(t, published, http.StatusNotFound)
 
-	firings, err := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: workspaceID, RuleId: fixtures.RuleGlobexID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRuleFiringsListNotFound{}, firings)
+	_, firings := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: workspaceID, RuleId: fixtures.RuleGlobexID})
+	testhelper.SiteRefusal(t, firings, http.StatusNotFound)
 }
 
 func TestSiteRuleFiringsShowWhatEachActionDid(t *testing.T) {
@@ -252,8 +235,7 @@ func TestSiteRuleFiringsShowWhatEachActionDid(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	listed, ok := out.(*siteapi.SiteRuleFiringsListOK)
-	require.Truef(t, ok, "got %T", out)
+	listed := out
 	require.Len(t, listed.Items, 2)
 	pending, done := listed.Items[0], listed.Items[1] // newest first
 	assert.EqualValues(t, fixtures.RuleFiringPendingID, pending.ID)

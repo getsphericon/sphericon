@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,19 +37,16 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 		Steps: []siteapi.SiteAutomationStep{siteEmailStepVia(mailgun), siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	res, ok := created.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
 	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")}, params)
 	require.NoError(t, err)
-	kept, ok := renamed.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", renamed)
+	kept := renamed
 	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
 		Steps: []siteapi.SiteAutomationStep{siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, params)
 	require.NoError(t, err)
-	back, ok := rewritten.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", rewritten)
+	back := rewritten
 
 	require.Len(t, res.Draft.Value.Steps, 2)
 	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.Steps[0].IntegrationId.Or(0), "the first step through the relay")
@@ -67,15 +65,13 @@ func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 	steps := []siteapi.SiteAutomationStep{siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))} // another Workspace's
 	draftBefore := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps
 
-	create, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
+	_, create := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
 		siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	update, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: steps},
+	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: steps},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.AutomationWelcomeSeriesID)})
-	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteAutomationsCreateUnprocessableEntity{}, create)
-	assert.IsType(t, &siteapi.SiteAutomationsUpdateUnprocessableEntity{}, update)
+	testhelper.SiteRefusal(t, create, http.StatusUnprocessableEntity)
+	testhelper.SiteRefusal(t, update, http.StatusUnprocessableEntity)
 	assert.False(t, env.DB.Automation.Query().Where(automation.Name("x")).ExistX(ctx), "a refused create stores nothing")
 	assert.Equal(t, draftBefore, env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps, "a refused update changes nothing")
 }

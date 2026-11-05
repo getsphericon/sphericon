@@ -120,11 +120,5 @@ namespace AuditEntries {
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 25,
-  ):
-    | AuditEntryList
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | PaymentRequiredProblem;
+  ): AuditEntryList | Problem;
 }

@@ -18,7 +18,7 @@ func (h *Handlers) SiteLegalDocumentsSignupItems(ctx context.Context) (*siteapi.
 
 // SiteLegalDocumentsGet is the current version of a Sign-up item's Legal document, for its public
 // page. Public.
-func (h *Handlers) SiteLegalDocumentsGet(ctx context.Context, params siteapi.SiteLegalDocumentsGetParams) (siteapi.SiteLegalDocumentsGetRes, error) {
+func (h *Handlers) SiteLegalDocumentsGet(ctx context.Context, params siteapi.SiteLegalDocumentsGetParams) (*siteapi.SiteLegalDocument, error) {
 	doc, err := h.signupItems.Document(ctx, string(params.Key))
 	if err != nil {
 		return nil, err

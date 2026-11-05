@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -168,8 +167,8 @@ func TestAPasskeyRemovedByItsUserNoLongerSignsAnyoneIn(t *testing.T) {
 func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *testing.T) {
 	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
-	require.IsType(t, &siteapi.SiteWorkspaceResource{},
-		requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID))
+
+	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	c.t = c.t.Add(8 * 24 * time.Hour)
 	tags := "/site/workspaces/" + fixtures.GlobexPublicID + "/tags"
 	session := env.SiteToken(t, fixtures.PasskeyPatEmail, func(claims *gptoken.Claims) {

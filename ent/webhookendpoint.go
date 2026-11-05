@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // WebhookEndpoint is the model entity for the WebhookEndpoint schema.
@@ -38,7 +39,7 @@ type WebhookEndpoint struct {
 	// FailingSince holds the value of the "failing_since" field.
 	FailingSince *time.Time `json:"failing_since,omitempty"`
 	// LastErrorKind holds the value of the "last_error_kind" field.
-	LastErrorKind *webhookendpoint.LastErrorKind `json:"last_error_kind,omitempty"`
+	LastErrorKind *webhook.ErrorKind `json:"last_error_kind,omitempty"`
 	// LastErrorStatus holds the value of the "last_error_status" field.
 	LastErrorStatus *int `json:"last_error_status,omitempty"`
 	// LastFailureAt holds the value of the "last_failure_at" field.
@@ -168,8 +169,8 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field last_error_kind", values[i])
 			} else if value.Valid {
-				_m.LastErrorKind = new(webhookendpoint.LastErrorKind)
-				*_m.LastErrorKind = webhookendpoint.LastErrorKind(value.String)
+				_m.LastErrorKind = new(webhook.ErrorKind)
+				*_m.LastErrorKind = webhook.ErrorKind(value.String)
 			}
 		case webhookendpoint.FieldLastErrorStatus:
 			if value, ok := values[i].(*sql.NullInt64); !ok {

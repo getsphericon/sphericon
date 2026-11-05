@@ -140,9 +140,7 @@ interface Broadcasts
       UpdateBroadcastInput,
       ApiTokenScope.broadcastsRead,
       ApiTokenScope.broadcastsWrite,
-      never,
-      BroadcastsListFilter,
-      ConflictProblem
+      BroadcastsListFilter
     > {
   /** Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing. */
   @action("archive")
@@ -150,12 +148,7 @@ interface Broadcasts
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])
   archive(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem;
+    | Problem;
 
   /** Bring an archived broadcast back to the list, in the status it had */
   @action("unarchive")
@@ -163,11 +156,7 @@ interface Broadcasts
   @requiresScopes(#[ApiTokenScope.broadcastsWrite])
   unarchive(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409. */
   @action("segment")
@@ -177,15 +166,7 @@ interface Broadcasts
   setSegment(
     ...ResourceParameters<BroadcastResource>,
     @body body: SetBroadcastSegmentInput,
-  ):
-    | BroadcastResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): BroadcastResource | Problem;
 
   /** Send a rendered preview with sample merge data to a single address: an email broadcast to the `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so a Telegram broadcast is a 422. */
   @action("test-send")
@@ -194,14 +175,7 @@ interface Broadcasts
   testSend(
     ...ResourceParameters<BroadcastResource>,
     @body body: TestSendBroadcastInput,
-  ):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): NoContentResponse | Problem;
 
   /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
@@ -210,15 +184,7 @@ interface Broadcasts
   schedule(
     ...ResourceParameters<BroadcastResource>,
     @body body: ScheduleBroadcastInput,
-  ):
-    | BroadcastResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): BroadcastResource | Problem;
 
   /** Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition: scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("unschedule")
@@ -226,23 +192,12 @@ interface Broadcasts
   @requiresScopes(#[ApiTokenScope.broadcastsSend])
   unschedule(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Read the delivery report: sent, skipped, failed, opened and clicked counts */
   @action("report")
   @get
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsRead])
-  report(...ResourceParameters<BroadcastResource>):
-    | BroadcastReport
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  report(...ResourceParameters<BroadcastResource>): BroadcastReport | Problem;
 }

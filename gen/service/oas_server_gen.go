@@ -13,13 +13,13 @@ type Handler interface {
 	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 	//
 	// DELETE /workspaces/{workspaceId}/holds/{key}
-	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error)
+	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (*HoldClearResult, error)
 	// ServiceHoldsList implements ServiceHolds_list operation.
 	//
 	// The holds of a Workspace that are active now; a lapsed one is not listed.
 	//
 	// GET /workspaces/{workspaceId}/holds
-	ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (ServiceHoldsListRes, error)
+	ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (*HoldList, error)
 	// ServiceHoldsSet implements ServiceHolds_set operation.
 	//
 	// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
@@ -27,13 +27,13 @@ type Handler interface {
 	// change.
 	//
 	// PUT /workspaces/{workspaceId}/holds/{key}
-	ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
+	ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (*HoldSetResult, error)
 	// ServiceIdentityGet implements ServiceIdentity_get operation.
 	//
 	// The calling credential's own name, scopes and expiry.
 	//
 	// GET /identity
-	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
+	ServiceIdentityGet(ctx context.Context) (*ServiceIdentityResource, error)
 	// ServiceTrackingHostFeedList implements ServiceTrackingHostFeed_list operation.
 	//
 	// The changes of Tracking domain hosts since an opaque cursor, in the order they were made: a host
@@ -44,14 +44,14 @@ type Handler interface {
 	// a cursor returns the same entries, so applying one twice must change nothing.
 	//
 	// GET /domains/changes
-	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (ServiceTrackingHostFeedListRes, error)
+	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (*ServiceTrackingHostFeedPage, error)
 	// ServiceUsageList implements ServiceUsage_list operation.
 	//
 	// The figures of every Workspace for a Usage period, by Workspace id: Live usage for the open period,
 	// Usage snapshots for a closed one. Never a recount on read.
 	//
 	// GET /usage
-	ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (ServiceUsageListRes, error)
+	ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (*ServiceUsageListOK, error)
 	// ServiceUserFeedList implements ServiceUserFeed_list operation.
 	//
 	// The Users created or changed since an opaque cursor, each with their current consent to the
@@ -61,7 +61,7 @@ type Handler interface {
 	// entries, and an empty cursor starts from the beginning.
 	//
 	// GET /users/changes
-	ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (ServiceUserFeedListRes, error)
+	ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (*ServiceUserFeedPage, error)
 	// ServiceWorkspaceFeedList implements ServiceWorkspaceFeed_list operation.
 	//
 	// The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
@@ -70,7 +70,7 @@ type Handler interface {
 	// same entries, and an empty cursor starts from the beginning.
 	//
 	// GET /workspaces/changes
-	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)
+	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (*ServiceWorkspaceFeedPage, error)
 	// ServiceWorkspaceUsageGet implements ServiceWorkspaceUsage_get operation.
 	//
 	// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
@@ -78,7 +78,11 @@ type Handler interface {
 	// read.
 	//
 	// GET /workspaces/{workspaceId}/usage
-	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error)
+	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (*WorkspaceUsageResource, error)
+	// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+	//
+	// Used for common default response.
+	NewError(ctx context.Context, err error) *ProblemDetailsStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

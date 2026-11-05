@@ -56,7 +56,7 @@ const challengeProviderLogin = "provider_login"
 // codes count as failures of the User's address, and while its delay runs even a
 // correct code answers 429. A bad challenge has no trusted address, so it is answered
 // 401 without counting; the per-IP login cap still applies to the route.
-func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLoginSecondFactorInput) (siteapi.SiteAuthSecondFactorRes, error) {
+func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLoginSecondFactorInput) (*siteapi.SiteLoginResultHeaders, error) {
 	res, err := h.login.SecondFactor(ctx, req.Challenge, req.Code)
 	if err != nil {
 		return nil, err

@@ -9,16 +9,17 @@ import (
 	"testing"
 
 	"entgo.io/ent"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const edgeHeader = "X-Edge-Host"
@@ -66,7 +67,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 
 	unsubFor := func(ws int64) string {
 		full, err := tr.UnsubscribeURL(tracking.UnsubTarget{
-			Channel: messaging.ChannelEmail,
+			Channel: channels.Email,
 			Source:  eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
 		})
 		require.NoError(t, err)

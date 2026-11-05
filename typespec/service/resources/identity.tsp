@@ -47,8 +47,5 @@ namespace ServiceIdentity {
   /** The calling credential's own name, scopes and expiry */
   @get
   @requiresServiceScopes(#[])
-  op get():
-    | ServiceIdentityResource
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+  op get(): ServiceIdentityResource | Problem;
 }

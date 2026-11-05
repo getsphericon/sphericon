@@ -34,27 +34,27 @@ type Invoker interface {
 	// List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope).
 	//
 	// GET /audit-entries
-	AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (AuditEntriesListRes, error)
+	AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (*AuditEntryList, error)
 	// AuthMeGet invokes Auth_meGet operation.
 	//
 	// GET /auth/me
-	AuthMeGet(ctx context.Context) (AuthMeGetRes, error)
+	AuthMeGet(ctx context.Context) (*ApiTokenInfo, error)
 	// AuthTokensBootstrap invokes Auth_tokensBootstrap operation.
 	//
 	// POST /auth/tokens/bootstrap
-	AuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (AuthTokensBootstrapRes, error)
+	AuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (*CreateApiTokenResponse, error)
 	// AuthTokensCreate invokes Auth_tokensCreate operation.
 	//
 	// POST /auth/tokens
-	AuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (AuthTokensCreateRes, error)
+	AuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (*CreateApiTokenResponse, error)
 	// AuthTokensDelete invokes Auth_tokensDelete operation.
 	//
 	// DELETE /auth/tokens/{id}
-	AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (AuthTokensDeleteRes, error)
+	AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) error
 	// AuthTokensList invokes Auth_tokensList operation.
 	//
 	// GET /auth/tokens
-	AuthTokensList(ctx context.Context) (AuthTokensListRes, error)
+	AuthTokensList(ctx context.Context) (*ApiTokenListResponse, error)
 	// AutomationsArchive invokes Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
@@ -62,38 +62,38 @@ type Invoker interface {
 	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /automations/{id}/archive
-	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
+	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (*AutomationResource, error)
 	// AutomationsCreate invokes Automations_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /automations
-	AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (AutomationsCreateRes, error)
+	AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (*AutomationResource, error)
 	// AutomationsDeactivate invokes Automations_deactivate operation.
 	//
 	// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
 	// Needs the automations:write scope.
 	//
 	// POST /automations/{id}/deactivate
-	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
+	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (*AutomationResource, error)
 	// AutomationsDryRunHttpStep invokes Automations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
 	//
 	// POST /automations/dry-run-http-step
-	AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error)
+	AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (*DryRunHttpStepResult, error)
 	// AutomationsGet invokes Automations_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /automations/{id}
-	AutomationsGet(ctx context.Context, params AutomationsGetParams) (AutomationsGetRes, error)
+	AutomationsGet(ctx context.Context, params AutomationsGetParams) (*AutomationResource, error)
 	// AutomationsList invokes Automations_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /automations
-	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	AutomationsList(ctx context.Context, params AutomationsListParams) (*AutomationsListOK, error)
 	// AutomationsPublish invokes Automations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
@@ -103,7 +103,7 @@ type Invoker interface {
 	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
-	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
+	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error)
 	// AutomationsReport invokes Automations_report operation.
 	//
 	// Read the report: the engagement of the automation's emails over its whole history, and its results
@@ -112,28 +112,28 @@ type Invoker interface {
 	// before it. Needs the automations:read scope.
 	//
 	// GET /automations/{id}/report
-	AutomationsReport(ctx context.Context, params AutomationsReportParams) (AutomationsReportRes, error)
+	AutomationsReport(ctx context.Context, params AutomationsReportParams) (*AutomationReport, error)
 	// AutomationsRevert invokes Automations_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
 	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
-	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
+	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error)
 	// AutomationsUnarchive invokes Automations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
 	// again.
 	//
 	// POST /automations/{id}/unarchive
-	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
+	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (*AutomationResource, error)
 	// AutomationsUpdate invokes Automations_update operation.
 	//
 	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
 	// archived. Needs the automations:write scope.
 	//
 	// PUT /automations/{id}
-	AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error)
+	AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (*AutomationResource, error)
 	// BrandKitGet invokes BrandKit_get operation.
 	//
 	// Read the Workspace's Brand kit to write a message in its colors, fonts and button style. Its fonts,
@@ -141,7 +141,7 @@ type Invoker interface {
 	// Read-only: an agent never changes the Brand kit.
 	//
 	// GET /brand-kit
-	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
+	BrandKitGet(ctx context.Context) (*BrandKitResource, error)
 	// BroadcastsArchive invokes Broadcasts_archive operation.
 	//
 	// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
@@ -149,31 +149,31 @@ type Invoker interface {
 	// Archiving an archived broadcast changes nothing.
 	//
 	// POST /broadcasts/{id}/archive
-	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
+	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (*BroadcastResource, error)
 	// BroadcastsCreate invokes Broadcasts_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /broadcasts
-	BroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (BroadcastsCreateRes, error)
+	BroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (*BroadcastResource, error)
 	// BroadcastsGet invokes Broadcasts_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /broadcasts/{id}
-	BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (BroadcastsGetRes, error)
+	BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (*BroadcastResource, error)
 	// BroadcastsList invokes Broadcasts_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /broadcasts
-	BroadcastsList(ctx context.Context, params BroadcastsListParams) (BroadcastsListRes, error)
+	BroadcastsList(ctx context.Context, params BroadcastsListParams) (*BroadcastsListOK, error)
 	// BroadcastsReport invokes Broadcasts_report operation.
 	//
 	// Read the delivery report: sent, skipped, failed, opened and clicked counts.
 	//
 	// GET /broadcasts/{id}/report
-	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (BroadcastsReportRes, error)
+	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (*BroadcastReport, error)
 	// BroadcastsSchedule invokes Broadcasts_schedule operation.
 	//
 	// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
@@ -184,14 +184,14 @@ type Invoker interface {
 	// needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
-	BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
+	BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (*BroadcastResource, error)
 	// BroadcastsSetSegment invokes Broadcasts_setSegment operation.
 	//
 	// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
 	// is a 409.
 	//
 	// PUT /broadcasts/{id}/segment
-	BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
+	BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (*BroadcastResource, error)
 	// BroadcastsTestSend invokes Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address: an email broadcast to the
@@ -200,13 +200,13 @@ type Invoker interface {
 	// a Telegram broadcast is a 422.
 	//
 	// POST /broadcasts/{id}/test-send
-	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
+	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) error
 	// BroadcastsUnarchive invokes Broadcasts_unarchive operation.
 	//
 	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /broadcasts/{id}/unarchive
-	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
+	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (*BroadcastResource, error)
 	// BroadcastsUnschedule invokes Broadcasts_unschedule operation.
 	//
 	// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
@@ -214,37 +214,37 @@ type Invoker interface {
 	// mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/unschedule
-	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error)
+	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (*BroadcastResource, error)
 	// BroadcastsUpdate invokes Broadcasts_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /broadcasts/{id}
-	BroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (BroadcastsUpdateRes, error)
+	BroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (*BroadcastResource, error)
 	// CapturedMessagesDelete invokes CapturedMessages_delete operation.
 	//
 	// Delete one Captured message.
 	//
 	// DELETE /captured-messages/{id}
-	CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (CapturedMessagesDeleteRes, error)
+	CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) error
 	// CapturedMessagesDeleteAll invokes CapturedMessages_deleteAll operation.
 	//
 	// Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
 	//
 	// DELETE /captured-messages/all
-	CapturedMessagesDeleteAll(ctx context.Context) (CapturedMessagesDeleteAllRes, error)
+	CapturedMessagesDeleteAll(ctx context.Context) error
 	// CapturedMessagesGet invokes CapturedMessages_get operation.
 	//
 	// Read one Captured message in full: headers, HTML, text and links.
 	//
 	// GET /captured-messages/{id}
-	CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (CapturedMessagesGetRes, error)
+	CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (*CapturedMessageResource, error)
 	// CapturedMessagesList invokes CapturedMessages_list operation.
 	//
 	// List the Captured messages, newest first, without their content (read one for it).
 	//
 	// GET /captured-messages
-	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error)
+	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (*CapturedMessagesListOK, error)
 	// ConfirmationsCreate invokes Confirmations_create operation.
 	//
 	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
@@ -254,26 +254,26 @@ type Invoker interface {
 	// does not lift an opt-out: only the person can, by texting START.
 	//
 	// POST /confirmations
-	ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (ConfirmationsCreateRes, error)
+	ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (*ConfirmationResource, error)
 	// ContactsBatchUpsert invokes ContactsBatch_upsert operation.
 	//
 	// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
 	//
 	// POST /contacts/batch
-	ContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (ContactsBatchUpsertRes, error)
+	ContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (*UpsertContactsResult, error)
 	// ContactsCreate invokes Contacts_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /contacts
-	ContactsCreate(ctx context.Context, request *CreateContactInput) (ContactsCreateRes, error)
+	ContactsCreate(ctx context.Context, request *CreateContactInput) (*ContactResource, error)
 	// ContactsDelete invokes Contacts_delete operation.
 	//
 	// Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and
 	// its opt-outs survive. Requires the contacts:erase scope.
 	//
 	// DELETE /contacts/{id}
-	ContactsDelete(ctx context.Context, params ContactsDeleteParams) (ContactsDeleteRes, error)
+	ContactsDelete(ctx context.Context, params ContactsDeleteParams) error
 	// ContactsEraseBy invokes Contacts_eraseBy operation.
 	//
 	// Erase by an identifier other than the contact id (GDPR Art. 17): by `email` (also anonymizes
@@ -282,7 +282,7 @@ type Invoker interface {
 	// contacts:erase scope.
 	//
 	// DELETE /contacts/erase
-	ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (ContactsEraseByRes, error)
+	ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) error
 	// ContactsExport invokes Contacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download: the contact, its custom
@@ -297,32 +297,32 @@ type Invoker interface {
 	// Get a resource by ID.
 	//
 	// GET /contacts/{id}
-	ContactsGet(ctx context.Context, params ContactsGetParams) (ContactsGetRes, error)
+	ContactsGet(ctx context.Context, params ContactsGetParams) (*ContactResource, error)
 	// ContactsList invokes Contacts_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /contacts
-	ContactsList(ctx context.Context, params ContactsListParams) (ContactsListRes, error)
+	ContactsList(ctx context.Context, params ContactsListParams) (*ContactsListOK, error)
 	// ContactsUpdate invokes Contacts_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /contacts/{id}
-	ContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (ContactsUpdateRes, error)
+	ContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (*ContactResource, error)
 	// CustomFieldsList invokes CustomFields_list operation.
 	//
 	// List the workspace's custom field definitions.
 	//
 	// GET /custom-fields
-	CustomFieldsList(ctx context.Context) (CustomFieldsListRes, error)
+	CustomFieldsList(ctx context.Context) (*CustomFieldsListOK, error)
 	// CustomFieldsUpdate invokes CustomFields_update operation.
 	//
 	// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
 	// broadcast tests the field with an operator the new type does not take (`usedBy` names them).
 	//
 	// PUT /custom-fields/{id}
-	CustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (CustomFieldsUpdateRes, error)
+	CustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (*CustomFieldResource, error)
 	// EmailLintLint invokes EmailLint_lint operation.
 	//
 	// Lint a message before a person sees it: the same lint that runs when a message is saved and when a
@@ -331,7 +331,7 @@ type Invoker interface {
 	// untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
 	//
 	// POST /emails/lint
-	EmailLintLint(ctx context.Context, request *LintEmailInput) (EmailLintLintRes, error)
+	EmailLintLint(ctx context.Context, request *LintEmailInput) (*LintEmailResult, error)
 	// EmailSchemaGet invokes EmailSchema_get operation.
 	//
 	// Read the schema of the editor's document: the node and mark types, the attributes each takes and the
@@ -340,7 +340,7 @@ type Invoker interface {
 	// as `doc` on a Template, Broadcast or Automation email step.
 	//
 	// GET /emails/schema
-	EmailSchemaGet(ctx context.Context) (EmailSchemaGetRes, error)
+	EmailSchemaGet(ctx context.Context) (*EmailSchemaResult, error)
 	// EmailsSend invokes Emails_send operation.
 	//
 	// Send a transactional email. The referenced Template's current content is rendered with the supplied
@@ -351,37 +351,37 @@ type Invoker interface {
 	// sending a second email, and a key whose first request is still in flight returns 409.
 	//
 	// POST /emails
-	EmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (EmailsSendRes, error)
+	EmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error)
 	// EnrollmentsGet invokes Enrollments_get operation.
 	//
 	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
 	//
 	// GET /automations/{automationId}/enrollments/{enrollmentId}
-	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (EnrollmentsGetRes, error)
+	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (*EnrollmentResource, error)
 	// EnrollmentsList invokes Enrollments_list operation.
 	//
 	// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
 	//
 	// GET /automations/{automationId}/enrollments
-	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (EnrollmentsListRes, error)
+	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (*EnrollmentsListOK, error)
 	// EventActionsList invokes EventActions_list operation.
 	//
 	// List unique event actions.
 	//
 	// GET /events/actions
-	EventActionsList(ctx context.Context, params EventActionsListParams) (EventActionsListRes, error)
+	EventActionsList(ctx context.Context, params EventActionsListParams) (*EventActionsListOK, error)
 	// EventsBatchSubmit invokes EventsBatch_submit operation.
 	//
 	// Record up to 1000 events; a failing item does not affect the others.
 	//
 	// POST /events/batch
-	EventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (EventsBatchSubmitRes, error)
+	EventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (*RecordEventsBatchResult, error)
 	// EventsCreate invokes Events_create operation.
 	//
 	// Record events in batch.
 	//
 	// POST /events
-	EventsCreate(ctx context.Context, request *RecordEventsInput) (EventsCreateRes, error)
+	EventsCreate(ctx context.Context, request *RecordEventsInput) error
 	// ExportAudit invokes Export_audit operation.
 	//
 	// Read the Workspace's Audit entries, oldest first (Enterprise; needs the `export:read` scope and the
@@ -389,14 +389,14 @@ type Invoker interface {
 	// Audit log list is the human read; this is the machine stream.
 	//
 	// GET /export/audit
-	ExportAudit(ctx context.Context, params ExportAuditParams) (ExportAuditRes, error)
+	ExportAudit(ctx context.Context, params ExportAuditParams) (*ExportAuditOKHeaders, error)
 	// ExportContacts invokes Export_contacts operation.
 	//
 	// Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read` scope). Each
 	// line of the body is an `ExportContactRow`; every key is always present.
 	//
 	// GET /export/contacts
-	ExportContacts(ctx context.Context, params ExportContactsParams) (ExportContactsRes, error)
+	ExportContacts(ctx context.Context, params ExportContactsParams) (*ExportContactsOKHeaders, error)
 	// ExportErasures invokes Export_erasures operation.
 	//
 	// Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope). Each line
@@ -405,27 +405,27 @@ type Invoker interface {
 	// re-seeds from an empty cursor.
 	//
 	// GET /export/erasures
-	ExportErasures(ctx context.Context, params ExportErasuresParams) (ExportErasuresRes, error)
+	ExportErasures(ctx context.Context, params ExportErasuresParams) (*ExportErasuresOKHeaders, error)
 	// ExportEvents invokes Export_events operation.
 	//
 	// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
 	// line of the body is an `ExportEventRow`; every key is always present.
 	//
 	// GET /export/events
-	ExportEvents(ctx context.Context, params ExportEventsParams) (ExportEventsRes, error)
+	ExportEvents(ctx context.Context, params ExportEventsParams) (*ExportEventsOKHeaders, error)
 	// ExportMessages invokes Export_messages operation.
 	//
 	// Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the `export:read`
 	// scope). Each line of the body is an `ExportMessageRow`; every key is always present.
 	//
 	// GET /export/messages
-	ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error)
+	ExportMessages(ctx context.Context, params ExportMessagesParams) (*ExportMessagesOKHeaders, error)
 	// IntegrationsCreate invokes Integrations_create operation.
 	//
 	// Create an integration.
 	//
 	// POST /integrations
-	IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (IntegrationsCreateRes, error)
+	IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (*IntegrationResource, error)
 	// IntegrationsDelete invokes Integrations_delete operation.
 	//
 	// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
@@ -434,19 +434,19 @@ type Invoker interface {
 	// webhook is removed, best effort.
 	//
 	// DELETE /integrations/{id}
-	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error)
+	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) error
 	// IntegrationsGet invokes Integrations_get operation.
 	//
 	// Get an integration by ID, deleted or not.
 	//
 	// GET /integrations/{id}
-	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error)
+	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (*IntegrationResource, error)
 	// IntegrationsList invokes Integrations_list operation.
 	//
 	// List integrations with pagination.
 	//
 	// GET /integrations
-	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
+	IntegrationsList(ctx context.Context, params IntegrationsListParams) (*IntegrationsListOK, error)
 	// IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
@@ -454,62 +454,62 @@ type Invoker interface {
 	// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
-	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
+	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (*IntegrationResource, error)
 	// IntegrationsUpdate invokes Integrations_update operation.
 	//
 	// Update an integration; a deleted one is read-only and answers 404.
 	//
 	// PUT /integrations/{id}
-	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
+	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (*IntegrationResource, error)
 	// PresetsList invokes Presets_list operation.
 	//
 	// List the Presets the Instance offers, with the params schema of each.
 	//
 	// GET /presets
-	PresetsList(ctx context.Context) (PresetsListRes, error)
+	PresetsList(ctx context.Context) (*PresetsListOK, error)
 	// RuleFiringsList invokes RuleFirings_list operation.
 	//
 	// List a Rule's Firings, newest first. Needs the automations:read scope.
 	//
 	// GET /rules/{ruleId}/firings
-	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
+	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (*RuleFiringsListOK, error)
 	// RulesCreate invokes Rules_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /rules
-	RulesCreate(ctx context.Context, request *CreateRuleInput) (RulesCreateRes, error)
+	RulesCreate(ctx context.Context, request *CreateRuleInput) (*RuleResource, error)
 	// RulesDeactivate invokes Rules_deactivate operation.
 	//
 	// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 	//
 	// POST /rules/{id}/deactivate
-	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
+	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (*RuleResource, error)
 	// RulesDelete invokes Rules_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /rules/{id}
-	RulesDelete(ctx context.Context, params RulesDeleteParams) (RulesDeleteRes, error)
+	RulesDelete(ctx context.Context, params RulesDeleteParams) error
 	// RulesDryRun invokes Rules_dryRun operation.
 	//
 	// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
 	// nothing. Needs the automations:read scope.
 	//
 	// POST /rules/{id}/dry-run
-	RulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (RulesDryRunRes, error)
+	RulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (*RuleDryRunResource, error)
 	// RulesGet invokes Rules_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /rules/{id}
-	RulesGet(ctx context.Context, params RulesGetParams) (RulesGetRes, error)
+	RulesGet(ctx context.Context, params RulesGetParams) (*RuleResource, error)
 	// RulesList invokes Rules_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /rules
-	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	RulesList(ctx context.Context, params RulesListParams) (*RulesListOK, error)
 	// RulesPublish invokes Rules_publish operation.
 	//
 	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
@@ -517,75 +517,75 @@ type Invoker interface {
 	// neither draft nor live version. Needs the automations:publish scope.
 	//
 	// POST /rules/{id}/publish
-	RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error)
+	RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error)
 	// RulesRevert invokes Rules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	// Needs the automations:write scope.
 	//
 	// POST /rules/{id}/revert
-	RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error)
+	RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error)
 	// RulesUpdate invokes Rules_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /rules/{id}
-	RulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (RulesUpdateRes, error)
+	RulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (*RuleResource, error)
 	// SegmentsArchive invokes Segments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
 	// with 409 while live work uses it.
 	//
 	// POST /segments/{id}/archive
-	SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (SegmentsArchiveRes, error)
+	SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (*SegmentResource, error)
 	// SegmentsCreate invokes Segments_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /segments
-	SegmentsCreate(ctx context.Context, request *CreateSegmentInput) (SegmentsCreateRes, error)
+	SegmentsCreate(ctx context.Context, request *CreateSegmentInput) (*SegmentResource, error)
 	// SegmentsGet invokes Segments_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /segments/{id}
-	SegmentsGet(ctx context.Context, params SegmentsGetParams) (SegmentsGetRes, error)
+	SegmentsGet(ctx context.Context, params SegmentsGetParams) (*SegmentResource, error)
 	// SegmentsList invokes Segments_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /segments
-	SegmentsList(ctx context.Context, params SegmentsListParams) (SegmentsListRes, error)
+	SegmentsList(ctx context.Context, params SegmentsListParams) (*SegmentsListOK, error)
 	// SegmentsPreview invokes Segments_preview operation.
 	//
 	// Count the contacts matching an unsaved rule definition.
 	//
 	// POST /segments/preview
-	SegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (SegmentsPreviewRes, error)
+	SegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (*PreviewSegmentResult, error)
 	// SegmentsUnarchive invokes Segments_unarchive operation.
 	//
 	// Restore an archived resource.
 	//
 	// POST /segments/{id}/unarchive
-	SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (SegmentsUnarchiveRes, error)
+	SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (*SegmentResource, error)
 	// SegmentsUpdate invokes Segments_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /segments/{id}
-	SegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (SegmentsUpdateRes, error)
+	SegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (*SegmentResource, error)
 	// SendingDomainRatesList invokes SendingDomainRates_list operation.
 	//
 	// Complaint and bounce rates per sending domain over a trailing window.
 	//
 	// GET /sending-domains/rates
-	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error)
+	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (*SendingDomainRatesListOK, error)
 	// SendingDomainsCreate invokes SendingDomains_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /sending-domains
-	SendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (SendingDomainsCreateRes, error)
+	SendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (*SendingDomainResource, error)
 	// SendingDomainsDelete invokes SendingDomains_delete operation.
 	//
 	// Delete a Sending domain for good: it leaves the list and is never restored; what it sent keeps its
@@ -593,25 +593,25 @@ type Invoker interface {
 	// sends from it.
 	//
 	// DELETE /sending-domains/{id}
-	SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (SendingDomainsDeleteRes, error)
+	SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) error
 	// SendingDomainsGet invokes SendingDomains_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /sending-domains/{id}
-	SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (SendingDomainsGetRes, error)
+	SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (*SendingDomainResource, error)
 	// SendingDomainsList invokes SendingDomains_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /sending-domains
-	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
+	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (*SendingDomainsListOK, error)
 	// SendingDomainsUpdate invokes SendingDomains_update operation.
 	//
 	// Update a Sending domain; a deleted one is read-only and answers 404.
 	//
 	// PUT /sending-domains/{id}
-	SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error)
+	SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (*SendingDomainResource, error)
 	// SendingDomainsVerify invokes SendingDomains_verify operation.
 	//
 	// Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
@@ -619,7 +619,7 @@ type Invoker interface {
 	// again (404).
 	//
 	// POST /sending-domains/{id}/verify
-	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error)
+	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (*SendingDomainResource, error)
 	// SmsConsentsGet invokes SmsConsents_get operation.
 	//
 	// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
@@ -628,7 +628,7 @@ type Invoker interface {
 	// the contact has now.
 	//
 	// GET /contacts/{contactId}/sms-consent
-	SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (SmsConsentsGetRes, error)
+	SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (*SmsConsent, error)
 	// SuppressionsCreate invokes Suppressions_create operation.
 	//
 	// Suppress a destination so no surface sends to it (a manual Suppression). Idempotent: an
@@ -636,82 +636,82 @@ type Invoker interface {
 	// available through the API.
 	//
 	// POST /suppressions
-	SuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (SuppressionsCreateRes, error)
+	SuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (*SuppressionResource, error)
 	// TagsApply invokes Tags_apply operation.
 	//
 	// Apply a tag to a contact, creating the tag on first use. Idempotent.
 	//
 	// POST /contacts/{contactId}/tags
-	TagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (TagsApplyRes, error)
+	TagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (*TagResource, error)
 	// TagsDelete invokes Tags_delete operation.
 	//
 	// Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names
 	// the users.
 	//
 	// DELETE /tags/{id}
-	TagsDelete(ctx context.Context, params TagsDeleteParams) (TagsDeleteRes, error)
+	TagsDelete(ctx context.Context, params TagsDeleteParams) error
 	// TagsList invokes Tags_list operation.
 	//
 	// List the workspace's tags.
 	//
 	// GET /tags
-	TagsList(ctx context.Context, params TagsListParams) (TagsListRes, error)
+	TagsList(ctx context.Context, params TagsListParams) (*TagsListOK, error)
 	// TagsListForContact invokes Tags_listForContact operation.
 	//
 	// List the tags a contact has.
 	//
 	// GET /contacts/{contactId}/tags
-	TagsListForContact(ctx context.Context, params TagsListForContactParams) (TagsListForContactRes, error)
+	TagsListForContact(ctx context.Context, params TagsListForContactParams) (*TagsListForContactOK, error)
 	// TagsRemove invokes Tags_remove operation.
 	//
 	// Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 	//
 	// DELETE /contacts/{contactId}/tags/{name}
-	TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error)
+	TagsRemove(ctx context.Context, params TagsRemoveParams) error
 	// TelegramStartLinksIssue invokes TelegramStartLinks_issue operation.
 	//
 	// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
 	// binds to the contact, once. Each call issues a new link.
 	//
 	// POST /contacts/{contactId}/telegram-start-links
-	TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error)
+	TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (*TelegramStartLinkResource, error)
 	// TemplatesCreate invokes Templates_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /templates
-	TemplatesCreate(ctx context.Context, request *CreateTemplateInput) (TemplatesCreateRes, error)
+	TemplatesCreate(ctx context.Context, request *CreateTemplateInput) (*TemplateResource, error)
 	// TemplatesDelete invokes Templates_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /templates/{id}
-	TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (TemplatesDeleteRes, error)
+	TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) error
 	// TemplatesGet invokes Templates_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /templates/{id}
-	TemplatesGet(ctx context.Context, params TemplatesGetParams) (TemplatesGetRes, error)
+	TemplatesGet(ctx context.Context, params TemplatesGetParams) (*TemplateResource, error)
 	// TemplatesList invokes Templates_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /templates
-	TemplatesList(ctx context.Context, params TemplatesListParams) (TemplatesListRes, error)
+	TemplatesList(ctx context.Context, params TemplatesListParams) (*TemplatesListOK, error)
 	// TemplatesUpdate invokes Templates_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /templates/{id}
-	TemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (TemplatesUpdateRes, error)
+	TemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (*TemplateResource, error)
 	// TrackingDomainsList invokes TrackingDomains_list operation.
 	//
 	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
 	// Empty while the Instance offers none.
 	//
 	// GET /tracking-domains
-	TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error)
+	TrackingDomainsList(ctx context.Context) ([]TrackingDomainResource, error)
 	// TrackingDomainsRemove invokes TrackingDomains_remove operation.
 	//
 	// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
@@ -720,7 +720,7 @@ type Invoker interface {
 	// it stop working.
 	//
 	// DELETE /tracking-domains/{id}
-	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error)
+	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) error
 	// TrackingDomainsSet invokes TrackingDomains_set operation.
 	//
 	// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
@@ -730,65 +730,65 @@ type Invoker interface {
 	// 422; 404 when the Instance offers no Tracking domains.
 	//
 	// POST /tracking-domains
-	TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (TrackingDomainsSetRes, error)
+	TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (*TrackingDomainResource, error)
 	// TrackingDomainsVerify invokes TrackingDomains_verify operation.
 	//
 	// Check the host now and answer once the check is done: the Tracking domain as it left it. A
 	// replacement that reaches `serving` becomes current. Verification is never set by the caller.
 	//
 	// POST /tracking-domains/{id}/verify
-	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
+	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (*TrackingDomainResource, error)
 	// UnsubscribesCreate invokes Unsubscribes_create operation.
 	//
 	// Record that a destination unsubscribed from a sending source (default `broadcasts`), for an opt-out
 	// that reached you by any route. Idempotent. Resubscribing is not available through the API.
 	//
 	// POST /unsubscribes
-	UnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (UnsubscribesCreateRes, error)
+	UnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (*UnsubscribeResource, error)
 	// WebhooksCreate invokes Webhooks_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /webhooks
-	WebhooksCreate(ctx context.Context, request *CreateWebhookInput) (WebhooksCreateRes, error)
+	WebhooksCreate(ctx context.Context, request *CreateWebhookInput) (*WebhookResource, error)
 	// WebhooksDelete invokes Webhooks_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /webhooks/{id}
-	WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (WebhooksDeleteRes, error)
+	WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) error
 	// WebhooksGet invokes Webhooks_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /webhooks/{id}
-	WebhooksGet(ctx context.Context, params WebhooksGetParams) (WebhooksGetRes, error)
+	WebhooksGet(ctx context.Context, params WebhooksGetParams) (*WebhookResource, error)
 	// WebhooksList invokes Webhooks_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /webhooks
-	WebhooksList(ctx context.Context, params WebhooksListParams) (WebhooksListRes, error)
+	WebhooksList(ctx context.Context, params WebhooksListParams) (*WebhooksListOK, error)
 	// WebhooksRegenerateSecret invokes Webhooks_regenerateSecret operation.
 	//
 	// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
 	// returned here: read it in the app. Needs the webhooks:regenerate scope.
 	//
 	// POST /webhooks/{id}/regenerate-secret
-	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (WebhooksRegenerateSecretRes, error)
+	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (*WebhookResource, error)
 	// WebhooksTest invokes Webhooks_test operation.
 	//
 	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
 	// Does not change the endpoint's failure state. Needs the webhooks:test scope.
 	//
 	// POST /webhooks/{id}/test
-	WebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (WebhooksTestRes, error)
+	WebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (*WebhookTestResult, error)
 	// WebhooksUpdate invokes Webhooks_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /webhooks/{id}
-	WebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (WebhooksUpdateRes, error)
+	WebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (*WebhookResource, error)
 	// WorkspaceGet invokes Workspace_get operation.
 	//
 	// Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to explain
@@ -796,7 +796,7 @@ type Invoker interface {
 	// more than a day. Read-only: no operation changes the Send cap.
 	//
 	// GET /workspace
-	WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error)
+	WorkspaceGet(ctx context.Context) (*WorkspaceResource, error)
 }
 
 // Client implements OAS client.
@@ -845,12 +845,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope).
 //
 // GET /audit-entries
-func (c *Client) AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (AuditEntriesListRes, error) {
+func (c *Client) AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (*AuditEntryList, error) {
 	res, err := c.sendAuditEntriesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAuditEntriesList(ctx context.Context, params AuditEntriesListParams) (res AuditEntriesListRes, err error) {
+func (c *Client) sendAuditEntriesList(ctx context.Context, params AuditEntriesListParams) (res *AuditEntryList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("AuditEntries_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1153,12 +1153,12 @@ func (c *Client) sendAuditEntriesList(ctx context.Context, params AuditEntriesLi
 // AuthMeGet invokes Auth_meGet operation.
 //
 // GET /auth/me
-func (c *Client) AuthMeGet(ctx context.Context) (AuthMeGetRes, error) {
+func (c *Client) AuthMeGet(ctx context.Context) (*ApiTokenInfo, error) {
 	res, err := c.sendAuthMeGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendAuthMeGet(ctx context.Context) (res AuthMeGetRes, err error) {
+func (c *Client) sendAuthMeGet(ctx context.Context) (res *ApiTokenInfo, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Auth_meGet"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1264,12 +1264,12 @@ func (c *Client) sendAuthMeGet(ctx context.Context) (res AuthMeGetRes, err error
 // AuthTokensBootstrap invokes Auth_tokensBootstrap operation.
 //
 // POST /auth/tokens/bootstrap
-func (c *Client) AuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (AuthTokensBootstrapRes, error) {
+func (c *Client) AuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (*CreateApiTokenResponse, error) {
 	res, err := c.sendAuthTokensBootstrap(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (res AuthTokensBootstrapRes, err error) {
+func (c *Client) sendAuthTokensBootstrap(ctx context.Context, request *CreateApiTokenInput, params AuthTokensBootstrapParams) (res *CreateApiTokenResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Auth_tokensBootstrap"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1359,12 +1359,12 @@ func (c *Client) sendAuthTokensBootstrap(ctx context.Context, request *CreateApi
 // AuthTokensCreate invokes Auth_tokensCreate operation.
 //
 // POST /auth/tokens
-func (c *Client) AuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (AuthTokensCreateRes, error) {
+func (c *Client) AuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (*CreateApiTokenResponse, error) {
 	res, err := c.sendAuthTokensCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendAuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (res AuthTokensCreateRes, err error) {
+func (c *Client) sendAuthTokensCreate(ctx context.Context, request *CreateApiTokenInput) (res *CreateApiTokenResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Auth_tokensCreate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1473,12 +1473,12 @@ func (c *Client) sendAuthTokensCreate(ctx context.Context, request *CreateApiTok
 // AuthTokensDelete invokes Auth_tokensDelete operation.
 //
 // DELETE /auth/tokens/{id}
-func (c *Client) AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (AuthTokensDeleteRes, error) {
-	res, err := c.sendAuthTokensDelete(ctx, params)
-	return res, err
+func (c *Client) AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) error {
+	_, err := c.sendAuthTokensDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendAuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (res AuthTokensDeleteRes, err error) {
+func (c *Client) sendAuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (res *AuthTokensDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Auth_tokensDelete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -1605,12 +1605,12 @@ func (c *Client) sendAuthTokensDelete(ctx context.Context, params AuthTokensDele
 // AuthTokensList invokes Auth_tokensList operation.
 //
 // GET /auth/tokens
-func (c *Client) AuthTokensList(ctx context.Context) (AuthTokensListRes, error) {
+func (c *Client) AuthTokensList(ctx context.Context) (*ApiTokenListResponse, error) {
 	res, err := c.sendAuthTokensList(ctx)
 	return res, err
 }
 
-func (c *Client) sendAuthTokensList(ctx context.Context) (res AuthTokensListRes, err error) {
+func (c *Client) sendAuthTokensList(ctx context.Context) (res *ApiTokenListResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Auth_tokensList"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1720,12 +1720,12 @@ func (c *Client) sendAuthTokensList(ctx context.Context) (res AuthTokensListRes,
 // an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /automations/{id}/archive
-func (c *Client) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error) {
+func (c *Client) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (res AutomationsArchiveRes, err error) {
+func (c *Client) sendAutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1855,12 +1855,12 @@ func (c *Client) sendAutomationsArchive(ctx context.Context, params AutomationsA
 // Create a resource.
 //
 // POST /automations
-func (c *Client) AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (AutomationsCreateRes, error) {
+func (c *Client) AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (*AutomationResource, error) {
 	res, err := c.sendAutomationsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendAutomationsCreate(ctx context.Context, request *CreateAutomationInput) (res AutomationsCreateRes, err error) {
+func (c *Client) sendAutomationsCreate(ctx context.Context, request *CreateAutomationInput) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1972,12 +1972,12 @@ func (c *Client) sendAutomationsCreate(ctx context.Context, request *CreateAutom
 // Needs the automations:write scope.
 //
 // POST /automations/{id}/deactivate
-func (c *Client) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error) {
+func (c *Client) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsDeactivate(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (res AutomationsDeactivateRes, err error) {
+func (c *Client) sendAutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_deactivate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2107,12 +2107,12 @@ func (c *Client) sendAutomationsDeactivate(ctx context.Context, params Automatio
 // Render an HTTP step's body for a Contact and validate it, calling nothing.
 //
 // POST /automations/dry-run-http-step
-func (c *Client) AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error) {
+func (c *Client) AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (*DryRunHttpStepResult, error) {
 	res, err := c.sendAutomationsDryRunHttpStep(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (res AutomationsDryRunHttpStepRes, err error) {
+func (c *Client) sendAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (res *DryRunHttpStepResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_dryRunHttpStep"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2223,12 +2223,12 @@ func (c *Client) sendAutomationsDryRunHttpStep(ctx context.Context, request *Dry
 // Get a resource by ID.
 //
 // GET /automations/{id}
-func (c *Client) AutomationsGet(ctx context.Context, params AutomationsGetParams) (AutomationsGetRes, error) {
+func (c *Client) AutomationsGet(ctx context.Context, params AutomationsGetParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsGet(ctx context.Context, params AutomationsGetParams) (res AutomationsGetRes, err error) {
+func (c *Client) sendAutomationsGet(ctx context.Context, params AutomationsGetParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2357,12 +2357,12 @@ func (c *Client) sendAutomationsGet(ctx context.Context, params AutomationsGetPa
 // List resources with pagination.
 //
 // GET /automations
-func (c *Client) AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error) {
+func (c *Client) AutomationsList(ctx context.Context, params AutomationsListParams) (*AutomationsListOK, error) {
 	res, err := c.sendAutomationsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsListParams) (res AutomationsListRes, err error) {
+func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsListParams) (res *AutomationsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2529,12 +2529,12 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 // refused. 409 for an archived automation too. Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
-func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error) {
+func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsPublish(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsPublishParams) (res AutomationsPublishRes, err error) {
+func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsPublishParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2667,12 +2667,12 @@ func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsP
 // before it. Needs the automations:read scope.
 //
 // GET /automations/{id}/report
-func (c *Client) AutomationsReport(ctx context.Context, params AutomationsReportParams) (AutomationsReportRes, error) {
+func (c *Client) AutomationsReport(ctx context.Context, params AutomationsReportParams) (*AutomationReport, error) {
 	res, err := c.sendAutomationsReport(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsReportParams) (res AutomationsReportRes, err error) {
+func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsReportParams) (res *AutomationReport, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_report"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2824,12 +2824,12 @@ func (c *Client) sendAutomationsReport(ctx context.Context, params AutomationsRe
 // 409 when the automation is archived. Needs the automations:write scope.
 //
 // POST /automations/{id}/revert
-func (c *Client) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error) {
+func (c *Client) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsRevert(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRevertParams) (res AutomationsRevertRes, err error) {
+func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRevertParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2960,12 +2960,12 @@ func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRe
 // again.
 //
 // POST /automations/{id}/unarchive
-func (c *Client) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error) {
+func (c *Client) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (res AutomationsUnarchiveRes, err error) {
+func (c *Client) sendAutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -3096,12 +3096,12 @@ func (c *Client) sendAutomationsUnarchive(ctx context.Context, params Automation
 // archived. Needs the automations:write scope.
 //
 // PUT /automations/{id}
-func (c *Client) AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error) {
+func (c *Client) AutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (*AutomationResource, error) {
 	res, err := c.sendAutomationsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendAutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (res AutomationsUpdateRes, err error) {
+func (c *Client) sendAutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params AutomationsUpdateParams) (res *AutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Automations_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -3235,12 +3235,12 @@ func (c *Client) sendAutomationsUpdate(ctx context.Context, request *UpdateAutom
 // Read-only: an agent never changes the Brand kit.
 //
 // GET /brand-kit
-func (c *Client) BrandKitGet(ctx context.Context) (BrandKitGetRes, error) {
+func (c *Client) BrandKitGet(ctx context.Context) (*BrandKitResource, error) {
 	res, err := c.sendBrandKitGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendBrandKitGet(ctx context.Context) (res BrandKitGetRes, err error) {
+func (c *Client) sendBrandKitGet(ctx context.Context) (res *BrandKitResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("BrandKit_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3350,12 +3350,12 @@ func (c *Client) sendBrandKitGet(ctx context.Context) (res BrandKitGetRes, err e
 // Archiving an archived broadcast changes nothing.
 //
 // POST /broadcasts/{id}/archive
-func (c *Client) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error) {
+func (c *Client) BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (res BroadcastsArchiveRes, err error) {
+func (c *Client) sendBroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -3485,12 +3485,12 @@ func (c *Client) sendBroadcastsArchive(ctx context.Context, params BroadcastsArc
 // Create a resource.
 //
 // POST /broadcasts
-func (c *Client) BroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (BroadcastsCreateRes, error) {
+func (c *Client) BroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (res BroadcastsCreateRes, err error) {
+func (c *Client) sendBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -3601,12 +3601,12 @@ func (c *Client) sendBroadcastsCreate(ctx context.Context, request *CreateBroadc
 // Get a resource by ID.
 //
 // GET /broadcasts/{id}
-func (c *Client) BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (BroadcastsGetRes, error) {
+func (c *Client) BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsGet(ctx context.Context, params BroadcastsGetParams) (res BroadcastsGetRes, err error) {
+func (c *Client) sendBroadcastsGet(ctx context.Context, params BroadcastsGetParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3735,12 +3735,12 @@ func (c *Client) sendBroadcastsGet(ctx context.Context, params BroadcastsGetPara
 // List resources with pagination.
 //
 // GET /broadcasts
-func (c *Client) BroadcastsList(ctx context.Context, params BroadcastsListParams) (BroadcastsListRes, error) {
+func (c *Client) BroadcastsList(ctx context.Context, params BroadcastsListParams) (*BroadcastsListOK, error) {
 	res, err := c.sendBroadcastsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListParams) (res BroadcastsListRes, err error) {
+func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListParams) (res *BroadcastsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3920,12 +3920,12 @@ func (c *Client) sendBroadcastsList(ctx context.Context, params BroadcastsListPa
 // Read the delivery report: sent, skipped, failed, opened and clicked counts.
 //
 // GET /broadcasts/{id}/report
-func (c *Client) BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (BroadcastsReportRes, error) {
+func (c *Client) BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (*BroadcastReport, error) {
 	res, err := c.sendBroadcastsReport(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsReportParams) (res BroadcastsReportRes, err error) {
+func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsReportParams) (res *BroadcastReport, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_report"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -4060,12 +4060,12 @@ func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsRepo
 // needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
-func (c *Client) BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error) {
+func (c *Client) BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsSchedule(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (res BroadcastsScheduleRes, err error) {
+func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_schedule"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4199,12 +4199,12 @@ func (c *Client) sendBroadcastsSchedule(ctx context.Context, request *ScheduleBr
 // is a 409.
 //
 // PUT /broadcasts/{id}/segment
-func (c *Client) BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error) {
+func (c *Client) BroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsSetSegment(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (res BroadcastsSetSegmentRes, err error) {
+func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_setSegment"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -4340,12 +4340,12 @@ func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroad
 // a Telegram broadcast is a 422.
 //
 // POST /broadcasts/{id}/test-send
-func (c *Client) BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error) {
-	res, err := c.sendBroadcastsTestSend(ctx, request, params)
-	return res, err
+func (c *Client) BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) error {
+	_, err := c.sendBroadcastsTestSend(ctx, request, params)
+	return err
 }
 
-func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (res BroadcastsTestSendRes, err error) {
+func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) (res *BroadcastsTestSendNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_testSend"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4478,12 +4478,12 @@ func (c *Client) sendBroadcastsTestSend(ctx context.Context, request *TestSendBr
 // Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /broadcasts/{id}/unarchive
-func (c *Client) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error) {
+func (c *Client) BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (res BroadcastsUnarchiveRes, err error) {
+func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4615,12 +4615,12 @@ func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsU
 // mcp:send over MCP.
 //
 // POST /broadcasts/{id}/unschedule
-func (c *Client) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error) {
+func (c *Client) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsUnschedule(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (res BroadcastsUnscheduleRes, err error) {
+func (c *Client) sendBroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_unschedule"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4750,12 +4750,12 @@ func (c *Client) sendBroadcastsUnschedule(ctx context.Context, params Broadcasts
 // Update a resource.
 //
 // PUT /broadcasts/{id}
-func (c *Client) BroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (BroadcastsUpdateRes, error) {
+func (c *Client) BroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (*BroadcastResource, error) {
 	res, err := c.sendBroadcastsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (res BroadcastsUpdateRes, err error) {
+func (c *Client) sendBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params BroadcastsUpdateParams) (res *BroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Broadcasts_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -4887,12 +4887,12 @@ func (c *Client) sendBroadcastsUpdate(ctx context.Context, request *UpdateBroadc
 // Delete one Captured message.
 //
 // DELETE /captured-messages/{id}
-func (c *Client) CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (CapturedMessagesDeleteRes, error) {
-	res, err := c.sendCapturedMessagesDelete(ctx, params)
-	return res, err
+func (c *Client) CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) error {
+	_, err := c.sendCapturedMessagesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendCapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (res CapturedMessagesDeleteRes, err error) {
+func (c *Client) sendCapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (res *CapturedMessagesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CapturedMessages_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -5021,12 +5021,12 @@ func (c *Client) sendCapturedMessagesDelete(ctx context.Context, params Captured
 // Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
 //
 // DELETE /captured-messages/all
-func (c *Client) CapturedMessagesDeleteAll(ctx context.Context) (CapturedMessagesDeleteAllRes, error) {
-	res, err := c.sendCapturedMessagesDeleteAll(ctx)
-	return res, err
+func (c *Client) CapturedMessagesDeleteAll(ctx context.Context) error {
+	_, err := c.sendCapturedMessagesDeleteAll(ctx)
+	return err
 }
 
-func (c *Client) sendCapturedMessagesDeleteAll(ctx context.Context) (res CapturedMessagesDeleteAllRes, err error) {
+func (c *Client) sendCapturedMessagesDeleteAll(ctx context.Context) (res *CapturedMessagesDeleteAllNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CapturedMessages_deleteAll"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -5134,12 +5134,12 @@ func (c *Client) sendCapturedMessagesDeleteAll(ctx context.Context) (res Capture
 // Read one Captured message in full: headers, HTML, text and links.
 //
 // GET /captured-messages/{id}
-func (c *Client) CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (CapturedMessagesGetRes, error) {
+func (c *Client) CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (*CapturedMessageResource, error) {
 	res, err := c.sendCapturedMessagesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendCapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (res CapturedMessagesGetRes, err error) {
+func (c *Client) sendCapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (res *CapturedMessageResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CapturedMessages_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5268,12 +5268,12 @@ func (c *Client) sendCapturedMessagesGet(ctx context.Context, params CapturedMes
 // List the Captured messages, newest first, without their content (read one for it).
 //
 // GET /captured-messages
-func (c *Client) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error) {
+func (c *Client) CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (*CapturedMessagesListOK, error) {
 	res, err := c.sendCapturedMessagesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendCapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (res CapturedMessagesListRes, err error) {
+func (c *Client) sendCapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (res *CapturedMessagesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CapturedMessages_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5423,12 +5423,12 @@ func (c *Client) sendCapturedMessagesList(ctx context.Context, params CapturedMe
 // does not lift an opt-out: only the person can, by texting START.
 //
 // POST /confirmations
-func (c *Client) ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (ConfirmationsCreateRes, error) {
+func (c *Client) ConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (*ConfirmationResource, error) {
 	res, err := c.sendConfirmationsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (res ConfirmationsCreateRes, err error) {
+func (c *Client) sendConfirmationsCreate(ctx context.Context, request *CreateConfirmationInput) (res *ConfirmationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Confirmations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5539,12 +5539,12 @@ func (c *Client) sendConfirmationsCreate(ctx context.Context, request *CreateCon
 // Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
 //
 // POST /contacts/batch
-func (c *Client) ContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (ContactsBatchUpsertRes, error) {
+func (c *Client) ContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (*UpsertContactsResult, error) {
 	res, err := c.sendContactsBatchUpsert(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (res ContactsBatchUpsertRes, err error) {
+func (c *Client) sendContactsBatchUpsert(ctx context.Context, request *UpsertContactsInput) (res *UpsertContactsResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("ContactsBatch_upsert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5655,12 +5655,12 @@ func (c *Client) sendContactsBatchUpsert(ctx context.Context, request *UpsertCon
 // Create a resource.
 //
 // POST /contacts
-func (c *Client) ContactsCreate(ctx context.Context, request *CreateContactInput) (ContactsCreateRes, error) {
+func (c *Client) ContactsCreate(ctx context.Context, request *CreateContactInput) (*ContactResource, error) {
 	res, err := c.sendContactsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendContactsCreate(ctx context.Context, request *CreateContactInput) (res ContactsCreateRes, err error) {
+func (c *Client) sendContactsCreate(ctx context.Context, request *CreateContactInput) (res *ContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5772,12 +5772,12 @@ func (c *Client) sendContactsCreate(ctx context.Context, request *CreateContactI
 // its opt-outs survive. Requires the contacts:erase scope.
 //
 // DELETE /contacts/{id}
-func (c *Client) ContactsDelete(ctx context.Context, params ContactsDeleteParams) (ContactsDeleteRes, error) {
-	res, err := c.sendContactsDelete(ctx, params)
-	return res, err
+func (c *Client) ContactsDelete(ctx context.Context, params ContactsDeleteParams) error {
+	_, err := c.sendContactsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendContactsDelete(ctx context.Context, params ContactsDeleteParams) (res ContactsDeleteRes, err error) {
+func (c *Client) sendContactsDelete(ctx context.Context, params ContactsDeleteParams) (res *ContactsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -5909,12 +5909,12 @@ func (c *Client) sendContactsDelete(ctx context.Context, params ContactsDeletePa
 // contacts:erase scope.
 //
 // DELETE /contacts/erase
-func (c *Client) ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (ContactsEraseByRes, error) {
-	res, err := c.sendContactsEraseBy(ctx, params)
-	return res, err
+func (c *Client) ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) error {
+	_, err := c.sendContactsEraseBy(ctx, params)
+	return err
 }
 
-func (c *Client) sendContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (res ContactsEraseByRes, err error) {
+func (c *Client) sendContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (res *ContactsEraseByNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_eraseBy"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -6223,12 +6223,12 @@ func (c *Client) sendContactsExport(ctx context.Context, params ContactsExportPa
 // Get a resource by ID.
 //
 // GET /contacts/{id}
-func (c *Client) ContactsGet(ctx context.Context, params ContactsGetParams) (ContactsGetRes, error) {
+func (c *Client) ContactsGet(ctx context.Context, params ContactsGetParams) (*ContactResource, error) {
 	res, err := c.sendContactsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendContactsGet(ctx context.Context, params ContactsGetParams) (res ContactsGetRes, err error) {
+func (c *Client) sendContactsGet(ctx context.Context, params ContactsGetParams) (res *ContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -6357,12 +6357,12 @@ func (c *Client) sendContactsGet(ctx context.Context, params ContactsGetParams) 
 // List resources with pagination.
 //
 // GET /contacts
-func (c *Client) ContactsList(ctx context.Context, params ContactsListParams) (ContactsListRes, error) {
+func (c *Client) ContactsList(ctx context.Context, params ContactsListParams) (*ContactsListOK, error) {
 	res, err := c.sendContactsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendContactsList(ctx context.Context, params ContactsListParams) (res ContactsListRes, err error) {
+func (c *Client) sendContactsList(ctx context.Context, params ContactsListParams) (res *ContactsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -6508,12 +6508,12 @@ func (c *Client) sendContactsList(ctx context.Context, params ContactsListParams
 // Update a resource.
 //
 // PUT /contacts/{id}
-func (c *Client) ContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (ContactsUpdateRes, error) {
+func (c *Client) ContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (*ContactResource, error) {
 	res, err := c.sendContactsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (res ContactsUpdateRes, err error) {
+func (c *Client) sendContactsUpdate(ctx context.Context, request *UpdateContactInput, params ContactsUpdateParams) (res *ContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Contacts_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -6645,12 +6645,12 @@ func (c *Client) sendContactsUpdate(ctx context.Context, request *UpdateContactI
 // List the workspace's custom field definitions.
 //
 // GET /custom-fields
-func (c *Client) CustomFieldsList(ctx context.Context) (CustomFieldsListRes, error) {
+func (c *Client) CustomFieldsList(ctx context.Context) (*CustomFieldsListOK, error) {
 	res, err := c.sendCustomFieldsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendCustomFieldsList(ctx context.Context) (res CustomFieldsListRes, err error) {
+func (c *Client) sendCustomFieldsList(ctx context.Context) (res *CustomFieldsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CustomFields_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -6759,12 +6759,12 @@ func (c *Client) sendCustomFieldsList(ctx context.Context) (res CustomFieldsList
 // broadcast tests the field with an operator the new type does not take (`usedBy` names them).
 //
 // PUT /custom-fields/{id}
-func (c *Client) CustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (CustomFieldsUpdateRes, error) {
+func (c *Client) CustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (*CustomFieldResource, error) {
 	res, err := c.sendCustomFieldsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendCustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (res CustomFieldsUpdateRes, err error) {
+func (c *Client) sendCustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (res *CustomFieldResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("CustomFields_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -6899,12 +6899,12 @@ func (c *Client) sendCustomFieldsUpdate(ctx context.Context, request *UpdateCust
 // untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
 //
 // POST /emails/lint
-func (c *Client) EmailLintLint(ctx context.Context, request *LintEmailInput) (EmailLintLintRes, error) {
+func (c *Client) EmailLintLint(ctx context.Context, request *LintEmailInput) (*LintEmailResult, error) {
 	res, err := c.sendEmailLintLint(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendEmailLintLint(ctx context.Context, request *LintEmailInput) (res EmailLintLintRes, err error) {
+func (c *Client) sendEmailLintLint(ctx context.Context, request *LintEmailInput) (res *LintEmailResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("EmailLint_lint"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7018,12 +7018,12 @@ func (c *Client) sendEmailLintLint(ctx context.Context, request *LintEmailInput)
 // as `doc` on a Template, Broadcast or Automation email step.
 //
 // GET /emails/schema
-func (c *Client) EmailSchemaGet(ctx context.Context) (EmailSchemaGetRes, error) {
+func (c *Client) EmailSchemaGet(ctx context.Context) (*EmailSchemaResult, error) {
 	res, err := c.sendEmailSchemaGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendEmailSchemaGet(ctx context.Context) (res EmailSchemaGetRes, err error) {
+func (c *Client) sendEmailSchemaGet(ctx context.Context) (res *EmailSchemaResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("EmailSchema_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7136,12 +7136,12 @@ func (c *Client) sendEmailSchemaGet(ctx context.Context) (res EmailSchemaGetRes,
 // sending a second email, and a key whose first request is still in flight returns 409.
 //
 // POST /emails
-func (c *Client) EmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (EmailsSendRes, error) {
+func (c *Client) EmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error) {
 	res, err := c.sendEmailsSend(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendEmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (res EmailsSendRes, err error) {
+func (c *Client) sendEmailsSend(ctx context.Context, request *SendTransactionalEmailInput, params EmailsSendParams) (res *SendTransactionalEmailResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Emails_send"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7269,12 +7269,12 @@ func (c *Client) sendEmailsSend(ctx context.Context, request *SendTransactionalE
 // Get one Enrollment of an Automation. Needs the enrollments:read scope.
 //
 // GET /automations/{automationId}/enrollments/{enrollmentId}
-func (c *Client) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (EnrollmentsGetRes, error) {
+func (c *Client) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (*EnrollmentResource, error) {
 	res, err := c.sendEnrollmentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendEnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (res EnrollmentsGetRes, err error) {
+func (c *Client) sendEnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (res *EnrollmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Enrollments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7425,12 +7425,12 @@ func (c *Client) sendEnrollmentsGet(ctx context.Context, params EnrollmentsGetPa
 // List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
 //
 // GET /automations/{automationId}/enrollments
-func (c *Client) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (EnrollmentsListRes, error) {
+func (c *Client) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (*EnrollmentsListOK, error) {
 	res, err := c.sendEnrollmentsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendEnrollmentsList(ctx context.Context, params EnrollmentsListParams) (res EnrollmentsListRes, err error) {
+func (c *Client) sendEnrollmentsList(ctx context.Context, params EnrollmentsListParams) (res *EnrollmentsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Enrollments_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7615,12 +7615,12 @@ func (c *Client) sendEnrollmentsList(ctx context.Context, params EnrollmentsList
 // List unique event actions.
 //
 // GET /events/actions
-func (c *Client) EventActionsList(ctx context.Context, params EventActionsListParams) (EventActionsListRes, error) {
+func (c *Client) EventActionsList(ctx context.Context, params EventActionsListParams) (*EventActionsListOK, error) {
 	res, err := c.sendEventActionsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendEventActionsList(ctx context.Context, params EventActionsListParams) (res EventActionsListRes, err error) {
+func (c *Client) sendEventActionsList(ctx context.Context, params EventActionsListParams) (res *EventActionsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("EventActions_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7766,12 +7766,12 @@ func (c *Client) sendEventActionsList(ctx context.Context, params EventActionsLi
 // Record up to 1000 events; a failing item does not affect the others.
 //
 // POST /events/batch
-func (c *Client) EventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (EventsBatchSubmitRes, error) {
+func (c *Client) EventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (*RecordEventsBatchResult, error) {
 	res, err := c.sendEventsBatchSubmit(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendEventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (res EventsBatchSubmitRes, err error) {
+func (c *Client) sendEventsBatchSubmit(ctx context.Context, request *RecordEventsBatchInput) (res *RecordEventsBatchResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("EventsBatch_submit"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7882,12 +7882,12 @@ func (c *Client) sendEventsBatchSubmit(ctx context.Context, request *RecordEvent
 // Record events in batch.
 //
 // POST /events
-func (c *Client) EventsCreate(ctx context.Context, request *RecordEventsInput) (EventsCreateRes, error) {
-	res, err := c.sendEventsCreate(ctx, request)
-	return res, err
+func (c *Client) EventsCreate(ctx context.Context, request *RecordEventsInput) error {
+	_, err := c.sendEventsCreate(ctx, request)
+	return err
 }
 
-func (c *Client) sendEventsCreate(ctx context.Context, request *RecordEventsInput) (res EventsCreateRes, err error) {
+func (c *Client) sendEventsCreate(ctx context.Context, request *RecordEventsInput) (res *EventsCreateNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Events_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8000,12 +8000,12 @@ func (c *Client) sendEventsCreate(ctx context.Context, request *RecordEventsInpu
 // Audit log list is the human read; this is the machine stream.
 //
 // GET /export/audit
-func (c *Client) ExportAudit(ctx context.Context, params ExportAuditParams) (ExportAuditRes, error) {
+func (c *Client) ExportAudit(ctx context.Context, params ExportAuditParams) (*ExportAuditOKHeaders, error) {
 	res, err := c.sendExportAudit(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendExportAudit(ctx context.Context, params ExportAuditParams) (res ExportAuditRes, err error) {
+func (c *Client) sendExportAudit(ctx context.Context, params ExportAuditParams) (res *ExportAuditOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Export_audit"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8152,12 +8152,12 @@ func (c *Client) sendExportAudit(ctx context.Context, params ExportAuditParams) 
 // line of the body is an `ExportContactRow`; every key is always present.
 //
 // GET /export/contacts
-func (c *Client) ExportContacts(ctx context.Context, params ExportContactsParams) (ExportContactsRes, error) {
+func (c *Client) ExportContacts(ctx context.Context, params ExportContactsParams) (*ExportContactsOKHeaders, error) {
 	res, err := c.sendExportContacts(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendExportContacts(ctx context.Context, params ExportContactsParams) (res ExportContactsRes, err error) {
+func (c *Client) sendExportContacts(ctx context.Context, params ExportContactsParams) (res *ExportContactsOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Export_contacts"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8306,12 +8306,12 @@ func (c *Client) sendExportContacts(ctx context.Context, params ExportContactsPa
 // re-seeds from an empty cursor.
 //
 // GET /export/erasures
-func (c *Client) ExportErasures(ctx context.Context, params ExportErasuresParams) (ExportErasuresRes, error) {
+func (c *Client) ExportErasures(ctx context.Context, params ExportErasuresParams) (*ExportErasuresOKHeaders, error) {
 	res, err := c.sendExportErasures(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendExportErasures(ctx context.Context, params ExportErasuresParams) (res ExportErasuresRes, err error) {
+func (c *Client) sendExportErasures(ctx context.Context, params ExportErasuresParams) (res *ExportErasuresOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Export_erasures"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8458,12 +8458,12 @@ func (c *Client) sendExportErasures(ctx context.Context, params ExportErasuresPa
 // line of the body is an `ExportEventRow`; every key is always present.
 //
 // GET /export/events
-func (c *Client) ExportEvents(ctx context.Context, params ExportEventsParams) (ExportEventsRes, error) {
+func (c *Client) ExportEvents(ctx context.Context, params ExportEventsParams) (*ExportEventsOKHeaders, error) {
 	res, err := c.sendExportEvents(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendExportEvents(ctx context.Context, params ExportEventsParams) (res ExportEventsRes, err error) {
+func (c *Client) sendExportEvents(ctx context.Context, params ExportEventsParams) (res *ExportEventsOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Export_events"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8610,12 +8610,12 @@ func (c *Client) sendExportEvents(ctx context.Context, params ExportEventsParams
 // scope). Each line of the body is an `ExportMessageRow`; every key is always present.
 //
 // GET /export/messages
-func (c *Client) ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error) {
+func (c *Client) ExportMessages(ctx context.Context, params ExportMessagesParams) (*ExportMessagesOKHeaders, error) {
 	res, err := c.sendExportMessages(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesParams) (res ExportMessagesRes, err error) {
+func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesParams) (res *ExportMessagesOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Export_messages"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8761,12 +8761,12 @@ func (c *Client) sendExportMessages(ctx context.Context, params ExportMessagesPa
 // Create an integration.
 //
 // POST /integrations
-func (c *Client) IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (IntegrationsCreateRes, error) {
+func (c *Client) IntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (*IntegrationResource, error) {
 	res, err := c.sendIntegrationsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (res IntegrationsCreateRes, err error) {
+func (c *Client) sendIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput) (res *IntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8880,12 +8880,12 @@ func (c *Client) sendIntegrationsCreate(ctx context.Context, request *CreateInte
 // webhook is removed, best effort.
 //
 // DELETE /integrations/{id}
-func (c *Client) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error) {
-	res, err := c.sendIntegrationsDelete(ctx, params)
-	return res, err
+func (c *Client) IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) error {
+	_, err := c.sendIntegrationsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendIntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (res IntegrationsDeleteRes, err error) {
+func (c *Client) sendIntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (res *IntegrationsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -9014,12 +9014,12 @@ func (c *Client) sendIntegrationsDelete(ctx context.Context, params Integrations
 // Get an integration by ID, deleted or not.
 //
 // GET /integrations/{id}
-func (c *Client) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error) {
+func (c *Client) IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (*IntegrationResource, error) {
 	res, err := c.sendIntegrationsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendIntegrationsGet(ctx context.Context, params IntegrationsGetParams) (res IntegrationsGetRes, err error) {
+func (c *Client) sendIntegrationsGet(ctx context.Context, params IntegrationsGetParams) (res *IntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9148,12 +9148,12 @@ func (c *Client) sendIntegrationsGet(ctx context.Context, params IntegrationsGet
 // List integrations with pagination.
 //
 // GET /integrations
-func (c *Client) IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error) {
+func (c *Client) IntegrationsList(ctx context.Context, params IntegrationsListParams) (*IntegrationsListOK, error) {
 	res, err := c.sendIntegrationsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsListParams) (res IntegrationsListRes, err error) {
+func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsListParams) (res *IntegrationsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9301,12 +9301,12 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 // is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 //
 // POST /integrations/{id}/regenerate-key
-func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
+func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (*IntegrationResource, error) {
 	res, err := c.sendIntegrationsRegenerateKey(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (res IntegrationsRegenerateKeyRes, err error) {
+func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (res *IntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_regenerateKey"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -9436,12 +9436,12 @@ func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params Integ
 // Update an integration; a deleted one is read-only and answers 404.
 //
 // PUT /integrations/{id}
-func (c *Client) IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error) {
+func (c *Client) IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (*IntegrationResource, error) {
 	res, err := c.sendIntegrationsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (res IntegrationsUpdateRes, err error) {
+func (c *Client) sendIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (res *IntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Integrations_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -9573,12 +9573,12 @@ func (c *Client) sendIntegrationsUpdate(ctx context.Context, request *UpdateInte
 // List the Presets the Instance offers, with the params schema of each.
 //
 // GET /presets
-func (c *Client) PresetsList(ctx context.Context) (PresetsListRes, error) {
+func (c *Client) PresetsList(ctx context.Context) (*PresetsListOK, error) {
 	res, err := c.sendPresetsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendPresetsList(ctx context.Context) (res PresetsListRes, err error) {
+func (c *Client) sendPresetsList(ctx context.Context) (res *PresetsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Presets_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9686,12 +9686,12 @@ func (c *Client) sendPresetsList(ctx context.Context) (res PresetsListRes, err e
 // List a Rule's Firings, newest first. Needs the automations:read scope.
 //
 // GET /rules/{ruleId}/firings
-func (c *Client) RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error) {
+func (c *Client) RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (*RuleFiringsListOK, error) {
 	res, err := c.sendRuleFiringsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRuleFiringsList(ctx context.Context, params RuleFiringsListParams) (res RuleFiringsListRes, err error) {
+func (c *Client) sendRuleFiringsList(ctx context.Context, params RuleFiringsListParams) (res *RuleFiringsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("RuleFirings_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9859,12 +9859,12 @@ func (c *Client) sendRuleFiringsList(ctx context.Context, params RuleFiringsList
 // Create a resource.
 //
 // POST /rules
-func (c *Client) RulesCreate(ctx context.Context, request *CreateRuleInput) (RulesCreateRes, error) {
+func (c *Client) RulesCreate(ctx context.Context, request *CreateRuleInput) (*RuleResource, error) {
 	res, err := c.sendRulesCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendRulesCreate(ctx context.Context, request *CreateRuleInput) (res RulesCreateRes, err error) {
+func (c *Client) sendRulesCreate(ctx context.Context, request *CreateRuleInput) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -9975,12 +9975,12 @@ func (c *Client) sendRulesCreate(ctx context.Context, request *CreateRuleInput) 
 // Deactivate a Rule: it stops firing. Needs the automations:write scope.
 //
 // POST /rules/{id}/deactivate
-func (c *Client) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error) {
+func (c *Client) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (*RuleResource, error) {
 	res, err := c.sendRulesDeactivate(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRulesDeactivate(ctx context.Context, params RulesDeactivateParams) (res RulesDeactivateRes, err error) {
+func (c *Client) sendRulesDeactivate(ctx context.Context, params RulesDeactivateParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_deactivate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10110,12 +10110,12 @@ func (c *Client) sendRulesDeactivate(ctx context.Context, params RulesDeactivate
 // Delete a resource.
 //
 // DELETE /rules/{id}
-func (c *Client) RulesDelete(ctx context.Context, params RulesDeleteParams) (RulesDeleteRes, error) {
-	res, err := c.sendRulesDelete(ctx, params)
-	return res, err
+func (c *Client) RulesDelete(ctx context.Context, params RulesDeleteParams) error {
+	_, err := c.sendRulesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendRulesDelete(ctx context.Context, params RulesDeleteParams) (res RulesDeleteRes, err error) {
+func (c *Client) sendRulesDelete(ctx context.Context, params RulesDeleteParams) (res *RulesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -10245,12 +10245,12 @@ func (c *Client) sendRulesDelete(ctx context.Context, params RulesDeleteParams) 
 // nothing. Needs the automations:read scope.
 //
 // POST /rules/{id}/dry-run
-func (c *Client) RulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (RulesDryRunRes, error) {
+func (c *Client) RulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (*RuleDryRunResource, error) {
 	res, err := c.sendRulesDryRun(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendRulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (res RulesDryRunRes, err error) {
+func (c *Client) sendRulesDryRun(ctx context.Context, request *DryRunRuleInput, params RulesDryRunParams) (res *RuleDryRunResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_dryRun"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10383,12 +10383,12 @@ func (c *Client) sendRulesDryRun(ctx context.Context, request *DryRunRuleInput, 
 // Get a resource by ID.
 //
 // GET /rules/{id}
-func (c *Client) RulesGet(ctx context.Context, params RulesGetParams) (RulesGetRes, error) {
+func (c *Client) RulesGet(ctx context.Context, params RulesGetParams) (*RuleResource, error) {
 	res, err := c.sendRulesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRulesGet(ctx context.Context, params RulesGetParams) (res RulesGetRes, err error) {
+func (c *Client) sendRulesGet(ctx context.Context, params RulesGetParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10517,12 +10517,12 @@ func (c *Client) sendRulesGet(ctx context.Context, params RulesGetParams) (res R
 // List resources with pagination.
 //
 // GET /rules
-func (c *Client) RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error) {
+func (c *Client) RulesList(ctx context.Context, params RulesListParams) (*RulesListOK, error) {
 	res, err := c.sendRulesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRulesList(ctx context.Context, params RulesListParams) (res RulesListRes, err error) {
+func (c *Client) sendRulesList(ctx context.Context, params RulesListParams) (res *RulesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10670,12 +10670,12 @@ func (c *Client) sendRulesList(ctx context.Context, params RulesListParams) (res
 // neither draft nor live version. Needs the automations:publish scope.
 //
 // POST /rules/{id}/publish
-func (c *Client) RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error) {
+func (c *Client) RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error) {
 	res, err := c.sendRulesPublish(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams) (res RulesPublishRes, err error) {
+func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10806,12 +10806,12 @@ func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams
 // Needs the automations:write scope.
 //
 // POST /rules/{id}/revert
-func (c *Client) RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error) {
+func (c *Client) RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error) {
 	res, err := c.sendRulesRevert(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) (res RulesRevertRes, err error) {
+func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10941,12 +10941,12 @@ func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) 
 // Update a resource.
 //
 // PUT /rules/{id}
-func (c *Client) RulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (RulesUpdateRes, error) {
+func (c *Client) RulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (*RuleResource, error) {
 	res, err := c.sendRulesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendRulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (res RulesUpdateRes, err error) {
+func (c *Client) sendRulesUpdate(ctx context.Context, request *UpdateRuleInput, params RulesUpdateParams) (res *RuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Rules_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -11079,12 +11079,12 @@ func (c *Client) sendRulesUpdate(ctx context.Context, request *UpdateRuleInput, 
 // with 409 while live work uses it.
 //
 // POST /segments/{id}/archive
-func (c *Client) SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (SegmentsArchiveRes, error) {
+func (c *Client) SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (*SegmentResource, error) {
 	res, err := c.sendSegmentsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (res SegmentsArchiveRes, err error) {
+func (c *Client) sendSegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (res *SegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -11214,12 +11214,12 @@ func (c *Client) sendSegmentsArchive(ctx context.Context, params SegmentsArchive
 // Create a resource.
 //
 // POST /segments
-func (c *Client) SegmentsCreate(ctx context.Context, request *CreateSegmentInput) (SegmentsCreateRes, error) {
+func (c *Client) SegmentsCreate(ctx context.Context, request *CreateSegmentInput) (*SegmentResource, error) {
 	res, err := c.sendSegmentsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSegmentsCreate(ctx context.Context, request *CreateSegmentInput) (res SegmentsCreateRes, err error) {
+func (c *Client) sendSegmentsCreate(ctx context.Context, request *CreateSegmentInput) (res *SegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -11330,12 +11330,12 @@ func (c *Client) sendSegmentsCreate(ctx context.Context, request *CreateSegmentI
 // Get a resource by ID.
 //
 // GET /segments/{id}
-func (c *Client) SegmentsGet(ctx context.Context, params SegmentsGetParams) (SegmentsGetRes, error) {
+func (c *Client) SegmentsGet(ctx context.Context, params SegmentsGetParams) (*SegmentResource, error) {
 	res, err := c.sendSegmentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSegmentsGet(ctx context.Context, params SegmentsGetParams) (res SegmentsGetRes, err error) {
+func (c *Client) sendSegmentsGet(ctx context.Context, params SegmentsGetParams) (res *SegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11464,12 +11464,12 @@ func (c *Client) sendSegmentsGet(ctx context.Context, params SegmentsGetParams) 
 // List resources with pagination.
 //
 // GET /segments
-func (c *Client) SegmentsList(ctx context.Context, params SegmentsListParams) (SegmentsListRes, error) {
+func (c *Client) SegmentsList(ctx context.Context, params SegmentsListParams) (*SegmentsListOK, error) {
 	res, err := c.sendSegmentsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSegmentsList(ctx context.Context, params SegmentsListParams) (res SegmentsListRes, err error) {
+func (c *Client) sendSegmentsList(ctx context.Context, params SegmentsListParams) (res *SegmentsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11632,12 +11632,12 @@ func (c *Client) sendSegmentsList(ctx context.Context, params SegmentsListParams
 // Count the contacts matching an unsaved rule definition.
 //
 // POST /segments/preview
-func (c *Client) SegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (SegmentsPreviewRes, error) {
+func (c *Client) SegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (*PreviewSegmentResult, error) {
 	res, err := c.sendSegmentsPreview(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (res SegmentsPreviewRes, err error) {
+func (c *Client) sendSegmentsPreview(ctx context.Context, request *PreviewSegmentInput) (res *PreviewSegmentResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_preview"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -11748,12 +11748,12 @@ func (c *Client) sendSegmentsPreview(ctx context.Context, request *PreviewSegmen
 // Restore an archived resource.
 //
 // POST /segments/{id}/unarchive
-func (c *Client) SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (SegmentsUnarchiveRes, error) {
+func (c *Client) SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (*SegmentResource, error) {
 	res, err := c.sendSegmentsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (res SegmentsUnarchiveRes, err error) {
+func (c *Client) sendSegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (res *SegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -11883,12 +11883,12 @@ func (c *Client) sendSegmentsUnarchive(ctx context.Context, params SegmentsUnarc
 // Update a resource.
 //
 // PUT /segments/{id}
-func (c *Client) SegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (SegmentsUpdateRes, error) {
+func (c *Client) SegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (*SegmentResource, error) {
 	res, err := c.sendSegmentsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (res SegmentsUpdateRes, err error) {
+func (c *Client) sendSegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SegmentsUpdateParams) (res *SegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Segments_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12020,12 +12020,12 @@ func (c *Client) sendSegmentsUpdate(ctx context.Context, request *UpdateSegmentI
 // Complaint and bounce rates per sending domain over a trailing window.
 //
 // GET /sending-domains/rates
-func (c *Client) SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error) {
+func (c *Client) SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (*SendingDomainRatesListOK, error) {
 	res, err := c.sendSendingDomainRatesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (res SendingDomainRatesListRes, err error) {
+func (c *Client) sendSendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (res *SendingDomainRatesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomainRates_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12154,12 +12154,12 @@ func (c *Client) sendSendingDomainRatesList(ctx context.Context, params SendingD
 // Create a resource.
 //
 // POST /sending-domains
-func (c *Client) SendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (SendingDomainsCreateRes, error) {
+func (c *Client) SendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (*SendingDomainResource, error) {
 	res, err := c.sendSendingDomainsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (res SendingDomainsCreateRes, err error) {
+func (c *Client) sendSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -12272,12 +12272,12 @@ func (c *Client) sendSendingDomainsCreate(ctx context.Context, request *CreateSe
 // sends from it.
 //
 // DELETE /sending-domains/{id}
-func (c *Client) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (SendingDomainsDeleteRes, error) {
-	res, err := c.sendSendingDomainsDelete(ctx, params)
-	return res, err
+func (c *Client) SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) error {
+	_, err := c.sendSendingDomainsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (res SendingDomainsDeleteRes, err error) {
+func (c *Client) sendSendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (res *SendingDomainsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -12406,12 +12406,12 @@ func (c *Client) sendSendingDomainsDelete(ctx context.Context, params SendingDom
 // Get a resource by ID.
 //
 // GET /sending-domains/{id}
-func (c *Client) SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (SendingDomainsGetRes, error) {
+func (c *Client) SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (*SendingDomainResource, error) {
 	res, err := c.sendSendingDomainsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (res SendingDomainsGetRes, err error) {
+func (c *Client) sendSendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12540,12 +12540,12 @@ func (c *Client) sendSendingDomainsGet(ctx context.Context, params SendingDomain
 // List resources with pagination.
 //
 // GET /sending-domains
-func (c *Client) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error) {
+func (c *Client) SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (*SendingDomainsListOK, error) {
 	res, err := c.sendSendingDomainsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomainsListParams) (res SendingDomainsListRes, err error) {
+func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomainsListParams) (res *SendingDomainsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12691,12 +12691,12 @@ func (c *Client) sendSendingDomainsList(ctx context.Context, params SendingDomai
 // Update a Sending domain; a deleted one is read-only and answers 404.
 //
 // PUT /sending-domains/{id}
-func (c *Client) SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error) {
+func (c *Client) SendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (*SendingDomainResource, error) {
 	res, err := c.sendSendingDomainsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (res SendingDomainsUpdateRes, err error) {
+func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12830,12 +12830,12 @@ func (c *Client) sendSendingDomainsUpdate(ctx context.Context, request *UpdateSe
 // again (404).
 //
 // POST /sending-domains/{id}/verify
-func (c *Client) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error) {
+func (c *Client) SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (*SendingDomainResource, error) {
 	res, err := c.sendSendingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (res SendingDomainsVerifyRes, err error) {
+func (c *Client) sendSendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SendingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -12968,12 +12968,12 @@ func (c *Client) sendSendingDomainsVerify(ctx context.Context, params SendingDom
 // the contact has now.
 //
 // GET /contacts/{contactId}/sms-consent
-func (c *Client) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (SmsConsentsGetRes, error) {
+func (c *Client) SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (*SmsConsent, error) {
 	res, err := c.sendSmsConsentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (res SmsConsentsGetRes, err error) {
+func (c *Client) sendSmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (res *SmsConsent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SmsConsents_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13105,12 +13105,12 @@ func (c *Client) sendSmsConsentsGet(ctx context.Context, params SmsConsentsGetPa
 // available through the API.
 //
 // POST /suppressions
-func (c *Client) SuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (SuppressionsCreateRes, error) {
+func (c *Client) SuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (*SuppressionResource, error) {
 	res, err := c.sendSuppressionsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (res SuppressionsCreateRes, err error) {
+func (c *Client) sendSuppressionsCreate(ctx context.Context, request *CreateSuppressionInput) (res *SuppressionResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Suppressions_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -13221,12 +13221,12 @@ func (c *Client) sendSuppressionsCreate(ctx context.Context, request *CreateSupp
 // Apply a tag to a contact, creating the tag on first use. Idempotent.
 //
 // POST /contacts/{contactId}/tags
-func (c *Client) TagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (TagsApplyRes, error) {
+func (c *Client) TagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (*TagResource, error) {
 	res, err := c.sendTagsApply(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendTagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (res TagsApplyRes, err error) {
+func (c *Client) sendTagsApply(ctx context.Context, request *ApplyTagInput, params TagsApplyParams) (res *TagResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Tags_apply"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -13360,12 +13360,12 @@ func (c *Client) sendTagsApply(ctx context.Context, request *ApplyTagInput, para
 // the users.
 //
 // DELETE /tags/{id}
-func (c *Client) TagsDelete(ctx context.Context, params TagsDeleteParams) (TagsDeleteRes, error) {
-	res, err := c.sendTagsDelete(ctx, params)
-	return res, err
+func (c *Client) TagsDelete(ctx context.Context, params TagsDeleteParams) error {
+	_, err := c.sendTagsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendTagsDelete(ctx context.Context, params TagsDeleteParams) (res TagsDeleteRes, err error) {
+func (c *Client) sendTagsDelete(ctx context.Context, params TagsDeleteParams) (res *TagsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Tags_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -13494,12 +13494,12 @@ func (c *Client) sendTagsDelete(ctx context.Context, params TagsDeleteParams) (r
 // List the workspace's tags.
 //
 // GET /tags
-func (c *Client) TagsList(ctx context.Context, params TagsListParams) (TagsListRes, error) {
+func (c *Client) TagsList(ctx context.Context, params TagsListParams) (*TagsListOK, error) {
 	res, err := c.sendTagsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendTagsList(ctx context.Context, params TagsListParams) (res TagsListRes, err error) {
+func (c *Client) sendTagsList(ctx context.Context, params TagsListParams) (res *TagsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Tags_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13645,12 +13645,12 @@ func (c *Client) sendTagsList(ctx context.Context, params TagsListParams) (res T
 // List the tags a contact has.
 //
 // GET /contacts/{contactId}/tags
-func (c *Client) TagsListForContact(ctx context.Context, params TagsListForContactParams) (TagsListForContactRes, error) {
+func (c *Client) TagsListForContact(ctx context.Context, params TagsListForContactParams) (*TagsListForContactOK, error) {
 	res, err := c.sendTagsListForContact(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendTagsListForContact(ctx context.Context, params TagsListForContactParams) (res TagsListForContactRes, err error) {
+func (c *Client) sendTagsListForContact(ctx context.Context, params TagsListForContactParams) (res *TagsListForContactOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Tags_listForContact"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13818,12 +13818,12 @@ func (c *Client) sendTagsListForContact(ctx context.Context, params TagsListForC
 // Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 //
 // DELETE /contacts/{contactId}/tags/{name}
-func (c *Client) TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error) {
-	res, err := c.sendTagsRemove(ctx, params)
-	return res, err
+func (c *Client) TagsRemove(ctx context.Context, params TagsRemoveParams) error {
+	_, err := c.sendTagsRemove(ctx, params)
+	return err
 }
 
-func (c *Client) sendTagsRemove(ctx context.Context, params TagsRemoveParams) (res TagsRemoveRes, err error) {
+func (c *Client) sendTagsRemove(ctx context.Context, params TagsRemoveParams) (res *TagsRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Tags_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -13972,12 +13972,12 @@ func (c *Client) sendTagsRemove(ctx context.Context, params TagsRemoveParams) (r
 // binds to the contact, once. Each call issues a new link.
 //
 // POST /contacts/{contactId}/telegram-start-links
-func (c *Client) TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error) {
+func (c *Client) TelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (*TelegramStartLinkResource, error) {
 	res, err := c.sendTelegramStartLinksIssue(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendTelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (res TelegramStartLinksIssueRes, err error) {
+func (c *Client) sendTelegramStartLinksIssue(ctx context.Context, request *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (res *TelegramStartLinkResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("TelegramStartLinks_issue"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -14110,12 +14110,12 @@ func (c *Client) sendTelegramStartLinksIssue(ctx context.Context, request *Issue
 // Create a resource.
 //
 // POST /templates
-func (c *Client) TemplatesCreate(ctx context.Context, request *CreateTemplateInput) (TemplatesCreateRes, error) {
+func (c *Client) TemplatesCreate(ctx context.Context, request *CreateTemplateInput) (*TemplateResource, error) {
 	res, err := c.sendTemplatesCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendTemplatesCreate(ctx context.Context, request *CreateTemplateInput) (res TemplatesCreateRes, err error) {
+func (c *Client) sendTemplatesCreate(ctx context.Context, request *CreateTemplateInput) (res *TemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Templates_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -14226,12 +14226,12 @@ func (c *Client) sendTemplatesCreate(ctx context.Context, request *CreateTemplat
 // Delete a resource.
 //
 // DELETE /templates/{id}
-func (c *Client) TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (TemplatesDeleteRes, error) {
-	res, err := c.sendTemplatesDelete(ctx, params)
-	return res, err
+func (c *Client) TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) error {
+	_, err := c.sendTemplatesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendTemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (res TemplatesDeleteRes, err error) {
+func (c *Client) sendTemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (res *TemplatesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Templates_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -14360,12 +14360,12 @@ func (c *Client) sendTemplatesDelete(ctx context.Context, params TemplatesDelete
 // Get a resource by ID.
 //
 // GET /templates/{id}
-func (c *Client) TemplatesGet(ctx context.Context, params TemplatesGetParams) (TemplatesGetRes, error) {
+func (c *Client) TemplatesGet(ctx context.Context, params TemplatesGetParams) (*TemplateResource, error) {
 	res, err := c.sendTemplatesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendTemplatesGet(ctx context.Context, params TemplatesGetParams) (res TemplatesGetRes, err error) {
+func (c *Client) sendTemplatesGet(ctx context.Context, params TemplatesGetParams) (res *TemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Templates_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14494,12 +14494,12 @@ func (c *Client) sendTemplatesGet(ctx context.Context, params TemplatesGetParams
 // List resources with pagination.
 //
 // GET /templates
-func (c *Client) TemplatesList(ctx context.Context, params TemplatesListParams) (TemplatesListRes, error) {
+func (c *Client) TemplatesList(ctx context.Context, params TemplatesListParams) (*TemplatesListOK, error) {
 	res, err := c.sendTemplatesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendTemplatesList(ctx context.Context, params TemplatesListParams) (res TemplatesListRes, err error) {
+func (c *Client) sendTemplatesList(ctx context.Context, params TemplatesListParams) (res *TemplatesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Templates_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14645,12 +14645,12 @@ func (c *Client) sendTemplatesList(ctx context.Context, params TemplatesListPara
 // Update a resource.
 //
 // PUT /templates/{id}
-func (c *Client) TemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (TemplatesUpdateRes, error) {
+func (c *Client) TemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (*TemplateResource, error) {
 	res, err := c.sendTemplatesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (res TemplatesUpdateRes, err error) {
+func (c *Client) sendTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params TemplatesUpdateParams) (res *TemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Templates_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -14783,12 +14783,12 @@ func (c *Client) sendTemplatesUpdate(ctx context.Context, request *UpdateTemplat
 // Empty while the Instance offers none.
 //
 // GET /tracking-domains
-func (c *Client) TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error) {
+func (c *Client) TrackingDomainsList(ctx context.Context) ([]TrackingDomainResource, error) {
 	res, err := c.sendTrackingDomainsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendTrackingDomainsList(ctx context.Context) (res TrackingDomainsListRes, err error) {
+func (c *Client) sendTrackingDomainsList(ctx context.Context) (res []TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("TrackingDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14899,12 +14899,12 @@ func (c *Client) sendTrackingDomainsList(ctx context.Context) (res TrackingDomai
 // it stop working.
 //
 // DELETE /tracking-domains/{id}
-func (c *Client) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error) {
-	res, err := c.sendTrackingDomainsRemove(ctx, params)
-	return res, err
+func (c *Client) TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) error {
+	_, err := c.sendTrackingDomainsRemove(ctx, params)
+	return err
 }
 
-func (c *Client) sendTrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (res TrackingDomainsRemoveRes, err error) {
+func (c *Client) sendTrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (res *TrackingDomainsRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("TrackingDomains_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -15037,12 +15037,12 @@ func (c *Client) sendTrackingDomainsRemove(ctx context.Context, params TrackingD
 // 422; 404 when the Instance offers no Tracking domains.
 //
 // POST /tracking-domains
-func (c *Client) TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (TrackingDomainsSetRes, error) {
+func (c *Client) TrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (*TrackingDomainResource, error) {
 	res, err := c.sendTrackingDomainsSet(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (res TrackingDomainsSetRes, err error) {
+func (c *Client) sendTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput) (res *TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("TrackingDomains_set"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15154,12 +15154,12 @@ func (c *Client) sendTrackingDomainsSet(ctx context.Context, request *SetTrackin
 // replacement that reaches `serving` becomes current. Verification is never set by the caller.
 //
 // POST /tracking-domains/{id}/verify
-func (c *Client) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error) {
+func (c *Client) TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (*TrackingDomainResource, error) {
 	res, err := c.sendTrackingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendTrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (res TrackingDomainsVerifyRes, err error) {
+func (c *Client) sendTrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (res *TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("TrackingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15290,12 +15290,12 @@ func (c *Client) sendTrackingDomainsVerify(ctx context.Context, params TrackingD
 // that reached you by any route. Idempotent. Resubscribing is not available through the API.
 //
 // POST /unsubscribes
-func (c *Client) UnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (UnsubscribesCreateRes, error) {
+func (c *Client) UnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (*UnsubscribeResource, error) {
 	res, err := c.sendUnsubscribesCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendUnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (res UnsubscribesCreateRes, err error) {
+func (c *Client) sendUnsubscribesCreate(ctx context.Context, request *CreateUnsubscribeInput) (res *UnsubscribeResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Unsubscribes_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15406,12 +15406,12 @@ func (c *Client) sendUnsubscribesCreate(ctx context.Context, request *CreateUnsu
 // Create a resource.
 //
 // POST /webhooks
-func (c *Client) WebhooksCreate(ctx context.Context, request *CreateWebhookInput) (WebhooksCreateRes, error) {
+func (c *Client) WebhooksCreate(ctx context.Context, request *CreateWebhookInput) (*WebhookResource, error) {
 	res, err := c.sendWebhooksCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendWebhooksCreate(ctx context.Context, request *CreateWebhookInput) (res WebhooksCreateRes, err error) {
+func (c *Client) sendWebhooksCreate(ctx context.Context, request *CreateWebhookInput) (res *WebhookResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15522,12 +15522,12 @@ func (c *Client) sendWebhooksCreate(ctx context.Context, request *CreateWebhookI
 // Delete a resource.
 //
 // DELETE /webhooks/{id}
-func (c *Client) WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (WebhooksDeleteRes, error) {
-	res, err := c.sendWebhooksDelete(ctx, params)
-	return res, err
+func (c *Client) WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) error {
+	_, err := c.sendWebhooksDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendWebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (res WebhooksDeleteRes, err error) {
+func (c *Client) sendWebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (res *WebhooksDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -15656,12 +15656,12 @@ func (c *Client) sendWebhooksDelete(ctx context.Context, params WebhooksDeletePa
 // Get a resource by ID.
 //
 // GET /webhooks/{id}
-func (c *Client) WebhooksGet(ctx context.Context, params WebhooksGetParams) (WebhooksGetRes, error) {
+func (c *Client) WebhooksGet(ctx context.Context, params WebhooksGetParams) (*WebhookResource, error) {
 	res, err := c.sendWebhooksGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendWebhooksGet(ctx context.Context, params WebhooksGetParams) (res WebhooksGetRes, err error) {
+func (c *Client) sendWebhooksGet(ctx context.Context, params WebhooksGetParams) (res *WebhookResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15790,12 +15790,12 @@ func (c *Client) sendWebhooksGet(ctx context.Context, params WebhooksGetParams) 
 // List resources with pagination.
 //
 // GET /webhooks
-func (c *Client) WebhooksList(ctx context.Context, params WebhooksListParams) (WebhooksListRes, error) {
+func (c *Client) WebhooksList(ctx context.Context, params WebhooksListParams) (*WebhooksListOK, error) {
 	res, err := c.sendWebhooksList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendWebhooksList(ctx context.Context, params WebhooksListParams) (res WebhooksListRes, err error) {
+func (c *Client) sendWebhooksList(ctx context.Context, params WebhooksListParams) (res *WebhooksListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15942,12 +15942,12 @@ func (c *Client) sendWebhooksList(ctx context.Context, params WebhooksListParams
 // returned here: read it in the app. Needs the webhooks:regenerate scope.
 //
 // POST /webhooks/{id}/regenerate-secret
-func (c *Client) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (WebhooksRegenerateSecretRes, error) {
+func (c *Client) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (*WebhookResource, error) {
 	res, err := c.sendWebhooksRegenerateSecret(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendWebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (res WebhooksRegenerateSecretRes, err error) {
+func (c *Client) sendWebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (res *WebhookResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_regenerateSecret"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -16078,12 +16078,12 @@ func (c *Client) sendWebhooksRegenerateSecret(ctx context.Context, params Webhoo
 // Does not change the endpoint's failure state. Needs the webhooks:test scope.
 //
 // POST /webhooks/{id}/test
-func (c *Client) WebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (WebhooksTestRes, error) {
+func (c *Client) WebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (*WebhookTestResult, error) {
 	res, err := c.sendWebhooksTest(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendWebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (res WebhooksTestRes, err error) {
+func (c *Client) sendWebhooksTest(ctx context.Context, request *TestWebhookInput, params WebhooksTestParams) (res *WebhookTestResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_test"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -16216,12 +16216,12 @@ func (c *Client) sendWebhooksTest(ctx context.Context, request *TestWebhookInput
 // Update a resource.
 //
 // PUT /webhooks/{id}
-func (c *Client) WebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (WebhooksUpdateRes, error) {
+func (c *Client) WebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (*WebhookResource, error) {
 	res, err := c.sendWebhooksUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (res WebhooksUpdateRes, err error) {
+func (c *Client) sendWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (res *WebhookResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Webhooks_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -16355,12 +16355,12 @@ func (c *Client) sendWebhooksUpdate(ctx context.Context, request *UpdateWebhookI
 // more than a day. Read-only: no operation changes the Send cap.
 //
 // GET /workspace
-func (c *Client) WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error) {
+func (c *Client) WorkspaceGet(ctx context.Context) (*WorkspaceResource, error) {
 	res, err := c.sendWorkspaceGet(ctx)
 	return res, err
 }
 
-func (c *Client) sendWorkspaceGet(ctx context.Context) (res WorkspaceGetRes, err error) {
+func (c *Client) sendWorkspaceGet(ctx context.Context) (res *WorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("Workspace_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),

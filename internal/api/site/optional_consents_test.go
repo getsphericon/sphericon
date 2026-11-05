@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -38,13 +39,11 @@ func optionalConsents(t *testing.T, site *siteapi.Client) []string {
 	})
 }
 
-func setOptionalConsent(t *testing.T, site *siteapi.Client, key, version string, accepted bool) siteapi.SiteOptionalConsentsSetRes {
+func setOptionalConsent(t *testing.T, site *siteapi.Client, key, version string, accepted bool) (*siteapi.SiteOptionalConsent, error) {
 	t.Helper()
-	res, err := site.SiteOptionalConsentsSet(t.Context(), &siteapi.SiteOptionalConsentChange{
+	return site.SiteOptionalConsentsSet(t.Context(), &siteapi.SiteOptionalConsentChange{
 		Version: siteapi.LegalDocumentLabel(version), Accepted: accepted,
 	}, siteapi.SiteOptionalConsentsSetParams{Key: siteapi.SignupItemKey(key)})
-	require.NoError(t, err)
-	return res
 }
 
 func TestTheReadListsEachOptionalConsentInEffectWithTheUsersCurrentAnswer(t *testing.T) {
@@ -88,15 +87,15 @@ func TestGivingAndWithdrawingAConsentEachChangeTheCurrentAnswer(t *testing.T) {
 	withSignupItemsAccepted(t, env)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	given := setOptionalConsent(t, mary, fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, true)
+	given, err := setOptionalConsent(t, mary, fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, true)
+	require.NoError(t, err)
 	afterGiving := optionalConsents(t, mary)
-	withdrawn := setOptionalConsent(t, mary, fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, false)
+	_, err = setOptionalConsent(t, mary, fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, false)
+	require.NoError(t, err)
 	afterWithdrawing := optionalConsents(t, mary)
 
-	require.IsType(t, &siteapi.SiteOptionalConsent{}, given)
-	assert.Equal(t, siteapi.SiteOptionalConsentDecisionAccepted, given.(*siteapi.SiteOptionalConsent).Decision.Value)
+	assert.Equal(t, siteapi.SiteOptionalConsentDecisionAccepted, given.Decision.Value)
 	assert.Equal(t, []string{fixtures.OperatorNewsKey + ": accepted"}, afterGiving)
-	require.IsType(t, &siteapi.SiteOptionalConsent{}, withdrawn)
 	assert.Equal(t, []string{fixtures.OperatorNewsKey + ": withdrawn"}, afterWithdrawing)
 }
 
@@ -104,7 +103,8 @@ func TestAChangeIsRecordedWithTheSourceAccountSettings(t *testing.T) {
 	env := testhelper.Setup(t)
 	withSignupItemsAccepted(t, env)
 
-	setOptionalConsent(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, true)
+	_, err := setOptionalConsent(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, true)
+	require.NoError(t, err)
 
 	records, err := env.ConsentRecords.Current(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
@@ -125,9 +125,9 @@ func TestARequiredAcceptanceOrANoticeCannotBeChangedInAccountSettings(t *testing
 	}
 	for name, item := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := setOptionalConsent(t, mary, item[0], item[1], false)
+			_, err := setOptionalConsent(t, mary, item[0], item[1], false)
 
-			require.IsType(t, &siteapi.SiteOptionalConsentsSetUnprocessableEntity{}, res)
+			testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, before, currentAnswers(t, env, fixtures.MemberMaryID))
 		})
 	}
@@ -138,10 +138,9 @@ func TestAChangeOnAStaleVersionIsRefusedAndRecordsNothing(t *testing.T) {
 	withSignupItemsAccepted(t, env)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res := setOptionalConsent(t, mary, fixtures.OperatorNewsKey, "an-older-version", true)
+	_, err := setOptionalConsent(t, mary, fixtures.OperatorNewsKey, "an-older-version", true)
 
-	problem, ok := res.(*siteapi.SiteOptionalConsentsSetUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, []string{"version"}, lo.Keys(problem.Errors.Value))
 	assert.Equal(t, []string{fixtures.OperatorNewsKey + ": declined"}, optionalConsents(t, mary))
 }
@@ -157,9 +156,9 @@ func TestAConsentNotInEffectIsNotFound(t *testing.T) {
 	}
 	for name, key := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := setOptionalConsent(t, mary, key, fixtures.OperatorNewsCurrentLabel, true)
+			_, err := setOptionalConsent(t, mary, key, fixtures.OperatorNewsCurrentLabel, true)
 
-			require.IsType(t, &siteapi.SiteOptionalConsentsSetNotFound{}, res)
+			testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		})
 	}
 }

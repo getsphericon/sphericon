@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Unsubscribe is the model entity for the Unsubscribe schema.
@@ -26,7 +27,7 @@ type Unsubscribe struct {
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel unsubscribe.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
 	// SendingSource holds the value of the "sending_source" field.
@@ -128,7 +129,7 @@ func (_m *Unsubscribe) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = unsubscribe.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case unsubscribe.FieldDestination:
 			if value, ok := values[i].(*sql.NullString); !ok {

@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 
@@ -31,10 +32,9 @@ func surveyOn(t *testing.T, opts ...testhelper.Option) *testhelper.TestEnv {
 
 func signUpForSurvey(t *testing.T, env *testhelper.TestEnv) *siteapi.Client {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(),
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(),
 		&siteapi.SiteSignUpInput{Name: "Newcomer", Email: surveyEmail, Password: siteapi.NewOptString(formPassword)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
 	return env.SiteActor(t, surveyEmail)
 }
 
@@ -53,11 +53,9 @@ func validAnswers() *siteapi.SiteSignupSurveyInput {
 	}
 }
 
-func submitSurvey(t *testing.T, c *siteapi.Client, in *siteapi.SiteSignupSurveyInput) siteapi.SiteSignupSurveySubmitRes {
+func submitSurvey(t *testing.T, c *siteapi.Client, in *siteapi.SiteSignupSurveyInput) error {
 	t.Helper()
-	res, err := c.SiteSignupSurveySubmit(t.Context(), in)
-	require.NoError(t, err)
-	return res
+	return c.SiteSignupSurveySubmit(t.Context(), in)
 }
 
 func responseOf(t *testing.T, env *testhelper.TestEnv, email string) *ent.SignupSurveyResponse {
@@ -81,11 +79,11 @@ func TestAPasswordSignUpOwesTheSurveyUntilItIsSubmitted(t *testing.T) {
 	newcomer := signUpForSurvey(t, env)
 	dueAfterSignUp := surveyDue(t, newcomer)
 
-	res := submitSurvey(t, newcomer, validAnswers())
+	err := submitSurvey(t, newcomer, validAnswers())
 	dueAfterSubmit := surveyDue(t, newcomer)
 
 	assert.True(t, dueAfterSignUp)
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitNoContent{}, res)
+	require.NoError(t, err)
 	assert.False(t, dueAfterSubmit)
 }
 
@@ -96,7 +94,7 @@ func TestSubmittingStoresTheAnswersOfTheUser(t *testing.T) {
 	in.HeardFrom = siteapi.NewOptSiteSignupSource(siteapi.SiteSignupSourceOther)
 	in.HeardFromOther = siteapi.NewOptString("a podcast")
 
-	submitSurvey(t, newcomer, in)
+	require.NoError(t, submitSurvey(t, newcomer, in))
 
 	row := responseOf(t, env, surveyEmail)
 	assert.Equal(t, signupsurveyresponse.RoleMarketer, row.Role)
@@ -110,7 +108,7 @@ func TestTheWhereDidYouHearAnswerIsOptional(t *testing.T) {
 	env := surveyOn(t)
 	newcomer := signUpForSurvey(t, env)
 
-	submitSurvey(t, newcomer, validAnswers())
+	require.NoError(t, submitSurvey(t, newcomer, validAnswers()))
 
 	row := responseOf(t, env, surveyEmail)
 	assert.Nil(t, row.HeardFrom)
@@ -119,13 +117,13 @@ func TestTheWhereDidYouHearAnswerIsOptional(t *testing.T) {
 func TestASecondSubmitIsRefusedAndKeepsTheFirstAnswers(t *testing.T) {
 	env := surveyOn(t)
 	newcomer := signUpForSurvey(t, env)
-	submitSurvey(t, newcomer, validAnswers())
+	require.NoError(t, submitSurvey(t, newcomer, validAnswers()))
 	again := validAnswers()
 	again.Role = siteapi.SiteSignupRoleFounder
 
-	res := submitSurvey(t, newcomer, again)
+	err := submitSurvey(t, newcomer, again)
 
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitConflict{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	row := responseOf(t, env, surveyEmail)
 	assert.Equal(t, signupsurveyresponse.RoleMarketer, row.Role)
 }
@@ -135,10 +133,10 @@ func TestAUserWhoAnsweredIsNeverDueAndCannotSubmitAgain(t *testing.T) {
 	ann := env.SiteActor(t, fixtures.SurveyAnsweredAnnEmail)
 
 	due := surveyDue(t, ann)
-	res := submitSurvey(t, ann, validAnswers())
+	err := submitSurvey(t, ann, validAnswers())
 
 	assert.False(t, due)
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitConflict{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 }
 
 func TestAnInstanceInTheSelfHostedModeNeverAsks(t *testing.T) {
@@ -146,10 +144,10 @@ func TestAnInstanceInTheSelfHostedModeNeverAsks(t *testing.T) {
 	newcomer := signUpForSurvey(t, env)
 
 	due := surveyDue(t, newcomer)
-	res := submitSurvey(t, newcomer, validAnswers())
+	err := submitSurvey(t, newcomer, validAnswers())
 
 	assert.False(t, due)
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitConflict{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 }
 
 func TestAnInstanceWithoutTheStaffLicenseNeverAsks(t *testing.T) {
@@ -173,11 +171,10 @@ func TestAUserWhoVerifiesTheirAddressOwesTheSurveyToo(t *testing.T) {
 func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
 	token := fixtures.InvitationAcmeSurveyToken
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
 	due := surveyDue(t, env.SiteActor(t, surveyEmail))
 
@@ -221,10 +218,9 @@ func TestASubmitOutsideTheContractStoresNothingAndKeepsTheSurveyDue(t *testing.T
 			env := surveyOn(t)
 			newcomer := signUpForSurvey(t, env)
 
-			res, err := newcomer.SiteSignupSurveySubmit(t.Context(), in)
+			err := newcomer.SiteSignupSurveySubmit(t.Context(), in)
 
-			require.NoError(t, err)
-			assert.IsType(t, &siteapi.SiteSignupSurveySubmitBadRequest{}, res)
+			testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 			assert.False(t, hasResponse(t, env, surveyEmail))
 			assert.True(t, surveyDue(t, newcomer))
 		})
@@ -237,9 +233,9 @@ func TestAnOtherTextWithoutItsOtherChoiceIsRefusedAndStoresNothing(t *testing.T)
 	in := validAnswers()
 	in.RoleOther = siteapi.NewOptString("something")
 
-	res := submitSurvey(t, newcomer, in)
+	err := submitSurvey(t, newcomer, in)
 
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.False(t, hasResponse(t, env, surveyEmail))
 	assert.True(t, surveyDue(t, newcomer))
 }
@@ -248,12 +244,12 @@ func TestDeletingTheUserRemovesTheirSurveyAnswers(t *testing.T) {
 	env := surveyOn(t)
 	ann := env.SiteActor(t, fixtures.SurveyAnsweredAnnEmail)
 
-	res := deleteUser(t, ann, &siteapi.SiteDeleteUserInput{
+	err := deleteUser(t, ann, &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.SurveyAnsweredAnnEmail,
 		CurrentPassword: siteapi.NewOptString("password"),
 	})
 
-	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
+	require.NoError(t, err)
 	left, err := env.DB.SignupSurveyResponse.Get(t.Context(), fixtures.AnnSurveyResponseID)
 	assert.Nil(t, left)
 	assert.True(t, ent.IsNotFound(err))
@@ -264,12 +260,11 @@ func TestAnUnverifiedUserWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
 	signUpLink(t, env, "Newcomer", surveyEmail)
 	token := fixtures.InvitationAcmeSurveyToken
 
-	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+	err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 	assert.False(t, surveyDue(t, env.SiteActor(t, surveyEmail)))
 }
 
@@ -297,9 +292,9 @@ func TestASubmitIsRefusedWhenTheInstanceNoLongerAsks(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	dan := env.SiteActor(t, fixtures.SurveyDueDanEmail)
 
-	res := submitSurvey(t, dan, validAnswers())
+	err := submitSurvey(t, dan, validAnswers())
 
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitConflict{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.False(t, hasResponse(t, env, fixtures.SurveyDueDanEmail))
 }
 
@@ -310,9 +305,9 @@ func TestABlankOtherTextIsRefusedAndStoresNothing(t *testing.T) {
 	in.Role = siteapi.SiteSignupRoleOther
 	in.RoleOther = siteapi.NewOptString("   ")
 
-	res := submitSurvey(t, newcomer, in)
+	err := submitSurvey(t, newcomer, in)
 
-	assert.IsType(t, &siteapi.SiteSignupSurveySubmitUnprocessableEntity{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.False(t, hasResponse(t, env, surveyEmail))
 	assert.True(t, surveyDue(t, newcomer))
 }

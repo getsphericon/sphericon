@@ -200,27 +200,13 @@ interface Rules
   @action("publish")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsPublish])
-  publish(...ResourceParameters<RuleResource>):
-    | RuleResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  publish(...ResourceParameters<RuleResource>): RuleResource | Problem;
 
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
-  revert(...ResourceParameters<RuleResource>):
-    | RuleResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  revert(...ResourceParameters<RuleResource>): RuleResource | Problem;
 
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope. */
   @action("dry-run")
@@ -228,23 +214,13 @@ interface Rules
   @requiresScopes(#[ApiTokenScope.automationsRead])
   dryRun(...ResourceParameters<RuleResource>, @body body: DryRunRuleInput):
     | RuleDryRunResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Deactivate a Rule: it stops firing. Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.automationsWrite])
-  deactivate(...ResourceParameters<RuleResource>):
-    | RuleResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  deactivate(...ResourceParameters<RuleResource>): RuleResource | Problem;
 }
 
 /** One execution of a Rule for one Event, with what each Action did. Erased with the Contact. */
@@ -282,9 +258,5 @@ namespace RuleFirings {
   @requiresScopes(#[ApiTokenScope.automationsRead])
   op list(@path ruleId: EntityId, ...PageQuery):
     | Page<RuleFiringResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 }

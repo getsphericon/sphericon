@@ -2,6 +2,7 @@ package jobs_test
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -63,7 +65,7 @@ func mustInt(t *testing.T, s string) int64 {
 func optedOut(t *testing.T, env *testhelper.TestEnv, user int64) bool {
 	t.Helper()
 	return env.DB.Unsubscribe.Query().Where(
-		unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram), unsubscribe.Destination(strconv.FormatInt(user, 10)),
+		unsubscribe.ChannelEQ(channels.Telegram), unsubscribe.Destination(strconv.FormatInt(user, 10)),
 		unsubscribe.SendingSource(eligibility.SourceEverything),
 	).ExistX(t.Context())
 }
@@ -100,7 +102,7 @@ func TestEachWayToStopIsTheChannelWideOptOutAndTelegramUnsubscribed(t *testing.T
 
 			assert.True(t, optedOut(t, env, optOutUser))
 			row := env.DB.Unsubscribe.Query().Where(
-				unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram), unsubscribe.Destination(strconv.FormatInt(optOutUser, 10)),
+				unsubscribe.ChannelEQ(channels.Telegram), unsubscribe.Destination(strconv.FormatInt(optOutUser, 10)),
 			).OnlyX(t.Context())
 			assert.Equal(t, w.via, string(lo.FromPtr(row.Via)), "the opt-out keeps how the person stopped")
 			recorded := env.QueuedMessages(t, events.NameTelegramUnsubscribed)
@@ -119,7 +121,7 @@ func TestStoppingTwiceRecordsOneOptOut(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "STOP"))
 	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/stop"))
 
-	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram)).CountX(t.Context()))
+	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.ChannelEQ(channels.Telegram)).CountX(t.Context()))
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil))
 }
 
@@ -306,14 +308,12 @@ func TestARecordedOptOutByHandOnTelegramCoversTheUser(t *testing.T) {
 	boundBob(t, env)
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
+	created, err := c.UnsubscribesCreate(t.Context(), &externalapi.CreateUnsubscribeInput{
 		Channel:     externalapi.NewOptConsentChannel(externalapi.ConsentChannelTelegram),
 		Destination: strconv.Itoa(optOutUser),
 	})
 
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.UnsubscribeResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.ConsentChannelTelegram, created.Channel)
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
 	assert.True(t, optedOut(t, env, optOutUser))
@@ -324,14 +324,12 @@ func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "suppressions:write")
 
-	res, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
+	created, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
 		Channel:     externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelTelegram),
 		Destination: strconv.Itoa(optOutUser),
 	})
 
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.SuppressionResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, externalapi.SuppressionChannelTelegram, created.Channel)
 	d, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelTelegram, strconv.Itoa(optOutUser), "")
 	require.NoError(t, err)
@@ -342,11 +340,10 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, "suppressions:write")
 
-	res, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
+	_, err := c.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{
 		Channel:     externalapi.NewOptSuppressionChannel(externalapi.SuppressionChannelTelegram),
 		Destination: "@alice",
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.SuppressionsCreateUnprocessableEntity), res)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

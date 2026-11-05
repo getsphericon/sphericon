@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -31,12 +32,10 @@ func smtpInput(host string) externalapi.IntegrationConfigInput {
 
 func createSMTP(t *testing.T, c *externalapi.Client, name string, isDefault bool) *externalapi.IntegrationResource {
 	t.Helper()
-	res, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+	created, err := c.IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
 		Name: name, IsDefault: externalapi.NewOptBool(isDefault), Config: smtpInput("smtp.example.com"),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	return created
 }
 
@@ -46,22 +45,18 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 	reader := env.ExternalScoped(t, "integrations:read")
 	id := entityIDString(fixtures.IntegrationAcmeSesID)
 
-	create, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateForbidden{}, create)
+	_, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	upd, err := reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("x")}, externalapi.IntegrationsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateForbidden{}, upd)
+	_, err = reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("x")}, externalapi.IntegrationsUpdateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	del, err := reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteForbidden{}, del)
+	err = reader.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	writer := env.ExternalScoped(t, "integrations:write")
-	get, err := writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsGetForbidden{}, get, "write does not imply read")
+	_, err = writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "write does not imply read")
 
 	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ID(fixtures.IntegrationAcmeSesID)).Count(ctx)
 	require.NoError(t, err)
@@ -105,13 +100,11 @@ func TestExternalIntegrationsCreateValidates(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:write")
 	ctx := context.Background()
 
-	blank, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "  ", Config: smtpInput("smtp.example.com")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, blank)
+	_, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "  ", Config: smtpInput("smtp.example.com")})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	noHost, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "no host", Config: smtpInput("")})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, noHost, "the provider's own config check runs")
+	_, err = c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "no host", Config: smtpInput("")})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "the provider's own config check runs")
 }
 
 func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
@@ -124,7 +117,7 @@ func TestExternalIntegrationsNewDefaultReplacesTheOldOne(t *testing.T) {
 
 	old, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: entityIDString(fixtures.IntegrationAcmeDefaultID)})
 	require.NoError(t, err)
-	assert.False(t, old.(*externalapi.IntegrationResource).IsDefault, "one default per channel")
+	assert.False(t, old.IsDefault, "one default per channel")
 }
 
 func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
@@ -137,13 +130,11 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	before, err := scoped.Integration().Get(ctx, fixtures.IntegrationAcmeSmtpLoginID)
 	require.NoError(t, err)
 
-	renamed, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
+	res, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
 		Name: externalapi.NewOptString("Renamed"), Enabled: externalapi.NewOptBool(false),
 		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(externalapi.MaxPerSecond(5)),
 	}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
-	res, ok := renamed.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", renamed)
 	assert.Equal(t, "Renamed", res.Name)
 	assert.False(t, res.Enabled)
 	assert.Equal(t, int32(5), res.MaxPerSecond.Value)
@@ -164,8 +155,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 		MaxPerSecond: externalapi.OptNilMaxPerSecond{Null: true, Set: true},
 	}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
-	res, ok = edited.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", edited)
+	res = edited
 	got, ok := res.Config.OneOf.GetSmtpConfig()
 	require.True(t, ok)
 	assert.Equal(t, "smtp.example.com", got.Host)
@@ -176,19 +166,17 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 
 	// Pointing the Integration at another host without the password is refused: the stored
 	// secret is never sent to a destination it was not saved for.
-	moved, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
 		externalapi.IntegrationsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, moved)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// A config of the other provider kind is refused.
 	sesCfg := externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 		Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 	})}
-	mismatch, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
 		externalapi.IntegrationsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, mismatch)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // Another Workspace's Integration is invisible and untouchable through this token.
@@ -198,17 +186,14 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	globex := entityIDString(fixtures.IntegrationGlobexID)
 
-	get, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: globex})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsGetNotFound{}, get)
+	_, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: globex})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	upd, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateNotFound{}, upd)
+	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("hijacked")}, externalapi.IntegrationsUpdateParams{ID: globex})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	del, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsDeleteNotFound{}, del)
+	err = c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: globex})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationGlobexID)
 	require.NoError(t, err)
@@ -232,22 +217,18 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 		}
 	}
 
-	bad, err := c.IntegrationsCreate(ctx, ses("not-an-arn"))
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, bad)
+	_, err := c.IntegrationsCreate(ctx, ses("not-an-arn"))
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	// An SES Integration without a topic could never receive a bounce: it is refused at save.
 	noTopic := ses("unused")
 	noTopic.Params = externalapi.OptJsonObject{}
-	missing, err := c.IntegrationsCreate(ctx, noTopic)
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, missing)
+	_, err = c.IntegrationsCreate(ctx, noTopic)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	const topic = "arn:aws:sns:eu-west-1:123456789012:ses-events"
-	res, err := c.IntegrationsCreate(ctx, ses(topic))
+	created, err := c.IntegrationsCreate(ctx, ses(topic))
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "ses", created.Preset.Or(""))
 	assert.JSONEq(t, strconv.Quote(topic), string(created.Params["topic_arn"]))
 }

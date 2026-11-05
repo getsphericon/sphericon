@@ -20,10 +20,9 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalAnchor(t)
 
-	res, err := c.TagsApply(context.Background(), &externalapi.ApplyTagInput{Name: "api-tag"},
+	_, err := c.TagsApply(context.Background(), &externalapi.ApplyTagInput{Name: "api-tag"},
 		externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.TagResource{}, res)
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
@@ -36,8 +35,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	env.WorkEditionJobs(t)
 	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	page, ok := list.(*siteapi.SiteAuditEntryList)
-	require.Truef(t, ok, "got %T", list)
+	page := list
 	require.NotEmpty(t, page.Items)
 	listed := page.Items[0]
 	assert.Equal(t, siteapi.AuditActionTagCreate, listed.Action)

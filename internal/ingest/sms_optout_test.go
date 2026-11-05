@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -49,7 +50,7 @@ func textable(t *testing.T, env *testhelper.TestEnv, number string) eligibility.
 func optOutOf(t *testing.T, env *testhelper.TestEnv, number string) *ent.Unsubscribe {
 	t.Helper()
 	rows := env.DB.Unsubscribe.Query().Where(
-		unsubscribe.ChannelEQ(unsubscribe.ChannelSms), unsubscribe.DestinationEQ(number),
+		unsubscribe.ChannelEQ(channels.SMS), unsubscribe.DestinationEQ(number),
 	).AllX(t.Context())
 	require.LessOrEqual(t, len(rows), 1)
 	if len(rows) == 0 {
@@ -62,7 +63,7 @@ func optOutOf(t *testing.T, env *testhelper.TestEnv, number string) *ent.Unsubsc
 func smsConfirmationOf(t *testing.T, env *testhelper.TestEnv, number string) *ent.Confirmation {
 	t.Helper()
 	return lo.FirstOrEmpty(env.DB.Confirmation.Query().Where(
-		confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(number),
+		confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(number),
 	).AllX(t.Context()))
 }
 

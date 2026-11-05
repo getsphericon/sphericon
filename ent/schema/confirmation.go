@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Confirmation is the derived read-model row for a confirmed subscription on a (workspace,
@@ -41,7 +43,7 @@ func (Confirmation) Fields() []ent.Field {
 			Immutable(),
 		// The channel this confirmation applies to.
 		field.Enum("channel").
-			Values("email", "telegram", "sms").
+			GoType(channels.Channel("")).
 			Default("email"),
 		// Normalized channel-specific destination: the lower-cased email address, or the phone
 		// number in E.164.

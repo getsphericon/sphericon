@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,42 +23,37 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	createParams := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	updateParams := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID}
 
-	create := func(from string) siteapi.SiteBroadcastsCreateRes {
-		res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	create := func(from string) error {
+		_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 			Name:    "from check",
 			Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from))}),
 		}, createParams)
-		require.NoError(t, err)
-		return res
+		return err
 	}
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, create("news@"+fixtures.SendingDomainVerifiedDomain))
+	require.NoError(t, create("news@"+fixtures.SendingDomainVerifiedDomain))
 	for _, from := range []string{
 		"news@" + fixtures.SendingDomainUnverifiedDomain,
 		"news@" + fixtures.SendingDomainGlobexDomain,
 		"news@" + fixtures.SendingDomainArchivedDomain,
 		"news@nowhere.example",
 	} {
-		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, create(from), from)
+		testhelper.SiteRefusal(t, create(from), http.StatusUnprocessableEntity, from)
 	}
 	refused := create("news@" + fixtures.SendingDomainUnverifiedDomain)
-	problem, ok := refused.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
-	require.True(t, ok)
+	problem := testhelper.SiteRefusal(t, refused, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Detail.Or(""), fixtures.SendingDomainUnverifiedDomain, "the refusal names the domain")
 
-	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, createParams)
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, createParams)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, res)
 
-	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain)}),
 	}, updateParams)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
-	okUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Content: testhelper.SiteEmailEdit(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainVerifiedDomain)}),
 	}, updateParams)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteBroadcastResource{}, okUpd)
 
 	// The draft's From lost its verification: the subject is still editable, with or without
 	// the unchanged From in the request.
@@ -69,8 +65,7 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 			FromEmail: siteapi.NewOptNilEmailAddress("hello@" + fixtures.SendingDomainLostDomain),
 		})},
 	} {
-		got, err := c.SiteBroadcastsUpdate(ctx, in, lost)
+		_, err := c.SiteBroadcastsUpdate(ctx, in, lost)
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastResource{}, got)
 	}
 }

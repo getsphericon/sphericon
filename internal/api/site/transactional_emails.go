@@ -9,7 +9,7 @@ import (
 
 // SiteTransactionalEmailsList returns the workspace's transactional send history
 // (the Outbound messages the /api/emails surface wrote), most recent first.
-func (h *Handlers) SiteTransactionalEmailsList(ctx context.Context, params siteapi.SiteTransactionalEmailsListParams) (siteapi.SiteTransactionalEmailsListRes, error) {
+func (h *Handlers) SiteTransactionalEmailsList(ctx context.Context, params siteapi.SiteTransactionalEmailsListParams) (*siteapi.SiteTransactionalEmailsListOK, error) {
 	s := workspaceScope(ctx)
 
 	page, err := h.outbound.ListTransactional(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))

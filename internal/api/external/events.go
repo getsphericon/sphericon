@@ -9,21 +9,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEventsInput) (externalapi.EventsCreateRes, error) {
+func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEventsInput) error {
 	batch, err := inputs.Events(req.Events, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// The module resolves identity and publishes the batch atomically; rows land
 	// asynchronously (accept-then-process).
-	if err := h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), batch); err != nil {
-		return nil, err
-	}
-	return &externalapi.EventsCreateNoContent{}, nil
+	return h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), batch)
 }
 
 // EventsBatchSubmit records each Event independently and reports a per-item result.
-func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.RecordEventsBatchInput) (externalapi.EventsBatchSubmitRes, error) {
+func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.RecordEventsBatchInput) (*externalapi.RecordEventsBatchResult, error) {
 	batch, err := inputs.Events(req.Events, req.Backfill.Or(false))
 	if err != nil {
 		return nil, err
@@ -41,7 +38,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 	return &externalapi.RecordEventsBatchResult{Results: results}, nil
 }
 
-func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (externalapi.EventActionsListRes, error) {
+func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (*externalapi.EventActionsListOK, error) {
 	page, err := h.eventlog.ListActions(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err

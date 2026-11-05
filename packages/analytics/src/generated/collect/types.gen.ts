@@ -90,13 +90,6 @@ export type CollectTelegramStartLinkInput = {
 };
 
 /**
- * RFC 7807 conflict response
- */
-export type ConflictProblem = {
-  body: ProblemDetails;
-};
-
-/**
  * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
  */
 export type CountryCode = string;
@@ -121,90 +114,9 @@ export type EmailAddress = string;
 export type EntityId = string;
 
 /**
- * RFC 7807 forbidden response
- */
-export type ForbiddenProblem = {
-  body: ProblemDetails;
-};
-
-/**
- * RFC 7807 gone response: the resource existed but is no longer available (an expired link)
- */
-export type GoneProblem = {
-  body: ProblemDetails;
-};
-
-/**
  * The https URL of an image
  */
 export type ImageUrl = string;
-
-/**
- * RFC 7807 conflict response for a removal refused because live work still uses the row
- * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
- * Integration, Sending domain or Automation answers it.
- */
-export type InUseProblem = {
-  body: InUseProblemDetails;
-};
-
-/**
- * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
- */
-export type InUseProblemDetails = {
-  /**
-   * Why the request was refused, when the client should act on it
-   */
-  code?: ProblemCode;
-  /**
-   * A URI reference that identifies the problem type
-   */
-  type?: string;
-  /**
-   * A short, human-readable summary of the problem type
-   */
-  title?: string;
-  /**
-   * HTTP status code
-   */
-  status?: number;
-  /**
-   * A human-readable explanation specific to this occurrence
-   */
-  detail?: string;
-  /**
-   * A URI reference that identifies the specific occurrence
-   */
-  instance?: string;
-  /**
-   * Validation errors grouped by field
-   */
-  errors?: {
-    [key: string]: Array<string>;
-  };
-  /**
-   * Form-level validation error
-   */
-  form?: string;
-  /**
-   * Field validation errors
-   */
-  fields?: {
-    [key: string]: string;
-  };
-  /**
-   * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
-   */
-  retryAfter?: number;
-  /**
-   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
-   */
-  debug?: ProblemDebug;
-  /**
-   * The live rows that use the one a removal was refused for, never empty
-   */
-  usedBy: Array<UsedBy>;
-};
 
 /**
  * A JSON object whose members the contract leaves open: custom field values, event properties,
@@ -219,28 +131,6 @@ export type JsonObject = {
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export type LocaleTag = string;
-
-/**
- * RFC 7807 not found response
- */
-export type NotFoundProblem = {
-  body: ProblemDetails;
-};
-
-/**
- * RFC 7807 payment required response: the feature needs an Enterprise license
- */
-export type PaymentRequiredProblem = {
-  body: ProblemDetails;
-};
-
-/**
- * RFC 7807 precondition required response: the request needs something it did not carry
- * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
- */
-export type PreconditionRequiredProblem = {
-  body: ProblemDetails;
-};
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -337,6 +227,16 @@ export type ProblemDetails = {
    * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
    */
   debug?: ProblemDebug;
+  /**
+   * A removal refused because live work still uses the row (a 409, ADR 0049): the rows that
+   * use it, never empty
+   */
+  usedBy?: Array<UsedBy>;
+  /**
+   * A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each
+   * handed over or deleted first; empty when the refusal is another rule's
+   */
+  workspaces?: Array<SoleOwnedWorkspace>;
 };
 
 /**
@@ -344,6 +244,20 @@ export type ProblemDetails = {
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
 export type RegionalFormat = string;
+
+/**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export type SoleOwnedWorkspace = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
+};
 
 export type TimeZoneName = string;
 
@@ -406,29 +320,14 @@ export type CollectEventsCreateData = {
 
 export type CollectEventsCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)
-   */
-  413: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-  /**
-   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
-   */
-  503: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type CollectEventsCreateError = CollectEventsCreateErrors[keyof CollectEventsCreateErrors];
@@ -451,29 +350,14 @@ export type CollectIdentifyCreateData = {
 
 export type CollectIdentifyCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)
-   */
-  413: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-  /**
-   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
-   */
-  503: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type CollectIdentifyCreateError = CollectIdentifyCreateErrors[keyof CollectIdentifyCreateErrors];
@@ -496,29 +380,14 @@ export type CollectTelegramStartLinksCreateData = {
 
 export type CollectTelegramStartLinksCreateErrors = {
   /**
-   * RFC 7807 bad request response
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
    */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)
-   */
-  413: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-  /**
-   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
-   */
-  503: ProblemDetails;
+  default: ProblemDetails;
 };
 
 export type CollectTelegramStartLinksCreateError = CollectTelegramStartLinksCreateErrors[keyof CollectTelegramStartLinksCreateErrors];

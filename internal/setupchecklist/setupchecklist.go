@@ -12,7 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Status is where one step stands. Only the Sending domain step is ever Pending.
@@ -94,8 +96,8 @@ func steps(ctx context.Context, s *ent.Scoped) (Checklist, error) {
 	// outside, so only a real email provider completes it. Archived Integrations are out of the
 	// default query.
 	provider := s.Integration().Query().Where(
-		integration.ChannelEQ(integration.ChannelEmail),
-		integration.ProviderNEQ(integration.ProviderInbox),
+		integration.ChannelEQ(channels.Email),
+		integration.ProviderNEQ(providers.Inbox),
 	)
 	if c.Steps.Integration, err = exists(provider.Exist(ctx)); err != nil {
 		return Checklist{}, err

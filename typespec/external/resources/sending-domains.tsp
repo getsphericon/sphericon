@@ -95,11 +95,7 @@ interface SendingDomains {
   @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
   list(...ResourceCollectionParameters<SendingDomainResource>, ...PageQuery):
     | Page<SendingDomainResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Create a resource */
   @createsResource(SendingDomainResource)
@@ -114,12 +110,7 @@ interface SendingDomains {
         @statusCode statusCode: 201;
         @body body: SendingDomainResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get a resource by ID */
   @readsResource(SendingDomainResource)
@@ -128,11 +119,7 @@ interface SendingDomains {
   @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
   get(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Update a Sending domain; a deleted one is read-only and answers 404 */
   @updatesResource(SendingDomainResource)
@@ -142,15 +129,7 @@ interface SendingDomains {
   update(
     ...ResourceParameters<SendingDomainResource>,
     @body body: UpdateSendingDomainInput,
-  ):
-    | SendingDomainResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+  ): SendingDomainResource | Problem;
 
   /** Delete a Sending domain for good: it leaves the list and is never restored; what it sent keeps its history. Refused with 409 (`usedBy`) while a scheduled or sending Broadcast or an active Automation sends from it. */
   @deletesResource(SendingDomainResource)
@@ -159,12 +138,7 @@ interface SendingDomains {
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   delete(...ResourceParameters<SendingDomainResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /** Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller, and a deleted domain is never checked again (404). */
   @action("verify")
@@ -172,9 +146,5 @@ interface SendingDomains {
   @requiresScopes(#[ApiTokenScope.sendingDomainsWrite])
   verify(...ResourceParameters<SendingDomainResource>):
     | SendingDomainResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+    | Problem;
 }

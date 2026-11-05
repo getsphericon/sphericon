@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"crypto/ed25519"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,9 +82,8 @@ func TestExportAuditNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]string{{}, {"audit:read"}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, scopes...))
-		res, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportAuditForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
 
@@ -91,10 +91,9 @@ func TestExportAuditAnswers404WithoutTheExportLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	res, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+	_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportAuditNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportAuditAnswers404WithoutTheAuditFeature(t *testing.T) {
@@ -105,24 +104,21 @@ func TestExportAuditAnswers404WithoutTheAuditFeature(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithLicenseKey(pub, key))
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	events, err := c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
+	_, err = c.ExportEvents(context.Background(), externalapi.ExportEventsParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportEventsOKHeaders{}, events, "export alone still serves the Events stream")
 
-	res, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
+	_, err = c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportAuditNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportAuditRefusesAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.GlobexID)
 
-	res, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{
+	_, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportAuditBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

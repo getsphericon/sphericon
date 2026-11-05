@@ -486,7 +486,7 @@ func TestRecordDeliveryRemembersFailuresAndASuccessClearsThem(t *testing.T) {
 	assert.Equal(t, 1, *e.ConsecutiveFailures)
 	assert.True(t, r.now.Equal(*e.FailingSince))
 	assert.True(t, r.now.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
+	assert.Equal(t, webhook.KindHTTPStatus, *e.LastErrorKind)
 	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
 	assert.Nil(t, e.DisabledAt)
 
@@ -497,7 +497,7 @@ func TestRecordDeliveryRemembersFailuresAndASuccessClearsThem(t *testing.T) {
 	assert.Equal(t, 2, *e.ConsecutiveFailures)
 	assert.True(t, began.Equal(*e.FailingSince))
 	assert.True(t, r.now.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhookendpoint.LastErrorKindBlockedAddress, *e.LastErrorKind)
+	assert.Equal(t, webhook.KindBlockedAddress, *e.LastErrorKind)
 	assert.Nil(t, e.LastErrorStatus)
 
 	r.record(nil)

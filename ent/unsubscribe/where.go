@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // ID filters vertices based on their ID field.
@@ -186,23 +187,33 @@ func WorkspaceIDNotIn(vs ...int64) predicate.Unsubscribe {
 }
 
 // ChannelEQ applies the EQ predicate on the "channel" field.
-func ChannelEQ(v Channel) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldEQ(FieldChannel, v))
+func ChannelEQ(v channels.Channel) predicate.Unsubscribe {
+	vc := v
+	return predicate.Unsubscribe(sql.FieldEQ(FieldChannel, vc))
 }
 
 // ChannelNEQ applies the NEQ predicate on the "channel" field.
-func ChannelNEQ(v Channel) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldNEQ(FieldChannel, v))
+func ChannelNEQ(v channels.Channel) predicate.Unsubscribe {
+	vc := v
+	return predicate.Unsubscribe(sql.FieldNEQ(FieldChannel, vc))
 }
 
 // ChannelIn applies the In predicate on the "channel" field.
-func ChannelIn(vs ...Channel) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldIn(FieldChannel, vs...))
+func ChannelIn(vs ...channels.Channel) predicate.Unsubscribe {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Unsubscribe(sql.FieldIn(FieldChannel, v...))
 }
 
 // ChannelNotIn applies the NotIn predicate on the "channel" field.
-func ChannelNotIn(vs ...Channel) predicate.Unsubscribe {
-	return predicate.Unsubscribe(sql.FieldNotIn(FieldChannel, vs...))
+func ChannelNotIn(vs ...channels.Channel) predicate.Unsubscribe {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Unsubscribe(sql.FieldNotIn(FieldChannel, v...))
 }
 
 // DestinationEQ applies the EQ predicate on the "destination" field.

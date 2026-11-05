@@ -110,12 +110,7 @@ interface SiteWebhooks {
   list(
     ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
     ...PageQuery,
-  ):
-    | Page<SiteWebhookEndpointResource>
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteWebhookEndpointResource> | Problem;
 
   /** Create a webhook endpoint. Owners and admins only. */
   @createsResource(SiteWebhookEndpointResource)
@@ -130,10 +125,7 @@ interface SiteWebhooks {
         @statusCode statusCode: 201;
         @body body: SiteWebhookEndpointResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get a webhook endpoint by ID. Owners and admins only. */
   @readsResource(SiteWebhookEndpointResource)
@@ -142,9 +134,7 @@ interface SiteWebhooks {
   @requiresPermissions(#[Permission.webhooksManage])
   get(...ResourceParameters<SiteWebhookEndpointResource>):
     | SiteWebhookEndpointResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Update a webhook endpoint. Owners and admins only. */
   @updatesResource(SiteWebhookEndpointResource)
@@ -154,12 +144,7 @@ interface SiteWebhooks {
   update(
     ...ResourceParameters<SiteWebhookEndpointResource>,
     @body body: UpdateWebhookInput,
-  ):
-    | SiteWebhookEndpointResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteWebhookEndpointResource | Problem;
 
   /** Delete a webhook endpoint. Owners and admins only. */
   @deletesResource(SiteWebhookEndpointResource)
@@ -168,9 +153,7 @@ interface SiteWebhooks {
   @requiresPermissions(#[Permission.webhooksManage])
   delete(...ResourceParameters<SiteWebhookEndpointResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only. */
   @action("regenerate-secret")
@@ -178,9 +161,7 @@ interface SiteWebhooks {
   @requiresPermissions(#[Permission.webhooksManage])
   regenerateSecret(...ResourceParameters<SiteWebhookEndpointResource>):
     | SiteWebhookEndpointResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only. */
   @action("test")
@@ -189,10 +170,5 @@ interface SiteWebhooks {
   test(
     ...ResourceParameters<SiteWebhookEndpointResource>,
     @body body: TestWebhookInput,
-  ):
-    | SiteWebhookTestResult
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteWebhookTestResult | Problem;
 }

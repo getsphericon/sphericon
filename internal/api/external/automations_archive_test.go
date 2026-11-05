@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -16,13 +17,11 @@ import (
 
 func listedAutomationIDs(t *testing.T, c *externalapi.Client, archived bool) []externalapi.EntityId {
 	t.Helper()
-	res, err := c.AutomationsList(context.Background(), externalapi.AutomationsListParams{
+	list, err := c.AutomationsList(context.Background(), externalapi.AutomationsListParams{
 		PageSize: externalapi.NewOptInt32(100),
 		Archived: externalapi.NewOptBool(archived),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*externalapi.AutomationsListOK)
-	require.Truef(t, ok, "got %T", res)
 	return lo.Map(list.Items, func(a externalapi.AutomationResource, _ int) externalapi.EntityId { return a.ID })
 }
 
@@ -33,31 +32,24 @@ func TestExternalAutomationsArchiveAndUnarchive(t *testing.T) {
 	c := env.ExternalScoped(t, "automations:write", "automations:read")
 	ctx := context.Background()
 
-	busy, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
-	require.NoError(t, err)
-	refused, ok := busy.(*externalapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", busy)
+	_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
+	refused := testhelper.ExternalRefusal(t, err, http.StatusConflict)
 	require.Len(t, refused.UsedBy, 1)
 	assert.Equal(t, externalapi.UsedByKindEnrollment, refused.UsedBy[0].Kind)
 	assert.EqualValues(t, 2, refused.UsedBy[0].Count.Or(0))
 
 	id := entityIDString(fixtures.AutomationNotifySlackID)
-	out, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
+	archived, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	archived, ok := out.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", out)
 	assert.True(t, archived.ArchivedAt.IsSet())
 	assert.NotContains(t, listedAutomationIDs(t, c, false), id)
 	assert.Contains(t, listedAutomationIDs(t, c, true), id)
 
-	edited, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")}, externalapi.AutomationsUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsUpdateConflict{}, edited, "an archived automation is read-only")
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")}, externalapi.AutomationsUpdateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusConflict, "an archived automation is read-only")
 
-	back, err := c.AutomationsUnarchive(ctx, externalapi.AutomationsUnarchiveParams{ID: id})
+	restored, err := c.AutomationsUnarchive(ctx, externalapi.AutomationsUnarchiveParams{ID: id})
 	require.NoError(t, err)
-	restored, ok := back.(*externalapi.AutomationResource)
-	require.Truef(t, ok, "got %T", back)
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Contains(t, listedAutomationIDs(t, c, false), id)
 }
@@ -70,13 +62,11 @@ func TestExternalAutomationsArchiveKeepsOneThatSentMail(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.AutomationOnOpenID)
 
-	out, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
+	_, err := c.AutomationsArchive(ctx, externalapi.AutomationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	got, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
-	require.NoError(t, err)
+	_, err = c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: id})
+	require.NoError(t, err, "an archived automation is still read by id")
 
-	assert.IsType(t, &externalapi.AutomationResource{}, out)
-	assert.IsType(t, &externalapi.AutomationResource{}, got, "an archived automation is still read by id")
 	assert.NotContains(t, listedAutomationIDs(t, c, false), id)
 	assert.Contains(t, listedAutomationIDs(t, c, true), id)
 }

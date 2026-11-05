@@ -34,90 +34,90 @@ type Invoker interface {
 	// Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
 	//
 	// GET /workspaces/{workspaceId}/analytics/clicks-by-link
-	SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (SiteAnalyticsClicksByLinkRes, error)
+	SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (*SiteAnalyticsClicksByLink, error)
 	// SiteAnalyticsDeliverability invokes SiteAnalytics_deliverability operation.
 	//
 	// Deliverability report: the Complaint and Bounce rates of each Sending domain over the range.
 	//
 	// GET /workspaces/{workspaceId}/analytics/deliverability
-	SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (SiteAnalyticsDeliverabilityRes, error)
+	SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (*SiteAnalyticsDeliverability, error)
 	// SiteAnalyticsEvents invokes SiteAnalytics_events operation.
 	//
 	// Events in the range, grouped by action.
 	//
 	// GET /workspaces/{workspaceId}/analytics/events
-	SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (SiteAnalyticsEventsRes, error)
+	SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (*SiteAnalyticsEvents, error)
 	// SiteAnalyticsNewPeople invokes SiteAnalytics_newPeople operation.
 	//
 	// New people report: Contacts created per Report day, split by Contact source.
 	//
 	// GET /workspaces/{workspaceId}/analytics/new-people
-	SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (SiteAnalyticsNewPeopleRes, error)
+	SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (*SiteNewPeopleReport, error)
 	// SiteAnalyticsOpensByHour invokes SiteAnalytics_opensByHour operation.
 	//
 	// Human opens by hour of day and day of week in the Workspace time zone.
 	//
 	// GET /workspaces/{workspaceId}/analytics/opens-by-hour
-	SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (SiteAnalyticsOpensByHourRes, error)
+	SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (*SiteAnalyticsOpensByHour, error)
 	// SiteAnalyticsOverview invokes SiteAnalytics_overview operation.
 	//
 	// Aggregate metrics for the workspace dashboard.
 	//
 	// GET /workspaces/{workspaceId}/analytics/overview
-	SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (SiteAnalyticsOverviewRes, error)
+	SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (*SiteAnalyticsOverview, error)
 	// SiteAnalyticsRevenue invokes SiteAnalytics_revenue operation.
 	//
 	// Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064). Open to
 	// every member.
 	//
 	// GET /workspaces/{workspaceId}/analytics/revenue
-	SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (SiteAnalyticsRevenueRes, error)
+	SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (*SiteAnalyticsRevenue, error)
 	// SiteAnalyticsSubscribedPeople invokes SiteAnalytics_subscribedPeople operation.
 	//
 	// Subscribed people report: who subscribed and unsubscribed per Report day, and how many are
 	// subscribed now.
 	//
 	// GET /workspaces/{workspaceId}/analytics/subscribed-people
-	SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (SiteAnalyticsSubscribedPeopleRes, error)
+	SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (*SiteAnalyticsSubscribedPeople, error)
 	// SiteAttentionGet invokes SiteAttention_get operation.
 	//
 	// What needs attention in the Workspace. Open to every member.
 	//
 	// GET /workspaces/{workspaceId}/attention
-	SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (SiteAttentionGetRes, error)
+	SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (*SiteAttentionList, error)
 	// SiteAuditExport invokes SiteAudit_export operation.
 	//
 	// Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise;
 	// owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries/export
-	SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (SiteAuditExportRes, error)
+	SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (*SiteAuditExportOKHeaders, error)
 	// SiteAuditFacets invokes SiteAudit_facets operation.
 	//
 	// The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner
 	// and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries/facets
-	SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (SiteAuditFacetsRes, error)
+	SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (*SiteAuditFacets, error)
 	// SiteAuditGetRetention invokes SiteAudit_getRetention operation.
 	//
 	// Read the Audit log retention window (Enterprise; owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries/retention
-	SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (SiteAuditGetRetentionRes, error)
+	SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (*SiteAuditRetention, error)
 	// SiteAuditList invokes SiteAudit_list operation.
 	//
 	// List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
-	SiteAuditList(ctx context.Context, params SiteAuditListParams) (SiteAuditListRes, error)
+	SiteAuditList(ctx context.Context, params SiteAuditListParams) (*SiteAuditEntryList, error)
 	// SiteAuditSetRetention invokes SiteAudit_setRetention operation.
 	//
 	// Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin
 	// only).
 	//
 	// PUT /workspaces/{workspaceId}/audit-entries/retention
-	SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (SiteAuditSetRetentionRes, error)
+	SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error)
 	// SiteAuthConfirmEmailChange invokes SiteAuth_confirmEmailChange operation.
 	//
 	// Confirm an email change from the token sent to the new address. Public: the link may be opened from
@@ -126,7 +126,7 @@ type Invoker interface {
 	// The link alone never starts a session.
 	//
 	// POST /auth/confirm-email-change
-	SiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (SiteAuthConfirmEmailChangeRes, error)
+	SiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (*SiteAuthConfirmEmailChangeOK, error)
 	// SiteAuthForgotPassword invokes SiteAuth_forgotPassword operation.
 	//
 	// Request a password-reset link. Always returns 202 regardless of whether the email matches an account
@@ -134,7 +134,7 @@ type Invoker interface {
 	// Answers 429 over the per-IP limit.
 	//
 	// POST /auth/forgot-password
-	SiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) (SiteAuthForgotPasswordRes, error)
+	SiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) error
 	// SiteAuthLogin invokes SiteAuth_login operation.
 	//
 	// Check the password. A User without a Second factor gets a session (outcome `session`, the JWT cookie
@@ -146,7 +146,7 @@ type Invoker interface {
 	// and no session.
 	//
 	// POST /auth/login
-	SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (SiteAuthLoginRes, error)
+	SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (*SiteLoginResultHeaders, error)
 	// SiteAuthLogout invokes SiteAuth_logout operation.
 	//
 	// End the session on this browser: clears the session cookie. Answered while an acceptance is pending
@@ -161,14 +161,14 @@ type Invoker interface {
 	// a mail. Rate limited per IP like Sign-up.
 	//
 	// POST /auth/resend-verification
-	SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error)
+	SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) error
 	// SiteAuthResetPassword invokes SiteAuth_resetPassword operation.
 	//
 	// Set a new password from a reset token. A password outside the length rule answers 422 with the field
 	// error; an invalid or expired token answers 400.
 	//
 	// POST /auth/reset-password
-	SiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) (SiteAuthResetPasswordRes, error)
+	SiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) error
 	// SiteAuthSecondFactor invokes SiteAuth_secondFactor operation.
 	//
 	// The second login step of a User with a Second factor: verify the challenge and a TOTP or Recovery
@@ -177,7 +177,7 @@ type Invoker interface {
 	// correct code while its delay runs (ADR 0020, ADR 0025).
 	//
 	// POST /auth/second-factor
-	SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
+	SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (*SiteLoginResultHeaders, error)
 	// SiteAuthSignUp invokes SiteAuth_signUp operation.
 	//
 	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
@@ -191,7 +191,7 @@ type Invoker interface {
 	// address answers 409. Sign-up is open on every Instance (ADR 0063).
 	//
 	// POST /auth/sign-up
-	SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error)
+	SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (*SiteAuthSignUpAccepted, error)
 	// SiteAuthSigninCallback invokes SiteAuth_signinCallback operation.
 	//
 	// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
@@ -207,7 +207,7 @@ type Invoker interface {
 	// reaches the handler and gets the same redirect as any other refusal.
 	//
 	// GET /auth/signin/{provider}/callback
-	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (SiteAuthSigninCallbackRes, error)
+	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
 	// SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
 	//
 	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
@@ -215,7 +215,7 @@ type Invoker interface {
 	// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 	//
 	// POST /auth/signin-not-me
-	SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error)
+	SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) error
 	// SiteAuthSigninPending invokes SiteAuth_signinPending operation.
 	//
 	// A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up items. The
@@ -223,14 +223,14 @@ type Invoker interface {
 	// completed, declined or forged one answers 400.
 	//
 	// GET /auth/signin-pending
-	SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (SiteAuthSigninPendingRes, error)
+	SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (*SitePendingSignup, error)
 	// SiteAuthSigninPendingDecline invokes SiteAuth_signinPendingDecline operation.
 	//
 	// Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a token that
 	// names nothing any more.
 	//
 	// POST /auth/signin-pending/decline
-	SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (SiteAuthSigninPendingDeclineRes, error)
+	SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error
 	// SiteAuthSigninPendingSubmit invokes SiteAuth_signinPendingSubmit operation.
 	//
 	// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified
@@ -242,7 +242,7 @@ type Invoker interface {
 	// was taken meanwhile.
 	//
 	// POST /auth/signin-pending
-	SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (SiteAuthSigninPendingSubmitRes, error)
+	SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (*SiteAuthSigninPendingSubmitNoContent, error)
 	// SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
 	//
 	// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
@@ -258,7 +258,7 @@ type Invoker interface {
 	// as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
 	//
 	// GET /auth/signin/{provider}/start
-	SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error)
+	SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (*SiteAuthSigninStartFound, error)
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
 	// Complete a Sign-up from the verification link (the token is the credential): stamps the Verified
@@ -271,7 +271,7 @@ type Invoker interface {
 	// address it was sent to. Rate limited like Sign-up.
 	//
 	// POST /auth/verify-email
-	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
+	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (*SiteVerifyEmailResultHeaders, error)
 	// SiteAutomationReportsGet invokes SiteAutomationReports_get operation.
 	//
 	// The opens and clicks of an automation's emails, with a count per clicked link, and its results over
@@ -280,7 +280,7 @@ type Invoker interface {
 	// read from its enrollments for the chosen period and the one before it.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/report
-	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
+	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*SiteAutomationReport, error)
 	// SiteAutomationsArchive invokes SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
@@ -288,37 +288,37 @@ type Invoker interface {
 	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
-	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
+	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (*SiteAutomationResource, error)
 	// SiteAutomationsCreate invokes SiteAutomations_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/automations
-	SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error)
+	SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error)
 	// SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 	//
 	// Deactivate an automation (stops new enrollments). 409 when it is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/deactivate
-	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error)
+	SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (*SiteAutomationResource, error)
 	// SiteAutomationsDryRunHttpStep invokes SiteAutomations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
 	//
 	// POST /workspaces/{workspaceId}/automations/dry-run-http-step
-	SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (SiteAutomationsDryRunHttpStepRes, error)
+	SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*SiteDryRunHttpStepResult, error)
 	// SiteAutomationsGet invokes SiteAutomations_get operation.
 	//
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (SiteAutomationsGetRes, error)
+	SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (*SiteAutomationResource, error)
 	// SiteAutomationsList invokes SiteAutomations_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/automations
-	SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (SiteAutomationsListRes, error)
+	SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (*SiteAutomationsListOK, error)
 	// SiteAutomationsPublish invokes SiteAutomations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
@@ -328,34 +328,34 @@ type Invoker interface {
 	// refused. 409 for an archived automation too.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
-	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
+	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
 	// SiteAutomationsRevert invokes SiteAutomations_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
 	// 409 when the automation is archived.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/revert
-	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
+	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (*SiteAutomationResource, error)
 	// SiteAutomationsUnarchive invokes SiteAutomations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
 	// again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
-	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)
+	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (*SiteAutomationResource, error)
 	// SiteAutomationsUpdate invokes SiteAutomations_update operation.
 	//
 	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
 	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
+	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error)
 	// SiteBrandKitGet invokes SiteBrandKit_get operation.
 	//
 	// Read the Brand kit. Every member may read it.
 	//
 	// GET /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error)
+	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*SiteBrandKitResource, error)
 	// SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
 	//
 	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
@@ -363,7 +363,7 @@ type Invoker interface {
 	// Brand kit has been saved.
 	//
 	// POST /workspaces/{workspaceId}/brand-kit/starter-templates
-	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error)
+	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) ([]SiteEmailTemplateResource, error)
 	// SiteBrandKitSave invokes SiteBrandKit_save operation.
 	//
 	// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
@@ -371,7 +371,7 @@ type Invoker interface {
 	// changes no message already written. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
+	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*SiteBrandKitResource, error)
 	// SiteBroadcastLinksList invokes SiteBroadcastLinks_list operation.
 	//
 	// The links of a broadcast that were clicked, with a count each, most clicked first. The counts come
@@ -379,7 +379,7 @@ type Invoker interface {
 	// in the broadcast's stats does not.
 	//
 	// GET /workspaces/{workspaceId}/broadcasts/{broadcastId}/links
-	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error)
+	SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (*SiteBroadcastLinkClicksList, error)
 	// SiteBroadcastsArchive invokes SiteBroadcasts_archive operation.
 	//
 	// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
@@ -387,25 +387,25 @@ type Invoker interface {
 	// archived (409). Archiving an archived broadcast changes nothing.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/archive
-	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error)
+	SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsCreate invokes SiteBroadcasts_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts
-	SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
+	SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsGet invokes SiteBroadcasts_get operation.
 	//
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (SiteBroadcastsGetRes, error)
+	SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsList invokes SiteBroadcasts_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/broadcasts
-	SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (SiteBroadcastsListRes, error)
+	SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (*SiteBroadcastsListOK, error)
 	// SiteBroadcastsSchedule invokes SiteBroadcasts_schedule operation.
 	//
 	// Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients
@@ -415,14 +415,14 @@ type Invoker interface {
 	// scheduling it is refused. An archived broadcast is a 409 too.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
-	SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
+	SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsSend invokes SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
 	// resolved from; an archived segment is refused. An archived broadcast is a 409.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
-	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
+	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
 	// Send a one-off rendered preview to a single address: an email broadcast to the `email` given, an SMS
@@ -433,69 +433,69 @@ type Invoker interface {
 	// another address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
-	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
+	SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (*SiteTestSendBroadcastResult, error)
 	// SiteBroadcastsUnarchive invokes SiteBroadcasts_unarchive operation.
 	//
 	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
-	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error)
+	SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (*SiteBroadcastResource, error)
 	// SiteBroadcastsUpdate invokes SiteBroadcasts_update operation.
 	//
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error)
+	SiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (*SiteBroadcastResource, error)
 	// SiteCapturedMessagesDelete invokes SiteCapturedMessages_delete operation.
 	//
 	// Delete one Captured message. Every member may delete.
 	//
 	// DELETE /workspaces/{workspaceId}/captured-messages/{id}
-	SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (SiteCapturedMessagesDeleteRes, error)
+	SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) error
 	// SiteCapturedMessagesDeleteAll invokes SiteCapturedMessages_deleteAll operation.
 	//
 	// Delete every Captured message of the workspace. Every member may delete.
 	//
 	// DELETE /workspaces/{workspaceId}/captured-messages/all
-	SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (SiteCapturedMessagesDeleteAllRes, error)
+	SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) error
 	// SiteCapturedMessagesGet invokes SiteCapturedMessages_get operation.
 	//
 	// Read one Captured message in full: headers, HTML, text and links. Every member may read.
 	//
 	// GET /workspaces/{workspaceId}/captured-messages/{id}
-	SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (SiteCapturedMessagesGetRes, error)
+	SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (*SiteCapturedMessageResource, error)
 	// SiteCapturedMessagesList invokes SiteCapturedMessages_list operation.
 	//
 	// List the Captured messages of the workspace, newest first, without their content (read one for it).
 	// Every member may read.
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
-	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error)
+	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (*SiteCapturedMessagesListOK, error)
 	// SiteConnectionsDelete invokes SiteConnections_delete operation.
 	//
 	// Revoke a Connection: the caller's own, or anyone's with members:manage.
 	//
 	// DELETE /workspaces/{workspaceId}/connections/{id}
-	SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (SiteConnectionsDeleteRes, error)
+	SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) error
 	// SiteConnectionsList invokes SiteConnections_list operation.
 	//
 	// List the Connections the caller may see: their own, or every member's with members:manage.
 	//
 	// GET /workspaces/{workspaceId}/connections
-	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (SiteConnectionsListRes, error)
+	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) ([]SiteConnectionResource, error)
 	// SiteContactsCreate invokes SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/contacts
-	SiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (SiteContactsCreateRes, error)
+	SiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (*SiteContactResource, error)
 	// SiteContactsDelete invokes SiteContacts_delete operation.
 	//
 	// Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and
 	// its opt-outs survive. Owner or admin only.
 	//
 	// DELETE /workspaces/{workspaceId}/contacts/{id}
-	SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (SiteContactsDeleteRes, error)
+	SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) error
 	// SiteContactsErase invokes SiteContacts_erase operation.
 	//
 	// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
@@ -504,7 +504,7 @@ type Invoker interface {
 	// Owner or admin only.
 	//
 	// DELETE /workspaces/{workspaceId}/contacts/erase
-	SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error)
+	SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) error
 	// SiteContactsExport invokes SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -517,13 +517,13 @@ type Invoker interface {
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/contacts/{id}
-	SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (SiteContactsGetRes, error)
+	SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (*SiteContactResource, error)
 	// SiteContactsList invokes SiteContacts_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/contacts
-	SiteContactsList(ctx context.Context, params SiteContactsListParams) (SiteContactsListRes, error)
+	SiteContactsList(ctx context.Context, params SiteContactsListParams) (*SiteContactsListOK, error)
 	// SiteContactsLookup invokes SiteContacts_lookup operation.
 	//
 	// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
@@ -531,19 +531,19 @@ type Invoker interface {
 	// zeros, not 404. Owner or admin only.
 	//
 	// GET /workspaces/{workspaceId}/contacts/lookup
-	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error)
+	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (*SiteContactHoldings, error)
 	// SiteContactsUpdate invokes SiteContacts_update operation.
 	//
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/contacts/{id}
-	SiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (SiteContactsUpdateRes, error)
+	SiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (*SiteContactResource, error)
 	// SiteCustomFieldsList invokes SiteCustomFields_list operation.
 	//
 	// List the workspace's custom field definitions.
 	//
 	// GET /workspaces/{workspaceId}/custom-fields
-	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
+	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (*SiteCustomFieldsListOK, error)
 	// SiteCustomFieldsUpdate invokes SiteCustomFields_update operation.
 	//
 	// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
@@ -551,44 +551,44 @@ type Invoker interface {
 	// and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/custom-fields/{id}
-	SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (SiteCustomFieldsUpdateRes, error)
+	SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error)
 	// SiteDomainJoinGet invokes SiteDomainJoin_get operation.
 	//
 	// Read the domain join switch (owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/domain-join
-	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error)
+	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (*SiteDomainJoinResource, error)
 	// SiteDomainJoinSet invokes SiteDomainJoin_set operation.
 	//
 	// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
 	// User: only an address proven afterwards joins. Recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/domain-join
-	SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error)
+	SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (*SiteDomainJoinResource, error)
 	// SiteEnrollmentsGet invokes SiteEnrollments_get operation.
 	//
 	// Get one Enrollment of an Automation.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (SiteEnrollmentsGetRes, error)
+	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*SiteEnrollmentResource, error)
 	// SiteEnrollmentsList invokes SiteEnrollments_list operation.
 	//
 	// List an Automation's Enrollments, newest first.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/enrollments
-	SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (SiteEnrollmentsListRes, error)
+	SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (*SiteEnrollmentsListOK, error)
 	// SiteEventsActions invokes SiteEvents_actions operation.
 	//
 	// Distinct event actions in the workspace, sorted — powers the segment builder.
 	//
 	// GET /workspaces/{workspaceId}/events/actions
-	SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (SiteEventsActionsRes, error)
+	SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (*SiteEventActionsResult, error)
 	// SiteEventsList invokes SiteEvents_list operation.
 	//
 	// List events for the site UI (most recent first).
 	//
 	// GET /workspaces/{workspaceId}/events
-	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
+	SiteEventsList(ctx context.Context, params SiteEventsListParams) (*SiteEventsListOK, error)
 	// SiteIdentitiesLink invokes SiteIdentities_link operation.
 	//
 	// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
@@ -598,7 +598,7 @@ type Invoker interface {
 	// code (see SiteSigninError). 404 for a provider that is not configured.
 	//
 	// GET /me/identities/{provider}/link
-	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (SiteIdentitiesLinkRes, error)
+	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (*SiteIdentitiesLinkFound, error)
 	// SiteIdentitiesList invokes SiteIdentities_list operation.
 	//
 	// List the authenticated User's Linked identities.
@@ -611,20 +611,20 @@ type Invoker interface {
 	// identity). Every other session ends; the acting one continues under the cookie set here.
 	//
 	// DELETE /me/identities/{id}
-	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error)
+	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (*SiteIdentitiesUnlinkNoContent, error)
 	// SiteInstanceGetRelease invokes SiteInstance_getRelease operation.
 	//
 	// The newer release the Release check found, for its banner. Refused (403) to a User who holds
 	// `release:read` in no live Workspace.
 	//
 	// GET /instance/release
-	SiteInstanceGetRelease(ctx context.Context) (SiteInstanceGetReleaseRes, error)
+	SiteInstanceGetRelease(ctx context.Context) (*SiteInstanceRelease, error)
 	// SiteIntegrationsCreate invokes SiteIntegrations_create operation.
 	//
 	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations
-	SiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
+	SiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (*SiteIntegrationResource, error)
 	// SiteIntegrationsDelete invokes SiteIntegrations_delete operation.
 	//
 	// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
@@ -633,19 +633,19 @@ type Invoker interface {
 	// effort. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/integrations/{id}
-	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error)
+	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) error
 	// SiteIntegrationsGet invokes SiteIntegrations_get operation.
 	//
 	// Get an integration by id, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/integrations/{id}
-	SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (SiteIntegrationsGetRes, error)
+	SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (*SiteIntegrationResource, error)
 	// SiteIntegrationsList invokes SiteIntegrations_list operation.
 	//
 	// List the workspace's sending-provider integrations; a deleted one is not listed.
 	//
 	// GET /workspaces/{workspaceId}/integrations
-	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
+	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) ([]SiteIntegrationResource, error)
 	// SiteIntegrationsRegenerateKey invokes SiteIntegrations_regenerateKey operation.
 	//
 	// Replace the integration's hook key: the old hook URL stops working at once; an enabled Telegram
@@ -653,31 +653,31 @@ type Invoker interface {
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
-	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
+	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (*SiteIntegrationResource, error)
 	// SiteIntegrationsUpdate invokes SiteIntegrations_update operation.
 	//
 	// Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/integrations/{id}
-	SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
+	SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (*SiteIntegrationResource, error)
 	// SiteInvitationsCreate invokes SiteInvitations_create operation.
 	//
 	// Invite an email address; the accept link is returned once.
 	//
 	// POST /workspaces/{workspaceId}/invitations
-	SiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (SiteInvitationsCreateRes, error)
+	SiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (*SiteCreateInvitationResponse, error)
 	// SiteInvitationsDelete invokes SiteInvitations_delete operation.
 	//
 	// Revoke a pending invitation.
 	//
 	// DELETE /workspaces/{workspaceId}/invitations/{id}
-	SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) (SiteInvitationsDeleteRes, error)
+	SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) error
 	// SiteInvitationsList invokes SiteInvitations_list operation.
 	//
 	// List pending (unaccepted) invitations for the workspace.
 	//
 	// GET /workspaces/{workspaceId}/invitations
-	SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (SiteInvitationsListRes, error)
+	SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) ([]SiteInvitationResource, error)
 	// SiteJoinDomainsAdd invokes SiteJoinDomains_add operation.
 	//
 	// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
@@ -685,19 +685,19 @@ type Invoker interface {
 	// domain the Workspace already has is 409.
 	//
 	// POST /workspaces/{workspaceId}/join-domains
-	SiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (SiteJoinDomainsAddRes, error)
+	SiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (*SiteJoinDomainResource, error)
 	// SiteJoinDomainsList invokes SiteJoinDomains_list operation.
 	//
 	// List the Workspace's Join domains (owner and admin only), pending and verified.
 	//
 	// GET /workspaces/{workspaceId}/join-domains
-	SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error)
+	SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) ([]SiteJoinDomainResource, error)
 	// SiteJoinDomainsRemove invokes SiteJoinDomains_remove operation.
 	//
 	// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 	//
 	// DELETE /workspaces/{workspaceId}/join-domains/{id}
-	SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error)
+	SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) error
 	// SiteJoinDomainsVerify invokes SiteJoinDomains_verify operation.
 	//
 	// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
@@ -705,7 +705,7 @@ type Invoker interface {
 	// published, otherwise the domain moves here. 422 when the record is not found.
 	//
 	// POST /workspaces/{workspaceId}/join-domains/{id}/verify
-	SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (SiteJoinDomainsVerifyRes, error)
+	SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (*SiteJoinDomainResource, error)
 	// SiteLegalDocumentsGet invokes SiteLegalDocuments_get operation.
 	//
 	// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
@@ -713,7 +713,7 @@ type Invoker interface {
 	// pending, for the screen that shows the new texts (ADR 0062).
 	//
 	// GET /legal-documents/{key}
-	SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error)
+	SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (*SiteLegalDocument, error)
 	// SiteLegalDocumentsSignupItems invokes SiteLegalDocuments_signupItems operation.
 	//
 	// The Sign-up items in effect: those not deleted that have a published version, with that version's
@@ -726,13 +726,13 @@ type Invoker interface {
 	// Remove a member (owner/admin only; the last owner cannot be removed).
 	//
 	// DELETE /workspaces/{workspaceId}/memberships/{id}
-	SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) (SiteMembershipsDeleteRes, error)
+	SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) error
 	// SiteMembershipsList invokes SiteMemberships_list operation.
 	//
 	// List the workspace's members.
 	//
 	// GET /workspaces/{workspaceId}/memberships
-	SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (SiteMembershipsListRes, error)
+	SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) ([]SiteMembershipResource, error)
 	// SiteMembershipsResetSecondFactor invokes SiteMemberships_resetSecondFactor operation.
 	//
 	// Reset the member's Second factor (owner/admin only; owner-only for an owner): clears the factor and
@@ -740,13 +740,13 @@ type Invoker interface {
 	// member has no Second factor or is the caller (who disables their own with a password and a code).
 	//
 	// POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor
-	SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) (SiteMembershipsResetSecondFactorRes, error)
+	SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) error
 	// SiteMembershipsUpdate invokes SiteMemberships_update operation.
 	//
 	// Change a member's role (owner/admin only; owner-only to grant owner).
 	//
 	// PUT /workspaces/{workspaceId}/memberships/{id}
-	SiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (SiteMembershipsUpdateRes, error)
+	SiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (*SiteMembershipResource, error)
 	// SiteOAuthDecide invokes SiteOAuth_decide operation.
 	//
 	// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
@@ -754,13 +754,13 @@ type Invoker interface {
 	// lacks is refused (403 permission_required).
 	//
 	// POST /oauth/authorization
-	SiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (SiteOAuthDecideRes, error)
+	SiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (*SiteOAuthDecisionResult, error)
 	// SiteOAuthDescribe invokes SiteOAuth_describe operation.
 	//
 	// Validate an OAuth authorization request for the consent screen.
 	//
 	// GET /oauth/authorization
-	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
+	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (*SiteOAuthAuthorizationRequest, error)
 	// SiteOptionalConsentsList invokes SiteOptionalConsents_list operation.
 	//
 	// The optional consents in effect (not deleted, with a published version) and the User's current
@@ -778,7 +778,7 @@ type Invoker interface {
 	// (field `version`).
 	//
 	// PUT /me/optional-consents/{key}
-	SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (SiteOptionalConsentsSetRes, error)
+	SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (*SiteOptionalConsent, error)
 	// SitePasskeyLoginBegin invokes SitePasskeyLogin_begin operation.
 	//
 	// Begin a Passkey login: the request options for the browser, with the challenge in a signed, httpOnly
@@ -786,7 +786,7 @@ type Invoker interface {
 	// used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
 	//
 	// POST /auth/passkey
-	SitePasskeyLoginBegin(ctx context.Context) (SitePasskeyLoginBeginRes, error)
+	SitePasskeyLoginBegin(ctx context.Context) (*SitePasskeyLoginBegunHeaders, error)
 	// SitePasskeyLoginFinish invokes SitePasskeyLogin_finish operation.
 	//
 	// Finish a Passkey login: the authenticator's response, with no email and no password. The User is
@@ -797,7 +797,7 @@ type Invoker interface {
 	// one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
 	//
 	// POST /auth/passkey/finish
-	SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (SitePasskeyLoginFinishRes, error)
+	SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (*SiteLoginResultHeaders, error)
 	// SitePasskeysBeginCheck invokes SitePasskeys_beginCheck operation.
 	//
 	// Begin a fresh Passkey check: the request options for the browser, naming the User's own Passkeys,
@@ -806,7 +806,7 @@ type Invoker interface {
 	// none.
 	//
 	// POST /me/passkeys/check
-	SitePasskeysBeginCheck(ctx context.Context) (SitePasskeysBeginCheckRes, error)
+	SitePasskeysBeginCheck(ctx context.Context) (*SitePasskeyCheckBegunHeaders, error)
 	// SitePasskeysBeginRegistration invokes SitePasskeys_beginRegistration operation.
 	//
 	// Begin registering a Passkey: the creation options for the browser, with the challenge in a signed,
@@ -814,7 +814,7 @@ type Invoker interface {
 	// options exclude the Passkeys the User already holds.
 	//
 	// POST /me/passkeys/registration
-	SitePasskeysBeginRegistration(ctx context.Context) (SitePasskeysBeginRegistrationRes, error)
+	SitePasskeysBeginRegistration(ctx context.Context) (*SitePasskeyRegistrationBegunHeaders, error)
 	// SitePasskeysFinishCheck invokes SitePasskeys_finishCheck operation.
 	//
 	// Finish a Passkey check. The authenticator must have verified the person, by a Passkey of the
@@ -823,7 +823,7 @@ type Invoker interface {
 	// 403 for any response that does not verify.
 	//
 	// POST /me/passkeys/check/finish
-	SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (SitePasskeysFinishCheckRes, error)
+	SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (*SitePasskeysFinishCheckNoContent, error)
 	// SitePasskeysFinishRegistration invokes SitePasskeys_finishRegistration operation.
 	//
 	// Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
@@ -834,7 +834,7 @@ type Invoker interface {
 	// user, or a credential already registered.
 	//
 	// POST /me/passkeys/registration/finish
-	SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (SitePasskeysFinishRegistrationRes, error)
+	SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (*SitePasskey, error)
 	// SitePasskeysList invokes SitePasskeys_list operation.
 	//
 	// List the authenticated User's Passkeys.
@@ -850,14 +850,14 @@ type Invoker interface {
 	// in: no password, no Linked identity and no other Passkey.
 	//
 	// DELETE /me/passkeys/{id}
-	SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (SitePasskeysRemoveRes, error)
+	SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (*SitePasskeysRemoveNoContent, error)
 	// SitePasskeysRename invokes SitePasskeys_rename operation.
 	//
 	// Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's, 422 for a
 	// name that is empty or longer than 100 characters.
 	//
 	// PATCH /me/passkeys/{id}
-	SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (SitePasskeysRenameRes, error)
+	SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (*SitePasskey, error)
 	// SitePersonalTokensCreate invokes SitePersonalTokens_create operation.
 	//
 	// Mint a Personal token of the caller's own; the full secret is returned once. Any member may mint
@@ -866,26 +866,26 @@ type Invoker interface {
 	// operation decodes (400).
 	//
 	// POST /workspaces/{workspaceId}/personal-tokens
-	SitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (SitePersonalTokensCreateRes, error)
+	SitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (*SiteCreatePersonalTokenResponse, error)
 	// SitePersonalTokensDelete invokes SitePersonalTokens_delete operation.
 	//
 	// Revoke a Personal token: the caller's own, or anyone's with members:manage.
 	//
 	// DELETE /workspaces/{workspaceId}/personal-tokens/{id}
-	SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (SitePersonalTokensDeleteRes, error)
+	SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) error
 	// SitePersonalTokensGrantableScopes invokes SitePersonalTokens_grantableScopes operation.
 	//
 	// The scopes the caller's Role may grant to a Personal token in the Workspace, in the vocabulary's
 	// order: the mint form offers these and no other.
 	//
 	// GET /workspaces/{workspaceId}/personal-token-scopes
-	SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (SitePersonalTokensGrantableScopesRes, error)
+	SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) ([]PersonalScope, error)
 	// SitePersonalTokensList invokes SitePersonalTokens_list operation.
 	//
 	// List the active Personal tokens the caller may see: their own, or every member's with members:manage.
 	//
 	// GET /workspaces/{workspaceId}/personal-tokens
-	SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (SitePersonalTokensListRes, error)
+	SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) ([]SitePersonalTokenResource, error)
 	// SitePresetsList invokes SitePresets_list operation.
 	//
 	// List the Presets the Instance offers, with the params schema of each.
@@ -899,7 +899,7 @@ type Invoker interface {
 	// up again; 400 is an invalid token.
 	//
 	// POST /confirmations/{token}
-	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (SitePublicConfirmationsPerformRes, error)
+	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) error
 	// SitePublicInvitationsAccept invokes SitePublicInvitations_accept operation.
 	//
 	// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
@@ -907,63 +907,63 @@ type Invoker interface {
 	// User.
 	//
 	// POST /invitations/{token}/accept
-	SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error)
+	SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) error
 	// SitePublicInvitationsLookup invokes SitePublicInvitations_lookup operation.
 	//
 	// Look up a pending invite by its token to render the accept page.
 	//
 	// GET /invitations/{token}
-	SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (SitePublicInvitationsLookupRes, error)
+	SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (*SiteInvitationLookupResult, error)
 	// SitePublicUnsubscribesPerform invokes SitePublicUnsubscribes_perform operation.
 	//
 	// Perform an unsubscribe (ADR 0012). The button on the unsubscribe page; the mailbox provider
 	// one-click POST keeps using POST /e/u/{token}. Repeating it is a no-op.
 	//
 	// POST /unsubscribes/{token}
-	SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (SitePublicUnsubscribesPerformRes, error)
+	SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) error
 	// SiteRuleFiringsList invokes SiteRuleFirings_list operation.
 	//
 	// List a Rule's Firings, newest first.
 	//
 	// GET /workspaces/{workspaceId}/rules/{ruleId}/firings
-	SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (SiteRuleFiringsListRes, error)
+	SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (*SiteRuleFiringsListOK, error)
 	// SiteRulesCreate invokes SiteRules_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/rules
-	SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (SiteRulesCreateRes, error)
+	SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error)
 	// SiteRulesDeactivate invokes SiteRules_deactivate operation.
 	//
 	// Deactivate a Rule: it stops firing.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/deactivate
-	SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (SiteRulesDeactivateRes, error)
+	SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (*SiteRuleResource, error)
 	// SiteRulesDelete invokes SiteRules_delete operation.
 	//
 	// Delete a resource from the site UI.
 	//
 	// DELETE /workspaces/{workspaceId}/rules/{id}
-	SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (SiteRulesDeleteRes, error)
+	SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) error
 	// SiteRulesDryRun invokes SiteRules_dryRun operation.
 	//
 	// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
 	// nothing.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/dry-run
-	SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (SiteRulesDryRunRes, error)
+	SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (*SiteRuleDryRunResource, error)
 	// SiteRulesGet invokes SiteRules_get operation.
 	//
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/rules/{id}
-	SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (SiteRulesGetRes, error)
+	SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (*SiteRuleResource, error)
 	// SiteRulesList invokes SiteRules_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/rules
-	SiteRulesList(ctx context.Context, params SiteRulesListParams) (SiteRulesListRes, error)
+	SiteRulesList(ctx context.Context, params SiteRulesListParams) (*SiteRulesListOK, error)
 	// SiteRulesPublish invokes SiteRules_publish operation.
 	//
 	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
@@ -971,26 +971,26 @@ type Invoker interface {
 	// neither draft nor live version.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/publish
-	SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (SiteRulesPublishRes, error)
+	SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (*SiteRuleResource, error)
 	// SiteRulesRevert invokes SiteRules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/revert
-	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (SiteRulesRevertRes, error)
+	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (*SiteRuleResource, error)
 	// SiteRulesUpdate invokes SiteRules_update operation.
 	//
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/rules/{id}
-	SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (SiteRulesUpdateRes, error)
+	SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error)
 	// SiteSchemaApplyMigrations invokes SiteSchema_applyMigrations operation.
 	//
 	// Run the migrations the database has not run, the button of the error page. Only a development build
 	// serves it; any other answers 404. The answer comes once they ran.
 	//
 	// POST /schema/migrations
-	SiteSchemaApplyMigrations(ctx context.Context) (SiteSchemaApplyMigrationsRes, error)
+	SiteSchemaApplyMigrations(ctx context.Context) error
 	// SiteSecondFactorConfirmEnrollment invokes SiteSecondFactor_confirmEnrollment operation.
 	//
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second
@@ -1000,7 +1000,7 @@ type Invoker interface {
 	// its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 	//
 	// POST /me/second-factor/enrollment/confirm
-	SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error)
+	SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (*SiteRecoveryCodesHeaders, error)
 	// SiteSecondFactorDisable invokes SiteSecondFactor_disable operation.
 	//
 	// Disable the Second factor, proving the password and a current code. Every other session ends; the
@@ -1008,7 +1008,7 @@ type Invoker interface {
 	// throttle: 429 while its delay runs), 422 on a wrong code, 409 without an active Second factor.
 	//
 	// POST /me/second-factor/disable
-	SiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (SiteSecondFactorDisableRes, error)
+	SiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (*SiteSecondFactorDisableNoContent, error)
 	// SiteSecondFactorGetStatus invokes SiteSecondFactor_getStatus operation.
 	//
 	// The authenticated User's Second factor status. Answered while an acceptance is pending, for the
@@ -1024,7 +1024,7 @@ type Invoker interface {
 	// throttle: 429 while its delay runs), 409 without an active Second factor.
 	//
 	// POST /me/second-factor/recovery-codes
-	SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error)
+	SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (*SiteRecoveryCodesHeaders, error)
 	// SiteSecondFactorStartEnrollment invokes SiteSecondFactor_startEnrollment operation.
 	//
 	// Start enrolling a TOTP Second factor, proving the password: creates a pending secret (replacing an
@@ -1034,63 +1034,63 @@ type Invoker interface {
 	// for a correct one while its delay runs (ADR 0025).
 	//
 	// POST /me/second-factor/enrollment
-	SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
+	SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (*SiteSecondFactorEnrollment, error)
 	// SiteSegmentContactsList invokes SiteSegmentContacts_list operation.
 	//
 	// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
 	// that no longer fits the contact schema is a 422.
 	//
 	// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (SiteSegmentContactsListRes, error)
+	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactsListOK, error)
 	// SiteSegmentsArchive invokes SiteSegments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
 	// with 409 while live work uses it.
 	//
 	// POST /workspaces/{workspaceId}/segments/{id}/archive
-	SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (SiteSegmentsArchiveRes, error)
+	SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (*SiteSegmentResource, error)
 	// SiteSegmentsCreate invokes SiteSegments_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/segments
-	SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (SiteSegmentsCreateRes, error)
+	SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error)
 	// SiteSegmentsGet invokes SiteSegments_get operation.
 	//
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/segments/{id}
-	SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (SiteSegmentsGetRes, error)
+	SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (*SiteSegmentResource, error)
 	// SiteSegmentsList invokes SiteSegments_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/segments
-	SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (SiteSegmentsListRes, error)
+	SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (*SiteSegmentsListOK, error)
 	// SiteSegmentsPreview invokes SiteSegments_preview operation.
 	//
 	// Preview how many active contacts match a rule definition.
 	//
 	// POST /workspaces/{workspaceId}/segments/preview
-	SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (SiteSegmentsPreviewRes, error)
+	SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (*SitePreviewSegmentResult, error)
 	// SiteSegmentsUnarchive invokes SiteSegments_unarchive operation.
 	//
 	// Restore an archived resource.
 	//
 	// POST /workspaces/{workspaceId}/segments/{id}/unarchive
-	SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (SiteSegmentsUnarchiveRes, error)
+	SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (*SiteSegmentResource, error)
 	// SiteSegmentsUpdate invokes SiteSegments_update operation.
 	//
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/segments/{id}
-	SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error)
+	SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error)
 	// SiteSendingDomainsCreate invokes SiteSendingDomains_create operation.
 	//
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
-	SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
+	SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SiteSendingDomainResource, error)
 	// SiteSendingDomainsDelete invokes SiteSendingDomains_delete operation.
 	//
 	// Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its
@@ -1098,19 +1098,19 @@ type Invoker interface {
 	// it. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/sending-domains/{id}
-	SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (SiteSendingDomainsDeleteRes, error)
+	SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) error
 	// SiteSendingDomainsGet invokes SiteSendingDomains_get operation.
 	//
 	// Get a sending domain by ID for the site UI, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/sending-domains/{id}
-	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (SiteSendingDomainsGetRes, error)
+	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SiteSendingDomainResource, error)
 	// SiteSendingDomainsList invokes SiteSendingDomains_list operation.
 	//
 	// List sending domains for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/sending-domains
-	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error)
+	SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (*SiteSendingDomainsListOK, error)
 	// SiteSendingDomainsVerify invokes SiteSendingDomains_verify operation.
 	//
 	// Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of the
@@ -1118,13 +1118,13 @@ type Invoker interface {
 	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
+	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SiteSendingDomainResource, error)
 	// SiteSetupChecklistGet invokes SiteSetupChecklist_get operation.
 	//
 	// The Workspace's Setup checklist.
 	//
 	// GET /workspaces/{workspaceId}/setup-checklist
-	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error)
+	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (*SiteSetupProgress, error)
 	// SiteSignupSurveySubmit invokes SiteSignupSurvey_submit operation.
 	//
 	// Answer the Sign-up survey. It belongs to the User, so it takes no Workspace. The answers are stored
@@ -1135,7 +1135,7 @@ type Invoker interface {
 	// request.
 	//
 	// POST /me/signup-survey
-	SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
+	SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) error
 	// SiteSmsConsentsConfirm invokes SiteSmsConsents_confirm operation.
 	//
 	// Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with
@@ -1143,142 +1143,142 @@ type Invoker interface {
 	// stays. It does not lift an opt-out. 422 when the contact has no phone.
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
-	SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (SiteSmsConsentsConfirmRes, error)
+	SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (*SmsConsent, error)
 	// SiteSmsConsentsGet invokes SiteSmsConsents_get operation.
 	//
 	// Read the SMS Confirmation and opt-out of a contact's phone.
 	//
 	// GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
-	SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (SiteSmsConsentsGetRes, error)
+	SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (*SmsConsent, error)
 	// SiteSmsConsentsOptOut invokes SiteSmsConsents_optOut operation.
 	//
 	// Record an SMS opt-out that reached you by another route (an email, a call): the contact's number
 	// gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
-	SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (SiteSmsConsentsOptOutRes, error)
+	SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (*SmsConsent, error)
 	// SiteSuppressionsCreate invokes SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/suppressions
-	SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
+	SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (*SiteSuppressionResource, error)
 	// SiteSuppressionsDelete invokes SiteSuppressions_delete operation.
 	//
 	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
 	// one that is already lifted is a 404. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
-	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)
+	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) error
 	// SiteSuppressionsList invokes SiteSuppressions_list operation.
 	//
 	// List suppressed addresses (every member).
 	//
 	// GET /workspaces/{workspaceId}/suppressions
-	SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error)
+	SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (*SiteSuppressionsListOK, error)
 	// SiteTagsApply invokes SiteTags_apply operation.
 	//
 	// Apply a tag to a contact, creating the tag on first use. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/tags
-	SiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (SiteTagsApplyRes, error)
+	SiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (*SiteTagResource, error)
 	// SiteTagsDelete invokes SiteTags_delete operation.
 	//
 	// Delete a tag from the catalogue, unless a segment rule or an automation step names it.
 	//
 	// DELETE /workspaces/{workspaceId}/tags/{id}
-	SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (SiteTagsDeleteRes, error)
+	SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) error
 	// SiteTagsList invokes SiteTags_list operation.
 	//
 	// List the workspace's tags (feeds the segment builder).
 	//
 	// GET /workspaces/{workspaceId}/tags
-	SiteTagsList(ctx context.Context, params SiteTagsListParams) (SiteTagsListRes, error)
+	SiteTagsList(ctx context.Context, params SiteTagsListParams) (*SiteTagsListOK, error)
 	// SiteTagsListForContact invokes SiteTags_listForContact operation.
 	//
 	// List the tags a contact has.
 	//
 	// GET /workspaces/{workspaceId}/contacts/{contactId}/tags
-	SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (SiteTagsListForContactRes, error)
+	SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (*SiteTagsListForContactOK, error)
 	// SiteTagsRemove invokes SiteTags_remove operation.
 	//
 	// Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 	//
 	// DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
-	SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (SiteTagsRemoveRes, error)
+	SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) error
 	// SiteTelegramIssueStartLink invokes SiteTelegram_issueStartLink operation.
 	//
 	// Issue a Telegram start link for a contact. Each call issues a new link.
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
-	SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (SiteTelegramIssueStartLinkRes, error)
+	SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (*TelegramStartLinkResource, error)
 	// SiteTelegramListBindings invokes SiteTelegram_listBindings operation.
 	//
 	// List the Telegram chats a contact is reached through.
 	//
 	// GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
-	SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (SiteTelegramListBindingsRes, error)
+	SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) ([]SiteBindingResource, error)
 	// SiteTemplatesCreate invokes SiteTemplates_create operation.
 	//
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/templates
-	SiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (SiteTemplatesCreateRes, error)
+	SiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (*SiteEmailTemplateResource, error)
 	// SiteTemplatesDelete invokes SiteTemplates_delete operation.
 	//
 	// Delete a resource from the site UI.
 	//
 	// DELETE /workspaces/{workspaceId}/templates/{id}
-	SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) (SiteTemplatesDeleteRes, error)
+	SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) error
 	// SiteTemplatesGet invokes SiteTemplates_get operation.
 	//
 	// Get a resource by ID for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/templates/{id}
-	SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (SiteTemplatesGetRes, error)
+	SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (*SiteEmailTemplateResource, error)
 	// SiteTemplatesList invokes SiteTemplates_list operation.
 	//
 	// List resources for the site UI.
 	//
 	// GET /workspaces/{workspaceId}/templates
-	SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (SiteTemplatesListRes, error)
+	SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (*SiteTemplatesListOK, error)
 	// SiteTemplatesUpdate invokes SiteTemplates_update operation.
 	//
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/templates/{id}
-	SiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (SiteTemplatesUpdateRes, error)
+	SiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (*SiteEmailTemplateResource, error)
 	// SiteTokensCreate invokes SiteTokens_create operation.
 	//
 	// Create an API token; the full secret is returned once. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/tokens
-	SiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (SiteTokensCreateRes, error)
+	SiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (*SiteCreateTokenResponse, error)
 	// SiteTokensDelete invokes SiteTokens_delete operation.
 	//
 	// Revoke an API token. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/tokens/{id}
-	SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (SiteTokensDeleteRes, error)
+	SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) error
 	// SiteTokensList invokes SiteTokens_list operation.
 	//
 	// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 	//
 	// GET /workspaces/{workspaceId}/tokens
-	SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error)
+	SiteTokensList(ctx context.Context, params SiteTokensListParams) ([]SiteApiTokenResource, error)
 	// SiteTokensUpdate invokes SiteTokens_update operation.
 	//
 	// Rename an active API token. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/tokens/{id}
-	SiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (SiteTokensUpdateRes, error)
+	SiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (*SiteApiTokenResource, error)
 	// SiteTrackingDomainsList invokes SiteTrackingDomains_list operation.
 	//
 	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
 	// Empty while the Instance offers none.
 	//
 	// GET /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (SiteTrackingDomainsListRes, error)
+	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]SiteTrackingDomainResource, error)
 	// SiteTrackingDomainsRemove invokes SiteTrackingDomains_remove operation.
 	//
 	// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
@@ -1287,7 +1287,7 @@ type Invoker interface {
 	// forgotten: links sent on it stop working.
 	//
 	// DELETE /workspaces/{workspaceId}/tracking-domains/{id}
-	SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (SiteTrackingDomainsRemoveRes, error)
+	SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) error
 	// SiteTrackingDomainsSet invokes SiteTrackingDomains_set operation.
 	//
 	// Set the Workspace's Tracking domain (owner and admin only). With none it becomes the current one.
@@ -1297,20 +1297,20 @@ type Invoker interface {
 	// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (SiteTrackingDomainsSetRes, error)
+	SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*SiteTrackingDomainResource, error)
 	// SiteTrackingDomainsVerify invokes SiteTrackingDomains_verify operation.
 	//
 	// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
 	// it left it. A replacement that reaches `serving` becomes current.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (SiteTrackingDomainsVerifyRes, error)
+	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*SiteTrackingDomainResource, error)
 	// SiteTransactionalEmailsList invokes SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.
 	//
 	// GET /workspaces/{workspaceId}/transactional-emails
-	SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (SiteTransactionalEmailsListRes, error)
+	SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (*SiteTransactionalEmailsListOK, error)
 	// SiteUserAcceptPending invokes SiteUser_acceptPending operation.
 	//
 	// Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted with the
@@ -1320,7 +1320,7 @@ type Invoker interface {
 	// nothing.
 	//
 	// POST /me/acceptances
-	SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (SiteUserAcceptPendingRes, error)
+	SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (*SiteUserResource, error)
 	// SiteUserDeleteUser invokes SiteUser_deleteUser operation.
 	//
 	// Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
@@ -1334,7 +1334,7 @@ type Invoker interface {
 	// deleted. A Workspace in its deletion window does not block.
 	//
 	// POST /me/delete
-	SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (SiteUserDeleteUserRes, error)
+	SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (*SiteUserDeleteUserNoContent, error)
 	// SiteUserDeleteUserLink invokes SiteUser_deleteUserLink operation.
 	//
 	// Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the User's
@@ -1343,7 +1343,7 @@ type Invoker interface {
 	// the User's, or when the User has a password and confirms with it instead.
 	//
 	// POST /me/delete/link
-	SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (SiteUserDeleteUserLinkRes, error)
+	SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) error
 	// SiteUserEmailChange invokes SiteUser_emailChange operation.
 	//
 	// Request an email change; sends a confirmation link to the new address. Requires the current
@@ -1351,7 +1351,7 @@ type Invoker interface {
 	// the link (ADR 0031).
 	//
 	// POST /me/email-change
-	SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (SiteUserEmailChangeRes, error)
+	SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) error
 	// SiteUserGetMe invokes SiteUser_getMe operation.
 	//
 	// Get the authenticated user's profile.
@@ -1373,58 +1373,58 @@ type Invoker interface {
 	// answers 429 even for a right one while its delay runs.
 	//
 	// PUT /me
-	SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (SiteUserUpdateMeRes, error)
+	SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (*SiteUserResourceHeaders, error)
 	// SiteWebhooksCreate invokes SiteWebhooks_create operation.
 	//
 	// Create a webhook endpoint. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks
-	SiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error)
+	SiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (*SiteWebhookEndpointResource, error)
 	// SiteWebhooksDelete invokes SiteWebhooks_delete operation.
 	//
 	// Delete a webhook endpoint. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/webhooks/{id}
-	SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (SiteWebhooksDeleteRes, error)
+	SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) error
 	// SiteWebhooksGet invokes SiteWebhooks_get operation.
 	//
 	// Get a webhook endpoint by ID. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks/{id}
-	SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (SiteWebhooksGetRes, error)
+	SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (*SiteWebhookEndpointResource, error)
 	// SiteWebhooksList invokes SiteWebhooks_list operation.
 	//
 	// List webhook endpoints. Owners and admins only.
 	//
 	// GET /workspaces/{workspaceId}/webhooks
-	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error)
+	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (*SiteWebhooksListOK, error)
 	// SiteWebhooksRegenerateSecret invokes SiteWebhooks_regenerateSecret operation.
 	//
 	// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
-	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error)
+	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (*SiteWebhookEndpointResource, error)
 	// SiteWebhooksTest invokes SiteWebhooks_test operation.
 	//
 	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
-	SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
+	SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*SiteWebhookTestResult, error)
 	// SiteWebhooksUpdate invokes SiteWebhooks_update operation.
 	//
 	// Update a webhook endpoint. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/webhooks/{id}
-	SiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
+	SiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (*SiteWebhookEndpointResource, error)
 	// SiteWorkspacesAccountLink invokes SiteWorkspaces_accountLink operation.
 	//
 	// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link
 	// configured.
 	//
 	// POST /workspaces/{workspaceId}/account-link
-	SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error)
+	SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (*SiteAccountLinkResource, error)
 	// SiteWorkspacesCreate invokes SiteWorkspaces_create operation.
 	//
 	// Create a Workspace; the authenticated User becomes its Owner. Names are free text and need not be
@@ -1432,7 +1432,7 @@ type Invoker interface {
 	// is recorded as an Audit entry.
 	//
 	// POST /workspaces
-	SiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (SiteWorkspacesCreateRes, error)
+	SiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesDelete invokes SiteWorkspaces_delete operation.
 	//
 	// Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
@@ -1442,14 +1442,14 @@ type Invoker interface {
 	// Two-factor requirement still applies.
 	//
 	// POST /workspaces/{workspaceId}/delete
-	SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
+	SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (*SiteDeletedWorkspaceResource, error)
 	// SiteWorkspacesGetRevenueSettings invokes SiteWorkspaces_getRevenueSettings operation.
 	//
 	// Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
 	// window. Open to every member.
 	//
 	// GET /workspaces/{workspaceId}/revenue-settings
-	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error)
+	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (*SiteRevenueSettingsResource, error)
 	// SiteWorkspacesLeave invokes SiteWorkspaces_leave operation.
 	//
 	// Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
@@ -1457,7 +1457,7 @@ type Invoker interface {
 	// Workspace be deleted, first. Recorded as an Audit entry with the caller as actor.
 	//
 	// POST /workspaces/{workspaceId}/leave
-	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error)
+	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) error
 	// SiteWorkspacesLiftSecondFactorRequirement invokes SiteWorkspaces_liftSecondFactorRequirement operation.
 	//
 	// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
@@ -1465,7 +1465,7 @@ type Invoker interface {
 	// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
 	//
 	// DELETE /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error)
+	SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesList invokes SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -1487,7 +1487,7 @@ type Invoker interface {
 	// grace restarts. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error)
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesRestore invokes SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1497,7 +1497,7 @@ type Invoker interface {
 	// 404. Recorded as an Audit entry.
 	//
 	// POST /workspaces/deleted/{id}/restore
-	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
+	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesSetTimezone invokes SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
@@ -1505,13 +1505,13 @@ type Invoker interface {
 	// history at once.
 	//
 	// PUT /workspaces/{workspaceId}/timezone
-	SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error)
+	SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesUpdate invokes SiteWorkspaces_update operation.
 	//
 	// Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
 	//
 	// PUT /workspaces/{workspaceId}
-	SiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (SiteWorkspacesUpdateRes, error)
+	SiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesUpdateRevenueSettings invokes SiteWorkspaces_updateRevenueSettings operation.
 	//
 	// Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
@@ -1519,7 +1519,7 @@ type Invoker interface {
 	// its bounds. Every change is recorded as an Audit entry naming who changed what.
 	//
 	// PUT /workspaces/{workspaceId}/revenue-settings
-	SiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (SiteWorkspacesUpdateRevenueSettingsRes, error)
+	SiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (*SiteRevenueSettingsResource, error)
 }
 
 // Client implements OAS client.
@@ -1568,12 +1568,12 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 // Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link.
 //
 // GET /workspaces/{workspaceId}/analytics/clicks-by-link
-func (c *Client) SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (SiteAnalyticsClicksByLinkRes, error) {
+func (c *Client) SiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (*SiteAnalyticsClicksByLink, error) {
 	res, err := c.sendSiteAnalyticsClicksByLink(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (res SiteAnalyticsClicksByLinkRes, err error) {
+func (c *Client) sendSiteAnalyticsClicksByLink(ctx context.Context, params SiteAnalyticsClicksByLinkParams) (res *SiteAnalyticsClicksByLink, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_clicksByLink"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1724,12 +1724,12 @@ func (c *Client) sendSiteAnalyticsClicksByLink(ctx context.Context, params SiteA
 // Deliverability report: the Complaint and Bounce rates of each Sending domain over the range.
 //
 // GET /workspaces/{workspaceId}/analytics/deliverability
-func (c *Client) SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (SiteAnalyticsDeliverabilityRes, error) {
+func (c *Client) SiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (*SiteAnalyticsDeliverability, error) {
 	res, err := c.sendSiteAnalyticsDeliverability(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (res SiteAnalyticsDeliverabilityRes, err error) {
+func (c *Client) sendSiteAnalyticsDeliverability(ctx context.Context, params SiteAnalyticsDeliverabilityParams) (res *SiteAnalyticsDeliverability, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_deliverability"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -1880,12 +1880,12 @@ func (c *Client) sendSiteAnalyticsDeliverability(ctx context.Context, params Sit
 // Events in the range, grouped by action.
 //
 // GET /workspaces/{workspaceId}/analytics/events
-func (c *Client) SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (SiteAnalyticsEventsRes, error) {
+func (c *Client) SiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (*SiteAnalyticsEvents, error) {
 	res, err := c.sendSiteAnalyticsEvents(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (res SiteAnalyticsEventsRes, err error) {
+func (c *Client) sendSiteAnalyticsEvents(ctx context.Context, params SiteAnalyticsEventsParams) (res *SiteAnalyticsEvents, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_events"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2036,12 +2036,12 @@ func (c *Client) sendSiteAnalyticsEvents(ctx context.Context, params SiteAnalyti
 // New people report: Contacts created per Report day, split by Contact source.
 //
 // GET /workspaces/{workspaceId}/analytics/new-people
-func (c *Client) SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (SiteAnalyticsNewPeopleRes, error) {
+func (c *Client) SiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (*SiteNewPeopleReport, error) {
 	res, err := c.sendSiteAnalyticsNewPeople(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (res SiteAnalyticsNewPeopleRes, err error) {
+func (c *Client) sendSiteAnalyticsNewPeople(ctx context.Context, params SiteAnalyticsNewPeopleParams) (res *SiteNewPeopleReport, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_newPeople"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2192,12 +2192,12 @@ func (c *Client) sendSiteAnalyticsNewPeople(ctx context.Context, params SiteAnal
 // Human opens by hour of day and day of week in the Workspace time zone.
 //
 // GET /workspaces/{workspaceId}/analytics/opens-by-hour
-func (c *Client) SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (SiteAnalyticsOpensByHourRes, error) {
+func (c *Client) SiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (*SiteAnalyticsOpensByHour, error) {
 	res, err := c.sendSiteAnalyticsOpensByHour(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (res SiteAnalyticsOpensByHourRes, err error) {
+func (c *Client) sendSiteAnalyticsOpensByHour(ctx context.Context, params SiteAnalyticsOpensByHourParams) (res *SiteAnalyticsOpensByHour, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_opensByHour"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2348,12 +2348,12 @@ func (c *Client) sendSiteAnalyticsOpensByHour(ctx context.Context, params SiteAn
 // Aggregate metrics for the workspace dashboard.
 //
 // GET /workspaces/{workspaceId}/analytics/overview
-func (c *Client) SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (SiteAnalyticsOverviewRes, error) {
+func (c *Client) SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (*SiteAnalyticsOverview, error) {
 	res, err := c.sendSiteAnalyticsOverview(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (res SiteAnalyticsOverviewRes, err error) {
+func (c *Client) sendSiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (res *SiteAnalyticsOverview, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_overview"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2505,12 +2505,12 @@ func (c *Client) sendSiteAnalyticsOverview(ctx context.Context, params SiteAnaly
 // every member.
 //
 // GET /workspaces/{workspaceId}/analytics/revenue
-func (c *Client) SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (SiteAnalyticsRevenueRes, error) {
+func (c *Client) SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (*SiteAnalyticsRevenue, error) {
 	res, err := c.sendSiteAnalyticsRevenue(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (res SiteAnalyticsRevenueRes, err error) {
+func (c *Client) sendSiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (res *SiteAnalyticsRevenue, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_revenue"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2662,12 +2662,12 @@ func (c *Client) sendSiteAnalyticsRevenue(ctx context.Context, params SiteAnalyt
 // subscribed now.
 //
 // GET /workspaces/{workspaceId}/analytics/subscribed-people
-func (c *Client) SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (SiteAnalyticsSubscribedPeopleRes, error) {
+func (c *Client) SiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (*SiteAnalyticsSubscribedPeople, error) {
 	res, err := c.sendSiteAnalyticsSubscribedPeople(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (res SiteAnalyticsSubscribedPeopleRes, err error) {
+func (c *Client) sendSiteAnalyticsSubscribedPeople(ctx context.Context, params SiteAnalyticsSubscribedPeopleParams) (res *SiteAnalyticsSubscribedPeople, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAnalytics_subscribedPeople"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2818,12 +2818,12 @@ func (c *Client) sendSiteAnalyticsSubscribedPeople(ctx context.Context, params S
 // What needs attention in the Workspace. Open to every member.
 //
 // GET /workspaces/{workspaceId}/attention
-func (c *Client) SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (SiteAttentionGetRes, error) {
+func (c *Client) SiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (*SiteAttentionList, error) {
 	res, err := c.sendSiteAttentionGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (res SiteAttentionGetRes, err error) {
+func (c *Client) sendSiteAttentionGet(ctx context.Context, params SiteAttentionGetParams) (res *SiteAttentionList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAttention_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -2954,12 +2954,12 @@ func (c *Client) sendSiteAttentionGet(ctx context.Context, params SiteAttentionG
 // owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/export
-func (c *Client) SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (SiteAuditExportRes, error) {
+func (c *Client) SiteAuditExport(ctx context.Context, params SiteAuditExportParams) (*SiteAuditExportOKHeaders, error) {
 	res, err := c.sendSiteAuditExport(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditExport(ctx context.Context, params SiteAuditExportParams) (res SiteAuditExportRes, err error) {
+func (c *Client) sendSiteAuditExport(ctx context.Context, params SiteAuditExportParams) (res *SiteAuditExportOKHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_export"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3253,12 +3253,12 @@ func (c *Client) sendSiteAuditExport(ctx context.Context, params SiteAuditExport
 // and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/facets
-func (c *Client) SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (SiteAuditFacetsRes, error) {
+func (c *Client) SiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (*SiteAuditFacets, error) {
 	res, err := c.sendSiteAuditFacets(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (res SiteAuditFacetsRes, err error) {
+func (c *Client) sendSiteAuditFacets(ctx context.Context, params SiteAuditFacetsParams) (res *SiteAuditFacets, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_facets"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3388,12 +3388,12 @@ func (c *Client) sendSiteAuditFacets(ctx context.Context, params SiteAuditFacets
 // Read the Audit log retention window (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries/retention
-func (c *Client) SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (SiteAuditGetRetentionRes, error) {
+func (c *Client) SiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (*SiteAuditRetention, error) {
 	res, err := c.sendSiteAuditGetRetention(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (res SiteAuditGetRetentionRes, err error) {
+func (c *Client) sendSiteAuditGetRetention(ctx context.Context, params SiteAuditGetRetentionParams) (res *SiteAuditRetention, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_getRetention"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3523,12 +3523,12 @@ func (c *Client) sendSiteAuditGetRetention(ctx context.Context, params SiteAudit
 // List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (c *Client) SiteAuditList(ctx context.Context, params SiteAuditListParams) (SiteAuditListRes, error) {
+func (c *Client) SiteAuditList(ctx context.Context, params SiteAuditListParams) (*SiteAuditEntryList, error) {
 	res, err := c.sendSiteAuditList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListParams) (res SiteAuditListRes, err error) {
+func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListParams) (res *SiteAuditEntryList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -3856,12 +3856,12 @@ func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListPara
 // only).
 //
 // PUT /workspaces/{workspaceId}/audit-entries/retention
-func (c *Client) SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (SiteAuditSetRetentionRes, error) {
+func (c *Client) SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error) {
 	res, err := c.sendSiteAuditSetRetention(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (res SiteAuditSetRetentionRes, err error) {
+func (c *Client) sendSiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (res *SiteAuditRetention, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_setRetention"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -3997,12 +3997,12 @@ func (c *Client) sendSiteAuditSetRetention(ctx context.Context, request *SiteAud
 // The link alone never starts a session.
 //
 // POST /auth/confirm-email-change
-func (c *Client) SiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (SiteAuthConfirmEmailChangeRes, error) {
+func (c *Client) SiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (*SiteAuthConfirmEmailChangeOK, error) {
 	res, err := c.sendSiteAuthConfirmEmailChange(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (res SiteAuthConfirmEmailChangeRes, err error) {
+func (c *Client) sendSiteAuthConfirmEmailChange(ctx context.Context, request *SiteConfirmEmailChangeInput, params SiteAuthConfirmEmailChangeParams) (res *SiteAuthConfirmEmailChangeOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_confirmEmailChange"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4101,12 +4101,12 @@ func (c *Client) sendSiteAuthConfirmEmailChange(ctx context.Context, request *Si
 // Answers 429 over the per-IP limit.
 //
 // POST /auth/forgot-password
-func (c *Client) SiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) (SiteAuthForgotPasswordRes, error) {
-	res, err := c.sendSiteAuthForgotPassword(ctx, request)
-	return res, err
+func (c *Client) SiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) error {
+	_, err := c.sendSiteAuthForgotPassword(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) (res SiteAuthForgotPasswordRes, err error) {
+func (c *Client) sendSiteAuthForgotPassword(ctx context.Context, request *SiteForgotPasswordInput) (res *SiteAuthForgotPasswordAccepted, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_forgotPassword"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4190,12 +4190,12 @@ func (c *Client) sendSiteAuthForgotPassword(ctx context.Context, request *SiteFo
 // and no session.
 //
 // POST /auth/login
-func (c *Client) SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (SiteAuthLoginRes, error) {
+func (c *Client) SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (*SiteLoginResultHeaders, error) {
 	res, err := c.sendSiteAuthLogin(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthLogin(ctx context.Context, request *SiteLoginInput) (res SiteAuthLoginRes, err error) {
+func (c *Client) sendSiteAuthLogin(ctx context.Context, request *SiteLoginInput) (res *SiteLoginResultHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_login"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4356,12 +4356,12 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 // a mail. Rate limited per IP like Sign-up.
 //
 // POST /auth/resend-verification
-func (c *Client) SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error) {
-	res, err := c.sendSiteAuthResendVerification(ctx, request, params)
-	return res, err
+func (c *Client) SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) error {
+	_, err := c.sendSiteAuthResendVerification(ctx, request, params)
+	return err
 }
 
-func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (res SiteAuthResendVerificationRes, err error) {
+func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (res *SiteAuthResendVerificationAccepted, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_resendVerification"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4459,12 +4459,12 @@ func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *Si
 // error; an invalid or expired token answers 400.
 //
 // POST /auth/reset-password
-func (c *Client) SiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) (SiteAuthResetPasswordRes, error) {
-	res, err := c.sendSiteAuthResetPassword(ctx, request)
-	return res, err
+func (c *Client) SiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) error {
+	_, err := c.sendSiteAuthResetPassword(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) (res SiteAuthResetPasswordRes, err error) {
+func (c *Client) sendSiteAuthResetPassword(ctx context.Context, request *SiteResetPasswordInput) (res *SiteAuthResetPasswordOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_resetPassword"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4545,12 +4545,12 @@ func (c *Client) sendSiteAuthResetPassword(ctx context.Context, request *SiteRes
 // correct code while its delay runs (ADR 0020, ADR 0025).
 //
 // POST /auth/second-factor
-func (c *Client) SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error) {
+func (c *Client) SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (*SiteLoginResultHeaders, error) {
 	res, err := c.sendSiteAuthSecondFactor(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (res SiteAuthSecondFactorRes, err error) {
+func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (res *SiteLoginResultHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_secondFactor"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4636,12 +4636,12 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 // address answers 409. Sign-up is open on every Instance (ADR 0063).
 //
 // POST /auth/sign-up
-func (c *Client) SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error) {
+func (c *Client) SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (*SiteAuthSignUpAccepted, error) {
 	res, err := c.sendSiteAuthSignUp(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (res SiteAuthSignUpRes, err error) {
+func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (res *SiteAuthSignUpAccepted, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signUp"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -4729,12 +4729,12 @@ func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInpu
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
-func (c *Client) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (SiteAuthSigninCallbackRes, error) {
+func (c *Client) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error) {
 	res, err := c.sendSiteAuthSigninCallback(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (res SiteAuthSigninCallbackRes, err error) {
+func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (res *SiteAuthSigninCallbackFound, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinCallback"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -4920,12 +4920,12 @@ func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuth
 // opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 //
 // POST /auth/signin-not-me
-func (c *Client) SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error) {
-	res, err := c.sendSiteAuthSigninNotMe(ctx, request)
-	return res, err
+func (c *Client) SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) error {
+	_, err := c.sendSiteAuthSigninNotMe(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (res SiteAuthSigninNotMeRes, err error) {
+func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (res *SiteAuthSigninNotMeOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinNotMe"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5005,12 +5005,12 @@ func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigni
 // completed, declined or forged one answers 400.
 //
 // GET /auth/signin-pending
-func (c *Client) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (SiteAuthSigninPendingRes, error) {
+func (c *Client) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (*SitePendingSignup, error) {
 	res, err := c.sendSiteAuthSigninPending(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (res SiteAuthSigninPendingRes, err error) {
+func (c *Client) sendSiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (res *SitePendingSignup, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinPending"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5104,12 +5104,12 @@ func (c *Client) sendSiteAuthSigninPending(ctx context.Context, params SiteAuthS
 // names nothing any more.
 //
 // POST /auth/signin-pending/decline
-func (c *Client) SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (SiteAuthSigninPendingDeclineRes, error) {
-	res, err := c.sendSiteAuthSigninPendingDecline(ctx, request)
-	return res, err
+func (c *Client) SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error {
+	_, err := c.sendSiteAuthSigninPendingDecline(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (res SiteAuthSigninPendingDeclineRes, err error) {
+func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (res *SiteAuthSigninPendingDeclineNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinPendingDecline"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5193,12 +5193,12 @@ func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *
 // was taken meanwhile.
 //
 // POST /auth/signin-pending
-func (c *Client) SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (SiteAuthSigninPendingSubmitRes, error) {
+func (c *Client) SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (*SiteAuthSigninPendingSubmitNoContent, error) {
 	res, err := c.sendSiteAuthSigninPendingSubmit(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (res SiteAuthSigninPendingSubmitRes, err error) {
+func (c *Client) sendSiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (res *SiteAuthSigninPendingSubmitNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinPendingSubmit"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5360,12 +5360,12 @@ func (c *Client) sendSiteAuthSigninProviders(ctx context.Context) (res *SiteSign
 // as a relative in-app path; anything else is dropped. 404 for a provider that is not configured.
 //
 // GET /auth/signin/{provider}/start
-func (c *Client) SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error) {
+func (c *Client) SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (*SiteAuthSigninStartFound, error) {
 	res, err := c.sendSiteAuthSigninStart(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (res SiteAuthSigninStartRes, err error) {
+func (c *Client) sendSiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (res *SiteAuthSigninStartFound, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinStart"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5504,12 +5504,12 @@ func (c *Client) sendSiteAuthSigninStart(ctx context.Context, params SiteAuthSig
 // address it was sent to. Rate limited like Sign-up.
 //
 // POST /auth/verify-email
-func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error) {
+func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (*SiteVerifyEmailResultHeaders, error) {
 	res, err := c.sendSiteAuthVerifyEmail(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (res SiteAuthVerifyEmailRes, err error) {
+func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (res *SiteVerifyEmailResultHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_verifyEmail"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5609,12 +5609,12 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 // read from its enrollments for the chosen period and the one before it.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/report
-func (c *Client) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error) {
+func (c *Client) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*SiteAutomationReport, error) {
 	res, err := c.sendSiteAutomationReportsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (res SiteAutomationReportsGetRes, err error) {
+func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (res *SiteAutomationReport, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomationReports_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5789,12 +5789,12 @@ func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAu
 // an active rule enrolls contacts in it (`usedBy` names them).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
-func (c *Client) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error) {
+func (c *Client) SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (res SiteAutomationsArchiveRes, err error) {
+func (c *Client) sendSiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -5946,12 +5946,12 @@ func (c *Client) sendSiteAutomationsArchive(ctx context.Context, params SiteAuto
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/automations
-func (c *Client) SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (SiteAutomationsCreateRes, error) {
+func (c *Client) SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (res SiteAutomationsCreateRes, err error) {
+func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6084,12 +6084,12 @@ func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCre
 // Deactivate an automation (stops new enrollments). 409 when it is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/deactivate
-func (c *Client) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (SiteAutomationsDeactivateRes, error) {
+func (c *Client) SiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsDeactivate(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (res SiteAutomationsDeactivateRes, err error) {
+func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteAutomationsDeactivateParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_deactivate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6241,12 +6241,12 @@ func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteA
 // Render an HTTP step's body for a Contact and validate it, calling nothing.
 //
 // POST /workspaces/{workspaceId}/automations/dry-run-http-step
-func (c *Client) SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (SiteAutomationsDryRunHttpStepRes, error) {
+func (c *Client) SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*SiteDryRunHttpStepResult, error) {
 	res, err := c.sendSiteAutomationsDryRunHttpStep(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (res SiteAutomationsDryRunHttpStepRes, err error) {
+func (c *Client) sendSiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (res *SiteDryRunHttpStepResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_dryRunHttpStep"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6379,12 +6379,12 @@ func (c *Client) sendSiteAutomationsDryRunHttpStep(ctx context.Context, request 
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/automations/{id}
-func (c *Client) SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (SiteAutomationsGetRes, error) {
+func (c *Client) SiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (res SiteAutomationsGetRes, err error) {
+func (c *Client) sendSiteAutomationsGet(ctx context.Context, params SiteAutomationsGetParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -6535,12 +6535,12 @@ func (c *Client) sendSiteAutomationsGet(ctx context.Context, params SiteAutomati
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/automations
-func (c *Client) SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (SiteAutomationsListRes, error) {
+func (c *Client) SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (*SiteAutomationsListOK, error) {
 	res, err := c.sendSiteAutomationsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (res SiteAutomationsListRes, err error) {
+func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (res *SiteAutomationsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -6797,12 +6797,12 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // refused. 409 for an archived automation too.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
-func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error) {
+func (c *Client) SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsPublish(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (res SiteAutomationsPublishRes, err error) {
+func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6955,12 +6955,12 @@ func (c *Client) sendSiteAutomationsPublish(ctx context.Context, params SiteAuto
 // 409 when the automation is archived.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/revert
-func (c *Client) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error) {
+func (c *Client) SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsRevert(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (res SiteAutomationsRevertRes, err error) {
+func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7113,12 +7113,12 @@ func (c *Client) sendSiteAutomationsRevert(ctx context.Context, params SiteAutom
 // again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
-func (c *Client) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error) {
+func (c *Client) SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (res SiteAutomationsUnarchiveRes, err error) {
+func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7271,12 +7271,12 @@ func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAu
 // archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
-func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error) {
+func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (res SiteAutomationsUpdateRes, err error) {
+func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -7430,12 +7430,12 @@ func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpd
 // Read the Brand kit. Every member may read it.
 //
 // GET /workspaces/{workspaceId}/brand-kit
-func (c *Client) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error) {
+func (c *Client) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*SiteBrandKitResource, error) {
 	res, err := c.sendSiteBrandKitGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (res SiteBrandKitGetRes, err error) {
+func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (res *SiteBrandKitResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBrandKit_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7567,12 +7567,12 @@ func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGet
 // Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
-func (c *Client) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error) {
+func (c *Client) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) ([]SiteEmailTemplateResource, error) {
 	res, err := c.sendSiteBrandKitRecreateStarterTemplates(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (res SiteBrandKitRecreateStarterTemplatesRes, err error) {
+func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (res []SiteEmailTemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBrandKit_recreateStarterTemplates"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7704,12 +7704,12 @@ func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, p
 // changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
-func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error) {
+func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*SiteBrandKitResource, error) {
 	res, err := c.sendSiteBrandKitSave(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (res SiteBrandKitSaveRes, err error) {
+func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (res *SiteBrandKitResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBrandKit_save"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -7844,12 +7844,12 @@ func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBran
 // in the broadcast's stats does not.
 //
 // GET /workspaces/{workspaceId}/broadcasts/{broadcastId}/links
-func (c *Client) SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (SiteBroadcastLinksListRes, error) {
+func (c *Client) SiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (*SiteBroadcastLinkClicksList, error) {
 	res, err := c.sendSiteBroadcastLinksList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (res SiteBroadcastLinksListRes, err error) {
+func (c *Client) sendSiteBroadcastLinksList(ctx context.Context, params SiteBroadcastLinksListParams) (res *SiteBroadcastLinkClicksList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcastLinks_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8003,12 +8003,12 @@ func (c *Client) sendSiteBroadcastLinksList(ctx context.Context, params SiteBroa
 // archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
-func (c *Client) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (SiteBroadcastsArchiveRes, error) {
+func (c *Client) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (res SiteBroadcastsArchiveRes, err error) {
+func (c *Client) sendSiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8160,12 +8160,12 @@ func (c *Client) sendSiteBroadcastsArchive(ctx context.Context, params SiteBroad
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/broadcasts
-func (c *Client) SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error) {
+func (c *Client) SiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (res SiteBroadcastsCreateRes, err error) {
+func (c *Client) sendSiteBroadcastsCreate(ctx context.Context, request *CreateBroadcastInput, params SiteBroadcastsCreateParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8298,12 +8298,12 @@ func (c *Client) sendSiteBroadcastsCreate(ctx context.Context, request *CreateBr
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/broadcasts/{id}
-func (c *Client) SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (SiteBroadcastsGetRes, error) {
+func (c *Client) SiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (res SiteBroadcastsGetRes, err error) {
+func (c *Client) sendSiteBroadcastsGet(ctx context.Context, params SiteBroadcastsGetParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8454,12 +8454,12 @@ func (c *Client) sendSiteBroadcastsGet(ctx context.Context, params SiteBroadcast
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/broadcasts
-func (c *Client) SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (SiteBroadcastsListRes, error) {
+func (c *Client) SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (*SiteBroadcastsListOK, error) {
 	res, err := c.sendSiteBroadcastsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (res SiteBroadcastsListRes, err error) {
+func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (res *SiteBroadcastsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -8708,12 +8708,12 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 // scheduling it is refused. An archived broadcast is a 409 too.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
-func (c *Client) SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error) {
+func (c *Client) SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsSchedule(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (res SiteBroadcastsScheduleRes, err error) {
+func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_schedule"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -8869,12 +8869,12 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *Schedu
 // resolved from; an archived segment is refused. An archived broadcast is a 409.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
-func (c *Client) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error) {
+func (c *Client) SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsSend(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (res SiteBroadcastsSendRes, err error) {
+func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_send"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -9031,12 +9031,12 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 // another address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
-func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {
+func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (*SiteTestSendBroadcastResult, error) {
 	res, err := c.sendSiteBroadcastsTestSend(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (res SiteBroadcastsTestSendRes, err error) {
+func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (res *SiteTestSendBroadcastResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_testSend"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -9191,12 +9191,12 @@ func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *TestSe
 // Bring an archived broadcast back to the list, in the status it had.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/unarchive
-func (c *Client) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (SiteBroadcastsUnarchiveRes, error) {
+func (c *Client) SiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (res SiteBroadcastsUnarchiveRes, err error) {
+func (c *Client) sendSiteBroadcastsUnarchive(ctx context.Context, params SiteBroadcastsUnarchiveParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -9348,12 +9348,12 @@ func (c *Client) sendSiteBroadcastsUnarchive(ctx context.Context, params SiteBro
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/broadcasts/{id}
-func (c *Client) SiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error) {
+func (c *Client) SiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (*SiteBroadcastResource, error) {
 	res, err := c.sendSiteBroadcastsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (res SiteBroadcastsUpdateRes, err error) {
+func (c *Client) sendSiteBroadcastsUpdate(ctx context.Context, request *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (res *SiteBroadcastResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBroadcasts_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -9507,12 +9507,12 @@ func (c *Client) sendSiteBroadcastsUpdate(ctx context.Context, request *UpdateBr
 // Delete one Captured message. Every member may delete.
 //
 // DELETE /workspaces/{workspaceId}/captured-messages/{id}
-func (c *Client) SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (SiteCapturedMessagesDeleteRes, error) {
-	res, err := c.sendSiteCapturedMessagesDelete(ctx, params)
-	return res, err
+func (c *Client) SiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) error {
+	_, err := c.sendSiteCapturedMessagesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (res SiteCapturedMessagesDeleteRes, err error) {
+func (c *Client) sendSiteCapturedMessagesDelete(ctx context.Context, params SiteCapturedMessagesDeleteParams) (res *SiteCapturedMessagesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCapturedMessages_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -9663,12 +9663,12 @@ func (c *Client) sendSiteCapturedMessagesDelete(ctx context.Context, params Site
 // Delete every Captured message of the workspace. Every member may delete.
 //
 // DELETE /workspaces/{workspaceId}/captured-messages/all
-func (c *Client) SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (SiteCapturedMessagesDeleteAllRes, error) {
-	res, err := c.sendSiteCapturedMessagesDeleteAll(ctx, params)
-	return res, err
+func (c *Client) SiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) error {
+	_, err := c.sendSiteCapturedMessagesDeleteAll(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (res SiteCapturedMessagesDeleteAllRes, err error) {
+func (c *Client) sendSiteCapturedMessagesDeleteAll(ctx context.Context, params SiteCapturedMessagesDeleteAllParams) (res *SiteCapturedMessagesDeleteAllNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCapturedMessages_deleteAll"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -9798,12 +9798,12 @@ func (c *Client) sendSiteCapturedMessagesDeleteAll(ctx context.Context, params S
 // Read one Captured message in full: headers, HTML, text and links. Every member may read.
 //
 // GET /workspaces/{workspaceId}/captured-messages/{id}
-func (c *Client) SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (SiteCapturedMessagesGetRes, error) {
+func (c *Client) SiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (*SiteCapturedMessageResource, error) {
 	res, err := c.sendSiteCapturedMessagesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (res SiteCapturedMessagesGetRes, err error) {
+func (c *Client) sendSiteCapturedMessagesGet(ctx context.Context, params SiteCapturedMessagesGetParams) (res *SiteCapturedMessageResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCapturedMessages_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -9955,12 +9955,12 @@ func (c *Client) sendSiteCapturedMessagesGet(ctx context.Context, params SiteCap
 // Every member may read.
 //
 // GET /workspaces/{workspaceId}/captured-messages
-func (c *Client) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error) {
+func (c *Client) SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (*SiteCapturedMessagesListOK, error) {
 	res, err := c.sendSiteCapturedMessagesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (res SiteCapturedMessagesListRes, err error) {
+func (c *Client) sendSiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (res *SiteCapturedMessagesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCapturedMessages_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10128,12 +10128,12 @@ func (c *Client) sendSiteCapturedMessagesList(ctx context.Context, params SiteCa
 // Revoke a Connection: the caller's own, or anyone's with members:manage.
 //
 // DELETE /workspaces/{workspaceId}/connections/{id}
-func (c *Client) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (SiteConnectionsDeleteRes, error) {
-	res, err := c.sendSiteConnectionsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) error {
+	_, err := c.sendSiteConnectionsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (res SiteConnectionsDeleteRes, err error) {
+func (c *Client) sendSiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (res *SiteConnectionsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteConnections_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -10284,12 +10284,12 @@ func (c *Client) sendSiteConnectionsDelete(ctx context.Context, params SiteConne
 // List the Connections the caller may see: their own, or every member's with members:manage.
 //
 // GET /workspaces/{workspaceId}/connections
-func (c *Client) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (SiteConnectionsListRes, error) {
+func (c *Client) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) ([]SiteConnectionResource, error) {
 	res, err := c.sendSiteConnectionsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (res SiteConnectionsListRes, err error) {
+func (c *Client) sendSiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (res []SiteConnectionResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteConnections_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -10419,12 +10419,12 @@ func (c *Client) sendSiteConnectionsList(ctx context.Context, params SiteConnect
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/contacts
-func (c *Client) SiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (SiteContactsCreateRes, error) {
+func (c *Client) SiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (*SiteContactResource, error) {
 	res, err := c.sendSiteContactsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (res SiteContactsCreateRes, err error) {
+func (c *Client) sendSiteContactsCreate(ctx context.Context, request *SiteCreateContactInput, params SiteContactsCreateParams) (res *SiteContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -10558,12 +10558,12 @@ func (c *Client) sendSiteContactsCreate(ctx context.Context, request *SiteCreate
 // its opt-outs survive. Owner or admin only.
 //
 // DELETE /workspaces/{workspaceId}/contacts/{id}
-func (c *Client) SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (SiteContactsDeleteRes, error) {
-	res, err := c.sendSiteContactsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) error {
+	_, err := c.sendSiteContactsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (res SiteContactsDeleteRes, err error) {
+func (c *Client) sendSiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (res *SiteContactsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -10717,12 +10717,12 @@ func (c *Client) sendSiteContactsDelete(ctx context.Context, params SiteContacts
 // Owner or admin only.
 //
 // DELETE /workspaces/{workspaceId}/contacts/erase
-func (c *Client) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error) {
-	res, err := c.sendSiteContactsErase(ctx, params)
-	return res, err
+func (c *Client) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) error {
+	_, err := c.sendSiteContactsErase(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (res SiteContactsEraseRes, err error) {
+func (c *Client) sendSiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (res *SiteContactsEraseNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_erase"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -11050,12 +11050,12 @@ func (c *Client) sendSiteContactsExport(ctx context.Context, params SiteContacts
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/contacts/{id}
-func (c *Client) SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (SiteContactsGetRes, error) {
+func (c *Client) SiteContactsGet(ctx context.Context, params SiteContactsGetParams) (*SiteContactResource, error) {
 	res, err := c.sendSiteContactsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteContactsGet(ctx context.Context, params SiteContactsGetParams) (res SiteContactsGetRes, err error) {
+func (c *Client) sendSiteContactsGet(ctx context.Context, params SiteContactsGetParams) (res *SiteContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11206,12 +11206,12 @@ func (c *Client) sendSiteContactsGet(ctx context.Context, params SiteContactsGet
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/contacts
-func (c *Client) SiteContactsList(ctx context.Context, params SiteContactsListParams) (SiteContactsListRes, error) {
+func (c *Client) SiteContactsList(ctx context.Context, params SiteContactsListParams) (*SiteContactsListOK, error) {
 	res, err := c.sendSiteContactsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsListParams) (res SiteContactsListRes, err error) {
+func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsListParams) (res *SiteContactsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11435,12 +11435,12 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 // zeros, not 404. Owner or admin only.
 //
 // GET /workspaces/{workspaceId}/contacts/lookup
-func (c *Client) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error) {
+func (c *Client) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (*SiteContactHoldings, error) {
 	res, err := c.sendSiteContactsLookup(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (res SiteContactsLookupRes, err error) {
+func (c *Client) sendSiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (res *SiteContactHoldings, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_lookup"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11588,12 +11588,12 @@ func (c *Client) sendSiteContactsLookup(ctx context.Context, params SiteContacts
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/contacts/{id}
-func (c *Client) SiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (SiteContactsUpdateRes, error) {
+func (c *Client) SiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (*SiteContactResource, error) {
 	res, err := c.sendSiteContactsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (res SiteContactsUpdateRes, err error) {
+func (c *Client) sendSiteContactsUpdate(ctx context.Context, request *SiteUpdateContactInput, params SiteContactsUpdateParams) (res *SiteContactResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteContacts_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -11747,12 +11747,12 @@ func (c *Client) sendSiteContactsUpdate(ctx context.Context, request *SiteUpdate
 // List the workspace's custom field definitions.
 //
 // GET /workspaces/{workspaceId}/custom-fields
-func (c *Client) SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error) {
+func (c *Client) SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (*SiteCustomFieldsListOK, error) {
 	res, err := c.sendSiteCustomFieldsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (res SiteCustomFieldsListRes, err error) {
+func (c *Client) sendSiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (res *SiteCustomFieldsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCustomFields_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -11884,12 +11884,12 @@ func (c *Client) sendSiteCustomFieldsList(ctx context.Context, params SiteCustom
 // and admins only.
 //
 // PUT /workspaces/{workspaceId}/custom-fields/{id}
-func (c *Client) SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (SiteCustomFieldsUpdateRes, error) {
+func (c *Client) SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error) {
 	res, err := c.sendSiteCustomFieldsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (res SiteCustomFieldsUpdateRes, err error) {
+func (c *Client) sendSiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (res *SiteCustomFieldResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCustomFields_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12043,12 +12043,12 @@ func (c *Client) sendSiteCustomFieldsUpdate(ctx context.Context, request *SiteUp
 // Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
-func (c *Client) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error) {
+func (c *Client) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (*SiteDomainJoinResource, error) {
 	res, err := c.sendSiteDomainJoinGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (res SiteDomainJoinGetRes, err error) {
+func (c *Client) sendSiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (res *SiteDomainJoinResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteDomainJoin_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12179,12 +12179,12 @@ func (c *Client) sendSiteDomainJoinGet(ctx context.Context, params SiteDomainJoi
 // User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
-func (c *Client) SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error) {
+func (c *Client) SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (*SiteDomainJoinResource, error) {
 	res, err := c.sendSiteDomainJoinSet(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (res SiteDomainJoinSetRes, err error) {
+func (c *Client) sendSiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (res *SiteDomainJoinResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteDomainJoin_set"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12317,12 +12317,12 @@ func (c *Client) sendSiteDomainJoinSet(ctx context.Context, request *SiteSetDoma
 // Get one Enrollment of an Automation.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-func (c *Client) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (SiteEnrollmentsGetRes, error) {
+func (c *Client) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*SiteEnrollmentResource, error) {
 	res, err := c.sendSiteEnrollmentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (res SiteEnrollmentsGetRes, err error) {
+func (c *Client) sendSiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (res *SiteEnrollmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteEnrollments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12495,12 +12495,12 @@ func (c *Client) sendSiteEnrollmentsGet(ctx context.Context, params SiteEnrollme
 // List an Automation's Enrollments, newest first.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/enrollments
-func (c *Client) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (SiteEnrollmentsListRes, error) {
+func (c *Client) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (*SiteEnrollmentsListOK, error) {
 	res, err := c.sendSiteEnrollmentsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (res SiteEnrollmentsListRes, err error) {
+func (c *Client) sendSiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (res *SiteEnrollmentsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteEnrollments_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12707,12 +12707,12 @@ func (c *Client) sendSiteEnrollmentsList(ctx context.Context, params SiteEnrollm
 // Distinct event actions in the workspace, sorted — powers the segment builder.
 //
 // GET /workspaces/{workspaceId}/events/actions
-func (c *Client) SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (SiteEventsActionsRes, error) {
+func (c *Client) SiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (*SiteEventActionsResult, error) {
 	res, err := c.sendSiteEventsActions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (res SiteEventsActionsRes, err error) {
+func (c *Client) sendSiteEventsActions(ctx context.Context, params SiteEventsActionsParams) (res *SiteEventActionsResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteEvents_actions"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -12842,12 +12842,12 @@ func (c *Client) sendSiteEventsActions(ctx context.Context, params SiteEventsAct
 // List events for the site UI (most recent first).
 //
 // GET /workspaces/{workspaceId}/events
-func (c *Client) SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error) {
+func (c *Client) SiteEventsList(ctx context.Context, params SiteEventsListParams) (*SiteEventsListOK, error) {
 	res, err := c.sendSiteEventsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListParams) (res SiteEventsListRes, err error) {
+func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListParams) (res *SiteEventsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteEvents_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13090,12 +13090,12 @@ func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListPa
 // code (see SiteSigninError). 404 for a provider that is not configured.
 //
 // GET /me/identities/{provider}/link
-func (c *Client) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (SiteIdentitiesLinkRes, error) {
+func (c *Client) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (*SiteIdentitiesLinkFound, error) {
 	res, err := c.sendSiteIdentitiesLink(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (res SiteIdentitiesLinkRes, err error) {
+func (c *Client) sendSiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (res *SiteIdentitiesLinkFound, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIdentities_link"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13357,12 +13357,12 @@ func (c *Client) sendSiteIdentitiesList(ctx context.Context) (res *SiteLinkedIde
 // identity). Every other session ends; the acting one continues under the cookie set here.
 //
 // DELETE /me/identities/{id}
-func (c *Client) SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error) {
+func (c *Client) SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (*SiteIdentitiesUnlinkNoContent, error) {
 	res, err := c.sendSiteIdentitiesUnlink(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (res SiteIdentitiesUnlinkRes, err error) {
+func (c *Client) sendSiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (res *SiteIdentitiesUnlinkNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIdentities_unlink"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -13492,12 +13492,12 @@ func (c *Client) sendSiteIdentitiesUnlink(ctx context.Context, params SiteIdenti
 // `release:read` in no live Workspace.
 //
 // GET /instance/release
-func (c *Client) SiteInstanceGetRelease(ctx context.Context) (SiteInstanceGetReleaseRes, error) {
+func (c *Client) SiteInstanceGetRelease(ctx context.Context) (*SiteInstanceRelease, error) {
 	res, err := c.sendSiteInstanceGetRelease(ctx)
 	return res, err
 }
 
-func (c *Client) sendSiteInstanceGetRelease(ctx context.Context) (res SiteInstanceGetReleaseRes, err error) {
+func (c *Client) sendSiteInstanceGetRelease(ctx context.Context) (res *SiteInstanceRelease, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteInstance_getRelease"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -13605,12 +13605,12 @@ func (c *Client) sendSiteInstanceGetRelease(ctx context.Context) (res SiteInstan
 // Create an integration. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations
-func (c *Client) SiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error) {
+func (c *Client) SiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (*SiteIntegrationResource, error) {
 	res, err := c.sendSiteIntegrationsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (res SiteIntegrationsCreateRes, err error) {
+func (c *Client) sendSiteIntegrationsCreate(ctx context.Context, request *CreateIntegrationInput, params SiteIntegrationsCreateParams) (res *SiteIntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -13746,12 +13746,12 @@ func (c *Client) sendSiteIntegrationsCreate(ctx context.Context, request *Create
 // effort. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/integrations/{id}
-func (c *Client) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error) {
-	res, err := c.sendSiteIntegrationsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) error {
+	_, err := c.sendSiteIntegrationsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (res SiteIntegrationsDeleteRes, err error) {
+func (c *Client) sendSiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (res *SiteIntegrationsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -13902,12 +13902,12 @@ func (c *Client) sendSiteIntegrationsDelete(ctx context.Context, params SiteInte
 // Get an integration by id, deleted or not.
 //
 // GET /workspaces/{workspaceId}/integrations/{id}
-func (c *Client) SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (SiteIntegrationsGetRes, error) {
+func (c *Client) SiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (*SiteIntegrationResource, error) {
 	res, err := c.sendSiteIntegrationsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (res SiteIntegrationsGetRes, err error) {
+func (c *Client) sendSiteIntegrationsGet(ctx context.Context, params SiteIntegrationsGetParams) (res *SiteIntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14058,12 +14058,12 @@ func (c *Client) sendSiteIntegrationsGet(ctx context.Context, params SiteIntegra
 // List the workspace's sending-provider integrations; a deleted one is not listed.
 //
 // GET /workspaces/{workspaceId}/integrations
-func (c *Client) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error) {
+func (c *Client) SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) ([]SiteIntegrationResource, error) {
 	res, err := c.sendSiteIntegrationsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (res SiteIntegrationsListRes, err error) {
+func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (res []SiteIntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14195,12 +14195,12 @@ func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegr
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key
-func (c *Client) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error) {
+func (c *Client) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (*SiteIntegrationResource, error) {
 	res, err := c.sendSiteIntegrationsRegenerateKey(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (res SiteIntegrationsRegenerateKeyRes, err error) {
+func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (res *SiteIntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_regenerateKey"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -14352,12 +14352,12 @@ func (c *Client) sendSiteIntegrationsRegenerateKey(ctx context.Context, params S
 // Update an integration; a deleted one is read-only and answers 404. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
-func (c *Client) SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error) {
+func (c *Client) SiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (*SiteIntegrationResource, error) {
 	res, err := c.sendSiteIntegrationsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (res SiteIntegrationsUpdateRes, err error) {
+func (c *Client) sendSiteIntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (res *SiteIntegrationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIntegrations_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -14511,12 +14511,12 @@ func (c *Client) sendSiteIntegrationsUpdate(ctx context.Context, request *Update
 // Invite an email address; the accept link is returned once.
 //
 // POST /workspaces/{workspaceId}/invitations
-func (c *Client) SiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (SiteInvitationsCreateRes, error) {
+func (c *Client) SiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (*SiteCreateInvitationResponse, error) {
 	res, err := c.sendSiteInvitationsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (res SiteInvitationsCreateRes, err error) {
+func (c *Client) sendSiteInvitationsCreate(ctx context.Context, request *SiteCreateInvitationInput, params SiteInvitationsCreateParams) (res *SiteCreateInvitationResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteInvitations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -14649,12 +14649,12 @@ func (c *Client) sendSiteInvitationsCreate(ctx context.Context, request *SiteCre
 // Revoke a pending invitation.
 //
 // DELETE /workspaces/{workspaceId}/invitations/{id}
-func (c *Client) SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) (SiteInvitationsDeleteRes, error) {
-	res, err := c.sendSiteInvitationsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) error {
+	_, err := c.sendSiteInvitationsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) (res SiteInvitationsDeleteRes, err error) {
+func (c *Client) sendSiteInvitationsDelete(ctx context.Context, params SiteInvitationsDeleteParams) (res *SiteInvitationsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteInvitations_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -14805,12 +14805,12 @@ func (c *Client) sendSiteInvitationsDelete(ctx context.Context, params SiteInvit
 // List pending (unaccepted) invitations for the workspace.
 //
 // GET /workspaces/{workspaceId}/invitations
-func (c *Client) SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (SiteInvitationsListRes, error) {
+func (c *Client) SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) ([]SiteInvitationResource, error) {
 	res, err := c.sendSiteInvitationsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (res SiteInvitationsListRes, err error) {
+func (c *Client) sendSiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (res []SiteInvitationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteInvitations_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -14942,12 +14942,12 @@ func (c *Client) sendSiteInvitationsList(ctx context.Context, params SiteInvitat
 // domain the Workspace already has is 409.
 //
 // POST /workspaces/{workspaceId}/join-domains
-func (c *Client) SiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (SiteJoinDomainsAddRes, error) {
+func (c *Client) SiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (*SiteJoinDomainResource, error) {
 	res, err := c.sendSiteJoinDomainsAdd(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (res SiteJoinDomainsAddRes, err error) {
+func (c *Client) sendSiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (res *SiteJoinDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteJoinDomains_add"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15080,12 +15080,12 @@ func (c *Client) sendSiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoi
 // List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
-func (c *Client) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error) {
+func (c *Client) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) ([]SiteJoinDomainResource, error) {
 	res, err := c.sendSiteJoinDomainsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (res SiteJoinDomainsListRes, err error) {
+func (c *Client) sendSiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (res []SiteJoinDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteJoinDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15215,12 +15215,12 @@ func (c *Client) sendSiteJoinDomainsList(ctx context.Context, params SiteJoinDom
 // Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
-func (c *Client) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error) {
-	res, err := c.sendSiteJoinDomainsRemove(ctx, params)
-	return res, err
+func (c *Client) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) error {
+	_, err := c.sendSiteJoinDomainsRemove(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (res SiteJoinDomainsRemoveRes, err error) {
+func (c *Client) sendSiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (res *SiteJoinDomainsRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteJoinDomains_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -15373,12 +15373,12 @@ func (c *Client) sendSiteJoinDomainsRemove(ctx context.Context, params SiteJoinD
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
-func (c *Client) SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (SiteJoinDomainsVerifyRes, error) {
+func (c *Client) SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (*SiteJoinDomainResource, error) {
 	res, err := c.sendSiteJoinDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (res SiteJoinDomainsVerifyRes, err error) {
+func (c *Client) sendSiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (res *SiteJoinDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteJoinDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -15532,12 +15532,12 @@ func (c *Client) sendSiteJoinDomainsVerify(ctx context.Context, params SiteJoinD
 // pending, for the screen that shows the new texts (ADR 0062).
 //
 // GET /legal-documents/{key}
-func (c *Client) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error) {
+func (c *Client) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (*SiteLegalDocument, error) {
 	res, err := c.sendSiteLegalDocumentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (res SiteLegalDocumentsGetRes, err error) {
+func (c *Client) sendSiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (res *SiteLegalDocument, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteLegalDocuments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -15714,12 +15714,12 @@ func (c *Client) sendSiteLegalDocumentsSignupItems(ctx context.Context) (res *Si
 // Remove a member (owner/admin only; the last owner cannot be removed).
 //
 // DELETE /workspaces/{workspaceId}/memberships/{id}
-func (c *Client) SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) (SiteMembershipsDeleteRes, error) {
-	res, err := c.sendSiteMembershipsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) error {
+	_, err := c.sendSiteMembershipsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) (res SiteMembershipsDeleteRes, err error) {
+func (c *Client) sendSiteMembershipsDelete(ctx context.Context, params SiteMembershipsDeleteParams) (res *SiteMembershipsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteMemberships_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -15870,12 +15870,12 @@ func (c *Client) sendSiteMembershipsDelete(ctx context.Context, params SiteMembe
 // List the workspace's members.
 //
 // GET /workspaces/{workspaceId}/memberships
-func (c *Client) SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (SiteMembershipsListRes, error) {
+func (c *Client) SiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) ([]SiteMembershipResource, error) {
 	res, err := c.sendSiteMembershipsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (res SiteMembershipsListRes, err error) {
+func (c *Client) sendSiteMembershipsList(ctx context.Context, params SiteMembershipsListParams) (res []SiteMembershipResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteMemberships_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16007,12 +16007,12 @@ func (c *Client) sendSiteMembershipsList(ctx context.Context, params SiteMembers
 // member has no Second factor or is the caller (who disables their own with a password and a code).
 //
 // POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor
-func (c *Client) SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) (SiteMembershipsResetSecondFactorRes, error) {
-	res, err := c.sendSiteMembershipsResetSecondFactor(ctx, params)
-	return res, err
+func (c *Client) SiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) error {
+	_, err := c.sendSiteMembershipsResetSecondFactor(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) (res SiteMembershipsResetSecondFactorRes, err error) {
+func (c *Client) sendSiteMembershipsResetSecondFactor(ctx context.Context, params SiteMembershipsResetSecondFactorParams) (res *SiteMembershipsResetSecondFactorNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteMemberships_resetSecondFactor"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -16164,12 +16164,12 @@ func (c *Client) sendSiteMembershipsResetSecondFactor(ctx context.Context, param
 // Change a member's role (owner/admin only; owner-only to grant owner).
 //
 // PUT /workspaces/{workspaceId}/memberships/{id}
-func (c *Client) SiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (SiteMembershipsUpdateRes, error) {
+func (c *Client) SiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (*SiteMembershipResource, error) {
 	res, err := c.sendSiteMembershipsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (res SiteMembershipsUpdateRes, err error) {
+func (c *Client) sendSiteMembershipsUpdate(ctx context.Context, request *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (res *SiteMembershipResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteMemberships_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -16325,12 +16325,12 @@ func (c *Client) sendSiteMembershipsUpdate(ctx context.Context, request *SiteUpd
 // lacks is refused (403 permission_required).
 //
 // POST /oauth/authorization
-func (c *Client) SiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (SiteOAuthDecideRes, error) {
+func (c *Client) SiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (*SiteOAuthDecisionResult, error) {
 	res, err := c.sendSiteOAuthDecide(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (res SiteOAuthDecideRes, err error) {
+func (c *Client) sendSiteOAuthDecide(ctx context.Context, request *SiteOAuthDecisionInput) (res *SiteOAuthDecisionResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteOAuth_decide"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -16441,12 +16441,12 @@ func (c *Client) sendSiteOAuthDecide(ctx context.Context, request *SiteOAuthDeci
 // Validate an OAuth authorization request for the consent screen.
 //
 // GET /oauth/authorization
-func (c *Client) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error) {
+func (c *Client) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (*SiteOAuthAuthorizationRequest, error) {
 	res, err := c.sendSiteOAuthDescribe(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (res SiteOAuthDescribeRes, err error) {
+func (c *Client) sendSiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (res *SiteOAuthAuthorizationRequest, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteOAuth_describe"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -16722,12 +16722,12 @@ func (c *Client) sendSiteOptionalConsentsList(ctx context.Context) (res *SiteOpt
 // (field `version`).
 //
 // PUT /me/optional-consents/{key}
-func (c *Client) SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (SiteOptionalConsentsSetRes, error) {
+func (c *Client) SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (*SiteOptionalConsent, error) {
 	res, err := c.sendSiteOptionalConsentsSet(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (res SiteOptionalConsentsSetRes, err error) {
+func (c *Client) sendSiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (res *SiteOptionalConsent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteOptionalConsents_set"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -16861,12 +16861,12 @@ func (c *Client) sendSiteOptionalConsentsSet(ctx context.Context, request *SiteO
 // used to fill a table (ADR 0052). 404 when the Instance has no host name a Passkey can be bound to.
 //
 // POST /auth/passkey
-func (c *Client) SitePasskeyLoginBegin(ctx context.Context) (SitePasskeyLoginBeginRes, error) {
+func (c *Client) SitePasskeyLoginBegin(ctx context.Context) (*SitePasskeyLoginBegunHeaders, error) {
 	res, err := c.sendSitePasskeyLoginBegin(ctx)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeyLoginBegin(ctx context.Context) (res SitePasskeyLoginBeginRes, err error) {
+func (c *Client) sendSitePasskeyLoginBegin(ctx context.Context) (res *SitePasskeyLoginBegunHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeyLogin_begin"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -16946,12 +16946,12 @@ func (c *Client) sendSitePasskeyLoginBegin(ctx context.Context) (res SitePasskey
 // one; while a known User's Login throttle delay runs the answer is 429 (ADR 0025).
 //
 // POST /auth/passkey/finish
-func (c *Client) SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (SitePasskeyLoginFinishRes, error) {
+func (c *Client) SitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (*SiteLoginResultHeaders, error) {
 	res, err := c.sendSitePasskeyLoginFinish(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (res SitePasskeyLoginFinishRes, err error) {
+func (c *Client) sendSitePasskeyLoginFinish(ctx context.Context, request *SitePasskeyLoginInput, params SitePasskeyLoginFinishParams) (res *SiteLoginResultHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeyLogin_finish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -17051,12 +17051,12 @@ func (c *Client) sendSitePasskeyLoginFinish(ctx context.Context, request *SitePa
 // none.
 //
 // POST /me/passkeys/check
-func (c *Client) SitePasskeysBeginCheck(ctx context.Context) (SitePasskeysBeginCheckRes, error) {
+func (c *Client) SitePasskeysBeginCheck(ctx context.Context) (*SitePasskeyCheckBegunHeaders, error) {
 	res, err := c.sendSitePasskeysBeginCheck(ctx)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysBeginCheck(ctx context.Context) (res SitePasskeysBeginCheckRes, err error) {
+func (c *Client) sendSitePasskeysBeginCheck(ctx context.Context) (res *SitePasskeyCheckBegunHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_beginCheck"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -17166,12 +17166,12 @@ func (c *Client) sendSitePasskeysBeginCheck(ctx context.Context) (res SitePasske
 // options exclude the Passkeys the User already holds.
 //
 // POST /me/passkeys/registration
-func (c *Client) SitePasskeysBeginRegistration(ctx context.Context) (SitePasskeysBeginRegistrationRes, error) {
+func (c *Client) SitePasskeysBeginRegistration(ctx context.Context) (*SitePasskeyRegistrationBegunHeaders, error) {
 	res, err := c.sendSitePasskeysBeginRegistration(ctx)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysBeginRegistration(ctx context.Context) (res SitePasskeysBeginRegistrationRes, err error) {
+func (c *Client) sendSitePasskeysBeginRegistration(ctx context.Context) (res *SitePasskeyRegistrationBegunHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_beginRegistration"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -17282,12 +17282,12 @@ func (c *Client) sendSitePasskeysBeginRegistration(ctx context.Context) (res Sit
 // 403 for any response that does not verify.
 //
 // POST /me/passkeys/check/finish
-func (c *Client) SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (SitePasskeysFinishCheckRes, error) {
+func (c *Client) SitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (*SitePasskeysFinishCheckNoContent, error) {
 	res, err := c.sendSitePasskeysFinishCheck(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (res SitePasskeysFinishCheckRes, err error) {
+func (c *Client) sendSitePasskeysFinishCheck(ctx context.Context, request *SitePasskeyCheckInput, params SitePasskeysFinishCheckParams) (res *SitePasskeysFinishCheckNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_finishCheck"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -17422,12 +17422,12 @@ func (c *Client) sendSitePasskeysFinishCheck(ctx context.Context, request *SiteP
 // user, or a credential already registered.
 //
 // POST /me/passkeys/registration/finish
-func (c *Client) SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (SitePasskeysFinishRegistrationRes, error) {
+func (c *Client) SitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (*SitePasskey, error) {
 	res, err := c.sendSitePasskeysFinishRegistration(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (res SitePasskeysFinishRegistrationRes, err error) {
+func (c *Client) sendSitePasskeysFinishRegistration(ctx context.Context, request *SitePasskeyRegistrationInput, params SitePasskeysFinishRegistrationParams) (res *SitePasskey, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_finishRegistration"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -17674,12 +17674,12 @@ func (c *Client) sendSitePasskeysList(ctx context.Context) (res *SitePasskeyList
 // in: no password, no Linked identity and no other Passkey.
 //
 // DELETE /me/passkeys/{id}
-func (c *Client) SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (SitePasskeysRemoveRes, error) {
+func (c *Client) SitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (*SitePasskeysRemoveNoContent, error) {
 	res, err := c.sendSitePasskeysRemove(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (res SitePasskeysRemoveRes, err error) {
+func (c *Client) sendSitePasskeysRemove(ctx context.Context, request *SitePasskeyRemoveInput, params SitePasskeysRemoveParams) (res *SitePasskeysRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -17812,12 +17812,12 @@ func (c *Client) sendSitePasskeysRemove(ctx context.Context, request *SitePasske
 // name that is empty or longer than 100 characters.
 //
 // PATCH /me/passkeys/{id}
-func (c *Client) SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (SitePasskeysRenameRes, error) {
+func (c *Client) SitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (*SitePasskey, error) {
 	res, err := c.sendSitePasskeysRename(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (res SitePasskeysRenameRes, err error) {
+func (c *Client) sendSitePasskeysRename(ctx context.Context, request *SitePasskeyRenameInput, params SitePasskeysRenameParams) (res *SitePasskey, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePasskeys_rename"),
 		semconv.HTTPRequestMethodKey.String("PATCH"),
@@ -17952,12 +17952,12 @@ func (c *Client) sendSitePasskeysRename(ctx context.Context, request *SitePasske
 // operation decodes (400).
 //
 // POST /workspaces/{workspaceId}/personal-tokens
-func (c *Client) SitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (SitePersonalTokensCreateRes, error) {
+func (c *Client) SitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (*SiteCreatePersonalTokenResponse, error) {
 	res, err := c.sendSitePersonalTokensCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (res SitePersonalTokensCreateRes, err error) {
+func (c *Client) sendSitePersonalTokensCreate(ctx context.Context, request *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (res *SiteCreatePersonalTokenResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePersonalTokens_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -18090,12 +18090,12 @@ func (c *Client) sendSitePersonalTokensCreate(ctx context.Context, request *Site
 // Revoke a Personal token: the caller's own, or anyone's with members:manage.
 //
 // DELETE /workspaces/{workspaceId}/personal-tokens/{id}
-func (c *Client) SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (SitePersonalTokensDeleteRes, error) {
-	res, err := c.sendSitePersonalTokensDelete(ctx, params)
-	return res, err
+func (c *Client) SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) error {
+	_, err := c.sendSitePersonalTokensDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (res SitePersonalTokensDeleteRes, err error) {
+func (c *Client) sendSitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (res *SitePersonalTokensDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePersonalTokens_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -18247,12 +18247,12 @@ func (c *Client) sendSitePersonalTokensDelete(ctx context.Context, params SitePe
 // order: the mint form offers these and no other.
 //
 // GET /workspaces/{workspaceId}/personal-token-scopes
-func (c *Client) SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (SitePersonalTokensGrantableScopesRes, error) {
+func (c *Client) SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) ([]PersonalScope, error) {
 	res, err := c.sendSitePersonalTokensGrantableScopes(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (res SitePersonalTokensGrantableScopesRes, err error) {
+func (c *Client) sendSitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (res []PersonalScope, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePersonalTokens_grantableScopes"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -18382,12 +18382,12 @@ func (c *Client) sendSitePersonalTokensGrantableScopes(ctx context.Context, para
 // List the active Personal tokens the caller may see: their own, or every member's with members:manage.
 //
 // GET /workspaces/{workspaceId}/personal-tokens
-func (c *Client) SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (SitePersonalTokensListRes, error) {
+func (c *Client) SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) ([]SitePersonalTokenResource, error) {
 	res, err := c.sendSitePersonalTokensList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (res SitePersonalTokensListRes, err error) {
+func (c *Client) sendSitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (res []SitePersonalTokenResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePersonalTokens_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -18632,12 +18632,12 @@ func (c *Client) sendSitePresetsList(ctx context.Context) (res []SitePresetResou
 // up again; 400 is an invalid token.
 //
 // POST /confirmations/{token}
-func (c *Client) SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (SitePublicConfirmationsPerformRes, error) {
-	res, err := c.sendSitePublicConfirmationsPerform(ctx, params)
-	return res, err
+func (c *Client) SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) error {
+	_, err := c.sendSitePublicConfirmationsPerform(ctx, params)
+	return err
 }
 
-func (c *Client) sendSitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (res SitePublicConfirmationsPerformRes, err error) {
+func (c *Client) sendSitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (res *SitePublicConfirmationsPerformNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePublicConfirmations_perform"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -18732,12 +18732,12 @@ func (c *Client) sendSitePublicConfirmationsPerform(ctx context.Context, params 
 // User.
 //
 // POST /invitations/{token}/accept
-func (c *Client) SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error) {
-	res, err := c.sendSitePublicInvitationsAccept(ctx, request, params)
-	return res, err
+func (c *Client) SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) error {
+	_, err := c.sendSitePublicInvitationsAccept(ctx, request, params)
+	return err
 }
 
-func (c *Client) sendSitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (res SitePublicInvitationsAcceptRes, err error) {
+func (c *Client) sendSitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (res *SitePublicInvitationsAcceptOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePublicInvitations_accept"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -18868,12 +18868,12 @@ func (c *Client) sendSitePublicInvitationsAccept(ctx context.Context, request *S
 // Look up a pending invite by its token to render the accept page.
 //
 // GET /invitations/{token}
-func (c *Client) SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (SitePublicInvitationsLookupRes, error) {
+func (c *Client) SitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (*SiteInvitationLookupResult, error) {
 	res, err := c.sendSitePublicInvitationsLookup(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (res SitePublicInvitationsLookupRes, err error) {
+func (c *Client) sendSitePublicInvitationsLookup(ctx context.Context, params SitePublicInvitationsLookupParams) (res *SiteInvitationLookupResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePublicInvitations_lookup"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -18967,12 +18967,12 @@ func (c *Client) sendSitePublicInvitationsLookup(ctx context.Context, params Sit
 // one-click POST keeps using POST /e/u/{token}. Repeating it is a no-op.
 //
 // POST /unsubscribes/{token}
-func (c *Client) SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (SitePublicUnsubscribesPerformRes, error) {
-	res, err := c.sendSitePublicUnsubscribesPerform(ctx, params)
-	return res, err
+func (c *Client) SitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) error {
+	_, err := c.sendSitePublicUnsubscribesPerform(ctx, params)
+	return err
 }
 
-func (c *Client) sendSitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (res SitePublicUnsubscribesPerformRes, err error) {
+func (c *Client) sendSitePublicUnsubscribesPerform(ctx context.Context, params SitePublicUnsubscribesPerformParams) (res *SitePublicUnsubscribesPerformNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePublicUnsubscribes_perform"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -19065,12 +19065,12 @@ func (c *Client) sendSitePublicUnsubscribesPerform(ctx context.Context, params S
 // List a Rule's Firings, newest first.
 //
 // GET /workspaces/{workspaceId}/rules/{ruleId}/firings
-func (c *Client) SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (SiteRuleFiringsListRes, error) {
+func (c *Client) SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (*SiteRuleFiringsListOK, error) {
 	res, err := c.sendSiteRuleFiringsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (res SiteRuleFiringsListRes, err error) {
+func (c *Client) sendSiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (res *SiteRuleFiringsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRuleFirings_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -19260,12 +19260,12 @@ func (c *Client) sendSiteRuleFiringsList(ctx context.Context, params SiteRuleFir
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/rules
-func (c *Client) SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (SiteRulesCreateRes, error) {
+func (c *Client) SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (res SiteRulesCreateRes, err error) {
+func (c *Client) sendSiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -19398,12 +19398,12 @@ func (c *Client) sendSiteRulesCreate(ctx context.Context, request *SiteCreateRul
 // Deactivate a Rule: it stops firing.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/deactivate
-func (c *Client) SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (SiteRulesDeactivateRes, error) {
+func (c *Client) SiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesDeactivate(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (res SiteRulesDeactivateRes, err error) {
+func (c *Client) sendSiteRulesDeactivate(ctx context.Context, params SiteRulesDeactivateParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_deactivate"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -19555,12 +19555,12 @@ func (c *Client) sendSiteRulesDeactivate(ctx context.Context, params SiteRulesDe
 // Delete a resource from the site UI.
 //
 // DELETE /workspaces/{workspaceId}/rules/{id}
-func (c *Client) SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (SiteRulesDeleteRes, error) {
-	res, err := c.sendSiteRulesDelete(ctx, params)
-	return res, err
+func (c *Client) SiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) error {
+	_, err := c.sendSiteRulesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (res SiteRulesDeleteRes, err error) {
+func (c *Client) sendSiteRulesDelete(ctx context.Context, params SiteRulesDeleteParams) (res *SiteRulesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -19712,12 +19712,12 @@ func (c *Client) sendSiteRulesDelete(ctx context.Context, params SiteRulesDelete
 // nothing.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/dry-run
-func (c *Client) SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (SiteRulesDryRunRes, error) {
+func (c *Client) SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (*SiteRuleDryRunResource, error) {
 	res, err := c.sendSiteRulesDryRun(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (res SiteRulesDryRunRes, err error) {
+func (c *Client) sendSiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (res *SiteRuleDryRunResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_dryRun"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -19872,12 +19872,12 @@ func (c *Client) sendSiteRulesDryRun(ctx context.Context, request *SiteDryRunRul
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/rules/{id}
-func (c *Client) SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (SiteRulesGetRes, error) {
+func (c *Client) SiteRulesGet(ctx context.Context, params SiteRulesGetParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesGet(ctx context.Context, params SiteRulesGetParams) (res SiteRulesGetRes, err error) {
+func (c *Client) sendSiteRulesGet(ctx context.Context, params SiteRulesGetParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -20028,12 +20028,12 @@ func (c *Client) sendSiteRulesGet(ctx context.Context, params SiteRulesGetParams
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/rules
-func (c *Client) SiteRulesList(ctx context.Context, params SiteRulesListParams) (SiteRulesListRes, error) {
+func (c *Client) SiteRulesList(ctx context.Context, params SiteRulesListParams) (*SiteRulesListOK, error) {
 	res, err := c.sendSiteRulesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesList(ctx context.Context, params SiteRulesListParams) (res SiteRulesListRes, err error) {
+func (c *Client) sendSiteRulesList(ctx context.Context, params SiteRulesListParams) (res *SiteRulesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -20203,12 +20203,12 @@ func (c *Client) sendSiteRulesList(ctx context.Context, params SiteRulesListPara
 // neither draft nor live version.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/publish
-func (c *Client) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (SiteRulesPublishRes, error) {
+func (c *Client) SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesPublish(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (res SiteRulesPublishRes, err error) {
+func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_publish"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20360,12 +20360,12 @@ func (c *Client) sendSiteRulesPublish(ctx context.Context, params SiteRulesPubli
 // Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/revert
-func (c *Client) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (SiteRulesRevertRes, error) {
+func (c *Client) SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesRevert(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (res SiteRulesRevertRes, err error) {
+func (c *Client) sendSiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_revert"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20517,12 +20517,12 @@ func (c *Client) sendSiteRulesRevert(ctx context.Context, params SiteRulesRevert
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/rules/{id}
-func (c *Client) SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (SiteRulesUpdateRes, error) {
+func (c *Client) SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (res SiteRulesUpdateRes, err error) {
+func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -20677,12 +20677,12 @@ func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *SiteUpdateRul
 // serves it; any other answers 404. The answer comes once they ran.
 //
 // POST /schema/migrations
-func (c *Client) SiteSchemaApplyMigrations(ctx context.Context) (SiteSchemaApplyMigrationsRes, error) {
-	res, err := c.sendSiteSchemaApplyMigrations(ctx)
-	return res, err
+func (c *Client) SiteSchemaApplyMigrations(ctx context.Context) error {
+	_, err := c.sendSiteSchemaApplyMigrations(ctx)
+	return err
 }
 
-func (c *Client) sendSiteSchemaApplyMigrations(ctx context.Context) (res SiteSchemaApplyMigrationsRes, err error) {
+func (c *Client) sendSiteSchemaApplyMigrations(ctx context.Context) (res *SiteSchemaApplyMigrationsNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSchema_applyMigrations"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20761,12 +20761,12 @@ func (c *Client) sendSiteSchemaApplyMigrations(ctx context.Context) (res SiteSch
 // its delay runs), 422 on a wrong code, 409 without a pending enrollment.
 //
 // POST /me/second-factor/enrollment/confirm
-func (c *Client) SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (SiteSecondFactorConfirmEnrollmentRes, error) {
+func (c *Client) SiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (*SiteRecoveryCodesHeaders, error) {
 	res, err := c.sendSiteSecondFactorConfirmEnrollment(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (res SiteSecondFactorConfirmEnrollmentRes, err error) {
+func (c *Client) sendSiteSecondFactorConfirmEnrollment(ctx context.Context, request *SiteSecondFactorConfirmInput) (res *SiteRecoveryCodesHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSecondFactor_confirmEnrollment"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20879,12 +20879,12 @@ func (c *Client) sendSiteSecondFactorConfirmEnrollment(ctx context.Context, requ
 // throttle: 429 while its delay runs), 422 on a wrong code, 409 without an active Second factor.
 //
 // POST /me/second-factor/disable
-func (c *Client) SiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (SiteSecondFactorDisableRes, error) {
+func (c *Client) SiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (*SiteSecondFactorDisableNoContent, error) {
 	res, err := c.sendSiteSecondFactorDisable(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (res SiteSecondFactorDisableRes, err error) {
+func (c *Client) sendSiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (res *SiteSecondFactorDisableNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSecondFactor_disable"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21112,12 +21112,12 @@ func (c *Client) sendSiteSecondFactorGetStatus(ctx context.Context) (res *SiteSe
 // throttle: 429 while its delay runs), 409 without an active Second factor.
 //
 // POST /me/second-factor/recovery-codes
-func (c *Client) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (SiteSecondFactorRegenerateRecoveryCodesRes, error) {
+func (c *Client) SiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (*SiteRecoveryCodesHeaders, error) {
 	res, err := c.sendSiteSecondFactorRegenerateRecoveryCodes(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (res SiteSecondFactorRegenerateRecoveryCodesRes, err error) {
+func (c *Client) sendSiteSecondFactorRegenerateRecoveryCodes(ctx context.Context, request *SiteRecoveryCodesInput) (res *SiteRecoveryCodesHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSecondFactor_regenerateRecoveryCodes"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21232,12 +21232,12 @@ func (c *Client) sendSiteSecondFactorRegenerateRecoveryCodes(ctx context.Context
 // for a correct one while its delay runs (ADR 0025).
 //
 // POST /me/second-factor/enrollment
-func (c *Client) SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error) {
+func (c *Client) SiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (*SiteSecondFactorEnrollment, error) {
 	res, err := c.sendSiteSecondFactorStartEnrollment(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (res SiteSecondFactorStartEnrollmentRes, err error) {
+func (c *Client) sendSiteSecondFactorStartEnrollment(ctx context.Context, request *SiteSecondFactorStartInput) (res *SiteSecondFactorEnrollment, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSecondFactor_startEnrollment"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21349,12 +21349,12 @@ func (c *Client) sendSiteSecondFactorStartEnrollment(ctx context.Context, reques
 // that no longer fits the contact schema is a 422.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
-func (c *Client) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (SiteSegmentContactsListRes, error) {
+func (c *Client) SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (*SiteSegmentContactsListOK, error) {
 	res, err := c.sendSiteSegmentContactsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (res SiteSegmentContactsListRes, err error) {
+func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (res *SiteSegmentContactsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegmentContacts_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -21545,12 +21545,12 @@ func (c *Client) sendSiteSegmentContactsList(ctx context.Context, params SiteSeg
 // with 409 while live work uses it.
 //
 // POST /workspaces/{workspaceId}/segments/{id}/archive
-func (c *Client) SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (SiteSegmentsArchiveRes, error) {
+func (c *Client) SiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (res SiteSegmentsArchiveRes, err error) {
+func (c *Client) sendSiteSegmentsArchive(ctx context.Context, params SiteSegmentsArchiveParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_archive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21702,12 +21702,12 @@ func (c *Client) sendSiteSegmentsArchive(ctx context.Context, params SiteSegment
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/segments
-func (c *Client) SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (SiteSegmentsCreateRes, error) {
+func (c *Client) SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (res SiteSegmentsCreateRes, err error) {
+func (c *Client) sendSiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -21840,12 +21840,12 @@ func (c *Client) sendSiteSegmentsCreate(ctx context.Context, request *SiteCreate
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/segments/{id}
-func (c *Client) SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (SiteSegmentsGetRes, error) {
+func (c *Client) SiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (res SiteSegmentsGetRes, err error) {
+func (c *Client) sendSiteSegmentsGet(ctx context.Context, params SiteSegmentsGetParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -21996,12 +21996,12 @@ func (c *Client) sendSiteSegmentsGet(ctx context.Context, params SiteSegmentsGet
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/segments
-func (c *Client) SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (SiteSegmentsListRes, error) {
+func (c *Client) SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (*SiteSegmentsListOK, error) {
 	res, err := c.sendSiteSegmentsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (res SiteSegmentsListRes, err error) {
+func (c *Client) sendSiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (res *SiteSegmentsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -22186,12 +22186,12 @@ func (c *Client) sendSiteSegmentsList(ctx context.Context, params SiteSegmentsLi
 // Preview how many active contacts match a rule definition.
 //
 // POST /workspaces/{workspaceId}/segments/preview
-func (c *Client) SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (SiteSegmentsPreviewRes, error) {
+func (c *Client) SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (*SitePreviewSegmentResult, error) {
 	res, err := c.sendSiteSegmentsPreview(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (res SiteSegmentsPreviewRes, err error) {
+func (c *Client) sendSiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (res *SitePreviewSegmentResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_preview"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -22324,12 +22324,12 @@ func (c *Client) sendSiteSegmentsPreview(ctx context.Context, request *SitePrevi
 // Restore an archived resource.
 //
 // POST /workspaces/{workspaceId}/segments/{id}/unarchive
-func (c *Client) SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (SiteSegmentsUnarchiveRes, error) {
+func (c *Client) SiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsUnarchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (res SiteSegmentsUnarchiveRes, err error) {
+func (c *Client) sendSiteSegmentsUnarchive(ctx context.Context, params SiteSegmentsUnarchiveParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_unarchive"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -22481,12 +22481,12 @@ func (c *Client) sendSiteSegmentsUnarchive(ctx context.Context, params SiteSegme
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/segments/{id}
-func (c *Client) SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (SiteSegmentsUpdateRes, error) {
+func (c *Client) SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (res SiteSegmentsUpdateRes, err error) {
+func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -22640,12 +22640,12 @@ func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdate
 // Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
-func (c *Client) SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error) {
+func (c *Client) SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SiteSendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (res SiteSendingDomainsCreateRes, err error) {
+func (c *Client) sendSiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (res *SiteSendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -22780,12 +22780,12 @@ func (c *Client) sendSiteSendingDomainsCreate(ctx context.Context, request *Crea
 // it. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/sending-domains/{id}
-func (c *Client) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (SiteSendingDomainsDeleteRes, error) {
-	res, err := c.sendSiteSendingDomainsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) error {
+	_, err := c.sendSiteSendingDomainsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (res SiteSendingDomainsDeleteRes, err error) {
+func (c *Client) sendSiteSendingDomainsDelete(ctx context.Context, params SiteSendingDomainsDeleteParams) (res *SiteSendingDomainsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -22936,12 +22936,12 @@ func (c *Client) sendSiteSendingDomainsDelete(ctx context.Context, params SiteSe
 // Get a sending domain by ID for the site UI, deleted or not.
 //
 // GET /workspaces/{workspaceId}/sending-domains/{id}
-func (c *Client) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (SiteSendingDomainsGetRes, error) {
+func (c *Client) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SiteSendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (res SiteSendingDomainsGetRes, err error) {
+func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (res *SiteSendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -23092,12 +23092,12 @@ func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendi
 // List sending domains for the site UI.
 //
 // GET /workspaces/{workspaceId}/sending-domains
-func (c *Client) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (SiteSendingDomainsListRes, error) {
+func (c *Client) SiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (*SiteSendingDomainsListOK, error) {
 	res, err := c.sendSiteSendingDomainsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (res SiteSendingDomainsListRes, err error) {
+func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSendingDomainsListParams) (res *SiteSendingDomainsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -23267,12 +23267,12 @@ func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSend
 // only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error) {
+func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SiteSendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (res SiteSendingDomainsVerifyRes, err error) {
+func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (res *SiteSendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -23424,12 +23424,12 @@ func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSe
 // The Workspace's Setup checklist.
 //
 // GET /workspaces/{workspaceId}/setup-checklist
-func (c *Client) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error) {
+func (c *Client) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (*SiteSetupProgress, error) {
 	res, err := c.sendSiteSetupChecklistGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (res SiteSetupChecklistGetRes, err error) {
+func (c *Client) sendSiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (res *SiteSetupProgress, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSetupChecklist_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -23564,12 +23564,12 @@ func (c *Client) sendSiteSetupChecklistGet(ctx context.Context, params SiteSetup
 // request.
 //
 // POST /me/signup-survey
-func (c *Client) SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error) {
-	res, err := c.sendSiteSignupSurveySubmit(ctx, request)
-	return res, err
+func (c *Client) SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) error {
+	_, err := c.sendSiteSignupSurveySubmit(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (res SiteSignupSurveySubmitRes, err error) {
+func (c *Client) sendSiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (res *SiteSignupSurveySubmitNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSignupSurvey_submit"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -23682,12 +23682,12 @@ func (c *Client) sendSiteSignupSurveySubmit(ctx context.Context, request *SiteSi
 // stays. It does not lift an opt-out. 422 when the contact has no phone.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/sms-confirmations
-func (c *Client) SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (SiteSmsConsentsConfirmRes, error) {
+func (c *Client) SiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (*SmsConsent, error) {
 	res, err := c.sendSiteSmsConsentsConfirm(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (res SiteSmsConsentsConfirmRes, err error) {
+func (c *Client) sendSiteSmsConsentsConfirm(ctx context.Context, request *ConsentEvidence, params SiteSmsConsentsConfirmParams) (res *SmsConsent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSmsConsents_confirm"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -23842,12 +23842,12 @@ func (c *Client) sendSiteSmsConsentsConfirm(ctx context.Context, request *Consen
 // Read the SMS Confirmation and opt-out of a contact's phone.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/sms-consent
-func (c *Client) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (SiteSmsConsentsGetRes, error) {
+func (c *Client) SiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (*SmsConsent, error) {
 	res, err := c.sendSiteSmsConsentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (res SiteSmsConsentsGetRes, err error) {
+func (c *Client) sendSiteSmsConsentsGet(ctx context.Context, params SiteSmsConsentsGetParams) (res *SmsConsent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSmsConsents_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -24000,12 +24000,12 @@ func (c *Client) sendSiteSmsConsentsGet(ctx context.Context, params SiteSmsConse
 // gets no more texts from the Workspace. Idempotent. 422 when the contact has no phone.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/sms-opt-outs
-func (c *Client) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (SiteSmsConsentsOptOutRes, error) {
+func (c *Client) SiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (*SmsConsent, error) {
 	res, err := c.sendSiteSmsConsentsOptOut(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (res SiteSmsConsentsOptOutRes, err error) {
+func (c *Client) sendSiteSmsConsentsOptOut(ctx context.Context, params SiteSmsConsentsOptOutParams) (res *SmsConsent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSmsConsents_optOut"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -24157,12 +24157,12 @@ func (c *Client) sendSiteSmsConsentsOptOut(ctx context.Context, params SiteSmsCo
 // Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
-func (c *Client) SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error) {
+func (c *Client) SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (*SiteSuppressionResource, error) {
 	res, err := c.sendSiteSuppressionsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (res SiteSuppressionsCreateRes, err error) {
+func (c *Client) sendSiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (res *SiteSuppressionResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSuppressions_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -24296,12 +24296,12 @@ func (c *Client) sendSiteSuppressionsCreate(ctx context.Context, request *SiteCr
 // one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
-func (c *Client) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error) {
-	res, err := c.sendSiteSuppressionsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) error {
+	_, err := c.sendSiteSuppressionsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (res SiteSuppressionsDeleteRes, err error) {
+func (c *Client) sendSiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (res *SiteSuppressionsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSuppressions_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -24452,12 +24452,12 @@ func (c *Client) sendSiteSuppressionsDelete(ctx context.Context, params SiteSupp
 // List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
-func (c *Client) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error) {
+func (c *Client) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (*SiteSuppressionsListOK, error) {
 	res, err := c.sendSiteSuppressionsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (res SiteSuppressionsListRes, err error) {
+func (c *Client) sendSiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (res *SiteSuppressionsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSuppressions_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -24642,12 +24642,12 @@ func (c *Client) sendSiteSuppressionsList(ctx context.Context, params SiteSuppre
 // Apply a tag to a contact, creating the tag on first use. Idempotent.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/tags
-func (c *Client) SiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (SiteTagsApplyRes, error) {
+func (c *Client) SiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (*SiteTagResource, error) {
 	res, err := c.sendSiteTagsApply(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (res SiteTagsApplyRes, err error) {
+func (c *Client) sendSiteTagsApply(ctx context.Context, request *ApplyTagInput, params SiteTagsApplyParams) (res *SiteTagResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTags_apply"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -24802,12 +24802,12 @@ func (c *Client) sendSiteTagsApply(ctx context.Context, request *ApplyTagInput, 
 // Delete a tag from the catalogue, unless a segment rule or an automation step names it.
 //
 // DELETE /workspaces/{workspaceId}/tags/{id}
-func (c *Client) SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (SiteTagsDeleteRes, error) {
-	res, err := c.sendSiteTagsDelete(ctx, params)
-	return res, err
+func (c *Client) SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) error {
+	_, err := c.sendSiteTagsDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (res SiteTagsDeleteRes, err error) {
+func (c *Client) sendSiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (res *SiteTagsDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTags_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -24958,12 +24958,12 @@ func (c *Client) sendSiteTagsDelete(ctx context.Context, params SiteTagsDeletePa
 // List the workspace's tags (feeds the segment builder).
 //
 // GET /workspaces/{workspaceId}/tags
-func (c *Client) SiteTagsList(ctx context.Context, params SiteTagsListParams) (SiteTagsListRes, error) {
+func (c *Client) SiteTagsList(ctx context.Context, params SiteTagsListParams) (*SiteTagsListOK, error) {
 	res, err := c.sendSiteTagsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTagsList(ctx context.Context, params SiteTagsListParams) (res SiteTagsListRes, err error) {
+func (c *Client) sendSiteTagsList(ctx context.Context, params SiteTagsListParams) (res *SiteTagsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTags_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -25131,12 +25131,12 @@ func (c *Client) sendSiteTagsList(ctx context.Context, params SiteTagsListParams
 // List the tags a contact has.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/tags
-func (c *Client) SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (SiteTagsListForContactRes, error) {
+func (c *Client) SiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (*SiteTagsListForContactOK, error) {
 	res, err := c.sendSiteTagsListForContact(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (res SiteTagsListForContactRes, err error) {
+func (c *Client) sendSiteTagsListForContact(ctx context.Context, params SiteTagsListForContactParams) (res *SiteTagsListForContactOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTags_listForContact"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -25326,12 +25326,12 @@ func (c *Client) sendSiteTagsListForContact(ctx context.Context, params SiteTags
 // Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 //
 // DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}
-func (c *Client) SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (SiteTagsRemoveRes, error) {
-	res, err := c.sendSiteTagsRemove(ctx, params)
-	return res, err
+func (c *Client) SiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) error {
+	_, err := c.sendSiteTagsRemove(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (res SiteTagsRemoveRes, err error) {
+func (c *Client) sendSiteTagsRemove(ctx context.Context, params SiteTagsRemoveParams) (res *SiteTagsRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTags_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -25501,12 +25501,12 @@ func (c *Client) sendSiteTagsRemove(ctx context.Context, params SiteTagsRemovePa
 // Issue a Telegram start link for a contact. Each call issues a new link.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/telegram-start-links
-func (c *Client) SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (SiteTelegramIssueStartLinkRes, error) {
+func (c *Client) SiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (*TelegramStartLinkResource, error) {
 	res, err := c.sendSiteTelegramIssueStartLink(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (res SiteTelegramIssueStartLinkRes, err error) {
+func (c *Client) sendSiteTelegramIssueStartLink(ctx context.Context, request *IssueTelegramStartLinkInput, params SiteTelegramIssueStartLinkParams) (res *TelegramStartLinkResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTelegram_issueStartLink"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -25661,12 +25661,12 @@ func (c *Client) sendSiteTelegramIssueStartLink(ctx context.Context, request *Is
 // List the Telegram chats a contact is reached through.
 //
 // GET /workspaces/{workspaceId}/contacts/{contactId}/bindings
-func (c *Client) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (SiteTelegramListBindingsRes, error) {
+func (c *Client) SiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) ([]SiteBindingResource, error) {
 	res, err := c.sendSiteTelegramListBindings(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (res SiteTelegramListBindingsRes, err error) {
+func (c *Client) sendSiteTelegramListBindings(ctx context.Context, params SiteTelegramListBindingsParams) (res []SiteBindingResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTelegram_listBindings"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -25818,12 +25818,12 @@ func (c *Client) sendSiteTelegramListBindings(ctx context.Context, params SiteTe
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/templates
-func (c *Client) SiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (SiteTemplatesCreateRes, error) {
+func (c *Client) SiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (*SiteEmailTemplateResource, error) {
 	res, err := c.sendSiteTemplatesCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (res SiteTemplatesCreateRes, err error) {
+func (c *Client) sendSiteTemplatesCreate(ctx context.Context, request *CreateTemplateInput, params SiteTemplatesCreateParams) (res *SiteEmailTemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTemplates_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -25956,12 +25956,12 @@ func (c *Client) sendSiteTemplatesCreate(ctx context.Context, request *CreateTem
 // Delete a resource from the site UI.
 //
 // DELETE /workspaces/{workspaceId}/templates/{id}
-func (c *Client) SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) (SiteTemplatesDeleteRes, error) {
-	res, err := c.sendSiteTemplatesDelete(ctx, params)
-	return res, err
+func (c *Client) SiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) error {
+	_, err := c.sendSiteTemplatesDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) (res SiteTemplatesDeleteRes, err error) {
+func (c *Client) sendSiteTemplatesDelete(ctx context.Context, params SiteTemplatesDeleteParams) (res *SiteTemplatesDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTemplates_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -26112,12 +26112,12 @@ func (c *Client) sendSiteTemplatesDelete(ctx context.Context, params SiteTemplat
 // Get a resource by ID for the site UI.
 //
 // GET /workspaces/{workspaceId}/templates/{id}
-func (c *Client) SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (SiteTemplatesGetRes, error) {
+func (c *Client) SiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (*SiteEmailTemplateResource, error) {
 	res, err := c.sendSiteTemplatesGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (res SiteTemplatesGetRes, err error) {
+func (c *Client) sendSiteTemplatesGet(ctx context.Context, params SiteTemplatesGetParams) (res *SiteEmailTemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTemplates_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -26268,12 +26268,12 @@ func (c *Client) sendSiteTemplatesGet(ctx context.Context, params SiteTemplatesG
 // List resources for the site UI.
 //
 // GET /workspaces/{workspaceId}/templates
-func (c *Client) SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (SiteTemplatesListRes, error) {
+func (c *Client) SiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (*SiteTemplatesListOK, error) {
 	res, err := c.sendSiteTemplatesList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (res SiteTemplatesListRes, err error) {
+func (c *Client) sendSiteTemplatesList(ctx context.Context, params SiteTemplatesListParams) (res *SiteTemplatesListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTemplates_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -26441,12 +26441,12 @@ func (c *Client) sendSiteTemplatesList(ctx context.Context, params SiteTemplates
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/templates/{id}
-func (c *Client) SiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (SiteTemplatesUpdateRes, error) {
+func (c *Client) SiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (*SiteEmailTemplateResource, error) {
 	res, err := c.sendSiteTemplatesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (res SiteTemplatesUpdateRes, err error) {
+func (c *Client) sendSiteTemplatesUpdate(ctx context.Context, request *UpdateTemplateInput, params SiteTemplatesUpdateParams) (res *SiteEmailTemplateResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTemplates_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -26600,12 +26600,12 @@ func (c *Client) sendSiteTemplatesUpdate(ctx context.Context, request *UpdateTem
 // Create an API token; the full secret is returned once. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/tokens
-func (c *Client) SiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (SiteTokensCreateRes, error) {
+func (c *Client) SiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (*SiteCreateTokenResponse, error) {
 	res, err := c.sendSiteTokensCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (res SiteTokensCreateRes, err error) {
+func (c *Client) sendSiteTokensCreate(ctx context.Context, request *SiteCreateTokenInput, params SiteTokensCreateParams) (res *SiteCreateTokenResponse, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTokens_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -26738,12 +26738,12 @@ func (c *Client) sendSiteTokensCreate(ctx context.Context, request *SiteCreateTo
 // Revoke an API token. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/tokens/{id}
-func (c *Client) SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (SiteTokensDeleteRes, error) {
-	res, err := c.sendSiteTokensDelete(ctx, params)
-	return res, err
+func (c *Client) SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) error {
+	_, err := c.sendSiteTokensDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (res SiteTokensDeleteRes, err error) {
+func (c *Client) sendSiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (res *SiteTokensDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTokens_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -26894,12 +26894,12 @@ func (c *Client) sendSiteTokensDelete(ctx context.Context, params SiteTokensDele
 // List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 //
 // GET /workspaces/{workspaceId}/tokens
-func (c *Client) SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error) {
+func (c *Client) SiteTokensList(ctx context.Context, params SiteTokensListParams) ([]SiteApiTokenResource, error) {
 	res, err := c.sendSiteTokensList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTokensList(ctx context.Context, params SiteTokensListParams) (res SiteTokensListRes, err error) {
+func (c *Client) sendSiteTokensList(ctx context.Context, params SiteTokensListParams) (res []SiteApiTokenResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTokens_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -27029,12 +27029,12 @@ func (c *Client) sendSiteTokensList(ctx context.Context, params SiteTokensListPa
 // Rename an active API token. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/tokens/{id}
-func (c *Client) SiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (SiteTokensUpdateRes, error) {
+func (c *Client) SiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (*SiteApiTokenResource, error) {
 	res, err := c.sendSiteTokensUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (res SiteTokensUpdateRes, err error) {
+func (c *Client) sendSiteTokensUpdate(ctx context.Context, request *SiteUpdateTokenInput, params SiteTokensUpdateParams) (res *SiteApiTokenResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTokens_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -27189,12 +27189,12 @@ func (c *Client) sendSiteTokensUpdate(ctx context.Context, request *SiteUpdateTo
 // Empty while the Instance offers none.
 //
 // GET /workspaces/{workspaceId}/tracking-domains
-func (c *Client) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (SiteTrackingDomainsListRes, error) {
+func (c *Client) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]SiteTrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (res SiteTrackingDomainsListRes, err error) {
+func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (res []SiteTrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -27327,12 +27327,12 @@ func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTra
 // forgotten: links sent on it stop working.
 //
 // DELETE /workspaces/{workspaceId}/tracking-domains/{id}
-func (c *Client) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (SiteTrackingDomainsRemoveRes, error) {
-	res, err := c.sendSiteTrackingDomainsRemove(ctx, params)
-	return res, err
+func (c *Client) SiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) error {
+	_, err := c.sendSiteTrackingDomainsRemove(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (res SiteTrackingDomainsRemoveRes, err error) {
+func (c *Client) sendSiteTrackingDomainsRemove(ctx context.Context, params SiteTrackingDomainsRemoveParams) (res *SiteTrackingDomainsRemoveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_remove"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -27487,12 +27487,12 @@ func (c *Client) sendSiteTrackingDomainsRemove(ctx context.Context, params SiteT
 // of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 //
 // POST /workspaces/{workspaceId}/tracking-domains
-func (c *Client) SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (SiteTrackingDomainsSetRes, error) {
+func (c *Client) SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*SiteTrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsSet(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (res SiteTrackingDomainsSetRes, err error) {
+func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (res *SiteTrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_set"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -27626,12 +27626,12 @@ func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTra
 // it left it. A replacement that reaches `serving` becomes current.
 //
 // POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-func (c *Client) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (SiteTrackingDomainsVerifyRes, error) {
+func (c *Client) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*SiteTrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (res SiteTrackingDomainsVerifyRes, err error) {
+func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (res *SiteTrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -27783,12 +27783,12 @@ func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteT
 // List transactional sends, most recent first.
 //
 // GET /workspaces/{workspaceId}/transactional-emails
-func (c *Client) SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (SiteTransactionalEmailsListRes, error) {
+func (c *Client) SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (*SiteTransactionalEmailsListOK, error) {
 	res, err := c.sendSiteTransactionalEmailsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (res SiteTransactionalEmailsListRes, err error) {
+func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (res *SiteTransactionalEmailsListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTransactionalEmails_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -27960,12 +27960,12 @@ func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params Sit
 // nothing.
 //
 // POST /me/acceptances
-func (c *Client) SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (SiteUserAcceptPendingRes, error) {
+func (c *Client) SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (*SiteUserResource, error) {
 	res, err := c.sendSiteUserAcceptPending(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (res SiteUserAcceptPendingRes, err error) {
+func (c *Client) sendSiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (res *SiteUserResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteUser_acceptPending"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28084,12 +28084,12 @@ func (c *Client) sendSiteUserAcceptPending(ctx context.Context, request *SiteAcc
 // deleted. A Workspace in its deletion window does not block.
 //
 // POST /me/delete
-func (c *Client) SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (SiteUserDeleteUserRes, error) {
+func (c *Client) SiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (*SiteUserDeleteUserNoContent, error) {
 	res, err := c.sendSiteUserDeleteUser(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (res SiteUserDeleteUserRes, err error) {
+func (c *Client) sendSiteUserDeleteUser(ctx context.Context, request *SiteDeleteUserInput) (res *SiteUserDeleteUserNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteUser_deleteUser"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28203,12 +28203,12 @@ func (c *Client) sendSiteUserDeleteUser(ctx context.Context, request *SiteDelete
 // the User's, or when the User has a password and confirms with it instead.
 //
 // POST /me/delete/link
-func (c *Client) SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (SiteUserDeleteUserLinkRes, error) {
-	res, err := c.sendSiteUserDeleteUserLink(ctx, request)
-	return res, err
+func (c *Client) SiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) error {
+	_, err := c.sendSiteUserDeleteUserLink(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (res SiteUserDeleteUserLinkRes, err error) {
+func (c *Client) sendSiteUserDeleteUserLink(ctx context.Context, request *SiteDeleteUserLinkInput) (res *SiteUserDeleteUserLinkAccepted, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteUser_deleteUserLink"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28321,12 +28321,12 @@ func (c *Client) sendSiteUserDeleteUserLink(ctx context.Context, request *SiteDe
 // the link (ADR 0031).
 //
 // POST /me/email-change
-func (c *Client) SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (SiteUserEmailChangeRes, error) {
-	res, err := c.sendSiteUserEmailChange(ctx, request)
-	return res, err
+func (c *Client) SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) error {
+	_, err := c.sendSiteUserEmailChange(ctx, request)
+	return err
 }
 
-func (c *Client) sendSiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (res SiteUserEmailChangeRes, err error) {
+func (c *Client) sendSiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (res *SiteUserEmailChangeAccepted, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteUser_emailChange"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28667,12 +28667,12 @@ func (c *Client) sendSiteUserSignOutEverywhere(ctx context.Context) (res *SiteUs
 // answers 429 even for a right one while its delay runs.
 //
 // PUT /me
-func (c *Client) SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (SiteUserUpdateMeRes, error) {
+func (c *Client) SiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (*SiteUserResourceHeaders, error) {
 	res, err := c.sendSiteUserUpdateMe(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (res SiteUserUpdateMeRes, err error) {
+func (c *Client) sendSiteUserUpdateMe(ctx context.Context, request *SiteUpdateMeInput) (res *SiteUserResourceHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteUser_updateMe"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -28783,12 +28783,12 @@ func (c *Client) sendSiteUserUpdateMe(ctx context.Context, request *SiteUpdateMe
 // Create a webhook endpoint. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks
-func (c *Client) SiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error) {
+func (c *Client) SiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (*SiteWebhookEndpointResource, error) {
 	res, err := c.sendSiteWebhooksCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (res SiteWebhooksCreateRes, err error) {
+func (c *Client) sendSiteWebhooksCreate(ctx context.Context, request *CreateWebhookInput, params SiteWebhooksCreateParams) (res *SiteWebhookEndpointResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28921,12 +28921,12 @@ func (c *Client) sendSiteWebhooksCreate(ctx context.Context, request *CreateWebh
 // Delete a webhook endpoint. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/webhooks/{id}
-func (c *Client) SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (SiteWebhooksDeleteRes, error) {
-	res, err := c.sendSiteWebhooksDelete(ctx, params)
-	return res, err
+func (c *Client) SiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) error {
+	_, err := c.sendSiteWebhooksDelete(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (res SiteWebhooksDeleteRes, err error) {
+func (c *Client) sendSiteWebhooksDelete(ctx context.Context, params SiteWebhooksDeleteParams) (res *SiteWebhooksDeleteNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_delete"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -29077,12 +29077,12 @@ func (c *Client) sendSiteWebhooksDelete(ctx context.Context, params SiteWebhooks
 // Get a webhook endpoint by ID. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks/{id}
-func (c *Client) SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (SiteWebhooksGetRes, error) {
+func (c *Client) SiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (*SiteWebhookEndpointResource, error) {
 	res, err := c.sendSiteWebhooksGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (res SiteWebhooksGetRes, err error) {
+func (c *Client) sendSiteWebhooksGet(ctx context.Context, params SiteWebhooksGetParams) (res *SiteWebhookEndpointResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -29233,12 +29233,12 @@ func (c *Client) sendSiteWebhooksGet(ctx context.Context, params SiteWebhooksGet
 // List webhook endpoints. Owners and admins only.
 //
 // GET /workspaces/{workspaceId}/webhooks
-func (c *Client) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error) {
+func (c *Client) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (*SiteWebhooksListOK, error) {
 	res, err := c.sendSiteWebhooksList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (res SiteWebhooksListRes, err error) {
+func (c *Client) sendSiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (res *SiteWebhooksListOK, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -29407,12 +29407,12 @@ func (c *Client) sendSiteWebhooksList(ctx context.Context, params SiteWebhooksLi
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret
-func (c *Client) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error) {
+func (c *Client) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (*SiteWebhookEndpointResource, error) {
 	res, err := c.sendSiteWebhooksRegenerateSecret(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (res SiteWebhooksRegenerateSecretRes, err error) {
+func (c *Client) sendSiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (res *SiteWebhookEndpointResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_regenerateSecret"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -29565,12 +29565,12 @@ func (c *Client) sendSiteWebhooksRegenerateSecret(ctx context.Context, params Si
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
-func (c *Client) SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error) {
+func (c *Client) SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*SiteWebhookTestResult, error) {
 	res, err := c.sendSiteWebhooksTest(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (res SiteWebhooksTestRes, err error) {
+func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (res *SiteWebhookTestResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_test"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -29725,12 +29725,12 @@ func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *TestWebhookI
 // Update a webhook endpoint. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/webhooks/{id}
-func (c *Client) SiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error) {
+func (c *Client) SiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (*SiteWebhookEndpointResource, error) {
 	res, err := c.sendSiteWebhooksUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (res SiteWebhooksUpdateRes, err error) {
+func (c *Client) sendSiteWebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params SiteWebhooksUpdateParams) (res *SiteWebhookEndpointResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -29885,12 +29885,12 @@ func (c *Client) sendSiteWebhooksUpdate(ctx context.Context, request *UpdateWebh
 // configured.
 //
 // POST /workspaces/{workspaceId}/account-link
-func (c *Client) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error) {
+func (c *Client) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (*SiteAccountLinkResource, error) {
 	res, err := c.sendSiteWorkspacesAccountLink(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (res SiteWorkspacesAccountLinkRes, err error) {
+func (c *Client) sendSiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (res *SiteAccountLinkResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_accountLink"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -30022,12 +30022,12 @@ func (c *Client) sendSiteWorkspacesAccountLink(ctx context.Context, params SiteW
 // is recorded as an Audit entry.
 //
 // POST /workspaces
-func (c *Client) SiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (SiteWorkspacesCreateRes, error) {
+func (c *Client) SiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (res SiteWorkspacesCreateRes, err error) {
+func (c *Client) sendSiteWorkspacesCreate(ctx context.Context, request *SiteCreateWorkspaceInput) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -30142,12 +30142,12 @@ func (c *Client) sendSiteWorkspacesCreate(ctx context.Context, request *SiteCrea
 // Two-factor requirement still applies.
 //
 // POST /workspaces/{workspaceId}/delete
-func (c *Client) SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error) {
+func (c *Client) SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (*SiteDeletedWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesDelete(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (res SiteWorkspacesDeleteRes, err error) {
+func (c *Client) sendSiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (res *SiteDeletedWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_delete"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -30281,12 +30281,12 @@ func (c *Client) sendSiteWorkspacesDelete(ctx context.Context, request *SiteDele
 // window. Open to every member.
 //
 // GET /workspaces/{workspaceId}/revenue-settings
-func (c *Client) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error) {
+func (c *Client) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (*SiteRevenueSettingsResource, error) {
 	res, err := c.sendSiteWorkspacesGetRevenueSettings(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (res SiteWorkspacesGetRevenueSettingsRes, err error) {
+func (c *Client) sendSiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (res *SiteRevenueSettingsResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_getRevenueSettings"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -30418,12 +30418,12 @@ func (c *Client) sendSiteWorkspacesGetRevenueSettings(ctx context.Context, param
 // Workspace be deleted, first. Recorded as an Audit entry with the caller as actor.
 //
 // POST /workspaces/{workspaceId}/leave
-func (c *Client) SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error) {
-	res, err := c.sendSiteWorkspacesLeave(ctx, params)
-	return res, err
+func (c *Client) SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) error {
+	_, err := c.sendSiteWorkspacesLeave(ctx, params)
+	return err
 }
 
-func (c *Client) sendSiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (res SiteWorkspacesLeaveRes, err error) {
+func (c *Client) sendSiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (res *SiteWorkspacesLeaveNoContent, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_leave"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -30555,12 +30555,12 @@ func (c *Client) sendSiteWorkspacesLeave(ctx context.Context, params SiteWorkspa
 // Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
 //
 // DELETE /workspaces/{workspaceId}/second-factor-requirement
-func (c *Client) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error) {
+func (c *Client) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesLiftSecondFactorRequirement(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (res SiteWorkspacesLiftSecondFactorRequirementRes, err error) {
+func (c *Client) sendSiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_liftSecondFactorRequirement"),
 		semconv.HTTPRequestMethodKey.String("DELETE"),
@@ -30920,12 +30920,12 @@ func (c *Client) sendSiteWorkspacesListDeleted(ctx context.Context) (res []SiteD
 // grace restarts. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/second-factor-requirement
-func (c *Client) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error) {
+func (c *Client) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesRequireSecondFactor(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (res SiteWorkspacesRequireSecondFactorRes, err error) {
+func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_requireSecondFactor"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -31059,12 +31059,12 @@ func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, para
 // 404. Recorded as an Audit entry.
 //
 // POST /workspaces/deleted/{id}/restore
-func (c *Client) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error) {
+func (c *Client) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesRestore(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (res SiteWorkspacesRestoreRes, err error) {
+func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_restore"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -31196,12 +31196,12 @@ func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorks
 // history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
-func (c *Client) SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error) {
+func (c *Client) SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesSetTimezone(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (res SiteWorkspacesSetTimezoneRes, err error) {
+func (c *Client) sendSiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_setTimezone"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -31334,12 +31334,12 @@ func (c *Client) sendSiteWorkspacesSetTimezone(ctx context.Context, request *Sit
 // Rename a workspace or change its postal address (Owner and Admin only). The id never changes.
 //
 // PUT /workspaces/{workspaceId}
-func (c *Client) SiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (SiteWorkspacesUpdateRes, error) {
+func (c *Client) SiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (*SiteWorkspaceResource, error) {
 	res, err := c.sendSiteWorkspacesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (res SiteWorkspacesUpdateRes, err error) {
+func (c *Client) sendSiteWorkspacesUpdate(ctx context.Context, request *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (res *SiteWorkspaceResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -31473,12 +31473,12 @@ func (c *Client) sendSiteWorkspacesUpdate(ctx context.Context, request *SiteUpda
 // its bounds. Every change is recorded as an Audit entry naming who changed what.
 //
 // PUT /workspaces/{workspaceId}/revenue-settings
-func (c *Client) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (SiteWorkspacesUpdateRevenueSettingsRes, error) {
+func (c *Client) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (*SiteRevenueSettingsResource, error) {
 	res, err := c.sendSiteWorkspacesUpdateRevenueSettings(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (res SiteWorkspacesUpdateRevenueSettingsRes, err error) {
+func (c *Client) sendSiteWorkspacesUpdateRevenueSettings(ctx context.Context, request *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (res *SiteRevenueSettingsResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_updateRevenueSettings"),
 		semconv.HTTPRequestMethodKey.String("PUT"),

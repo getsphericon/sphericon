@@ -9,7 +9,7 @@ import (
 )
 
 // ExportContacts serves the Contacts stream (ADR 0045), the same shape as ExportEvents.
-func (h *Handlers) ExportContacts(ctx context.Context, params externalapi.ExportContactsParams) (externalapi.ExportContactsRes, error) {
+func (h *Handlers) ExportContacts(ctx context.Context, params externalapi.ExportContactsParams) (*externalapi.ExportContactsOKHeaders, error) {
 	if !h.exportLicensed() {
 		return nil, exportstream.ErrNotOffered
 	}

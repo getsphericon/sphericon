@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -30,12 +31,11 @@ func TestAnOrderCompletedIsAcceptedUnderItsOwnName(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `19.99`, "currency": `"USD"`}),
 	}})
 
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsCreateNoContent{}, res)
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameCollected, map[string]any{"action": "Order Completed"}))
 }
 
@@ -56,10 +56,8 @@ func TestAnAmountWithMorePlacesThanItsCurrencyOrAnUnknownCurrencyIsRefusedWithAR
 		"total is negative": {map[string]string{"order_id": `"A-1"`, "total": `-5`, "currency": `"USD"`}, "total must not be negative"},
 		"no currency":       {map[string]string{"order_id": `"A-1"`, "total": `5`}, "currency is required"},
 	} {
-		res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{orderEvent("Order Completed", tc.props)}})
-		require.NoError(t, err, name)
-		refused, ok := res.(*externalapi.EventsCreateUnprocessableEntity)
-		require.Truef(t, ok, "%s: got %T", name, res)
+		err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{orderEvent("Order Completed", tc.props)}})
+		refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, name)
 		assert.Contains(t, refused.Detail.Or(""), tc.reason, name)
 	}
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "nothing was published")
@@ -70,13 +68,11 @@ func TestAChangeWithoutACurrencyIsCheckedAgainstTheCurrencyOfItsOrder(t *testing
 	c := env.ExternalScoped(t, "events:write")
 
 	// fixture-order-1 is Alice's Order OrderAcme, in USD.
-	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Refunded", map[string]string{"order_id": `"fixture-order-1"`, "total": `10.555`}),
 	}})
 
-	require.NoError(t, err)
-	refused, ok := res.(*externalapi.EventsCreateUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "total has more than 2 decimal places, which USD allows")
 }
 
@@ -84,28 +80,27 @@ func TestAChangeWithoutACurrencyBeforeItsOrderIsCheckedAsANumber(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	for props, want := range map[string]any{`10.5`: &externalapi.EventsCreateNoContent{}, `"10"`: &externalapi.EventsCreateUnprocessableEntity{}} {
-		res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
-			orderEvent("Order Refunded", map[string]string{"order_id": `"not-yet"`, "total": props}),
+	refund := func(total string) error {
+		return c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+			orderEvent("Order Refunded", map[string]string{"order_id": `"not-yet"`, "total": total}),
 		}})
-		require.NoError(t, err)
-		assert.IsType(t, want, res, props)
 	}
+
+	require.NoError(t, refund(`10.5`), "a number is a total")
+	testhelper.ExternalRefusal(t, refund(`"10"`), http.StatusUnprocessableEntity, "a string is not")
 }
 
 func TestTheBatchReportsAnOrderRefusalPerItemAndTakesTheOthers(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	res, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Events: []externalapi.EventInput{
+	batch, err := c.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{"order_id": `"A-1"`, "total": `1.234`, "currency": `"USD"`}),
 		orderEvent("Product Viewed", map[string]string{"total": `1.234`, "currency": `"QQQ"`}),
 		orderEvent("Order Completed", map[string]string{"order_id": `"A-2"`, "total": `1.23`, "currency": `"USD"`}),
 	}})
 
 	require.NoError(t, err)
-	batch, ok := res.(*externalapi.RecordEventsBatchResult)
-	require.Truef(t, ok, "got %T", res)
 	statuses := lo.Map(batch.Results, func(r externalapi.EventBatchItemResult, _ int) externalapi.EventBatchStatus { return r.Status })
 	assert.Equal(t, []externalapi.EventBatchStatus{
 		externalapi.EventBatchStatusFailed, externalapi.EventBatchStatusAccepted, externalapi.EventBatchStatusAccepted,
@@ -117,7 +112,7 @@ func TestAnOrderIsRefusedOnlyForWhatSphericonReads(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	res, err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
+	err := c.EventsCreate(t.Context(), &externalapi.RecordEventsInput{Events: []externalapi.EventInput{
 		orderEvent("Order Completed", map[string]string{
 			"order_id": `"A-1"`, "total": `5`, "currency": `"USD"`,
 			"revenue": `-1`, "discount": `0.001`, "tax": `0.001`, "shipping": `"free"`,
@@ -125,5 +120,4 @@ func TestAnOrderIsRefusedOnlyForWhatSphericonReads(t *testing.T) {
 	}})
 
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsCreateNoContent{}, res)
 }

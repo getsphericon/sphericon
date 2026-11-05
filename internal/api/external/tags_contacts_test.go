@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -23,9 +24,8 @@ func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) 
 		"foreign": entityIDString(fixtures.ContactGlobexID),
 	} {
 		t.Run(name, func(t *testing.T) {
-			res, err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: id, Name: "vip"})
-			require.NoError(t, err)
-			assert.IsType(t, &externalapi.TagsRemoveNotFound{}, res)
+			err := c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: id, Name: "vip"})
+			testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 		})
 	}
 }
@@ -35,15 +35,13 @@ func TestExternalContactsCreatePersistsCustomFields(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
-	res, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
+	created, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("fields@example.com"),
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"plan": jx.Raw(`"pro"`),
 		}),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", res)
 
 	stored, err := env.DB.Contact.Get(ctx, int64(created.ID))
 	require.NoError(t, err)

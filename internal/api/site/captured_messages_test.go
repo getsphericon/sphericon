@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,8 +21,7 @@ func TestSiteCapturedMessageIsReadInFullByAnyMember(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	msg, ok := out.(*siteapi.SiteCapturedMessageResource)
-	require.Truef(t, ok, "got %T", out)
+	msg := out
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, msg.Subject)
 	assert.Contains(t, msg.HTML, "start here")
 	assert.Equal(t, "Welcome, start here: https://globex.test/start", msg.Text)
@@ -37,7 +37,7 @@ func TestSiteCapturedMessagesListLeavesTheContentOut(t *testing.T) {
 	out, err := jane.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
 
-	page := out.(*siteapi.SiteCapturedMessagesListOK)
+	page := out
 	require.NotEmpty(t, page.Items)
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, page.Items[0].Subject)
 }
@@ -46,28 +46,24 @@ func TestSiteCapturedMessageOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	read, err := john.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
+	_, read := john.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.CapturedMessageGlobexWelcomeID),
 	})
-	require.NoError(t, err)
-	del, err := john.SiteCapturedMessagesDelete(t.Context(), siteapi.SiteCapturedMessagesDeleteParams{
+	del := john.SiteCapturedMessagesDelete(t.Context(), siteapi.SiteCapturedMessagesDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.CapturedMessageGlobexWelcomeID),
 	})
-	require.NoError(t, err)
-	foreign, err := john.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
+	_, foreign := john.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.CapturedMessageGlobexWelcomeID),
 	})
-	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteCapturedMessagesGetNotFound{}, read)
-	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteNotFound{}, del)
-	assert.IsType(t, &siteapi.SiteCapturedMessagesGetNotFound{}, foreign, "a non-member gets nothing")
+	testhelper.SiteRefusal(t, read, http.StatusNotFound)
+	testhelper.SiteRefusal(t, del, http.StatusNotFound)
+	testhelper.SiteRefusal(t, foreign, http.StatusNotFound, "a non-member gets nothing")
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	still, err := jane.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
+	_, err := jane.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.CapturedMessageGlobexWelcomeID),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteCapturedMessageResource{}, still, "the message survived")
+	assert.NoError(t, err, "the message survived")
 }
 
 func TestSiteCapturedMessageIsDeletedByAnyMember(t *testing.T) {
@@ -77,16 +73,13 @@ func TestSiteCapturedMessageIsDeletedByAnyMember(t *testing.T) {
 		WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.CapturedMessageGlobexWelcomeID),
 	}
 
-	out, err := mary.SiteCapturedMessagesDelete(t.Context(), params)
-	require.NoError(t, err)
-	again, err := mary.SiteCapturedMessagesDelete(t.Context(), params)
-	require.NoError(t, err)
+	out := mary.SiteCapturedMessagesDelete(t.Context(), params)
+	again := mary.SiteCapturedMessagesDelete(t.Context(), params)
 
-	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteNoContent{}, out)
-	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteNotFound{}, again)
-	list, err := mary.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, out)
+	testhelper.SiteRefusal(t, again, http.StatusNotFound)
+	page, err := mary.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	page := list.(*siteapi.SiteCapturedMessagesListOK)
 	require.Len(t, page.Items, 1)
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexNewsletterID), int64(page.Items[0].ID), "the other one stays")
 }
@@ -96,17 +89,15 @@ func TestSiteCapturedMessagesAreAllDeletedForTheOwnWorkspaceOnly(t *testing.T) {
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := mary.SiteCapturedMessagesDeleteAll(t.Context(), siteapi.SiteCapturedMessagesDeleteAllParams{WorkspaceId: fixtures.GlobexPublicID})
-	require.NoError(t, err)
-	denied, err := john.SiteCapturedMessagesDeleteAll(t.Context(), siteapi.SiteCapturedMessagesDeleteAllParams{WorkspaceId: fixtures.GlobexPublicID})
-	require.NoError(t, err)
+	out := mary.SiteCapturedMessagesDeleteAll(t.Context(), siteapi.SiteCapturedMessagesDeleteAllParams{WorkspaceId: fixtures.GlobexPublicID})
+	denied := john.SiteCapturedMessagesDeleteAll(t.Context(), siteapi.SiteCapturedMessagesDeleteAllParams{WorkspaceId: fixtures.GlobexPublicID})
 
-	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteAllNoContent{}, out)
-	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteAllNotFound{}, denied)
+	require.NoError(t, out)
+	testhelper.SiteRefusal(t, denied, http.StatusNotFound)
 	own, err := mary.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	assert.Empty(t, own.(*siteapi.SiteCapturedMessagesListOK).Items)
+	assert.Empty(t, own.Items)
 	other, err := john.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Len(t, other.(*siteapi.SiteCapturedMessagesListOK).Items, 1, "Acme's message is untouched")
+	assert.Len(t, other.Items, 1, "Acme's message is untouched")
 }

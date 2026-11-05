@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // SuppressionUpdate is the builder for updating Suppression entities.
@@ -52,13 +53,13 @@ func (_u *SuppressionUpdate) SetNillableWorkspaceID(v *int64) *SuppressionUpdate
 }
 
 // SetChannel sets the "channel" field.
-func (_u *SuppressionUpdate) SetChannel(v suppression.Channel) *SuppressionUpdate {
+func (_u *SuppressionUpdate) SetChannel(v channels.Channel) *SuppressionUpdate {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *SuppressionUpdate) SetNillableChannel(v *suppression.Channel) *SuppressionUpdate {
+func (_u *SuppressionUpdate) SetNillableChannel(v *channels.Channel) *SuppressionUpdate {
 	if v != nil {
 		_u.SetChannel(*v)
 	}
@@ -356,13 +357,13 @@ func (_u *SuppressionUpdateOne) SetNillableWorkspaceID(v *int64) *SuppressionUpd
 }
 
 // SetChannel sets the "channel" field.
-func (_u *SuppressionUpdateOne) SetChannel(v suppression.Channel) *SuppressionUpdateOne {
+func (_u *SuppressionUpdateOne) SetChannel(v channels.Channel) *SuppressionUpdateOne {
 	_u.mutation.SetChannel(v)
 	return _u
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_u *SuppressionUpdateOne) SetNillableChannel(v *suppression.Channel) *SuppressionUpdateOne {
+func (_u *SuppressionUpdateOne) SetNillableChannel(v *channels.Channel) *SuppressionUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
 	}

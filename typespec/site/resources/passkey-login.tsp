@@ -55,7 +55,7 @@ namespace SitePasskeyLogin {
 
         @body body: SitePasskeyLoginBegun;
       }
-    | NotFoundProblem;
+    | Problem;
 
   /** Finish a Passkey login: the authenticator's response, with no email and no password. The
    * User is found by the credential id; the authenticator must have verified the person and the
@@ -82,7 +82,5 @@ namespace SitePasskeyLogin {
 
         @body body: SiteLoginResult;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

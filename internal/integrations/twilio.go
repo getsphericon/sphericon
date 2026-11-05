@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -98,7 +99,7 @@ func (m *Module) connectTwilio(ctx context.Context, c twilio.Config, key string)
 	if err != nil {
 		return nil, err
 	}
-	account, err := m.catalog.BuildSMS(messaging.ProviderTwilio, raw)
+	account, err := m.catalog.BuildSMS(providers.Twilio, raw)
 	if err != nil {
 		return nil, configError(err)
 	}

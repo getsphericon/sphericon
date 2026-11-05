@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,11 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func eraseByEmail(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) siteapi.SiteContactsEraseRes {
+func eraseByEmail(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, email string) error {
 	t.Helper()
-	res, err := c.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{WorkspaceId: workspaceID, Email: email})
-	require.NoError(t, err)
-	return res
+	return c.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{WorkspaceId: workspaceID, Email: email})
 }
 
 // Erase by address removes the Contact; a padded, mixed-case address finds it; a second
@@ -28,15 +27,14 @@ func TestSiteContactsEraseByEmailErasesTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := eraseByEmail(t, c, fixtures.AcmePublicID, " Export.Subject@Example.com ")
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
+	err := eraseByEmail(t, c, fixtures.AcmePublicID, " Export.Subject@Example.com ")
+	require.NoError(t, err)
 
 	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(context.Background())
 	require.NoError(t, err)
 	assert.False(t, still)
 
-	got, ok := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail).(*siteapi.SiteContactHoldings)
-	require.True(t, ok)
+	got := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	assert.Equal(t, siteapi.SiteContactHoldings{Unsubscribes: 1, Suppressions: 1}, *got)
 }
 
@@ -45,8 +43,8 @@ func TestSiteContactsEraseByEmailAnonymizesDeliveryRecordsWithoutContact(t *test
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 
-	res := eraseByEmail(t, c, fixtures.InitechPublicID, fixtures.OutboundMessageStrangerDestination)
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
+	err := eraseByEmail(t, c, fixtures.InitechPublicID, fixtures.OutboundMessageStrangerDestination)
+	require.NoError(t, err)
 
 	msg, err := env.DB.OutboundMessage.Get(context.Background(), fixtures.OutboundMessageStrangerID)
 	require.NoError(t, err)
@@ -58,8 +56,11 @@ func TestSiteContactsEraseByEmailNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	assert.IsType(t, &siteapi.SiteContactsEraseNotFound{}, eraseByEmail(t, c, fixtures.AcmePublicID, "nobody@nowhere.test"))
-	assert.IsType(t, &siteapi.SiteContactsEraseNotFound{}, eraseByEmail(t, c, fixtures.AcmePublicID, "pat@globex.test"))
+	nobody := eraseByEmail(t, c, fixtures.AcmePublicID, "nobody@nowhere.test")
+	foreign := eraseByEmail(t, c, fixtures.AcmePublicID, "pat@globex.test")
+
+	testhelper.SiteRefusal(t, nobody, http.StatusNotFound)
+	testhelper.SiteRefusal(t, foreign, http.StatusNotFound)
 }
 
 // An invalid address is rejected before anything is erased.
@@ -67,7 +68,8 @@ func TestSiteContactsEraseByEmailRejectsAnInvalidAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	assert.IsType(t, &siteapi.SiteContactsEraseUnprocessableEntity{}, eraseByEmail(t, c, fixtures.AcmePublicID, "not an address"))
+	err := eraseByEmail(t, c, fixtures.AcmePublicID, "not an address")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 // A plain member is refused and nothing is touched.
@@ -75,8 +77,8 @@ func TestSiteContactsEraseByEmailIsRefusedForMembers(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
-	assert.IsType(t, &siteapi.SiteContactsEraseForbidden{}, res)
+	refused := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
+	testhelper.SiteRefusal(t, refused, http.StatusForbidden)
 
 	still, err := env.DB.Contact.Query().Where(contact.Email(fixtures.ContactExportSubjectEmail)).Exist(context.Background())
 	require.NoError(t, err)
@@ -88,8 +90,8 @@ func TestSiteContactsEraseByEmailRecordsTheUserRequester(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
+	err := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
+	require.NoError(t, err)
 
 	msgs := env.QueuedMessages(t, events.NameContactErased)
 	require.Len(t, msgs, 1)
@@ -102,7 +104,8 @@ func TestSiteContactsEraseByEmailRecordsTheUserRequester(t *testing.T) {
 func TestSiteContactsEraseByEmailAuditEntryHoldsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail))
+	err := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
+	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "contact.delete")
 

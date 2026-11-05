@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,20 +22,17 @@ func TestExternalRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 
 	for _, rule := range []int64{fixtures.RuleTagClickedID, fixtures.RuleInactiveID} {
 		id := entityIDString(rule)
-		deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: id})
+		err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: id})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
 
 		kept, err := c.RulesGet(ctx, externalapi.RulesGetParams{ID: id})
 		require.NoError(t, err)
-		res, ok := kept.(*externalapi.RuleResource)
-		require.Truef(t, ok, "got %T", kept)
+		res := kept
 		_, discardedAt := res.DiscardedAt.Get()
 		assert.True(t, discardedAt, "the Rule is kept, marked discarded")
-		renamed, err := c.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Name: externalapi.NewOptString("renamed")},
+		_, err = c.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Name: externalapi.NewOptString("renamed")},
 			externalapi.RulesUpdateParams{ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.RulesUpdateNotFound{}, renamed, "a deleted Rule changes no more")
+		testhelper.ExternalRefusal(t, err, http.StatusNotFound, "a deleted Rule changes no more")
 	}
 }
 
@@ -43,7 +41,6 @@ func TestExternalRulesDeleteNeedsTheAutomationsWriteScope(t *testing.T) {
 	ctx := context.Background()
 	reader := env.ExternalScoped(t, "automations:read")
 
-	del, err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDeleteForbidden{}, del)
+	err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

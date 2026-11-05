@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // FindByProviderMessageID is the Outbound message a Delivery notice names by the provider's
@@ -21,7 +22,7 @@ func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessage
 		return nil, nil
 	}
 	m, err := s.OutboundMessage().Query().
-		Where(outboundmessage.ProviderMessageID(providerMessageID), outboundmessage.ChannelEQ(outboundmessage.ChannelEmail)).
+		Where(outboundmessage.ProviderMessageID(providerMessageID), outboundmessage.ChannelEQ(channels.Email)).
 		Order(outboundmessage.ByID(sql.OrderDesc())).
 		First(ctx)
 	if ent.IsNotFound(err) {
@@ -45,7 +46,7 @@ func FindTelegramMessage(ctx context.Context, s *ent.Scoped, integrationID int64
 	}
 	m, err := s.OutboundMessage().Query().
 		Where(
-			outboundmessage.ChannelEQ(outboundmessage.ChannelTelegram),
+			outboundmessage.ChannelEQ(channels.Telegram),
 			outboundmessage.IntegrationID(integrationID),
 			outboundmessage.Destination(destination),
 			outboundmessage.ProviderMessageID(providerMessageID),
@@ -70,7 +71,7 @@ func FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, pro
 	}
 	m, err := s.OutboundMessage().Query().
 		Where(
-			outboundmessage.ChannelEQ(outboundmessage.ChannelSms),
+			outboundmessage.ChannelEQ(channels.SMS),
 			outboundmessage.IntegrationID(integrationID),
 			outboundmessage.ProviderMessageID(providerMessageID),
 		).

@@ -20,8 +20,7 @@ func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 
 	failing, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsFailingID)})
 	require.NoError(t, err)
-	res, ok := failing.(*siteapi.SiteWebhookEndpointResource)
-	require.Truef(t, ok, "got %T", failing)
+	res := failing
 	f, has := res.Failure.Get()
 	require.True(t, has)
 	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, f.Kind)
@@ -31,7 +30,7 @@ func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 
 	healthy, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).Failure.IsSet())
+	assert.False(t, healthy.Failure.IsSet())
 }
 
 func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
@@ -41,21 +40,19 @@ func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 
 	gone, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsGoneID)})
 	require.NoError(t, err)
-	res, ok := gone.(*siteapi.SiteWebhookEndpointResource)
-	require.Truef(t, ok, "got %T", gone)
+	res := gone
 	assert.False(t, res.Enabled)
 	assert.Equal(t, siteapi.SiteWebhookDisabledReasonGone, res.DisabledReason.Value)
 	assert.True(t, res.DisabledAt.IsSet(), "when it turned off is shown")
 
 	byOwner, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsDisabledID)})
 	require.NoError(t, err)
-	ownerRes, ok := byOwner.(*siteapi.SiteWebhookEndpointResource)
-	require.Truef(t, ok, "got %T", byOwner)
+	ownerRes := byOwner
 	assert.Equal(t, siteapi.SiteWebhookDisabledReasonOwner, ownerRes.DisabledReason.Value)
 	assert.True(t, ownerRes.DisabledAt.IsSet())
 
 	healthy, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).DisabledReason.IsSet())
-	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).DisabledAt.IsSet())
+	assert.False(t, healthy.DisabledReason.IsSet())
+	assert.False(t, healthy.DisabledAt.IsSet())
 }

@@ -53,34 +53,30 @@ func (h *harness) code(t *testing.T, secret string) string {
 }
 
 // passwordStep runs the first login step and returns its answer.
-func (h *harness) passwordStep(t *testing.T, email, password string) staffapi.StaffAuthLoginRes {
+func (h *harness) passwordStep(t *testing.T, email, password string) (*staffapi.StaffLoginResult, error) {
 	t.Helper()
-	res, err := h.env.StaffAnonymous(t).StaffAuthLogin(t.Context(), &staffapi.StaffLoginInput{Email: email, Password: password})
-	require.NoError(t, err)
-	return res
+	return h.env.StaffAnonymous(t).StaffAuthLogin(t.Context(), &staffapi.StaffLoginInput{Email: email, Password: password})
 }
 
 // challenge passes the password step and returns the challenge it answers with.
 func (h *harness) challenge(t *testing.T, email, password string) *staffapi.StaffLoginResult {
 	t.Helper()
-	res, ok := h.passwordStep(t, email, password).(*staffapi.StaffLoginResult)
-	require.True(t, ok, "the password step grants a challenge, got %T", res)
+	res, err := h.passwordStep(t, email, password)
+	require.NoError(t, err, "the password step grants a challenge")
 	return res
 }
 
-func (h *harness) secondStep(t *testing.T, challenge, code string) staffapi.StaffAuthSecondFactorRes {
+func (h *harness) secondStep(t *testing.T, challenge, code string) (*staffapi.StaffResourceHeaders, error) {
 	t.Helper()
-	res, err := h.env.StaffAnonymous(t).StaffAuthSecondFactor(t.Context(), &staffapi.StaffSecondFactorInput{Challenge: challenge, Code: code})
-	require.NoError(t, err)
-	return res
+	return h.env.StaffAnonymous(t).StaffAuthSecondFactor(t.Context(), &staffapi.StaffSecondFactorInput{Challenge: challenge, Code: code})
 }
 
 // session runs the whole two-step login of an enrolled Staff member and returns the
 // session cookie.
 func (h *harness) session(t *testing.T, email, password, secret string) *http.Cookie {
 	t.Helper()
-	res, ok := h.secondStep(t, h.challenge(t, email, password).Challenge, h.code(t, secret)).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok, "the second step starts a session")
+	res, err := h.secondStep(t, h.challenge(t, email, password).Challenge, h.code(t, secret))
+	require.NoError(t, err, "the second step starts a session")
 	return parseCookie(t, res.SetCookie)
 }
 
@@ -93,27 +89,23 @@ func parseCookie(t *testing.T, setCookie string) *http.Cookie {
 	return cookies[0]
 }
 
-func (h *harness) me(t *testing.T, token string) staffapi.StaffMeGetRes {
+func (h *harness) me(t *testing.T, token string) (*staffapi.StaffResource, error) {
 	t.Helper()
-	res, err := h.env.StaffWithToken(t, token).StaffMeGet(t.Context())
-	require.NoError(t, err)
-	return res
+	return h.env.StaffWithToken(t, token).StaffMeGet(t.Context())
 }
 
-func requireProblem(t *testing.T, res any, status int) {
+// errOf is the error of a call's two results, for a call that is expected to be refused.
+func errOf[T any](_ T, err error) error {
+	return err
+}
+
+// requireProblem fails unless err is a refusal with status and a problem body carrying it, and
+// returns the problem.
+func requireProblem(t *testing.T, err error, status int) staffapi.ProblemDetails {
 	t.Helper()
-	switch p := res.(type) {
-	case *staffapi.ProblemDetails:
-		assert.EqualValues(t, status, p.Status.Value)
-	case *staffapi.ProblemDetailsHeaders:
-		assert.EqualValues(t, status, p.Response.Status.Value)
-	case *staffapi.StaffAuthLoginUnauthorized:
-		assert.EqualValues(t, status, p.Status.Value)
-	case *staffapi.StaffAuthSecondFactorUnauthorized:
-		assert.EqualValues(t, status, p.Status.Value)
-	default:
-		require.Failf(t, "not a problem", "got %T", res)
-	}
+	problem := testhelper.StaffRefusal(t, err, status)
+	assert.EqualValues(t, status, problem.Status.Value)
+	return problem
 }
 
 func get(t *testing.T, h http.Handler, path string, cookies ...*http.Cookie) *httptest.ResponseRecorder {
@@ -145,11 +137,11 @@ func TestASelfhostedInstanceWithoutALicenseSignsACreatedStaffMemberIn(t *testing
 
 	res := h.challenge(t, "ops@selfhosted.test", password)
 	require.Equal(t, staffapi.StaffLoginOutcomeEnrolment, res.Outcome)
-	done, ok := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret)).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok, "the confirming code starts a session")
+	done, err := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret))
+	require.NoError(t, err, "the confirming code starts a session")
 
-	me, ok := h.me(t, parseCookie(t, done.SetCookie).Value).(*staffapi.StaffResource)
-	require.True(t, ok, "the core surface answers without a license")
+	me, err := h.me(t, parseCookie(t, done.SetCookie).Value)
+	require.NoError(t, err, "the core surface answers without a license")
 	assert.EqualValues(t, "ops@selfhosted.test", me.Email)
 }
 
@@ -191,17 +183,17 @@ func TestWithoutAStaffSecretTheWholeSurfaceIs404(t *testing.T) {
 
 func TestAnAnonymousRequestToTheSurfaceIs401(t *testing.T) {
 	h := newHarness(t)
-	requireProblem(t, h.me(t, ""), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, "")), http.StatusUnauthorized)
 }
 
 func TestAWrongPasswordAndAnUnknownEmailAnswerTheSame401(t *testing.T) {
 	h := newHarness(t)
 
-	wrong := h.passwordStep(t, fixtures.StaffEnrolledEmail, "not-the-password")
-	unknown := h.passwordStep(t, "nobody@sphericon.test", fixtures.StaffEnrolledPassword)
+	_, wrongErr := h.passwordStep(t, fixtures.StaffEnrolledEmail, "not-the-password")
+	_, unknownErr := h.passwordStep(t, "nobody@sphericon.test", fixtures.StaffEnrolledPassword)
 
-	requireProblem(t, wrong, http.StatusUnauthorized)
-	requireProblem(t, unknown, http.StatusUnauthorized)
+	wrong := requireProblem(t, wrongErr, http.StatusUnauthorized)
+	unknown := requireProblem(t, unknownErr, http.StatusUnauthorized)
 	assert.Equal(t, unknown, wrong)
 }
 
@@ -222,8 +214,8 @@ func TestTheSecondStepWithATOTPCodeStartsASession(t *testing.T) {
 
 	assert.Equal(t, "STAFF_JWT", cookie.Name)
 	assert.True(t, cookie.HttpOnly)
-	me, ok := h.me(t, cookie.Value).(*staffapi.StaffResource)
-	require.True(t, ok, "the cookie authorizes the StaffMember surface")
+	me, err := h.me(t, cookie.Value)
+	require.NoError(t, err, "the cookie authorizes the StaffMember surface")
 	assert.EqualValues(t, fixtures.StaffEnrolledEmail, me.Email)
 }
 
@@ -236,29 +228,29 @@ func TestTheSessionIsShorterThanACustomersAndHasNoRememberMe(t *testing.T) {
 	assert.Less(t, ttl, 24*time.Hour, "shorter than SPHERICON_SESSION_TTL's default")
 
 	h.clock.t = h.clock.t.Add(ttl + time.Second)
-	requireProblem(t, h.me(t, cookie.Value), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, cookie.Value)), http.StatusUnauthorized)
 }
 
 func TestTheSecondStepRejectsAWrongCodeWithoutASession(t *testing.T) {
 	h := newHarness(t)
 	challenge := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
 
-	requireProblem(t, h.secondStep(t, challenge, "000000"), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, challenge, "000000")), http.StatusUnauthorized)
 }
 
 func TestAReplayedCodeAndAnExpiredChallengeAreRejected(t *testing.T) {
 	h := newHarness(t)
 	code := h.code(t, fixtures.StaffEnrolledTotpSecret)
 	first := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
-	_, ok := h.secondStep(t, first, code).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok)
+	_, err := h.secondStep(t, first, code)
+	require.NoError(t, err)
 
 	replay := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
-	requireProblem(t, h.secondStep(t, replay, code), http.StatusUnauthorized)
-	requireProblem(t, h.secondStep(t, first, h.code(t, fixtures.StaffEnrolledTotpSecret)), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, replay, code)), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, first, h.code(t, fixtures.StaffEnrolledTotpSecret))), http.StatusUnauthorized)
 
 	h.clock.t = h.clock.t.Add(5*time.Minute + time.Second)
-	requireProblem(t, h.secondStep(t, replay, h.code(t, fixtures.StaffEnrolledTotpSecret)), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, replay, h.code(t, fixtures.StaffEnrolledTotpSecret))), http.StatusUnauthorized)
 }
 
 func TestAFirstLoginEnrolsATOTPAndOnlyTheConfirmingCodeStartsASession(t *testing.T) {
@@ -272,15 +264,15 @@ func TestAFirstLoginEnrolsATOTPAndOnlyTheConfirmingCodeStartsASession(t *testing
 	assert.True(t, strings.HasPrefix(enrolment.URI, "otpauth://totp/"))
 	assert.True(t, strings.HasPrefix(enrolment.QrCode, "data:image/png;base64,"))
 
-	requireProblem(t, h.secondStep(t, res.Challenge, "000000"), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.secondStep(t, res.Challenge, "000000")), http.StatusUnauthorized)
 	again := h.challenge(t, fixtures.StaffFreshEmail, fixtures.StaffFreshPassword)
 	assert.Equal(t, staffapi.StaffLoginOutcomeEnrolment, again.Outcome, "a wrong code enrols nothing")
 
 	secret := again.Enrolment.Value.Secret
-	done, ok := h.secondStep(t, again.Challenge, h.code(t, secret)).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok)
-	_, ok = h.me(t, parseCookie(t, done.SetCookie).Value).(*staffapi.StaffResource)
-	assert.True(t, ok)
+	done, err := h.secondStep(t, again.Challenge, h.code(t, secret))
+	require.NoError(t, err)
+	_, err = h.me(t, parseCookie(t, done.SetCookie).Value)
+	require.NoError(t, err)
 
 	h.clock.t = h.clock.t.Add(time.Minute)
 	next := h.challenge(t, fixtures.StaffFreshEmail, fixtures.StaffFreshPassword)
@@ -293,25 +285,22 @@ func TestLogoutClearsTheCookieAndEndsTheSessionServerSide(t *testing.T) {
 	cookie := h.session(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword, fixtures.StaffEnrolledTotpSecret)
 	copied := cookie.Value
 
-	res, err := h.env.StaffWithToken(t, cookie.Value).StaffAuthLogout(t.Context())
+	out, err := h.env.StaffWithToken(t, cookie.Value).StaffAuthLogout(t.Context())
 	require.NoError(t, err)
 
-	out, ok := res.(*staffapi.StaffAuthLogoutNoContent)
-	require.True(t, ok)
 	cleared := parseCookie(t, out.SetCookie)
 	assert.Equal(t, "STAFF_JWT", cleared.Name)
 	assert.Empty(t, cleared.Value)
 	assert.Negative(t, cleared.MaxAge)
-	requireProblem(t, h.me(t, copied), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, copied)), http.StatusUnauthorized)
 }
 
 func TestLogoutNeedsASession(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.StaffAnonymous(t).StaffAuthLogout(t.Context())
-	require.NoError(t, err)
+	_, err := h.env.StaffAnonymous(t).StaffAuthLogout(t.Context())
 
-	requireProblem(t, res, http.StatusUnauthorized)
+	requireProblem(t, err, http.StatusUnauthorized)
 }
 
 func TestARepeatedPasswordStepKeepsTheSamePendingSecret(t *testing.T) {
@@ -326,8 +315,8 @@ func TestARepeatedPasswordStepKeepsTheSamePendingSecret(t *testing.T) {
 	assert.Equal(t, first.Enrolment.Value.URI, second.Enrolment.Value.URI)
 
 	secret := first.Enrolment.Value.Secret
-	_, ok := h.secondStep(t, first.Challenge, h.code(t, secret)).(*staffapi.StaffResourceHeaders)
-	assert.True(t, ok, "the first challenge still confirms the secret the StaffMember enrolled")
+	_, err := h.secondStep(t, first.Challenge, h.code(t, secret))
+	assert.NoError(t, err, "the first challenge still confirms the secret the StaffMember enrolled")
 }
 
 func TestARepeatedPasswordStepLeavesAConfirmedStaffUntouched(t *testing.T) {
@@ -348,7 +337,7 @@ func TestAUserSessionNeverOpensTheStaffSurface(t *testing.T) {
 	h := newHarness(t)
 	userToken := h.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
 
-	requireProblem(t, h.me(t, userToken), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, userToken)), http.StatusUnauthorized)
 	rec := get(t, h.env.Server, "/staff/me", testhelper.RequestCookie("JWT", userToken))
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
@@ -368,8 +357,8 @@ func TestAnStaffWhoIsAlsoACustomerKeepsTwoIdentities(t *testing.T) {
 	require.Equal(t, fixtures.OwnerJohnEmail, fixtures.StaffAlsoCustomerEmail, "the fixture shares an address with a User")
 
 	cookie := h.session(t, fixtures.StaffAlsoCustomerEmail, fixtures.StaffAlsoCustomerPassword, fixtures.StaffAlsoCustomerTotpSecret)
-	_, ok := h.me(t, cookie.Value).(*staffapi.StaffResource)
-	assert.True(t, ok)
+	_, err := h.me(t, cookie.Value)
+	assert.NoError(t, err)
 }
 
 func TestEndingAStaffMembersSessionsRejectsTheOldToken(t *testing.T) {
@@ -378,5 +367,5 @@ func TestEndingAStaffMembersSessionsRejectsTheOldToken(t *testing.T) {
 
 	h.env.DB.StaffMember.UpdateOneID(fixtures.StaffEnrolledID).AddSessionEpoch(1).ExecX(t.Context())
 
-	requireProblem(t, h.me(t, cookie.Value), http.StatusUnauthorized)
+	requireProblem(t, errOf(h.me(t, cookie.Value)), http.StatusUnauthorized)
 }

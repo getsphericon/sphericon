@@ -104,10 +104,5 @@ namespace SiteSignupSurvey {
    * answer, a value outside the lists, an `…Other` text over its length or without its
    * `other` choice. Nothing is stored for a refused request. */
   @post
-  op submit(@body body: SiteSignupSurveyInput):
-    | NoContentResponse
-    | BadRequestProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+  op submit(@body body: SiteSignupSurveyInput): NoContentResponse | Problem;
 }

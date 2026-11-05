@@ -17,7 +17,7 @@ import (
 // Result as the HTTP contract; a request the module refuses is its error. The optional
 // Idempotency-Key becomes the send's claim key: a repeated key replays the recorded outcome
 // instead of sending again, and a key whose first request is still in flight is refused (409).
-func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransactionalEmailInput, params externalapi.EmailsSendParams) (externalapi.EmailsSendRes, error) {
+func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransactionalEmailInput, params externalapi.EmailsSendParams) (*externalapi.SendTransactionalEmailResponse, error) {
 	res, err := h.transactional.Send(ctx, auth.TokenScoped(ctx), transactional.Request{
 		TemplateID:     int64(req.TemplateId),
 		Destination:    string(req.Destination),

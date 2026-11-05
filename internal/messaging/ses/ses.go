@@ -18,14 +18,17 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/aws/smithy-go"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
-	"github.com/aws/smithy-go"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -58,8 +61,8 @@ func Descriptor() messaging.ProviderDescriptor {
 // test can point the provider at a local fake. Production uses Descriptor.
 func NewDescriptor(client aws.HTTPClient) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  messaging.ChannelEmail,
-		Provider: messaging.ProviderSES,
+		Channel:  channels.Email,
+		Provider: providers.SES,
 		Validate: validate,
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {
 			return build(raw, deps.Signer, client)
@@ -206,14 +209,14 @@ func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 
 // enforcement maps SES's EnforcementStatus; HEALTHY, a missing status and one SES may add
 // later are no enforcement, so an unknown answer never stops sending.
-func enforcement(status string) messaging.Enforcement {
+func enforcement(status string) providers.Enforcement {
 	switch status {
 	case "PROBATION":
-		return messaging.EnforcementProbation
+		return providers.EnforcementProbation
 	case "SHUTDOWN":
-		return messaging.EnforcementShutdown
+		return providers.EnforcementShutdown
 	default:
-		return messaging.EnforcementNone
+		return providers.EnforcementNone
 	}
 }
 

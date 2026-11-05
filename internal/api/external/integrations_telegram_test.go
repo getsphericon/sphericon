@@ -23,8 +23,7 @@ func TestExternalTelegramConnectsABot(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	created, ok := res.(*externalapi.IntegrationResource)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 	cfg, ok := created.Config.OneOf.GetTelegramConfig()
 	require.True(t, ok)
 	assert.Equal(t, "acme_api_bot", cfg.Username)
@@ -40,8 +39,7 @@ func TestExternalPresetsLeaveOutTheFixedTelegramPreset(t *testing.T) {
 	res, err := env.ExternalScoped(t, "integrations:read").PresetsList(context.Background())
 	require.NoError(t, err)
 
-	page, ok := res.(*externalapi.PresetsListOK)
-	require.Truef(t, ok, "got %T", res)
+	page := res
 	names := make([]string, 0, len(page.Items))
 	for _, p := range page.Items {
 		names = append(names, p.Name)

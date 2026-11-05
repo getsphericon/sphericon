@@ -13,27 +13,27 @@ type Handler interface {
 	// List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope).
 	//
 	// GET /audit-entries
-	AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (AuditEntriesListRes, error)
+	AuditEntriesList(ctx context.Context, params AuditEntriesListParams) (*AuditEntryList, error)
 	// AuthMeGet implements Auth_meGet operation.
 	//
 	// GET /auth/me
-	AuthMeGet(ctx context.Context) (AuthMeGetRes, error)
+	AuthMeGet(ctx context.Context) (*ApiTokenInfo, error)
 	// AuthTokensBootstrap implements Auth_tokensBootstrap operation.
 	//
 	// POST /auth/tokens/bootstrap
-	AuthTokensBootstrap(ctx context.Context, req *CreateApiTokenInput, params AuthTokensBootstrapParams) (AuthTokensBootstrapRes, error)
+	AuthTokensBootstrap(ctx context.Context, req *CreateApiTokenInput, params AuthTokensBootstrapParams) (*CreateApiTokenResponse, error)
 	// AuthTokensCreate implements Auth_tokensCreate operation.
 	//
 	// POST /auth/tokens
-	AuthTokensCreate(ctx context.Context, req *CreateApiTokenInput) (AuthTokensCreateRes, error)
+	AuthTokensCreate(ctx context.Context, req *CreateApiTokenInput) (*CreateApiTokenResponse, error)
 	// AuthTokensDelete implements Auth_tokensDelete operation.
 	//
 	// DELETE /auth/tokens/{id}
-	AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) (AuthTokensDeleteRes, error)
+	AuthTokensDelete(ctx context.Context, params AuthTokensDeleteParams) error
 	// AuthTokensList implements Auth_tokensList operation.
 	//
 	// GET /auth/tokens
-	AuthTokensList(ctx context.Context) (AuthTokensListRes, error)
+	AuthTokensList(ctx context.Context) (*ApiTokenListResponse, error)
 	// AutomationsArchive implements Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
@@ -41,38 +41,38 @@ type Handler interface {
 	// an active rule enrolls contacts in it (`usedBy` names them).
 	//
 	// POST /automations/{id}/archive
-	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
+	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (*AutomationResource, error)
 	// AutomationsCreate implements Automations_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /automations
-	AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (AutomationsCreateRes, error)
+	AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (*AutomationResource, error)
 	// AutomationsDeactivate implements Automations_deactivate operation.
 	//
 	// Deactivate an automation (stops new enrollments; in-flight ones finish). 409 when it is archived.
 	// Needs the automations:write scope.
 	//
 	// POST /automations/{id}/deactivate
-	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
+	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (*AutomationResource, error)
 	// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
 	//
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
 	//
 	// POST /automations/dry-run-http-step
-	AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error)
+	AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (*DryRunHttpStepResult, error)
 	// AutomationsGet implements Automations_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /automations/{id}
-	AutomationsGet(ctx context.Context, params AutomationsGetParams) (AutomationsGetRes, error)
+	AutomationsGet(ctx context.Context, params AutomationsGetParams) (*AutomationResource, error)
 	// AutomationsList implements Automations_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /automations
-	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	AutomationsList(ctx context.Context, params AutomationsListParams) (*AutomationsListOK, error)
 	// AutomationsPublish implements Automations_publish operation.
 	//
 	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
@@ -82,7 +82,7 @@ type Handler interface {
 	// refused. 409 for an archived automation too. Needs the automations:publish scope.
 	//
 	// POST /automations/{id}/publish
-	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
+	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (*AutomationResource, error)
 	// AutomationsReport implements Automations_report operation.
 	//
 	// Read the report: the engagement of the automation's emails over its whole history, and its results
@@ -91,28 +91,28 @@ type Handler interface {
 	// before it. Needs the automations:read scope.
 	//
 	// GET /automations/{id}/report
-	AutomationsReport(ctx context.Context, params AutomationsReportParams) (AutomationsReportRes, error)
+	AutomationsReport(ctx context.Context, params AutomationsReportParams) (*AutomationReport, error)
 	// AutomationsRevert implements Automations_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live,
 	// 409 when the automation is archived. Needs the automations:write scope.
 	//
 	// POST /automations/{id}/revert
-	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
+	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (*AutomationResource, error)
 	// AutomationsUnarchive implements Automations_unarchive operation.
 	//
 	// Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll
 	// again.
 	//
 	// POST /automations/{id}/unarchive
-	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
+	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (*AutomationResource, error)
 	// AutomationsUpdate implements Automations_update operation.
 	//
 	// Update an automation: its name, and its definition written to the draft. 409 when the automation is
 	// archived. Needs the automations:write scope.
 	//
 	// PUT /automations/{id}
-	AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (AutomationsUpdateRes, error)
+	AutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params AutomationsUpdateParams) (*AutomationResource, error)
 	// BrandKitGet implements BrandKit_get operation.
 	//
 	// Read the Workspace's Brand kit to write a message in its colors, fonts and button style. Its fonts,
@@ -120,7 +120,7 @@ type Handler interface {
 	// Read-only: an agent never changes the Brand kit.
 	//
 	// GET /brand-kit
-	BrandKitGet(ctx context.Context) (BrandKitGetRes, error)
+	BrandKitGet(ctx context.Context) (*BrandKitResource, error)
 	// BroadcastsArchive implements Broadcasts_archive operation.
 	//
 	// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
@@ -128,31 +128,31 @@ type Handler interface {
 	// Archiving an archived broadcast changes nothing.
 	//
 	// POST /broadcasts/{id}/archive
-	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (BroadcastsArchiveRes, error)
+	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (*BroadcastResource, error)
 	// BroadcastsCreate implements Broadcasts_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /broadcasts
-	BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (BroadcastsCreateRes, error)
+	BroadcastsCreate(ctx context.Context, req *CreateBroadcastInput) (*BroadcastResource, error)
 	// BroadcastsGet implements Broadcasts_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /broadcasts/{id}
-	BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (BroadcastsGetRes, error)
+	BroadcastsGet(ctx context.Context, params BroadcastsGetParams) (*BroadcastResource, error)
 	// BroadcastsList implements Broadcasts_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /broadcasts
-	BroadcastsList(ctx context.Context, params BroadcastsListParams) (BroadcastsListRes, error)
+	BroadcastsList(ctx context.Context, params BroadcastsListParams) (*BroadcastsListOK, error)
 	// BroadcastsReport implements Broadcasts_report operation.
 	//
 	// Read the delivery report: sent, skipped, failed, opened and clicked counts.
 	//
 	// GET /broadcasts/{id}/report
-	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (BroadcastsReportRes, error)
+	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (*BroadcastReport, error)
 	// BroadcastsSchedule implements Broadcasts_schedule operation.
 	//
 	// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
@@ -163,14 +163,14 @@ type Handler interface {
 	// needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
-	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
+	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (*BroadcastResource, error)
 	// BroadcastsSetSegment implements Broadcasts_setSegment operation.
 	//
 	// Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast
 	// is a 409.
 	//
 	// PUT /broadcasts/{id}/segment
-	BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (BroadcastsSetSegmentRes, error)
+	BroadcastsSetSegment(ctx context.Context, req *SetBroadcastSegmentInput, params BroadcastsSetSegmentParams) (*BroadcastResource, error)
 	// BroadcastsTestSend implements Broadcasts_testSend operation.
 	//
 	// Send a rendered preview with sample merge data to a single address: an email broadcast to the
@@ -179,13 +179,13 @@ type Handler interface {
 	// a Telegram broadcast is a 422.
 	//
 	// POST /broadcasts/{id}/test-send
-	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) (BroadcastsTestSendRes, error)
+	BroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params BroadcastsTestSendParams) error
 	// BroadcastsUnarchive implements Broadcasts_unarchive operation.
 	//
 	// Bring an archived broadcast back to the list, in the status it had.
 	//
 	// POST /broadcasts/{id}/unarchive
-	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
+	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (*BroadcastResource, error)
 	// BroadcastsUnschedule implements Broadcasts_unschedule operation.
 	//
 	// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
@@ -193,37 +193,37 @@ type Handler interface {
 	// mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/unschedule
-	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error)
+	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (*BroadcastResource, error)
 	// BroadcastsUpdate implements Broadcasts_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /broadcasts/{id}
-	BroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params BroadcastsUpdateParams) (BroadcastsUpdateRes, error)
+	BroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params BroadcastsUpdateParams) (*BroadcastResource, error)
 	// CapturedMessagesDelete implements CapturedMessages_delete operation.
 	//
 	// Delete one Captured message.
 	//
 	// DELETE /captured-messages/{id}
-	CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) (CapturedMessagesDeleteRes, error)
+	CapturedMessagesDelete(ctx context.Context, params CapturedMessagesDeleteParams) error
 	// CapturedMessagesDeleteAll implements CapturedMessages_deleteAll operation.
 	//
 	// Delete every Captured message of the Workspace. Needs a person: hidden from MCP.
 	//
 	// DELETE /captured-messages/all
-	CapturedMessagesDeleteAll(ctx context.Context) (CapturedMessagesDeleteAllRes, error)
+	CapturedMessagesDeleteAll(ctx context.Context) error
 	// CapturedMessagesGet implements CapturedMessages_get operation.
 	//
 	// Read one Captured message in full: headers, HTML, text and links.
 	//
 	// GET /captured-messages/{id}
-	CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (CapturedMessagesGetRes, error)
+	CapturedMessagesGet(ctx context.Context, params CapturedMessagesGetParams) (*CapturedMessageResource, error)
 	// CapturedMessagesList implements CapturedMessages_list operation.
 	//
 	// List the Captured messages, newest first, without their content (read one for it).
 	//
 	// GET /captured-messages
-	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (CapturedMessagesListRes, error)
+	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (*CapturedMessagesListOK, error)
 	// ConfirmationsCreate implements Confirmations_create operation.
 	//
 	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),
@@ -233,26 +233,26 @@ type Handler interface {
 	// does not lift an opt-out: only the person can, by texting START.
 	//
 	// POST /confirmations
-	ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (ConfirmationsCreateRes, error)
+	ConfirmationsCreate(ctx context.Context, req *CreateConfirmationInput) (*ConfirmationResource, error)
 	// ContactsBatchUpsert implements ContactsBatch_upsert operation.
 	//
 	// Upsert up to 1000 contacts by alias keys; a failing item does not affect the others.
 	//
 	// POST /contacts/batch
-	ContactsBatchUpsert(ctx context.Context, req *UpsertContactsInput) (ContactsBatchUpsertRes, error)
+	ContactsBatchUpsert(ctx context.Context, req *UpsertContactsInput) (*UpsertContactsResult, error)
 	// ContactsCreate implements Contacts_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /contacts
-	ContactsCreate(ctx context.Context, req *CreateContactInput) (ContactsCreateRes, error)
+	ContactsCreate(ctx context.Context, req *CreateContactInput) (*ContactResource, error)
 	// ContactsDelete implements Contacts_delete operation.
 	//
 	// Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and
 	// its opt-outs survive. Requires the contacts:erase scope.
 	//
 	// DELETE /contacts/{id}
-	ContactsDelete(ctx context.Context, params ContactsDeleteParams) (ContactsDeleteRes, error)
+	ContactsDelete(ctx context.Context, params ContactsDeleteParams) error
 	// ContactsEraseBy implements Contacts_eraseBy operation.
 	//
 	// Erase by an identifier other than the contact id (GDPR Art. 17): by `email` (also anonymizes
@@ -261,7 +261,7 @@ type Handler interface {
 	// contacts:erase scope.
 	//
 	// DELETE /contacts/erase
-	ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) (ContactsEraseByRes, error)
+	ContactsEraseBy(ctx context.Context, params ContactsEraseByParams) error
 	// ContactsExport implements Contacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download: the contact, its custom
@@ -276,32 +276,32 @@ type Handler interface {
 	// Get a resource by ID.
 	//
 	// GET /contacts/{id}
-	ContactsGet(ctx context.Context, params ContactsGetParams) (ContactsGetRes, error)
+	ContactsGet(ctx context.Context, params ContactsGetParams) (*ContactResource, error)
 	// ContactsList implements Contacts_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /contacts
-	ContactsList(ctx context.Context, params ContactsListParams) (ContactsListRes, error)
+	ContactsList(ctx context.Context, params ContactsListParams) (*ContactsListOK, error)
 	// ContactsUpdate implements Contacts_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /contacts/{id}
-	ContactsUpdate(ctx context.Context, req *UpdateContactInput, params ContactsUpdateParams) (ContactsUpdateRes, error)
+	ContactsUpdate(ctx context.Context, req *UpdateContactInput, params ContactsUpdateParams) (*ContactResource, error)
 	// CustomFieldsList implements CustomFields_list operation.
 	//
 	// List the workspace's custom field definitions.
 	//
 	// GET /custom-fields
-	CustomFieldsList(ctx context.Context) (CustomFieldsListRes, error)
+	CustomFieldsList(ctx context.Context) (*CustomFieldsListOK, error)
 	// CustomFieldsUpdate implements CustomFields_update operation.
 	//
 	// Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled
 	// broadcast tests the field with an operator the new type does not take (`usedBy` names them).
 	//
 	// PUT /custom-fields/{id}
-	CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (CustomFieldsUpdateRes, error)
+	CustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params CustomFieldsUpdateParams) (*CustomFieldResource, error)
 	// EmailLintLint implements EmailLint_lint operation.
 	//
 	// Lint a message before a person sees it: the same lint that runs when a message is saved and when a
@@ -310,7 +310,7 @@ type Handler interface {
 	// untrusted data in the result. Send a `body` or a `doc`, not both and not neither (422).
 	//
 	// POST /emails/lint
-	EmailLintLint(ctx context.Context, req *LintEmailInput) (EmailLintLintRes, error)
+	EmailLintLint(ctx context.Context, req *LintEmailInput) (*LintEmailResult, error)
 	// EmailSchemaGet implements EmailSchema_get operation.
 	//
 	// Read the schema of the editor's document: the node and mark types, the attributes each takes and the
@@ -319,7 +319,7 @@ type Handler interface {
 	// as `doc` on a Template, Broadcast or Automation email step.
 	//
 	// GET /emails/schema
-	EmailSchemaGet(ctx context.Context) (EmailSchemaGetRes, error)
+	EmailSchemaGet(ctx context.Context) (*EmailSchemaResult, error)
 	// EmailsSend implements Emails_send operation.
 	//
 	// Send a transactional email. The referenced Template's current content is rendered with the supplied
@@ -330,37 +330,37 @@ type Handler interface {
 	// sending a second email, and a key whose first request is still in flight returns 409.
 	//
 	// POST /emails
-	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (EmailsSendRes, error)
+	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error)
 	// EnrollmentsGet implements Enrollments_get operation.
 	//
 	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
 	//
 	// GET /automations/{automationId}/enrollments/{enrollmentId}
-	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (EnrollmentsGetRes, error)
+	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (*EnrollmentResource, error)
 	// EnrollmentsList implements Enrollments_list operation.
 	//
 	// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
 	//
 	// GET /automations/{automationId}/enrollments
-	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (EnrollmentsListRes, error)
+	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (*EnrollmentsListOK, error)
 	// EventActionsList implements EventActions_list operation.
 	//
 	// List unique event actions.
 	//
 	// GET /events/actions
-	EventActionsList(ctx context.Context, params EventActionsListParams) (EventActionsListRes, error)
+	EventActionsList(ctx context.Context, params EventActionsListParams) (*EventActionsListOK, error)
 	// EventsBatchSubmit implements EventsBatch_submit operation.
 	//
 	// Record up to 1000 events; a failing item does not affect the others.
 	//
 	// POST /events/batch
-	EventsBatchSubmit(ctx context.Context, req *RecordEventsBatchInput) (EventsBatchSubmitRes, error)
+	EventsBatchSubmit(ctx context.Context, req *RecordEventsBatchInput) (*RecordEventsBatchResult, error)
 	// EventsCreate implements Events_create operation.
 	//
 	// Record events in batch.
 	//
 	// POST /events
-	EventsCreate(ctx context.Context, req *RecordEventsInput) (EventsCreateRes, error)
+	EventsCreate(ctx context.Context, req *RecordEventsInput) error
 	// ExportAudit implements Export_audit operation.
 	//
 	// Read the Workspace's Audit entries, oldest first (Enterprise; needs the `export:read` scope and the
@@ -368,14 +368,14 @@ type Handler interface {
 	// Audit log list is the human read; this is the machine stream.
 	//
 	// GET /export/audit
-	ExportAudit(ctx context.Context, params ExportAuditParams) (ExportAuditRes, error)
+	ExportAudit(ctx context.Context, params ExportAuditParams) (*ExportAuditOKHeaders, error)
 	// ExportContacts implements Export_contacts operation.
 	//
 	// Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read` scope). Each
 	// line of the body is an `ExportContactRow`; every key is always present.
 	//
 	// GET /export/contacts
-	ExportContacts(ctx context.Context, params ExportContactsParams) (ExportContactsRes, error)
+	ExportContacts(ctx context.Context, params ExportContactsParams) (*ExportContactsOKHeaders, error)
 	// ExportErasures implements Export_erasures operation.
 	//
 	// Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope). Each line
@@ -384,27 +384,27 @@ type Handler interface {
 	// re-seeds from an empty cursor.
 	//
 	// GET /export/erasures
-	ExportErasures(ctx context.Context, params ExportErasuresParams) (ExportErasuresRes, error)
+	ExportErasures(ctx context.Context, params ExportErasuresParams) (*ExportErasuresOKHeaders, error)
 	// ExportEvents implements Export_events operation.
 	//
 	// Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
 	// line of the body is an `ExportEventRow`; every key is always present.
 	//
 	// GET /export/events
-	ExportEvents(ctx context.Context, params ExportEventsParams) (ExportEventsRes, error)
+	ExportEvents(ctx context.Context, params ExportEventsParams) (*ExportEventsOKHeaders, error)
 	// ExportMessages implements Export_messages operation.
 	//
 	// Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the `export:read`
 	// scope). Each line of the body is an `ExportMessageRow`; every key is always present.
 	//
 	// GET /export/messages
-	ExportMessages(ctx context.Context, params ExportMessagesParams) (ExportMessagesRes, error)
+	ExportMessages(ctx context.Context, params ExportMessagesParams) (*ExportMessagesOKHeaders, error)
 	// IntegrationsCreate implements Integrations_create operation.
 	//
 	// Create an integration.
 	//
 	// POST /integrations
-	IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (IntegrationsCreateRes, error)
+	IntegrationsCreate(ctx context.Context, req *CreateIntegrationInput) (*IntegrationResource, error)
 	// IntegrationsDelete implements Integrations_delete operation.
 	//
 	// Delete an integration for good: it leaves the list, gives up the default and is never restored; what
@@ -413,19 +413,19 @@ type Handler interface {
 	// webhook is removed, best effort.
 	//
 	// DELETE /integrations/{id}
-	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) (IntegrationsDeleteRes, error)
+	IntegrationsDelete(ctx context.Context, params IntegrationsDeleteParams) error
 	// IntegrationsGet implements Integrations_get operation.
 	//
 	// Get an integration by ID, deleted or not.
 	//
 	// GET /integrations/{id}
-	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (IntegrationsGetRes, error)
+	IntegrationsGet(ctx context.Context, params IntegrationsGetParams) (*IntegrationResource, error)
 	// IntegrationsList implements Integrations_list operation.
 	//
 	// List integrations with pagination.
 	//
 	// GET /integrations
-	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
+	IntegrationsList(ctx context.Context, params IntegrationsListParams) (*IntegrationsListOK, error)
 	// IntegrationsRegenerateKey implements Integrations_regenerateKey operation.
 	//
 	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
@@ -433,62 +433,62 @@ type Handler interface {
 	// is a 422); a deleted integration answers 404. Needs a person: hidden from MCP.
 	//
 	// POST /integrations/{id}/regenerate-key
-	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
+	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (*IntegrationResource, error)
 	// IntegrationsUpdate implements Integrations_update operation.
 	//
 	// Update an integration; a deleted one is read-only and answers 404.
 	//
 	// PUT /integrations/{id}
-	IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
+	IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (*IntegrationResource, error)
 	// PresetsList implements Presets_list operation.
 	//
 	// List the Presets the Instance offers, with the params schema of each.
 	//
 	// GET /presets
-	PresetsList(ctx context.Context) (PresetsListRes, error)
+	PresetsList(ctx context.Context) (*PresetsListOK, error)
 	// RuleFiringsList implements RuleFirings_list operation.
 	//
 	// List a Rule's Firings, newest first. Needs the automations:read scope.
 	//
 	// GET /rules/{ruleId}/firings
-	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
+	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (*RuleFiringsListOK, error)
 	// RulesCreate implements Rules_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /rules
-	RulesCreate(ctx context.Context, req *CreateRuleInput) (RulesCreateRes, error)
+	RulesCreate(ctx context.Context, req *CreateRuleInput) (*RuleResource, error)
 	// RulesDeactivate implements Rules_deactivate operation.
 	//
 	// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 	//
 	// POST /rules/{id}/deactivate
-	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
+	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (*RuleResource, error)
 	// RulesDelete implements Rules_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /rules/{id}
-	RulesDelete(ctx context.Context, params RulesDeleteParams) (RulesDeleteRes, error)
+	RulesDelete(ctx context.Context, params RulesDeleteParams) error
 	// RulesDryRun implements Rules_dryRun operation.
 	//
 	// Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs
 	// nothing. Needs the automations:read scope.
 	//
 	// POST /rules/{id}/dry-run
-	RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (RulesDryRunRes, error)
+	RulesDryRun(ctx context.Context, req *DryRunRuleInput, params RulesDryRunParams) (*RuleDryRunResource, error)
 	// RulesGet implements Rules_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /rules/{id}
-	RulesGet(ctx context.Context, params RulesGetParams) (RulesGetRes, error)
+	RulesGet(ctx context.Context, params RulesGetParams) (*RuleResource, error)
 	// RulesList implements Rules_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /rules
-	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	RulesList(ctx context.Context, params RulesListParams) (*RulesListOK, error)
 	// RulesPublish implements Rules_publish operation.
 	//
 	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
@@ -496,75 +496,75 @@ type Handler interface {
 	// neither draft nor live version. Needs the automations:publish scope.
 	//
 	// POST /rules/{id}/publish
-	RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error)
+	RulesPublish(ctx context.Context, params RulesPublishParams) (*RuleResource, error)
 	// RulesRevert implements Rules_revert operation.
 	//
 	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
 	// Needs the automations:write scope.
 	//
 	// POST /rules/{id}/revert
-	RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error)
+	RulesRevert(ctx context.Context, params RulesRevertParams) (*RuleResource, error)
 	// RulesUpdate implements Rules_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /rules/{id}
-	RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (RulesUpdateRes, error)
+	RulesUpdate(ctx context.Context, req *UpdateRuleInput, params RulesUpdateParams) (*RuleResource, error)
 	// SegmentsArchive implements Segments_archive operation.
 	//
 	// Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused
 	// with 409 while live work uses it.
 	//
 	// POST /segments/{id}/archive
-	SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (SegmentsArchiveRes, error)
+	SegmentsArchive(ctx context.Context, params SegmentsArchiveParams) (*SegmentResource, error)
 	// SegmentsCreate implements Segments_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /segments
-	SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (SegmentsCreateRes, error)
+	SegmentsCreate(ctx context.Context, req *CreateSegmentInput) (*SegmentResource, error)
 	// SegmentsGet implements Segments_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /segments/{id}
-	SegmentsGet(ctx context.Context, params SegmentsGetParams) (SegmentsGetRes, error)
+	SegmentsGet(ctx context.Context, params SegmentsGetParams) (*SegmentResource, error)
 	// SegmentsList implements Segments_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /segments
-	SegmentsList(ctx context.Context, params SegmentsListParams) (SegmentsListRes, error)
+	SegmentsList(ctx context.Context, params SegmentsListParams) (*SegmentsListOK, error)
 	// SegmentsPreview implements Segments_preview operation.
 	//
 	// Count the contacts matching an unsaved rule definition.
 	//
 	// POST /segments/preview
-	SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (SegmentsPreviewRes, error)
+	SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (*PreviewSegmentResult, error)
 	// SegmentsUnarchive implements Segments_unarchive operation.
 	//
 	// Restore an archived resource.
 	//
 	// POST /segments/{id}/unarchive
-	SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (SegmentsUnarchiveRes, error)
+	SegmentsUnarchive(ctx context.Context, params SegmentsUnarchiveParams) (*SegmentResource, error)
 	// SegmentsUpdate implements Segments_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /segments/{id}
-	SegmentsUpdate(ctx context.Context, req *UpdateSegmentInput, params SegmentsUpdateParams) (SegmentsUpdateRes, error)
+	SegmentsUpdate(ctx context.Context, req *UpdateSegmentInput, params SegmentsUpdateParams) (*SegmentResource, error)
 	// SendingDomainRatesList implements SendingDomainRates_list operation.
 	//
 	// Complaint and bounce rates per sending domain over a trailing window.
 	//
 	// GET /sending-domains/rates
-	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (SendingDomainRatesListRes, error)
+	SendingDomainRatesList(ctx context.Context, params SendingDomainRatesListParams) (*SendingDomainRatesListOK, error)
 	// SendingDomainsCreate implements SendingDomains_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /sending-domains
-	SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (SendingDomainsCreateRes, error)
+	SendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput) (*SendingDomainResource, error)
 	// SendingDomainsDelete implements SendingDomains_delete operation.
 	//
 	// Delete a Sending domain for good: it leaves the list and is never restored; what it sent keeps its
@@ -572,25 +572,25 @@ type Handler interface {
 	// sends from it.
 	//
 	// DELETE /sending-domains/{id}
-	SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) (SendingDomainsDeleteRes, error)
+	SendingDomainsDelete(ctx context.Context, params SendingDomainsDeleteParams) error
 	// SendingDomainsGet implements SendingDomains_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /sending-domains/{id}
-	SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (SendingDomainsGetRes, error)
+	SendingDomainsGet(ctx context.Context, params SendingDomainsGetParams) (*SendingDomainResource, error)
 	// SendingDomainsList implements SendingDomains_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /sending-domains
-	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (SendingDomainsListRes, error)
+	SendingDomainsList(ctx context.Context, params SendingDomainsListParams) (*SendingDomainsListOK, error)
 	// SendingDomainsUpdate implements SendingDomains_update operation.
 	//
 	// Update a Sending domain; a deleted one is read-only and answers 404.
 	//
 	// PUT /sending-domains/{id}
-	SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (SendingDomainsUpdateRes, error)
+	SendingDomainsUpdate(ctx context.Context, req *UpdateSendingDomainInput, params SendingDomainsUpdateParams) (*SendingDomainResource, error)
 	// SendingDomainsVerify implements SendingDomains_verify operation.
 	//
 	// Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
@@ -598,7 +598,7 @@ type Handler interface {
 	// again (404).
 	//
 	// POST /sending-domains/{id}/verify
-	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (SendingDomainsVerifyRes, error)
+	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (*SendingDomainResource, error)
 	// SmsConsentsGet implements SmsConsents_get operation.
 	//
 	// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number
@@ -607,7 +607,7 @@ type Handler interface {
 	// the contact has now.
 	//
 	// GET /contacts/{contactId}/sms-consent
-	SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (SmsConsentsGetRes, error)
+	SmsConsentsGet(ctx context.Context, params SmsConsentsGetParams) (*SmsConsent, error)
 	// SuppressionsCreate implements Suppressions_create operation.
 	//
 	// Suppress a destination so no surface sends to it (a manual Suppression). Idempotent: an
@@ -615,82 +615,82 @@ type Handler interface {
 	// available through the API.
 	//
 	// POST /suppressions
-	SuppressionsCreate(ctx context.Context, req *CreateSuppressionInput) (SuppressionsCreateRes, error)
+	SuppressionsCreate(ctx context.Context, req *CreateSuppressionInput) (*SuppressionResource, error)
 	// TagsApply implements Tags_apply operation.
 	//
 	// Apply a tag to a contact, creating the tag on first use. Idempotent.
 	//
 	// POST /contacts/{contactId}/tags
-	TagsApply(ctx context.Context, req *ApplyTagInput, params TagsApplyParams) (TagsApplyRes, error)
+	TagsApply(ctx context.Context, req *ApplyTagInput, params TagsApplyParams) (*TagResource, error)
 	// TagsDelete implements Tags_delete operation.
 	//
 	// Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names
 	// the users.
 	//
 	// DELETE /tags/{id}
-	TagsDelete(ctx context.Context, params TagsDeleteParams) (TagsDeleteRes, error)
+	TagsDelete(ctx context.Context, params TagsDeleteParams) error
 	// TagsList implements Tags_list operation.
 	//
 	// List the workspace's tags.
 	//
 	// GET /tags
-	TagsList(ctx context.Context, params TagsListParams) (TagsListRes, error)
+	TagsList(ctx context.Context, params TagsListParams) (*TagsListOK, error)
 	// TagsListForContact implements Tags_listForContact operation.
 	//
 	// List the tags a contact has.
 	//
 	// GET /contacts/{contactId}/tags
-	TagsListForContact(ctx context.Context, params TagsListForContactParams) (TagsListForContactRes, error)
+	TagsListForContact(ctx context.Context, params TagsListForContactParams) (*TagsListForContactOK, error)
 	// TagsRemove implements Tags_remove operation.
 	//
 	// Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
 	//
 	// DELETE /contacts/{contactId}/tags/{name}
-	TagsRemove(ctx context.Context, params TagsRemoveParams) (TagsRemoveRes, error)
+	TagsRemove(ctx context.Context, params TagsRemoveParams) error
 	// TelegramStartLinksIssue implements TelegramStartLinks_issue operation.
 	//
 	// Issue a start link for a contact: `https://t.me/<bot>?start=<token>`. The chat that starts with it
 	// binds to the contact, once. Each call issues a new link.
 	//
 	// POST /contacts/{contactId}/telegram-start-links
-	TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (TelegramStartLinksIssueRes, error)
+	TelegramStartLinksIssue(ctx context.Context, req *IssueTelegramStartLinkInput, params TelegramStartLinksIssueParams) (*TelegramStartLinkResource, error)
 	// TemplatesCreate implements Templates_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /templates
-	TemplatesCreate(ctx context.Context, req *CreateTemplateInput) (TemplatesCreateRes, error)
+	TemplatesCreate(ctx context.Context, req *CreateTemplateInput) (*TemplateResource, error)
 	// TemplatesDelete implements Templates_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /templates/{id}
-	TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) (TemplatesDeleteRes, error)
+	TemplatesDelete(ctx context.Context, params TemplatesDeleteParams) error
 	// TemplatesGet implements Templates_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /templates/{id}
-	TemplatesGet(ctx context.Context, params TemplatesGetParams) (TemplatesGetRes, error)
+	TemplatesGet(ctx context.Context, params TemplatesGetParams) (*TemplateResource, error)
 	// TemplatesList implements Templates_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /templates
-	TemplatesList(ctx context.Context, params TemplatesListParams) (TemplatesListRes, error)
+	TemplatesList(ctx context.Context, params TemplatesListParams) (*TemplatesListOK, error)
 	// TemplatesUpdate implements Templates_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /templates/{id}
-	TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (TemplatesUpdateRes, error)
+	TemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params TemplatesUpdateParams) (*TemplateResource, error)
 	// TrackingDomainsList implements TrackingDomains_list operation.
 	//
 	// List the Workspace's Tracking domains: the current one, the replacement, then the retired ones.
 	// Empty while the Instance offers none.
 	//
 	// GET /tracking-domains
-	TrackingDomainsList(ctx context.Context) (TrackingDomainsListRes, error)
+	TrackingDomainsList(ctx context.Context) ([]TrackingDomainResource, error)
 	// TrackingDomainsRemove implements TrackingDomains_remove operation.
 	//
 	// Remove a Tracking domain by its role. The current one stops being used: it is retired when it served
@@ -699,7 +699,7 @@ type Handler interface {
 	// it stop working.
 	//
 	// DELETE /tracking-domains/{id}
-	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) (TrackingDomainsRemoveRes, error)
+	TrackingDomainsRemove(ctx context.Context, params TrackingDomainsRemoveParams) error
 	// TrackingDomainsSet implements TrackingDomains_set operation.
 	//
 	// Set the Workspace's Tracking domain. With none it becomes the current one. While the current one
@@ -709,65 +709,65 @@ type Handler interface {
 	// 422; 404 when the Instance offers no Tracking domains.
 	//
 	// POST /tracking-domains
-	TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (TrackingDomainsSetRes, error)
+	TrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput) (*TrackingDomainResource, error)
 	// TrackingDomainsVerify implements TrackingDomains_verify operation.
 	//
 	// Check the host now and answer once the check is done: the Tracking domain as it left it. A
 	// replacement that reaches `serving` becomes current. Verification is never set by the caller.
 	//
 	// POST /tracking-domains/{id}/verify
-	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (TrackingDomainsVerifyRes, error)
+	TrackingDomainsVerify(ctx context.Context, params TrackingDomainsVerifyParams) (*TrackingDomainResource, error)
 	// UnsubscribesCreate implements Unsubscribes_create operation.
 	//
 	// Record that a destination unsubscribed from a sending source (default `broadcasts`), for an opt-out
 	// that reached you by any route. Idempotent. Resubscribing is not available through the API.
 	//
 	// POST /unsubscribes
-	UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (UnsubscribesCreateRes, error)
+	UnsubscribesCreate(ctx context.Context, req *CreateUnsubscribeInput) (*UnsubscribeResource, error)
 	// WebhooksCreate implements Webhooks_create operation.
 	//
 	// Create a resource.
 	//
 	// POST /webhooks
-	WebhooksCreate(ctx context.Context, req *CreateWebhookInput) (WebhooksCreateRes, error)
+	WebhooksCreate(ctx context.Context, req *CreateWebhookInput) (*WebhookResource, error)
 	// WebhooksDelete implements Webhooks_delete operation.
 	//
 	// Delete a resource.
 	//
 	// DELETE /webhooks/{id}
-	WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) (WebhooksDeleteRes, error)
+	WebhooksDelete(ctx context.Context, params WebhooksDeleteParams) error
 	// WebhooksGet implements Webhooks_get operation.
 	//
 	// Get a resource by ID.
 	//
 	// GET /webhooks/{id}
-	WebhooksGet(ctx context.Context, params WebhooksGetParams) (WebhooksGetRes, error)
+	WebhooksGet(ctx context.Context, params WebhooksGetParams) (*WebhookResource, error)
 	// WebhooksList implements Webhooks_list operation.
 	//
 	// List resources with pagination.
 	//
 	// GET /webhooks
-	WebhooksList(ctx context.Context, params WebhooksListParams) (WebhooksListRes, error)
+	WebhooksList(ctx context.Context, params WebhooksListParams) (*WebhooksListOK, error)
 	// WebhooksRegenerateSecret implements Webhooks_regenerateSecret operation.
 	//
 	// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
 	// returned here: read it in the app. Needs the webhooks:regenerate scope.
 	//
 	// POST /webhooks/{id}/regenerate-secret
-	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (WebhooksRegenerateSecretRes, error)
+	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (*WebhookResource, error)
 	// WebhooksTest implements Webhooks_test operation.
 	//
 	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
 	// Does not change the endpoint's failure state. Needs the webhooks:test scope.
 	//
 	// POST /webhooks/{id}/test
-	WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (WebhooksTestRes, error)
+	WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (*WebhookTestResult, error)
 	// WebhooksUpdate implements Webhooks_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /webhooks/{id}
-	WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (WebhooksUpdateRes, error)
+	WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (*WebhookResource, error)
 	// WorkspaceGet implements Workspace_get operation.
 	//
 	// Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to explain
@@ -775,7 +775,11 @@ type Handler interface {
 	// more than a day. Read-only: no operation changes the Send cap.
 	//
 	// GET /workspace
-	WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error)
+	WorkspaceGet(ctx context.Context) (*WorkspaceResource, error)
+	// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+	//
+	// Used for common default response.
+	NewError(ctx context.Context, err error) *ProblemDetailsStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

@@ -22,8 +22,8 @@ func TestACreatedStaffEnrolsAtFirstLoginWithItsOneTimePassword(t *testing.T) {
 	res := h.challenge(t, "new.staff@sphericon.test", password)
 	assert.Equal(t, staffapi.StaffLoginOutcomeEnrolment, res.Outcome)
 	require.True(t, res.Enrolment.Set)
-	done, ok := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret)).(*staffapi.StaffResourceHeaders)
-	require.True(t, ok)
+	done, err := h.secondStep(t, res.Challenge, h.code(t, res.Enrolment.Value.Secret))
+	require.NoError(t, err)
 	assert.EqualValues(t, "new.staff@sphericon.test", done.Response.Email)
 }
 

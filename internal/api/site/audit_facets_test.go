@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -19,7 +20,7 @@ type facetActor struct {
 	Name string
 }
 
-func auditFacets(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteAuditFacetsRes {
+func auditFacets(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteAuditFacets {
 	t.Helper()
 	res, err := c.SiteAuditFacets(context.Background(), siteapi.SiteAuditFacetsParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -35,9 +36,7 @@ func facetActors(facets *siteapi.SiteAuditFacets) []facetActor {
 // Globex's fixture log: Jane (user 2) under two names, an unnamed API token and the system.
 func TestAuditFacetsOfferWhatOccursInTheLog(t *testing.T) {
 	env := testhelper.Setup(t)
-	res := auditFacets(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
-	facets, ok := res.(*siteapi.SiteAuditFacets)
-	require.Truef(t, ok, "facets answered %T", res)
+	facets := auditFacets(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 
 	assert.Equal(t, []siteapi.AuditAction{
 		siteapi.AuditActionIntegrationDelete, siteapi.AuditActionIntegrationUpdate, siteapi.AuditActionMembershipUpdate,
@@ -54,9 +53,7 @@ func TestAuditFacetsOfferWhatOccursInTheLog(t *testing.T) {
 // Initech's log holds an entry by a platform Staff member: the facets name no staff identity.
 func TestAuditFacetsNeverExposeAStaffIdentity(t *testing.T) {
 	env := testhelper.Setup(t)
-	res := auditFacets(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID)
-	facets, ok := res.(*siteapi.SiteAuditFacets)
-	require.Truef(t, ok, "facets answered %T", res)
+	facets := auditFacets(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID)
 
 	assert.Equal(t, []facetActor{
 		{Kind: siteapi.SiteAuditActorKindStaff, Name: "Sphericon staff"},
@@ -67,9 +64,9 @@ func TestAuditFacetsNeverExposeAStaffIdentity(t *testing.T) {
 func TestAuditFacetsAreOwnerAndAdminOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	member := auditFacets(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
-	assert.IsType(t, &siteapi.SiteAuditFacetsForbidden{}, member, "a member is refused")
+	_, member := env.SiteActor(t, fixtures.MemberMaryEmail).SiteAuditFacets(t.Context(), siteapi.SiteAuditFacetsParams{WorkspaceId: fixtures.AcmePublicID})
+	testhelper.SiteRefusal(t, member, http.StatusForbidden, "a member is refused")
 
-	cross := auditFacets(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.GlobexPublicID)
-	assert.IsType(t, &siteapi.SiteAuditFacetsNotFound{}, cross, "John cannot address Globex's log")
+	_, cross := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditFacets(t.Context(), siteapi.SiteAuditFacetsParams{WorkspaceId: fixtures.GlobexPublicID})
+	testhelper.SiteRefusal(t, cross, http.StatusNotFound, "John cannot address Globex's log")
 }

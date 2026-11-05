@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -75,7 +76,7 @@ func TestExportContactsDeliversAContactAgainOnATagChange(t *testing.T) {
 	require.NotNil(t, bob, "attaching a Tag re-delivers the Contact")
 	assert.Equal(t, []any{"churn-risk"}, bob["tags"])
 
-	_, err = c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: entityIDString(fixtures.ContactBobID), Name: "churn-risk"})
+	err = c.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: entityIDString(fixtures.ContactBobID), Name: "churn-risk"})
 	require.NoError(t, err)
 
 	detached := readExportContacts(t, c, attached.cursor, 0)
@@ -99,9 +100,8 @@ func TestExportContactsNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.AcmeID, scopes...))
-		res, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportContactsForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
 
@@ -109,10 +109,9 @@ func TestExportContactsAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportContactsClient(t, env, fixtures.AcmeID)
 
-	res, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
+	_, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportContactsNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportContactsNeverReadsAnotherWorkspace(t *testing.T) {
@@ -130,10 +129,9 @@ func TestExportContactsRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportContactsClient(t, env, fixtures.AcmeID)
 
-	res, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{
+	_, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportContactsBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

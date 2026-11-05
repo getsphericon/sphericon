@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"testing"
 
@@ -25,51 +26,40 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 	missing := idStr(99999)
 
 	// Create: foreign workspace, then a duplicate alias key is a field-level 409.
-	r1, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("new@example.com")}, siteapi.SiteContactsCreateParams{WorkspaceId: foreign})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsCreateNotFound{}, r1)
-	r2, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)}, siteapi.SiteContactsCreateParams{WorkspaceId: acme})
-	require.NoError(t, err)
-	conflict, ok := r2.(*siteapi.SiteContactsCreateConflict)
-	require.Truef(t, ok, "got %T", r2)
+	_, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("new@example.com")}, siteapi.SiteContactsCreateParams{WorkspaceId: foreign})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)}, siteapi.SiteContactsCreateParams{WorkspaceId: acme})
+	conflict := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Contains(t, conflict.Errors.Value, "email")
 
 	// Get.
-	g1, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: foreign, ID: alice})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsGetNotFound{}, g1)
-	g3, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: acme, ID: missing})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsGetNotFound{}, g3)
+	_, err = c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: foreign, ID: alice})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: acme, ID: missing})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	g4, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: acme, ID: alice})
 	require.NoError(t, err)
-	got, ok := g4.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", g4)
+	got := g4
 	assert.Equal(t, fixtures.ContactAliceEmail, string(got.Email.Or("")))
 
 	// Update.
 	rename := &siteapi.SiteUpdateContactInput{FirstName: siteapi.NewOptNilString("Renamed")}
-	u1, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: foreign, ID: alice})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsUpdateNotFound{}, u1)
-	u3, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: missing})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsUpdateNotFound{}, u3)
-	u4, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
+	_, err = c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: foreign, ID: alice})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: missing})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
 		siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: idStr(fixtures.ContactBobID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsUpdateConflict{}, u4, "bob cannot take alice's email")
+	testhelper.SiteRefusal(t, err, http.StatusConflict, "bob cannot take alice's email")
 	bob, err := env.DB.Contact.Get(ctx, fixtures.ContactBobID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactBobEmail, *bob.Email)
 
 	// Delete.
-	d1, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: foreign, ID: alice})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, d1)
-	d2, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: acme, ID: missing})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, d2)
+	err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: foreign, ID: alice})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: acme, ID: missing})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	stillThere, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactAliceID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, stillThere)
@@ -94,8 +84,7 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 			WorkspaceId: fixtures.GlobexPublicID, Range: siteapi.NewOptSiteAnalyticsRange(tc.r),
 		})
 		require.NoError(t, err)
-		ov, ok := res.(*siteapi.SiteAnalyticsOverview)
-		require.Truef(t, ok, "got %T", res)
+		ov := res
 		assert.Len(t, ov.Timeseries, tc.days, string(tc.r))
 		// Globex's one marketing message (a usage fixture, sent an hour ago) is in every cohort, unengaged.
 		assert.Equal(t, int32(1), ov.Current.Email.SentCount)
@@ -108,7 +97,7 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 	// No range given defaults to 7 days.
 	def, err := jane.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	assert.Len(t, def.(*siteapi.SiteAnalyticsOverview).Timeseries, 7)
+	assert.Len(t, def.Timeseries, 7)
 }
 
 func TestSiteOAuthConsentErrorBranches(t *testing.T) {
@@ -119,20 +108,16 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	const verifier = "0123456789012345678901234567890123456789012"
 
 	// Describe: unknown client 404, unregistered redirect 422, no usable scope 422.
-	d1, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: "nope", RedirectUri: redirect})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeNotFound{}, d1)
-	d2, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: "https://evil.example/cb"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, d2)
-	d3, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: redirect, Scope: siteapi.NewOptString("bogus")})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, d3)
+	_, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: "nope", RedirectUri: redirect})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	_, err = owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: "https://evil.example/cb"})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	_, err = owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: redirect, Scope: siteapi.NewOptString("bogus")})
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	// Without a scope every grantable scope is offered; the send scopes list stays empty, not null.
 	d4, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: redirect})
 	require.NoError(t, err)
-	req, ok := d4.(*siteapi.SiteOAuthAuthorizationRequest)
-	require.Truef(t, ok, "got %T", d4)
+	req := d4
 	assert.NotEmpty(t, req.Scopes)
 	assert.NotNil(t, req.SendScopes)
 	assert.Empty(t, req.SendScopes)
@@ -149,29 +134,24 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	// Decide: foreign workspace, unknown client, bad redirect, bad PKCE, bad scope.
 	foreignIn := in()
 	foreignIn.WorkspaceId = fixtures.GlobexPublicID
-	e1, err := owner.SiteOAuthDecide(ctx, foreignIn)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, e1)
+	_, err = owner.SiteOAuthDecide(ctx, foreignIn)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	unknown := in()
 	unknown.ClientId = "nope"
-	e2, err := owner.SiteOAuthDecide(ctx, unknown)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, e2)
+	_, err = owner.SiteOAuthDecide(ctx, unknown)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	badRedirect := in()
 	badRedirect.RedirectUri = "https://evil.example/cb"
-	e3, err := owner.SiteOAuthDecide(ctx, badRedirect)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e3)
+	_, err = owner.SiteOAuthDecide(ctx, badRedirect)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	badPKCE := in()
 	badPKCE.CodeChallenge = "short"
-	e4, err := owner.SiteOAuthDecide(ctx, badPKCE)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e4)
+	_, err = owner.SiteOAuthDecide(ctx, badPKCE)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	badScope := in()
 	badScope.Scope = siteapi.NewOptString("bogus")
-	e5, err := owner.SiteOAuthDecide(ctx, badScope)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e5)
+	_, err = owner.SiteOAuthDecide(ctx, badScope)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	codes, err := env.DB.OAuthCode.Query().Where(oauthcode.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, codes, "rejected decisions mint no code")
@@ -182,8 +162,7 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	deny.State = siteapi.NewOptString("st")
 	e6, err := owner.SiteOAuthDecide(ctx, deny)
 	require.NoError(t, err)
-	denied, ok := e6.(*siteapi.SiteOAuthDecisionResult)
-	require.Truef(t, ok, "got %T", e6)
+	denied := e6
 	u, err := url.Parse(denied.RedirectUrl)
 	require.NoError(t, err)
 	assert.Equal(t, "access_denied", u.Query().Get("error"))
@@ -191,7 +170,6 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 
 	// A plain member may not connect an application.
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-	e7, err := member.SiteOAuthDecide(ctx, in())
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideForbidden{}, e7)
+	_, err = member.SiteOAuthDecide(ctx, in())
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 }

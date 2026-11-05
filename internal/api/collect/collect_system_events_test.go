@@ -1,6 +1,7 @@
 package collect_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -19,13 +20,12 @@ func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 	c := env.CollectAcme(t)
 	identify := func(plan string) {
 		t.Helper()
-		res, err := c.CollectIdentifyCreate(t.Context(), &collectapi.CollectIdentifyInput{
+		_, err := c.CollectIdentifyCreate(t.Context(), &collectapi.CollectIdentifyInput{
 			VisitorId: "dev-plan",
 			Email:     collectapi.NewOptNilEmailAddress("planner@example.com"),
 			Traits:    collectapi.NewOptNilJsonObject(collectapi.JsonObject{"plan": jx.Raw(plan)}),
 		})
 		require.NoError(t, err)
-		require.IsType(t, &collectapi.CollectOkResponse{}, res)
 	}
 
 	identify(`"pro"`)
@@ -52,11 +52,9 @@ func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 func TestCollectRefusesAutomationActions(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+	err := env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{VisitorId: "v-1", Action: "automation.completed"}},
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*collectapi.CollectEventsCreateUnprocessableEntity)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.CollectRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")
 }

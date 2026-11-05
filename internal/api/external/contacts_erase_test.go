@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -35,10 +36,9 @@ func initechClient(t *testing.T, env *testhelper.TestEnv, scopes ...string) *ext
 
 func eraseErasable(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	res, err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
+	err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactsDeleteNoContent{}, res, "got %T", res)
 }
 
 func eventByID(t *testing.T, env *testhelper.TestEnv, id int64) *ent.Event {
@@ -60,9 +60,8 @@ func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 	ctx := context.Background()
 	id := entityIDString(fixtures.ContactErasableID)
 
-	denied, err := initechClient(t, env, "contacts:read", "contacts:write").ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteForbidden{}, denied, "contacts:write does not erase")
+	err := initechClient(t, env, "contacts:read", "contacts:write").ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden, "contacts:write does not erase")
 	still, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, still)
@@ -195,10 +194,8 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 	c := initechClient(t, env, "contacts:erase", "sending_domains:read")
 
 	ratesOf := func() any {
-		res, err := c.SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
+		ok, err := c.SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
 		require.NoError(t, err)
-		ok, isOK := res.(*externalapi.SendingDomainRatesListOK)
-		require.Truef(t, isOK, "got %T", res)
 		return ok.Items
 	}
 	// The billable/reported volume: system Event rows per action in the Workspace.
@@ -222,9 +219,8 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 	ratesBefore, countsBefore := ratesOf(), countsOf()
 	assert.Equal(t, 2, countsBefore["email.sent"])
 
-	res, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
+	err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.ContactsDeleteNoContent{}, res)
 
 	assert.Equal(t, ratesBefore, ratesOf(), "complaint and bounce rates")
 	countsAfter := countsOf()
@@ -247,7 +243,7 @@ func TestExternalContactsEraseIsAtomic(t *testing.T) {
 		})
 	})
 
-	_, err := initechClient(t, env, "contacts:erase").ContactsDelete(ctx,
+	err := initechClient(t, env, "contacts:erase").ContactsDelete(ctx,
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.Error(t, err)
 
@@ -281,10 +277,9 @@ func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 
 	// An Acme token cannot erase an Initech Contact: it does not exist for Acme.
-	res, err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(ctx,
+	err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(ctx,
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
 	still, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
@@ -299,12 +294,10 @@ func TestExternalContactsEraseDoesNotBlockReappearance(t *testing.T) {
 	ctx := context.Background()
 	eraseErasable(t, env)
 
-	res, err := initechClient(t, env, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
+	created, err := initechClient(t, env, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress(fixtures.ContactErasableEmail),
 	})
 	require.NoError(t, err)
-	created, ok := res.(*externalapi.ContactResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.NotEqual(t, entityIDString(fixtures.ContactErasableID), created.ID)
 
 	n, err := env.DB.Unsubscribe.Query().Where(unsubscribe.DestinationEQ(fixtures.ContactErasableEmail), unsubscribe.WorkspaceID(fixtures.InitechID)).Count(ctx)
@@ -353,10 +346,9 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
+	err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBystanderID)})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.ContactsDeleteNoContent{}, res)
 
 	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 	require.Len(t, envelopes, 1)
@@ -369,9 +361,8 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 func TestExternalContactsEraseRefusedEmitsNoContactErased(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(context.Background(),
+	err := env.ExternalScoped(t, "contacts:erase").ContactsDelete(context.Background(),
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
-	require.NoError(t, err)
-	require.IsType(t, &externalapi.ContactsDeleteNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameContactErased))
 }

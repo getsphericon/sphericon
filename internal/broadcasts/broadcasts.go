@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
@@ -102,7 +103,7 @@ func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when tim
 // armable refuses a claimed Broadcast that cannot go out as written: its Send route cannot send, or
 // its content breaks its Channel's written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	channel := messaging.Channel(b.Channel)
+	channel := b.Channel
 	route, err := m.out.Route(ctx, ts, channel, b.IntegrationID)
 	if err != nil {
 		return err
@@ -121,14 +122,14 @@ func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) 
 // SMS a blank text has nothing to send.
 func checkWritten(b *ent.Broadcast) error {
 	switch b.Channel {
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		if strings.TrimSpace(lo.FromPtr(b.Text)) == "" {
 			return ErrTextBlank
 		}
 		return nil
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		return nil
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 	}
 	text, hasImage := lo.FromPtr(b.Text), lo.FromPtr(b.ImageURL) != ""
 	if strings.TrimSpace(text) == "" && !hasImage {
@@ -295,7 +296,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent
 		return nil, ErrNoChannel
 	}
 	channel := f.Content.Channel()
-	if channel == messaging.ChannelSMS {
+	if channel == channels.SMS {
 		ok, err := messaging.HasIntegrationOn(ctx, s, channel)
 		if err != nil {
 			return nil, err
@@ -323,7 +324,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent
 // checkRefs refuses a Segment or Integration that is missing or archived: an archived row leaves
 // new work (ADR 0049). A Broadcast already pointing at one keeps it as history. An Integration of
 // another Channel than the Broadcast's never sends it (ADR 0074) and is refused too.
-func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel messaging.Channel, segmentID, integrationID *int64) error {
+func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, channel channels.Channel, segmentID, integrationID *int64) error {
 	if segmentID != nil {
 		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			return err
@@ -381,7 +382,7 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadca
 type ListFilter struct {
 	Archived bool
 	Statuses []broadcast.Status
-	Channel  *broadcast.Channel
+	Channel  *channels.Channel
 }
 
 // List returns one page of the Workspace's Broadcasts that f lets through, in order.
@@ -446,7 +447,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if err := refuseArchived(cur); err != nil {
 		return nil, err
 	}
-	channel := messaging.Channel(cur.Channel)
+	channel := cur.Channel
 	if f.Content != nil && f.Content.Channel() != channel {
 		return nil, ErrChannelFixed
 	}

@@ -30,20 +30,16 @@ func telegramInput(token string) siteapi.IntegrationConfigInput {
 	}
 }
 
-func createTelegram(t *testing.T, c *siteapi.Client, token string) siteapi.SiteIntegrationsCreateRes {
+func createTelegram(t *testing.T, c *siteapi.Client, token string) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
+	return c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name: "Acme bot", Config: telegramInput(token),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	return res
 }
 
-func updateTelegram(t *testing.T, c *siteapi.Client, id siteapi.EntityId, in *siteapi.UpdateIntegrationInput) siteapi.SiteIntegrationsUpdateRes {
+func updateTelegram(t *testing.T, c *siteapi.Client, id siteapi.EntityId, in *siteapi.UpdateIntegrationInput) (*siteapi.SiteIntegrationResource, error) {
 	t.Helper()
-	res, err := c.SiteIntegrationsUpdate(context.Background(), in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
-	require.NoError(t, err)
-	return res
+	return c.SiteIntegrationsUpdate(context.Background(), in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 }
 
 // connectedTelegram connects the Acme bot through the Site API and returns the Integration and the
@@ -51,24 +47,15 @@ func updateTelegram(t *testing.T, c *siteapi.Client, id siteapi.EntityId, in *si
 func connectedTelegram(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client) (row *siteapi.SiteIntegrationResource, token string) {
 	t.Helper()
 	token = env.Telegram.AddBot(acmeBotID, acmeBotUsername)
-	res := createTelegram(t, c, token)
-	row, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "got %T", res)
+	row, err := createTelegram(t, c, token)
+	require.NoError(t, err)
 	return row, token
 }
 
-func problemOf(t *testing.T, res any) siteapi.ProblemDetailsErrors {
+// problemOf is the field errors of the 422 err refused a call with.
+func problemOf(t *testing.T, err error) siteapi.ProblemDetailsErrors {
 	t.Helper()
-	switch p := res.(type) {
-	case *siteapi.SiteIntegrationsCreateUnprocessableEntity:
-		return p.Errors.Value
-	case *siteapi.SiteIntegrationsUpdateUnprocessableEntity:
-		return p.Errors.Value
-	case *siteapi.SiteIntegrationsRegenerateKeyUnprocessableEntity:
-		return p.Errors.Value
-	}
-	require.Failf(t, "not a 422", "got %T", res)
-	return nil
+	return testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity).Errors.Value
 }
 
 func TestSiteTelegramConnectsABot(t *testing.T) {
@@ -105,16 +92,16 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	t.Run("a token Telegram does not accept", func(t *testing.T) {
-		res := createTelegram(t, c, env.Telegram.UnknownToken(acmeBotID))
+		_, err := createTelegram(t, c, env.Telegram.UnknownToken(acmeBotID))
 
-		errs := problemOf(t, res)
+		errs := problemOf(t, err)
 		assert.Contains(t, errs, "config.token")
 	})
 
 	t.Run("a token that is not shaped like one", func(t *testing.T) {
-		res := createTelegram(t, c, "not-a-token")
+		_, err := createTelegram(t, c, "not-a-token")
 
-		errs := problemOf(t, res)
+		errs := problemOf(t, err)
 		assert.Contains(t, errs, "config.token")
 	})
 
@@ -122,16 +109,16 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 		token := env.Telegram.AddBot(acmeBotID+1, "other_bot")
 		env.Telegram.FailOnce(telegramtest.SetWebhook, telegramtest.BadWebhook)
 
-		res := createTelegram(t, c, token)
+		_, err := createTelegram(t, c, token)
 
-		errs := problemOf(t, res)
+		errs := problemOf(t, err)
 		require.Contains(t, errs, "config")
 		assert.Contains(t, errs["config"][0], "HTTPS url must be provided for webhook")
 	})
 
 	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	bots := lo.FilterMap(*list.(*siteapi.SiteIntegrationsListOKApplicationJSON), func(row siteapi.SiteIntegrationResource, _ int) (int64, bool) {
+	bots := lo.FilterMap(list, func(row siteapi.SiteIntegrationResource, _ int) (int64, bool) {
 		return int64(row.ID), row.Provider == siteapi.SiteIntegrationProviderTelegram
 	})
 	assert.ElementsMatch(t, []int64{fixtures.IntegrationAcmeTelegramID, fixtures.IntegrationAcmeSecondTelegramID}, bots,
@@ -146,19 +133,18 @@ func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {
 	t.Run("a token of another bot is refused", func(t *testing.T) {
 		other := env.Telegram.AddBot(acmeBotID+1, "other_bot")
 
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(telegramInput(other))})
+		_, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(telegramInput(other))})
 
-		errs := problemOf(t, res)
+		errs := problemOf(t, err)
 		assert.Equal(t, []string{"this token belongs to another bot; add a new Integration"}, errs["config.token"])
 	})
 
 	t.Run("a new token of the same bot re-registers the webhook", func(t *testing.T) {
 		rotated := env.Telegram.Rotate(acmeBotID)
 
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(telegramInput(rotated))})
+		updated, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(telegramInput(rotated))})
 
-		updated, ok := res.(*siteapi.SiteIntegrationResource)
-		require.Truef(t, ok, "got %T", res)
+		require.NoError(t, err)
 		hook, ok := env.Telegram.Last(telegramtest.SetWebhook)
 		require.True(t, ok)
 		assert.Equal(t, rotated, hook.Token)
@@ -169,11 +155,11 @@ func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {
 	t.Run("a blank token keeps the stored one and calls nothing", func(t *testing.T) {
 		before := len(env.Telegram.Requests())
 
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
+		_, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
 			Name: siteapi.NewOptString("Renamed bot"), Config: siteapi.NewOptIntegrationConfigInput(telegramInput("")),
 		})
 
-		require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+		require.NoError(t, err)
 		assert.Len(t, env.Telegram.Requests(), before)
 	})
 }
@@ -185,19 +171,17 @@ func TestSiteTelegramDeletedIntegrationTouchesNoBot(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	row, _ := connectedTelegram(t, env, c)
-	deleted, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleted)
 	before := len(env.Telegram.Requests())
 
-	res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
+	_, err = updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{
 		Enabled: siteapi.NewOptBool(true), Config: siteapi.NewOptIntegrationConfigInput(telegramInput(env.Telegram.Rotate(acmeBotID))),
 	})
-	assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
-	rekeyed, err := c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteIntegrationsRegenerateKeyNotFound{}, rekeyed)
+	_, err = c.SiteIntegrationsRegenerateKey(ctx, siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	assert.Len(t, env.Telegram.Requests(), before, "no Bot API call after the delete")
 }
@@ -210,11 +194,9 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	path := siteapi.SiteIntegrationsRegenerateKeyParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID}
 
 	t.Run("regenerating the key re-registers the webhook", func(t *testing.T) {
-		res, err := c.SiteIntegrationsRegenerateKey(ctx, path)
+		regenerated, err := c.SiteIntegrationsRegenerateKey(ctx, path)
 		require.NoError(t, err)
 
-		regenerated, ok := res.(*siteapi.SiteIntegrationResource)
-		require.Truef(t, ok, "got %T", res)
 		assert.NotEqual(t, row.HookUrl, regenerated.HookUrl)
 		hook, ok := env.Telegram.Last(telegramtest.SetWebhook)
 		require.True(t, ok)
@@ -225,16 +207,15 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	t.Run("a webhook Telegram refuses keeps the old key", func(t *testing.T) {
 		env.Telegram.FailOnce(telegramtest.SetWebhook, telegramtest.BadWebhook)
 
-		res, err := c.SiteIntegrationsRegenerateKey(ctx, path)
-		require.NoError(t, err)
+		_, err := c.SiteIntegrationsRegenerateKey(ctx, path)
 
-		problemOf(t, res)
+		problemOf(t, err)
 	})
 
 	t.Run("disabling deletes the webhook", func(t *testing.T) {
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Enabled: siteapi.NewOptBool(false)})
+		_, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Enabled: siteapi.NewOptBool(false)})
 
-		require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+		require.NoError(t, err)
 		deleted, ok := env.Telegram.Last(telegramtest.DeleteWebhook)
 		require.True(t, ok)
 		assert.Equal(t, token, deleted.Token)
@@ -243,9 +224,9 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 	t.Run("enabling again re-registers it without dropping updates", func(t *testing.T) {
 		before := len(env.Telegram.RequestsOf(telegramtest.SetWebhook))
 
-		res := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Enabled: siteapi.NewOptBool(true)})
+		_, err := updateTelegram(t, c, row.ID, &siteapi.UpdateIntegrationInput{Enabled: siteapi.NewOptBool(true)})
 
-		require.IsType(t, &siteapi.SiteIntegrationResource{}, res)
+		require.NoError(t, err)
 		hooks := env.Telegram.RequestsOf(telegramtest.SetWebhook)
 		require.Len(t, hooks, before+1)
 		assert.False(t, hooks[before].Bool("drop_pending_updates"))
@@ -255,10 +236,9 @@ func TestSiteTelegramWebhookFollowsTheIntegration(t *testing.T) {
 		env.Telegram.FailOnce(telegramtest.DeleteWebhook, telegramtest.Unauthorized)
 		before := len(env.Telegram.RequestsOf(telegramtest.DeleteWebhook))
 
-		res, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
+		err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: row.ID})
 		require.NoError(t, err)
 
-		require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, res)
 		assert.Len(t, env.Telegram.RequestsOf(telegramtest.DeleteWebhook), before+1)
 	})
 }
@@ -284,18 +264,17 @@ func TestSiteTelegramPresetIsFixed(t *testing.T) {
 	id := siteapi.EntityId(fixtures.IntegrationAcmeTelegramID)
 
 	t.Run("a Telegram integration takes no other Preset", func(t *testing.T) {
-		res := updateTelegram(t, c, id, &siteapi.UpdateIntegrationInput{Preset: siteapi.NewOptNilString("generic")})
+		_, err := updateTelegram(t, c, id, &siteapi.UpdateIntegrationInput{Preset: siteapi.NewOptNilString("generic")})
 
-		assert.Contains(t, problemOf(t, res), "preset")
+		assert.Contains(t, problemOf(t, err), "preset")
 	})
 
 	t.Run("no other integration takes the telegram Preset", func(t *testing.T) {
-		res, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
+		_, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 			Name: "SMTP", Config: smtpInput("smtp.acme.test", "pw"), Preset: siteapi.NewOptNilString("telegram"),
 		}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
 
-		assert.Contains(t, problemOf(t, res), "preset")
+		assert.Contains(t, problemOf(t, err), "preset")
 	})
 
 	t.Run("the Presets offered leave it out", func(t *testing.T) {

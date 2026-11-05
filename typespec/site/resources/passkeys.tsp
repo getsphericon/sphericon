@@ -159,10 +159,12 @@ model SitePasskeyRegistrationInput {
 namespace SitePasskeys {
   /** List the authenticated User's Passkeys */
   @get
-  op list(): {
-    @statusCode statusCode: 200;
-    @body body: SitePasskeyList;
-  };
+  op list():
+    | {
+        @statusCode statusCode: 200;
+        @body body: SitePasskeyList;
+      }
+    | Problem;
 
   /** Begin registering a Passkey: the creation options for the browser, with the challenge
    * in a signed, httpOnly cookie. Nothing is written: the ceremony is stateless until it
@@ -178,7 +180,7 @@ namespace SitePasskeys {
 
         @body body: SitePasskeyRegistrationBegun;
       }
-    | NotFoundProblem;
+    | Problem;
 
   /** Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
    * authenticator must have verified the user and the challenge must not have been used
@@ -198,11 +200,7 @@ namespace SitePasskeys {
         @statusCode statusCode: 200;
         @body body: SitePasskey;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+    | Problem;
 
   /** Begin a fresh Passkey check: the request options for the browser, naming the User's own
    * Passkeys, with the challenge in a signed, httpOnly cookie. Nothing is written. The check
@@ -219,7 +217,7 @@ namespace SitePasskeys {
 
         @body body: SitePasskeyCheckBegun;
       }
-    | NotFoundProblem;
+    | Problem;
 
   /** Finish a Passkey check. The authenticator must have verified the person, by a Passkey of
    * the session's own User, against a challenge not used before. The acting session is
@@ -239,9 +237,7 @@ namespace SitePasskeys {
         /** The acting session reissued with the check */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's,
    * 422 for a name that is empty or longer than 100 characters. */
@@ -252,9 +248,7 @@ namespace SitePasskeys {
         @statusCode statusCode: 200;
         @body body: SitePasskey;
       }
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Remove a Passkey of the authenticated User, proving the password (or a fresh provider
    * login). It no longer signs anyone in, every other session ends, the acting one continues
@@ -271,9 +265,5 @@ namespace SitePasskeys {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

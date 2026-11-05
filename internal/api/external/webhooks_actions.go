@@ -10,7 +10,7 @@ import (
 
 // WebhooksRegenerateSecret replaces the endpoint's signing secret. The new secret is
 // not part of the response: the external API never returns it.
-func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params externalapi.WebhooksRegenerateSecretParams) (externalapi.WebhooksRegenerateSecretRes, error) {
+func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params externalapi.WebhooksRegenerateSecretParams) (*externalapi.WebhookResource, error) {
 	e, err := h.webhooks.RegenerateSecret(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params external
 
 // WebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered; the endpoint's failure state is not touched.
-func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhookInput, params externalapi.WebhooksTestParams) (externalapi.WebhooksTestRes, error) {
+func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhookInput, params externalapi.WebhooksTestParams) (*externalapi.WebhookTestResult, error) {
 	res, err := h.webhooks.TestSend(ctx, auth.TokenScoped(ctx), int64(params.ID), req.EventType)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhoo
 		out.Status = externalapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
-		out.Kind = externalapi.NewOptWebhookErrorKind(mapper.DeliveryErrorKindToResource(res.Kind))
+		out.Kind = externalapi.NewOptWebhookErrorKind(mapper.WebhookErrorKindToResource(res.Kind))
 	}
 	return &out, nil
 }

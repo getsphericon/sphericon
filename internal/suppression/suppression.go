@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/phone"
@@ -73,7 +74,7 @@ func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 // Entry is one Suppression to add. ContactID is the Contact the destination belongs
 // to, when known (display only); zero means none. Channel is email when empty.
 type Entry struct {
-	Channel     entsuppression.Channel
+	Channel     channels.Channel
 	Destination string
 	Reason      entsuppression.Reason
 	ContactID   int64
@@ -90,9 +91,9 @@ var e164 = regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
 // number in E.164 on SMS.
 func ValidDestination(channel, dest string) bool {
 	switch channel {
-	case string(entsuppression.ChannelTelegram):
+	case string(channels.Telegram):
 		return telegramUserID.MatchString(dest)
-	case string(entsuppression.ChannelSms):
+	case string(channels.SMS):
 		return e164.MatchString(dest)
 	}
 	return dest != ""
@@ -108,7 +109,7 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	}
 	channel := e.Channel
 	if channel == "" {
-		channel = entsuppression.ChannelEmail
+		channel = channels.Email
 	}
 	if !ValidDestination(string(channel), dest) {
 		return ErrDestinationInvalid
@@ -129,18 +130,18 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 
 // AddManual is Add with the manual reason (an Owner's or an API caller's request), and
 // returns the entry, the existing one when the destination was already suppressed.
-func AddManual(ctx context.Context, s *ent.Scoped, channel entsuppression.Channel, destination string) (*ent.Suppression, error) {
+func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.Suppression, error) {
 	if channel == "" {
-		channel = entsuppression.ChannelEmail
+		channel = channels.Email
 	}
 	// Someone typed it: the address must be one (the bus subscriber's addresses come from
 	// providers), and a number is stored in E.164, read with the country code it must carry.
 	switch channel {
-	case entsuppression.ChannelEmail:
+	case channels.Email:
 		if addr, err := mail.ParseAddress(NormalizeDestination(destination)); err != nil || addr.Address != NormalizeDestination(destination) {
 			return nil, ErrDestinationInvalid
 		}
-	case entsuppression.ChannelSms:
+	case channels.SMS:
 		if strings.TrimSpace(destination) == "" {
 			return nil, ErrDestinationEmpty
 		}
@@ -149,7 +150,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel entsuppression.Channe
 			return nil, ErrDestinationInvalid
 		}
 		destination = number
-	case entsuppression.ChannelTelegram:
+	case channels.Telegram:
 		// A user id is checked by Add.
 	}
 	if err := Add(ctx, s, Entry{Channel: channel, Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
@@ -196,9 +197,9 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 		return err
 	}
 	lifted := entsuppression.ID(row.ID)
-	if row.Channel == entsuppression.ChannelSms && e164.MatchString(row.Destination) {
+	if row.Channel == channels.SMS && e164.MatchString(row.Destination) {
 		lifted = entsuppression.Or(lifted, entsuppression.And(
-			entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
+			entsuppression.ChannelEQ(channels.SMS), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
 	}
 	_, err = s.Suppression().Update().
 		Where(lifted, entsuppression.LiftedAtIsNil()).
@@ -217,7 +218,7 @@ func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number st
 	mine := entsuppression.ContactID(contactID)
 	if number != "" {
 		mine = entsuppression.Or(mine, entsuppression.And(
-			entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.DestinationEQ(number)))
+			entsuppression.ChannelEQ(channels.SMS), entsuppression.DestinationEQ(number)))
 	}
 	if _, err := s.Suppression().Delete().Where(mine, entsuppression.LiftedAtNotNil()).Exec(ctx); err != nil {
 		return err
@@ -232,7 +233,7 @@ func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number st
 // hashNumbers rekeys the active sms Suppressions mine matches by the hash of their number.
 func hashNumbers(ctx context.Context, s *ent.Scoped, mine predicate.Suppression) error {
 	rows, err := s.Suppression().Query().
-		Where(mine, entsuppression.ChannelEQ(entsuppression.ChannelSms), entsuppression.LiftedAtIsNil()).
+		Where(mine, entsuppression.ChannelEQ(channels.SMS), entsuppression.LiftedAtIsNil()).
 		All(ctx)
 	if err != nil {
 		return err
@@ -240,7 +241,7 @@ func hashNumbers(ctx context.Context, s *ent.Scoped, mine predicate.Suppression)
 	for _, r := range rows {
 		hashed := phone.Hash(r.Destination)
 		twin, err := s.Suppression().Query().Where(
-			entsuppression.ChannelEQ(entsuppression.ChannelSms),
+			entsuppression.ChannelEQ(channels.SMS),
 			entsuppression.DestinationEQ(hashed),
 			entsuppression.LiftedAtIsNil(),
 		).Exist(ctx)

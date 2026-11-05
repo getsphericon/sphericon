@@ -25,9 +25,7 @@ namespace SiteTags {
   @requiresPermissions(#[])
   op list(@path workspaceId: WorkspaceId, ...PageQuery):
     | Page<SiteTagResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** List the tags a contact has */
   @route("/contacts/{contactId}/tags")
@@ -37,11 +35,7 @@ namespace SiteTags {
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     ...PageQuery,
-  ):
-    | Page<SiteTagResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteTagResource> | Problem;
 
   /** Apply a tag to a contact, creating the tag on first use. Idempotent. */
   @route("/contacts/{contactId}/tags")
@@ -51,11 +45,7 @@ namespace SiteTags {
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     @body body: ApplyTagInput,
-  ):
-    | SiteTagResource
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): SiteTagResource | Problem;
 
   /** Delete a tag from the catalogue, unless a segment rule or an automation step names it */
   @route("/tags/{id}")
@@ -63,9 +53,7 @@ namespace SiteTags {
   @requiresPermissions(#[])
   op delete(@path workspaceId: WorkspaceId, @path id: EntityId):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /** Remove a tag from a contact. Idempotent; the tag stays in the catalogue. */
   @route("/contacts/{contactId}/tags/{name}")
@@ -75,5 +63,5 @@ namespace SiteTags {
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     @path name: string,
-  ): NoContentResponse | BadRequestProblem | NotFoundProblem;
+  ): NoContentResponse | Problem;
 }

@@ -166,11 +166,7 @@ namespace CustomFields {
   /** List the workspace's custom field definitions */
   @get
   @requiresScopes(#[ApiTokenScope.customFieldsRead])
-  op list():
-    | Page<CustomFieldResource>
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  op list(): Page<CustomFieldResource> | Problem;
 
   /** Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). */
   @route("/{id}")
@@ -178,13 +174,7 @@ namespace CustomFields {
   @requiresScopes(#[ApiTokenScope.customFieldsWrite])
   op update(@path id: EntityId, @body body: UpdateCustomFieldInput):
     | CustomFieldResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem
-    | InUseProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }
 
 @route("/sending-domains/rates")
@@ -199,10 +189,5 @@ namespace SendingDomainRates {
     @minValue(1)
     @maxValue(90)
     windowDays?: int32 = 7,
-  ):
-    | Page<SendingDomainRatesResource>
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | TooManyRequestsProblem;
+  ): Page<SendingDomainRatesResource> | Problem;
 }

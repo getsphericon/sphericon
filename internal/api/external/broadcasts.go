@@ -16,7 +16,7 @@ import (
 // send-class operations. The state rules live in internal/broadcasts; these
 // handlers check the scope, call it and map its errors.
 
-func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (externalapi.BroadcastsListRes, error) {
+func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (*externalapi.BroadcastsListOK, error) {
 	ws := auth.TokenScoped(ctx)
 	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), broadcasts.OrderNewest)
 	if err != nil {
@@ -25,7 +25,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 	return mapper.BroadcastsListPage(page), nil
 }
 
-func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (externalapi.BroadcastsCreateRes, error) {
+func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (*externalapi.BroadcastResource, error) {
 	ws := auth.TokenScoped(ctx)
 
 	in, err := inputs.BroadcastCreate(req)
@@ -40,7 +40,7 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.BroadcastsGetParams) (externalapi.BroadcastsGetRes, error) {
+func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.BroadcastsGetParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -50,7 +50,7 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.UpdateBroadcastInput, params externalapi.BroadcastsUpdateParams) (externalapi.BroadcastsUpdateRes, error) {
+func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.UpdateBroadcastInput, params externalapi.BroadcastsUpdateParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
 	in, err := inputs.BroadcastUpdate(req)
 	if err != nil {
@@ -65,7 +65,7 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 }
 
 // BroadcastsArchive archives a draft, sent or failed broadcast (ADR 0100).
-func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (externalapi.BroadcastsArchiveRes, error) {
+func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (*externalapi.BroadcastResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	b, err := h.broadcasts.Archive(ctx, ws, id)
@@ -77,7 +77,7 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 }
 
 // BroadcastsUnarchive brings an archived broadcast back to the list.
-func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (externalapi.BroadcastsUnarchiveRes, error) {
+func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (*externalapi.BroadcastResource, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	b, err := h.broadcasts.Unarchive(ctx, ws, id)
@@ -88,7 +88,7 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (externalapi.BroadcastsSetSegmentRes, error) {
+func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
 	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, convert.Int64Ptr(req.SegmentId))
 	if err != nil {
@@ -101,7 +101,7 @@ func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.Se
 // BroadcastsSchedule and BroadcastsUnschedule are send-class (ADR 0016, "Send is a
 // second lock"): they need broadcasts:send, which authoring scopes never imply. Over
 // MCP they additionally need mcp:send (the x-mcp send flag).
-func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (externalapi.BroadcastsScheduleRes, error) {
+func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
 	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
 	if err != nil {
@@ -111,7 +111,7 @@ func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.Sche
 	return &res, nil
 }
 
-func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.BroadcastsUnscheduleParams) (externalapi.BroadcastsUnscheduleRes, error) {
+func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.BroadcastsUnscheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
 	b, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -123,22 +123,22 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 
 // BroadcastsTestSend renders the broadcast with sample merge data and sends it to
 // one address: no recipient rows, no tracking, never the audience.
-func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.TestSendBroadcastInput, params externalapi.BroadcastsTestSendParams) (externalapi.BroadcastsTestSendRes, error) {
+func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.TestSendBroadcastInput, params externalapi.BroadcastsTestSendParams) error {
 	id := int64(params.ID)
 	ws := auth.TokenScoped(ctx)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// No Asker: /api never sends from the System sender, so its cap never defers the Test send.
 	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), nil); err != nil {
-		return nil, err
+		return err
 	}
-	return &externalapi.BroadcastsTestSendNoContent{}, nil
+	return nil
 }
 
-func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.BroadcastsReportParams) (externalapi.BroadcastsReportRes, error) {
+func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.BroadcastsReportParams) (*externalapi.BroadcastReport, error) {
 	id := int64(params.ID)
 	r, err := h.broadcasts.Report(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {

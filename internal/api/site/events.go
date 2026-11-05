@@ -10,7 +10,7 @@ import (
 )
 
 // SiteEventsList returns the workspace's events, most recent first.
-func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEventsListParams) (siteapi.SiteEventsListRes, error) {
+func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEventsListParams) (*siteapi.SiteEventsListOK, error) {
 	scoped := workspaceScope(ctx)
 
 	f := eventlog.Filter{Action: params.Action.Or(""), Email: params.Email.Or(""), IncludeMachine: params.IncludeMachine.Or(false)}
@@ -38,7 +38,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 
 // SiteEventsActions returns the distinct event actions in the workspace, sorted —
 // used to populate the segment builder's event-condition picker.
-func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsActionsParams) (siteapi.SiteEventsActionsRes, error) {
+func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsActionsParams) (*siteapi.SiteEventActionsResult, error) {
 	scoped := workspaceScope(ctx)
 
 	actions, err := h.eventlog.Actions(ctx, scoped)

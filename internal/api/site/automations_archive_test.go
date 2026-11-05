@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -25,12 +26,11 @@ func listAutomations(t *testing.T, c *siteapi.Client, archived bool) []int64 {
 		Archived:    siteapi.NewOptBool(archived),
 	})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteAutomationsListOK)
-	require.Truef(t, ok, "got %T", res)
+	list := res
 	return lo.Map(list.Items, func(a siteapi.SiteAutomationResource, _ int) int64 { return int64(a.ID) })
 }
 
-func archiveAutomation(c *siteapi.Client, id int64) (siteapi.SiteAutomationsArchiveRes, error) {
+func archiveAutomation(c *siteapi.Client, id int64) (*siteapi.SiteAutomationResource, error) {
 	return c.SiteAutomationsArchive(context.Background(), siteapi.SiteAutomationsArchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 }
 
@@ -40,10 +40,8 @@ func TestSiteAutomationsArchiveRefusedWithActiveEnrollments(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := archiveAutomation(c, fixtures.AutomationWelcomeSeriesID)
-	require.NoError(t, err)
-	refused, ok := out.(*siteapi.InUseProblemDetails)
-	require.Truef(t, ok, "got %T", out)
+	_, err := archiveAutomation(c, fixtures.AutomationWelcomeSeriesID)
+	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	require.Len(t, refused.UsedBy, 1)
 	assert.Equal(t, siteapi.UsedByKindEnrollment, refused.UsedBy[0].Kind)
 	assert.EqualValues(t, fixtures.AutomationWelcomeSeriesID, refused.UsedBy[0].ID)
@@ -63,8 +61,7 @@ func TestSiteAutomationsArchiveAndUnarchive(t *testing.T) {
 
 	out, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	archived, ok := out.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", out)
+	archived := out
 	assert.True(t, archived.ArchivedAt.IsSet())
 
 	assert.NotContains(t, listAutomations(t, c, false), id)
@@ -73,14 +70,12 @@ func TestSiteAutomationsArchiveAndUnarchive(t *testing.T) {
 	assert.Contains(t, shown, int64(fixtures.AutomationArchivedID))
 	assert.NotContains(t, shown, int64(fixtures.AutomationWelcomeSeriesID))
 
-	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+	_, err = c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	assert.IsTypef(t, &siteapi.SiteAutomationResource{}, got, "an archived automation can still be opened")
 
 	back, err := c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	restored, ok := back.(*siteapi.SiteAutomationResource)
-	require.Truef(t, ok, "got %T", back)
+	restored := back
 	assert.False(t, restored.ArchivedAt.IsSet())
 	assert.Contains(t, listAutomations(t, c, false), id)
 }
@@ -120,13 +115,11 @@ func TestSiteAutomationsArchiveKeepsEveryAutomation(t *testing.T) {
 	for _, id := range []int64{fixtures.AutomationWinBackID, fixtures.AutomationOnOpenID} {
 		out, err := archiveAutomation(c, id)
 		require.NoError(t, err)
-		archived, ok := out.(*siteapi.SiteAutomationResource)
-		require.Truef(t, ok, "automation %d: got %T", id, out)
+		archived := out
 		assert.True(t, archived.ArchivedAt.IsSet())
 
-		got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+		_, err = c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 		require.NoError(t, err)
-		assert.IsTypef(t, &siteapi.SiteAutomationResource{}, got, "automation %d is kept", id)
 	}
 	shown := listAutomations(t, c, true)
 	assert.Contains(t, shown, int64(fixtures.AutomationWinBackID))
@@ -143,22 +136,18 @@ func TestSiteAnArchivedAutomationIsReadOnly(t *testing.T) {
 	before, err := c.SiteAutomationsGet(ctx, params)
 	require.NoError(t, err)
 
-	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")},
+	_, edited := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
-	require.NoError(t, err)
-	published, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
-	require.NoError(t, err)
-	reverted, err := c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
-	require.NoError(t, err)
-	deactivated, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
-	require.NoError(t, err)
+	_, published := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
+	_, reverted := c.SiteAutomationsRevert(ctx, siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
+	_, deactivated := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	after, err := c.SiteAutomationsGet(ctx, params)
 	require.NoError(t, err)
 
-	assert.IsType(t, &siteapi.SiteAutomationsUpdateConflict{}, edited)
-	assert.IsType(t, &siteapi.SiteAutomationsPublishConflict{}, published)
-	assert.IsType(t, &siteapi.SiteAutomationsRevertConflict{}, reverted)
-	assert.IsType(t, &siteapi.SiteAutomationsDeactivateConflict{}, deactivated)
+	testhelper.SiteRefusal(t, edited, http.StatusConflict)
+	testhelper.SiteRefusal(t, published, http.StatusConflict)
+	testhelper.SiteRefusal(t, reverted, http.StatusConflict)
+	testhelper.SiteRefusal(t, deactivated, http.StatusConflict)
 	assert.Equal(t, before, after)
 }
 
@@ -189,15 +178,14 @@ func TestArchivedAutomationDoesNotUseTheDefaultIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MeridianOwnerMonaEmail)
 	meridian := env.DB.Scoped(fixtures.MeridianID)
-	del := func() siteapi.SiteIntegrationsDeleteRes {
+	del := func() error {
 		return deleteIntegrationOf(t, c, fixtures.MeridianPublicID, fixtures.IntegrationMeridianDefaultID)
 	}
 	sendMeridianBroadcasts(t, meridian)
-	refused, ok := del().(*siteapi.InUseProblemDetails)
-	require.True(t, ok)
+	refused := testhelper.SiteRefusal(t, del(), http.StatusConflict)
 	assert.Equal(t, map[siteapi.UsedByKind][]string{siteapi.UsedByKindAutomation: {fixtures.AutomationMeridianWelcomeName}}, usedBy(refused))
 
 	require.NoError(t, meridian.Automation().Archive(t.Context(), fixtures.AutomationMeridianWelcomeID))
 
-	assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, del())
+	assert.NoError(t, del())
 }

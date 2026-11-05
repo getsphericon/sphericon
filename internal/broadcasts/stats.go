@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/aggregates"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/orders"
 )
 
@@ -21,7 +22,7 @@ import (
 type Stats struct {
 	// Channel is the Channel of the Broadcast: it decides which figures are reported (the Reports
 	// methods). StatsOf leaves it empty; StatsFor sets it.
-	Channel broadcast.Channel
+	Channel channels.Channel
 	// Recipients counts the Broadcast's recipient rows.
 	Recipients int
 	// Sent, Skipped and Failed count the recipients whose message ended that way.
@@ -91,11 +92,11 @@ func (st Stats) ReportsOpens() bool { return st.onEmail() }
 
 // ReportsDelivered says whether the Channel's provider reports a delivery: email's and SMS's do,
 // Telegram's gives only the acceptance (Sent).
-func (st Stats) ReportsDelivered() bool { return st.Channel != broadcast.ChannelTelegram }
+func (st Stats) ReportsDelivered() bool { return st.Channel != channels.Telegram }
 
 // ReportsUndelivered says whether the Channel's provider reports a message it could not deliver
 // (ADR 0079): SMS's does; email's says bounced instead.
-func (st Stats) ReportsUndelivered() bool { return st.Channel == broadcast.ChannelSms }
+func (st Stats) ReportsUndelivered() bool { return st.Channel == channels.SMS }
 
 // ReportsBounces says whether the Channel reports bounces and complaints: email. The delivery rate
 // goes with them: SMS reports delivered and undelivered, but no delivery rate.
@@ -107,7 +108,7 @@ func (st Stats) ReportsCaptured() bool { return st.onEmail() }
 // onEmail says whether the figures are an email Broadcast's: the Channel StatsFor set, or none
 // (StatsOf, which reads them as email's).
 func (st Stats) onEmail() bool {
-	return st.Channel != broadcast.ChannelTelegram && st.Channel != broadcast.ChannelSms
+	return st.Channel != channels.Telegram && st.Channel != channels.SMS
 }
 
 // Processed counts the recipients whose send has ended.

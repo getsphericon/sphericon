@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -275,7 +276,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 	if err != nil {
 		return nil, err
 	}
-	if current.Provider == integration.ProviderTelegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
+	if current.Provider == providers.Telegram && holdsWebhook(current.Enabled, current.DiscardedAt) {
 		cfg, err := m.telegramConfigOf(current)
 		if err != nil {
 			return nil, err
@@ -287,7 +288,7 @@ func (m *Module) RegenerateKey(ctx context.Context, s *ent.Scoped, id int64) (*e
 	// A Twilio Integration points its sender's callbacks at the new URL first; Twilio's refusal
 	// refuses the regeneration and the old key stays.
 	var sealed *string
-	if current.Provider == integration.ProviderTwilio {
+	if current.Provider == providers.Twilio {
 		enc, err := m.repointTwilio(ctx, current, key)
 		if err != nil {
 			return nil, err

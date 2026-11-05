@@ -3,8 +3,7 @@ package testhelper
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
@@ -23,7 +22,7 @@ func (env *TestEnv) SuppressDestination(ctx context.Context, destination string)
 // SuppressNumber is SuppressDestination for a phone number on sms.
 func (env *TestEnv) SuppressNumber(ctx context.Context, number string) {
 	err := env.DB.Scoped(fixtures.AcmeID).Suppression().UpdateOneID(fixtures.SuppressionLiftedID).
-		SetChannel(suppression.ChannelSms).SetDestination(number).ClearLiftedAt().Exec(ctx)
+		SetChannel(channels.SMS).SetDestination(number).ClearLiftedAt().Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +43,7 @@ func (env *TestEnv) UnsubscribeFromBroadcasts(ctx context.Context, destination s
 // person's stop, which silences every bot of the Workspace for them.
 func (env *TestEnv) UnsubscribeTelegramFromBroadcasts(ctx context.Context, userID string) {
 	err := env.DB.Scoped(fixtures.AcmeID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeAutomationLeoID).
-		SetChannel(unsubscribe.ChannelTelegram).SetDestination(userID).SetSendingSource(eligibility.SourceBroadcasts).Exec(ctx)
+		SetChannel(channels.Telegram).SetDestination(userID).SetSendingSource(eligibility.SourceBroadcasts).Exec(ctx)
 	if err != nil {
 		panic(err)
 	}

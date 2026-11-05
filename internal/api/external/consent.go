@@ -14,7 +14,7 @@ import (
 // Confirmation (ADR 0077), which never lifts an opt-out. Resubscribing and lifting a Suppression
 // are deliberately absent: a human (or the contact via link or START) does them.
 
-func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (externalapi.SuppressionsCreateRes, error) {
+func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (*externalapi.SuppressionResource, error) {
 	s := auth.TokenScoped(ctx)
 
 	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
@@ -25,7 +25,7 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 	return &res, nil
 }
 
-func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (externalapi.UnsubscribesCreateRes, error) {
+func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (*externalapi.UnsubscribeResource, error) {
 	channel := inputs.ConsentChannel(req.Channel.Or(externalapi.ConsentChannelEmail))
 	u, err := consent.OptOut(ctx, h.bus, auth.TokenScoped(ctx), channel, req.Destination, req.SendingSource.Or(""))
 	if err != nil {
@@ -35,7 +35,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 	return &res, nil
 }
 
-func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (externalapi.ConfirmationsCreateRes, error) {
+func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (*externalapi.ConfirmationResource, error) {
 	c, err := consent.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
 	if err != nil {
 		return nil, err

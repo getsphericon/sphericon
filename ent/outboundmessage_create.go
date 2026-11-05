@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // OutboundMessageCreate is the builder for creating a OutboundMessage entity.
@@ -78,13 +79,13 @@ func (_c *OutboundMessageCreate) SetIdempotencyKey(v string) *OutboundMessageCre
 }
 
 // SetChannel sets the "channel" field.
-func (_c *OutboundMessageCreate) SetChannel(v outboundmessage.Channel) *OutboundMessageCreate {
+func (_c *OutboundMessageCreate) SetChannel(v channels.Channel) *OutboundMessageCreate {
 	_c.mutation.SetChannel(v)
 	return _c
 }
 
 // SetNillableChannel sets the "channel" field if the given value is not nil.
-func (_c *OutboundMessageCreate) SetNillableChannel(v *outboundmessage.Channel) *OutboundMessageCreate {
+func (_c *OutboundMessageCreate) SetNillableChannel(v *channels.Channel) *OutboundMessageCreate {
 	if v != nil {
 		_c.SetChannel(*v)
 	}
@@ -987,7 +988,7 @@ func (u *OutboundMessageUpsert) UpdateWorkspaceID() *OutboundMessageUpsert {
 }
 
 // SetChannel sets the "channel" field.
-func (u *OutboundMessageUpsert) SetChannel(v outboundmessage.Channel) *OutboundMessageUpsert {
+func (u *OutboundMessageUpsert) SetChannel(v channels.Channel) *OutboundMessageUpsert {
 	u.Set(outboundmessage.FieldChannel, v)
 	return u
 }
@@ -1525,7 +1526,7 @@ func (u *OutboundMessageUpsertOne) UpdateWorkspaceID() *OutboundMessageUpsertOne
 }
 
 // SetChannel sets the "channel" field.
-func (u *OutboundMessageUpsertOne) SetChannel(v outboundmessage.Channel) *OutboundMessageUpsertOne {
+func (u *OutboundMessageUpsertOne) SetChannel(v channels.Channel) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetChannel(v)
 	})
@@ -2304,7 +2305,7 @@ func (u *OutboundMessageUpsertBulk) UpdateWorkspaceID() *OutboundMessageUpsertBu
 }
 
 // SetChannel sets the "channel" field.
-func (u *OutboundMessageUpsertBulk) SetChannel(v outboundmessage.Channel) *OutboundMessageUpsertBulk {
+func (u *OutboundMessageUpsertBulk) SetChannel(v channels.Channel) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetChannel(v)
 	})

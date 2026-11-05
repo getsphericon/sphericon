@@ -88,11 +88,7 @@ interface SiteSendingDomains {
   list(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     ...PageQuery,
-  ):
-    | Page<SiteSendingDomainResource>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteSendingDomainResource> | Problem;
 
   /** Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only. */
   @createsResource(SiteSendingDomainResource)
@@ -107,11 +103,7 @@ interface SiteSendingDomains {
         @statusCode statusCode: 201;
         @body body: SiteSendingDomainResource;
       }
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | ConflictProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Get a sending domain by ID for the site UI, deleted or not */
   @readsResource(SiteSendingDomainResource)
@@ -120,8 +112,7 @@ interface SiteSendingDomains {
   @requiresPermissions(#[])
   get(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /**
    * Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its history.
@@ -133,10 +124,7 @@ interface SiteSendingDomains {
   @requiresPermissions(#[Permission.sendingDomainsManage])
   delete(...ResourceParameters<SiteSendingDomainResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | InUseProblem;
+    | Problem;
 
   /**
    * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
@@ -148,7 +136,5 @@ interface SiteSendingDomains {
   @requiresPermissions(#[Permission.sendingDomainsManage])
   verify(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+    | Problem;
 }

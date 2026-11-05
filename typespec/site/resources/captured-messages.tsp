@@ -97,11 +97,7 @@ namespace SiteCapturedMessages {
   op list(
     ...ResourceCollectionParameters<SiteCapturedMessageResource>,
     ...PageQuery,
-  ):
-    | Page<SiteCapturedMessageSummary>
-    | BadRequestProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  ): Page<SiteCapturedMessageSummary> | Problem;
 
   /** Read one Captured message in full: headers, HTML, text and links. Every member may read. */
   @readsResource(SiteCapturedMessageResource)
@@ -110,8 +106,7 @@ namespace SiteCapturedMessages {
   @requiresPermissions(#[])
   op get(...ResourceParameters<SiteCapturedMessageResource>):
     | SiteCapturedMessageResource
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Delete one Captured message. Every member may delete. */
   @deletesResource(SiteCapturedMessageResource)
@@ -120,8 +115,7 @@ namespace SiteCapturedMessages {
   @requiresPermissions(#[])
   op delete(...ResourceParameters<SiteCapturedMessageResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Delete every Captured message of the workspace. Every member may delete. */
   @collectionAction(SiteCapturedMessageResource, "all")
@@ -130,6 +124,5 @@ namespace SiteCapturedMessages {
   @requiresPermissions(#[])
   op deleteAll(...ResourceCollectionParameters<SiteCapturedMessageResource>):
     | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 }

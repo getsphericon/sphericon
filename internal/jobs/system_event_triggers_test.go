@@ -142,12 +142,12 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 			AllX(ctx)
 	}
 
-	res, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(ctx, &externalapi.CreateConfirmationInput{
+	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(ctx, &externalapi.CreateConfirmationInput{
 		Channel: externalapi.ConsentChannelSMS, Destination: fixtures.ContactTexterPhone,
 		Wording: "Text me offers", Source: "checkout form", Brand: "Acme",
 	})
 	require.NoError(t, err)
-	require.IsType(t, new(externalapi.ConfirmationResource), res)
+
 	onSMS := router.deliver(t)
 	afterSMS := runs()
 	require.NoError(t, consent.RecordConfirmation(ctx, env.Bus, tracking.ConfirmTarget{

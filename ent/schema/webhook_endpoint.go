@@ -6,6 +6,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // WebhookEndpoint is a workspace-scoped HTTP destination that receives domain
@@ -61,7 +63,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 			Nillable(),
 		// Closed kind of the latest failure; http_status carries last_error_status.
 		field.Enum("last_error_kind").
-			Values("timeout", "blocked_address", "http_status", "network").
+			GoType(webhook.ErrorKind("")).
 			Optional().
 			Nillable(),
 		field.Int("last_error_status").

@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,11 +21,10 @@ func TestExternalContactsEraseByEmailAppliesTheRulesOfById(t *testing.T) {
 	ctx := context.Background()
 	c := initechClient(t, env, "contacts:erase")
 
-	res, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactsEraseByNoContent{}, res, "got %T", res)
 
 	gone, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
@@ -49,11 +49,10 @@ func TestExternalContactsEraseByEmailAnonymizesContactlessTransactionalSends(t *
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.OutboundMessageStrangerDestination),
 	})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactsEraseByNoContent{}, res, "got %T", res)
 
 	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageStrangerID)
 	require.NoError(t, err)
@@ -68,11 +67,10 @@ func TestExternalContactsEraseByVisitorWithoutContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		VisitorId: externalapi.NewOptString("vis-anonymous-301"),
 	})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactsEraseByNoContent{}, res, "got %T", res)
 
 	n, err := env.DB.Visitor.Query().Where(visitor.ID(fixtures.VisitorAnonymousID)).Count(ctx)
 	require.NoError(t, err)
@@ -88,34 +86,29 @@ func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 	ctx := context.Background()
 	c := initechClient(t, env, "contacts:erase")
 
-	none, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByUnprocessableEntity{}, none)
+	err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	both, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err = c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email:     externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 		VisitorId: externalapi.NewOptString("vis-anonymous-301"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByUnprocessableEntity{}, both)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	missing, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err = c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress("nobody@initech.test"),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByNotFound{}, missing)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	denied, err := initechClient(t, env, "contacts:write").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err = initechClient(t, env, "contacts:write").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByForbidden{}, denied)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
-	cross, err := env.ExternalScoped(t, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err = env.ExternalScoped(t, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByNotFound{}, cross)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // A visitor bound to a Contact erases that Contact, by the same rules as by id.
@@ -123,11 +116,10 @@ func TestExternalContactsEraseByVisitorOfAContactErasesTheContact(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		VisitorId: externalapi.NewOptString("vis-erasable-laptop"),
 	})
 	require.NoError(t, err)
-	require.IsTypef(t, &externalapi.ContactsEraseByNoContent{}, res, "got %T", res)
 	gone, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, gone)

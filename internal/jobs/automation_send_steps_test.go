@@ -26,8 +26,7 @@ func stepFigures(t *testing.T, env *testhelper.TestEnv, automationID int64) []ex
 	t.Helper()
 	res, err := env.ExternalScoped(t, "automations:read").AutomationsReport(t.Context(), externalapi.AutomationsReportParams{ID: externalapi.EntityId(automationID)})
 	require.NoError(t, err)
-	report, ok := res.(*externalapi.AutomationReport)
-	require.Truef(t, ok, "got %T", res)
+	report := res
 	return report.Steps
 }
 

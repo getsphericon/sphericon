@@ -7,7 +7,7 @@ import (
 )
 
 // ServiceHoldsList lists a Workspace's active holds.
-func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {
+func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (*serviceapi.HoldList, error) {
 	rows, err := h.module.ActiveHolds(ctx, string(params.WorkspaceId))
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 }
 
 // ServiceHoldsSet sets or renews a hold.
-func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
+func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (*serviceapi.HoldSetResult, error) {
 	change, err := h.module.SetHold(ctx, CurrentService(ctx), string(params.WorkspaceId), params.Key, serviceInputs.HoldSet(req))
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 }
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
-func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params serviceapi.ServiceHoldsClearParams) (serviceapi.ServiceHoldsClearRes, error) {
+func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params serviceapi.ServiceHoldsClearParams) (*serviceapi.HoldClearResult, error) {
 	change, err := h.module.ClearHold(ctx, CurrentService(ctx), string(params.WorkspaceId), params.Key)
 	if err != nil {
 		return nil, err

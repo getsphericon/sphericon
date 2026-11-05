@@ -3,10 +3,15 @@
 package serviceapi
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-faster/errors"
 )
+
+func (s *ProblemDetailsStatusCode) Error() string {
+	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
+}
 
 type BearerAuth struct {
 	Token string
@@ -53,8 +58,6 @@ func (s *HoldClearResult) GetChanged() bool {
 func (s *HoldClearResult) SetChanged(val bool) {
 	s.Changed = val
 }
-
-func (*HoldClearResult) serviceHoldsClearRes() {}
 
 // Setting or renewing a hold.
 // Ref: #/components/schemas/HoldInput
@@ -125,8 +128,6 @@ func (s *HoldList) GetItems() []HoldResource {
 func (s *HoldList) SetItems(val []HoldResource) {
 	s.Items = val
 }
-
-func (*HoldList) serviceHoldsListRes() {}
 
 // A Staff hold: one reversible freeze of a Workspace's outbound sending (ADR 0009).
 // Ref: #/components/schemas/HoldResource
@@ -257,8 +258,6 @@ func (s *HoldSetResult) SetChanged(val bool) {
 func (s *HoldSetResult) SetHold(val HoldResource) {
 	s.Hold = val
 }
-
-func (*HoldSetResult) serviceHoldsSetRes() {}
 
 // NewOptEmailAddress returns new OptEmailAddress with value set to v.
 func NewOptEmailAddress(v EmailAddress) OptEmailAddress {
@@ -919,6 +918,12 @@ type ProblemDetails struct {
 	RetryAfter OptInt32 `json:"retryAfter"`
 	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
 	Debug OptProblemDebug `json:"debug"`
+	// A removal refused because live work still uses the row (a 409, ADR 0049): the rows that use it,
+	// never empty.
+	UsedBy []UsedBy `json:"usedBy"`
+	// A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each handed
+	// over or deleted first; empty when the refusal is another rule's.
+	Workspaces []SoleOwnedWorkspace `json:"workspaces"`
 }
 
 // GetCode returns the value of Code.
@@ -976,6 +981,16 @@ func (s *ProblemDetails) GetDebug() OptProblemDebug {
 	return s.Debug
 }
 
+// GetUsedBy returns the value of UsedBy.
+func (s *ProblemDetails) GetUsedBy() []UsedBy {
+	return s.UsedBy
+}
+
+// GetWorkspaces returns the value of Workspaces.
+func (s *ProblemDetails) GetWorkspaces() []SoleOwnedWorkspace {
+	return s.Workspaces
+}
+
 // SetCode sets the value of Code.
 func (s *ProblemDetails) SetCode(val OptProblemCode) {
 	s.Code = val
@@ -1031,7 +1046,15 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) serviceIdentityGetRes() {}
+// SetUsedBy sets the value of UsedBy.
+func (s *ProblemDetails) SetUsedBy(val []UsedBy) {
+	s.UsedBy = val
+}
+
+// SetWorkspaces sets the value of Workspaces.
+func (s *ProblemDetails) SetWorkspaces(val []SoleOwnedWorkspace) {
+	s.Workspaces = val
+}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -1057,114 +1080,31 @@ func (s *ProblemDetailsFields) init() ProblemDetailsFields {
 	return m
 }
 
-// ProblemDetailsHeaders wraps ProblemDetails with response headers.
-type ProblemDetailsHeaders struct {
-	RetryAfter          int32
-	XRateLimitLimit     int32
-	XRateLimitRemaining int32
-	XRateLimitReset     int64
-	Response            ProblemDetails
+// ProblemDetailsStatusCode wraps ProblemDetails with StatusCode.
+type ProblemDetailsStatusCode struct {
+	StatusCode int
+	Response   ProblemDetails
 }
 
-// GetRetryAfter returns the value of RetryAfter.
-func (s *ProblemDetailsHeaders) GetRetryAfter() int32 {
-	return s.RetryAfter
-}
-
-// GetXRateLimitLimit returns the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) GetXRateLimitLimit() int32 {
-	return s.XRateLimitLimit
-}
-
-// GetXRateLimitRemaining returns the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) GetXRateLimitRemaining() int32 {
-	return s.XRateLimitRemaining
-}
-
-// GetXRateLimitReset returns the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) GetXRateLimitReset() int64 {
-	return s.XRateLimitReset
+// GetStatusCode returns the value of StatusCode.
+func (s *ProblemDetailsStatusCode) GetStatusCode() int {
+	return s.StatusCode
 }
 
 // GetResponse returns the value of Response.
-func (s *ProblemDetailsHeaders) GetResponse() ProblemDetails {
+func (s *ProblemDetailsStatusCode) GetResponse() ProblemDetails {
 	return s.Response
 }
 
-// SetRetryAfter sets the value of RetryAfter.
-func (s *ProblemDetailsHeaders) SetRetryAfter(val int32) {
-	s.RetryAfter = val
-}
-
-// SetXRateLimitLimit sets the value of XRateLimitLimit.
-func (s *ProblemDetailsHeaders) SetXRateLimitLimit(val int32) {
-	s.XRateLimitLimit = val
-}
-
-// SetXRateLimitRemaining sets the value of XRateLimitRemaining.
-func (s *ProblemDetailsHeaders) SetXRateLimitRemaining(val int32) {
-	s.XRateLimitRemaining = val
-}
-
-// SetXRateLimitReset sets the value of XRateLimitReset.
-func (s *ProblemDetailsHeaders) SetXRateLimitReset(val int64) {
-	s.XRateLimitReset = val
+// SetStatusCode sets the value of StatusCode.
+func (s *ProblemDetailsStatusCode) SetStatusCode(val int) {
+	s.StatusCode = val
 }
 
 // SetResponse sets the value of Response.
-func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
+func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
-
-func (*ProblemDetailsHeaders) serviceHoldsClearRes()           {}
-func (*ProblemDetailsHeaders) serviceHoldsListRes()            {}
-func (*ProblemDetailsHeaders) serviceHoldsSetRes()             {}
-func (*ProblemDetailsHeaders) serviceIdentityGetRes()          {}
-func (*ProblemDetailsHeaders) serviceTrackingHostFeedListRes() {}
-func (*ProblemDetailsHeaders) serviceUsageListRes()            {}
-func (*ProblemDetailsHeaders) serviceUserFeedListRes()         {}
-func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes()    {}
-func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes()    {}
-
-type ServiceHoldsClearBadRequest ProblemDetails
-
-func (*ServiceHoldsClearBadRequest) serviceHoldsClearRes() {}
-
-type ServiceHoldsClearNotFound ProblemDetails
-
-func (*ServiceHoldsClearNotFound) serviceHoldsClearRes() {}
-
-type ServiceHoldsClearUnauthorized ProblemDetails
-
-func (*ServiceHoldsClearUnauthorized) serviceHoldsClearRes() {}
-
-type ServiceHoldsListBadRequest ProblemDetails
-
-func (*ServiceHoldsListBadRequest) serviceHoldsListRes() {}
-
-type ServiceHoldsListNotFound ProblemDetails
-
-func (*ServiceHoldsListNotFound) serviceHoldsListRes() {}
-
-type ServiceHoldsListUnauthorized ProblemDetails
-
-func (*ServiceHoldsListUnauthorized) serviceHoldsListRes() {}
-
-type ServiceHoldsSetBadRequest ProblemDetails
-
-func (*ServiceHoldsSetBadRequest) serviceHoldsSetRes() {}
-
-type ServiceHoldsSetNotFound ProblemDetails
-
-func (*ServiceHoldsSetNotFound) serviceHoldsSetRes() {}
-
-type ServiceHoldsSetUnauthorized ProblemDetails
-
-func (*ServiceHoldsSetUnauthorized) serviceHoldsSetRes() {}
-
-type ServiceHoldsSetUnprocessableEntity ProblemDetails
-
-func (*ServiceHoldsSetUnprocessableEntity) serviceHoldsSetRes() {}
 
 // What a Service credential is: its name, its scopes and its expiry.
 // Ref: #/components/schemas/ServiceIdentityResource
@@ -1206,8 +1146,6 @@ func (s *ServiceIdentityResource) SetScopes(val []ServiceScope) {
 func (s *ServiceIdentityResource) SetExpiresAt(val OptNilTimestamp) {
 	s.ExpiresAt = val
 }
-
-func (*ServiceIdentityResource) serviceIdentityGetRes() {}
 
 // A scope a Service credential may carry.
 // Ref: #/components/schemas/ServiceScope
@@ -1327,18 +1265,6 @@ func (s *ServiceTrackingHostChange) SetChangedAt(val Timestamp) {
 	s.ChangedAt = val
 }
 
-type ServiceTrackingHostFeedListBadRequest ProblemDetails
-
-func (*ServiceTrackingHostFeedListBadRequest) serviceTrackingHostFeedListRes() {}
-
-type ServiceTrackingHostFeedListForbidden ProblemDetails
-
-func (*ServiceTrackingHostFeedListForbidden) serviceTrackingHostFeedListRes() {}
-
-type ServiceTrackingHostFeedListUnauthorized ProblemDetails
-
-func (*ServiceTrackingHostFeedListUnauthorized) serviceTrackingHostFeedListRes() {}
-
 // One page of the Tracking host feed.
 // Ref: #/components/schemas/ServiceTrackingHostFeedPage
 type ServiceTrackingHostFeedPage struct {
@@ -1380,8 +1306,6 @@ func (s *ServiceTrackingHostFeedPage) SetNextCursor(val string) {
 func (s *ServiceTrackingHostFeedPage) SetHasMore(val bool) {
 	s.HasMore = val
 }
-
-func (*ServiceTrackingHostFeedPage) serviceTrackingHostFeedListRes() {}
 
 // What a Tracking domain host did at one change.
 // Ref: #/components/schemas/ServiceTrackingHostState
@@ -1432,14 +1356,6 @@ func (s *ServiceTrackingHostState) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
-
-type ServiceUsageListBadRequest ProblemDetails
-
-func (*ServiceUsageListBadRequest) serviceUsageListRes() {}
-
-type ServiceUsageListForbidden ProblemDetails
-
-func (*ServiceUsageListForbidden) serviceUsageListRes() {}
 
 // Paginated response.
 type ServiceUsageListOK struct {
@@ -1505,24 +1421,6 @@ func (s *ServiceUsageListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-func (*ServiceUsageListOK) serviceUsageListRes() {}
-
-type ServiceUsageListUnauthorized ProblemDetails
-
-func (*ServiceUsageListUnauthorized) serviceUsageListRes() {}
-
-type ServiceUserFeedListBadRequest ProblemDetails
-
-func (*ServiceUserFeedListBadRequest) serviceUserFeedListRes() {}
-
-type ServiceUserFeedListForbidden ProblemDetails
-
-func (*ServiceUserFeedListForbidden) serviceUserFeedListRes() {}
-
-type ServiceUserFeedListUnauthorized ProblemDetails
-
-func (*ServiceUserFeedListUnauthorized) serviceUserFeedListRes() {}
-
 // One page of the Users feed.
 // Ref: #/components/schemas/ServiceUserFeedPage
 type ServiceUserFeedPage struct {
@@ -1564,8 +1462,6 @@ func (s *ServiceUserFeedPage) SetNextCursor(val string) {
 func (s *ServiceUserFeedPage) SetHasMore(val bool) {
 	s.HasMore = val
 }
-
-func (*ServiceUserFeedPage) serviceUserFeedListRes() {}
 
 // A User as the feed reports it, with their current consent to the operator's mailings (ADR 0062). A
 // deleted User is a tombstone: only its id and when it was deleted, nothing else of theirs is kept.
@@ -1672,18 +1568,6 @@ func (s *ServiceUserResource) SetMailingsConsentChangedAt(val OptNilTimestamp) {
 	s.MailingsConsentChangedAt = val
 }
 
-type ServiceWorkspaceFeedListBadRequest ProblemDetails
-
-func (*ServiceWorkspaceFeedListBadRequest) serviceWorkspaceFeedListRes() {}
-
-type ServiceWorkspaceFeedListForbidden ProblemDetails
-
-func (*ServiceWorkspaceFeedListForbidden) serviceWorkspaceFeedListRes() {}
-
-type ServiceWorkspaceFeedListUnauthorized ProblemDetails
-
-func (*ServiceWorkspaceFeedListUnauthorized) serviceWorkspaceFeedListRes() {}
-
 // One page of the Workspace feed.
 // Ref: #/components/schemas/ServiceWorkspaceFeedPage
 type ServiceWorkspaceFeedPage struct {
@@ -1725,8 +1609,6 @@ func (s *ServiceWorkspaceFeedPage) SetNextCursor(val string) {
 func (s *ServiceWorkspaceFeedPage) SetHasMore(val bool) {
 	s.HasMore = val
 }
-
-func (*ServiceWorkspaceFeedPage) serviceWorkspaceFeedListRes() {}
 
 // One owner of a Workspace in the feed.
 // Ref: #/components/schemas/ServiceWorkspaceOwner
@@ -1847,21 +1729,34 @@ func (s *ServiceWorkspaceResource) SetOwners(val []ServiceWorkspaceOwner) {
 	s.Owners = val
 }
 
-type ServiceWorkspaceUsageGetBadRequest ProblemDetails
+// A Workspace the User is the only Owner of, which blocks User deletion.
+// Ref: #/components/schemas/SoleOwnedWorkspace
+type SoleOwnedWorkspace struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+}
 
-func (*ServiceWorkspaceUsageGetBadRequest) serviceWorkspaceUsageGetRes() {}
+// GetID returns the value of ID.
+func (s *SoleOwnedWorkspace) GetID() WorkspaceId {
+	return s.ID
+}
 
-type ServiceWorkspaceUsageGetForbidden ProblemDetails
+// GetName returns the value of Name.
+func (s *SoleOwnedWorkspace) GetName() string {
+	return s.Name
+}
 
-func (*ServiceWorkspaceUsageGetForbidden) serviceWorkspaceUsageGetRes() {}
+// SetID sets the value of ID.
+func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
+	s.ID = val
+}
 
-type ServiceWorkspaceUsageGetNotFound ProblemDetails
-
-func (*ServiceWorkspaceUsageGetNotFound) serviceWorkspaceUsageGetRes() {}
-
-type ServiceWorkspaceUsageGetUnauthorized ProblemDetails
-
-func (*ServiceWorkspaceUsageGetUnauthorized) serviceWorkspaceUsageGetRes() {}
+// SetName sets the value of Name.
+func (s *SoleOwnedWorkspace) SetName(val string) {
+	s.Name = val
+}
 
 type Timestamp time.Time
 
@@ -1968,6 +1863,125 @@ func (s *UsageMetric) UnmarshalText(data []byte) error {
 	}
 }
 
+// A row that uses the one a removal was refused for: what a client shows to say what to change first.
+// Ref: #/components/schemas/UsedBy
+type UsedBy struct {
+	// What kind of row it is.
+	Kind UsedByKind `json:"kind"`
+	// Its id.
+	ID EntityId `json:"id"`
+	// Its name.
+	Name string `json:"name"`
+	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
+	// (id, name) and counts its active Enrollments.
+	Count OptInt32 `json:"count"`
+}
+
+// GetKind returns the value of Kind.
+func (s *UsedBy) GetKind() UsedByKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *UsedBy) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *UsedBy) GetName() string {
+	return s.Name
+}
+
+// GetCount returns the value of Count.
+func (s *UsedBy) GetCount() OptInt32 {
+	return s.Count
+}
+
+// SetKind sets the value of Kind.
+func (s *UsedBy) SetKind(val UsedByKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *UsedBy) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *UsedBy) SetName(val string) {
+	s.Name = val
+}
+
+// SetCount sets the value of Count.
+func (s *UsedBy) SetCount(val OptInt32) {
+	s.Count = val
+}
+
+// What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind of live
+// user a removal can find, so a client branches on it without parsing text.
+// Ref: #/components/schemas/UsedByKind
+type UsedByKind string
+
+const (
+	UsedByKindBroadcast  UsedByKind = "broadcast"
+	UsedByKindAutomation UsedByKind = "automation"
+	UsedByKindSegment    UsedByKind = "segment"
+	UsedByKindRule       UsedByKind = "rule"
+	UsedByKindEnrollment UsedByKind = "enrollment"
+)
+
+// AllValues returns all UsedByKind values.
+func (UsedByKind) AllValues() []UsedByKind {
+	return []UsedByKind{
+		UsedByKindBroadcast,
+		UsedByKindAutomation,
+		UsedByKindSegment,
+		UsedByKindRule,
+		UsedByKindEnrollment,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UsedByKind) MarshalText() ([]byte, error) {
+	switch s {
+	case UsedByKindBroadcast:
+		return []byte(s), nil
+	case UsedByKindAutomation:
+		return []byte(s), nil
+	case UsedByKindSegment:
+		return []byte(s), nil
+	case UsedByKindRule:
+		return []byte(s), nil
+	case UsedByKindEnrollment:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UsedByKind) UnmarshalText(data []byte) error {
+	switch UsedByKind(data) {
+	case UsedByKindBroadcast:
+		*s = UsedByKindBroadcast
+		return nil
+	case UsedByKindAutomation:
+		*s = UsedByKindAutomation
+		return nil
+	case UsedByKindSegment:
+		*s = UsedByKindSegment
+		return nil
+	case UsedByKindRule:
+		*s = UsedByKindRule
+		return nil
+	case UsedByKindEnrollment:
+		*s = UsedByKindEnrollment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type WorkspaceId string
 
 // The figures of one Workspace for one Usage period.
@@ -2010,5 +2024,3 @@ func (s *WorkspaceUsageResource) SetPeriod(val string) {
 func (s *WorkspaceUsageResource) SetFigures(val []UsageFigure) {
 	s.Figures = val
 }
-
-func (*WorkspaceUsageResource) serviceWorkspaceUsageGetRes() {}

@@ -505,23 +505,6 @@ export const zProblemDebug = z.object({
 });
 
 /**
- * RFC 7807 Problem Details
- */
-export const zProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug)
-});
-
-/**
  * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
@@ -3699,24 +3682,6 @@ export const zUsedBy = z.object({
 });
 
 /**
- * The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it
- */
-export const zInUseProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  usedBy: z.array(zUsedBy)
-});
-
-/**
  * What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
  * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
  * by the handler (422), which applies the same limit to a Sign-in provider's name.
@@ -3793,33 +3758,6 @@ export const zSiteOAuthDecisionInput = z.object({
 });
 
 /**
- * A Workspace the User is the only Owner of, which blocks User deletion
- */
-export const zSiteSoleOwnedWorkspace = z.object({
-  id: zWorkspaceId,
-  name: z.string()
-});
-
-/**
- * The body of a refused User deletion: ProblemDetails plus, when the User is the only Owner
- * of Workspaces, the list of them (empty when the typed email did not match)
- */
-export const zSiteDeleteUserProblemDetails = z.object({
-  code: z.exactOptional(zProblemCode),
-  type: z.exactOptional(z.string()),
-  title: z.exactOptional(z.string()),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  detail: z.exactOptional(z.string()),
-  instance: z.exactOptional(z.string()),
-  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
-  form: z.exactOptional(z.string()),
-  fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  debug: z.exactOptional(zProblemDebug),
-  workspaces: z.array(zSiteSoleOwnedWorkspace)
-});
-
-/**
  * Where a User who proved their address goes next
  */
 export const zSiteVerifyEmailResult = z.object({
@@ -3851,6 +3789,33 @@ export const zSiteWorkspaceResource = z.object({
   sendCap: z.exactOptional(zSiteSendCap.nullable()),
   accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp
+});
+
+/**
+ * A Workspace the User is the only Owner of, which blocks User deletion
+ */
+export const zSoleOwnedWorkspace = z.object({
+  id: zWorkspaceId,
+  name: z.string()
+});
+
+/**
+ * RFC 7807 Problem Details
+ */
+export const zProblemDetails = z.object({
+  code: z.exactOptional(zProblemCode),
+  type: z.exactOptional(z.string()),
+  title: z.exactOptional(z.string()),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  detail: z.exactOptional(z.string()),
+  instance: z.exactOptional(z.string()),
+  errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
+  form: z.exactOptional(z.string()),
+  fields: z.exactOptional(z.record(z.string(), z.string())),
+  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  debug: z.exactOptional(zProblemDebug),
+  usedBy: z.exactOptional(z.array(zUsedBy)),
+  workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
 });
 
 /**
@@ -4466,6 +4431,16 @@ export const zSiteAuthSigninCallbackQuery = z.object({
   error: z.exactOptional(z.string())
 });
 
+/**
+ * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+ * status is the response's and the body's `status`, and `code` tells apart the answers a client
+ * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+ * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+ * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+ * as the `default` response (ADR 0103).
+ */
+export const zSiteAuthSigninCallbackResponse = zProblemDetails;
+
 export const zSiteAuthSigninStartPath = z.object({
   provider: z.string()
 });
@@ -4474,6 +4449,16 @@ export const zSiteAuthSigninStartQuery = z.object({
   return_to: z.exactOptional(z.string()),
   invitation: z.exactOptional(z.string())
 });
+
+/**
+ * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+ * status is the response's and the body's `status`, and `code` tells apart the answers a client
+ * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+ * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+ * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+ * as the `default` response (ADR 0103).
+ */
+export const zSiteAuthSigninStartResponse = zProblemDetails;
 
 export const zSiteAuthVerifyEmailBody = zSiteVerifyEmailInput;
 
@@ -4571,6 +4556,16 @@ export const zSiteIdentitiesLinkPath = z.object({
 export const zSiteIdentitiesLinkQuery = z.object({
   return_to: z.exactOptional(z.string())
 });
+
+/**
+ * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+ * status is the response's and the body's `status`, and `code` tells apart the answers a client
+ * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+ * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+ * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+ * as the `default` response (ADR 0103).
+ */
+export const zSiteIdentitiesLinkResponse = zProblemDetails;
 
 /**
  * The request has succeeded.

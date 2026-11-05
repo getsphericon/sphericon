@@ -17,7 +17,7 @@ import (
 // carries its outcome and, when a verification link follows, the Sign-up browser's cookie
 // (whatever the address, ADR 0031). No session starts and no Workspace is made here; they
 // follow the proof.
-func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (siteapi.SiteAuthSignUpRes, error) {
+func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (*siteapi.SiteAuthSignUpAccepted, error) {
 	res, err := h.signup.SignUp(ctx, inputs.SignUp(req))
 	if err != nil {
 		return nil, err
@@ -80,14 +80,14 @@ func (h *Handlers) newSignUp() *signup.Module {
 // job is queued); only an Unverified User's job delivers, the others' is a no-send one,
 // so neither the answer nor its timing says whether the address has an account. The
 // per-IP cap answers 429 in the rate limit middleware, before this runs.
-func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput, params siteapi.SiteAuthResendVerificationParams) (siteapi.SiteAuthResendVerificationRes, error) {
+func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput, params siteapi.SiteAuthResendVerificationParams) error {
 	email := strings.TrimSpace(string(req.Email))
 	if email == "" {
-		return &siteapi.SiteAuthResendVerificationAccepted{}, nil
+		return nil
 	}
 	u, err := h.accounts.UserByEmail(ctx, email)
 	if err != nil && !ent.IsNotFound(err) {
-		return nil, err
+		return err
 	}
 	// The same link as at Sign-up: it works until the password is replaced or the address
 	// verified. It carries the hash of the Sign-up browser cookie the request holds, none
@@ -102,10 +102,10 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	}
 	token, err := h.links.VerificationLink(u, signup.BrowserHash(params.SIGNUPBROWSER.Or("")))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := h.mail.Enqueue(ctx, mailjobs.EmailVerification(to, token, u != nil && u.EmailVerifiedAt == nil)); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
-	return &siteapi.SiteAuthResendVerificationAccepted{}, nil
+	return nil
 }

@@ -18,7 +18,9 @@ import (
 	"github.com/mymmrac/telego"
 	ta "github.com/mymmrac/telego/telegoapi"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // DefaultAPIURL is Telegram's own Bot API server.
@@ -48,8 +50,8 @@ func ValidToken(token string) bool { return tokenFormat.MatchString(token) }
 // base URL every bot of the Instance is reached at.
 func Descriptor(apiURL string) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  messaging.ChannelTelegram,
-		Provider: messaging.ProviderTelegram,
+		Channel:  channels.Telegram,
+		Provider: providers.Telegram,
 		Validate: func(config []byte) error {
 			c, err := parse(config)
 			if err != nil {

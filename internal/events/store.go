@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // storeEvent writes the Event row of a projected domain event, on client, the producer's
@@ -86,5 +87,5 @@ func recordProviderOutcome(ctx context.Context, ev DomainEvent) {
 		return
 	}
 	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
-	messaging.RecordSendOutcome(ctx, messaging.Provider(f.Provider), status)
+	messaging.RecordSendOutcome(ctx, providers.Provider(f.Provider), status)
 }

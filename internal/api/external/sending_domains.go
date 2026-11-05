@@ -15,7 +15,7 @@ import (
 // can set `verified`: only the live DKIM check does.
 
 // SendingDomainsList returns the Workspace's Sending domains with the DNS records to publish.
-func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.SendingDomainsListParams) (externalapi.SendingDomainsListRes, error) {
+func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.SendingDomainsListParams) (*externalapi.SendingDomainsListOK, error) {
 	page, err := h.sendingDomains.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 }
 
 // SendingDomainsCreate adds a Sending domain; the DKIM keypair is minted and sealed.
-func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.CreateSendingDomainInput) (externalapi.SendingDomainsCreateRes, error) {
+func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.CreateSendingDomainInput) (*externalapi.SendingDomainResource, error) {
 	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), inputs.SendingDomainCreate(req))
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 }
 
 // SendingDomainsGet returns one Sending domain.
-func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.SendingDomainsGetParams) (externalapi.SendingDomainsGetRes, error) {
+func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.SendingDomainsGetParams) (*externalapi.SendingDomainResource, error) {
 	id := int64(params.ID)
 	row, err := h.sendingDomains.Get(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 }
 
 // SendingDomainsUpdate changes the DKIM selector, which unverifies the domain.
-func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.UpdateSendingDomainInput, params externalapi.SendingDomainsUpdateParams) (externalapi.SendingDomainsUpdateRes, error) {
+func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.UpdateSendingDomainInput, params externalapi.SendingDomainsUpdateParams) (*externalapi.SendingDomainResource, error) {
 	id := int64(params.ID)
 	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, inputs.SendingDomainUpdate(req))
 	if err != nil {
@@ -57,16 +57,13 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 
 // SendingDomainsDelete deletes a Sending domain for good (ADR 0049): it leaves the list. Live
 // sends from it refuse it with 409.
-func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.SendingDomainsDeleteParams) (externalapi.SendingDomainsDeleteRes, error) {
-	if err := h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
-		return nil, err
-	}
-	return &externalapi.SendingDomainsDeleteNoContent{}, nil
+func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.SendingDomainsDeleteParams) error {
+	return h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 }
 
 // SendingDomainsVerify runs the live DNS check and returns the domain as the check left it
 // (`verified`, `lastCheckedAt`).
-func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (externalapi.SendingDomainsVerifyRes, error) {
+func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (*externalapi.SendingDomainResource, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	row, err := h.sendingDomains.Verify(ctx, s, id)

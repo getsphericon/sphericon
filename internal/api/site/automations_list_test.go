@@ -31,8 +31,7 @@ func TestSiteAutomationsListFiltersByNameAndStateAndSorts(t *testing.T) {
 		params.Name = siteapi.NewOptString("LIST PROBE")
 		res, err := c.SiteAutomationsList(ctx, params)
 		require.NoError(t, err)
-		page, ok := res.(*siteapi.SiteAutomationsListOK)
-		require.Truef(t, ok, "got %T", res)
+		page := res
 		ids := lo.Map(page.Items, func(a siteapi.SiteAutomationResource, _ int) siteapi.EntityId { return a.ID })
 		assert.EqualValues(t, len(ids), page.TotalItems, "the total counts what the filter keeps")
 		return ids

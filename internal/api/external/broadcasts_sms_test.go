@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,35 +24,28 @@ func TestExternalSMSBroadcastIsCreatedTestSentScheduledAndKeepsItsIntegrationInU
 	twilio := int64(account.Integration.ID)
 	c := env.ExternalScoped(t, "broadcasts:read", "broadcasts:write", "broadcasts:send", "integrations:read", "integrations:write")
 
-	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
+	made, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.ExternalSMS("Hi {{ first_name }}"),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(twilio)),
 	})
 	require.NoError(t, err)
-	made, ok := created.(*externalapi.BroadcastResource)
-	require.Truef(t, ok, "got %T", created)
-	tested, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("+14155550199")},
+	tested := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("+14155550199")},
 		externalapi.BroadcastsTestSendParams{ID: made.ID})
-	require.NoError(t, err)
-	badNumber, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("not a number")},
+	badNumber := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("not a number")},
 		externalapi.BroadcastsTestSendParams{ID: made.ID})
-	require.NoError(t, err)
-	scheduled, err := c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+	_, err = c.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
 		externalapi.BroadcastsScheduleParams{ID: made.ID})
 	require.NoError(t, err)
 	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: made.ID})
 	require.NoError(t, err)
-	deleted, err := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(twilio)})
-	require.NoError(t, err)
+	deleted := c.IntegrationsDelete(ctx, externalapi.IntegrationsDeleteParams{ID: entityIDString(twilio)})
 
 	assert.Equal(t, externalapi.BroadcastChannelSMS, made.Channel)
 	assert.Equal(t, "Hi {{ first_name }}", testhelper.ExternalSMSOf(made).Text)
-	assert.IsType(t, &externalapi.BroadcastsTestSendNoContent{}, tested)
+	require.NoError(t, tested)
 	assert.Equal(t, []string{"+14155550199"}, lo.Map(env.Twilio.Messages(), func(m twiliotest.Message, _ int) string { return m.To }))
-	assert.IsType(t, &externalapi.BroadcastsTestSendUnprocessableEntity{}, badNumber)
-	assert.IsType(t, &externalapi.BroadcastResource{}, scheduled)
-	figures, ok := report.(*externalapi.BroadcastReport)
-	require.Truef(t, ok, "got %T", report)
+	testhelper.ExternalRefusal(t, badNumber, http.StatusUnprocessableEntity)
+	figures := report
 	assert.True(t, figures.OpenedCount.Null)
 	assert.Equal(t, externalapi.NewNilInt32(0), figures.DeliveredCount, "SMS reports deliveries, none yet")
 	assert.Equal(t, externalapi.NewNilInt32(0), figures.UndeliveredCount)

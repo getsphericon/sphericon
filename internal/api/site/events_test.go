@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"sort"
 	"testing"
 	"time"
@@ -18,10 +19,8 @@ func TestSiteEventsListMostRecentFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID})
+	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	// The page is ordered most-recent-first: each item's createdAt is >= the next.
 	require.NotEmpty(t, ok.Items)
@@ -35,13 +34,11 @@ func TestSiteEventsListFilterByAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
+	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Action:      siteapi.NewOptString("purchase"),
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	// The action filter selects only matching events.
 	require.NotEmpty(t, ok.Items)
@@ -56,13 +53,11 @@ func TestSiteEventsListFilterByEmail(t *testing.T) {
 
 	// Upper-cased on purpose: the match must be case-insensitive because contact
 	// emails are stored as entered while collect events are lowercased.
-	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
+	ok, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		Email:       siteapi.NewOptString("ALICE@example.com"),
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", res)
 
 	// The email filter selects only alice's events (case-insensitively); bob's are
 	// excluded. Alice's single seeded event is her page_view.
@@ -78,9 +73,8 @@ func TestSiteEventsListUnknownWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteEventsListNotFound{}, res)
+	_, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 // SiteEventsActions returns the workspace's distinct actions, sorted — the
@@ -92,10 +86,8 @@ func TestSiteEventsActions(t *testing.T) {
 	ctx := context.Background()
 
 	// Many fixture events are page_views: de-duplication shows it once.
-	out, err := c.SiteEventsActions(ctx, siteapi.SiteEventsActionsParams{WorkspaceId: fixtures.AcmePublicID})
+	res, err := c.SiteEventsActions(ctx, siteapi.SiteEventsActionsParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	res, ok := out.(*siteapi.SiteEventActionsResult)
-	require.Truef(t, ok, "got %T", out)
 
 	assert.True(t, sort.StringsAreSorted(res.Actions), "actions are sorted")
 	seen := map[string]int{}
@@ -110,7 +102,6 @@ func TestSiteEventsActionsUnknownWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteEventsActions(context.Background(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteEventsActionsNotFound{}, res)
+	_, err := c.SiteEventsActions(context.Background(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

@@ -40,40 +40,22 @@ namespace Auth {
         @statusCode statusCode: 201;
         @body body: CreateApiTokenResponse;
       }
-    | UnauthorizedProblem
-    | TooManyRequestsProblem
-    | ForbiddenProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   @get
   @route("/tokens")
   @requiresScopes(#[ApiTokenScope.tokensRead])
-  op tokensList():
-    | ApiTokenListResponse
-    | UnauthorizedProblem
-    | TooManyRequestsProblem
-    | ForbiddenProblem;
+  op tokensList(): ApiTokenListResponse | Problem;
 
   @delete
   @route("/tokens/{id}")
   @requiresScopes(#[ApiTokenScope.tokensWrite])
-  op tokensDelete(@path id: EntityId):
-    | NoContentResponse
-    | UnauthorizedProblem
-    | TooManyRequestsProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | BadRequestProblem;
+  op tokensDelete(@path id: EntityId): NoContentResponse | Problem;
 
   @get
   @route("/me")
   @requiresScopes(#[])
-  op meGet():
-    | ApiTokenInfo
-    | UnauthorizedProblem
-    | TooManyRequestsProblem
-    | NotFoundProblem;
+  op meGet(): ApiTokenInfo | Problem;
 
   @post
   @route("/tokens/bootstrap")
@@ -87,9 +69,5 @@ namespace Auth {
         @statusCode statusCode: 201;
         @body body: CreateApiTokenResponse;
       }
-    | UnauthorizedProblem
-    | TooManyRequestsProblem
-    | ForbiddenProblem
-    | BadRequestProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

@@ -13,27 +13,27 @@ type Handler interface {
 	// The Sign-up survey answers, counted per question. Read only.
 	//
 	// GET /signup-survey
-	StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error)
+	StaffSignupSurveyCounts(ctx context.Context) (*StaffSignupSurveyCounts, error)
 	// StaffSignupSurveyGet implements StaffSignupSurvey_get operation.
 	//
 	// One User's answers. 404 when the User is unknown or has not answered the survey.
 	//
 	// GET /signup-survey/users/{userId}
-	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error)
+	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (*StaffSignupSurveyResponseResource, error)
 	// StaffWorkspaceAuditList implements StaffWorkspaceAudit_list operation.
 	//
 	// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing
 	// is then recorded.
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
-	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
+	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (*StaffAuditEntryList, error)
 	// StaffWorkspacesClearSendCap implements StaffWorkspaces_clearSendCap operation.
 	//
 	// Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited. Idempotent.
 	// Not found on an Instance that has no Send caps.
 	//
 	// DELETE /workspaces/{workspaceId}/send-cap
-	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error)
+	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (*StaffSendCapChange, error)
 	// StaffWorkspacesExempt implements StaffWorkspaces_exempt operation.
 	//
 	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -41,19 +41,19 @@ type Handler interface {
 	// Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error)
+	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error)
 	// StaffWorkspacesGet implements StaffWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
 	//
 	// GET /workspaces/{workspaceId}
-	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
+	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (*StaffWorkspaceDetailResource, error)
 	// StaffWorkspacesList implements StaffWorkspaces_list operation.
 	//
 	// List all Workspaces, newest first, optionally narrowed by an id or name search.
 	//
 	// GET /workspaces
-	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
+	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (*StaffWorkspacesListOK, error)
 	// StaffWorkspacesSetSendCap implements StaffWorkspaces_setSendCap operation.
 	//
 	// Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
@@ -61,27 +61,31 @@ type Handler interface {
 	// no Send caps.
 	//
 	// PUT /workspaces/{workspaceId}/send-cap
-	StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error)
+	StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (*StaffSendCapChange, error)
 	// StaffWorkspacesSuspend implements StaffWorkspaces_suspend operation.
 	//
 	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
 	// member. Idempotent: an already-suspended Workspace is left as it was.
 	//
 	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error)
+	StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error)
 	// StaffWorkspacesUnexempt implements StaffWorkspaces_unexempt operation.
 	//
 	// Police a Workspace by the abuse detector again. Audited. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error)
+	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error)
 	// StaffWorkspacesUnsuspend implements StaffWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
 	// left as it was.
 	//
 	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error)
+	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error)
+	// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+	//
+	// Used for common default response.
+	NewError(ctx context.Context, err error) *ProblemDetailsStatusCode
 }
 
 // Server implements http server based on OpenAPI v3 specification and

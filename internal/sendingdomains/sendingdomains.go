@@ -19,6 +19,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -218,7 +219,7 @@ func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([
 	senders := map[int64]messaging.EmailSender{}
 	var onDomain []liveuse.Send
 	for _, send := range sends {
-		if send.Channel != messaging.ChannelEmail {
+		if send.Channel != channels.Email {
 			continue
 		}
 		var sender messaging.EmailSender

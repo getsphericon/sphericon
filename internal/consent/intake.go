@@ -12,10 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -44,13 +44,13 @@ var (
 // reached the Workspace by any route: on email Unsubscribe, on telegram TelegramUnsubscribe, on sms
 // SMSUnsubscribe. An empty source is the Channel's default: `broadcasts` on email, `everything` on
 // telegram and sms, where a person stops all of the Workspace's messages. Idempotent.
-func OptOut(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel messaging.Channel, destination, source string) (*ent.Unsubscribe, error) {
+func OptOut(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channels.Channel, destination, source string) (*ent.Unsubscribe, error) {
 	switch channel {
-	case messaging.ChannelTelegram:
+	case channels.Telegram:
 		return TelegramUnsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
-	case messaging.ChannelSMS:
+	case channels.SMS:
 		return SMSUnsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
-	case messaging.ChannelEmail:
+	case channels.Email:
 	}
 	return Unsubscribe(ctx, bus, s, destination, cmp.Or(source, eligibility.SourceBroadcasts))
 }
@@ -72,7 +72,7 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 		return nil, err
 	}
 
-	target := tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
+	target := tracking.UnsubTarget{Channel: channels.Email, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
 	if c, err := s.Contact().Query().Where(contact.EmailEQ(dest)).First(ctx); err == nil {
 		target.ContactID = c.ID
 	} else if !ent.IsNotFound(err) {
@@ -82,7 +82,7 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 		return nil, err
 	}
 	return s.Unsubscribe().Query().Where(
-		unsubscribe.ChannelEQ(unsubscribe.ChannelEmail),
+		unsubscribe.ChannelEQ(channels.Email),
 		unsubscribe.DestinationEQ(dest),
 		unsubscribe.SendingSourceEQ(source),
 	).Only(ctx)
@@ -114,7 +114,7 @@ func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, de
 		return nil, err
 	}
 	return s.Unsubscribe().Query().Where(
-		unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram),
+		unsubscribe.ChannelEQ(channels.Telegram),
 		unsubscribe.DestinationEQ(dest),
 		unsubscribe.SendingSourceEQ(source),
 	).Only(ctx)

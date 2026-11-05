@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -82,9 +83,8 @@ func TestExportMessagesNeedsTheExportReadScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, scopes := range [][]string{{}, {"contacts:read"}, {"contacts:read", "events:read", "audit:read"}} {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
-		res, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportMessagesForbidden{}, res, "scopes %v are refused", scopes)
+		_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
+		testhelper.ExternalRefusal(t, err, http.StatusForbidden, "scopes %v are refused", scopes)
 	}
 }
 
@@ -92,10 +92,9 @@ func TestExportMessagesAnswers404WithoutTheLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := exportClient(t, env, fixtures.InitechID)
 
-	res, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
+	_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportMessagesNotFound{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExportMessagesNeverReadsAnotherWorkspace(t *testing.T) {
@@ -112,10 +111,9 @@ func TestExportMessagesRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.InitechID)
 
-	res, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{
+	_, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{
 		Cursor: externalapi.NewOptString("not-a-cursor"),
 	})
 
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportMessagesBadRequest{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }

@@ -104,10 +104,5 @@ namespace Export {
   @get
   @route("/messages")
   @requiresScopes(#[ApiTokenScope.exportRead])
-  op messages(...ExportPageQuery):
-    | ExportPage
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | ForbiddenProblem
-    | NotFoundProblem;
+  op messages(...ExportPageQuery): ExportPage | Problem;
 }

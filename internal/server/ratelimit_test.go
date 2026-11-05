@@ -10,13 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const humanLimit = 3
@@ -115,7 +116,8 @@ func TestARejectionCarriesCORSHeaders(t *testing.T) {
 	assert.Equal(t, "https://app.example", rec.Header().Get("Access-Control-Allow-Origin"))
 }
 
-// The generated site client types the 429, so a caller needs no string matching.
+// The generated site client types the 429, so a caller needs no string matching: the problem
+// repeats the wait (the rate limit headers are asserted on the raw answer above).
 func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, withHumanLimit(1))
 	client := env.SiteAnonymous(t)
@@ -123,15 +125,11 @@ func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 
 	_, err := client.SiteAuthSignUp(t.Context(), input)
 	require.NoError(t, err)
-	res, err := client.SiteAuthSignUp(t.Context(), input)
-	require.NoError(t, err)
+	_, err = client.SiteAuthSignUp(t.Context(), input)
 
-	limited, ok := res.(*siteapi.ProblemDetailsHeaders)
-	require.True(t, ok, "got %T", res)
-	assert.Equal(t, int32(60), limited.RetryAfter)
-	assert.Equal(t, int32(1), limited.XRateLimitLimit)
-	assert.Equal(t, int32(0), limited.XRateLimitRemaining)
-	assert.Equal(t, int32(http.StatusTooManyRequests), limited.Response.Status.Value)
+	limited := testhelper.SiteRefusal(t, err, http.StatusTooManyRequests)
+	assert.Equal(t, int32(60), limited.RetryAfter.Value)
+	assert.Equal(t, int32(http.StatusTooManyRequests), limited.Status.Value)
 }
 
 func TestARejectionIsCountedByPolicyAndLoggedWithoutTheEmail(t *testing.T) {

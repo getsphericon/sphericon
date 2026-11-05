@@ -13,7 +13,9 @@ import (
 
 	"github.com/wneessen/go-mail"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Config is the cleartext credential shape stored (encrypted) for an SMTP
@@ -39,8 +41,8 @@ func Descriptor() messaging.ProviderDescriptor { return NewDescriptor(false) }
 // the stored password cannot be sent to an internal service nor the server used to probe one.
 func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
-		Channel:  messaging.ChannelEmail,
-		Provider: messaging.ProviderSMTP,
+		Channel:  channels.Email,
+		Provider: providers.SMTP,
 		Validate: func(raw []byte) error { return validate(raw, allowPrivate) },
 		Build: func(raw []byte, deps messaging.Deps) (any, error) {
 			return build(raw, deps.Signer, allowPrivate)

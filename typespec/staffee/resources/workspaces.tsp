@@ -246,17 +246,14 @@ namespace StaffWorkspaces {
   @get
   op list(...StaffWorkspaceSearch, ...PageQuery):
     | Page<StaffWorkspaceResource>
-    | BadRequestProblem
-    | UnauthorizedProblem;
+    | Problem;
 
   /** One Workspace's metadata, suspension state, rates and send volume */
   @route("/{workspaceId}")
   @get
   op get(@path workspaceId: WorkspaceId):
     | StaffWorkspaceDetailResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the
    * signed-in Staff member. Idempotent: an already-suspended Workspace is left as it was. */
@@ -264,40 +261,25 @@ namespace StaffWorkspaces {
   @post
   op suspend(@path workspaceId: WorkspaceId, @body body: StaffSuspendInput):
     | StaffSuspensionChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is
    * not suspended is left as it was. */
   @route("/{workspaceId}/unsuspend")
   @post
-  op unsuspend(@path workspaceId: WorkspaceId):
-    | StaffSuspensionChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op unsuspend(@path workspaceId: WorkspaceId): StaffSuspensionChange | Problem;
 
   /** Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
    * frozen automatically, but stays listed with its rates and can still be suspended by
    * hand. Audited. Idempotent. */
   @route("/{workspaceId}/exempt")
   @post
-  op exempt(@path workspaceId: WorkspaceId):
-    | StaffExemptionChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op exempt(@path workspaceId: WorkspaceId): StaffExemptionChange | Problem;
 
   /** Police a Workspace by the abuse detector again. Audited. Idempotent. */
   @route("/{workspaceId}/unexempt")
   @post
-  op unexempt(@path workspaceId: WorkspaceId):
-    | StaffExemptionChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op unexempt(@path workspaceId: WorkspaceId): StaffExemptionChange | Problem;
 
   /** Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
    * rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that
@@ -306,17 +288,11 @@ namespace StaffWorkspaces {
   @put
   op setSendCap(@path workspaceId: WorkspaceId, @body body: StaffSendCapInput):
     | StaffSendCapChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited.
    * Idempotent. Not found on an Instance that has no Send caps. */
   @route("/{workspaceId}/send-cap")
   @delete
-  op clearSendCap(@path workspaceId: WorkspaceId):
-    | StaffSendCapChange
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op clearSendCap(@path workspaceId: WorkspaceId): StaffSendCapChange | Problem;
 }

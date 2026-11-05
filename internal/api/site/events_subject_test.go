@@ -24,8 +24,7 @@ func TestSiteEventsListNamesTheEmailAnEventIsAbout(t *testing.T) {
 		PageSize:    siteapi.NewOptInt32(100),
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", res)
+	ok := res
 
 	byID := lo.KeyBy(ok.Items, func(e siteapi.SiteEventResource) siteapi.EntityId { return e.ID })
 	opened, found := byID[siteapi.EntityId(fixtures.EventOpenedKeptSubjectID)]

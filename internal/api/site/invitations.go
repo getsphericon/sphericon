@@ -13,7 +13,7 @@ import (
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
-func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvitationsListParams) (siteapi.SiteInvitationsListRes, error) {
+func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvitationsListParams) ([]siteapi.SiteInvitationResource, error) {
 	s := workspaceScope(ctx)
 
 	invites, err := accounts.PendingInvitations(ctx, s)
@@ -22,7 +22,7 @@ func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvita
 	}
 
 	items := mapper.InvitationsToResources(invites)
-	return &items, nil
+	return items, nil
 }
 
 // inviteForm is what SiteInvitationsCreate checks beyond the contract, the address trimmed.
@@ -33,7 +33,7 @@ type inviteForm struct {
 // SiteInvitationsCreate invites an email address to the workspace. Owner/admin
 // only. The one-time accept link is returned (copy-link path) and an invite email
 // is sent best-effort — a missing/failed mailer must not fail the invite.
-func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, _ siteapi.SiteInvitationsCreateParams) (siteapi.SiteInvitationsCreateRes, error) {
+func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, _ siteapi.SiteInvitationsCreateParams) (*siteapi.SiteCreateInvitationResponse, error) {
 	s := workspaceScope(ctx)
 
 	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
@@ -80,20 +80,17 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 }
 
 // SiteInvitationsDelete revokes a pending invitation. Owner/admin only.
-func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.SiteInvitationsDeleteParams) (siteapi.SiteInvitationsDeleteRes, error) {
+func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.SiteInvitationsDeleteParams) error {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	if err := h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id); err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteInvitationsDeleteNoContent{}, nil
+	return h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id)
 }
 
 // SitePublicInvitationsLookup reveals a pending invite (workspace + email) so the
 // public accept page can render. Session-less: the token is the authorization.
-func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params siteapi.SitePublicInvitationsLookupParams) (siteapi.SitePublicInvitationsLookupRes, error) {
+func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params siteapi.SitePublicInvitationsLookupParams) (*siteapi.SiteInvitationLookupResult, error) {
 	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
 	if err != nil {
 		return nil, err
@@ -111,10 +108,10 @@ type acceptForm struct {
 // Verified User (their own session) or sets up the account (name + password and the
 // answers to the Sign-up items, ADR 0062), then joins them to the workspace. Link possession authorizes an address with no Verified
 // User; a Verified User's address also needs that User's session.
-func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) (siteapi.SitePublicInvitationsAcceptRes, error) {
+func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) error {
 	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// A Verified User's own session is the proof of the address (ADR 0030); the
@@ -129,15 +126,15 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	// User's address needs neither, and the name's rule is the transaction's too); a password
 	// that is sent must pass its rule.
 	if err := validation.Form(acceptForm{Password: password}); err != nil {
-		return nil, err
+		return err
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
 		Name: strings.TrimSpace(string(name)), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &siteapi.SitePublicInvitationsAcceptOK{}, nil
+	return nil
 }

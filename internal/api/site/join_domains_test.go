@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -27,25 +28,20 @@ func joinDomainsEnv(t *testing.T) (*testhelper.TestEnv, *dnstest.Zone) {
 
 func listJoinDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.SiteJoinDomainResource {
 	t.Helper()
-	res, err := c.SiteJoinDomainsList(context.Background(), siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
+	list, err := c.SiteJoinDomainsList(context.Background(), siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
 	require.NoError(t, err)
-	list, ok := res.(*siteapi.SiteJoinDomainsListOKApplicationJSON)
-	require.Truef(t, ok, "got %T", res)
-	return *list
+	return list
 }
 
-func addJoinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, domain string) siteapi.SiteJoinDomainsAddRes {
-	t.Helper()
-	res, err := c.SiteJoinDomainsAdd(context.Background(), &siteapi.SiteAddJoinDomainInput{Domain: domain},
+func addJoinDomain(c *siteapi.Client, ws siteapi.WorkspaceId, domain string) (*siteapi.SiteJoinDomainResource, error) {
+	return c.SiteJoinDomainsAdd(context.Background(), &siteapi.SiteAddJoinDomainInput{Domain: domain},
 		siteapi.SiteJoinDomainsAddParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	return res
 }
 
 func mustAddJoinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, domain string) *siteapi.SiteJoinDomainResource {
 	t.Helper()
-	res, ok := addJoinDomain(t, c, ws, domain).(*siteapi.SiteJoinDomainResource)
-	require.Truef(t, ok, "adding %s answered %T", domain, res)
+	res, err := addJoinDomain(c, ws, domain)
+	require.NoErrorf(t, err, "adding %s", domain)
 	return res
 }
 
@@ -57,11 +53,8 @@ func joinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int6
 	return found
 }
 
-func verifyJoinDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id siteapi.EntityId) siteapi.SiteJoinDomainsVerifyRes {
-	t.Helper()
-	res, err := c.SiteJoinDomainsVerify(context.Background(), siteapi.SiteJoinDomainsVerifyParams{WorkspaceId: ws, ID: id})
-	require.NoError(t, err)
-	return res
+func verifyJoinDomain(c *siteapi.Client, ws siteapi.WorkspaceId, id siteapi.EntityId) (*siteapi.SiteJoinDomainResource, error) {
+	return c.SiteJoinDomainsVerify(context.Background(), siteapi.SiteJoinDomainsVerifyParams{WorkspaceId: ws, ID: id})
 }
 
 func TestJoinDomainsListShowsVerifiedAndPendingWithTheRecordToPublish(t *testing.T) {
@@ -90,14 +83,14 @@ func TestAMemberCannotManageJoinDomains(t *testing.T) {
 	id := siteapi.EntityId(fixtures.JoinDomainPendingID)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	list, err := c.SiteJoinDomainsList(ctx, siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteJoinDomainsListForbidden{}, list)
-	assert.IsType(t, &siteapi.SiteJoinDomainsAddForbidden{}, addJoinDomain(t, c, ws, "forbidden.test"))
-	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyForbidden{}, verifyJoinDomain(t, c, ws, id))
-	remove, err := c.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteJoinDomainsRemoveForbidden{}, remove)
+	_, err := c.SiteJoinDomainsList(ctx, siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = addJoinDomain(c, ws, "forbidden.test")
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	_, err = verifyJoinDomain(c, ws, id)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
+	err = c.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	stillThere := env.DB.Scoped(fixtures.AcmeID).JoinDomain().Query().Where(joindomain.ID(int64(fixtures.JoinDomainPendingID))).ExistX(ctx)
 	assert.True(t, stillThere)
@@ -113,17 +106,16 @@ func TestJoinDomainsAddStoresTheCanonicalFormAndRefusesBadAndDuplicateDomains(t 
 	assert.False(t, added.Verified)
 	assert.Equal(t, "_sphericon-join.xn--bcher-canon-thb.test", added.Record.Host)
 
-	again := addJoinDomain(t, owner, ws, "BÜCHER-canon.test")
-	assert.IsType(t, &siteapi.SiteJoinDomainsAddConflict{}, again, "the same domain in another spelling is a duplicate")
-	garbage := addJoinDomain(t, owner, ws, "not a domain")
-	problem, ok := garbage.(*siteapi.SiteJoinDomainsAddUnprocessableEntity)
-	require.Truef(t, ok, "got %T", garbage)
+	_, err := addJoinDomain(owner, ws, "BÜCHER-canon.test")
+	testhelper.SiteRefusal(t, err, http.StatusConflict, "the same domain in another spelling is a duplicate")
+	_, err = addJoinDomain(owner, ws, "not a domain")
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, "not a valid domain name", problem.Detail.Value, "the detail is worded, not the message id")
 	assert.Equal(t, []string{"not a valid domain name"}, problem.Errors.Value["domain"])
-	ip := addJoinDomain(t, owner, ws, "192.0.2.1")
-	assert.IsType(t, &siteapi.SiteJoinDomainsAddUnprocessableEntity{}, ip)
-	dotless := addJoinDomain(t, owner, ws, "localhost")
-	assert.IsType(t, &siteapi.SiteJoinDomainsAddUnprocessableEntity{}, dotless)
+	_, err = addJoinDomain(owner, ws, "192.0.2.1")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	_, err = addJoinDomain(owner, ws, "localhost")
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
 func TestJoinDomainsPendingClaimOfAnotherWorkspaceNeverBlocks(t *testing.T) {
@@ -144,17 +136,16 @@ func TestJoinDomainsVerifyNeedsTheRecordToBePublished(t *testing.T) {
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	claim := joinDomain(t, owner, ws, fixtures.JoinDomainPendingID)
 
-	missing := verifyJoinDomain(t, owner, ws, claim.ID)
-	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyUnprocessableEntity{}, missing)
+	_, err := verifyJoinDomain(owner, ws, claim.ID)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	zone.PublishTXT(t, claim.Record.Host, "another value")
-	wrong := verifyJoinDomain(t, owner, ws, claim.ID)
-	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyUnprocessableEntity{}, wrong, "a record with another value proves nothing")
+	_, err = verifyJoinDomain(owner, ws, claim.ID)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "a record with another value proves nothing")
 
 	zone.PublishTXT(t, claim.Record.Host, claim.Record.Value)
-	res := verifyJoinDomain(t, owner, ws, claim.ID)
-	verified, ok := res.(*siteapi.SiteJoinDomainResource)
-	require.Truef(t, ok, "got %T", res)
+	verified, err := verifyJoinDomain(owner, ws, claim.ID)
+	require.NoError(t, err)
 	assert.True(t, verified.Verified)
 	assert.True(t, verified.VerifiedAt.Set)
 	assert.True(t, verified.LastCheckedAt.Set)
@@ -169,9 +160,9 @@ func TestJoinDomainsVerifyOfAnUnknownDomainIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := verifyJoinDomain(t, owner, fixtures.AcmePublicID, siteapi.EntityId(fixtures.JoinDomainGlobexID))
+	_, err := verifyJoinDomain(owner, fixtures.AcmePublicID, siteapi.EntityId(fixtures.JoinDomainGlobexID))
 
-	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyNotFound{}, res, "another Workspace's claim is not reachable")
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "another Workspace's claim is not reachable")
 }
 
 func TestJoinDomainsAnotherWorkspacesVerifiedDomainIsRefusedWhileItsRecordIsPublished(t *testing.T) {
@@ -183,9 +174,9 @@ func TestJoinDomainsAnotherWorkspacesVerifiedDomainIsRefusedWhileItsRecordIsPubl
 	globex := joinDomain(t, jane, fixtures.GlobexPublicID, fixtures.JoinDomainGlobexHeldClaimID)
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 
-	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
+	_, err := verifyJoinDomain(jane, fixtures.GlobexPublicID, globex.ID)
 
-	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyConflict{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	acmeRows := listJoinDomains(t, john, fixtures.AcmePublicID)
 	held, _ := lo.Find(acmeRows, func(d siteapi.SiteJoinDomainResource) bool { return d.ID == acme.ID })
 	assert.True(t, held.Verified, "the holder keeps the domain")
@@ -203,10 +194,9 @@ func TestJoinDomainsDomainMovesWhenTheHoldersRecordIsGone(t *testing.T) {
 	globex := joinDomain(t, jane, fixtures.GlobexPublicID, fixtures.JoinDomainGlobexHeldClaimID)
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 
-	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
+	moved, err := verifyJoinDomain(jane, fixtures.GlobexPublicID, globex.ID)
 
-	moved, ok := res.(*siteapi.SiteJoinDomainResource)
-	require.Truef(t, ok, "got %T", res)
+	require.NoError(t, err)
 	assert.True(t, moved.Verified)
 	acmeRows := listJoinDomains(t, john, fixtures.AcmePublicID)
 	former, _ := lo.Find(acmeRows, func(d siteapi.SiteJoinDomainResource) bool { return d.ID == acme.ID })
@@ -234,10 +224,9 @@ func TestJoinDomainsAMailFailureDoesNotUndoTheMove(t *testing.T) {
 	zone.PublishTXT(t, globex.Record.Host, globex.Record.Value)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
-	res := verifyJoinDomain(t, jane, fixtures.GlobexPublicID, globex.ID)
+	moved, err := verifyJoinDomain(jane, fixtures.GlobexPublicID, globex.ID)
 
-	moved, ok := res.(*siteapi.SiteJoinDomainResource)
-	require.Truef(t, ok, "got %T", res)
+	require.NoError(t, err)
 	assert.True(t, moved.Verified)
 }
 
@@ -249,21 +238,18 @@ func TestJoinDomainsRemoveDeletesOnlyTheClaim(t *testing.T) {
 	claim := joinDomain(t, owner, ws, fixtures.JoinDomainPendingID)
 	members := env.DB.Scoped(fixtures.AcmeID).Membership().Query().CountX(ctx)
 
-	res, err := owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: claim.ID})
-	require.NoError(t, err)
+	err := owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: claim.ID})
 
-	assert.IsType(t, &siteapi.SiteJoinDomainsRemoveNoContent{}, res)
+	require.NoError(t, err)
 	left := listJoinDomains(t, owner, ws)
 	_, still := lo.Find(left, func(d siteapi.SiteJoinDomainResource) bool { return d.ID == claim.ID })
 	assert.False(t, still)
 	after := env.DB.Scoped(fixtures.AcmeID).Membership().Query().CountX(ctx)
 	assert.Equal(t, members, after, "removing a Join domain touches no Membership")
-	gone, err := owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: claim.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteJoinDomainsRemoveNotFound{}, gone)
-	foreign, err := owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: siteapi.EntityId(fixtures.JoinDomainGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteJoinDomainsRemoveNotFound{}, foreign, "another Workspace's claim cannot be removed")
+	err = owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: claim.ID})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+	err = owner.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: siteapi.EntityId(fixtures.JoinDomainGlobexID)})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "another Workspace's claim cannot be removed")
 }
 
 func TestJoinDomainsChangesAreAuditedWithoutTheToken(t *testing.T) {

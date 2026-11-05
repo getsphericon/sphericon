@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 )
@@ -57,7 +58,7 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 		contactIDs = append([]int64{*st.Message.ContactID}, contactIDs...)
 	}
 	create := s.Unsubscribe().Create().
-		SetChannel(unsubscribe.ChannelTelegram).
+		SetChannel(channels.Telegram).
 		SetDestination(st.Destination).
 		SetSendingSource(eligibility.SourceEverything).
 		// The ways of stopping (events.UnsubscribedBy*) are the row's own values.
@@ -107,7 +108,7 @@ func LiftTelegram(ctx context.Context, s *ent.Scoped, destination string) error 
 
 func telegramEverything(destination string) []predicate.Unsubscribe {
 	return []predicate.Unsubscribe{
-		unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram),
+		unsubscribe.ChannelEQ(channels.Telegram),
 		unsubscribe.DestinationEQ(destination),
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	}

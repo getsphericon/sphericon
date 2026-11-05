@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 type silentSender struct{}
@@ -32,18 +34,18 @@ func (r *recordingCapturer) Capture(_ context.Context, c messaging.Captured) err
 func TestDeliversOutsideIsReadThroughTheMetricsDecorator(t *testing.T) {
 	catalog := messaging.NewCatalog(
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+			Channel: channels.Email, Provider: providers.SMTP,
 			Build: func([]byte, messaging.Deps) (any, error) { return silentSender{}, nil },
 		},
 		messaging.ProviderDescriptor{
-			Channel: messaging.ChannelEmail, Provider: messaging.ProviderSES,
+			Channel: channels.Email, Provider: providers.SES,
 			Build: func([]byte, messaging.Deps) (any, error) { return keepingSender{}, nil },
 		},
 	)
 
-	silent, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{})
+	silent, err := catalog.BuildEmail(providers.SMTP, nil, messaging.Deps{})
 	require.NoError(t, err)
-	kept, err := catalog.BuildEmail(messaging.ProviderSES, nil, messaging.Deps{})
+	kept, err := catalog.BuildEmail(providers.SES, nil, messaging.Deps{})
 	require.NoError(t, err)
 
 	assert.True(t, messaging.DeliversOutside(silent), "a sender that says nothing delivers outside")
@@ -56,14 +58,14 @@ func TestBuilderReceivesItsDependencies(t *testing.T) {
 	capturer := &recordingCapturer{}
 	var got messaging.Deps
 	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
-		Channel: messaging.ChannelEmail, Provider: messaging.ProviderSMTP,
+		Channel: channels.Email, Provider: providers.SMTP,
 		Build: func(_ []byte, deps messaging.Deps) (any, error) {
 			got = deps
 			return silentSender{}, nil
 		},
 	})
 
-	_, err := catalog.BuildEmail(messaging.ProviderSMTP, nil, messaging.Deps{Capturer: capturer})
+	_, err := catalog.BuildEmail(providers.SMTP, nil, messaging.Deps{Capturer: capturer})
 	require.NoError(t, err)
 
 	require.NoError(t, got.Capturer.Capture(context.Background(), messaging.Captured{Message: messaging.EmailMessage{Subject: "kept"}}))

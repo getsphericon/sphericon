@@ -28,7 +28,7 @@ import (
 // A User with an active Second factor gets a challenge instead of the cookie, and
 // the counter is not reset: only the second step resets it, else knowing the
 // password would buy a fresh round of code guesses on every login.
-func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInput) (siteapi.SiteAuthLoginRes, error) {
+func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInput) (*siteapi.SiteLoginResultHeaders, error) {
 	res, err := h.login.Password(ctx, req.Email, req.Password)
 	if err != nil {
 		return nil, err

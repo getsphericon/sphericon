@@ -25,8 +25,7 @@ func inviteAdminToAcme(t *testing.T, env *testhelper.TestEnv, email string) stri
 		&siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: siteapi.SiteInvitableRoleAdmin},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
-	require.Truef(t, ok, "got %T", res)
+	created := res
 	return created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
 }
 

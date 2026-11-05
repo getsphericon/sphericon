@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -245,7 +246,7 @@ func eraseConfirmations(ctx context.Context, s *ent.Scoped, t *Target, _ events.
 	match := confirmation.ContactID(t.ContactID)
 	if t.Phone != "" {
 		match = confirmation.Or(match, confirmation.And(
-			confirmation.ChannelEQ(confirmation.ChannelSms), confirmation.DestinationEQ(t.Phone)))
+			confirmation.ChannelEQ(channels.SMS), confirmation.DestinationEQ(t.Phone)))
 	}
 	_, err := s.Confirmation().Delete().Where(match).Exec(ctx)
 	return err
@@ -311,7 +312,7 @@ func forgetTexts(ctx context.Context, s *ent.Scoped, t *Target) error {
 	if t.Phone != "" {
 		texts = append(texts, outboundmessage.Destination(t.Phone))
 	}
-	which := outboundmessage.And(outboundmessage.ChannelEQ(outboundmessage.ChannelSms), outboundmessage.Or(texts...))
+	which := outboundmessage.And(outboundmessage.ChannelEQ(channels.SMS), outboundmessage.Or(texts...))
 	if _, err := s.OutboundMessage().Update().Where(which).ClearProviderMessageID().Save(ctx); err != nil {
 		return err
 	}

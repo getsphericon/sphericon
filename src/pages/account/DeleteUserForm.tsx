@@ -10,7 +10,7 @@ import {
   siteUserDeleteUserMutation,
   siteWorkspacesListDeletedOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteDeleteUserInput, SiteSoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
+import type { SiteDeleteUserInput, SoleOwnedWorkspace } from '../../generated/site/types.gen.ts'
 import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -18,7 +18,7 @@ import { getSoleOwnedWorkspaces } from '../../utils/apiErrors.ts'
 
 // What a page does with the Workspaces a refused deletion names, the ones the User is the only
 // Owner of (ADR 0050): the acceptance screen offers to delete each.
-type OnSoleOwned = (workspaces: SiteSoleOwnedWorkspace[]) => void
+type OnSoleOwned = (workspaces: SoleOwnedWorkspace[]) => void
 
 // soleOwnedHandler hands the Workspaces a refused deletion names to onSoleOwned and lets the
 // refusal toast as any other.
@@ -206,7 +206,7 @@ export function DeleteUserSection({ onSoleOwned }: { onSoleOwned?: OnSoleOwned }
   const { open, modal } = useActionModal(
     t(($) => $.profile.deleteUserTitle),
     (close) => {
-      const closeOnSoleOwned = (workspaces: SiteSoleOwnedWorkspace[]) => {
+      const closeOnSoleOwned = (workspaces: SoleOwnedWorkspace[]) => {
         close()
         onSoleOwned?.(workspaces)
       }

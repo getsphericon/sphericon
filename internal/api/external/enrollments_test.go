@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/samber/lo"
@@ -20,13 +21,11 @@ func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "enrollments:read")
 
-	list, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
+	listed, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{
 		AutomationId: entityIDString(fixtures.AutomationNotifySlackID),
 		Status:       externalapi.NewOptEnrollmentStatus(externalapi.EnrollmentStatusFailed),
 	})
 	require.NoError(t, err)
-	listed, ok := list.(*externalapi.EnrollmentsListOK)
-	require.Truef(t, ok, "got %T", list)
 	failed, found := lo.Find(listed.Items, func(e externalapi.EnrollmentResource) bool {
 		return e.ID == entityIDString(fixtures.AutomationRunHTTPFailedID)
 	})
@@ -38,13 +37,11 @@ func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 	assert.EqualValues(t, 503, f.Status.Or(0))
 	assert.Equal(t, "upstream unavailable, try again later", f.Excerpt.Or(""))
 
-	got, err := c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
+	one, err := c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
 		AutomationId: entityIDString(fixtures.AutomationNotifySlackID),
 		EnrollmentId: entityIDString(fixtures.AutomationRunHTTPFailedID),
 	})
 	require.NoError(t, err)
-	one, ok := got.(*externalapi.EnrollmentResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, failed.Failure, one.Failure)
 }
 
@@ -58,7 +55,7 @@ func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 		Status:       externalapi.NewOptEnrollmentStatus(externalapi.EnrollmentStatusCompleted),
 	})
 	require.NoError(t, err)
-	items := completed.(*externalapi.EnrollmentsListOK).Items
+	items := completed.Items
 	require.NotEmpty(t, items)
 	for _, e := range items {
 		assert.Equal(t, externalapi.EnrollmentStatusCompleted, e.Status)
@@ -66,15 +63,13 @@ func TestExternalEnrollmentsAreFilteredByStatusAndScoped(t *testing.T) {
 	}
 
 	// Another Workspace's Automation, and an Enrollment of a different Automation, are not found.
-	foreign, err := c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsListNotFound{}, foreign)
-	mismatch, err := c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
+	_, err = c.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationGlobexID)})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
 		AutomationId: entityIDString(fixtures.AutomationWelcomeSeriesID),
 		EnrollmentId: entityIDString(fixtures.AutomationRunHTTPFailedID),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsGetNotFound{}, mismatch)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
@@ -82,13 +77,11 @@ func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
 	ctx := context.Background()
 	denied := env.ExternalScoped(t, "automations:read")
 
-	res, err := denied.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationNotifySlackID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsListForbidden{}, res)
-	one, err := denied.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
+	_, err := denied.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationNotifySlackID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = denied.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
 		AutomationId: entityIDString(fixtures.AutomationNotifySlackID),
 		EnrollmentId: entityIDString(fixtures.AutomationRunHTTPFailedID),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsGetForbidden{}, one)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }

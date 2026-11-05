@@ -16,14 +16,14 @@ var _ Handler = UnimplementedHandler{}
 // CollectEventsCreate implements CollectEvents_create operation.
 //
 // POST /events
-func (UnimplementedHandler) CollectEventsCreate(ctx context.Context, req *CollectEventsInput) (r CollectEventsCreateRes, _ error) {
-	return r, ht.ErrNotImplemented
+func (UnimplementedHandler) CollectEventsCreate(ctx context.Context, req *CollectEventsInput) error {
+	return ht.ErrNotImplemented
 }
 
 // CollectIdentifyCreate implements CollectIdentify_create operation.
 //
 // POST /identify
-func (UnimplementedHandler) CollectIdentifyCreate(ctx context.Context, req *CollectIdentifyInput) (r CollectIdentifyCreateRes, _ error) {
+func (UnimplementedHandler) CollectIdentifyCreate(ctx context.Context, req *CollectIdentifyInput) (r *CollectOkResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -33,6 +33,14 @@ func (UnimplementedHandler) CollectIdentifyCreate(ctx context.Context, req *Coll
 // workspace has no enabled default one.
 //
 // POST /telegram-start-links
-func (UnimplementedHandler) CollectTelegramStartLinksCreate(ctx context.Context, req *CollectTelegramStartLinkInput) (r CollectTelegramStartLinksCreateRes, _ error) {
+func (UnimplementedHandler) CollectTelegramStartLinksCreate(ctx context.Context, req *CollectTelegramStartLinkInput) (r *CollectTelegramStartLink, _ error) {
 	return r, ht.ErrNotImplemented
+}
+
+// NewError creates *ProblemDetailsStatusCode from error returned by handler.
+//
+// Used for common default response.
+func (UnimplementedHandler) NewError(ctx context.Context, err error) (r *ProblemDetailsStatusCode) {
+	r = new(ProblemDetailsStatusCode)
+	return r
 }

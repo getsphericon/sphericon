@@ -17,10 +17,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
 	"golang.org/x/net/html"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -69,7 +70,7 @@ func (t *Tracker) OnHost(host string) *Tracker {
 // the message the link sits in, 0 for a link that came from none (a message sent before the link
 // named it, or an opt-out made without one): the email.unsubscribed Event is about that message.
 type UnsubTarget struct {
-	Channel           messaging.Channel
+	Channel           channels.Channel
 	Source            string
 	Destination       string
 	WorkspaceID       int64
@@ -202,8 +203,8 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 	if c.Source == "" {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
 	}
-	switch messaging.Channel(c.Channel) {
-	case messaging.ChannelEmail, messaging.ChannelTelegram, messaging.ChannelSMS:
+	switch channels.Channel(c.Channel) {
+	case channels.Email, channels.Telegram, channels.SMS:
 	default:
 		return UnsubTarget{}, ErrLinkInvalid.With("missing or unknown ch claim")
 	}
@@ -211,7 +212,7 @@ func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
 	return UnsubTarget{
-		Channel: messaging.Channel(c.Channel), Source: c.Source, Destination: c.Destination,
+		Channel: channels.Channel(c.Channel), Source: c.Source, Destination: c.Destination,
 		WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID,
 		OutboundMessageID: c.MessageID,
 	}, nil

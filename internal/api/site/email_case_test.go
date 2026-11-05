@@ -20,8 +20,14 @@ import (
 func TestAnAddressInAnotherCaseIsTheSameAccount(t *testing.T) {
 	env := gateOff(t)
 
-	assert.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Grace", "Grace@Example.com", "grace-password-1"))
-	assert.IsType(t, &siteapi.SiteAuthSignUpConflict{}, signUpWithPassword(t, env, "Grace", "grace@EXAMPLE.com", "grace-password-2"))
+	_, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Grace", Email: "Grace@Example.com", Password: siteapi.NewOptString("grace-password-1"),
+	})
+	require.NoError(t, err)
+	_, err = env.SiteAnonymous(t).SiteAuthSignUp(t.Context(), &siteapi.SiteSignUpInput{
+		Name: "Grace", Email: "grace@EXAMPLE.com", Password: siteapi.NewOptString("grace-password-2"),
+	})
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 
 	users, err := env.DB.User.Query().Where(entuser.EmailEqualFold("grace@example.com")).All(t.Context())
 	require.NoError(t, err)
@@ -39,11 +45,10 @@ func TestAnInvitationIsStoredLowerCased(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, exists)
 
-	again, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
+	_, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
 		&siteapi.SiteCreateInvitationInput{Email: "newuser@example.com", Role: siteapi.SiteInvitableRoleMember},
 		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteCreateInvitationResponse{}, again)
 	count, err := env.DB.Invitation.Query().Where(entinvitation.EmailEqualFold("newuser@example.com")).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "the same address in another case renews the one invitation")

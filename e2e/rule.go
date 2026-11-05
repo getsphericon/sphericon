@@ -56,18 +56,16 @@ func (w *Workspace) Visit(email, action string) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	visitor := "visitor-" + uniq()
-	identified, err := w.collect.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
+	_, err := w.collect.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: visitor,
 		Email:     collectapi.NewOptNilEmailAddress(collectapi.EmailAddress(email)),
 	})
 	require.NoError(w.t, err, "identify visitor")
-	require.IsType(w.t, &collectapi.CollectOkResponse{}, identified, "identify visitor")
 
-	recorded, err := w.collect.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
+	err = w.collect.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
 		Events: []collectapi.CollectEventInput{{VisitorId: visitor, Action: action}},
 	})
 	require.NoError(w.t, err, "collect event")
-	require.IsType(w.t, &collectapi.CollectEventsCreateNoContent{}, recorded, "collect event")
 }
 
 // RequireTagged polls, through the Contact's data export, until the Contact with this email has

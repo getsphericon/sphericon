@@ -62,8 +62,7 @@ namespace SiteCustomFields {
   @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SiteCustomFieldResource>):
     | Page<SiteCustomFieldResource>
-    | BadRequestProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Rename a custom field or change its type. Refused with 409 while a segment, a rule or a scheduled broadcast tests the field with an operator the new type does not take (`usedBy` names them). Owners and admins only. */
   @updatesResource(SiteCustomFieldResource)
@@ -73,11 +72,5 @@ namespace SiteCustomFields {
   op update(
     ...ResourceParameters<SiteCustomFieldResource>,
     @body body: SiteUpdateCustomFieldInput,
-  ):
-    | SiteCustomFieldResource
-    | BadRequestProblem
-    | ForbiddenProblem
-    | NotFoundProblem
-    | InUseProblem
-    | UnprocessableEntityProblem;
+  ): SiteCustomFieldResource | Problem;
 }

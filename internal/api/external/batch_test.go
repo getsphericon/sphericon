@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -30,7 +31,7 @@ func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
 
-	res, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
+	ok, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{
 			{Email: externalapi.NewOptNilEmailAddress("batch-new@example.com"), FirstName: externalapi.NewOptNilString("New")},
 			{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
@@ -39,8 +40,6 @@ func TestExternalContactsBatchUpsertMixedItems(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.UpsertContactsResult)
-	require.Truef(t, isOK, "got %T", res)
 	require.Len(t, ok.Results, 4)
 
 	for i, r := range ok.Results {
@@ -69,23 +68,21 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 	for i := range tooMany {
 		tooMany[i] = externalapi.UpsertContactInput{SubjectId: externalapi.NewOptNilString("limit")}
 	}
-	rejected, err := writer.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: tooMany})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsBatchUpsertBadRequest{}, rejected, "more than 1000 items is rejected as a whole")
+	_, err := writer.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: tooMany})
+	testhelper.ExternalRefusal(t, err, http.StatusBadRequest, "more than 1000 items is rejected as a whole")
 
 	reader := env.ExternalScoped(t, "contacts:read")
-	res, err := reader.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{
+	_, err = reader.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{
 		Contacts: []externalapi.UpsertContactInput{{SubjectId: externalapi.NewOptNilString("x")}},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsBatchUpsertForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
 			{SubjectId: "user:" + fixtures.ContactAliceEmail, Action: "batch_a"},
 			{SubjectId: "user:" + fixtures.ContactAliceEmail, Action: "  "}, // blank action
@@ -94,8 +91,6 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.RecordEventsBatchResult)
-	require.Truef(t, isOK, "got %T", res)
 	require.Len(t, ok.Results, 4)
 
 	want := []externalapi.EventBatchStatus{
@@ -121,11 +116,10 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 func TestExternalEventsBatchSubmitScope(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:read")
-	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	_, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{{SubjectId: "u", Action: "a"}},
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsBatchSubmitForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // A backfilled batch is accepted per item and stored as history, which no consumer is handed; a
@@ -134,7 +128,7 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
 
-	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Backfill: externalapi.NewOptBool(true),
 		Events: []externalapi.EventInput{
 			{
@@ -144,8 +138,6 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.RecordEventsBatchResult)
-	require.Truef(t, isOK, "got %T", res)
 	require.Len(t, ok.Results, 1)
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
 
@@ -165,16 +157,14 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 	c := env.ExternalScoped(t, "events:write")
 	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(eventsNow.AddDate(-2, 0, 0)))
 
-	res, err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+	err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "order_paid", OccurredAt: old}},
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*externalapi.EventsCreateUnprocessableEntity)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	detail := refused.Detail.Or("")
 	assert.Contains(t, detail, "backfill")
 
-	batch, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+	ok, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Events: []externalapi.EventInput{
 			{SubjectId: "s-1", Action: "order_paid", OccurredAt: old},
 			{SubjectId: "s-1", Action: "email.opened"},
@@ -182,8 +172,6 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 		},
 	})
 	require.NoError(t, err)
-	ok, isOK := batch.(*externalapi.RecordEventsBatchResult)
-	require.Truef(t, isOK, "got %T", batch)
 	require.Len(t, ok.Results, 3)
 	assert.Equal(t, externalapi.EventBatchStatusFailed, ok.Results[0].Status)
 	stale, reserved := ok.Results[0].Error.Or(""), ok.Results[1].Error.Or("")
@@ -197,11 +185,9 @@ func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T
 func TestExternalEventsRefuseSMSActions(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 
-	res, err := env.ExternalScoped(t, "events:write").EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+	err := env.ExternalScoped(t, "events:write").EventsCreate(context.Background(), &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "sms.delivered"}},
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*externalapi.EventsCreateUnprocessableEntity)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "reserved")
 }

@@ -25,40 +25,34 @@ import (
 
 // mintPersonal mints, as the User email, a Personal token named name with scopes in the Workspace
 // workspaceID, and returns the answer.
-func mintPersonal(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, name string, scopes ...siteapi.PersonalScope) siteapi.SitePersonalTokensCreateRes {
+func mintPersonal(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, name string, scopes ...siteapi.PersonalScope) (*siteapi.SiteCreatePersonalTokenResponse, error) {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SitePersonalTokensCreate(t.Context(),
+	return env.SiteActor(t, email).SitePersonalTokensCreate(t.Context(),
 		&siteapi.SiteCreatePersonalTokenInput{Name: name, Scopes: scopes},
 		siteapi.SitePersonalTokensCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	return res
 }
 
 // mintedPersonal is mintPersonal that must succeed, and returns the token and its resource.
 func mintedPersonal(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId, scopes ...siteapi.PersonalScope) *siteapi.SiteCreatePersonalTokenResponse {
 	t.Helper()
-	res := mintPersonal(t, env, email, workspaceID, "import script", scopes...)
-	minted, ok := res.(*siteapi.SiteCreatePersonalTokenResponse)
-	require.Truef(t, ok, "got %#v", res)
+	minted, err := mintPersonal(t, env, email, workspaceID, "import script", scopes...)
+	require.NoError(t, err)
 	return minted
 }
 
 // personalTokensOf is what the User email sees in the Personal tokens of the Workspace workspaceID.
 func personalTokensOf(t *testing.T, env *testhelper.TestEnv, email string, workspaceID siteapi.WorkspaceId) []siteapi.SitePersonalTokenResource {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SitePersonalTokensList(t.Context(), siteapi.SitePersonalTokensListParams{WorkspaceId: workspaceID})
+	listed, err := env.SiteActor(t, email).SitePersonalTokensList(t.Context(), siteapi.SitePersonalTokensListParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
-	listed, ok := res.(*siteapi.SitePersonalTokensListOKApplicationJSON)
-	require.Truef(t, ok, "got %#v", res)
-	return *listed
+	return listed
 }
 
-// listContactsWith is the answer of /api to a contacts list on the bearer.
-func listContactsWith(t *testing.T, env *testhelper.TestEnv, bearer string) externalapi.ContactsListRes {
+// listContactsWith is the error /api answers a contacts list on the bearer with: nil when it lists.
+func listContactsWith(t *testing.T, env *testhelper.TestEnv, bearer string) error {
 	t.Helper()
-	res, err := env.ExternalWithToken(t, bearer).ContactsList(t.Context(), externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	return res
+	_, err := env.ExternalWithToken(t, bearer).ContactsList(t.Context(), externalapi.ContactsListParams{})
+	return err
 }
 
 // The fixture Personal tokens (fixtures/api_tokens.yml), as their Users were shown them at minting.
@@ -71,11 +65,10 @@ var (
 // demoteVehementAdmin makes the Vehement admin Ada a member.
 func demoteVehementAdmin(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	demoted, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
+	_, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementAdminMembershipID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
 }
 
 // A member mints a Personal token of her own: its secret is shown once, it calls /api within its
@@ -91,7 +84,7 @@ func TestAMemberMintsAPersonalTokenOfHerOwn(t *testing.T) {
 	assert.Equal(t, siteapi.EntityId(fixtures.MemberMaryID), minted.Resource.UserId)
 	assert.Equal(t, fixtures.MemberMaryName, minted.Resource.UserName)
 	listed := listContactsWith(t, env, minted.Token)
-	assert.IsType(t, &externalapi.ContactsListOK{}, listed)
+	require.NoError(t, listed)
 	row, err := env.DB.ApiToken.Query().Where(apitoken.Prefix(minted.Resource.Prefix)).Only(t.Context())
 	require.NoError(t, err)
 	assert.NotContains(t, row.SecretHash, minted.Token, "only a hash of the secret is stored")
@@ -103,27 +96,22 @@ func TestAMemberMintsAPersonalTokenOfHerOwn(t *testing.T) {
 	assert.Equal(t, minted.Resource.ID, marys[0].ID)
 
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	tokens, err := john.SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
+	workspaceTokens, err := john.SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	workspaceTokens, isList := tokens.(*siteapi.SiteTokensListOKApplicationJSON)
-	require.Truef(t, isList, "got %#v", tokens)
-	tokenIDs := lo.Map(*workspaceTokens, func(r siteapi.SiteApiTokenResource, _ int) siteapi.EntityId { return r.ID })
+	tokenIDs := lo.Map(workspaceTokens, func(r siteapi.SiteApiTokenResource, _ int) siteapi.EntityId { return r.ID })
 	assert.NotContains(t, tokenIDs, minted.Resource.ID, "a Personal token is not the Workspace's API token")
-	connections, err := john.SiteConnectionsList(t.Context(), siteapi.SiteConnectionsListParams{WorkspaceId: fixtures.AcmePublicID})
+	connected, err := john.SiteConnectionsList(t.Context(), siteapi.SiteConnectionsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	connected, isList := connections.(*siteapi.SiteConnectionsListOKApplicationJSON)
-	require.Truef(t, isList, "got %#v", connections)
-	assert.Empty(t, *connected, "a Personal token is not a Connection")
+	assert.Empty(t, connected, "a Personal token is not a Connection")
 }
 
 // A Personal token can do no more than its scopes: a call that needs another one is refused.
 func TestAPersonalTokenIsBoundedByItsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalWithToken(t, melsToken).SegmentsList(t.Context(), externalapi.SegmentsListParams{})
-	require.NoError(t, err)
+	_, err := env.ExternalWithToken(t, melsToken).SegmentsList(t.Context(), externalapi.SegmentsListParams{})
 
-	assert.IsType(t, &externalapi.SegmentsListForbidden{}, res)
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 // The mint form offers the scopes the caller's Role may grant: a member none whose Permission she
@@ -132,17 +120,11 @@ func TestTheGrantableScopesFollowTheRole(t *testing.T) {
 	env := testhelper.Setup(t)
 	params := siteapi.SitePersonalTokensGrantableScopesParams{WorkspaceId: fixtures.AcmePublicID}
 
-	member, err := env.SiteActor(t, fixtures.MemberMaryEmail).SitePersonalTokensGrantableScopes(t.Context(), params)
+	memberScopes, err := env.SiteActor(t, fixtures.MemberMaryEmail).SitePersonalTokensGrantableScopes(t.Context(), params)
 	require.NoError(t, err)
-	admin, err := env.SiteActor(t, fixtures.AdminAliceEmail).SitePersonalTokensGrantableScopes(t.Context(), params)
+	adminScopes, err := env.SiteActor(t, fixtures.AdminAliceEmail).SitePersonalTokensGrantableScopes(t.Context(), params)
 	require.NoError(t, err)
 
-	memberListed, isList := member.(*siteapi.SitePersonalTokensGrantableScopesOKApplicationJSON)
-	require.Truef(t, isList, "got %#v", member)
-	adminListed, isList := admin.(*siteapi.SitePersonalTokensGrantableScopesOKApplicationJSON)
-	require.Truef(t, isList, "got %#v", admin)
-	memberScopes := []siteapi.PersonalScope(*memberListed)
-	adminScopes := []siteapi.PersonalScope(*adminListed)
 	everyPersonalScope := siteapi.PersonalScope("").AllValues()
 
 	assert.Contains(t, memberScopes, siteapi.PersonalScopeContactsWrite)
@@ -157,11 +139,10 @@ func TestTheGrantableScopesFollowTheRole(t *testing.T) {
 func TestAPersonalTokenCarriesOnlyWhatTheRoleMayGrant(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := mintPersonal(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "hooks",
+	_, err := mintPersonal(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "hooks",
 		siteapi.PersonalScopeContactsRead, siteapi.PersonalScopeWebhooksRead)
 
-	refused, isRefused := res.(*siteapi.SitePersonalTokensCreateForbidden)
-	require.Truef(t, isRefused, "got %#v", res)
+	refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.Code.Value)
 	stored, err := env.DB.ApiToken.Query().Where(apitoken.MembershipID(fixtures.AcmeMemberMembershipID)).Exist(t.Context())
 	require.NoError(t, err)
@@ -182,13 +163,11 @@ func TestAPersonalTokenNeverCarriesATokenOnlyScope(t *testing.T) {
 			})
 			valid := &siteapi.SiteCreatePersonalTokenInput{Name: "script", Scopes: []siteapi.PersonalScope{siteapi.PersonalScopeContactsRead}}
 
-			res, err := owner.SitePersonalTokensCreate(t.Context(), valid, siteapi.SitePersonalTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-			require.NoError(t, err)
+			_, mintErr := owner.SitePersonalTokensCreate(t.Context(), valid, siteapi.SitePersonalTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			stored, err := env.DB.ApiToken.Query().Where(apitoken.MembershipID(fixtures.AcmeOwnerMembershipID)).Exist(t.Context())
 			require.NoError(t, err)
 
-			refused, isRefused := res.(*siteapi.SitePersonalTokensCreateBadRequest)
-			require.Truef(t, isRefused, "got %#v", res)
+			refused := testhelper.SiteRefusal(t, mintErr, http.StatusBadRequest)
 			assert.EqualValues(t, http.StatusBadRequest, refused.Status.Value)
 			assert.False(t, stored, "a refused mint stores nothing")
 		})
@@ -200,24 +179,20 @@ func TestAPersonalTokenNeverCarriesATokenOnlyScope(t *testing.T) {
 func TestADemotionTakesEffectOnAPersonalTokensNextRequest(t *testing.T) {
 	env := testhelper.Setup(t)
 	api := env.ExternalWithToken(t, adasToken)
-	before, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
+	_, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.WebhooksListOK{}, before)
 
 	demoteVehementAdmin(t, env)
-	after, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
-	require.NoError(t, err)
+	_, err = api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 
-	refused, isRefused := after.(*externalapi.WebhooksListForbidden)
-	require.Truef(t, isRefused, "got %#v", after)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 
 // assertPersonalTokenEnded checks that Mel's Personal token is refused on /api and its row is gone.
 func assertPersonalTokenEnded(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	res := listContactsWith(t, env, melsToken)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, res)
+	testhelper.ExternalRefusal(t, listContactsWith(t, env, melsToken), http.StatusUnauthorized)
 	left, err := env.DB.ApiToken.Query().Where(apitoken.ID(fixtures.VehementMemberPersonalTokenID)).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, left)
@@ -228,31 +203,28 @@ func TestAPersonalTokenEndsWithItsMembership(t *testing.T) {
 	for name, end := range map[string]func(t *testing.T, env *testhelper.TestEnv){
 		"removal": func(t *testing.T, env *testhelper.TestEnv) {
 			t.Helper()
-			removed, err := env.SiteActor(t, fixtures.VehementAdminAdaEmail).SiteMembershipsDelete(t.Context(),
+			err := env.SiteActor(t, fixtures.VehementAdminAdaEmail).SiteMembershipsDelete(t.Context(),
 				siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementMemberMembershipID)})
 			require.NoError(t, err)
-			require.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, removed)
 		},
 		"leaving": func(t *testing.T, env *testhelper.TestEnv) {
 			t.Helper()
-			left, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.VehementPublicID})
+			err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.VehementPublicID})
 			require.NoError(t, err)
-			require.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, left)
 		},
 		"user deletion": func(t *testing.T, env *testhelper.TestEnv) {
 			t.Helper()
-			deleted, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
+			_, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
 				Email:           fixtures.VehementMemberMelEmail,
 				CurrentPassword: siteapi.NewOptString(fixtures.VehementMemberMelPassword),
 			})
 			require.NoError(t, err)
-			require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, deleted)
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			before := listContactsWith(t, env, melsToken)
-			require.IsType(t, &externalapi.ContactsListOK{}, before)
+			require.NoError(t, before)
 
 			end(t, env)
 
@@ -293,22 +265,20 @@ func TestPersonalTokensAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 	melsView := personalTokensOf(t, env, fixtures.VehementMemberMelEmail, fixtures.VehementPublicID)
 	melIDs := lo.Map(melsView, tokenIDs)
 	assert.Equal(t, []siteapi.EntityId{mels}, melIDs, "a member sees only her own")
-	refused, err := mel.SitePersonalTokensDelete(t.Context(), siteapi.SitePersonalTokensDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: adas})
-	require.NoError(t, err)
-	assert.IsTypef(t, &siteapi.SitePersonalTokensDeleteNotFound{}, refused, "another User's Personal token is not the member's to find: got %#v", refused)
+	err := mel.SitePersonalTokensDelete(t.Context(), siteapi.SitePersonalTokensDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: adas})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound, "another User's Personal token is not the member's to find")
 	adasStillWorks := listContactsWith(t, env, adasToken)
-	assert.IsType(t, &externalapi.ContactsListOK{}, adasStillWorks)
+	require.NoError(t, adasStillWorks)
 
 	adminsView := personalTokensOf(t, env, fixtures.VehementAdminAdaEmail, fixtures.VehementPublicID)
 	adminIDs := lo.Map(adminsView, tokenIDs)
 	assert.ElementsMatch(t, []siteapi.EntityId{mels, adas}, adminIDs, "members:manage sees anyone's")
-	revoked, err := admin.SitePersonalTokensDelete(t.Context(), siteapi.SitePersonalTokensDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: mels})
-	require.NoError(t, err)
+	revoked := admin.SitePersonalTokensDelete(t.Context(), siteapi.SitePersonalTokensDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: mels})
 	melsAfter := listContactsWith(t, env, melsToken)
 	melsViewAfter := personalTokensOf(t, env, fixtures.VehementMemberMelEmail, fixtures.VehementPublicID)
 
-	assert.IsType(t, &siteapi.SitePersonalTokensDeleteNoContent{}, revoked)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, melsAfter)
+	require.NoError(t, revoked)
+	testhelper.ExternalRefusal(t, melsAfter, http.StatusUnauthorized)
 	assert.Empty(t, melsViewAfter, "a revoked Personal token is no longer listed")
 }
 
@@ -320,8 +290,7 @@ func TestAPersonalTokenOfAGatedUserIsRefused(t *testing.T) {
 
 	res := listContactsWith(t, env, melsToken)
 
-	refused, isRefused := res.(*externalapi.ContactsListForbidden)
-	require.Truef(t, isRefused, "got %#v", res)
+	refused := testhelper.ExternalRefusal(t, res, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodeAcceptancePending, refused.Code.Value)
 }
 
@@ -333,12 +302,11 @@ func TestTheTwoFactorRequirementWithholdsAPersonalToken(t *testing.T) {
 	at := graceEnds.Add(-time.Hour)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 	inGrace := listContactsWith(t, env, ritasToken)
-	require.IsType(t, &externalapi.ContactsListOK{}, inGrace)
+	require.NoError(t, inGrace)
 
 	at = graceEnds.Add(time.Hour)
 	res := listContactsWith(t, env, ritasToken)
 
-	refused, isRefused := res.(*externalapi.ContactsListForbidden)
-	require.Truef(t, isRefused, "got %#v", res)
+	refused := testhelper.ExternalRefusal(t, res, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodeSecondFactorRequired, refused.Code.Value)
 }

@@ -4,7 +4,6 @@ import "@typespec/openapi";
 
 import "../common/scalars.tsp";
 import "../common/errors.tsp";
-import "./resources/errors.tsp";
 import "./resources/identify.tsp";
 import "./resources/events.tsp";
 import "./resources/telegram.tsp";

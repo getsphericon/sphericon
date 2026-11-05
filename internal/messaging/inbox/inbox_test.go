@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/inbox"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 type recordingCapturer struct{ got []messaging.Captured }
@@ -22,7 +23,7 @@ func (r *recordingCapturer) Capture(_ context.Context, c messaging.Captured) err
 func build(t *testing.T, capturer messaging.Capturer) messaging.EmailSender {
 	t.Helper()
 	catalog := messaging.NewCatalog(inbox.Descriptor())
-	sender, err := catalog.BuildEmail(messaging.ProviderInbox, []byte("{}"), messaging.Deps{Capturer: capturer})
+	sender, err := catalog.BuildEmail(providers.Inbox, []byte("{}"), messaging.Deps{Capturer: capturer})
 	require.NoError(t, err)
 	return sender
 }

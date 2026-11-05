@@ -12,6 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Integration is the model entity for the Integration schema.
@@ -30,9 +32,9 @@ type Integration struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel integration.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Provider holds the value of the "provider" field.
-	Provider integration.Provider `json:"provider,omitempty"`
+	Provider providers.Provider `json:"provider,omitempty"`
 	// ConfigEncrypted holds the value of the "config_encrypted" field.
 	ConfigEncrypted string `json:"-"`
 	// Preset holds the value of the "preset" field.
@@ -54,7 +56,7 @@ type Integration struct {
 	// ProviderMaxPerDay holds the value of the "provider_max_per_day" field.
 	ProviderMaxPerDay *int `json:"provider_max_per_day,omitempty"`
 	// ProviderEnforcement holds the value of the "provider_enforcement" field.
-	ProviderEnforcement *integration.ProviderEnforcement `json:"provider_enforcement,omitempty"`
+	ProviderEnforcement *providers.Enforcement `json:"provider_enforcement,omitempty"`
 	// ProviderSandbox holds the value of the "provider_sandbox" field.
 	ProviderSandbox bool `json:"provider_sandbox,omitempty"`
 	// ProviderRefusedAt holds the value of the "provider_refused_at" field.
@@ -204,13 +206,13 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = integration.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case integration.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field provider", values[i])
 			} else if value.Valid {
-				_m.Provider = integration.Provider(value.String)
+				_m.Provider = providers.Provider(value.String)
 			}
 		case integration.FieldConfigEncrypted:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -281,8 +283,8 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field provider_enforcement", values[i])
 			} else if value.Valid {
-				_m.ProviderEnforcement = new(integration.ProviderEnforcement)
-				*_m.ProviderEnforcement = integration.ProviderEnforcement(value.String)
+				_m.ProviderEnforcement = new(providers.Enforcement)
+				*_m.ProviderEnforcement = providers.Enforcement(value.String)
 			}
 		case integration.FieldProviderSandbox:
 			if value, ok := values[i].(*sql.NullBool); !ok {

@@ -24,23 +24,20 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
-	res, err := owner.SiteWebhooksRegenerateSecret(ctx, params)
+	hook, err := owner.SiteWebhooksRegenerateSecret(ctx, params)
 	require.NoError(t, err)
-	hook, ok := res.(*siteapi.SiteWebhookEndpointResource)
-	require.Truef(t, ok, "got %T", res)
 	assert.NotEqual(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", hook.Secret)
 
 	got, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.Equal(t, hook.Secret, got.(*siteapi.SiteWebhookEndpointResource).Secret)
+	assert.Equal(t, hook.Secret, got.Secret)
 
 	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "webhook_endpoint.update")
 	require.Len(t, entries, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, entries[0].Actor.Kind)
 
-	other, err := owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookGlobexID)})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksRegenerateSecretNotFound), other)
+	_, err = owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookGlobexID)})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
 func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
@@ -57,10 +54,8 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
-	res, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "email.opened"}, params)
+	got, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "email.opened"}, params)
 	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteWebhookTestResult)
-	require.Truef(t, ok, "got %T", res)
 	assert.False(t, got.Delivered)
 	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, got.Kind.Value)
 	assert.Equal(t, int32(http.StatusGone), got.Status.Value)
@@ -74,7 +69,6 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	require.Len(t, entries, 1)
 	assert.Equal(t, "webhook_endpoint", entries[0].Target.Type)
 
-	blank, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: ""}, params)
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteWebhooksTestUnprocessableEntity), blank)
+	_, err = owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: ""}, params)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

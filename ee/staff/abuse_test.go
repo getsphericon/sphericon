@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -21,16 +22,14 @@ import (
 func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffExemptionChange {
 	t.Helper()
 	wid := staffeeapi.WorkspaceId(id)
-	var res any
+	var change *staffeeapi.StaffExemptionChange
 	var err error
 	if exempt {
-		res, err = c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: wid})
+		change, err = c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: wid})
 	} else {
-		res, err = c.StaffWorkspacesUnexempt(t.Context(), staffeeapi.StaffWorkspacesUnexemptParams{WorkspaceId: wid})
+		change, err = c.StaffWorkspacesUnexempt(t.Context(), staffeeapi.StaffWorkspacesUnexemptParams{WorkspaceId: wid})
 	}
 	require.NoError(t, err)
-	change, ok := res.(*staffeeapi.StaffExemptionChange)
-	require.Truef(t, ok, "got %T", res)
 	return change
 }
 
@@ -60,10 +59,9 @@ func TestExemptingAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: "NoSuchId"})
+	_, err := c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: "NoSuchId"})
 
-	require.NoError(t, err)
-	assert.IsType(t, &staffeeapi.StaffWorkspacesExemptNotFound{}, res)
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
 }
 
 func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) {
@@ -71,24 +69,22 @@ func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) 
 	c, _ := h.staffSession(t)
 
 	page := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Search: staffeeapi.NewOptString(fixtures.KramericaPublicID)})
-	res := h.suspend(t, c, fixtures.KramericaPublicID, "verified abuse")
+	change := h.suspend(t, c, fixtures.KramericaPublicID, "verified abuse")
 
 	require.Len(t, page.Items, 1)
 	assert.True(t, page.Items[0].Exempt)
-	change, ok := res.(*staffeeapi.StaffSuspensionChange)
-	require.True(t, ok)
 	assert.True(t, change.Changed)
 }
 
 func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	before := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
+	before := h.workspaceDetail(t, c, fixtures.HooliPublicID)
 	require.False(t, before.Abuse.ClearedAt.Set)
 
 	h.unsuspend(t, c, fixtures.HooliPublicID)
 
-	after := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
+	after := h.workspaceDetail(t, c, fixtures.HooliPublicID)
 	require.True(t, after.Abuse.ClearedAt.Set)
 	assert.WithinDuration(t, time.Now(), time.Time(after.Abuse.ClearedAt.Value), time.Minute)
 }
@@ -112,7 +108,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	notified := time.Now().Add(-time.Hour)
 	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
-	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
+	detail := h.workspaceDetail(t, c, fixtures.SoylentPublicID)
 
 	require.True(t, detail.Abuse.Warning.Set, "its rates are over the limits")
 	assert.Equal(t, "mail.soylent.test", detail.Abuse.Warning.Value.Domain)
@@ -126,7 +122,7 @@ func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 	c, _ := h.staffSession(t)
 	h.setExempt(t, c, fixtures.SoylentPublicID, true)
 
-	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
+	detail := h.workspaceDetail(t, c, fixtures.SoylentPublicID)
 
 	assert.False(t, detail.Abuse.Warning.Set)
 	assert.True(t, detail.Abuse.Exempt)
@@ -142,12 +138,10 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 	require.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
 	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, "emails:send"))
 
-	res, err := vandelay.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
+	_, err = vandelay.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
 		TemplateId: externalapi.EntityId(int64(fixtures.TemplateVandelayID)), Destination: "held@example.com",
 	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
 
-	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
-	require.True(t, ok, "a send is refused with a 4xx")
+	held := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "a send is refused with a 4xx")
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 }

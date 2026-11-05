@@ -5,15 +5,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 func TestBroadcastStatsRates(t *testing.T) {
 	// 100 targeted, 80 delivered, 40 opened, 20 clicked, 5 unsubscribed, 20 failed.
 	got := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
-		Channel:      broadcast.ChannelEmail,
+		Channel:      channels.Email,
 		Recipients:   100,
 		Sent:         80,
 		Opened:       40,
@@ -70,7 +70,7 @@ func TestBroadcastStatsZeroDenominators(t *testing.T) {
 // are null, not zero; what it does report passes through.
 func TestBroadcastStatsTelegramReportsNoOpensOrDelivery(t *testing.T) {
 	got := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
-		Channel: broadcast.ChannelTelegram, Recipients: 10, Sent: 6, Skipped: 3, Failed: 1, Clicked: 2,
+		Channel: channels.Telegram, Recipients: 10, Sent: 6, Skipped: 3, Failed: 1, Clicked: 2,
 	}.Figures())
 
 	assert.True(t, got.OpenedCount.Null)
@@ -92,10 +92,10 @@ func TestBroadcastStatsTelegramReportsNoOpensOrDelivery(t *testing.T) {
 // undelivered: it says bounced.
 func TestBroadcastStatsSMSReportsDeliveredAndUndelivered(t *testing.T) {
 	sms := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
-		Channel: broadcast.ChannelSms, Recipients: 10, Sent: 9, Delivered: 6, Undelivered: 2,
+		Channel: channels.SMS, Recipients: 10, Sent: 9, Delivered: 6, Undelivered: 2,
 	}.Figures())
 	email := (&resources.ConverterImpl{}).BroadcastStatsToResource(broadcasts.Stats{
-		Channel: broadcast.ChannelEmail, Recipients: 10, Sent: 9, Delivered: 6, Bounced: 1,
+		Channel: channels.Email, Recipients: 10, Sent: 9, Delivered: 6, Bounced: 1,
 	}.Figures())
 
 	assert.EqualValues(t, 6, sms.DeliveredCount.Value)

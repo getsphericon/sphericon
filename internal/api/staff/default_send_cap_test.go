@@ -2,6 +2,7 @@ package staff_test
 
 import (
 	"encoding/json"
+	"net/http"
 	"slices"
 	"testing"
 
@@ -18,33 +19,36 @@ import (
 // Mode, which needs the staff License), recorded in the Instance audit log (ADR 0070), and its
 // absence on a self-hosted Instance.
 
-func setDefaultSendCap(t *testing.T, c *staffapi.Client, perDay int32) staffapi.StaffInstanceSetDefaultSendCapRes {
+func trySetDefaultSendCap(t *testing.T, c *staffapi.Client, perDay int32) (*staffapi.StaffDefaultSendCapChange, error) {
 	t.Helper()
-	res, err := c.StaffInstanceSetDefaultSendCap(t.Context(), &staffapi.StaffDefaultSendCapInput{PerDay: staffapi.MaxPerDay(perDay)})
-	require.NoError(t, err)
-	return res
+	return c.StaffInstanceSetDefaultSendCap(t.Context(), &staffapi.StaffDefaultSendCapInput{PerDay: staffapi.MaxPerDay(perDay)})
 }
 
-func clearDefaultSendCap(t *testing.T, c *staffapi.Client) staffapi.StaffInstanceClearDefaultSendCapRes {
+func tryClearDefaultSendCap(t *testing.T, c *staffapi.Client) (*staffapi.StaffDefaultSendCapChange, error) {
 	t.Helper()
-	res, err := c.StaffInstanceClearDefaultSendCap(t.Context())
-	require.NoError(t, err)
-	return res
+	return c.StaffInstanceClearDefaultSendCap(t.Context())
 }
 
-func defaultSendCapChange(t *testing.T, res any) *staffapi.StaffDefaultSendCapChange {
+// setDefaultSendCap is trySetDefaultSendCap for a change that is expected to be taken.
+func setDefaultSendCap(t *testing.T, c *staffapi.Client, perDay int32) *staffapi.StaffDefaultSendCapChange {
 	t.Helper()
-	change, ok := res.(*staffapi.StaffDefaultSendCapChange)
-	require.Truef(t, ok, "expected the change, got %T", res)
+	change, err := trySetDefaultSendCap(t, c, perDay)
+	require.NoError(t, err)
+	return change
+}
+
+// clearDefaultSendCap is tryClearDefaultSendCap for a change that is expected to be taken.
+func clearDefaultSendCap(t *testing.T, c *staffapi.Client) *staffapi.StaffDefaultSendCapChange {
+	t.Helper()
+	change, err := tryClearDefaultSendCap(t, c)
+	require.NoError(t, err)
 	return change
 }
 
 func auditPage(t *testing.T, c *staffapi.Client, params staffapi.StaffInstanceListAuditEntriesParams) *staffapi.StaffInstanceAuditEntryList {
 	t.Helper()
-	res, err := c.StaffInstanceListAuditEntries(t.Context(), params)
+	page, err := c.StaffInstanceListAuditEntries(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*staffapi.StaffInstanceAuditEntryList)
-	require.Truef(t, ok, "expected a page, got %T", res)
 	return page
 }
 
@@ -76,16 +80,16 @@ func TestAStaffMemberSetsChangesAndClearsTheDefaultSendCap(t *testing.T) {
 	require.True(t, before.DefaultSendCap.IsSet(), "an Instance with Send caps shows the default")
 	assert.True(t, before.DefaultSendCap.Value.PerDay.IsNull(), "an Instance starts with none")
 
-	set := defaultSendCapChange(t, setDefaultSendCap(t, c, 500))
+	set := setDefaultSendCap(t, c, 500)
 	assert.True(t, set.Changed)
 	assert.Equal(t, staffapi.NewNilMaxPerDay(500), set.DefaultSendCap.PerDay)
 
-	changed := defaultSendCapChange(t, setDefaultSendCap(t, c, 2000))
+	changed := setDefaultSendCap(t, c, 2000)
 	afterChange := instanceState(t, c)
 	assert.True(t, changed.Changed)
 	assert.Equal(t, staffapi.NewNilMaxPerDay(2000), afterChange.DefaultSendCap.Value.PerDay)
 
-	cleared := defaultSendCapChange(t, clearDefaultSendCap(t, c))
+	cleared := clearDefaultSendCap(t, c)
 	afterClear := instanceState(t, c)
 	assert.True(t, cleared.Changed)
 	assert.True(t, cleared.DefaultSendCap.PerDay.IsNull())
@@ -109,11 +113,11 @@ func TestSettingTheSameDefaultSendCapAndClearingNoneChangeNothing(t *testing.T) 
 	h := newLicensedHarness(t)
 	c := h.console(t)
 
-	none := defaultSendCapChange(t, clearDefaultSendCap(t, c))
+	none := clearDefaultSendCap(t, c)
 	assert.False(t, none.Changed, "an Instance with no default stays as it was")
 
 	setDefaultSendCap(t, c, 500)
-	same := defaultSendCapChange(t, setDefaultSendCap(t, c, 500))
+	same := setDefaultSendCap(t, c, 500)
 	assert.False(t, same.Changed)
 	assert.Equal(t, staffapi.NewNilMaxPerDay(500), same.DefaultSendCap.PerDay)
 
@@ -138,9 +142,8 @@ func TestTheInstanceAuditLogIsReadPageByPageNewestFirst(t *testing.T) {
 	recorded := diffs(t, append(first.Items, last.Items...))
 	assert.Equal(t, fixtureLog, recorded)
 
-	bad, err := c.StaffInstanceListAuditEntries(t.Context(), staffapi.StaffInstanceListAuditEntriesParams{Cursor: staffapi.NewOptString("nope")})
-	require.NoError(t, err)
-	assert.IsType(t, &staffapi.StaffInstanceListAuditEntriesBadRequest{}, bad)
+	_, err := c.StaffInstanceListAuditEntries(t.Context(), staffapi.StaffInstanceListAuditEntriesParams{Cursor: staffapi.NewOptString("nope")})
+	testhelper.StaffRefusal(t, err, http.StatusBadRequest)
 }
 
 // A self-hosted Instance has no Send cap: the default's endpoints are not found whatever the
@@ -159,12 +162,12 @@ func TestASelfHostedInstanceHasNoDefaultSendCap(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			c := build(t).console(t)
 
-			set := setDefaultSendCap(t, c, 500)
-			cleared := clearDefaultSendCap(t, c)
+			_, setErr := trySetDefaultSendCap(t, c, 500)
+			_, clearErr := tryClearDefaultSendCap(t, c)
 			state := instanceState(t, c)
 			log := auditPage(t, c, staffapi.StaffInstanceListAuditEntriesParams{})
-			assert.IsType(t, &staffapi.StaffInstanceSetDefaultSendCapNotFound{}, set)
-			assert.IsType(t, &staffapi.StaffInstanceClearDefaultSendCapNotFound{}, cleared)
+			testhelper.StaffRefusal(t, setErr, http.StatusNotFound)
+			testhelper.StaffRefusal(t, clearErr, http.StatusNotFound)
 			assert.False(t, state.DefaultSendCap.IsSet())
 			assert.Equal(t, fixtureLog, diffs(t, log.Items), "the refused calls record nothing")
 		})

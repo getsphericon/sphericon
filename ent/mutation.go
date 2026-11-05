@@ -81,8 +81,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 const (
@@ -9201,7 +9204,7 @@ type BroadcastMutation struct {
 	updated_at         *time.Time
 	archived_at        *time.Time
 	name               *string
-	channel            *broadcast.Channel
+	channel            *channels.Channel
 	subject            *string
 	from_name          *string
 	from_email         *string
@@ -9536,12 +9539,12 @@ func (m *BroadcastMutation) ResetName() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *BroadcastMutation) SetChannel(b broadcast.Channel) {
-	m.channel = &b
+func (m *BroadcastMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *BroadcastMutation) Channel() (r broadcast.Channel, exists bool) {
+func (m *BroadcastMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -9552,7 +9555,7 @@ func (m *BroadcastMutation) Channel() (r broadcast.Channel, exists bool) {
 // OldChannel returns the old "channel" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldChannel(ctx context.Context) (v broadcast.Channel, err error) {
+func (m *BroadcastMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -11014,7 +11017,7 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case broadcast.FieldChannel:
-		v, ok := value.(broadcast.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -13815,7 +13818,7 @@ type ConfirmationMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	channel          *confirmation.Channel
+	channel          *channels.Channel
 	destination      *string
 	provenance       *confirmation.Provenance
 	wording          *string
@@ -14044,12 +14047,12 @@ func (m *ConfirmationMutation) ResetWorkspaceID() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *ConfirmationMutation) SetChannel(c confirmation.Channel) {
+func (m *ConfirmationMutation) SetChannel(c channels.Channel) {
 	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *ConfirmationMutation) Channel() (r confirmation.Channel, exists bool) {
+func (m *ConfirmationMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -14060,7 +14063,7 @@ func (m *ConfirmationMutation) Channel() (r confirmation.Channel, exists bool) {
 // OldChannel returns the old "channel" field's value of the Confirmation entity.
 // If the Confirmation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ConfirmationMutation) OldChannel(ctx context.Context) (v confirmation.Channel, err error) {
+func (m *ConfirmationMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -14554,7 +14557,7 @@ func (m *ConfirmationMutation) SetField(name string, value ent.Value) error {
 		m.SetWorkspaceID(v)
 		return nil
 	case confirmation.FieldChannel:
-		v, ok := value.(confirmation.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -25199,8 +25202,8 @@ type IntegrationMutation struct {
 	updated_at                 *time.Time
 	discarded_at               *time.Time
 	name                       *string
-	channel                    *integration.Channel
-	provider                   *integration.Provider
+	channel                    *channels.Channel
+	provider                   *providers.Provider
 	config_encrypted           *string
 	preset                     *string
 	params_encrypted           *string
@@ -25215,7 +25218,7 @@ type IntegrationMutation struct {
 	addprovider_max_per_second *int
 	provider_max_per_day       *int
 	addprovider_max_per_day    *int
-	provider_enforcement       *integration.ProviderEnforcement
+	provider_enforcement       *providers.Enforcement
 	provider_sandbox           *bool
 	provider_refused_at        *time.Time
 	provider_quota_checked_at  *time.Time
@@ -25537,12 +25540,12 @@ func (m *IntegrationMutation) ResetName() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *IntegrationMutation) SetChannel(i integration.Channel) {
-	m.channel = &i
+func (m *IntegrationMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *IntegrationMutation) Channel() (r integration.Channel, exists bool) {
+func (m *IntegrationMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -25553,7 +25556,7 @@ func (m *IntegrationMutation) Channel() (r integration.Channel, exists bool) {
 // OldChannel returns the old "channel" field's value of the Integration entity.
 // If the Integration object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldChannel(ctx context.Context) (v integration.Channel, err error) {
+func (m *IntegrationMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -25573,12 +25576,12 @@ func (m *IntegrationMutation) ResetChannel() {
 }
 
 // SetProvider sets the "provider" field.
-func (m *IntegrationMutation) SetProvider(i integration.Provider) {
-	m.provider = &i
+func (m *IntegrationMutation) SetProvider(pr providers.Provider) {
+	m.provider = &pr
 }
 
 // Provider returns the value of the "provider" field in the mutation.
-func (m *IntegrationMutation) Provider() (r integration.Provider, exists bool) {
+func (m *IntegrationMutation) Provider() (r providers.Provider, exists bool) {
 	v := m.provider
 	if v == nil {
 		return
@@ -25589,7 +25592,7 @@ func (m *IntegrationMutation) Provider() (r integration.Provider, exists bool) {
 // OldProvider returns the old "provider" field's value of the Integration entity.
 // If the Integration object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProvider(ctx context.Context) (v integration.Provider, err error) {
+func (m *IntegrationMutation) OldProvider(ctx context.Context) (v providers.Provider, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldProvider is only allowed on UpdateOne operations")
 	}
@@ -26131,12 +26134,12 @@ func (m *IntegrationMutation) ResetProviderMaxPerDay() {
 }
 
 // SetProviderEnforcement sets the "provider_enforcement" field.
-func (m *IntegrationMutation) SetProviderEnforcement(ie integration.ProviderEnforcement) {
-	m.provider_enforcement = &ie
+func (m *IntegrationMutation) SetProviderEnforcement(pr providers.Enforcement) {
+	m.provider_enforcement = &pr
 }
 
 // ProviderEnforcement returns the value of the "provider_enforcement" field in the mutation.
-func (m *IntegrationMutation) ProviderEnforcement() (r integration.ProviderEnforcement, exists bool) {
+func (m *IntegrationMutation) ProviderEnforcement() (r providers.Enforcement, exists bool) {
 	v := m.provider_enforcement
 	if v == nil {
 		return
@@ -26147,7 +26150,7 @@ func (m *IntegrationMutation) ProviderEnforcement() (r integration.ProviderEnfor
 // OldProviderEnforcement returns the old "provider_enforcement" field's value of the Integration entity.
 // If the Integration object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderEnforcement(ctx context.Context) (v *integration.ProviderEnforcement, err error) {
+func (m *IntegrationMutation) OldProviderEnforcement(ctx context.Context) (v *providers.Enforcement, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldProviderEnforcement is only allowed on UpdateOne operations")
 	}
@@ -26841,14 +26844,14 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case integration.FieldChannel:
-		v, ok := value.(integration.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetChannel(v)
 		return nil
 	case integration.FieldProvider:
-		v, ok := value.(integration.Provider)
+		v, ok := value.(providers.Provider)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -26925,7 +26928,7 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 		m.SetProviderMaxPerDay(v)
 		return nil
 	case integration.FieldProviderEnforcement:
-		v, ok := value.(integration.ProviderEnforcement)
+		v, ok := value.(providers.Enforcement)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -36306,7 +36309,7 @@ type OutboundMessageMutation struct {
 	updated_at                 *time.Time
 	kind                       *outboundmessage.Kind
 	idempotency_key            *string
-	channel                    *outboundmessage.Channel
+	channel                    *channels.Channel
 	destination                *string
 	sending_source             *string
 	sending_domain             *string
@@ -36637,12 +36640,12 @@ func (m *OutboundMessageMutation) ResetIdempotencyKey() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *OutboundMessageMutation) SetChannel(o outboundmessage.Channel) {
-	m.channel = &o
+func (m *OutboundMessageMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *OutboundMessageMutation) Channel() (r outboundmessage.Channel, exists bool) {
+func (m *OutboundMessageMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -36653,7 +36656,7 @@ func (m *OutboundMessageMutation) Channel() (r outboundmessage.Channel, exists b
 // OldChannel returns the old "channel" field's value of the OutboundMessage entity.
 // If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboundMessageMutation) OldChannel(ctx context.Context) (v outboundmessage.Channel, err error) {
+func (m *OutboundMessageMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -38519,7 +38522,7 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		m.SetIdempotencyKey(v)
 		return nil
 	case outboundmessage.FieldChannel:
-		v, ok := value.(outboundmessage.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -55084,7 +55087,7 @@ type SuppressionMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	channel          *suppression.Channel
+	channel          *channels.Channel
 	destination      *string
 	reason           *suppression.Reason
 	lifted_at        *time.Time
@@ -55311,12 +55314,12 @@ func (m *SuppressionMutation) ResetWorkspaceID() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *SuppressionMutation) SetChannel(s suppression.Channel) {
-	m.channel = &s
+func (m *SuppressionMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *SuppressionMutation) Channel() (r suppression.Channel, exists bool) {
+func (m *SuppressionMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -55327,7 +55330,7 @@ func (m *SuppressionMutation) Channel() (r suppression.Channel, exists bool) {
 // OldChannel returns the old "channel" field's value of the Suppression entity.
 // If the Suppression object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SuppressionMutation) OldChannel(ctx context.Context) (v suppression.Channel, err error) {
+func (m *SuppressionMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -55709,7 +55712,7 @@ func (m *SuppressionMutation) SetField(name string, value ent.Value) error {
 		m.SetWorkspaceID(v)
 		return nil
 	case suppression.FieldChannel:
-		v, ok := value.(suppression.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -58839,7 +58842,7 @@ type UnsubscribeMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	channel          *unsubscribe.Channel
+	channel          *channels.Channel
 	destination      *string
 	sending_source   *string
 	via              *unsubscribe.Via
@@ -59066,12 +59069,12 @@ func (m *UnsubscribeMutation) ResetWorkspaceID() {
 }
 
 // SetChannel sets the "channel" field.
-func (m *UnsubscribeMutation) SetChannel(u unsubscribe.Channel) {
-	m.channel = &u
+func (m *UnsubscribeMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
 }
 
 // Channel returns the value of the "channel" field in the mutation.
-func (m *UnsubscribeMutation) Channel() (r unsubscribe.Channel, exists bool) {
+func (m *UnsubscribeMutation) Channel() (r channels.Channel, exists bool) {
 	v := m.channel
 	if v == nil {
 		return
@@ -59082,7 +59085,7 @@ func (m *UnsubscribeMutation) Channel() (r unsubscribe.Channel, exists bool) {
 // OldChannel returns the old "channel" field's value of the Unsubscribe entity.
 // If the Unsubscribe object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsubscribeMutation) OldChannel(ctx context.Context) (v unsubscribe.Channel, err error) {
+func (m *UnsubscribeMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
 	}
@@ -59464,7 +59467,7 @@ func (m *UnsubscribeMutation) SetField(name string, value ent.Value) error {
 		m.SetWorkspaceID(v)
 		return nil
 	case unsubscribe.FieldChannel:
-		v, ok := value.(unsubscribe.Channel)
+		v, ok := value.(channels.Channel)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -64498,7 +64501,7 @@ type WebhookEndpointMutation struct {
 	consecutive_failures    *int
 	addconsecutive_failures *int
 	failing_since           *time.Time
-	last_error_kind         *webhookendpoint.LastErrorKind
+	last_error_kind         *webhook.ErrorKind
 	last_error_status       *int
 	addlast_error_status    *int
 	last_failure_at         *time.Time
@@ -65029,12 +65032,12 @@ func (m *WebhookEndpointMutation) ResetFailingSince() {
 }
 
 // SetLastErrorKind sets the "last_error_kind" field.
-func (m *WebhookEndpointMutation) SetLastErrorKind(wek webhookendpoint.LastErrorKind) {
-	m.last_error_kind = &wek
+func (m *WebhookEndpointMutation) SetLastErrorKind(wk webhook.ErrorKind) {
+	m.last_error_kind = &wk
 }
 
 // LastErrorKind returns the value of the "last_error_kind" field in the mutation.
-func (m *WebhookEndpointMutation) LastErrorKind() (r webhookendpoint.LastErrorKind, exists bool) {
+func (m *WebhookEndpointMutation) LastErrorKind() (r webhook.ErrorKind, exists bool) {
 	v := m.last_error_kind
 	if v == nil {
 		return
@@ -65045,7 +65048,7 @@ func (m *WebhookEndpointMutation) LastErrorKind() (r webhookendpoint.LastErrorKi
 // OldLastErrorKind returns the old "last_error_kind" field's value of the WebhookEndpoint entity.
 // If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldLastErrorKind(ctx context.Context) (v *webhookendpoint.LastErrorKind, err error) {
+func (m *WebhookEndpointMutation) OldLastErrorKind(ctx context.Context) (v *webhook.ErrorKind, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldLastErrorKind is only allowed on UpdateOne operations")
 	}
@@ -65488,7 +65491,7 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		m.SetFailingSince(v)
 		return nil
 	case webhookendpoint.FieldLastErrorKind:
-		v, ok := value.(webhookendpoint.LastErrorKind)
+		v, ok := value.(webhook.ErrorKind)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

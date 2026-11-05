@@ -19,102 +19,8 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -152,102 +58,8 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -286,102 +98,8 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "RFC 7807 payload too large response: the body exceeds the size cap (ADR 0025)",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              }
-            },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -576,16 +294,6 @@
           }
         }
       },
-      "ConflictProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 conflict response"
-      },
       "CountryCode": {
         "type": "string",
         "pattern": "^[A-Z]{2}$",
@@ -607,118 +315,11 @@
         "format": "int64",
         "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can\ntell a malformed id from a valid one without trying it. Eighteen digits is the most a key\nreaches, so every id the schema admits fits an int64."
       },
-      "ForbiddenProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 forbidden response"
-      },
-      "GoneProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
-      },
       "ImageUrl": {
         "type": "string",
         "maxLength": 2048,
         "pattern": "^https://\\S+$",
         "description": "The https URL of an image"
-      },
-      "InUseProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/InUseProblemDetails"
-          }
-        },
-        "description": "RFC 7807 conflict response for a removal refused because live work still uses the row\n(ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,\nIntegration, Sending domain or Automation answers it."
-      },
-      "InUseProblemDetails": {
-        "type": "object",
-        "required": ["usedBy"],
-        "properties": {
-          "code": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ProblemCode"
-              }
-            ],
-            "description": "Why the request was refused, when the client should act on it"
-          },
-          "type": {
-            "type": "string",
-            "description": "A URI reference that identifies the problem type"
-          },
-          "title": {
-            "type": "string",
-            "description": "A short, human-readable summary of the problem type"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32",
-            "description": "HTTP status code"
-          },
-          "detail": {
-            "type": "string",
-            "description": "A human-readable explanation specific to this occurrence"
-          },
-          "instance": {
-            "type": "string",
-            "description": "A URI reference that identifies the specific occurrence"
-          },
-          "errors": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "description": "Validation errors grouped by field"
-          },
-          "form": {
-            "type": "string",
-            "description": "Form-level validation error"
-          },
-          "fields": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Field validation errors"
-          },
-          "retryAfter": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
-          },
-          "debug": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ProblemDebug"
-              }
-            ],
-            "description": "Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)"
-          },
-          "usedBy": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UsedBy"
-            },
-            "description": "The live rows that use the one a removal was refused for, never empty"
-          }
-        },
-        "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
       },
       "JsonObject": {
         "type": "object",
@@ -730,36 +331,6 @@
         "maxLength": 35,
         "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
         "description": "A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)"
-      },
-      "NotFoundProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 not found response"
-      },
-      "PaymentRequiredProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
-      },
-      "PreconditionRequiredProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Sign-up browser needs a password, ADR 0030)"
       },
       "ProblemCode": {
         "type": "string",
@@ -864,6 +435,20 @@
               }
             ],
             "description": "Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsedBy"
+            },
+            "description": "A removal refused because live work still uses the row (a 409, ADR 0049): the rows that\nuse it, never empty"
+          },
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SoleOwnedWorkspace"
+            },
+            "description": "A refused User deletion (ADR 0050): the live Workspaces the User is the only Owner of, each\nhanded over or deleted first; empty when the refusal is another rule's"
           }
         },
         "description": "RFC 7807 Problem Details"
@@ -872,6 +457,25 @@
         "type": "string",
         "maxLength": 35,
         "description": "A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and\nnumbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422)."
+      },
+      "SoleOwnedWorkspace": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          }
+        },
+        "description": "A Workspace the User is the only Owner of, which blocks User deletion"
       },
       "TimeZoneName": {
         "type": "string"

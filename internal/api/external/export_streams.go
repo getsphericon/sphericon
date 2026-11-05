@@ -19,7 +19,7 @@ func (h *Handlers) exportLicensed() bool {
 // ExportEvents serves the Events stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header. A stream added later is this handler with its own typed responses
 // and its own exportstream page function.
-func (h *Handlers) ExportEvents(ctx context.Context, params externalapi.ExportEventsParams) (externalapi.ExportEventsRes, error) {
+func (h *Handlers) ExportEvents(ctx context.Context, params externalapi.ExportEventsParams) (*externalapi.ExportEventsOKHeaders, error) {
 	if !h.exportLicensed() {
 		return nil, exportstream.ErrNotOffered
 	}

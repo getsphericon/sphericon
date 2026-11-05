@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (siteapi.SiteSegmentsListRes, error) {
+func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (*siteapi.SiteSegmentsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	page, err := h.segments.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
@@ -24,7 +24,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 	return mapper.SegmentsListPage(page), nil
 }
 
-func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
+func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.SegmentCreate(req)
@@ -39,7 +39,7 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 	return &res, nil
 }
 
-func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegmentsGetParams) (siteapi.SiteSegmentsGetRes, error) {
+func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegmentsGetParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -51,7 +51,7 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 	return &res, nil
 }
 
-func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (siteapi.SiteSegmentsUpdateRes, error) {
+func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -69,7 +69,7 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 // SiteSegmentsArchive archives a segment (ADR 0049): it leaves the list and new work, and a
 // sent Broadcast's report still names it. A draft Broadcast refuses it with 409.
-func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (siteapi.SiteSegmentsArchiveRes, error) {
+func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -82,7 +82,7 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 }
 
 // SiteSegmentsUnarchive restores an archived segment to the list.
-func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.SiteSegmentsUnarchiveParams) (siteapi.SiteSegmentsUnarchiveRes, error) {
+func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.SiteSegmentsUnarchiveParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -97,7 +97,7 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 // SiteSegmentsPreview reports how many *deliverable* (active) contacts match a
 // rule definition. It applies the same active filter the broadcast send path
 // uses, so the previewed number matches what a broadcast to this segment ships.
-func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, _ siteapi.SiteSegmentsPreviewParams) (siteapi.SiteSegmentsPreviewRes, error) {
+func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, _ siteapi.SiteSegmentsPreviewParams) (*siteapi.SitePreviewSegmentResult, error) {
 	ws := workspaceScope(ctx)
 
 	def, err := condition.EncodeOptional(req.Condition)
@@ -123,7 +123,7 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 
 // SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
 // like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001).
-func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (siteapi.SiteSegmentContactsListRes, error) {
+func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (*siteapi.SiteSegmentContactsListOK, error) {
 	ws := workspaceScope(ctx)
 
 	page, err := h.segments.Contacts(ctx, ws, int64(params.SegmentId), pagination.ParamsOf(params.Page, params.PageSize))

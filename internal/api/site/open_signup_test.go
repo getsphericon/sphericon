@@ -25,9 +25,8 @@ func selfHosted(t *testing.T) *testhelper.TestEnv {
 func TestASecondPersonSignsUpOnASelfHostedInstanceAndGetsTheirOwnWorkspace(t *testing.T) {
 	env := selfHosted(t)
 
-	res := signUpWithPassword(t, env, "Grace Hopper", "grace@example.com", formPassword)
+	signUpWithPassword(t, env, "Grace Hopper", "grace@example.com", formPassword)
 
-	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
 	rec := postLogin(t, env, "grace@example.com", formPassword)
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())

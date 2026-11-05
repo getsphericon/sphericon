@@ -49,7 +49,7 @@ func TestAMemberMakesAConnectionOfHerOwn(t *testing.T) {
 
 	listed, err := mary.SiteConnectionsList(t.Context(), siteapi.SiteConnectionsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	connections := *listed.(*siteapi.SiteConnectionsListOKApplicationJSON)
+	connections := listed
 	require.Len(t, connections, 1)
 	assert.Equal(t, siteapi.EntityId(row.ID), connections[0].ID)
 	assert.Equal(t, "Fixture Connector", connections[0].Name)
@@ -58,14 +58,12 @@ func TestAMemberMakesAConnectionOfHerOwn(t *testing.T) {
 
 	tokens, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	for _, token := range *tokens.(*siteapi.SiteTokensListOKApplicationJSON) {
+	for _, token := range tokens {
 		assert.NotEqual(t, siteapi.EntityId(row.ID), token.ID, "a Connection is not shown with the API tokens")
 	}
-	personal, err := mary.SitePersonalTokensList(t.Context(), siteapi.SitePersonalTokensListParams{WorkspaceId: fixtures.AcmePublicID})
+	personalTokens, err := mary.SitePersonalTokensList(t.Context(), siteapi.SitePersonalTokensListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	personalTokens, isList := personal.(*siteapi.SitePersonalTokensListOKApplicationJSON)
-	require.Truef(t, isList, "got %#v", personal)
-	assert.Empty(t, *personalTokens, "a Connection is not a Personal token")
+	assert.Empty(t, personalTokens, "a Connection is not a Personal token")
 }
 
 // The consent screen learns what the User may grant, and the server refuses a scope whose
@@ -83,7 +81,7 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 		"webhooks:read":      siteapi.PermissionWebhooksManage,
 		"contacts:export":    siteapi.PermissionContactsExport,
 		"suppressions:write": siteapi.PermissionSuppressionsManage,
-	}, described.(*siteapi.SiteOAuthAuthorizationRequest).RequiredPermissions)
+	}, described.RequiredPermissions)
 
 	for name, in := range map[string]siteapi.SiteOAuthDecisionInput{
 		"a granted scope":      approval("contacts:read webhooks:read", false),
@@ -96,11 +94,9 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 		}(),
 	} {
 		t.Run(name, func(t *testing.T) {
-			res, err := mary.SiteOAuthDecide(t.Context(), &in)
+			_, err := mary.SiteOAuthDecide(t.Context(), &in)
 
-			require.NoError(t, err)
-			refused, isRefused := res.(*siteapi.SiteOAuthDecideForbidden)
-			require.Truef(t, isRefused, "got %T", res)
+			refused := testhelper.SiteRefusal(t, err, http.StatusForbidden)
 			assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.Code.Value)
 			issued, err := env.DB.OAuthCode.Query().Where(oauthcode.MembershipID(fixtures.AcmeMemberMembershipID)).Exist(t.Context())
 			require.NoError(t, err)
@@ -112,11 +108,10 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 // demoteVehementAdmin makes the Vehement admin Ada a member.
 func demoteVehementAdmin(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	demoted, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
+	_, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementAdminMembershipID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
 }
 
 // A Connection can do what its scopes and its User's current Role allow: an admin's Connection to
@@ -125,16 +120,13 @@ func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
 	env := testhelper.Setup(t)
 	api := env.ExternalWithToken(t, adasConnection)
 
-	before, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
+	_, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksListOK{}, before)
 
 	demoteVehementAdmin(t, env)
 
-	after, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
-	require.NoError(t, err)
-	refused, isRefused := after.(*externalapi.WebhooksListForbidden)
-	require.Truef(t, isRefused, "got %T", after)
+	_, err = api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
+	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 
@@ -152,9 +144,8 @@ func TestAnOwnerOrAdminGrantsExportAndSuppressions(t *testing.T) {
 			require.NoError(t, err)
 			assert.IsType(t, &externalapi.ContactsExportOKApplicationOctetStreamHeaders{}, exported)
 
-			suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
+			_, err = api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
 			require.NoError(t, err)
-			assert.IsType(t, &externalapi.SuppressionResource{}, suppressed)
 		})
 	}
 }
@@ -168,16 +159,12 @@ func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 
 	demoteVehementAdmin(t, env)
 
-	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactVehementVicID))})
-	require.NoError(t, err)
-	refusedExport, isRefused := exported.(*externalapi.ContactsExportForbidden)
-	require.Truef(t, isRefused, "got %T", exported)
+	_, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactVehementVicID))})
+	refusedExport := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedExport.Code.Value)
 
-	suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
-	require.NoError(t, err)
-	refusedSuppression, isRefused := suppressed.(*externalapi.SuppressionsCreateForbidden)
-	require.Truef(t, isRefused, "got %T", suppressed)
+	_, err = api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
+	refusedSuppression := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedSuppression.Code.Value)
 	added, err := env.DB.Suppression.Query().Where(suppression.Destination("bounded@example.com")).Exist(t.Context())
 	require.NoError(t, err)
@@ -189,9 +176,8 @@ func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 func assertMelsConnectionEnded(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
-	listed, err := env.ExternalWithToken(t, melsConnection).ContactsList(t.Context(), externalapi.ContactsListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, listed)
+	_, err := env.ExternalWithToken(t, melsConnection).ContactsList(t.Context(), externalapi.ContactsListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 	assert.Equal(t, "invalid_grant", decodeToken(t, exchange(t, env, refreshForm(fixtures.VehementMemberRefreshToken))).Error)
 	remaining, err := env.DB.ApiToken.Query().Where(apitoken.MembershipID(fixtures.VehementMemberMembershipID)).Exist(t.Context())
 	require.NoError(t, err)
@@ -204,9 +190,8 @@ func TestLeavingEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	left, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.VehementPublicID})
+	err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.VehementPublicID})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, left)
 
 	assertMelsConnectionEnded(t, env)
 }
@@ -216,10 +201,9 @@ func TestRemovalEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	removed, err := env.SiteActor(t, fixtures.VehementAdminAdaEmail).SiteMembershipsDelete(t.Context(),
+	err := env.SiteActor(t, fixtures.VehementAdminAdaEmail).SiteMembershipsDelete(t.Context(),
 		siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementMemberMembershipID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, removed)
 
 	assertMelsConnectionEnded(t, env)
 }
@@ -229,12 +213,11 @@ func TestUserDeletionEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	deleted, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
+	_, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
 		Email:           fixtures.VehementMemberMelEmail,
 		CurrentPassword: siteapi.NewOptString(fixtures.VehementMemberMelPassword),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, deleted)
 
 	assertMelsConnectionEnded(t, env)
 }
@@ -265,20 +248,18 @@ func TestConnectionsAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 
 	melList, err := mel.SiteConnectionsList(t.Context(), params)
 	require.NoError(t, err)
-	melSees := lo.Map(*melList.(*siteapi.SiteConnectionsListOKApplicationJSON), connectionIDs)
+	melSees := lo.Map(melList, connectionIDs)
 	assert.Equal(t, []siteapi.EntityId{fixtures.VehementMemberConnectionID}, melSees, "a member sees only her own Connection")
-	refused, err := mel.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
-	require.NoError(t, err)
-	assert.IsTypef(t, &siteapi.SiteConnectionsDeleteNotFound{}, refused, "another User's Connection is not the member's to find: got %T", refused)
+	err = mel.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	admin := env.SiteActor(t, fixtures.VehementAdminAdaEmail)
 	adminList, err := admin.SiteConnectionsList(t.Context(), params)
 	require.NoError(t, err)
-	adminSees := lo.Map(*adminList.(*siteapi.SiteConnectionsListOKApplicationJSON), connectionIDs)
+	adminSees := lo.Map(adminList, connectionIDs)
 	assert.ElementsMatch(t, []siteapi.EntityId{owners, fixtures.VehementAdminConnectionID, fixtures.VehementMemberConnectionID}, adminSees, "members:manage sees anyone's")
-	revoked, err := admin.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
+	err = admin.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteConnectionsDeleteNoContent{}, revoked)
 	assert.NotNil(t, connection(t, env, fixtures.VehementOwnerConnectionID).RevokedAt)
 }
 

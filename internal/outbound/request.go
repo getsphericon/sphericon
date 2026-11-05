@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/oklog/ulid/v2"
+
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // The three Request constructors are the only code that derives a Kind, a Source, a Ref
@@ -26,14 +26,14 @@ func broadcastRecipientKey(recipientID int64) string {
 // unsubscribe button, on SMS its text and whether its links are tracked.
 func BroadcastContent(b *ent.Broadcast) (Content, error) {
 	switch b.Channel {
-	case broadcast.ChannelEmail:
+	case channels.Email:
 		return EmailContent{
 			Subject:   lo.FromPtr(b.Subject),
 			Body:      lo.FromPtr(b.Body),
 			FromEmail: lo.FromPtr(b.FromEmail),
 			FromName:  lo.FromPtr(b.FromName),
 		}, nil
-	case broadcast.ChannelTelegram:
+	case channels.Telegram:
 		return TelegramContent{
 			Text:              lo.FromPtr(b.Text),
 			ImageURL:          lo.FromPtr(b.ImageURL),
@@ -41,7 +41,7 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 			NoLinkPreview:     !b.LinkPreview,
 			UnsubscribeButton: lo.FromPtr(b.UnsubscribeButton),
 		}, nil
-	case broadcast.ChannelSms:
+	case channels.SMS:
 		return SMSContent{Text: lo.FromPtr(b.Text), NoLinkTracking: !b.LinkTracking}, nil
 	default:
 		return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
@@ -92,11 +92,11 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integra
 
 // contactDestination is the Contact's Destination on the Channel, "" when it has none: on email its
 // address, on SMS its phone (stored in E.164, ADR 0075).
-func contactDestination(ch messaging.Channel, c *ent.Contact) string {
+func contactDestination(ch channels.Channel, c *ent.Contact) string {
 	switch ch {
-	case messaging.ChannelEmail:
+	case channels.Email:
 		return lo.FromPtr(c.Email)
-	case messaging.ChannelSMS:
+	case channels.SMS:
 		return lo.FromPtr(c.Phone)
 	default:
 		return ""

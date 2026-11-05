@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -191,12 +192,10 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalScoped(t, "contacts:read", "contacts:write").ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	_, err := env.ExternalScoped(t, "contacts:read", "contacts:write").ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
-	require.NoError(t, err)
-	refused, isRefused := res.(*externalapi.ContactsExportForbidden)
-	require.Truef(t, isRefused, "got %T", res)
+	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	assert.Equal(t, "the API token lacks the scope contacts:export", refused.Detail.Value)
 }
 
@@ -205,17 +204,15 @@ func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:export")
 	ctx := context.Background()
 
-	byID, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
+	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactGlobexID)),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportNotFound{}, byID)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 
-	byEmail, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
+	_, err = c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactGlobexEmail),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportNotFound{}, byEmail)
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
@@ -223,14 +220,12 @@ func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:export")
 	ctx := context.Background()
 
-	none, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportUnprocessableEntity{}, none)
+	_, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	both, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
+	_, err = c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID:    externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
 	})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportUnprocessableEntity{}, both)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

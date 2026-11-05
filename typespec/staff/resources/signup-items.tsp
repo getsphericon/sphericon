@@ -107,7 +107,7 @@ model StaffLegalDocumentPublishInput {
 namespace StaffSignupItems {
   /** The Instance's Sign-up items, deleted ones left out, in the order of the sign-up form */
   @get
-  op list(): StaffSignupItemList | UnauthorizedProblem;
+  op list(): StaffSignupItemList | Problem;
 
   /** Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
    * consent, and a second mailings consent are refused (422). */
@@ -117,28 +117,18 @@ namespace StaffSignupItems {
         @statusCode statusCode: 201;
         @body body: StaffSignupItemResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
    * is not the id of every item that is not deleted, exactly once, is refused (422). */
   @put
   @route("/order")
-  op reorder(@body body: StaffSignupItemOrder):
-    | StaffSignupItemList
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | UnprocessableEntityProblem;
+  op reorder(@body body: StaffSignupItemOrder): StaffSignupItemList | Problem;
 
   /** One Sign-up item, a deleted one too */
   @get
   @route("/{id}")
-  op get(@path id: EntityId):
-    | StaffSignupItemResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op get(@path id: EntityId): StaffSignupItemResource | Problem;
 
   /** Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
    * consent, and a second mailings consent are refused (422); a deleted item is not found. */
@@ -146,10 +136,7 @@ namespace StaffSignupItems {
   @route("/{id}")
   op update(@path id: EntityId, @body body: StaffSignupItemUpdate):
     | StaffSignupItemResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 
   /** Delete the Sign-up item: it leaves the sign-up form, its public page and this list at once,
    * and is never restored; its published versions and Users' answers stay. Deleting a deleted item
@@ -157,22 +144,13 @@ namespace StaffSignupItems {
    * until it is unmarked. */
   @delete
   @route("/{id}")
-  op delete(@path id: EntityId):
-    | NoContentResponse
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  op delete(@path id: EntityId): NoContentResponse | Problem;
 
   /** Every published version of the item's Legal document with who published it and when, the
    * latest first */
   @get
   @route("/{id}/versions")
-  op listVersions(@path id: EntityId):
-    | StaffLegalDocumentVersionList
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+  op listVersions(@path id: EntityId): StaffLegalDocumentVersionList | Problem;
 
   /** Save the draft of the item's Legal document. It is edited freely and changes nothing a
    * visitor sees until it is published. A deleted item is not found. */
@@ -180,9 +158,7 @@ namespace StaffSignupItems {
   @route("/{id}/draft")
   op saveDraft(@path id: EntityId, @body body: StaffLegalDocumentDraftInput):
     | StaffSignupItemResource
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem;
+    | Problem;
 
   /** Publish the draft as a new version under a label: it takes effect at once, and is never
    * changed or removed afterwards. A label the item already has, and an item without a draft,
@@ -194,8 +170,5 @@ namespace StaffSignupItems {
         @statusCode statusCode: 201;
         @body body: StaffSignupItemResource;
       }
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | Problem;
 }

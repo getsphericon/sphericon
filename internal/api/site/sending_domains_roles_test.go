@@ -2,9 +2,9 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -23,27 +23,22 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	made, err := member.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "attacker.example"},
+	_, err := member.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "attacker.example"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsCreateForbidden), made)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	deleted, err := member.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsDeleteForbidden), deleted)
+	err = member.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
-	verified, err := member.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsVerifyForbidden), verified)
+	_, err = member.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	// Reading stays open to a member.
-	got, err := member.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: id})
+	_, err = member.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainResource), got)
 
 	// An admin manages them.
-	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteSendingDomainsVerify(ctx,
+	_, err = env.SiteActor(t, fixtures.AdminAliceEmail).SiteSendingDomainsVerify(ctx,
 		siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainResource), ok)
 }

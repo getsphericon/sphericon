@@ -20,14 +20,13 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalAnchor(t)
 
-	res, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+	_, err := c.ContactsBatchUpsert(context.Background(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
 		{Email: externalapi.NewOptNilEmailAddress("import.one@example.org")},
 		{Email: externalapi.NewOptNilEmailAddress("import.two@example.org")},
 		{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
 		{FirstName: externalapi.NewOptNilString("no identity")},
 	}})
 	require.NoError(t, err)
-	require.IsType(t, &externalapi.UpsertContactsResult{}, res)
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
@@ -54,7 +53,7 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	_, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Renamed")},
 		externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
-	_, err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBobID)})
+	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)

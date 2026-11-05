@@ -21,7 +21,7 @@ func actions(items []siteapi.SiteAuditEntryResource) []string {
 	return out
 }
 
-func mustExport(ctx context.Context, t *testing.T, c *siteapi.Client, p siteapi.SiteAuditExportParams) siteapi.SiteAuditExportRes {
+func mustExport(ctx context.Context, t *testing.T, c *siteapi.Client, p siteapi.SiteAuditExportParams) *siteapi.SiteAuditExportOKHeaders {
 	t.Helper()
 	res, err := c.SiteAuditExport(ctx, p)
 	require.NoError(t, err)
@@ -92,8 +92,7 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 			tc.list.WorkspaceId, tc.export.WorkspaceId = fixtures.GlobexPublicID, fixtures.GlobexPublicID
 			res, err := owner.SiteAuditList(ctx, tc.list)
 			require.NoError(t, err)
-			page, ok := res.(*siteapi.SiteAuditEntryList)
-			require.True(t, ok)
+			page := res
 			assert.Equal(t, tc.want, actions(page.Items))
 
 			rows := auditCSV(t, mustExport(ctx, t, owner, tc.export))
@@ -111,14 +110,14 @@ func TestAuditFilteredCursorPaginates(t *testing.T) {
 	}
 	res, err := owner.SiteAuditList(ctx, params)
 	require.NoError(t, err)
-	p1 := res.(*siteapi.SiteAuditEntryList)
+	p1 := res
 	require.Equal(t, []string{"integration.delete"}, actions(p1.Items))
 	require.True(t, p1.NextCursor.IsSet())
 
 	params.Cursor = siteapi.NewOptString(p1.NextCursor.Value)
 	res, err = owner.SiteAuditList(ctx, params)
 	require.NoError(t, err)
-	p2 := res.(*siteapi.SiteAuditEntryList)
+	p2 := res
 	assert.Equal(t, []string{"integration.update"}, actions(p2.Items))
 	assert.Empty(t, p2.NextCursor.Value)
 }

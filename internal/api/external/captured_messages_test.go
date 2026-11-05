@@ -1,6 +1,7 @@
 package external_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,12 +27,10 @@ func TestExternalCapturedMessagesAreListedAndReadWithTheReadScope(t *testing.T) 
 	one, err := c.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: externalapi.EntityId(fixtures.CapturedMessageGlobexWelcomeID)})
 	require.NoError(t, err)
 
-	page, ok := list.(*externalapi.CapturedMessagesListOK)
-	require.Truef(t, ok, "got %T", list)
+	page := list
 	require.Len(t, page.Items, 2)
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexWelcomeID), int64(page.Items[0].ID), "newest first")
-	msg, ok := one.(*externalapi.CapturedMessageResource)
-	require.Truef(t, ok, "got %T", one)
+	msg := one
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, msg.Subject)
 	assert.Contains(t, msg.HTML, "start here")
 	assert.Equal(t, []string{"https://globex.test/start"}, msg.Links)
@@ -44,19 +43,15 @@ func TestExternalCapturedMessagesNeedTheirScopes(t *testing.T) {
 	writer := globexClient(t, env, "captured_messages:write")
 	id := externalapi.EntityId(fixtures.CapturedMessageGlobexWelcomeID)
 
-	noRead, err := writer.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
-	require.NoError(t, err)
-	noReadOne, err := writer.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: id})
-	require.NoError(t, err)
-	noWrite, err := reader.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: id})
-	require.NoError(t, err)
-	noWriteAll, err := reader.CapturedMessagesDeleteAll(t.Context())
-	require.NoError(t, err)
+	_, noRead := writer.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
+	_, noReadOne := writer.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: id})
+	noWrite := reader.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: id})
+	noWriteAll := reader.CapturedMessagesDeleteAll(t.Context())
 
-	assert.IsType(t, &externalapi.CapturedMessagesListForbidden{}, noRead)
-	assert.IsType(t, &externalapi.CapturedMessagesGetForbidden{}, noReadOne)
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteForbidden{}, noWrite)
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteAllForbidden{}, noWriteAll)
+	testhelper.ExternalRefusal(t, noRead, http.StatusForbidden)
+	testhelper.ExternalRefusal(t, noReadOne, http.StatusForbidden)
+	testhelper.ExternalRefusal(t, noWrite, http.StatusForbidden)
+	testhelper.ExternalRefusal(t, noWriteAll, http.StatusForbidden)
 }
 
 func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testing.T) {
@@ -65,23 +60,19 @@ func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testin
 	welcome := externalapi.EntityId(fixtures.CapturedMessageGlobexWelcomeID)
 	others := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceIDNEQ(fixtures.GlobexID)).CountX(t.Context())
 
-	one, err := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: welcome})
-	require.NoError(t, err)
-	again, err := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: welcome})
-	require.NoError(t, err)
-	foreign, err := c.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: externalapi.EntityId(fixtures.CapturedMessageUmbrellaID)})
-	require.NoError(t, err)
+	one := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: welcome})
+	again := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: welcome})
+	_, foreign := c.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: externalapi.EntityId(fixtures.CapturedMessageUmbrellaID)})
 
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteNoContent{}, one)
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteNotFound{}, again)
-	assert.IsType(t, &externalapi.CapturedMessagesGetNotFound{}, foreign, "another Workspace's message is not found")
+	require.NoError(t, one)
+	testhelper.ExternalRefusal(t, again, http.StatusNotFound)
+	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound, "another Workspace's message is not found")
 
-	all, err := c.CapturedMessagesDeleteAll(t.Context())
+	err := c.CapturedMessagesDeleteAll(t.Context())
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteAllNoContent{}, all)
 	list, err := c.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
 	require.NoError(t, err)
-	assert.Empty(t, list.(*externalapi.CapturedMessagesListOK).Items)
+	assert.Empty(t, list.Items)
 	assert.Equal(t, others, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
 }
 
@@ -92,12 +83,11 @@ func TestExternalCapturedMessageOfAnotherWorkspaceIsNeitherListedNorDeleted(t *t
 
 	list, err := c.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
 	require.NoError(t, err)
-	deleted, err := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: foreign})
-	require.NoError(t, err)
+	deleted := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: foreign})
 
-	for _, item := range list.(*externalapi.CapturedMessagesListOK).Items {
+	for _, item := range list.Items {
 		assert.NotEqual(t, int64(foreign), int64(item.ID), "another Workspace's message is not listed")
 	}
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteNotFound{}, deleted)
+	testhelper.ExternalRefusal(t, deleted, http.StatusNotFound)
 	assert.True(t, env.DB.CapturedMessage.Query().Where(capturedmessage.ID(int64(foreign))).ExistX(t.Context()), "and it survives")
 }

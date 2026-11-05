@@ -21,23 +21,19 @@ func TestExternalWebhooksCRUD(t *testing.T) {
 	c := env.ExternalScoped(t, "webhooks:read", "webhooks:write")
 	ctx := context.Background()
 
-	got, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
+	hook, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	hook, ok := got.(*externalapi.WebhookResource)
-	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "https://codebasics.dev/webhooks/sphericon", hook.URL)
 	assert.Equal(t, []string{"contact.created", "email.opened", "email.clicked"}, hook.EventTypes)
 
-	bad, err := c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "not-a-url"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksCreateUnprocessableEntity{}, bad)
+	_, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "not-a-url"})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	created, err := c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{
 		URL: "https://example.com/hook", EventTypes: []string{"contact.created"},
 	})
 	require.NoError(t, err)
-	res, ok := created.(*externalapi.WebhookResource)
-	require.Truef(t, ok, "got %T", created)
+	res := created
 	assert.True(t, res.Enabled)
 	assert.Equal(t, []string{"contact.created"}, res.EventTypes)
 
@@ -46,29 +42,24 @@ func TestExternalWebhooksCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, row.SecretEncrypted)
 
-	upd, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{
+	updated, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{
 		Enabled: externalapi.NewOptBool(false), EventTypes: []string{},
 	}, externalapi.WebhooksUpdateParams{ID: res.ID})
 	require.NoError(t, err)
-	updated, ok := upd.(*externalapi.WebhookResource)
-	require.Truef(t, ok, "got %T", upd)
 	assert.False(t, updated.Enabled)
 	assert.Empty(t, updated.EventTypes)
 	after, err := env.DB.WebhookEndpoint.Get(ctx, row.ID)
 	require.NoError(t, err)
 	assert.Equal(t, row.SecretEncrypted, after.SecretEncrypted, "update keeps the secret")
 
-	badUpd, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{URL: externalapi.NewOptString("ftp://x")},
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{URL: externalapi.NewOptString("ftp://x")},
 		externalapi.WebhooksUpdateParams{ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksUpdateUnprocessableEntity{}, badUpd)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	del, err := c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: res.ID})
+	err = c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksDeleteNoContent{}, del)
-	missing, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: res.ID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksGetNotFound{}, missing)
+	_, err = c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: res.ID})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // The signing secret is never part of any /api response: not on list, get,
@@ -105,29 +96,24 @@ func TestExternalWebhooksScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	res, err := env.ExternalAnonymous(t).WebhooksList(ctx, externalapi.WebhooksListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksListUnauthorized{}, res)
+	_, err := env.ExternalAnonymous(t).WebhooksList(ctx, externalapi.WebhooksListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
 	// Template scopes do not grant webhooks.
 	other := env.ExternalScoped(t, "templates:read", "templates:write")
-	l, err := other.WebhooksList(ctx, externalapi.WebhooksListParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksListForbidden{}, l)
+	_, err = other.WebhooksList(ctx, externalapi.WebhooksListParams{})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 
 	ro := env.ExternalScoped(t, "webhooks:read")
-	g, err := ro.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
+	_, err = ro.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhookResource{}, g)
-	cr, err := ro.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://example.com/x"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksCreateForbidden{}, cr)
-	up, err := ro.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksUpdateForbidden{}, up)
-	de, err := ro.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksDeleteForbidden{}, de)
+
+	_, err = ro.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://example.com/x"})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	_, err = ro.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
+	err = ro.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
+	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 
 func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
@@ -139,18 +125,15 @@ func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {
 	c := env.ExternalScoped(t, "webhooks:read", "webhooks:write")
 	list, err := c.WebhooksList(ctx, externalapi.WebhooksListParams{})
 	require.NoError(t, err)
-	for _, it := range list.(*externalapi.WebhooksListOK).Items {
+	for _, it := range list.Items {
 		assert.NotEqual(t, fixtures.WebhookGlobexURL, it.URL)
 	}
-	g, err := c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksGetNotFound{}, g)
-	u, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Enabled: externalapi.NewOptBool(false)}, externalapi.WebhooksUpdateParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksUpdateNotFound{}, u)
-	d, err := c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: id})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksDeleteNotFound{}, d)
+	_, err = c.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{Enabled: externalapi.NewOptBool(false)}, externalapi.WebhooksUpdateParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	err = c.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: id})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
 }
 
 // audit.entry is selectable on a Webhook endpoint only with an Enterprise license,
@@ -160,18 +143,15 @@ func TestExternalWebhookSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	auditTypes := []string{"audit.entry"}
 
 	licensed := testhelper.Setup(t).ExternalScoped(t, "webhooks:write")
-	res, err := licensed.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
+	_, err := licensed.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhookResource{}, res)
 
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	c := env.ExternalScoped(t, "webhooks:write")
-	res, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksCreateUnprocessableEntity{}, res)
+	_, err = c.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://x.test/audit", EventTypes: auditTypes})
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
-	upd, err := c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{EventTypes: auditTypes},
+	_, err = c.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{EventTypes: auditTypes},
 		externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksUpdateUnprocessableEntity{}, upd)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }

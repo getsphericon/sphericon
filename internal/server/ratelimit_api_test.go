@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/getsphericon/sphericon/config"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const (
@@ -190,19 +190,17 @@ func TestAZeroAPILimitNeverThrottles(t *testing.T) {
 	assert.Empty(t, getAPI(t, env, anchorBearer(), nil).Header().Get("X-Ratelimit-Limit"))
 }
 
-// The generated external client types the 429, so a caller needs no string matching.
+// The generated external client types the 429, so a caller needs no string matching: the problem
+// repeats the wait (the rate limit headers are asserted on the raw answer above).
 func TestTheGeneratedExternalClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{APIPerMinute: 1}))
 	client := env.ExternalAnchor(t)
 
 	_, err := client.AuthMeGet(t.Context())
 	require.NoError(t, err)
-	res, err := client.AuthMeGet(t.Context())
-	require.NoError(t, err)
+	_, err = client.AuthMeGet(t.Context())
 
-	limited, ok := res.(*externalapi.ProblemDetailsHeaders)
-	require.True(t, ok, "got %T", res)
-	assert.Equal(t, int32(60), limited.RetryAfter)
-	assert.Equal(t, int32(1), limited.XRateLimitLimit)
-	assert.Equal(t, int32(http.StatusTooManyRequests), limited.Response.Status.Value)
+	limited := testhelper.ExternalRefusal(t, err, http.StatusTooManyRequests)
+	assert.Equal(t, int32(60), limited.RetryAfter.Value)
+	assert.Equal(t, int32(http.StatusTooManyRequests), limited.Status.Value)
 }

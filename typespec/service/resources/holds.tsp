@@ -79,12 +79,7 @@ namespace ServiceHolds {
   /** The holds of a Workspace that are active now; a lapsed one is not listed */
   @get
   @requiresServiceScopes(#[ServiceScope.holdsWrite])
-  op list(@path workspaceId: WorkspaceId):
-    | HoldList
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | TooManyRequestsProblem;
+  op list(@path workspaceId: WorkspaceId): HoldList | Problem;
 
   /** Set a hold under a key, or renew it by setting it again with a later expiry.
    * Idempotent: setting the same hold twice changes nothing and says so (`changed` false);
@@ -96,13 +91,7 @@ namespace ServiceHolds {
     @path workspaceId: WorkspaceId,
     @path key: string,
     @body body: HoldInput,
-  ):
-    | HoldSetResult
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | UnprocessableEntityProblem
-    | TooManyRequestsProblem;
+  ): HoldSetResult | Problem;
 
   /** Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false. */
   @route("/{key}")
@@ -110,8 +99,5 @@ namespace ServiceHolds {
   @requiresServiceScopes(#[ServiceScope.holdsWrite])
   op clear(@path workspaceId: WorkspaceId, @path key: string):
     | HoldClearResult
-    | BadRequestProblem
-    | UnauthorizedProblem
-    | NotFoundProblem
-    | TooManyRequestsProblem;
+    | Problem;
 }

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/holdreason"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
 )
@@ -52,7 +53,7 @@ func (Broadcast) Fields() []ent.Field {
 		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the
 		// column default only fills the rows that predate it.
 		field.Enum("channel").
-			Values("email", "telegram", "sms").
+			GoType(channels.Channel("")).
 			Immutable().
 			Annotations(entsql.Default("email")),
 		// Email's content: set on an email Broadcast, unset on any other (broadcastContents).

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 )
@@ -26,7 +27,7 @@ type Send struct {
 	// User is the work that sends: a Broadcast, or an Automation for a send step of one of its
 	// versions.
 	User    inuse.User
-	Channel messaging.Channel
+	Channel channels.Channel
 	// Integration is the Integration the send goes through (messaging.Through): the one it names,
 	// else its Channel's default, enabled or not. Nil when it names one that is gone or of another
 	// Channel, or names none while its Channel has no default.
@@ -53,8 +54,7 @@ func Sends(ctx context.Context, s *ent.Scoped) ([]Send, error) {
 	}
 	var sends []Send
 	for _, b := range live {
-		send, err := r.route(ctx, inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name},
-			messaging.Channel(b.Channel), b.IntegrationID, lo.FromPtr(b.FromEmail))
+		send, err := r.route(ctx, inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}, b.Channel, b.IntegrationID, lo.FromPtr(b.FromEmail))
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func sendingVersions(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, err
 }
 
 type routeKey struct {
-	ch messaging.Channel
+	ch channels.Channel
 	id int64
 }
 
@@ -140,7 +140,7 @@ type router struct {
 	through map[routeKey]*ent.Integration
 }
 
-func (r router) route(ctx context.Context, user inuse.User, ch messaging.Channel, id *int64, from string) (Send, error) {
+func (r router) route(ctx context.Context, user inuse.User, ch channels.Channel, id *int64, from string) (Send, error) {
 	key := routeKey{ch, lo.FromPtr(id)}
 	integ, seen := r.through[key]
 	if !seen {

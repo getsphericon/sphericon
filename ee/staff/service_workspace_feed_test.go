@@ -1,6 +1,7 @@
 package staff_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -27,10 +28,8 @@ func feedPage(t *testing.T, c *serviceapi.Client, cursor string, limit int32) *s
 	if limit > 0 {
 		params.Limit = serviceapi.NewOptInt32(limit)
 	}
-	res, err := c.ServiceWorkspaceFeedList(t.Context(), params)
+	page, err := c.ServiceWorkspaceFeedList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*serviceapi.ServiceWorkspaceFeedPage)
-	require.Truef(t, ok, "the feed is answered, got %T", res)
 	return page
 }
 
@@ -222,20 +221,18 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 func TestTheFeedNeedsTheReadWorkspacesScope(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.ServiceClient(t, readOnly).ServiceWorkspaceFeedList(t.Context(), serviceapi.ServiceWorkspaceFeedListParams{})
+	_, err := h.env.ServiceClient(t, readOnly).ServiceWorkspaceFeedList(t.Context(), serviceapi.ServiceWorkspaceFeedListParams{})
 
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceWorkspaceFeedListForbidden{}, res, "a credential without workspaces:read is refused")
+	testhelper.ServiceRefusal(t, err, http.StatusForbidden, "a credential without workspaces:read is refused")
 }
 
 func TestAMalformedCursorIsRefused(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.ServiceClient(t, primary).ServiceWorkspaceFeedList(t.Context(),
+	_, err := h.env.ServiceClient(t, primary).ServiceWorkspaceFeedList(t.Context(),
 		serviceapi.ServiceWorkspaceFeedListParams{Cursor: serviceapi.NewOptString("not-a-cursor")})
 
-	require.NoError(t, err)
-	assert.IsType(t, &serviceapi.ServiceWorkspaceFeedListBadRequest{}, res)
+	testhelper.ServiceRefusal(t, err, http.StatusBadRequest)
 }
 
 func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.T) {

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -46,7 +47,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	b := env.DB.Broadcast.GetX(ctx, id)
 	assert.Equal(t, broadcast.StatusSent, b.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
-	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
+	assert.Equal(t, channels.SMS, msg.Channel)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID))
 	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
 	assert.Equal(t, 1, smsSent)

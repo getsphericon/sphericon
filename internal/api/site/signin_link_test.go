@@ -111,10 +111,9 @@ func TestSigninTheNotMeLinkUnlinksTheIdentityAndEndsEverySession(t *testing.T) {
 	signInWith(t, fake, linked, patWithGoogle, "")
 	token := notMeLink(t, env)
 
-	res, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+	err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthSigninNotMeOK{}, res)
 	assert.Empty(t, identitiesOf(t, env, pat), "the identity is gone")
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, patSession.Value), "the old session ended")
 	assert.Equal(t, http.StatusUnauthorized, meStatus(t, linked), "so did the one the link started")
@@ -127,26 +126,24 @@ func TestSigninTheNotMeLinkWorksOnce(t *testing.T) {
 	signInWith(t, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
 	token := notMeLink(t, env)
 	anonymous := env.SiteAnonymous(t)
-	_, err := anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+	err := anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 	require.NoError(t, err)
 	b := env.NewRedirectBrowser(t)
 	signed := signInWith(t, fake, b, patWithGoogle, "")
 	require.Equal(t, "/", signed.Header.Get("Location"))
 
-	replay, err := anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+	err = anonymous.SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, replay)
+	testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, http.StatusOK, meStatus(t, b), "the old link ended nothing of the new link")
 }
 
 func TestSigninTheNotMeLinkRefusesATokenOfAnotherKind(t *testing.T) {
 	env, _ := signinEnv(t)
 
-	res, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: "not-a-token"})
+	err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: "not-a-token"})
 
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 }
 
 func TestSigninLinkingAnUnprovenAddressClearsThePasswordAndEndsTheSessions(t *testing.T) {
@@ -183,17 +180,14 @@ func TestSigninTheNotMeLinkOfAnUnprovenTakeoverLeavesNoWayInButTheReset(t *testi
 	signInWith(t, fake, env.NewRedirectBrowser(t), johnWithGoogle, "")
 	token := notMeLink(t, env)
 
-	res, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+	err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthSigninNotMeOK{}, res)
-	forgot, err := env.SiteAnonymous(t).SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
+	err = env.SiteAnonymous(t).SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthForgotPasswordAccepted{}, forgot)
 	_, body := lastSystemEmail(t, env)
-	reset, err := env.SiteAnonymous(t).SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, reset, "the owner takes the account back by resetting the password")
+	err = env.SiteAnonymous(t).SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
+	require.NoError(t, err, "the owner takes the account back by resetting the password")
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, "brandnewpass1"))
 }
 
@@ -252,11 +246,9 @@ func TestSigninATakenOverSignUpKeepsThePendingInvitation(t *testing.T) {
 	b := env.NewRedirectBrowser(t)
 	signInWith(t, fake, b, victim, "")
 
-	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(), siteapi.SitePublicInvitationsLookupParams{Token: token})
+	found, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(), siteapi.SitePublicInvitationsLookupParams{Token: token})
 
 	require.NoError(t, err)
-	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
-	require.Truef(t, ok, "got %T", lookup)
 	assert.Equal(t, fixtures.VictimGmailSquatterEmail, string(found.Email))
 }
 
@@ -286,7 +278,7 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 	})
 	t.Run("a Sign-up with verification off proves nothing", func(t *testing.T) {
 		env := gateOff(t)
-		require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Pat", patEmail, patPassword))
+		signUpWithPassword(t, env, "Pat", patEmail, patPassword)
 		u := userByEmail(t, env, patEmail)
 		assert.NotNil(t, u.EmailVerifiedAt)
 		assert.Nil(t, u.EmailProvenAt)
@@ -294,45 +286,39 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 	t.Run("an accepted invitation of a new address", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		token := fixtures.InvitationAcmeNewcomerToken
-		res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+		err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
 			siteapi.SitePublicInvitationsAcceptParams{Token: token})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 		assert.NotNil(t, userByEmail(t, env, fixtures.InvitationAcmeNewcomerEmail).EmailProvenAt)
 	})
 	t.Run("an accepted invitation of a Verified User", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		token := fixtures.InvitationAcmeOscarToken
-		res, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(t.Context(),
+		err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(t.Context(),
 			&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 		assert.NotNil(t, userByEmail(t, env, fixtures.OutsiderOscarEmail).EmailProvenAt)
 	})
 	t.Run("a confirmed email change", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+		err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
 			NewEmail: "moved@example.com", CurrentPassword: fixtures.OwnerJohnPassword,
 		})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteUserEmailChangeAccepted{}, res)
 		_, body := lastSystemEmail(t, env)
-		confirm, err := env.SiteAnonymous(t).SiteAuthConfirmEmailChange(t.Context(),
+		_, err = env.SiteAnonymous(t).SiteAuthConfirmEmailChange(t.Context(),
 			&siteapi.SiteConfirmEmailChangeInput{Token: tokenFromEmail(t, body)}, siteapi.SiteAuthConfirmEmailChangeParams{})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteAuthConfirmEmailChangeOK{}, confirm)
 		assert.NotNil(t, userByEmail(t, env, "moved@example.com").EmailProvenAt)
 	})
 	t.Run("a reset link", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		forgot, err := env.SiteAnonymous(t).SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
+		err := env.SiteAnonymous(t).SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: fixtures.OwnerJohnEmail})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteAuthForgotPasswordAccepted{}, forgot)
 		_, body := lastSystemEmail(t, env)
-		reset, err := env.SiteAnonymous(t).SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
+		err = env.SiteAnonymous(t).SiteAuthResetPassword(t.Context(), &siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "brandnewpass1"})
 		require.NoError(t, err)
-		require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, reset)
 		assert.NotNil(t, userByEmail(t, env, fixtures.OwnerJohnEmail).EmailProvenAt)
 	})
 }
@@ -348,7 +334,7 @@ func TestAuditASilentLinkAndItsNotMeUndoNameOnlyTheProvider(t *testing.T) {
 	assert.NotContains(t, diffOf(t, linked[0]), johnWithGoogle.Subject)
 
 	token := notMeLink(t, env)
-	_, err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+	err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
 	require.NoError(t, err)
 
 	unlinked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserIdentityUnlink)

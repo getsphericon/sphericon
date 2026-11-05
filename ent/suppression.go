@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/channels"
 )
 
 // Suppression is the model entity for the Suppression schema.
@@ -26,7 +27,7 @@ type Suppression struct {
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Channel holds the value of the "channel" field.
-	Channel suppression.Channel `json:"channel,omitempty"`
+	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
 	// Reason holds the value of the "reason" field.
@@ -128,7 +129,7 @@ func (_m *Suppression) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
-				_m.Channel = suppression.Channel(value.String)
+				_m.Channel = channels.Channel(value.String)
 			}
 		case suppression.FieldDestination:
 			if value, ok := values[i].(*sql.NullString); !ok {
