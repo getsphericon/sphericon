@@ -189,6 +189,25 @@ rules:
   core-raw:
     may_depend_on: [core]
     forbid_external: *no-container
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/internal/emailcase.Hook
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/workspacefeed.Guard
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/userfeed.Hook
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/userfeed.Guard
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
+        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
+      - name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
+        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); the database package knows no upgrade type
+      - name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
+        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); the database package knows no upgrade type
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   runner:
     may_depend_on: [core, core-raw]
