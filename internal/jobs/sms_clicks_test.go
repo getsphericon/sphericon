@@ -48,12 +48,13 @@ func smsShortPaths(t *testing.T, env *testhelper.TestEnv) []string {
 	return paths
 }
 
+// Lacuna's draft "Sale: <offer> or your cart <cart>. Stop: <unsubscribe link>" goes to Textham, whose
+// one number that can be texted is Bea's.
 func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	id := smsBroadcast(t, env, account, "Sale: "+smsOffer+" or your cart "+smsCart+". Stop: {{ unsubscribe_url }}")
+	env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsLinksID)
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
@@ -64,7 +65,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	paths := smsShortPaths(t, env)
 	require.Len(t, paths, 2)
 	assert.NotEqual(t, paths[0], paths[1])
-	linkLength, err := env.OutboundModule().ShortLinkLength(ctx, env.DB.Scoped(fixtures.AcmeID))
+	linkLength, err := env.OutboundModule().ShortLinkLength(ctx, env.DB.Scoped(fixtures.LacunaID))
 	require.NoError(t, err)
 	links := smsShortLink.FindAllString(body, -1)
 	lengths := lo.Map(links, func(link string, _ int) int { return len(link) })
@@ -89,7 +90,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	assert.Equal(t, smsCart, resp.Header().Get("Location"))
 	clickedAfterClick := clicked()
 	assert.True(t, clickedAfterClick, "a person's click sets the recipient's rollup")
-	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.AcmeID), id)
+	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)
 	require.NoError(t, err)
 	assert.Equal(t, 1, report.Clicked, "the SMS report shows clicked")
 	clicks := env.QueuedEvents(t, events.NameSmsClicked)
@@ -99,37 +100,34 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	human := clicks[2].(*events.SmsClicked)
 	assert.False(t, human.Machine)
 	assert.Equal(t, id, human.BroadcastID)
-	assert.EqualValues(t, fixtures.ContactTexterID, human.ContactID)
+	assert.EqualValues(t, fixtures.ContactLacunaBeaID, human.ContactID)
 	assert.Equal(t, smsCart, human.URL)
 }
 
+// Lacuna's untracked draft "Sale: <offer> or <cart>" goes to Textham, whose one number that can be
+// texted is Bea's.
 func TestAnSMSBroadcastWithLinkTrackingOffGoesOutAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	text := "Sale: " + smsOffer + " or " + smsCart
-	b, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Create(ctx, env.DB.Scoped(fixtures.AcmeID), broadcasts.CreateInput{
-		Name:          new("Untracked"),
-		Content:       broadcasts.SMSContentInput{Text: &text, LinkTracking: new(false)},
-		IntegrationID: new(int64(account.Integration.ID)),
-	})
-	require.NoError(t, err)
+	env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsUntrackedID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), b.ID))
+	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
 	sent := env.Twilio.Messages()
-	assert.Equal(t, text, sent[0].Body)
-	tracked := env.DB.TrackedLink.Query().Where(trackedlink.HasOutboundMessageWith(outboundmessage.BroadcastID(b.ID))).CountX(ctx)
+	require.Len(t, sent, 1)
+	assert.Equal(t, "Sale: "+smsOffer+" or "+smsCart, sent[0].Body)
+	tracked := env.DB.TrackedLink.Query().Where(trackedlink.HasOutboundMessageWith(outboundmessage.BroadcastID(id))).CountX(ctx)
 	assert.Zero(t, tracked, "no short link was made")
 }
 
+// Lacuna's draft "Hi {{ first_name }}, see <offer>".
 func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	id := smsBroadcast(t, env, account, "Hi {{ first_name }}, see "+smsOffer)
+	env.LacunaTwilio(t)
+	s := env.DB.Scoped(fixtures.LacunaID)
+	id := int64(fixtures.BroadcastLacunaSmsOfferID)
 	b := env.DB.Broadcast.GetX(ctx, id)
 	mod := env.OutboundModule()
 

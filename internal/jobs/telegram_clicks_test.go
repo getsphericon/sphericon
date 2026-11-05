@@ -20,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -147,18 +146,17 @@ func TestAnUnknownShortLinkIsNotFoundAndRecordsNothing(t *testing.T) {
 	assert.Zero(t, env.QueuedCount(t, events.NameTelegramClicked, nil))
 }
 
+// Lacuna's draft links its offer in the text and the button URL in its button; Ben is one of its
+// recipients.
 func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAndTheFigure(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	bot := env.AcmeTelegram(t)
-	id := telegramBroadcastOf(t, env, bot, broadcasts.TelegramContentInput{
-		Text:    new(`<a href="` + textLink + `">offer</a>`),
-		Buttons: &[]telegramrender.Button{{Label: "Open", URL: buttonLink}},
-	})
+	env.LacunaTelegram(t)
+	id := int64(fixtures.BroadcastLacunaTelegramClicksID)
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
-	text, buttons := shortPaths(t, env, "70001") // Liam's fixture chat
+	text, buttons := shortPaths(t, env, benChat)
 	clicked := func() bool {
-		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLiamID)).OnlyX(ctx).ClickedAt != nil
+		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLacunaBenID)).OnlyX(ctx).ClickedAt != nil
 	}
 
 	resp := follow(t, env, text[0], telegramUA)
@@ -170,7 +168,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	follow(t, env, buttons[0], browserUA)
 	assert.True(t, clicked(), "a person's click sets the recipient's rollup")
 	assert.Equal(t, 1, figuresOf(t, env, id).Clicked)
-	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.AcmeID), id)
+	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)
 	require.NoError(t, err)
 	assert.Equal(t, 1, report.Clicked, "the Telegram report shows clicked")
 	assert.Nil(t, report.Opened)

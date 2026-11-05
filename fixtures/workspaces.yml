@@ -350,3 +350,13 @@
   collect_key: omck_test_quahog_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Lacuna: SMS and Telegram Broadcasts to every Contact of their Workspace, kept off Acme so its
+# audiences and its Broadcast lists stay as they are: a Twilio account with four confirmed phones,
+# one without a Confirmation and one suppressed; a Telegram bot with a Contact in two chats, three
+# in one (one of them through a Visitor) and one who stopped; a second bot with one chat.
+- id: 96 # fixture: Lacuna
+  name: Lacuna
+  public_id: LacnaW96
+  collect_key: omck_test_lacuna_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

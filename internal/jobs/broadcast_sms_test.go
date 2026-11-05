@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -26,50 +25,30 @@ import (
 // phone, a Confirmation, no opt-out, no Suppression), one text per Contact through the Twilio account it names;
 // eligibility is checked again at each send. Twilio is the fake REST API.
 
-// alicePhone and bobPhone are the numbers a test gives Alice and Bob, who have none in the fixtures.
-const (
-	alicePhone = "+14155550901"
-	bobPhone   = "+14155550902"
-)
-
-// smsBroadcast creates a draft SMS Broadcast to all contacts through the account with text.
-func smsBroadcast(t *testing.T, env *testhelper.TestEnv, account testhelper.TwilioAccount, text string) int64 {
-	t.Helper()
-	b, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), broadcasts.CreateInput{
-		Name:          new("SMS news"),
-		Content:       broadcasts.SMSContentInput{Text: &text},
-		IntegrationID: new(int64(account.Integration.ID)),
-	})
-	require.NoError(t, err)
-	return b.ID
-}
-
+// Lacuna's Segment Textham holds Bea's confirmed phone, Uma's without a Confirmation and Sal's
+// suppressed one.
 func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
-	confirmSMS(t, env, alicePhone)
-	env.SuppressNumber(ctx, alicePhone)
-	id := smsBroadcast(t, env, account, "Hi {{ first_name }} & co, <sale> today")
+	account := env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsGreetingID)
 
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).AllX(ctx)
 	frozen := lo.Map(recipients, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ContactID })
-	assert.Equal(t, []int64{fixtures.ContactTexterID}, frozen, "a phone without a Confirmation, or a suppressed one, is not frozen")
+	assert.Equal(t, []int64{fixtures.ContactLacunaBeaID}, frozen, "a phone without a Confirmation, or a suppressed one, is not frozen")
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)
-	assert.Equal(t, fixtures.ContactTexterPhone, sent[0].To)
-	assert.Equal(t, "Hi Tess & co, <sale> today", sent[0].Body)
+	assert.Equal(t, fixtures.ContactLacunaBeaPhone, sent[0].To)
+	assert.Equal(t, "Hi Bea & co, <sale> today", sent[0].Body)
 	assert.Equal(t, account.Integration.HookUrl, sent[0].StatusCallback)
 	b := env.DB.Broadcast.GetX(ctx, id)
 	assert.Equal(t, broadcast.StatusSent, b.Status)
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID))
-	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactTexterID})
+	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
 	assert.Equal(t, 1, smsSent)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)
@@ -77,26 +56,20 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 
 // A Recipient frozen with a confirmed phone is checked again when its text is sent: one that lost
 // its phone, opted out or was suppressed since is Skipped with that reason, and the figures add up.
+// Lacuna's four confirmed phones are frozen: Ada's is cleared, the parked opt-out moves onto Bea's
+// and Cyd's lifted Suppression is re-opened before the sends.
 func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
-	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetPhone(bobPhone).ExecX(ctx)
-	for _, number := range []string{fixtures.ContactTexterPhone, fixtures.ContactExportSubjectPhone, alicePhone, bobPhone} {
-		confirmSMS(t, env, number)
-	}
-	id := smsBroadcast(t, env, account, "Hello")
+	env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsHelloID)
 	mod := env.OutboundModule()
 
 	ids, err := planAudience(ctx, env.DB, mod, id)
 	require.NoError(t, err)
-	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearPhone().ExecX(ctx)
-	_, err = env.ExternalScoped(t, "contacts:write").UnsubscribesCreate(ctx, &externalapi.CreateUnsubscribeInput{
-		Channel: externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS), Destination: fixtures.ContactExportSubjectPhone,
-	})
-	require.NoError(t, err)
-	env.SuppressNumber(ctx, bobPhone)
+	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).ClearPhone().ExecX(ctx)
+	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaParkedID).SetDestination(fixtures.ContactLacunaBeaPhone).ExecX(ctx)
+	env.DB.Suppression.UpdateOneID(fixtures.SuppressionLacunaCydLiftedID).ClearLiftedAt().ExecX(ctx)
 	for _, rid := range ids {
 		require.NoError(t, deliverRecipient(ctx, env.DB, mod, rid))
 	}
@@ -104,32 +77,29 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 	assert.Len(t, ids, 4)
 	sent := env.Twilio.Messages()
 	texted := lo.Map(sent, func(m twiliotest.Message, _ int) string { return m.To })
-	assert.Equal(t, []string{fixtures.ContactTexterPhone}, texted)
+	assert.Equal(t, []string{fixtures.ContactLacunaDotPhone}, texted)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).AllX(ctx)
 	reasons := lo.Associate(skipped, func(m *ent.OutboundMessage) (int64, string) {
 		return lo.FromPtr(m.ContactID), lo.FromPtr(m.Reason)
 	})
 	assert.Equal(t, map[int64]string{
-		fixtures.ContactAliceID:         eligibility.ReasonNoDestination,
-		fixtures.ContactExportSubjectID: eligibility.ReasonUnsubscribedEverything,
-		fixtures.ContactBobID:           eligibility.ReasonSuppressed,
+		fixtures.ContactLacunaAdaID: eligibility.ReasonNoDestination,
+		fixtures.ContactLacunaBeaID: eligibility.ReasonUnsubscribedEverything,
+		fixtures.ContactLacunaCydID: eligibility.ReasonSuppressed,
 	}, reasons)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figures)
 }
 
+// Lacuna's four confirmed phones are paced.
 func TestAnSMSBroadcastPacesAtTheProviderLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
-	for _, number := range []string{fixtures.ContactTexterPhone, fixtures.ContactExportSubjectPhone, alicePhone} {
-		confirmSMS(t, env, number)
-	}
+	account := env.LacunaTwilio(t)
 	env.DB.Integration.UpdateOneID(int64(account.Integration.ID)).SetMaxPerSecond(4).ExecX(ctx)
-	id := smsBroadcast(t, env, account, "Slowly")
+	id := int64(fixtures.BroadcastLacunaSmsHelloID)
 	del := broadcasts.NewDelivery(env.OutboundModule())
-	s := env.DB.Scoped(fixtures.AcmeID)
+	s := env.DB.Scoped(fixtures.LacunaID)
 	start := time.Now()
 
 	ids, err := del.Plan(ctx, s, id)
@@ -137,7 +107,8 @@ func TestAnSMSBroadcastPacesAtTheProviderLimit(t *testing.T) {
 	times, err := del.Pace(ctx, s, id, ids, start)
 	require.NoError(t, err)
 
-	require.Len(t, times, 3)
+	require.Len(t, times, 4)
 	assert.Equal(t, 250*time.Millisecond, times[1].Sub(times[0]), "four a second is 250ms apart")
 	assert.Equal(t, 250*time.Millisecond, times[2].Sub(times[1]))
+	assert.Equal(t, 250*time.Millisecond, times[3].Sub(times[2]))
 }

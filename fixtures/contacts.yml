@@ -1586,3 +1586,84 @@
   workspace_id: 92
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Lacuna (workspace 96): the audiences of its SMS and Telegram Broadcasts ---
+# Its texters: four phones with a Confirmation (Cyd's also carries a lifted Suppression), Uma's
+# with none and Sal's confirmed but suppressed. Bea, Uma and Sal live in Textham, the Segment
+# SegmentLacunaTextham, whose only number that can be texted is Bea's.
+- id: 7740 # fixture: ContactLacunaAda
+  phone: '+16175557740'
+  first_name: Ada
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7741 # fixture: ContactLacunaBea
+  phone: '+16175557741'
+  first_name: Bea
+  city: Textham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7742 # fixture: ContactLacunaCyd
+  phone: '+16175557742'
+  first_name: Cyd
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7743 # fixture: ContactLacunaDot
+  phone: '+16175557743'
+  first_name: Dot
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7744 # fixture: ContactLacunaUnconfirmed
+  phone: '+16175557744'
+  first_name: Uma
+  city: Textham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7745 # fixture: ContactLacunaSuppressed
+  phone: '+16175557745'
+  first_name: Sal
+  city: Textham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Its Telegram chats on the bot IntegrationLacunaTelegram: Tia in two, Ben and Fay in one each, Eve
+# through her Visitor's, and Sid in one he stopped Broadcasts in; Cal only on the other bot. Ben,
+# Eve, Fay and Cal live in Chatham, the Segment SegmentLacunaChatham.
+- id: 7750 # fixture: ContactLacunaTwoChats
+  first_name: Tia
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7751 # fixture: ContactLacunaBen
+  first_name: Ben
+  city: Chatham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7752 # fixture: ContactLacunaByVisitor
+  first_name: Eve
+  city: Chatham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7753 # fixture: ContactLacunaFay
+  first_name: Fay
+  city: Chatham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7754 # fixture: ContactLacunaOtherBot
+  first_name: Cal
+  city: Chatham
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7755 # fixture: ContactLacunaStopped
+  first_name: Sid
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

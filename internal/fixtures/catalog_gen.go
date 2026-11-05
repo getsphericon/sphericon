@@ -321,6 +321,12 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationLacunaOnSmsUndeliveredID is from fixtures/automations.
+	AutomationLacunaOnSmsUndeliveredID = 7740
+	// AutomationLacunaOnSmsUndeliveredName is from fixtures/automations.
+	AutomationLacunaOnSmsUndeliveredName = "On text undelivered"
+	// AutomationLacunaOnSmsUndeliveredVersionID is from fixtures/automation_versions.
+	AutomationLacunaOnSmsUndeliveredVersionID = 7740
 	// AutomationMeridianArchivedDraftVersionID is from fixtures/automation_versions.
 	AutomationMeridianArchivedDraftVersionID = 7409
 	// AutomationMeridianArchivedID is from fixtures/automations.
@@ -811,6 +817,58 @@ const (
 	BroadcastInitechSendingSubject = "Initech launch"
 	// BroadcastInitechSubject is from fixtures/broadcasts.
 	BroadcastInitechSubject = "Initech news"
+	// BroadcastLacunaSmsGreetingID is from fixtures/broadcasts.
+	BroadcastLacunaSmsGreetingID = 7901
+	// BroadcastLacunaSmsGreetingName is from fixtures/broadcasts.
+	BroadcastLacunaSmsGreetingName = "Lacuna SMS greeting"
+	// BroadcastLacunaSmsHelloID is from fixtures/broadcasts.
+	BroadcastLacunaSmsHelloID = 7900
+	// BroadcastLacunaSmsHelloName is from fixtures/broadcasts.
+	BroadcastLacunaSmsHelloName = "Lacuna SMS news"
+	// BroadcastLacunaSmsLinksID is from fixtures/broadcasts.
+	BroadcastLacunaSmsLinksID = 7902
+	// BroadcastLacunaSmsLinksName is from fixtures/broadcasts.
+	BroadcastLacunaSmsLinksName = "Lacuna SMS links"
+	// BroadcastLacunaSmsOfferID is from fixtures/broadcasts.
+	BroadcastLacunaSmsOfferID = 7904
+	// BroadcastLacunaSmsOfferName is from fixtures/broadcasts.
+	BroadcastLacunaSmsOfferName = "Lacuna SMS offer"
+	// BroadcastLacunaSmsStopID is from fixtures/broadcasts.
+	BroadcastLacunaSmsStopID = 7905
+	// BroadcastLacunaSmsStopName is from fixtures/broadcasts.
+	BroadcastLacunaSmsStopName = "Lacuna SMS stop"
+	// BroadcastLacunaSmsUntrackedID is from fixtures/broadcasts.
+	BroadcastLacunaSmsUntrackedID = 7903
+	// BroadcastLacunaSmsUntrackedName is from fixtures/broadcasts.
+	BroadcastLacunaSmsUntrackedName = "Lacuna SMS untracked"
+	// BroadcastLacunaTelegramChathamID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramChathamID = 7911
+	// BroadcastLacunaTelegramChathamName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramChathamName = "Lacuna Telegram news to Chatham"
+	// BroadcastLacunaTelegramClicksID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramClicksID = 7916
+	// BroadcastLacunaTelegramClicksName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramClicksName = "Lacuna Telegram clicks"
+	// BroadcastLacunaTelegramHelloID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramHelloID = 7910
+	// BroadcastLacunaTelegramHelloName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramHelloName = "Lacuna Telegram news"
+	// BroadcastLacunaTelegramLongCaptionID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramLongCaptionID = 7914
+	// BroadcastLacunaTelegramLongCaptionName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramLongCaptionName = "Lacuna Telegram long caption"
+	// BroadcastLacunaTelegramNoPreviewID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramNoPreviewID = 7913
+	// BroadcastLacunaTelegramNoPreviewName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramNoPreviewName = "Lacuna Telegram without a preview"
+	// BroadcastLacunaTelegramRichID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramRichID = 7912
+	// BroadcastLacunaTelegramRichName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramRichName = "Lacuna Telegram rich"
+	// BroadcastLacunaTelegramUnsubscribeID is from fixtures/broadcasts.
+	BroadcastLacunaTelegramUnsubscribeID = 7915
+	// BroadcastLacunaTelegramUnsubscribeName is from fixtures/broadcasts.
+	BroadcastLacunaTelegramUnsubscribeName = "Lacuna Telegram unsubscribe"
 	// BroadcastMercadoID is from fixtures/broadcasts.
 	BroadcastMercadoID = 7202
 	// BroadcastMercadoName is from fixtures/broadcasts.
@@ -1215,6 +1273,42 @@ const (
 	ContactKrustyTexterID = 7720
 	// ContactKrustyTexterPhone is from fixtures/contacts.
 	ContactKrustyTexterPhone = "+13125557720"
+	// ContactLacunaAdaID is from fixtures/contacts.
+	ContactLacunaAdaID = 7740
+	// ContactLacunaAdaPhone is from fixtures/contacts.
+	ContactLacunaAdaPhone = "+16175557740"
+	// ContactLacunaBeaID is from fixtures/contacts.
+	ContactLacunaBeaID = 7741
+	// ContactLacunaBeaPhone is from fixtures/contacts.
+	ContactLacunaBeaPhone = "+16175557741"
+	// ContactLacunaBenID is from fixtures/contacts.
+	ContactLacunaBenID = 7751
+	// ContactLacunaByVisitorID is from fixtures/contacts.
+	ContactLacunaByVisitorID = 7752
+	// ContactLacunaCydID is from fixtures/contacts.
+	ContactLacunaCydID = 7742
+	// ContactLacunaCydPhone is from fixtures/contacts.
+	ContactLacunaCydPhone = "+16175557742"
+	// ContactLacunaDotID is from fixtures/contacts.
+	ContactLacunaDotID = 7743
+	// ContactLacunaDotPhone is from fixtures/contacts.
+	ContactLacunaDotPhone = "+16175557743"
+	// ContactLacunaFayID is from fixtures/contacts.
+	ContactLacunaFayID = 7753
+	// ContactLacunaOtherBotID is from fixtures/contacts.
+	ContactLacunaOtherBotID = 7754
+	// ContactLacunaStoppedID is from fixtures/contacts.
+	ContactLacunaStoppedID = 7755
+	// ContactLacunaSuppressedID is from fixtures/contacts.
+	ContactLacunaSuppressedID = 7745
+	// ContactLacunaSuppressedPhone is from fixtures/contacts.
+	ContactLacunaSuppressedPhone = "+16175557745"
+	// ContactLacunaTwoChatsID is from fixtures/contacts.
+	ContactLacunaTwoChatsID = 7750
+	// ContactLacunaUnconfirmedID is from fixtures/contacts.
+	ContactLacunaUnconfirmedID = 7744
+	// ContactLacunaUnconfirmedPhone is from fixtures/contacts.
+	ContactLacunaUnconfirmedPhone = "+16175557744"
 	// ContactLiamEmail is from fixtures/contacts.
 	ContactLiamEmail = "liam.python@codebasics.dev"
 	// ContactLiamID is from fixtures/contacts.
@@ -2175,6 +2269,30 @@ const (
 	IntegrationKrustySmsName = "Krusty Twilio"
 	// IntegrationKrustySmsProvider is from fixtures/integrations.
 	IntegrationKrustySmsProvider = "twilio"
+	// IntegrationLacunaOtherTelegramID is from fixtures/integrations.
+	IntegrationLacunaOtherTelegramID = 7742
+	// IntegrationLacunaOtherTelegramIngestKey is from fixtures/integrations.
+	IntegrationLacunaOtherTelegramIngestKey = "omik_test_integrationlacunaothertelegram"
+	// IntegrationLacunaOtherTelegramName is from fixtures/integrations.
+	IntegrationLacunaOtherTelegramName = "Lacuna other bot"
+	// IntegrationLacunaOtherTelegramProvider is from fixtures/integrations.
+	IntegrationLacunaOtherTelegramProvider = "telegram"
+	// IntegrationLacunaSmsID is from fixtures/integrations.
+	IntegrationLacunaSmsID = 7740
+	// IntegrationLacunaSmsIngestKey is from fixtures/integrations.
+	IntegrationLacunaSmsIngestKey = "omik_test_integrationlacunasms"
+	// IntegrationLacunaSmsName is from fixtures/integrations.
+	IntegrationLacunaSmsName = "Lacuna Twilio"
+	// IntegrationLacunaSmsProvider is from fixtures/integrations.
+	IntegrationLacunaSmsProvider = "twilio"
+	// IntegrationLacunaTelegramID is from fixtures/integrations.
+	IntegrationLacunaTelegramID = 7741
+	// IntegrationLacunaTelegramIngestKey is from fixtures/integrations.
+	IntegrationLacunaTelegramIngestKey = "omik_test_integrationlacunatelegram"
+	// IntegrationLacunaTelegramName is from fixtures/integrations.
+	IntegrationLacunaTelegramName = "Lacuna bot"
+	// IntegrationLacunaTelegramProvider is from fixtures/integrations.
+	IntegrationLacunaTelegramProvider = "telegram"
 	// IntegrationMeridianArchivedID is from fixtures/integrations.
 	IntegrationMeridianArchivedID = 7406
 	// IntegrationMeridianArchivedIngestKey is from fixtures/integrations.
@@ -2459,6 +2577,24 @@ const (
 	KrustyOwnerKentPassword = "password"
 	// KrustyPublicID is from fixtures/workspaces.
 	KrustyPublicID = "KrstyW95"
+	// LacunaCollectKey is from fixtures/workspaces.
+	LacunaCollectKey = "omck_test_lacuna_collect_key"
+	// LacunaID is from fixtures/workspaces.
+	LacunaID = 96
+	// LacunaLenaMembershipID is from fixtures/memberships.
+	LacunaLenaMembershipID = 7740
+	// LacunaName is from fixtures/workspaces.
+	LacunaName = "Lacuna"
+	// LacunaOwnerLenaEmail is from fixtures/users.
+	LacunaOwnerLenaEmail = "lena@lacuna.test"
+	// LacunaOwnerLenaID is from fixtures/users.
+	LacunaOwnerLenaID = 7740
+	// LacunaOwnerLenaName is from fixtures/users.
+	LacunaOwnerLenaName = "Lena"
+	// LacunaOwnerLenaPassword is from fixtures/users.
+	LacunaOwnerLenaPassword = "password"
+	// LacunaPublicID is from fixtures/workspaces.
+	LacunaPublicID = "LacnaW96"
 	// LumonCollectKey is from fixtures/workspaces.
 	LumonCollectKey = "omck_test_lumon_collect_key"
 	// LumonID is from fixtures/workspaces.
@@ -3157,6 +3293,14 @@ const (
 	SegmentKrustyBayAreaID = 7720
 	// SegmentKrustyBayAreaName is from fixtures/segments.
 	SegmentKrustyBayAreaName = "Bay Area numbers"
+	// SegmentLacunaChathamID is from fixtures/segments.
+	SegmentLacunaChathamID = 7741
+	// SegmentLacunaChathamName is from fixtures/segments.
+	SegmentLacunaChathamName = "Lives in Chatham"
+	// SegmentLacunaTexthamID is from fixtures/segments.
+	SegmentLacunaTexthamID = 7740
+	// SegmentLacunaTexthamName is from fixtures/segments.
+	SegmentLacunaTexthamName = "Lives in Textham"
 	// SegmentNewsletterID is from fixtures/segments.
 	SegmentNewsletterID = 2
 	// SegmentNewsletterName is from fixtures/segments.
@@ -3503,6 +3647,14 @@ const (
 	SuppressionGlobexDestination = "bounce@globex.test"
 	// SuppressionGlobexID is from fixtures/suppressions.
 	SuppressionGlobexID = 900
+	// SuppressionLacunaCydLiftedDestination is from fixtures/suppressions.
+	SuppressionLacunaCydLiftedDestination = "+16175557742"
+	// SuppressionLacunaCydLiftedID is from fixtures/suppressions.
+	SuppressionLacunaCydLiftedID = 7741
+	// SuppressionLacunaSalDestination is from fixtures/suppressions.
+	SuppressionLacunaSalDestination = "+16175557745"
+	// SuppressionLacunaSalID is from fixtures/suppressions.
+	SuppressionLacunaSalID = 7740
 	// SuppressionLiftedDestination is from fixtures/suppressions.
 	SuppressionLiftedDestination = "lifted@codebasics.dev"
 	// SuppressionLiftedID is from fixtures/suppressions.
@@ -3783,6 +3935,14 @@ const (
 	UnsubscribeKrustyOptedOutDestination = "+13125557722"
 	// UnsubscribeKrustyOptedOutID is from fixtures/unsubscribes.
 	UnsubscribeKrustyOptedOutID = 7720
+	// UnsubscribeLacunaParkedDestination is from fixtures/unsubscribes.
+	UnsubscribeLacunaParkedDestination = "+16175557799"
+	// UnsubscribeLacunaParkedID is from fixtures/unsubscribes.
+	UnsubscribeLacunaParkedID = 7741
+	// UnsubscribeLacunaStoppedDestination is from fixtures/unsubscribes.
+	UnsubscribeLacunaStoppedDestination = "77407"
+	// UnsubscribeLacunaStoppedID is from fixtures/unsubscribes.
+	UnsubscribeLacunaStoppedID = 7740
 	// UnsubscribeTexterConfirmedBroadcastsDestination is from fixtures/unsubscribes.
 	UnsubscribeTexterConfirmedBroadcastsDestination = "+13125557504"
 	// UnsubscribeTexterConfirmedBroadcastsID is from fixtures/unsubscribes.

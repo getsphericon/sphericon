@@ -205,3 +205,23 @@
   workspace_id: 95
   created_at: '2026-02-02 00:00:00'
   updated_at: '2026-02-02 00:00:00'
+# Lacuna (workspace 96): Sid's stop of Broadcasts in his chat, and an opt-out of everything on sms
+# parked on a number no Contact has, which a test moves onto a phone between a Broadcast's freeze
+# and its send.
+- id: 7740 # fixture: UnsubscribeLacunaStopped
+  channel: telegram
+  destination: '77407'
+  sending_source: broadcasts
+  via: manual
+  contact_id: 7755
+  workspace_id: 96
+  created_at: '2026-02-02 00:00:00'
+  updated_at: '2026-02-02 00:00:00'
+- id: 7741 # fixture: UnsubscribeLacunaParked
+  channel: sms
+  destination: '+16175557799'
+  sending_source: everything
+  via: manual
+  workspace_id: 96
+  created_at: '2026-02-02 00:00:00'
+  updated_at: '2026-02-02 00:00:00'

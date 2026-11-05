@@ -367,10 +367,12 @@ func TestSendBroadcastOnASentBroadcastIsRefused(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSent, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID).Status)
 }
 
-// figuresOf is a Broadcast's delivery figures, derived from its rows.
+// figuresOf is a Broadcast's delivery figures, derived from its rows in its Workspace.
 func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
-	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
+	ctx := context.Background()
+	b := env.DB.Broadcast.GetX(ctx, broadcastID)
+	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
 }

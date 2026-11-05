@@ -81,6 +81,25 @@ func (env *TestEnv) KrustyTwilio(t *testing.T) TwilioAccount {
 	}
 }
 
+// The account of the fixture Integration IntegrationLacunaSms, as fixtures/integrations.yml stores
+// it, sending from TwilioNumber like Acme's.
+const (
+	LacunaTwilioAccountSID = "AC00000000000000000000000000007740"
+	LacunaTwilioAuthToken  = "fixturelacunatwilioauthtoken7740"
+)
+
+// LacunaTwilio is AcmeTwilio for Lacuna's fixture Integration IntegrationLacunaSms: the SMS
+// Integration of the Workspace whose SMS Broadcasts go to every Contact it holds.
+func (env *TestEnv) LacunaTwilio(t *testing.T) TwilioAccount {
+	t.Helper()
+	account := env.Twilio.AddAccountOf(LacunaTwilioAccountSID, LacunaTwilioAuthToken)
+	number := env.Twilio.AddNumber(account, TwilioNumber)
+	return TwilioAccount{
+		Integration: env.fixtureIntegration(t, fixtures.LacunaOwnerLenaEmail, fixtures.LacunaPublicID, fixtures.IntegrationLacunaSmsID),
+		Account:     account, NumberSID: number,
+	}
+}
+
 // ConnectTwilio adds an account with an API key and TwilioNumber to the fake REST API and connects
 // it as an SMS Integration of Acme, as its owner does in the app.
 func (env *TestEnv) ConnectTwilio(t *testing.T) TwilioAccount {

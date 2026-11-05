@@ -61,3 +61,75 @@
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Lacuna (workspace 96), on its bot: Tia in two chats, Ben and Fay in one each, Eve through her
+# Visitor's phone and Sid in the chat he stopped Broadcasts in; Cal on its other bot only.
+- id: 7740
+  integration_id: 7741
+  channel: telegram
+  destination: '77401'
+  chat_id: '77401'
+  contact_id: 7750
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7741
+  integration_id: 7741
+  channel: telegram
+  destination: '77402'
+  chat_id: '77402'
+  contact_id: 7750
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7742
+  integration_id: 7741
+  channel: telegram
+  destination: '77403'
+  chat_id: '77403'
+  contact_id: 7751
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7743
+  integration_id: 7741
+  channel: telegram
+  destination: '77404'
+  chat_id: '77404'
+  visitor_id: 7740
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7744
+  integration_id: 7741
+  channel: telegram
+  destination: '77405'
+  chat_id: '77405'
+  contact_id: 7753
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7745
+  integration_id: 7742
+  channel: telegram
+  destination: '77406'
+  chat_id: '77406'
+  contact_id: 7754
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7746
+  integration_id: 7741
+  channel: telegram
+  destination: '77407'
+  chat_id: '77407'
+  contact_id: 7755
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
