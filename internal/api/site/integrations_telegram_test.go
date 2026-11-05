@@ -131,10 +131,11 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 
 	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	bots := lo.Filter(*list.(*siteapi.SiteIntegrationsListOKApplicationJSON), func(row siteapi.SiteIntegrationResource, _ int) bool {
-		return row.Provider == siteapi.SiteIntegrationProviderTelegram
+	bots := lo.FilterMap(*list.(*siteapi.SiteIntegrationsListOKApplicationJSON), func(row siteapi.SiteIntegrationResource, _ int) (int64, bool) {
+		return int64(row.ID), row.Provider == siteapi.SiteIntegrationProviderTelegram
 	})
-	assert.Len(t, bots, 1, "a refused connect saved nothing: only the fixture bot is there")
+	assert.ElementsMatch(t, []int64{fixtures.IntegrationAcmeTelegramID, fixtures.IntegrationAcmeSecondTelegramID}, bots,
+		"a refused connect saved nothing: only the fixture bots are there")
 }
 
 func TestSiteTelegramUpdateReconnectsTheSameBotOnly(t *testing.T) {

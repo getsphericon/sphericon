@@ -223,21 +223,14 @@ func TestAnInvitationSignupWaitsForTheItemsAndAcceptsTheInvitationOnSubmit(t *te
 	assert.Zero(t, pendingInvitations(t, env, newcomer.Email), "the Invitation is accepted")
 }
 
-// victimWithGoogle is the owner of victim@gmail.com signing in with Google, after a stranger
-// signed up with the address and never verified it.
-var victimWithGoogle = testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
-
-// squattedBeforeTheItems is an Unverified User of victim@gmail.com with a pending password, signed
-// up before the Instance had Sign-up items in effect, which then are.
-func squattedBeforeTheItems(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	signUpPending(t, env, "Squatter", victimWithGoogle.Email, "squatter-password-1")
-	withSignupItems(t, env)
-}
+// victimWithGoogle is the owner of the address VictimGmailSquatter signed up with and never
+// verified, signing in with Google. The squatter, an Unverified User with a pending password,
+// signed up before the Sign-up items the tests below put in effect.
+var victimWithGoogle = testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: fixtures.VictimGmailSquatterEmail, EmailVerified: true, Name: "Victim"}
 
 func TestATakeoverWaitsForTheItemsAndLeavesTheUnverifiedUserAsItWas(t *testing.T) {
 	env, fake := signinEnv(t)
-	squattedBeforeTheItems(t, env)
+	withSignupItems(t, env)
 	b := env.NewRedirectBrowser(t)
 
 	pendingToken(t, signInWith(t, fake, b, victimWithGoogle, ""))
@@ -246,12 +239,12 @@ func TestATakeoverWaitsForTheItemsAndLeavesTheUnverifiedUserAsItWas(t *testing.T
 	squatter := userByEmail(t, env, victimWithGoogle.Email)
 	assert.Nil(t, squatter.EmailVerifiedAt, "the User is not taken over before the answers")
 	assert.NotEmpty(t, squatter.PasswordHash)
-	assert.Equal(t, "Squatter", squatter.Name)
+	assert.Equal(t, fixtures.VictimGmailSquatterName, squatter.Name)
 }
 
 func TestSubmittingTheAnswersTakesTheUnverifiedUserOverWithItsConsentRecords(t *testing.T) {
 	env, fake := signinEnv(t)
-	squattedBeforeTheItems(t, env)
+	withSignupItems(t, env)
 	squatter := userByEmail(t, env, victimWithGoogle.Email)
 	b := env.NewRedirectBrowser(t)
 	token := pendingToken(t, signInWith(t, fake, b, victimWithGoogle, ""))
@@ -277,7 +270,7 @@ func TestSubmittingTheAnswersTakesTheUnverifiedUserOverWithItsConsentRecords(t *
 
 func TestATakeoverIsGoneOnceThePersonWhoSignedUpVerifiesTheAddress(t *testing.T) {
 	env, fake := signinEnv(t)
-	squattedBeforeTheItems(t, env)
+	withSignupItems(t, env)
 	b := env.NewRedirectBrowser(t)
 	token := pendingToken(t, signInWith(t, fake, b, victimWithGoogle, ""))
 	squatter := userByEmail(t, env, victimWithGoogle.Email)

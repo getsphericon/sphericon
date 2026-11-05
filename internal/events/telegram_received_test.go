@@ -73,7 +73,7 @@ func TestAMessageFromAnUnknownSenderRecordsNothing(t *testing.T) {
 func TestAMessageOnAnotherBotIsNotTheBoundContactsWords(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.AcmeTelegram(t)
-	other := env.ConnectTelegram(t, 7304, "received_7304_bot")
+	other := env.AcmeSecondTelegram(t)
 
 	env.PostTelegramUpdate(t, other, say(4, liamsChat, "hi"))
 
