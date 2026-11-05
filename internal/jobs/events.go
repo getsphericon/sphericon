@@ -2,6 +2,8 @@ package jobs
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
@@ -233,11 +235,36 @@ type SuppressEventWorker struct {
 }
 
 // NewSuppressEventWorker is the suppression consumer's worker over the raw client: the envelope
-// names the Workspace, which events.Suppress scopes to.
+// names the Workspace, which Work scopes to.
 func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
 	return &SuppressEventWorker{ent: client}
 }
 
+// Work adds the event's destination to the Workspace's Suppression list when the action implies a
+// global do-not-send (hard bounce, complaint). No-op for other actions or a missing email.
+// Idempotent: a redelivered or repeated event keeps the original entry rather than erroring or
+// overwriting its reason.
 func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressEventArgs]) error {
-	return events.Suppress(ctx, w.ent, job.Args.Envelope)
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	p := ev.Project()
+	kind, _ := p.Properties["bounceKind"].(string)
+	reason, ok := suppression.ForEvent(p.Action, kind)
+	if !ok {
+		return nil
+	}
+	// The Workspace comes from the event envelope: a consumer has no membership or
+	// api token, so this is a scope source outside the site/external/job list.
+	s := w.ent.Scoped(env.WorkspaceID)
+	err = suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	if errors.Is(err, suppression.ErrDestinationEmpty) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("suppress %q: %w", p.Email, err)
+	}
+	return nil
 }

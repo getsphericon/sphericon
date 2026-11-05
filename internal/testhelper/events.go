@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/jobs"
 )
 
@@ -150,6 +151,7 @@ func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	require.NoError(t, err)
 	bus.UseJobs(inserter)
 	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+	bus.OnStored(ingest.RecordOutcome)
 	return bus
 }
 

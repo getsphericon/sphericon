@@ -11,6 +11,7 @@ import (
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -112,15 +113,15 @@ func TestNormalizeDestinationProperties(t *testing.T) {
 }
 
 func TestForEventSuppressesAComplaintAndAHardBounceOnly(t *testing.T) {
-	complaint, ok := suppression.ForEvent(suppression.EventComplained, "")
+	complaint, ok := suppression.ForEvent(events.NameEmailComplained, "")
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonComplaint, complaint)
 
-	hard, ok := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindHard)
+	hard, ok := suppression.ForEvent(events.NameEmailBounced, events.BounceKindHard)
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonBounce, hard)
 
-	_, soft := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindSoft)
+	_, soft := suppression.ForEvent(events.NameEmailBounced, events.BounceKindSoft)
 	assert.False(t, soft)
 	_, other := suppression.ForEvent("email.opened", "")
 	assert.False(t, other)

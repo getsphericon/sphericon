@@ -3,12 +3,10 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // WebhookDispatcher fans an event out to the workspace's matching webhook
@@ -16,35 +14,6 @@ import (
 // (per-endpoint jobs, retries) in river.
 type WebhookDispatcher interface {
 	Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error
-}
-
-// Suppress adds the event's destination to the workspace suppression list when
-// the action implies a global do-not-send (hard bounce, complaint). No-op for
-// other actions or a missing email. Idempotent — a redelivered or repeated event
-// keeps the original entry rather than erroring or overwriting its reason.
-// The suppression consumer's job (internal/jobs) calls it.
-func Suppress(ctx context.Context, client *ent.Client, env Envelope) error {
-	ev, err := Decode(env)
-	if err != nil {
-		return err
-	}
-	p := ev.Project()
-	kind, _ := p.Properties["bounceKind"].(string)
-	reason, ok := suppression.ForEvent(p.Action, kind)
-	if !ok {
-		return nil
-	}
-	// The Workspace comes from the event envelope: a consumer has no membership or
-	// api token, so this is a scope source outside the site/external/job list.
-	s := client.Scoped(env.WorkspaceID)
-	err = suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
-	if errors.Is(err, suppression.ErrDestinationEmpty) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("suppress %q: %w", p.Email, err)
-	}
-	return nil
 }
 
 // webhookPayload is the public JSON delivered to endpoints (and signed).

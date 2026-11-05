@@ -105,7 +105,6 @@ components:
         internal/consentrecords,
         internal/db,
         internal/domainverify,
-        internal/events,
         internal/instance,
         internal/instanceaudit,
         internal/joindomains,
@@ -126,8 +125,21 @@ components:
     # The Role definitions take no client at all.
     except: [internal/accounts/roles]
 
+  # The domain-event bus (docs/design/domain-events.md): it stores an Event and queues the jobs of
+  # its consumers, which the wiring registers on it. It holds the raw client like core-raw (the
+  # closed list of docs/architecture.md, Workspace scoping) and knows no domain module (ADR 0102).
+  bus: { in: internal/events }
+  # Two domain modules the bus must not know (bus: must_not_depend_on). They are components of
+  # their own only so the bus can name them; to everyone else they are core (common, core's rules).
+  suppression: { in: internal/suppression }
+  messaging: { in: internal/messaging }
+
   # Everything else under internal/ is the core domain.
   core: { in: ['internal/**', config] }
+
+# Every component may publish through the bus, and reach suppression and messaging as it reaches
+# the rest of the core.
+common: [bus, suppression, messaging]
 
 # Files that are not part of a component's own layer (tests drive whole programs).
 exclude: ['**/*_test.go', '**/*.test.ts', '**/*.test.tsx', 'src/test/**', '**/testdata/**']
@@ -182,6 +194,27 @@ rules:
     may_depend_on: [core, core-raw]
     forbid_external: *no-container
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
+  bus:
+    may_depend_on: [core, core-raw]
+    must_not_depend_on:
+      - name: suppression
+        because: the suppression consumer is a job of the runner (internal/jobs), and suppression refers to the bus's names, never the reverse
+      - name: messaging
+        because: the send-outcome counter of a bounce or a complaint is recorded by the ingest module, which the wiring registers on the bus (OnStored)
+    forbid_external: *no-container
+    because: the bus is infrastructure (ADR 0102); a consumer, a module or the wiring reaches it, it reaches no domain module
+  suppression:
+    may_depend_on: [core]
+    forbid_symbol: &core-no-raw-client
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
+    forbid_external: *no-container
+    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+  messaging:
+    may_depend_on: [core]
+    forbid_symbol: *core-no-raw-client
+    forbid_external: *no-container
+    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   ee-api:
     <<: *no-raw-client
     may_depend_on: [api-problem, core, core-raw, ee]

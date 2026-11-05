@@ -94,7 +94,11 @@ coding standards in `CODING_STANDARDS.md`.
   component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
-  `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban.
+  `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban. The event bus
+  (`internal/events`) is the `bus` component: every component may publish through it, and it
+  imports no domain module (easement fails its import of `internal/suppression` or
+  `internal/messaging`; the suppression consumer is a job in `internal/jobs`, and the send-outcome
+  counter of a bounce or a complaint is `ingest.RecordOutcome`, registered with `Bus.OnStored`).
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -163,7 +167,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event consumers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
-     contact and scopes from its Workspace; `events.Suppress`, and the webhooks
+     contact and scopes from its Workspace; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
      consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
      event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
      id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
@@ -256,7 +260,8 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   (`internal/app`, `internal/db`, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   packages of the list as the `core-raw` component of `easement.yml` (the job runner as its own
-  `runner` component, which does not forbid the client either) and fails a use of
+  `runner` component, which does not forbid the client either, and the bus, `internal/events`, as
+  the `bus` component) and fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
   both lists.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

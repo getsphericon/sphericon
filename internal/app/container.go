@@ -51,6 +51,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -428,6 +429,8 @@ var editionPackage = do.Package(
 		bus.UseJobs(inserter)
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
+		bus.OnStored(ingest.RecordOutcome)
 		return bus, nil
 	}),
 )

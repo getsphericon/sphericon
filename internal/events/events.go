@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -40,8 +39,8 @@ const (
 	NameEmailOpened        = "email.opened"
 	NameEmailClicked       = "email.clicked"
 	NameEmailUnsubscribed  = "email.unsubscribed"
-	NameEmailBounced       = suppression.EventBounced
-	NameEmailComplained    = suppression.EventComplained
+	NameEmailBounced       = "email.bounced"
+	NameEmailComplained    = "email.complained"
 	NameMarketingConfirmed = "marketing.confirmed"
 	NameCollected          = "event.collected"
 
@@ -135,11 +134,11 @@ func CheckAction(action string) error {
 	return nil
 }
 
-// Bounce kinds carried by EmailDelivery; what each means for Suppression is the
-// suppression module's rule.
+// Bounce kinds carried by EmailDelivery. Only a hard bounce suppresses; a soft one, such as a
+// full mailbox, is temporary. What each means for Suppression is the suppression module's rule.
 const (
-	BounceKindHard = suppression.BounceKindHard
-	BounceKindSoft = suppression.BounceKindSoft
+	BounceKindHard = "hard"
+	BounceKindSoft = "soft"
 )
 
 // Envelope is the generic bus message. It carries transport metadata plus the

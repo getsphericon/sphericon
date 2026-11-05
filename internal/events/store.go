@@ -11,8 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // storeEvent writes the Event row of a projected domain event, on client, the producer's
@@ -67,25 +65,4 @@ func storeEvent(ctx context.Context, client *ent.Client, env Envelope, ev Domain
 		return false, fmt.Errorf("store event %q: %w", env.Name, err)
 	}
 	return true, nil
-}
-
-// recordProviderOutcome counts a newly stored provider bounce or complaint on the send-outcome
-// counter. It runs once the Event's transaction committed, so neither a repeated notice nor a
-// rolled-back one counts.
-func recordProviderOutcome(ctx context.Context, ev DomainEvent) {
-	f, ok := ev.(*EmailDelivery)
-	if !ok || f.Provider == "" {
-		return
-	}
-	var status messaging.SendStatus
-	switch f.Action {
-	case NameEmailBounced:
-		status = messaging.SendBounce
-	case NameEmailComplained:
-		status = messaging.SendComplaint
-	default:
-		return
-	}
-	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
-	messaging.RecordSendOutcome(ctx, providers.Provider(f.Provider), status)
 }

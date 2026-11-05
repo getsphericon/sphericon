@@ -1,10 +1,12 @@
-package events_test
+package jobs_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,8 +15,35 @@ import (
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
+
+// suppressEvent works the suppression consumer's job for env, as River hands it to the worker.
+func suppressEvent(ctx context.Context, client *ent.Client, env events.Envelope) error {
+	return jobs.NewSuppressEventWorker(client).Work(ctx, &river.Job[jobs.SuppressEventArgs]{
+		Args: jobs.SuppressEventArgs{EventJob: events.EventJob{Envelope: env}},
+	})
+}
+
+// dataFor marshals a typed event into the envelope Data, as the publisher does.
+func dataFor(t *testing.T, ev events.DomainEvent) []byte {
+	t.Helper()
+	b, err := json.Marshal(ev)
+	require.NoError(t, err)
+	return b
+}
+
+func envelopeOf(name, data string) events.Envelope {
+	return events.Envelope{ID: "evt", Name: name, Version: 1, WorkspaceID: 1, Data: json.RawMessage(data)}
+}
+
+// The suppression consumer refuses an envelope it cannot decode.
+func TestSuppressRejectsUndecodableEnvelopes(t *testing.T) {
+	ctx := t.Context()
+	require.ErrorContains(t, suppressEvent(ctx, nil, envelopeOf("no.such.event", "{}")), "unknown event")
+	require.ErrorContains(t, suppressEvent(ctx, nil, envelopeOf(events.NameContactCreated, `"scalar"`)), "decode")
+}
 
 // An unsubscribe is NOT a suppression (ADR 0001): it is a separate, per-source
 // opt-out, so an unsubscribe event must not create a suppression row.
@@ -35,7 +64,7 @@ func TestSuppressIgnoresUnsubscribe(t *testing.T) {
 			Email:       "Unsub@Example.com",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
 
 	// No suppression was created for this destination (unsubscribe is not a
 	// suppression reason). Scoped to the destination so unrelated fixtures don't matter.
@@ -64,34 +93,13 @@ func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 			Email:       "open@example.com",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
 
 	exists, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("open@example.com")).
 		Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, exists)
-}
-
-// Publishing an EmailDelivery with a long natural id must succeed: the
-// id becomes the envelope DedupKey and the Event's source id, while the envelope keeps a short
-// ULID of its own.
-func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	err := env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.EmailDelivery{
-			Action:      events.NameEmailBounced,
-			WorkspaceID: fixtures.AcmeID,
-			Email:       "recipient@example.com",
-			BounceKind:  events.BounceKindHard,
-			Provider:    "ses",
-			// SNS messageId (36-char UUID) + "/" + email — well over 36 chars.
-			DedupID: "9c8e1f2a-3b4d-4e5f-8a9b-0c1d2e3f4a5b/recipient@example.com",
-		})
-	})
-	require.NoError(t, err)
 }
 
 // A hard bounce suppresses the address with reason "bounce".
@@ -113,7 +121,7 @@ func TestSuppressOnHardBounce(t *testing.T) {
 			Provider:    "ses",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
 
 	s, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),
@@ -143,7 +151,7 @@ func TestSuppressIgnoresSoftBounce(t *testing.T) {
 			Provider:    "ses",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
 
 	exists, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("softbounce@example.com")).
@@ -170,7 +178,7 @@ func TestSuppressOnComplaint(t *testing.T) {
 			Provider:    "ses",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
 
 	s, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),
@@ -198,8 +206,8 @@ func TestSuppressIsIdempotent(t *testing.T) {
 			Email:       "dupe@example.com",
 		}),
 	}
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp))
-	require.NoError(t, events.Suppress(ctx, env.DB, envlp)) // redelivery
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp))
+	require.NoError(t, suppressEvent(ctx, env.DB, envlp)) // redelivery
 
 	n, err := env.DB.Suppression.Query().
 		Where(suppression.WorkspaceID(fixtures.AcmeID),

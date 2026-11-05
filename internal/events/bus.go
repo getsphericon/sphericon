@@ -30,6 +30,8 @@ type Bus struct {
 	jobs  JobQueue
 	// consumers are the consumers every Publish inserts jobs for (UseConsumers).
 	consumers []Consumer
+	// stored run for every Event newly stored, once its transaction committed (OnStored).
+	stored []func(context.Context, DomainEvent)
 }
 
 // New builds a Bus over the application's database pool.
@@ -43,6 +45,14 @@ func New(pool *sql.DB) *Bus {
 // transaction the bus opens itself.
 func (b *Bus) Use(hooks ...ent.Hook) {
 	b.hooks = append(b.hooks, hooks...)
+}
+
+// OnStored registers what runs for every Event newly stored, once the transaction that stored
+// it committed: neither a repeat nor a rolled-back Event reaches it. It runs in the publisher's
+// context, uncancelled, and cannot fail the publish, which is already committed. Register at
+// composition time, before the bus is shared with concurrent callers.
+func (b *Bus) OnStored(fs ...func(context.Context, DomainEvent)) {
+	b.stored = append(b.stored, fs...)
 }
 
 // WithinTx runs fn inside a single SQL transaction. The *ent.Client handed to fn is bound to
@@ -74,7 +84,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient := db.NewTxClient(newTxDriver(sqlTx))
 	txClient.Use(b.hooks...)
 
-	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers}
+	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, stored: b.stored}
 	if err := fn(txClient, pub); err != nil {
 		_ = sqlTx.Rollback()
 		return err
@@ -142,6 +152,8 @@ type txPublisher struct {
 	jobs JobQueue
 	// consumers are the bus's consumers, whose jobs Publish inserts on tx.
 	consumers []Consumer
+	// stored are the bus's OnStored functions, run for a newly stored Event after the commit.
+	stored []func(context.Context, DomainEvent)
 	// committed runs once tx has committed, in order.
 	committed []func()
 }
@@ -187,7 +199,9 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 		if !first {
 			return nil // a repeat: published when it first arrived
 		}
-		p.committed = append(p.committed, func() { recordProviderOutcome(context.WithoutCancel(ctx), ev) })
+		for _, f := range p.stored {
+			p.committed = append(p.committed, func() { f(context.WithoutCancel(ctx), ev) })
+		}
 	}
 	if err := p.queueConsumers(ctx, env, ev); err != nil {
 		return fmt.Errorf("queue the consumers of %q: %w", env.Name, err)

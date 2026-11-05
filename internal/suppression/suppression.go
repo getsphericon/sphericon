@@ -1,6 +1,6 @@
 // Package suppression is the one place Suppression rows are written, listed and removed
 // (ADR 0015, GLOSSARY "Suppression"): the hard, global do-not-send registry keyed by
-// (channel, destination). The bus subscriber, the manual add and the site handlers all
+// (channel, destination). The suppression job, the manual add and the site handlers all
 // go through it, so the "insert, ignore on conflict" statement exists once. Unsubscribe
 // and confirm stay in consent; eligibility reads Suppression with its own SQL.
 package suppression
@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/phone"
@@ -41,28 +42,16 @@ func NormalizeDestination(dest string) string {
 	return strings.ToLower(strings.TrimSpace(dest))
 }
 
-// Bounce kinds. Only a hard bounce suppresses; a soft one, such as a full mailbox, is
-// temporary.
-const (
-	BounceKindHard = "hard"
-	BounceKindSoft = "soft"
-)
-
-// Names of the delivery events that can suppress; the bus's event names are these.
-const (
-	EventBounced    = "email.bounced"
-	EventComplained = "email.complained"
-)
-
 // ForEvent is the rule that decides whether a delivery event suppresses its address, and
-// why: a complaint always does, a bounce only when hard (bounceKind), anything else
-// never. Unsubscribe is not a Suppression (ADR 0001).
+// why: a complaint (events.NameEmailComplained) always does, a bounce (events.NameEmailBounced)
+// only when hard (bounceKind events.BounceKindHard; a soft one, such as a full mailbox, is
+// temporary), anything else never. Unsubscribe is not a Suppression (ADR 0001).
 func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 	switch name {
-	case EventComplained:
+	case events.NameEmailComplained:
 		return entsuppression.ReasonComplaint, true
-	case EventBounced:
-		if bounceKind == BounceKindHard {
+	case events.NameEmailBounced:
+		if bounceKind == events.BounceKindHard {
 			return entsuppression.ReasonBounce, true
 		}
 		return "", false
@@ -134,7 +123,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 	if channel == "" {
 		channel = channels.Email
 	}
-	// Someone typed it: the address must be one (the bus subscriber's addresses come from
+	// Someone typed it: the address must be one (the suppression job's addresses come from
 	// providers), and a number is stored in E.164, read with the country code it must carry.
 	switch channel {
 	case channels.Email:

@@ -1,7 +1,6 @@
 package events_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,18 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/events"
 )
-
-func envelopeOf(name, data string) events.Envelope {
-	return events.Envelope{ID: "evt", Name: name, Version: 1, WorkspaceID: 1, Data: json.RawMessage(data)}
-}
-
-// The suppression consumer hands the envelope to Suppress, which refuses one it cannot decode
-// the same way.
-func TestSuppressRejectsUndecodableEnvelopes(t *testing.T) {
-	ctx := t.Context()
-	require.ErrorContains(t, events.Suppress(ctx, nil, envelopeOf("no.such.event", "{}")), "unknown event")
-	require.ErrorContains(t, events.Suppress(ctx, nil, envelopeOf(events.NameContactCreated, `"scalar"`)), "decode")
-}
 
 func TestDecodeKnowsEveryEventName(t *testing.T) {
 	for _, name := range []string{
