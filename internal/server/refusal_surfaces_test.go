@@ -60,9 +60,9 @@ func TestARefusedInputAnswers422AlikeOnBothSurfaces(t *testing.T) {
 
 	_, err := siteClient.SiteTokensCreate(t.Context(), &siteapi.SiteCreateTokenInput{Name: "   ", Scopes: []siteapi.ApiTokenScope{siteapi.ApiTokenScopeContactsRead}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	_, err = extClient.AuthTokensCreate(t.Context(), &externalapi.CreateApiTokenInput{Name: "   ", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead}})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	want := `{"status":422,"title":"Unprocessable Entity","detail":"name must not be empty","errors":{"name":["name must not be empty"]}}`
 	assert.Equal(t, http.StatusUnprocessableEntity, site.status)
@@ -78,9 +78,9 @@ func TestARemovalOfARowInUseAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsWrite)), capture(&ext))
 
 	err := siteClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.TagVipID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	err = extClient.TagsDelete(t.Context(), externalapi.TagsDeleteParams{ID: fixtures.TagVipID})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
 	assert.Equal(t, http.StatusConflict, site.status)
 	assert.Equal(t, http.StatusConflict, ext.status)
@@ -98,9 +98,9 @@ func TestAWorkspaceTheCallerCannotReachAnswers404AlikeOnEveryOperation(t *testin
 	foreignClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&foreign))
 
 	err := unknownClient.SiteTagsDelete(t.Context(), siteapi.SiteTagsDeleteParams{WorkspaceId: "Unknown0", ID: fixtures.TagVipID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = foreignClient.SiteTokensList(t.Context(), siteapi.SiteTokensListParams{WorkspaceId: fixtures.GlobexPublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 	want := `{"status":404,"title":"Not Found","detail":"workspace not found"}`
 	assert.Equal(t, http.StatusNotFound, unknown.status)
@@ -119,7 +119,7 @@ func TestARoleWithoutThePermissionAnswers403WithItsCode(t *testing.T) {
 
 	_, err := member.SiteTokensCreate(t.Context(), &siteapi.SiteCreateTokenInput{Name: "script", Scopes: []siteapi.ApiTokenScope{siteapi.ApiTokenScopeContactsRead}},
 		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusForbidden)
 
 	want := `{"code":"permission_required","status":403,"title":"Forbidden","detail":"your role in this workspace does not allow managing API tokens"}`
 	assert.Equal(t, http.StatusForbidden, got.status)
@@ -226,8 +226,11 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			k := newKindSurfaces(t)
 
-			require.NoError(t, tc.site(t.Context(), k.site))
-			require.NoError(t, tc.ext(t.Context(), k.ext))
+			siteErr := tc.site(t.Context(), k.site)
+			extErr := tc.ext(t.Context(), k.ext)
+
+			testhelper.SiteRefusal(t, siteErr, tc.status)
+			testhelper.ExternalRefusal(t, extErr, tc.status)
 
 			assert.Equal(t, tc.status, k.siteAnswer.status)
 			assert.JSONEq(t, tc.want, k.siteAnswer.body)
@@ -246,11 +249,11 @@ func TestAConflictRefusalAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Second inbox", Config: inbox}, params)
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	_, err = k.ext.IntegrationsCreate(t.Context(), &externalapi.CreateIntegrationInput{Name: "Second inbox", Config: externalapi.IntegrationConfigInput{
 		OneOf: externalapi.NewInboxConfigInputIntegrationConfigInputSum(externalapi.InboxConfigInput{Kind: externalapi.InboxConfigInputKindInbox}),
 	}})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
 	want := `{"status":409,"title":"Conflict","detail":"a workspace has at most one Test inbox: use the one it has, or archive it first"}`
 	assert.Equal(t, http.StatusConflict, k.siteAnswer.status)
@@ -266,9 +269,9 @@ func TestContentThatCannotRenderAnswers422AlikeOnBothSurfaces(t *testing.T) {
 
 	_, err := k.site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: "Broken", Body: siteapi.NewOptString(broken)},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	_, err = k.ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{Name: "Broken", Body: externalapi.NewOptString(broken)})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, k.siteAnswer.status)
 	assert.Equal(t, http.StatusUnprocessableEntity, k.extAnswer.status)
@@ -282,11 +285,11 @@ func TestABlankWorkspaceNameIsRefusedOnItsField(t *testing.T) {
 	k := newKindSurfaces(t)
 
 	_, err := k.site.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "   "})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	created := *k.siteAnswer
 	_, err = k.site.SiteWorkspacesUpdate(t.Context(), &siteapi.SiteUpdateWorkspaceInput{Name: "   "},
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	renamed := *k.siteAnswer
 
 	want := `{"status":422,"title":"Unprocessable Entity","detail":"name must not be empty","errors":{"name":["name must not be empty"]}}`
@@ -306,9 +309,9 @@ func TestAConflictOnAFieldAnswers409UnderTheFieldAlikeOnBothSurfaces(t *testing.
 
 	_, err := siteClient.SiteContactsCreate(t.Context(), &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
 		siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusConflict)
 	_, err = extClient.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusConflict)
 
 	want := `{"status":409,"title":"Conflict","detail":"email already exists","errors":{"email":["email already exists"]}}`
 	assert.Equal(t, http.StatusConflict, site.status)
@@ -329,10 +332,10 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 
 	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
-	require.NoError(t, err)
+	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress(fixtures.OwnerJohnEmail)},
 		externalapi.BroadcastsTestSendParams{ID: fixtures.BroadcastDraftID})
-	require.NoError(t, err)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	want := `{"status":422,"title":"Unprocessable Entity","detail":"the message was not sent: sending is suspended for this workspace"}`
 	assert.Equal(t, http.StatusUnprocessableEntity, site.status)

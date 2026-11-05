@@ -41,6 +41,10 @@ func TestSendOutcomesMatchWithAndWithoutALicenseUntilAHoldExists(t *testing.T) {
 	licensed := newHarness(t)
 	plain := newHarness(t, testhelper.WithoutLicense())
 
+	licensed.sendOnAPI(t, "a@example.com")
 	plain.sendOnAPI(t, "a@example.com")
-	assert.Len(t, plain.env.CustomerMail.Messages(), len(licensed.env.CustomerMail.Messages()))
+
+	licensedMail := licensed.env.CustomerMail.Messages()
+	plainMail := plain.env.CustomerMail.Messages()
+	assert.Len(t, plainMail, len(licensedMail))
 }
