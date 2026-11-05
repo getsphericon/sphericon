@@ -538,3 +538,46 @@
   workspace_id: 95
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Lacuna (workspace 96): its Twilio account, which `env.LacunaTwilio` adds with its number to the
+# fake Twilio; its Telegram bot, which `env.LacunaTelegram` adds to the fake Bot API; and a second
+# bot the fake does not know, which holds one chat and sends nothing.
+- id: 7740 # fixture: IntegrationLacunaSms
+  ingest_key: omik_test_integrationlacunasms
+  name: Lacuna Twilio
+  channel: sms
+  provider: twilio
+  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000007740\",\"secret\":\"fixturelacunatwilioauthtoken7740\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
+  preset: twilio
+  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixturelacunatwilioauthtoken7740\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7741 # fixture: IntegrationLacunaTelegram
+  ingest_key: omik_test_integrationlacunatelegram
+  name: Lacuna bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7741:AAfixturetokenlacunabot000000000000\",\"bot_id\":7741,\"username\":\"lacuna_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-lacuna-webhook-secret\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7742 # fixture: IntegrationLacunaOtherTelegram
+  ingest_key: omik_test_integrationlacunaothertelegram
+  name: Lacuna other bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7742:AAfixturetokenlacunaotherbot0000000\",\"bot_id\":7742,\"username\":\"lacuna_other_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-lacuna-other-webhook-secret\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

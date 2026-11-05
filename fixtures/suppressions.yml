@@ -165,3 +165,22 @@
   workspace_id: 20
   created_at: '{{hoursAgo 200}}'
   updated_at: '{{hoursAgo 200}}'
+# Lacuna (workspace 96): Sal's confirmed phone is suppressed, and Cyd's Suppression was lifted, which
+# a test re-opens between a Broadcast's freeze and its send.
+- id: 7740 # fixture: SuppressionLacunaSal
+  channel: sms
+  destination: '+16175557745'
+  reason: manual
+  contact_id: 7745
+  workspace_id: 96
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+- id: 7741 # fixture: SuppressionLacunaCydLifted
+  channel: sms
+  destination: '+16175557742'
+  reason: manual
+  contact_id: 7742
+  lifted_at: '2026-02-02 00:00:00'
+  workspace_id: 96
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-02 00:00:00'

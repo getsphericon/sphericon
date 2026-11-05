@@ -644,3 +644,141 @@
   workspace_id: 78
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 5}}'
+
+# Lacuna (workspace 96): drafts to every Contact or to one of its Segments, through its Twilio
+# account (7740) or its bot (7741), one per content its tests send.
+- id: 7900 # fixture: BroadcastLacunaSmsHello
+  name: Lacuna SMS news
+  channel: sms
+  text: 'Hello'
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7901 # fixture: BroadcastLacunaSmsGreeting
+  name: Lacuna SMS greeting
+  channel: sms
+  text: '{{`Hi {{ first_name }} & co, <sale> today`}}'
+  segment_id: 7740
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7902 # fixture: BroadcastLacunaSmsLinks
+  name: Lacuna SMS links
+  channel: sms
+  text: '{{`Sale: https://shop.test/offer?a=1&b=2 or your cart https://shop.test/cart. Stop: {{ unsubscribe_url }}`}}'
+  segment_id: 7740
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7903 # fixture: BroadcastLacunaSmsUntracked
+  name: Lacuna SMS untracked
+  channel: sms
+  text: 'Sale: https://shop.test/offer?a=1&b=2 or https://shop.test/cart'
+  link_tracking: false
+  segment_id: 7740
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7904 # fixture: BroadcastLacunaSmsOffer
+  name: Lacuna SMS offer
+  channel: sms
+  text: '{{`Hi {{ first_name }}, see https://shop.test/offer?a=1&b=2`}}'
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7905 # fixture: BroadcastLacunaSmsStop
+  name: Lacuna SMS stop
+  channel: sms
+  text: '{{`Hi {{ first_name }}, stop: {{ unsubscribe_url }}`}}'
+  integration_id: 7740
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7910 # fixture: BroadcastLacunaTelegramHello
+  name: Lacuna Telegram news
+  channel: telegram
+  text: 'Hello'
+  buttons: '[]'
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7911 # fixture: BroadcastLacunaTelegramChatham
+  name: Lacuna Telegram news to Chatham
+  channel: telegram
+  text: 'Hello'
+  buttons: '[]'
+  segment_id: 7741
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7912 # fixture: BroadcastLacunaTelegramRich
+  name: Lacuna Telegram rich
+  channel: telegram
+  text: 'Look <b>here</b>'
+  image_url: 'https://cdn.example.com/a.png'
+  buttons: '[{"label":"Open","url":"https://example.com/a"}]'
+  unsubscribe_button: Stop news
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7913 # fixture: BroadcastLacunaTelegramNoPreview
+  name: Lacuna Telegram without a preview
+  channel: telegram
+  text: 'See https://example.com'
+  buttons: '[]'
+  link_preview: false
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+# A caption of 950 zeros and the first name: over Telegram's 1024 once the name is long.
+- id: 7914 # fixture: BroadcastLacunaTelegramLongCaption
+  name: Lacuna Telegram long caption
+  channel: telegram
+  text: '{{ printf "%0950d" 0 }}{{`{{ first_name }}`}}'
+  image_url: 'https://cdn.example.com/a.png'
+  buttons: '[]'
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7915 # fixture: BroadcastLacunaTelegramUnsubscribe
+  name: Lacuna Telegram unsubscribe
+  channel: telegram
+  text: '{{`<a href="{{ unsubscribe_url }}">stop</a>`}}'
+  buttons: '[]'
+  unsubscribe_button: Stop
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'
+- id: 7916 # fixture: BroadcastLacunaTelegramClicks
+  name: Lacuna Telegram clicks
+  channel: telegram
+  text: '<a href="https://shop.test/offer?a=1&b=2">offer</a>'
+  buttons: '[{"label":"Open","url":"https://shop.test/button"}]'
+  integration_id: 7741
+  status: draft
+  workspace_id: 96
+  created_at: '2026-03-01 00:00:00'
+  updated_at: '2026-03-01 00:00:00'

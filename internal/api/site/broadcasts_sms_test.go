@@ -103,14 +103,14 @@ func TestSiteSMSBroadcastIsRefusedWithoutAnSMSIntegration(t *testing.T) {
 	assert.Contains(t, refused.Detail.Value, "no integration of this channel")
 }
 
+// Lacuna's draft "Hi {{ first_name }}, stop: {{ unsubscribe_url }}".
 func TestSiteSMSBroadcastTestSendGoesToTheTypedNumberAndLeavesNoMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, "Hi {{ first_name }}, stop: {{ unsubscribe_url }}")
+	env.LacunaTwilio(t)
+	c := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail)
 	testSend := func(in siteapi.TestSendBroadcastInput) siteapi.SiteBroadcastsTestSendRes {
-		res, err := c.SiteBroadcastsTestSend(ctx, &in, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+		res, err := c.SiteBroadcastsTestSend(ctx, &in, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.LacunaPublicID, ID: idStr(fixtures.BroadcastLacunaSmsStopID)})
 		require.NoError(t, err)
 		return res
 	}
@@ -153,16 +153,17 @@ func TestSiteEmailBroadcastTestSendWithoutAnEmailIsRefused(t *testing.T) {
 }
 
 // Twilio's refusal of a Test send is the author's to read: a typed number that reaches no handset
-// is no Contact's and is not suppressed, and a refusal of the account holds nothing.
+// is no Contact's and is not suppressed, and a refusal of the account holds nothing. The draft is
+// Acme's "Hello" through its Twilio account.
 func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
+	env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, "Hello")
+	draft := idStr(fixtures.BroadcastSmsDraftID)
 	testSend := func() siteapi.SiteBroadcastsTestSendRes {
 		res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Phone: siteapi.NewOptString("+14155550199")},
-			siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+			siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: draft})
 		require.NoError(t, err)
 		return res
 	}
@@ -172,7 +173,7 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 	env.Twilio.RefuseNextSend(twiliotest.AccountNotActive)
 	refusedAccount := testSend()
 	scheduled, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},
-		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
+		siteapi.SiteBroadcastsScheduleParams{WorkspaceId: fixtures.AcmePublicID, ID: draft})
 	require.NoError(t, err)
 
 	refused, ok := deadNumber.(*siteapi.SiteBroadcastsTestSendUnprocessableEntity)

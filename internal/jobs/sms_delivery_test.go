@@ -38,31 +38,28 @@ func reportStatus(t *testing.T, env *testhelper.TestEnv, account testhelper.Twil
 	require.Equal(t, http.StatusOK, res.Code, res.Body.String())
 }
 
+// Lacuna's four confirmed phones are texted: Ada's text is delivered, Bea's undelivered, and Cyd's
+// and Dot's get no final report.
 func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetPhone(alicePhone).ExecX(ctx)
-	confirmSMS(t, env, alicePhone)
-	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetPhone(bobPhone).ExecX(ctx)
-	confirmSMS(t, env, bobPhone)
-	id := smsBroadcast(t, env, account, "Sale today")
+	account := env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsHelloID)
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
-	tessText := textOf(t, env, fixtures.ContactTexterPhone)
-	aliceText := textOf(t, env, alicePhone)
+	adaText := textOf(t, env, fixtures.ContactLacunaAdaPhone)
+	beaText := textOf(t, env, fixtures.ContactLacunaBeaPhone)
 
-	reportStatus(t, env, account, tessText, "sent", "")
-	reportStatus(t, env, account, tessText, "delivered", "")
-	reportStatus(t, env, account, aliceText, "undelivered", "30003")
-	reportStatus(t, env, account, aliceText, "delivered", "")
+	reportStatus(t, env, account, adaText, "sent", "")
+	reportStatus(t, env, account, adaText, "delivered", "")
+	reportStatus(t, env, account, beaText, "undelivered", "30003")
+	reportStatus(t, env, account, beaText, "delivered", "")
 
 	b := env.DB.Broadcast.GetX(ctx, id)
-	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.AcmeID), b)
+	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.LacunaID), b)
 	require.NoError(t, err)
-	assert.Equal(t, broadcasts.Stats{Channel: broadcast.ChannelSms, Recipients: 3, Sent: 3, Delivered: 1, Undelivered: 1}, st[id],
-		"Bob's text has no final report: it is neither")
+	assert.Equal(t, broadcasts.Stats{Channel: broadcast.ChannelSms, Recipients: 4, Sent: 4, Delivered: 1, Undelivered: 1}, st[id],
+		"Cyd's and Dot's texts have no final report: they are neither")
 	figures := st[id].Figures()
 	assert.Equal(t, 1, *figures.Delivered)
 	assert.Equal(t, 1, *figures.Undelivered)
@@ -73,17 +70,15 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 }
 
 // An Automation whose Trigger is sms.undelivered enrolls the Contact whose text Twilio could not
-// deliver, and its steps see the error code. Fixture: the Automation the fixtures trigger on
-// sms.undelivered.
+// deliver, and its steps see the error code. Fixture: Lacuna's Automation on sms.undelivered.
 func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	id := smsBroadcast(t, env, account, "Sale today")
+	account := env.LacunaTwilio(t)
+	id := int64(fixtures.BroadcastLacunaSmsHelloID)
 	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
 
-	text := textOf(t, env, fixtures.ContactTexterPhone)
+	text := textOf(t, env, fixtures.ContactLacunaAdaPhone)
 	reportStatus(t, env, account, text, "undelivered", "30007")
 	undelivered := onlyEnvelope(t, env, events.NameSmsUndelivered)
 	env.WorkAutomationJobOf(t, undelivered)
@@ -92,7 +87,7 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
-		Where(automationrun.AutomationID(fixtures.AutomationOnSmsUndeliveredID), automationrun.ContactID(fixtures.ContactTexterID)).
+		Where(automationrun.AutomationID(fixtures.AutomationLacunaOnSmsUndeliveredID), automationrun.ContactID(fixtures.ContactLacunaAdaID)).
 		Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, events.NameSmsUndelivered, *run.EventAction)

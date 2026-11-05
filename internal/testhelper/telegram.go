@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
-// TelegramBot is a fixture Telegram Integration of Acme and its bot, as the fake Bot API
+// TelegramBot is a fixture Telegram Integration and its bot, as the fake Bot API
 // (env.Telegram) knows it.
 type TelegramBot struct {
 	// Integration is the Integration as the Site API reads it.
@@ -67,6 +67,27 @@ func (env *TestEnv) AcmeSecondTelegram(t *testing.T) TelegramBot {
 		ID: AcmeSecondTelegramBotID, Username: AcmeSecondTelegramUsername, Token: AcmeSecondTelegramToken,
 		HookPath: "/hooks/" + fixtures.IntegrationAcmeSecondTelegramIngestKey, Secret: AcmeSecondTelegramSecret,
 	})
+}
+
+// The bot of the fixture Integration IntegrationLacunaTelegram, as fixtures/integrations.yml stores it.
+const (
+	LacunaTelegramBotID    = 7741
+	LacunaTelegramUsername = "lacuna_fixture_bot"
+	LacunaTelegramToken    = "7741:AAfixturetokenlacunabot000000000000"
+	LacunaTelegramSecret   = "fixture-lacuna-webhook-secret"
+)
+
+// LacunaTelegram is AcmeTelegram for Lacuna's fixture Integration IntegrationLacunaTelegram: the bot
+// of the Workspace whose Telegram Broadcasts go to every Contact it holds, with the fixture's
+// Bindings on it.
+func (env *TestEnv) LacunaTelegram(t *testing.T) TelegramBot {
+	t.Helper()
+	env.Telegram.AddBotToken(LacunaTelegramBotID, LacunaTelegramUsername, LacunaTelegramToken)
+	return TelegramBot{
+		Integration: env.fixtureIntegration(t, fixtures.LacunaOwnerLenaEmail, fixtures.LacunaPublicID, fixtures.IntegrationLacunaTelegramID),
+		ID:          LacunaTelegramBotID, Username: LacunaTelegramUsername, Token: LacunaTelegramToken,
+		HookPath: "/hooks/" + fixtures.IntegrationLacunaTelegramIngestKey, Secret: LacunaTelegramSecret,
+	}
 }
 
 // fixtureTelegram adds the bot of a fixture Telegram Integration of Acme to the fake Bot API and

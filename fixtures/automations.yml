@@ -690,3 +690,11 @@
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
+# Lacuna (workspace 96): starts when a text to a Contact is not delivered (sms.undelivered).
+- id: 7740 # fixture: AutomationLacunaOnSmsUndelivered
+  name: On text undelivered
+  status: active
+  live_version_id: 7740
+  workspace_id: 96
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

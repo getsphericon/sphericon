@@ -124,3 +124,11 @@
   last_seen_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Lacuna (workspace 96): Eve's phone, which holds her chat with Lacuna's bot.
+- id: 7740
+  visitor_id: vis-lacuna-eve-phone
+  contact_id: 7752
+  workspace_id: 96
+  last_seen_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

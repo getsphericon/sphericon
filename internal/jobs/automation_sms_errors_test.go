@@ -201,7 +201,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 			assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment goes on")
 			inbox := env.Twilio.Messages()
 			assert.Empty(t, inbox, "a refusal of the number is not retried, though Twilio would accept it now")
-			suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(ctx)
+			suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(ctx)
 			assert.Zero(t, suppressed)
 			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, sent)
@@ -251,7 +251,7 @@ func TestANumberTwilioSaysIsNoMobileNumberIsSuppressed(t *testing.T) {
 
 	runSteps(t, env)
 
-	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).OnlyX(ctx)
+	suppressed := env.DB.Suppression.Query().Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.ChannelEQ(entsuppression.ChannelSms)).OnlyX(ctx)
 	assert.Equal(t, fixtures.ContactTexterConfirmedPhone, suppressed.Destination)
 	assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 	assert.Equal(t, int64(fixtures.ContactTexterConfirmedID), lo.FromPtr(suppressed.ContactID))

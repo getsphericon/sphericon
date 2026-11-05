@@ -119,7 +119,7 @@ func TestStoppingTwiceRecordsOneOptOut(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "STOP"))
 	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/stop"))
 
-	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram)).CountX(t.Context()))
+	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram)).CountX(t.Context()))
 	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil))
 }
 
