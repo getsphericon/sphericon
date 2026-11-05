@@ -189,7 +189,7 @@ rules:
   core-raw:
     may_depend_on: [core]
     forbid_external: *no-container
-    forbid_symbol:
+    forbid_symbol: &raw-holder-no-hooks
       - name: github.com/getsphericon/sphericon/internal/emailcase.Hook
         because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the database package and the other raw-client holders install none
       - name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
@@ -212,6 +212,7 @@ rules:
   runner:
     may_depend_on: [core, core-raw]
     forbid_external: *no-container
+    forbid_symbol: *raw-holder-no-hooks
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   bus:
     may_depend_on: [core, core-raw]
@@ -221,6 +222,7 @@ rules:
       - name: messaging
         because: the send-outcome counter of a bounce or a complaint is recorded by the ingest module, which the wiring registers on the bus (OnStored)
     forbid_external: *no-container
+    forbid_symbol: *raw-holder-no-hooks
     because: the bus is infrastructure (ADR 0102); a consumer, a module or the wiring reaches it, it reaches no domain module
   suppression:
     may_depend_on: [core]
