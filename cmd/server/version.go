@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
 // printVersion makes the root `--version` flag print the same line as `sphericon version`

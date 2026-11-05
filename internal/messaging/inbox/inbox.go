@@ -14,9 +14,9 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // PerDay is the Test inbox's own ceiling per rolling 24 hours, equal to what it keeps per

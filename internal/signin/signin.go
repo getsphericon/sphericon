@@ -23,8 +23,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Reason is why a provider sign-in did not start a session. Its values are the

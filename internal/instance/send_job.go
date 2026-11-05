@@ -6,7 +6,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // reportCheckInterval is how often the job looks at whether a report is due: a report goes

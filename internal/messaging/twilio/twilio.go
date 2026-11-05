@@ -22,11 +22,11 @@ import (
 	api "github.com/twilio/twilio-go/rest/api/v2010"
 	msgapi "github.com/twilio/twilio-go/rest/messaging/v1"
 
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providers"
-	"github.com/getsphericon/sphericon/internal/smsrender"
 )
 
 // DefaultAPIURL is Twilio's own REST API.

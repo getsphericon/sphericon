@@ -17,7 +17,7 @@ import (
 	"github.com/doyensec/safeurl"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // maxResponseBytes caps how much of a receiver's response body we read.

@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/ingest"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // A provider's event id is unique only per provider account (a Telegram update_id per bot), so

@@ -2,7 +2,7 @@
 // automations and the daily time series (GLOSSARY "Engagement rates").
 //
 // Days are Report days (ADR 0057): calendar days in the Workspace time zone, cut by
-// internal/reportday, so the whole history is re-bucketed the moment the zone changes.
+// internal/kernel/reportday, so the whole history is re-bucketed the moment the zone changes.
 //
 // Engagement rates are a send cohort: the denominator is the Broadcast recipients
 // sent in the window, and opens and clicks are counted among that same cohort, so
@@ -26,7 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
 // Window is the selectable trailing window in Report days, today included.

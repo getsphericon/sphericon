@@ -13,7 +13,7 @@ import (
 	gosmtp "github.com/emersion/go-smtp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // MailSink is an SMTP relay on a loopback port that accepts every message and keeps it, standing

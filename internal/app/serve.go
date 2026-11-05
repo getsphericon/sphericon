@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 )

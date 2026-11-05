@@ -6,8 +6,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // strength ranks how a Confirmation was obtained, the strongest highest (ADR 0077): the person

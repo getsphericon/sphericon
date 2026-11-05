@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"github.com/getsphericon/sphericon/internal/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // LookupDMARC reports whether a DMARC record is published for the domain, found the way a

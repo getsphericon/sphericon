@@ -19,8 +19,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // Module is the Events ingest and read module.

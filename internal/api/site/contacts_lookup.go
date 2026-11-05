@@ -5,7 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // SiteContactsLookup answers a Privacy request's first question (ADR 0021): what the

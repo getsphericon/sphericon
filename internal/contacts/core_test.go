@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
 
 func TestATraitOfACoreAttributeWritesTheAttributeNotACustomField(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsListParams) (*siteapi.SiteTagsListOK, error) {

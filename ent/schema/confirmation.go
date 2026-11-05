@@ -8,7 +8,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Confirmation is the derived read-model row for a confirmed subscription on a (workspace,

@@ -12,7 +12,7 @@ import (
 	"github.com/foxcpp/go-mockdns"
 	"github.com/miekg/dns"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // Resolver serves zones (keys are fully qualified, with the trailing dot) and

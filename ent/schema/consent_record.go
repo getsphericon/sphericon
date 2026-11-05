@@ -45,7 +45,7 @@ func (ConsentRecord) Fields() []ent.Field {
 		field.Enum("source").
 			Values("sign_up_form", "provider_screen", "invitation", "re_acceptance", "account_settings").
 			Immutable(),
-		// The client's address, resolved as the rate limiter resolves it (internal/clientip).
+		// The client's address, resolved as the rate limiter resolves it (internal/kernel/clientip).
 		field.String("ip").
 			Optional().
 			Nillable().

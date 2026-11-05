@@ -5,7 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which

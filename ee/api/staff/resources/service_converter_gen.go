@@ -9,7 +9,7 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	trackinghostchange "github.com/getsphericon/sphericon/ent/trackinghostchange"
 	service "github.com/getsphericon/sphericon/gen/service"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 type ServiceConverterImpl struct{}

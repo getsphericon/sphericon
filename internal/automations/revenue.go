@@ -6,8 +6,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // WithRevenue is an Automation and what it earned: the Orders credited to it and their net

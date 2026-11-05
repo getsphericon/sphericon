@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 
 	"github.com/stretchr/testify/assert"

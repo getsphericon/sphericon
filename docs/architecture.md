@@ -16,8 +16,8 @@ coding standards in `CODING_STANDARDS.md`.
   config. A new dependency is a provider there, never a constructor call in a handler, the
   server package, the job client (`jobs.NewClient` takes its modules in `jobs.Deps`) or the
   harness. No domain module or handler sees the container: `samber/do` is
-  imported by `internal/app`, the harness and `internal/cleanup` (its shutdown report) only
-  (easement fails an import of it in the core, a surface or `ee/`; `internal/cleanup` carries
+  imported by `internal/app`, the harness and `internal/kernel/cleanup` (its shutdown report) only
+  (easement fails an import of it in the core, a surface or `ee/`; `internal/kernel/cleanup` carries
   the one suppression).
 - **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
   `/service`, is served by `NewInternal` on the internal listener, which also always serves the
@@ -90,8 +90,17 @@ coding standards in `CODING_STANDARDS.md`.
   module imports a handler. The job runner (`internal/jobs`, component `runner`) is a driver too: only
   the wiring imports it, and a package with jobs of its own (the Edition, the Instance) hands them
   in as a `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
-  baseline. The check is strict: a new Go package under `internal/` is covered by the `core`
-  component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
+  baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
+  packages that import none of ours, such as the vocabulary every tier shares (`channels`,
+  `providers`, `holdreason`, `tokenscope`, `jobkind`) and the helpers that know no domain module
+  (`i18n`, `validation`, `pagination`, `patch`, `secrets`, `credentials`, the renderers `emaildoc`,
+  `emailrender`, `smsrender` and `telegramrender`). Every component may import it, and easement fails
+  its import of any package of ours outside `internal/kernel`, the generated `ent` and `gen` trees
+  included (components `ent` and `gen`, open to every other component); a package that needs one is
+  not kernel.
+  The check is strict: a new Go package under `internal/kernel/` is covered by the `kernel`
+  component, any other under `internal/` by the `core` component, one under `ee/api/` by `ee-api` and
+  any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
   `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban. The event bus
@@ -372,9 +381,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   failure belongs to the Action's result; it does not cancel the Firing's other Actions or adopt
   Enrollment lifecycle rules. The call retains its stable request identity and existing delivery
   guarantees: a request accepted before a failed result write may be repeated.
-- `internal/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
+- `internal/kernel/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
   export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
-  `@react-email/editor`, then `go test ./internal/emaildoc -update` to accept the new golden HTML) and run in goja,
+  `@react-email/editor`, then `go test ./internal/kernel/emaildoc -update` to accept the new golden HTML) and run in goja,
   no cgo. The server starts the runtime in the background at boot (`Warm`; a library caller's first call does it otherwise), limits are enforced before and during a render. Editor and
   bundle dependencies in `packages/emaildoc/package.json` are pinned exactly.
 - The tracker snippet (`/t.js`) is the `@sphericon/analytics` IIFE bundle, built and embedded:

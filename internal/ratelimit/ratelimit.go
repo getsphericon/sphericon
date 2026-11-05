@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/go-chi/httprate"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

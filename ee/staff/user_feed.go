@@ -9,7 +9,7 @@ import (
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // UserFeedEntry is a User as the feed reports it: the User with their current consent to the

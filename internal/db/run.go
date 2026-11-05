@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // guardTimeout bounds the guard at start and `migrate --status`, which only read.

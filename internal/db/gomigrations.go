@@ -7,7 +7,7 @@ import (
 
 	"github.com/pressly/goose/v3"
 
-	"github.com/getsphericon/sphericon/internal/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 // goMigrations are the migrations written in Go, run by goose in version order among the SQL

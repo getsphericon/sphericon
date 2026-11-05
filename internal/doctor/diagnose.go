@@ -14,9 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // ErrChecksFailed is what Diagnose returns when a check failed: the report it printed already

@@ -7,7 +7,7 @@ import (
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ee/usage"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceUsageList is the stored figures of every Workspace for a Usage period: Live

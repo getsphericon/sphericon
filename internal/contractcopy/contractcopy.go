@@ -221,7 +221,7 @@ func skipDir(rel, name string) bool {
 		return true
 	}
 	switch rel {
-	case "openapi", "typespec", "gen", "src/generated", "internal/emaildoc/assets":
+	case "openapi", "typespec", "gen", "src/generated", "internal/kernel/emaildoc/assets":
 		return true
 	}
 	if strings.HasPrefix(rel, "ent/") && rel != "ent/schema" {

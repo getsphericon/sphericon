@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // Enrollment rules (GLOSSARY: Enrollment). A Contact is enrolled into an Automation

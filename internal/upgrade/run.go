@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
 // ErrNewerRelease is what a check returns when a newer release exists; the command exits 10 on

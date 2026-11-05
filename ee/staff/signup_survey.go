@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrSignupSurveyResponseNotFound is a User who is unknown or has not answered the Sign-up survey.

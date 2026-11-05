@@ -9,9 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 // EraseSMS is the SMS opt-out part of a Contact's Erasure (ADR 0021): the opt-outs of the Contact

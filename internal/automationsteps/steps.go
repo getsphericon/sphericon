@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"slices"
 
-	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/httpcall"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
 // Kind is the kind of a Step.

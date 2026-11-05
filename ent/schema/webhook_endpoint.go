@@ -38,7 +38,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.String("url").
 			NotEmpty().
 			Annotations(Sensitive{}),
-		// HMAC signing secret, encrypted at rest via internal/secrets.Cipher.
+		// HMAC signing secret, encrypted at rest via internal/kernel/secrets.Cipher.
 		field.String("secret_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),

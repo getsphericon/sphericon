@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // QueuePurger removes what the river job table still holds about a data subject. The Publisher

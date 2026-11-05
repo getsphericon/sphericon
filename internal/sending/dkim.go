@@ -18,7 +18,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/getsphericon/sphericon/internal/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // dkimKeyBits is the RSA key size for DKIM. 2048 is the modern floor mailbox

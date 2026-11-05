@@ -12,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // SessionCookie is the name of the cookie that carries a Staff member session. It differs

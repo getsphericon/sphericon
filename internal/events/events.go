@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Bus event names — the stable type discriminators (registry keys). These are

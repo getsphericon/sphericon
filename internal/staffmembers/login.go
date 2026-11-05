@@ -7,9 +7,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entstaffmember "github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
+	"github.com/getsphericon/sphericon/internal/kernel/otpcode"
 	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/otpcode"
 )
 
 // loginKind is the Kind under which a Staff member's failed logins are counted: its own,

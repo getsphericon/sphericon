@@ -9,8 +9,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
@@ -43,7 +43,7 @@ func (w *SendAuthMailWorker) Work(ctx context.Context, job *river.Job[mailjobs.A
 
 // linkMail is the copy of an account mail that carries a one-time link: its subject, the SPA
 // page the link opens (which posts the token back) and the line above the link. The copy is
-// localized by internal/i18n at send time.
+// localized by internal/kernel/i18n at send time.
 type linkMail struct {
 	subject, intro i18n.ID
 	path           string

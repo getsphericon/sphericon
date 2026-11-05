@@ -8,8 +8,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // InviteTokenTTL is how long an invitation link stays valid.

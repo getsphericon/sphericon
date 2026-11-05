@@ -7,7 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // Finalize flips a Broadcast to "sent" once none of its recipients' sends is still pending.

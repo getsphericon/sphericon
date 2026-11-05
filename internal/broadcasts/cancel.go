@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // CancelPending cancels a Contact's pending Broadcast work (Erasure, ADR 0021): the

@@ -12,7 +12,7 @@ import (
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
 	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
 )

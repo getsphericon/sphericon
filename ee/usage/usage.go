@@ -30,7 +30,7 @@ import (
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // Interval is how often the job closes elapsed periods and refreshes Live usage.

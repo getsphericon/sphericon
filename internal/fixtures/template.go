@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // timeLayout is the Postgres-friendly timestamp layout the template date helpers

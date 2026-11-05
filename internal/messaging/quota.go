@@ -3,7 +3,7 @@ package messaging
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // Quota is what a provider reports about the customer's account: its sending limits (ADR

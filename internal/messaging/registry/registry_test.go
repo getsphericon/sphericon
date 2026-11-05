@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 func TestDefaultRegistersBuiltInProviders(t *testing.T) {

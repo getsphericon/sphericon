@@ -5,7 +5,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // WebhooksRegenerateSecret replaces the endpoint's signing secret. The new secret is

@@ -21,10 +21,10 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 

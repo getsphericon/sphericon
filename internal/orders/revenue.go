@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
 // Every read of revenue is here (ADR 0064): it is summed from the Order Movements, each on the

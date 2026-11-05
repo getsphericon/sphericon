@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/rekey"
-	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 func TestRotateKeepsTheOldKeyForDecryptionAndSaysToReencrypt(t *testing.T) {

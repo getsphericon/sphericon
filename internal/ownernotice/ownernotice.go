@@ -8,7 +8,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
 // Notify mails the Owners of a Workspace through the system sender. A nil Notify sends nothing

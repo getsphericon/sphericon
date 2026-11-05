@@ -25,7 +25,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // Account is an account the fake knows: its SID and its Auth Token.

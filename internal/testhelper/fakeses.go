@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/inbox"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server

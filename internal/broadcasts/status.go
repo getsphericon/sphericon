@@ -11,7 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // trigger is a move of the Broadcast lifecycle (ADR 0046).

@@ -11,7 +11,7 @@ package brandkit
 import (
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 )
 
 // Kit is a Workspace's Brand kit. A Workspace that has not saved one has the defaults and Saved

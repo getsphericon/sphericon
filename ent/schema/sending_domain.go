@@ -46,7 +46,7 @@ func (SendingDomain) Fields() []ent.Field {
 		// DKIM selector; the DNS record is "<dkim_selector>._domainkey.<domain>".
 		field.String("dkim_selector").
 			NotEmpty(),
-		// Tink-encrypted PKCS#8 PEM private key (internal/secrets.Cipher).
+		// Tink-encrypted PKCS#8 PEM private key (internal/kernel/secrets.Cipher).
 		field.String("dkim_private_key_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),

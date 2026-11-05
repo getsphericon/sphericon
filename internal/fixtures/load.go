@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-testfixtures/testfixtures/v3"
 
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // Load replaces the contents of every table the YAML files of dir name with their rows, through

@@ -12,7 +12,7 @@ import (
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )

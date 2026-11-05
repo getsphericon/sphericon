@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // ErrNoKeyset means SPHERICON_ENCRYPTION_KEY is empty, so there is no keyset to rotate or retire.

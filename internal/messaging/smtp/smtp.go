@@ -13,9 +13,9 @@ import (
 
 	"github.com/wneessen/go-mail"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // Config is the cleartext credential shape stored (encrypted) for an SMTP

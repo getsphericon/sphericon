@@ -9,8 +9,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
 // Converter maps what a refusal names to the problem model's members, and the site's problem,

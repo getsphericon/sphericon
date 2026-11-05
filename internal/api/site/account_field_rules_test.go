@@ -14,7 +14,7 @@ import (
 )
 
 // Every way a person sets a password, a name or an address of their own goes through the same
-// rules as Sign-up (internal/validation), so none of them is a way around it.
+// rules as Sign-up (internal/kernel/validation), so none of them is a way around it.
 
 const (
 	shortPasswordMessage = "the password must be 8 to 256 characters long"

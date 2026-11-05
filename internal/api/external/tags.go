@@ -5,8 +5,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListParams) (*externalapi.TagsListOK, error) {

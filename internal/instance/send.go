@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
 const (

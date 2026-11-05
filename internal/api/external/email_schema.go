@@ -4,7 +4,7 @@ import (
 	"context"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/emaildoc"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 )
 
 // EmailSchemaGet describes the editor's document to an agent (ADR 0040): the structure the editor

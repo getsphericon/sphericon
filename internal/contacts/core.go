@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
 
 // The longest a text core attribute, a locale tag and an avatar URL may be. Identify's traits are an

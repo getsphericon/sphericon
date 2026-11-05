@@ -7,8 +7,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/patch"
-	"github.com/getsphericon/sphericon/internal/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 // e164 is a trimmed phone in E.164 (ADR 0075), a number without a country code read with country;

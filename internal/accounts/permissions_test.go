@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // cell is one cell of the Permission table of ADR 0061: whether role holds permission.

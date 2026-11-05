@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entcredential "github.com/getsphericon/sphericon/ent/servicecredential"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // saas configures a saas Instance with everything its Mode requires but the license key.

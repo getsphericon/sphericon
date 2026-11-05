@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
 // Release is one `## ` section of the changelog.

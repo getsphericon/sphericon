@@ -20,10 +20,10 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/linktarget"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // confirmTTL is how long a double-opt-in confirmation link stays valid. Unlike

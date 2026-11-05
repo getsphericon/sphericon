@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/api/problem"
-	"github.com/getsphericon/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 

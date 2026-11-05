@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // ProviderDescriptor is the extensibility seam: it teaches the catalog how to

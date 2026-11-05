@@ -4,13 +4,13 @@ import (
 	"time"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
 // ServiceInputs maps the service API's request bodies onto the modules' inputs: the input direction
 // of the contract, so a handler only hands the module what the request says. The extends below bind
-// the generated option types of this surface to the shared conversions of internal/convert. The
+// the generated option types of this surface to the shared conversions of internal/kernel/convert. The
 // Enterprise Staff API (gen/staffee) has no body that is a module's input: its operations pass the
 // module single values.
 //

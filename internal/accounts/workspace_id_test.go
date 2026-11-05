@@ -11,8 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 func TestCreateWorkspaceGivesItAnId(t *testing.T) {

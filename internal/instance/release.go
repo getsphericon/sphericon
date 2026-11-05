@@ -7,8 +7,8 @@ import (
 	"github.com/riverqueue/river"
 	"golang.org/x/mod/semver"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // releaseLookupTimeout bounds one ask: the source's own client waits much longer.

@@ -7,9 +7,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The acceptance gate (ADR 0062): a User is gated while a required acceptance in effect has a

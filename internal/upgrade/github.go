@@ -15,8 +15,8 @@ import (
 	"golang.org/x/mod/semver"
 	"golang.org/x/net/http/httpproxy"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 const (

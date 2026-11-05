@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
 // SubscribedPeople is the Subscribed people report: the flow of subscriptions per Report day and

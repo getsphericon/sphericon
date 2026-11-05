@@ -8,11 +8,11 @@ import (
 	"unicode"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrNotSaved means the Workspace has no saved Brand kit, so there is nothing to make starter

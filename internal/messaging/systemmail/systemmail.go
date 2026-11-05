@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/providers"
 )
 
 // defaultFromName is the display name of system mail when SPHERICON_SYSTEM_EMAIL_FROM_NAME is unset.

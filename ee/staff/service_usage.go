@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/usage"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // UsageEntry is one Workspace's stored figures for a Usage period, under the Workspace's id.

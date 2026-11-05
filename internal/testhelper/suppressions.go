@@ -3,9 +3,9 @@ package testhelper
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // SuppressDestination puts a destination of Acme on the Suppression list by re-opening the

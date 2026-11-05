@@ -552,7 +552,7 @@ description = "fixtures/*.yml -> Go (fixture catalog constants for `# fixture: N
 run = "go run ./cmd/fixturegen"
 
 ["generate:i18n-ids"]
-description = "internal/i18n/locales/en.json -> Go (one i18n.ID per message of the backend catalog)"
+description = "internal/kernel/i18n/locales/en.json -> Go (one i18n.ID per message of the backend catalog)"
 run = "go run ./cmd/i18ngen"
 
 ["generate:configdoc"]
@@ -873,10 +873,10 @@ description = "Build the standalone tracker (IIFE) and copy it into the Go embed
 run = ["pnpm build:tracker", "cp packages/analytics/dist/t.js internal/server/assets/t.js"]
 
 ["build:emaildoc"]
-description = "Build the email document renderer bundle (the editor's export code for goja) its schema listing and the editor version into internal/emaildoc/assets"
+description = "Build the email document renderer bundle (the editor's export code for goja) its schema listing and the editor version into internal/kernel/emaildoc/assets"
 run = [
   "pnpm build:emaildoc",
-  "cp packages/emaildoc/dist/emaildoc.js packages/emaildoc/dist/schema.json packages/emaildoc/dist/editor-version.txt internal/emaildoc/assets/",
+  "cp packages/emaildoc/dist/emaildoc.js packages/emaildoc/dist/schema.json packages/emaildoc/dist/editor-version.txt internal/kernel/emaildoc/assets/",
 ]
 
 ["build:spa"]
@@ -898,7 +898,7 @@ depends = ["build:tracker", "build:spa", "build:changelog"]
 run = '''
 commit=$(git rev-parse --short HEAD 2>/dev/null || echo none)
 date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-go build -tags embed_spa,embed_changelog -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${SPHERICON_VERSION:-dev} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
+go build -tags embed_spa,embed_changelog -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Version=${SPHERICON_VERSION:-dev} -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
 '''
 
 [loc]

@@ -7,7 +7,7 @@
 //
 // OAuth issuing (internal/oauthserver) keeps its own flow: its scopes are fixed by
 // the consent screen, and it only shares the credential generators in
-// internal/credentials. What it issues is a Connection, an API token tied to the
+// internal/kernel/credentials. What it issues is a Connection, an API token tied to the
 // approving User's Membership and naming the client approved (ADR 0061). A Personal token
 // is a User's own token that names no client, minted by hand (MintPersonal). The
 // Workspace's API tokens below are the rows without a Membership; a Connection is listed
@@ -24,9 +24,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 var (

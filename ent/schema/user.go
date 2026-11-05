@@ -57,7 +57,7 @@ func (User) Fields() []ent.Field {
 		field.Int64("session_epoch").
 			Default(0),
 		// The TOTP Second factor (ADR 0020): the shared secret sealed with the
-		// instance cipher (internal/secrets). Set while enrollment is pending and
+		// instance cipher (internal/kernel/secrets). Set while enrollment is pending and
 		// once it is active; empty when the User has no Second factor.
 		field.String("second_factor_secret_encrypted").
 			Sensitive().

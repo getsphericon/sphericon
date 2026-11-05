@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 

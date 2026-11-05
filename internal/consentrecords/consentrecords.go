@@ -23,11 +23,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	"github.com/getsphericon/sphericon/ent/signupitem"
-	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Field is the json name of the form field that carries the answers: a refusal of the answers as a
@@ -111,7 +111,7 @@ func decision(accepted bool) consentrecord.Decision {
 
 // Write adds the records of consents for the User in tx, the transaction that writes the User or
 // its answer, with the client's address and user agent of the request in ctx (resolved as the
-// rate limiter resolves them, internal/clientip).
+// rate limiter resolves them, internal/kernel/clientip).
 func Write(ctx context.Context, tx *ent.Client, userID int64, consents Consents) error {
 	if len(consents.Entries) == 0 {
 		return nil

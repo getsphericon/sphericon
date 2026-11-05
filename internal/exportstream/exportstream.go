@@ -20,8 +20,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // ErrBadCursor means a cursor token is not one this package issued: a malformed or foreign

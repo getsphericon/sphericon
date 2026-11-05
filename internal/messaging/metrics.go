@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 const otelScope = "github.com/getsphericon/sphericon/internal/messaging"

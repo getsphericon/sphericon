@@ -6,8 +6,8 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (*externalapi.SegmentsListOK, error) {

@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // EventConsumer is the Erasures stream's consumer of the domain events (ADR 0101): every

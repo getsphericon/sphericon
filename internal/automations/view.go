@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
 // StepView is a stored Step as the API shows it: only the fields of its kind are set, so a field

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
 // Mode is the kind of deployment an Instance is (ADR 0060). It alone decides what differs

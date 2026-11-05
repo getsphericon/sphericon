@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
 // NewPeople is the New people report: the Contacts created in the window, per Report day and

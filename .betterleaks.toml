@@ -44,7 +44,7 @@ targetRules = ["generic-password"]
 condition = "AND"
 paths = [
   '''^internal/((kernel/)?validation/fields|api/site/fields|accounts/accounts|users/users)\.go$''',
-  '''^internal/i18n/locales/en\.json$''',
+  '''^internal/(kernel/)?i18n/locales/en\.json$''',
   '''^locales/(en|ru|es)/translation\.json$''',
   '''^types/resources\.d\.ts$''',
 ]

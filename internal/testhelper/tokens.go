@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 )
 
 // ExpiredConfirmToken is a confirmation token for target, signed like the

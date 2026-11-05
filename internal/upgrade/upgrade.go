@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // Errors a caller maps to an exit code or a message.

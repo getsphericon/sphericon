@@ -5,7 +5,7 @@ import (
 
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceTrackingHostFeedList is the Tracking domain hosts that entered or left the

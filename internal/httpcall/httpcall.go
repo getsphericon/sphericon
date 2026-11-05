@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"golang.org/x/net/http/httpguts"
 )
 

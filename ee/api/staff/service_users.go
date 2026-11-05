@@ -5,7 +5,7 @@ import (
 
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceUserFeedList is the Users created, changed or deleted since a cursor, each with their

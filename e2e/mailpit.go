@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // Address is a mailbox as Mailpit reports it.

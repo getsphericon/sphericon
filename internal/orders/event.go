@@ -15,7 +15,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/getsphericon/sphericon/internal/money"
+	"github.com/getsphericon/sphericon/internal/kernel/money"
 )
 
 // The actions of the four order Events, as the spec names them.

@@ -11,7 +11,7 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/jackc/pgerrcode"
 	"golang.org/x/mod/semver"
 )
