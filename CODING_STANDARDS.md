@@ -102,7 +102,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
-  `internal/api/external` or `internal/api/staff` names no `validation.Error`, `validation.RefusalError`,
+  `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
   the module's error, and `refusalProblem` in `internal/server` answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
@@ -118,11 +118,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
-- **Rule 15, `no-hand-written-problem-in-site` and `no-hand-written-problem-in-external` (ast-grep).**
-  A handler in `internal/api/site` or `internal/api/external` calls neither `problem` nor
-  `problemWithErrors`, builds no `siteapi.*ProblemDetails` or `externalapi.*ProblemDetails` literal
-  and names no operation's error response (`siteapi.Site…NotFound`, `externalapi.…NotFound` and their
-  kin): the module that decides a refusal returns its sentinel. The rules' `ignores` are the files
+- **Rule 15, `no-hand-written-problem-in-site`, `no-hand-written-problem-in-external` and
+  `no-hand-written-problem-in-staff` (ast-grep).** A handler in `internal/api/site`,
+  `internal/api/external`, `internal/api/staff` or `ee/api/**` calls neither `problem` nor
+  `problemWithErrors`, builds no `ProblemDetails` literal of its contract (`siteapi`, `externalapi`,
+  `staffapi`, `staffeeapi`, `serviceapi`) and names no operation's error response
+  (`siteapi.Site…NotFound`, `serviceapi.…NotFound` and their kin): the module that decides a
+  refusal returns its sentinel. The rules' `ignores` are the files
   that keep an answer no refusal kind gives (the 402 of a missing Enterprise license, the 410 of an
   expired confirmation link), with each surface's `problem.go`, which holds the helpers they call.
   A single answer kept by hand in a covered file carries

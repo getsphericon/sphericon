@@ -5,15 +5,13 @@ import (
 	"encoding/base64"
 	"strconv"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
-// HostChange is one entry of the Tracking host feed, under its Workspace's id.
-type HostChange struct {
+// TrackingHostFeedEntry is one entry of the Tracking host feed, under its Workspace's id.
+type TrackingHostFeedEntry struct {
 	// WorkspaceID is the Workspace's id (ADR 0043), the address the service responses name.
 	WorkspaceID string
 	Change      *ent.TrackingHostChange
@@ -27,13 +25,13 @@ type HostChange struct {
 // beginning; the module keeps no position, and delivery is at-least-once like the
 // Workspace feed. It reads the log through the raw client: the entries name a Workspace
 // but carry no Workspace data.
-func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[HostChange], error) {
+func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[TrackingHostFeedEntry], error) {
 	if err := m.licensed(); err != nil {
-		return pagination.CursorPage[HostChange]{}, err
+		return pagination.CursorPage[TrackingHostFeedEntry]{}, err
 	}
 	after, err := parseChangeCursor(cursor)
 	if err != nil {
-		return pagination.CursorPage[HostChange]{}, err
+		return pagination.CursorPage[TrackingHostFeedEntry]{}, err
 	}
 	rows, err := m.ent.TrackingHostChange.Query().
 		Where(trackinghostchange.IDGT(after)).
@@ -41,15 +39,15 @@ func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int)
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
-		return pagination.CursorPage[HostChange]{}, err
+		return pagination.CursorPage[TrackingHostFeedEntry]{}, err
 	}
 	page := pagination.Cursor(rows, limit, cursor, changeCursor)
-	publicIDs, err := m.publicIDs(ctx, lo.Map(page.Items, func(c *ent.TrackingHostChange, _ int) int64 { return c.WorkspaceID }))
+	publicIDs, err := publicIDsOf(ctx, m, page.Items, func(c *ent.TrackingHostChange) int64 { return c.WorkspaceID })
 	if err != nil {
-		return pagination.CursorPage[HostChange]{}, err
+		return pagination.CursorPage[TrackingHostFeedEntry]{}, err
 	}
-	return pagination.MapCursor(page, func(c *ent.TrackingHostChange) HostChange {
-		return HostChange{WorkspaceID: publicIDs[c.WorkspaceID], Change: c}
+	return pagination.MapCursor(page, func(c *ent.TrackingHostChange) TrackingHostFeedEntry {
+		return TrackingHostFeedEntry{WorkspaceID: publicIDs[c.WorkspaceID], Change: c}
 	}), nil
 }
 

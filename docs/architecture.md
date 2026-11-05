@@ -84,10 +84,13 @@ coding standards in `CODING_STANDARDS.md`.
   package (`internal/api/{site,external,collect,staff}`) never imports another surface, `internal/**` core
   imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
   `internal/server`, `internal/mcpserver`, `internal/testhelper`, `internal/doctor`, `cmd/server`)
-  assemble them; only they import `ee/`. A new wiring package is added to the `wiring` component,
-  never to a baseline. The check is strict: a new Go package under `internal/` or `ee/` is covered by
-  the `core` and `ee` components, and a new top-level tree must be assigned a component or listed
-  as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
+  assemble them; only they import `ee/`. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
+  component `ee-api`) call their domain module in `ee/` and hold neither the raw client nor the
+  container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no Enterprise
+  module imports a handler. A new wiring package is added to the `wiring` component, never to a
+  baseline. The check is strict: a new Go package under `internal/` is covered by the `core`
+  component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
+  tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
   `*ent.Client` list (`core-raw`, see "Workspace scoping") and the `samber/do` ban.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's

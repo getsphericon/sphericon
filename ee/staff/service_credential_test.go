@@ -9,14 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/samber/lo"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	entcredential "github.com/getsphericon/sphericon/ent/servicecredential"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"

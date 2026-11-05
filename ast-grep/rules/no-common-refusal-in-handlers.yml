@@ -25,6 +25,7 @@ files:
   - internal/api/site/**/*.go
   - internal/api/external/**/*.go
   - internal/api/staff/**/*.go
+  - ee/api/**/*.go
 ignores:
   - '**/*_test.go'
   - '**/*_gen.go'

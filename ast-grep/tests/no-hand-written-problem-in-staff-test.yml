@@ -1,0 +1,36 @@
+id: no-hand-written-problem-in-staff
+valid:
+  - |
+    func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {
+    	rows, err := h.module.ActiveHolds(ctx, string(params.WorkspaceId))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return &serviceapi.HoldList{Items: serviceMapper.HoldsToResources(rows)}, nil
+    }
+  - |
+    func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (staffeeapi.StaffWorkspacesUnsuspendRes, error) {
+    	w, changed, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return change(staffMapper.WorkspaceToResource(w), changed), nil
+    }
+invalid:
+  - |
+    func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {
+    	p := serviceapi.ServiceHoldsListNotFound(workspaceNotFoundProblem())
+    	return &p, nil
+    }
+  - |
+    func notFoundProblem() staffeeapi.ProblemDetails {
+    	return staffeeapi.ProblemDetails{Detail: staffeeapi.NewOptString("not found")}
+    }
+  - |
+    func reasonRequired() staffeeapi.StaffWorkspacesSuspendRes {
+    	return &staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{Detail: staffeeapi.NewOptString("a reason")}
+    }
+  - |
+    func itemNotFound() staffapi.StaffSignupItemsGetRes {
+    	return &staffapi.StaffSignupItemsGetNotFound{}
+    }

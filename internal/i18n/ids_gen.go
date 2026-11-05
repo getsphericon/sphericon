@@ -155,6 +155,9 @@ var (
 	ErrorsEventRejected                         = ID{key: "errors.event_rejected"}
 	ErrorsExportCursorInvalid                   = ID{key: "errors.export_cursor_invalid"}
 	ErrorsFeedCursorInvalid                     = ID{key: "errors.feed_cursor_invalid"}
+	ErrorsHoldActionUrlInvalid                  = ID{key: "errors.hold_action_url_invalid"}
+	ErrorsHoldExpiryInPast                      = ID{key: "errors.hold_expiry_in_past"}
+	ErrorsHoldTooLong                           = ID{key: "errors.hold_too_long"}
 	ErrorsIdentityProofRequired                 = ID{key: "errors.identity_proof_required"}
 	ErrorsIntegrationDefaultConflict            = ID{key: "errors.integration_default_conflict"}
 	ErrorsIntegrationInvalid                    = ID{key: "errors.integration_invalid"}

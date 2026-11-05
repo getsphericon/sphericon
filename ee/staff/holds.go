@@ -2,32 +2,29 @@ package staff
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/url"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // DefaultHoldMaxExpiry is how far ahead a hold's expiry may be set when the instance
 // does not say otherwise: a service that stops renewing frees the Workspace by then.
 const DefaultHoldMaxExpiry = 30 * 24 * time.Hour
 
-// ErrHoldExpiryInPast refuses a hold that would already have lapsed.
-var ErrHoldExpiryInPast = errors.New("staff: a hold's expiry must be in the future")
-
-// ErrHoldActionURL refuses an action URL that is not an absolute https URL: it is shown
-// to the Workspace's Owners as a link, so no other scheme and no credentials in it.
-var ErrHoldActionURL = errors.New("staff: a hold's action URL must be an absolute https URL")
-
-// HoldTooLongError refuses a hold whose expiry is beyond the configured maximum.
-type HoldTooLongError struct{ Max time.Duration }
-
-func (e *HoldTooLongError) Error() string {
-	return fmt.Sprintf("staff: a hold's expiry may be at most %s from now", e.Max)
-}
+var (
+	// ErrHoldExpiryInPast refuses a hold that would already have lapsed.
+	ErrHoldExpiryInPast = validation.RefuseField("expiresAt", "staff: a hold's expiry must be in the future", i18n.ErrorsHoldExpiryInPast)
+	// ErrHoldTooLong refuses a hold whose expiry is beyond the configured maximum; the refusal
+	// names the maximum.
+	ErrHoldTooLong = validation.RefuseField("expiresAt", "staff: a hold's expiry is too far ahead", i18n.ErrorsHoldTooLong)
+	// ErrHoldActionURL refuses an action URL that is not an absolute https URL: it is shown
+	// to the Workspace's Owners as a link, so no other scheme and no credentials in it.
+	ErrHoldActionURL = validation.RefuseField("actionUrl", "staff: a hold's action URL must be an absolute https URL", i18n.ErrorsHoldActionUrlInvalid)
+)
 
 // HoldInput is what a setter states about a hold.
 type HoldInput = holds.Input
@@ -38,7 +35,7 @@ type HoldChange = holds.Change
 // SetHold sets the hold under key on a Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless. It is recorded in the Audit log under the
 // credential's name. The expiry is required to be ahead of now and no further than the
-// configured maximum. ent.IsNotFound for an unknown Workspace.
+// configured maximum. ErrWorkspaceNotFound for an unknown Workspace.
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (docs/architecture.md, list item 7).
@@ -51,7 +48,7 @@ func (m *Module) SetHold(ctx context.Context, cred *ent.ServiceCredential, works
 		return HoldChange{}, ErrHoldExpiryInPast
 	}
 	if in.ExpiresAt.After(now.Add(m.holdMax)) {
-		return HoldChange{}, &HoldTooLongError{Max: m.holdMax}
+		return HoldChange{}, ErrHoldTooLong.With("at most " + m.holdMax.String() + " from now")
 	}
 	if in.ActionURL != nil {
 		if u, err := url.Parse(*in.ActionURL); err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {
@@ -66,7 +63,7 @@ func (m *Module) SetHold(ctx context.Context, cred *ent.ServiceCredential, works
 }
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
-// in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
+// in the Audit log under the credential's name. ErrWorkspaceNotFound for an unknown Workspace.
 func (m *Module) ClearHold(ctx context.Context, cred *ent.ServiceCredential, workspaceID, key string) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
@@ -78,8 +75,8 @@ func (m *Module) ClearHold(ctx context.Context, cred *ent.ServiceCredential, wor
 	return holds.Clear(ctx, s, key)
 }
 
-// ActiveHolds lists the holds of a Workspace that are active now, by key. ent.IsNotFound
-// for an unknown Workspace.
+// ActiveHolds lists the holds of a Workspace that are active now, by key.
+// ErrWorkspaceNotFound for an unknown Workspace.
 func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Hold, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err

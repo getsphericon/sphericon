@@ -10,7 +10,7 @@ import (
 // AuditEntries is one page of a Workspace's Audit log, newest first, and the cursor of
 // the next page (0 on the last). It rides the same read path as the /site page
 // (audit.Log.Entries), through a scope over the Workspace the Staff member is looking at,
-// so the query carries no hand-written Workspace predicate; an ent not-found error
+// so the query carries no hand-written Workspace predicate; ErrWorkspaceNotFound
 // when the Workspace does not exist. With WorkspaceDeliverability and SentLast24h it is one of
 // the three console reads this package builds a Workspace scope for (docs/architecture.md, scope
 // list item 7).

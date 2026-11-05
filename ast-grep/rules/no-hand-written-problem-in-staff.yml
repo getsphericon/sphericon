@@ -1,0 +1,29 @@
+id: no-hand-written-problem-in-staff
+language: Go
+severity: error
+message: "rule 15: a Staff or service handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/ConflictField/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete/UnknownReference) and let refusalProblem in internal/server answer it"
+note: >-
+  The /staff and /service twin of no-hand-written-problem-in-site (review rule 15): the module that
+  decides a refusal returns a sentinel whose kind carries its status and code, and the server's
+  error handler writes the problem, alike on every surface. A handler that builds a
+  staffapi/staffeeapi/serviceapi *ProblemDetails literal or names an operation's error response
+  writes a second mapping of the decision, next to the handler rather than the module, which
+  drifts from the other surfaces. A new file is covered at once.
+rule:
+  any:
+    - kind: composite_literal
+      has:
+        field: type
+        regex: ^(staffapi|staffeeapi|serviceapi)\.\w*ProblemDetails$
+    # An operation's error response, however its body was built: converted to (a selector) or
+    # built as a literal (a qualified type).
+    - kind: selector_expression
+      regex: &response ^(staffapi|staffeeapi|serviceapi)\.\w+(BadRequest|Unauthorized|PaymentRequired|Forbidden|NotFound|Conflict|Gone|PreconditionRequired|UnprocessableEntity)$
+    - kind: qualified_type
+      regex: *response
+files:
+  - internal/api/staff/**/*.go
+  - ee/api/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'

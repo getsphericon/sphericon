@@ -1,7 +1,7 @@
 // Package staff is the core /staff surface (ADR 0026, ADR 0063): the Staff member's sign-in, the
 // signed-in Staff member and the Instance's own settings (its Sign-up items and its Telemetry
 // report), served on every Instance in both Modes and without a License key.
-// The Enterprise sections of the console are a contract of their own (gen/staffee, ee/staff),
+// The Enterprise sections of the console are a contract of their own (gen/staffee, ee/api/staff),
 // served under the same prefix: Server falls through to them for every path this surface does
 // not route.
 package staff
