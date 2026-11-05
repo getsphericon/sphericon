@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -332,6 +333,10 @@ func TestWithoutALicenseNothingIsServedAndTheModuleRefuses(t *testing.T) {
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
 	require.ErrorIs(t, env.StaffEnterprise.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID), staff.ErrNotLicensed)
 	_, err = env.StaffEnterprise.ServiceCredentials(t.Context(), "")
+	require.ErrorIs(t, err, staff.ErrNotLicensed)
+	_, err = env.StaffEnterprise.UsageList(t.Context(), time.Now(), pagination.Params{})
+	require.ErrorIs(t, err, staff.ErrNotLicensed)
+	_, err = env.StaffEnterprise.WorkspaceUsage(t.Context(), fixtures.AcmePublicID, time.Now())
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
 	_, err = env.StaffEnterprise.AuthenticateService(t.Context(), primary)
 	require.ErrorIs(t, err, staff.ErrUnauthorized, "a valid value is refused without the license")
