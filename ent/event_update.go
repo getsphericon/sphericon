@@ -171,20 +171,6 @@ func (_u *EventUpdate) ClearPhone() *EventUpdate {
 	return _u
 }
 
-// SetAction sets the "action" field.
-func (_u *EventUpdate) SetAction(v string) *EventUpdate {
-	_u.mutation.SetAction(v)
-	return _u
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (_u *EventUpdate) SetNillableAction(v *string) *EventUpdate {
-	if v != nil {
-		_u.SetAction(*v)
-	}
-	return _u
-}
-
 // SetProperties sets the "properties" field.
 func (_u *EventUpdate) SetProperties(v map[string]interface{}) *EventUpdate {
 	_u.mutation.SetProperties(v)
@@ -271,20 +257,6 @@ func (_u *EventUpdate) ClearURL() *EventUpdate {
 	return _u
 }
 
-// SetBackfill sets the "backfill" field.
-func (_u *EventUpdate) SetBackfill(v bool) *EventUpdate {
-	_u.mutation.SetBackfill(v)
-	return _u
-}
-
-// SetNillableBackfill sets the "backfill" field if the given value is not nil.
-func (_u *EventUpdate) SetNillableBackfill(v *bool) *EventUpdate {
-	if v != nil {
-		_u.SetBackfill(*v)
-	}
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *EventUpdate) SetWorkspace(v *Workspace) *EventUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -350,11 +322,6 @@ func (_u *EventUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EventUpdate) check() error {
-	if v, ok := _u.mutation.Action(); ok {
-		if err := event.ActionValidator(v); err != nil {
-			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Event.action": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Event.workspace"`)
 	}
@@ -412,9 +379,6 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.PhoneCleared() {
 		_spec.ClearField(event.FieldPhone, field.TypeString)
 	}
-	if value, ok := _u.mutation.Action(); ok {
-		_spec.SetField(event.FieldAction, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Properties(); ok {
 		_spec.SetField(event.FieldProperties, field.TypeJSON, value)
 	}
@@ -444,9 +408,6 @@ func (_u *EventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.URLCleared() {
 		_spec.ClearField(event.FieldURL, field.TypeString)
-	}
-	if value, ok := _u.mutation.Backfill(); ok {
-		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -668,20 +629,6 @@ func (_u *EventUpdateOne) ClearPhone() *EventUpdateOne {
 	return _u
 }
 
-// SetAction sets the "action" field.
-func (_u *EventUpdateOne) SetAction(v string) *EventUpdateOne {
-	_u.mutation.SetAction(v)
-	return _u
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (_u *EventUpdateOne) SetNillableAction(v *string) *EventUpdateOne {
-	if v != nil {
-		_u.SetAction(*v)
-	}
-	return _u
-}
-
 // SetProperties sets the "properties" field.
 func (_u *EventUpdateOne) SetProperties(v map[string]interface{}) *EventUpdateOne {
 	_u.mutation.SetProperties(v)
@@ -768,20 +715,6 @@ func (_u *EventUpdateOne) ClearURL() *EventUpdateOne {
 	return _u
 }
 
-// SetBackfill sets the "backfill" field.
-func (_u *EventUpdateOne) SetBackfill(v bool) *EventUpdateOne {
-	_u.mutation.SetBackfill(v)
-	return _u
-}
-
-// SetNillableBackfill sets the "backfill" field if the given value is not nil.
-func (_u *EventUpdateOne) SetNillableBackfill(v *bool) *EventUpdateOne {
-	if v != nil {
-		_u.SetBackfill(*v)
-	}
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *EventUpdateOne) SetWorkspace(v *Workspace) *EventUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -860,11 +793,6 @@ func (_u *EventUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EventUpdateOne) check() error {
-	if v, ok := _u.mutation.Action(); ok {
-		if err := event.ActionValidator(v); err != nil {
-			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Event.action": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Event.workspace"`)
 	}
@@ -939,9 +867,6 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 	if _u.mutation.PhoneCleared() {
 		_spec.ClearField(event.FieldPhone, field.TypeString)
 	}
-	if value, ok := _u.mutation.Action(); ok {
-		_spec.SetField(event.FieldAction, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Properties(); ok {
 		_spec.SetField(event.FieldProperties, field.TypeJSON, value)
 	}
@@ -971,9 +896,6 @@ func (_u *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error)
 	}
 	if _u.mutation.URLCleared() {
 		_spec.ClearField(event.FieldURL, field.TypeString)
-	}
-	if value, ok := _u.mutation.Backfill(); ok {
-		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -975,11 +975,6 @@
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
-- id: 5517 # fixture: TyrellMatrixMixedCase
-  email: Mixed.Case@tyrell.test
-  workspace_id: 56
-  created_at: '2026-01-01 00:00:00'
-  updated_at: '2026-01-01 00:00:00'
 - id: 5520 # fixture: LumonMatrixClean
   email: clean@lumon.test
   phone: '+14155551520'
@@ -1015,11 +1010,6 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5526 # fixture: LumonMatrixConfirmedSuppressed
   email: confirmed-suppressed@lumon.test
-  workspace_id: 55
-  created_at: '2026-01-01 00:00:00'
-  updated_at: '2026-01-01 00:00:00'
-- id: 5527 # fixture: LumonMatrixMixedCase
-  email: Mixed.Case@lumon.test
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

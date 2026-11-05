@@ -46,9 +46,10 @@ func (Event) Fields() []ent.Field {
 			Nillable().
 			Unique(),
 		// The authoritative link to the Contact, resolved by stable identity at ingest
-		// (never by email). A nullable FK with ON DELETE SET NULL: Events are immutable
-		// and append-only and outlive the Contact they were about. Null for anonymous
-		// events before Identify; backfilled (stitched) onto the Contact at Identify.
+		// (never by email). A nullable FK with ON DELETE SET NULL: Events are append-only
+		// and outlive the Contact they were about. Unlike what happened (action, time),
+		// it may change: null for anonymous events before Identify, stitched onto the
+		// Contact at Identify, cleared when Erasure anonymizes the Event.
 		field.Int64("contact_id").
 			Optional().
 			Nillable(),
@@ -68,7 +69,8 @@ func (Event) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.String("action").
-			NotEmpty(),
+			NotEmpty().
+			Immutable(),
 		field.JSON("properties", map[string]any{}).
 			Optional(),
 		// When the Event happened (ADR 0044): the source's time, or the publish time when the
@@ -109,7 +111,8 @@ func (Event) Fields() []ent.Field {
 		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
 		// receives it and no Rule fires on it.
 		field.Bool("backfill").
-			Default(false),
+			Default(false).
+			Immutable(),
 	}
 }
 

@@ -13907,18 +13907,6 @@ func (u *CustomFieldScopedUpsert) UpdateUpdatedAt() *CustomFieldScopedUpsert {
 	return u
 }
 
-// SetKey sets the "key" field.
-func (u *CustomFieldScopedUpsert) SetKey(v string) *CustomFieldScopedUpsert {
-	u.u.Set(customfield.FieldKey, v)
-	return u
-}
-
-// UpdateKey sets the "key" field to the value that was provided on create.
-func (u *CustomFieldScopedUpsert) UpdateKey() *CustomFieldScopedUpsert {
-	u.u.SetExcluded(customfield.FieldKey)
-	return u
-}
-
 // SetName sets the "name" field.
 func (u *CustomFieldScopedUpsert) SetName(v string) *CustomFieldScopedUpsert {
 	u.u.Set(customfield.FieldName, v)
@@ -14127,18 +14115,6 @@ func (x *CustomFieldScopedUpdateOne) SetUpdatedAt(v time.Time) *CustomFieldScope
 	return x
 }
 
-// SetKey sets the "key" field.
-func (x *CustomFieldScopedUpdateOne) SetKey(v string) *CustomFieldScopedUpdateOne {
-	x.b.SetKey(v)
-	return x
-}
-
-// SetNillableKey sets the "key" field if the given value is not nil.
-func (x *CustomFieldScopedUpdateOne) SetNillableKey(v *string) *CustomFieldScopedUpdateOne {
-	x.b.SetNillableKey(v)
-	return x
-}
-
 // SetName sets the "name" field.
 func (x *CustomFieldScopedUpdateOne) SetName(v string) *CustomFieldScopedUpdateOne {
 	x.b.SetName(v)
@@ -14238,18 +14214,6 @@ func (x *CustomFieldScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Cu
 // SetUpdatedAt sets the "updated_at" field.
 func (x *CustomFieldScopedUpdate) SetUpdatedAt(v time.Time) *CustomFieldScopedUpdate {
 	x.b.SetUpdatedAt(v)
-	return x
-}
-
-// SetKey sets the "key" field.
-func (x *CustomFieldScopedUpdate) SetKey(v string) *CustomFieldScopedUpdate {
-	x.b.SetKey(v)
-	return x
-}
-
-// SetNillableKey sets the "key" field if the given value is not nil.
-func (x *CustomFieldScopedUpdate) SetNillableKey(v *string) *CustomFieldScopedUpdate {
-	x.b.SetNillableKey(v)
 	return x
 }
 
@@ -16122,18 +16086,6 @@ func (u *EventScopedUpsert) ClearPhone() *EventScopedUpsert {
 	return u
 }
 
-// SetAction sets the "action" field.
-func (u *EventScopedUpsert) SetAction(v string) *EventScopedUpsert {
-	u.u.Set(event.FieldAction, v)
-	return u
-}
-
-// UpdateAction sets the "action" field to the value that was provided on create.
-func (u *EventScopedUpsert) UpdateAction() *EventScopedUpsert {
-	u.u.SetExcluded(event.FieldAction)
-	return u
-}
-
 // SetProperties sets the "properties" field.
 func (u *EventScopedUpsert) SetProperties(v map[string]interface{}) *EventScopedUpsert {
 	u.u.Set(event.FieldProperties, v)
@@ -16215,18 +16167,6 @@ func (u *EventScopedUpsert) UpdateURL() *EventScopedUpsert {
 // ClearURL clears the value of the "url" field.
 func (u *EventScopedUpsert) ClearURL() *EventScopedUpsert {
 	u.u.SetNull(event.FieldURL)
-	return u
-}
-
-// SetBackfill sets the "backfill" field.
-func (u *EventScopedUpsert) SetBackfill(v bool) *EventScopedUpsert {
-	u.u.Set(event.FieldBackfill, v)
-	return u
-}
-
-// UpdateBackfill sets the "backfill" field to the value that was provided on create.
-func (u *EventScopedUpsert) UpdateBackfill() *EventScopedUpsert {
-	u.u.SetExcluded(event.FieldBackfill)
 	return u
 }
 
@@ -16490,18 +16430,6 @@ func (x *EventScopedUpdateOne) ClearPhone() *EventScopedUpdateOne {
 	return x
 }
 
-// SetAction sets the "action" field.
-func (x *EventScopedUpdateOne) SetAction(v string) *EventScopedUpdateOne {
-	x.b.SetAction(v)
-	return x
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (x *EventScopedUpdateOne) SetNillableAction(v *string) *EventScopedUpdateOne {
-	x.b.SetNillableAction(v)
-	return x
-}
-
 // SetProperties sets the "properties" field.
 func (x *EventScopedUpdateOne) SetProperties(v map[string]interface{}) *EventScopedUpdateOne {
 	x.b.SetProperties(v)
@@ -16577,18 +16505,6 @@ func (x *EventScopedUpdateOne) SetNillableURL(v *string) *EventScopedUpdateOne {
 // ClearURL clears the value of the "url" field.
 func (x *EventScopedUpdateOne) ClearURL() *EventScopedUpdateOne {
 	x.b.ClearURL()
-	return x
-}
-
-// SetBackfill sets the "backfill" field.
-func (x *EventScopedUpdateOne) SetBackfill(v bool) *EventScopedUpdateOne {
-	x.b.SetBackfill(v)
-	return x
-}
-
-// SetNillableBackfill sets the "backfill" field if the given value is not nil.
-func (x *EventScopedUpdateOne) SetNillableBackfill(v *bool) *EventScopedUpdateOne {
-	x.b.SetNillableBackfill(v)
 	return x
 }
 
@@ -16777,18 +16693,6 @@ func (x *EventScopedUpdate) ClearPhone() *EventScopedUpdate {
 	return x
 }
 
-// SetAction sets the "action" field.
-func (x *EventScopedUpdate) SetAction(v string) *EventScopedUpdate {
-	x.b.SetAction(v)
-	return x
-}
-
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (x *EventScopedUpdate) SetNillableAction(v *string) *EventScopedUpdate {
-	x.b.SetNillableAction(v)
-	return x
-}
-
 // SetProperties sets the "properties" field.
 func (x *EventScopedUpdate) SetProperties(v map[string]interface{}) *EventScopedUpdate {
 	x.b.SetProperties(v)
@@ -16864,18 +16768,6 @@ func (x *EventScopedUpdate) SetNillableURL(v *string) *EventScopedUpdate {
 // ClearURL clears the value of the "url" field.
 func (x *EventScopedUpdate) ClearURL() *EventScopedUpdate {
 	x.b.ClearURL()
-	return x
-}
-
-// SetBackfill sets the "backfill" field.
-func (x *EventScopedUpdate) SetBackfill(v bool) *EventScopedUpdate {
-	x.b.SetBackfill(v)
-	return x
-}
-
-// SetNillableBackfill sets the "backfill" field if the given value is not nil.
-func (x *EventScopedUpdate) SetNillableBackfill(v *bool) *EventScopedUpdate {
-	x.b.SetNillableBackfill(v)
 	return x
 }
 

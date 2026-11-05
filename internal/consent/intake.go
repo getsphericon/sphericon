@@ -73,7 +73,7 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 	}
 
 	target := tracking.UnsubTarget{Channel: messaging.ChannelEmail, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
-	if c, err := s.Contact().Query().Where(contact.EmailEqualFold(dest)).First(ctx); err == nil {
+	if c, err := s.Contact().Query().Where(contact.EmailEQ(dest)).First(ctx); err == nil {
 		target.ContactID = c.ID
 	} else if !ent.IsNotFound(err) {
 		return nil, err

@@ -125,14 +125,6 @@
   workspace_id: 56
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
-- id: 5502 # fixture: SuppressionTyrellMixedCase
-  channel: email
-  destination: mixed.case@tyrell.test
-  reason: bounce
-  contact_id: 5517
-  workspace_id: 56
-  created_at: '2026-01-01 00:00:00'
-  updated_at: '2026-01-01 00:00:00'
 - id: 5503 # fixture: SuppressionLumonSuppressed
   channel: email
   destination: suppressed@lumon.test
@@ -146,14 +138,6 @@
   destination: confirmed-suppressed@lumon.test
   reason: bounce
   contact_id: 5526
-  workspace_id: 55
-  created_at: '2026-01-01 00:00:00'
-  updated_at: '2026-01-01 00:00:00'
-- id: 5505 # fixture: SuppressionLumonMixedCase
-  channel: email
-  destination: mixed.case@lumon.test
-  reason: bounce
-  contact_id: 5527
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

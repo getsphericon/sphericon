@@ -678,18 +678,6 @@ func (u *EventUpsert) ClearPhone() *EventUpsert {
 	return u
 }
 
-// SetAction sets the "action" field.
-func (u *EventUpsert) SetAction(v string) *EventUpsert {
-	u.Set(event.FieldAction, v)
-	return u
-}
-
-// UpdateAction sets the "action" field to the value that was provided on create.
-func (u *EventUpsert) UpdateAction() *EventUpsert {
-	u.SetExcluded(event.FieldAction)
-	return u
-}
-
 // SetProperties sets the "properties" field.
 func (u *EventUpsert) SetProperties(v map[string]interface{}) *EventUpsert {
 	u.Set(event.FieldProperties, v)
@@ -774,18 +762,6 @@ func (u *EventUpsert) ClearURL() *EventUpsert {
 	return u
 }
 
-// SetBackfill sets the "backfill" field.
-func (u *EventUpsert) SetBackfill(v bool) *EventUpsert {
-	u.Set(event.FieldBackfill, v)
-	return u
-}
-
-// UpdateBackfill sets the "backfill" field to the value that was provided on create.
-func (u *EventUpsert) UpdateBackfill() *EventUpsert {
-	u.SetExcluded(event.FieldBackfill)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -806,6 +782,9 @@ func (u *EventUpsertOne) UpdateNewValues() *EventUpsertOne {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(event.FieldCreatedAt)
 		}
+		if _, exists := u.create.mutation.Action(); exists {
+			s.SetIgnore(event.FieldAction)
+		}
 		if _, exists := u.create.mutation.OccurredAt(); exists {
 			s.SetIgnore(event.FieldOccurredAt)
 		}
@@ -814,6 +793,9 @@ func (u *EventUpsertOne) UpdateNewValues() *EventUpsertOne {
 		}
 		if _, exists := u.create.mutation.Captured(); exists {
 			s.SetIgnore(event.FieldCaptured)
+		}
+		if _, exists := u.create.mutation.Backfill(); exists {
+			s.SetIgnore(event.FieldBackfill)
 		}
 	}))
 	return u
@@ -1000,20 +982,6 @@ func (u *EventUpsertOne) ClearPhone() *EventUpsertOne {
 	})
 }
 
-// SetAction sets the "action" field.
-func (u *EventUpsertOne) SetAction(v string) *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.SetAction(v)
-	})
-}
-
-// UpdateAction sets the "action" field to the value that was provided on create.
-func (u *EventUpsertOne) UpdateAction() *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.UpdateAction()
-	})
-}
-
 // SetProperties sets the "properties" field.
 func (u *EventUpsertOne) SetProperties(v map[string]interface{}) *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
@@ -1109,20 +1077,6 @@ func (u *EventUpsertOne) UpdateURL() *EventUpsertOne {
 func (u *EventUpsertOne) ClearURL() *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
 		s.ClearURL()
-	})
-}
-
-// SetBackfill sets the "backfill" field.
-func (u *EventUpsertOne) SetBackfill(v bool) *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.SetBackfill(v)
-	})
-}
-
-// UpdateBackfill sets the "backfill" field to the value that was provided on create.
-func (u *EventUpsertOne) UpdateBackfill() *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.UpdateBackfill()
 	})
 }
 
@@ -1311,6 +1265,9 @@ func (u *EventUpsertBulk) UpdateNewValues() *EventUpsertBulk {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(event.FieldCreatedAt)
 			}
+			if _, exists := b.mutation.Action(); exists {
+				s.SetIgnore(event.FieldAction)
+			}
 			if _, exists := b.mutation.OccurredAt(); exists {
 				s.SetIgnore(event.FieldOccurredAt)
 			}
@@ -1319,6 +1276,9 @@ func (u *EventUpsertBulk) UpdateNewValues() *EventUpsertBulk {
 			}
 			if _, exists := b.mutation.Captured(); exists {
 				s.SetIgnore(event.FieldCaptured)
+			}
+			if _, exists := b.mutation.Backfill(); exists {
+				s.SetIgnore(event.FieldBackfill)
 			}
 		}
 	}))
@@ -1506,20 +1466,6 @@ func (u *EventUpsertBulk) ClearPhone() *EventUpsertBulk {
 	})
 }
 
-// SetAction sets the "action" field.
-func (u *EventUpsertBulk) SetAction(v string) *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.SetAction(v)
-	})
-}
-
-// UpdateAction sets the "action" field to the value that was provided on create.
-func (u *EventUpsertBulk) UpdateAction() *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.UpdateAction()
-	})
-}
-
 // SetProperties sets the "properties" field.
 func (u *EventUpsertBulk) SetProperties(v map[string]interface{}) *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
@@ -1615,20 +1561,6 @@ func (u *EventUpsertBulk) UpdateURL() *EventUpsertBulk {
 func (u *EventUpsertBulk) ClearURL() *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
 		s.ClearURL()
-	})
-}
-
-// SetBackfill sets the "backfill" field.
-func (u *EventUpsertBulk) SetBackfill(v bool) *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.SetBackfill(v)
-	})
-}
-
-// UpdateBackfill sets the "backfill" field to the value that was provided on create.
-func (u *EventUpsertBulk) UpdateBackfill() *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.UpdateBackfill()
 	})
 }
 
