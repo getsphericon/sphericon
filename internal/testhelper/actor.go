@@ -92,6 +92,8 @@ func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...s
 	require.NoError(t, err)
 	secret, err := credentials.GenerateTokenSecret()
 	require.NoError(t, err)
+	// test writes: a token of exactly the scopes the caller names, through the production hash
+	// (internal/AGENTS.md, Actors): no fixture can hold every scope set a test asks for.
 	_, err = env.DB.ApiToken.Create().
 		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopes).
 		SetWorkspaceID(workspaceID).

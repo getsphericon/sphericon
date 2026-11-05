@@ -9,5 +9,5 @@ import (
 )
 
 func TestTestwrites(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), testwrites.Analyzer, "bad", "clean")
+	analysistest.Run(t, analysistest.TestData(), testwrites.Analyzer, "bad", "clean", "github.com/getsphericon/sphericon/internal/testhelper")
 }

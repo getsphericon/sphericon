@@ -2,8 +2,10 @@
 // when creating them is the operation under test. A call to an ent `Create` or `CreateBulk` builder
 // (the raw client's, a transaction's or a scoped wrapper's) in a `_test.go` file must carry a comment
 // `// test writes: <why the write is the subject>` on the line above the statement that holds it, or
-// trailing on its line. Generated mocks (`*_gen_test.go`) are not checked. The end-to-end suite sits
-// behind the `e2e` build tag, which the lint run sets (`.golangci.yml`), so it is read here.
+// trailing on its line. Generated mocks (`*_gen_test.go`) are not checked. The test harness
+// (internal/testhelper) is checked like a test: a helper that creates a row for every test that calls it
+// is setup the fixtures should hold, so it names its reason too. The end-to-end suite sits behind the
+// `e2e` build tag, which the lint run sets (`.golangci.yml`), so it is read here.
 package testwrites
 
 import (
@@ -52,8 +54,7 @@ func run(pass *analysis.Pass) (any, error) {
 		if !isCreate(pass, call) {
 			return true
 		}
-		file := pass.Fset.Position(call.Pos()).Filename
-		if !strings.HasSuffix(file, "_test.go") || strings.HasSuffix(file, "_gen_test.go") {
+		if !inScope(pass, pass.Fset.Position(call.Pos()).Filename) {
 			return true
 		}
 		if hasReason(pass, call, stack) {
@@ -64,6 +65,18 @@ func run(pass *analysis.Pass) (any, error) {
 		return true
 	})
 	return nil, nil
+}
+
+// harness is the import path of the test harness, whose helpers are checked like tests.
+const harness = "github.com/getsphericon/sphericon/internal/testhelper"
+
+// inScope reports whether a creation in the file needs a reason: a test file other than a
+// generated mock, or a file of the test harness.
+func inScope(pass *analysis.Pass, file string) bool {
+	if strings.HasSuffix(file, "_gen_test.go") {
+		return false
+	}
+	return strings.HasSuffix(file, "_test.go") || pass.Pkg.Path() == harness
 }
 
 // isCreate reports whether the call is Create or CreateBulk on a type of the ent package.
