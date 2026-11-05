@@ -53,13 +53,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
   Whatever a function takes, a composite literal of a `gen/*` type whose elements copy a field of an ent entity
   (directly, through a conversion or a helper call, or through a loaded edge: a handler that loops over the rows a
-  module returned) is a finding in the handler packages (`/collect` too), `internal/server` and the handler types of `ee/staff`; a
+  module returned) is a finding in the handler packages (`/collect` and `ee/api/staff` too) and `internal/server`; a
   value handed to a converter method, and a fact decided from a field (`u.PasswordHash != ""`), are not. Make it a
   `Converter` method (a list method for a slice), with a value the row does not hold as a `goverter:map ... | helper`
   or a `goverter:context` argument.
   The input direction is checked too: a struct literal of a module input (a struct named `...Input` of a package
-  under `internal/`) in a handler package (`/site`, `/api`, `/staff`, and in `ee/staff` the methods of its handler
-  types) is a finding. Add a method to the surface's `Inputs` (`resources/inputs.go`; `ServiceInputs` for the service
+  under `internal/`) in a handler package (`/site`, `/api`, `/staff`, and the Enterprise `/staff` and `/service` in
+  `ee/api/staff`) is a finding. Add a method to the surface's `Inputs` (`resources/inputs.go`; `ServiceInputs` for the service
   API) and call it; a field the request does not carry (the actor) is a `goverter:ignore` with
   its reason, assigned by the handler after the call, and a value of the request outside the mapped part (a
   batch's flag on each of its Events) is a `goverter:context` argument.
@@ -93,14 +93,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
   upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
   client, a transaction, the scoped client and its wrappers) is a finding; test files are not read. The handlers
-  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect` and `staff`) do not read through ent either:
+  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff` and `ee/api/staff`) do not read through ent either:
   a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
-  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
-  the handlers of the Staff console's Enterprise sections and their domain module in one package, so only the methods of its handler types
-  (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
-  checked and `*Module` is the domain module; a new handler type there is added to `packages` in `tools/analyzers/mixed`, which `handmapper` reads too. The write
+  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
+  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The write
   goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,

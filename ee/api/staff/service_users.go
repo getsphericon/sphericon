@@ -3,6 +3,8 @@ package staff
 import (
 	"context"
 
+	eestaff "github.com/getsphericon/sphericon/ee/staff"
+
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -19,7 +21,7 @@ func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params servic
 
 // userFeedItem is a feed entry as a resource: a tombstone, or the User with the mailings consent
 // the entry carries.
-func userFeedItem(e UserFeedEntry) serviceapi.ServiceUserResource {
+func userFeedItem(e eestaff.UserFeedEntry) serviceapi.ServiceUserResource {
 	if e.Tombstone != nil {
 		return serviceMapper.TombstoneToResource(e.Tombstone)
 	}

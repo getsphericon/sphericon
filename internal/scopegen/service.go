@@ -9,7 +9,7 @@ const scopesExtension = "x-required-scopes"
 // `x-required-scopes`, an empty list being one any valid credential may call.
 var ServiceScopes = Table{
 	Spec:    "openapi/service.openapi.json",
-	Out:     "ee/staff/service_scopes_gen.go",
+	Out:     "ee/api/staff/service_scopes_gen.go",
 	Package: "staff",
 	Imports: []string{`serviceapi "github.com/getsphericon/sphericon/gen/service"`},
 	Doc: []string{

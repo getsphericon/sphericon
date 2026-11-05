@@ -16,6 +16,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ee/abuse"
+	staffhandlers "github.com/getsphericon/sphericon/ee/api/staff"
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/export"
 	"github.com/getsphericon/sphericon/ee/licensekey"
@@ -135,7 +136,7 @@ func (e *Edition) StaffSections() interface {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewSurface(e.Staff, e.staffSessions)
+	return staffhandlers.NewSurface(e.Staff, e.staffSessions)
 }
 
 // Service is the service endpoints of the Staff surface (ADR 0026) for the
@@ -147,7 +148,7 @@ func (e *Edition) Service() interface {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewServiceSurface(e.Staff)
+	return staffhandlers.NewServiceSurface(e.Staff)
 }
 
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).

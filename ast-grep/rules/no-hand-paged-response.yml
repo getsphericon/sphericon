@@ -20,7 +20,7 @@ rule:
       regex: '^(TotalPages|NextCursor|HasMore)\s*:'
 files:
   - internal/api/**/*.go
-  - ee/staff/**/*.go
+  - ee/api/**/*.go
 ignores:
   - '**/*_test.go'
   - '**/*_gen.go'

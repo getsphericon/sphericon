@@ -5,9 +5,7 @@
 // OnConflictColumnsWhere) on a type of the ent package, which covers the raw client, a transaction and
 // the generated scoped wrappers (`*ent.Scoped` and its per-entity wrappers). The raw-client packages
 // listed in docs/architecture.md are domain modules and are not entry points, so only the entry-point
-// packages below are checked; test files are not. `ee/staff` holds the handlers of the Staff console's
-// Enterprise sections and their domain module in one package, so there only the methods of the handler
-// types are checked (`*Module` is the domain module).
+// packages below are checked; test files are not.
 //
 // The handlers of the API surfaces (`surfaces`) do not read through ent either: a call that starts a
 // read (Get, GetX, a Query method, or Workspace on the scoped client) on a type of the ent package is a
@@ -27,7 +25,6 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
-	"github.com/getsphericon/sphericon/tools/analyzers/mixed"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -43,6 +40,7 @@ var entryPoints = []string{
 	"internal/api/external",
 	"internal/api/collect",
 	"internal/api/staff",
+	"ee/api/staff",
 	"internal/mcpserver",
 	"internal/jobs",
 	"internal/server",
@@ -54,6 +52,7 @@ var surfaces = []string{
 	"internal/api/external",
 	"internal/api/collect",
 	"internal/api/staff",
+	"ee/api/staff",
 }
 
 // Analyzer reports ent writes in entry-point packages.
@@ -93,8 +92,7 @@ func startsRead(name, named string) bool {
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	recvs, isMixed := mixed.Receivers(pass.Pkg.Path())
-	if !isMixed && !isEntryPoint(pass.Pkg.Path()) {
+	if !isEntryPoint(pass.Pkg.Path()) {
 		return nil, nil
 	}
 	reads := isSurface(pass.Pkg.Path())
@@ -102,19 +100,12 @@ func run(pass *analysis.Pass) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
-	insp.WithStack([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
+	insp.Preorder([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node) {
 		call, isNode := n.(*ast.CallExpr)
-		if !isNode {
-			return true
-		}
-		if !push || strings.HasSuffix(pass.Fset.Position(call.Pos()).Filename, "_test.go") {
-			return true
-		}
-		if isMixed && !slices.Contains(recvs, mixed.EnclosingReceiver(stack)) {
-			return true
+		if !isNode || strings.HasSuffix(pass.Fset.Position(call.Pos()).Filename, "_test.go") {
+			return
 		}
 		check(pass, call, reads)
-		return true
 	})
 	return nil, nil
 }

@@ -1,8 +1,8 @@
-// Package staff holds the Enterprise sections of the Staff console (ADR 0026, ADR 0063), under
-// the `staff` license feature: the cross-Workspace views and actions of a Staff member, and the
-// service endpoints a Service credential calls. The Staff member itself, its sign-in and its
-// sessions are core (internal/staffmembers) and run on every Instance; this package takes the
-// session check from there.
+// Package staff is the domain module of the Enterprise sections of the Staff console (ADR 0026, ADR
+// 0063), under the `staff` license feature: the cross-Workspace views and actions of a Staff member,
+// and what the service endpoints a Service credential calls read and write. Their handlers are
+// ee/api/staff, which call this module and hold no logic of their own. The Staff member itself, its
+// sign-in and its sessions are core (internal/staffmembers) and run on every Instance.
 //
 // The console's Workspace metadata belongs to no Workspace, so this package works on the raw
 // *ent.Client (it is in the closed list of docs/architecture.md): the Workspace rows, the
