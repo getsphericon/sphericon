@@ -210,7 +210,7 @@ func TestAWrongCurrentPasswordOnTheProfileCountsAgainstTheLoginBudget(t *testing
 			CurrentPassword: siteapi.NewOptString("wrong"),
 			NewPassword:     siteapi.NewOptString("newsecret123"),
 		})
-		require.NoError(t, err)
+		testhelper.SiteRefusal(t, err, http.StatusForbidden)
 	}
 
 	assert.Equal(t, http.StatusTooManyRequests, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))

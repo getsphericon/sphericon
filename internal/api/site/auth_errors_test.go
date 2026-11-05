@@ -82,25 +82,22 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	})
 
 	t.Run("confirm email change rejects garbage", func(t *testing.T) {
-		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: "garbage"}, siteapi.SiteAuthConfirmEmailChangeParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		_, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: "garbage"}, siteapi.SiteAuthConfirmEmailChangeParams{})
+		testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("confirm email change rejects a token without a new address", func(t *testing.T) {
 		tok, err := s.Mint(authtoken.PurposeEmailChange, john.ID, john.Email, time.Hour, nil)
 		require.NoError(t, err)
-		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		_, err = c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
+		testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	})
 
 	t.Run("confirm email change never says the address is in use", func(t *testing.T) {
 		tok, err := s.Mint(authtoken.PurposeEmailChange, john.ID, john.Email, time.Hour, map[string]string{"new": fixtures.MemberMaryEmail})
 		require.NoError(t, err)
-		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, res, "to the confirmer a Taken address is an invalid link (ADR 0031)")
+		_, err = c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
+		testhelper.SiteRefusal(t, err, http.StatusBadRequest, "to the confirmer a Taken address is an invalid link (ADR 0031)")
 		after, err := env.DB.User.Get(ctx, john.ID)
 		require.NoError(t, err)
 		assert.Equal(t, fixtures.OwnerJohnEmail, after.Email)

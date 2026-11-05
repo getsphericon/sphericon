@@ -41,14 +41,15 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 }
 
 // ServiceOperations lists every operation the service endpoints serve, from the
-// generated handler contract.
+// generated handler contract. The contract's NewError, which answers the default Problem
+// response of every operation (ADR 0103), is a method of that handler but no operation.
 func ServiceOperations() []serviceapi.OperationName {
 	t := reflect.TypeFor[serviceapi.Handler]()
 	names := make([]serviceapi.OperationName, 0, t.NumMethod())
 	for method := range t.Methods() {
 		names = append(names, method.Name)
 	}
-	return names
+	return slices.DeleteFunc(names, func(name string) bool { return name == "NewError" })
 }
 
 type serviceContextKey struct{}

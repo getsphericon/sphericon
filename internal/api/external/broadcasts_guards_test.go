@@ -59,7 +59,8 @@ func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 
 	err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@test.dev")},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
-	require.ErrorContains(t, err, "unexpected status code: 500")
+	failed := testhelper.ExternalRefusal(t, err, http.StatusInternalServerError)
+	assert.False(t, failed.Detail.IsSet(), "the 500 names no cause")
 	assert.Empty(t, env.CustomerMail.Messages())
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 }
