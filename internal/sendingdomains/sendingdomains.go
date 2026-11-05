@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -94,7 +95,7 @@ type UpdateInput struct {
 // Create validates the domain, mints its DKIM keypair and stores the row with the
 // private key sealed.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.SendingDomain, error) {
-	domain, ok := sending.NormalizeDomain(in.Domain)
+	domain, ok := domainname.Normalize(in.Domain)
 	if !ok {
 		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsSendingDomainInvalid, nil)}
 	}

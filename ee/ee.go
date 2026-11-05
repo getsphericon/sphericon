@@ -29,7 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/jobextension"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
@@ -196,9 +196,9 @@ func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
 // which removes nothing without the retention license, the usage job (ADR 0009) and the
 // abuse detector (ADR 0026), which do nothing without the staff license.
-func (e *Edition) Jobs() jobs.Extension {
+func (e *Edition) Jobs() jobextension.Extension {
 	detector := e.Abuse()
-	return jobs.Extension{
+	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
 			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
@@ -207,7 +207,6 @@ func (e *Edition) Jobs() jobs.Extension {
 			river.AddWorker(w, audit.NewEntryEventWorker(e.client, e.lic))
 		},
 		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
-		Webhooks:     e.Webhooks,
 	}
 }
 
@@ -215,7 +214,7 @@ func (e *Edition) Jobs() jobs.Extension {
 // Erasures stream over the instance's Event retention window (0 keeps every row), and the
 // stream's consumer of the domain events (EventConsumers). It is separate from Jobs because the
 // prune needs that window, a core setting; neither does anything without the `export` license.
-func (e *Edition) ExportJobs(eventsRetention time.Duration) jobs.Extension {
+func (e *Edition) ExportJobs(eventsRetention time.Duration) jobextension.Extension {
 	return export.Jobs(e.client, e.lic, eventsRetention)
 }
 

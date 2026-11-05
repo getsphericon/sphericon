@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/jobextension"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
@@ -46,16 +47,6 @@ const QueueWebhooks = "webhooks"
 // scheduled. The modules queue work through a Queue, which needs none of what the workers drive.
 type Client struct {
 	river *river.Client[*sql.Tx]
-}
-
-// Extension plugs extra workers and periodic jobs into the client without core
-// importing them: the composition root hands in the Enterprise Edition's (ADR 0014).
-type Extension struct {
-	Workers      func(*river.Workers)
-	PeriodicJobs []*river.PeriodicJob
-	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
-	// Edition's license gate on Audit entries, ADR 0022).
-	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
 }
 
 // Retention groups the data-retention settings of the prune jobs.
@@ -100,14 +91,17 @@ type Deps struct {
 	// OutboundAllow is the Instance's internal allowlist for webhook deliveries (ADR 0039).
 	OutboundAllow webhook.Allowlist
 	Retention     Retention
+	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
+	// Edition's license gate on Audit entries, ADR 0022).
+	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
 }
 
 // NewClient builds the river client with every worker registered over deps. ext plugs in the
-// Enterprise Edition's workers and periodic jobs. driver is river's database/sql driver over the
+// workers and periodic jobs of the Enterprise Edition and of the Instance. driver is river's database/sql driver over the
 // job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
 // connection that tells the client of a new job, a cancellation or a paused queue at once, and
 // built with riverdatabasesql.New (tests on one transaction) the client only polls.
-func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*Client, error) {
+func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.Extension) (*Client, error) {
 	entClient, mod, bus, cipher, systemSender, appURL := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender, deps.AppURL
 	now := deps.Clock
 	if now == nil {
@@ -157,14 +151,14 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*C
 	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
 	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
 	dispatcher := NewWebhookDispatcher(clientInserter{c})
+	if deps.Webhooks != nil {
+		dispatcher = deps.Webhooks(dispatcher)
+	}
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
 		if e.Workers != nil {
 			e.Workers(workers)
-		}
-		if e.Webhooks != nil {
-			dispatcher = e.Webhooks(dispatcher)
 		}
 		extraPeriodic = append(extraPeriodic, e.PeriodicJobs...)
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -30,7 +30,7 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 	if !ok {
 		return nil, nil
 	}
-	domain, ok := sending.NormalizeDomain(host)
+	domain, ok := domainname.Normalize(host)
 	if !ok {
 		return nil, nil
 	}

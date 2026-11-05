@@ -7,8 +7,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // RecordConfirmation writes the derived Confirmation read-model row (provenance
@@ -17,7 +17,7 @@ import (
 // by destination, so it records even if the contact was deleted between send and
 // click. A repeated POST (mailbox retry, double click) is a complete no-op: the
 // confirmation stands and no second Event is logged.
-func RecordConfirmation(ctx context.Context, bus *events.Bus, target tracking.ConfirmTarget, ip string) error {
+func RecordConfirmation(ctx context.Context, bus *events.Bus, target linktarget.Confirmation, ip string) error {
 	dest := suppression.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 {
 		return nil

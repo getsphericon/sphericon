@@ -15,13 +15,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func module(env *testhelper.TestEnv, lookup sending.TXTLookup) *domainverify.Module {
+func module(env *testhelper.TestEnv, lookup domainname.TXTLookup) *domainverify.Module {
 	return domainverify.New(env.DB, lookup, accounts.OwnerNotifier(env.DB, env.SystemMail))
 }
 

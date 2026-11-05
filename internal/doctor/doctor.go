@@ -22,7 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/domainname"
 )
 
 // Postgres majors the Instance supports: the oldest we document, and the newest the test
@@ -98,7 +98,7 @@ type Input struct {
 	// LicensePublicKey verifies SPHERICON_LICENSE_KEY: licensekey.ProductionKey outside tests.
 	LicensePublicKey ed25519.PublicKey
 	// LookupTXT resolves DNS, always the real resolver outside tests (never the dev stub).
-	LookupTXT sending.TXTLookup
+	LookupTXT domainname.TXTLookup
 }
 
 // Run performs every check, in the order the report prints them. Without a configuration it

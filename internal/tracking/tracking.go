@@ -22,6 +22,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -57,26 +58,6 @@ func (t *Tracker) Origin() string { return t.baseURL }
 // https://<host>, the Tracking domain of one message's Sending domain (ADR 0038).
 func (t *Tracker) OnHost(host string) *Tracker {
 	return &Tracker{secret: t.secret, verifyWith: t.verifyWith, baseURL: "https://" + host}
-}
-
-// UnsubTarget is the self-describing payload an unsubscribe link carries. The
-// opt-out is destination-keyed (ADR 0001), so the link records against the
-// destination directly — no contact-row lookup, and it survives the contact being
-// deleted between send and click. BroadcastID is set only for broadcast sends
-// (for per-broadcast attribution); Source is the sending-source string the opt-out
-// is scoped to ("broadcasts" / "automation:<id>" / "everything"). Channel is the Channel the
-// opt-out is recorded on: a link in a Telegram message unsubscribes on Telegram only (ADR 0077),
-// and Destination is that Channel's (the email address, the Telegram user id). OutboundMessageID is
-// the message the link sits in, 0 for a link that came from none (a message sent before the link
-// named it, or an opt-out made without one): the email.unsubscribed Event is about that message.
-type UnsubTarget struct {
-	Channel           channels.Channel
-	Source            string
-	Destination       string
-	WorkspaceID       int64
-	ContactID         int64
-	BroadcastID       int64
-	OutboundMessageID int64
 }
 
 // The tokens' claims are typed: int64 ids travel as JSON strings (`,string`) so
@@ -176,7 +157,7 @@ func (t *Tracker) DecodeClick(token string) (messageID int64, destination string
 }
 
 // unsubToken mints a signed scoped-unsubscribe token.
-func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
+func (t *Tracker) unsubToken(target linktarget.Unsubscribe) (string, error) {
 	return t.sign(&unsubClaims{
 		Channel:     string(target.Channel),
 		Source:      target.Source,
@@ -195,43 +176,32 @@ var ErrLinkInvalid = validation.LinkInvalid("tracking: invalid link token", i18n
 
 // DecodeUnsub validates a scoped-unsubscribe token and returns its target; a token that does
 // not stand is ErrLinkInvalid.
-func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
+func (t *Tracker) DecodeUnsub(token string) (linktarget.Unsubscribe, error) {
 	var c unsubClaims
 	if err := t.parse(token, &c); err != nil {
-		return UnsubTarget{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
+		return linktarget.Unsubscribe{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
 	if c.Source == "" {
-		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
+		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing src claim")
 	}
 	switch channels.Channel(c.Channel) {
 	case channels.Email, channels.Telegram, channels.SMS:
 	default:
-		return UnsubTarget{}, ErrLinkInvalid.With("missing or unknown ch claim")
+		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing or unknown ch claim")
 	}
 	if c.WorkspaceID == 0 {
-		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
+		return linktarget.Unsubscribe{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return UnsubTarget{
+	return linktarget.Unsubscribe{
 		Channel: channels.Channel(c.Channel), Source: c.Source, Destination: c.Destination,
 		WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID,
 		OutboundMessageID: c.MessageID,
 	}, nil
 }
 
-// ConfirmTarget is the payload a double-opt-in confirmation link carries (ADR
-// 0013). Like the opt-out, the confirmation is destination-keyed and not
-// source-scoped: confirming an address makes it mailable across sources, so the
-// link records against the destination directly (no contact-row lookup) and
-// survives the contact being deleted between send and click.
-type ConfirmTarget struct {
-	Destination string
-	WorkspaceID int64
-	ContactID   int64
-}
-
 // confirmToken mints a signed, expiring confirmation token; exp is a real JWT
 // numeric date so DecodeConfirm can reject a stale link.
-func (t *Tracker) confirmToken(target ConfirmTarget) (string, error) {
+func (t *Tracker) confirmToken(target linktarget.Confirmation) (string, error) {
 	return t.sign(&confirmClaims{
 		ExpiresAt:   jwt.NewNumericDate(time.Now().Add(confirmTTL)),
 		Destination: target.Destination,
@@ -251,18 +221,18 @@ func IsExpired(err error) bool {
 // rejects a token whose exp has passed (and requires exp to be present), so an
 // expired link cannot confirm — the endpoint surfaces that as "request a new one". A token
 // that does not stand, expired or not, is ErrLinkInvalid.
-func (t *Tracker) DecodeConfirm(token string) (ConfirmTarget, error) {
+func (t *Tracker) DecodeConfirm(token string) (linktarget.Confirmation, error) {
 	var c confirmClaims
 	if err := t.parse(token, &c, jwt.WithExpirationRequired()); err != nil {
-		return ConfirmTarget{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
+		return linktarget.Confirmation{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
 	if c.Destination == "" {
-		return ConfirmTarget{}, ErrLinkInvalid.With("missing dest claim")
+		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing dest claim")
 	}
 	if c.WorkspaceID == 0 {
-		return ConfirmTarget{}, ErrLinkInvalid.With("missing ws claim")
+		return linktarget.Confirmation{}, ErrLinkInvalid.With("missing ws claim")
 	}
-	return ConfirmTarget{Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID}, nil
+	return linktarget.Confirmation{Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID}, nil
 }
 
 // OpenURL is the 1x1 pixel URL that records an open.
@@ -287,7 +257,7 @@ func (t *Tracker) ShortURL(token string) string {
 }
 
 // UnsubscribeURL is the public link that records the scoped opt-out in target.
-func (t *Tracker) UnsubscribeURL(target UnsubTarget) (string, error) {
+func (t *Tracker) UnsubscribeURL(target linktarget.Unsubscribe) (string, error) {
 	token, err := t.unsubToken(target)
 	if err != nil {
 		return "", err
@@ -298,7 +268,7 @@ func (t *Tracker) UnsubscribeURL(target UnsubTarget) (string, error) {
 // ConfirmURL is the public double-opt-in link (ADR 0013). Like UnsubscribeURL the
 // GET is safe: it renders the SPA confirmation page, and the confirmation is
 // recorded only when the recipient POSTs back (scanner-safe, deliberate consent).
-func (t *Tracker) ConfirmURL(target ConfirmTarget) (string, error) {
+func (t *Tracker) ConfirmURL(target linktarget.Confirmation) (string, error) {
 	token, err := t.confirmToken(target)
 	if err != nil {
 		return "", err
@@ -312,7 +282,7 @@ func (t *Tracker) ConfirmURL(target ConfirmTarget) (string, error) {
 // non-empty it is escaped and appended below the unsubscribe line (its own
 // newlines become <br>). An empty address renders the footer unchanged — the
 // address is a non-gating nudge, not a send-blocker.
-func (t *Tracker) UnsubscribeFooter(target UnsubTarget, postalAddress string) (string, error) {
+func (t *Tracker) UnsubscribeFooter(target linktarget.Unsubscribe, postalAddress string) (string, error) {
 	url, err := t.UnsubscribeURL(target)
 	if err != nil {
 		return "", err
@@ -348,7 +318,7 @@ func (t *Tracker) Instrument(body string, messageID int64) (string, error) {
 
 // Rewrite prepares a marketing body for one Outbound message: Instrument, plus the
 // unsubscribe footer (scoped to unsub, carrying the workspace's CAN-SPAM postal address).
-func (t *Tracker) Rewrite(body string, messageID int64, unsub UnsubTarget, postalAddress string) (string, error) {
+func (t *Tracker) Rewrite(body string, messageID int64, unsub linktarget.Unsubscribe, postalAddress string) (string, error) {
 	instrumented, err := t.Instrument(body, messageID)
 	if err != nil {
 		return body, err

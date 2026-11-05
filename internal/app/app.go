@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -30,7 +31,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sidelistener"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -117,7 +117,7 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	if o.e2eDKIMLookup {
 		// The e2e suite's domains self-verify through DevTXTLookup, which echoes a Sending
 		// domain's own stored key.
-		do.Override(injector, func(i do.Injector) (sending.TXTLookup, error) {
+		do.Override(injector, func(i do.Injector) (domainname.TXTLookup, error) {
 			return domainverify.DevTXTLookup(do.MustInvoke[*ent.Client](i)), nil
 		})
 	}

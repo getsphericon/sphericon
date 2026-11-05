@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
@@ -30,11 +31,11 @@ import (
 // Module checks Sending domains.
 type Module struct {
 	client *ent.Client
-	lookup sending.TXTLookup
+	lookup domainname.TXTLookup
 	notify ownernotice.Notify
 }
 
-func New(client *ent.Client, lookup sending.TXTLookup, notify ownernotice.Notify) *Module {
+func New(client *ent.Client, lookup domainname.TXTLookup, notify ownernotice.Notify) *Module {
 	return &Module{client: client, lookup: lookup, notify: notify}
 }
 
@@ -193,7 +194,7 @@ const (
 // Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
 // a hand-over (the loser of a take-over) can never fire here.
 // A Sending domain's DMARC name answers the suggested record, so every such domain is bulk-ready.
-func DevTXTLookup(client *ent.Client) sending.TXTLookup {
+func DevTXTLookup(client *ent.Client) domainname.TXTLookup {
 	return func(ctx context.Context, name string) ([]string, error) {
 		domain, ok := recordDomain(name)
 		if !ok {

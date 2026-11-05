@@ -75,7 +75,7 @@ func (z *Zone) PublishTXT(tb testing.TB, name, value string) {
 // WithdrawTXT removes every TXT record at name.
 func (z *Zone) WithdrawTXT(name string) { z.srv.RemoveRR(name, typeTXT) }
 
-// LookupTXT resolves through the zone's server; it satisfies sending.TXTLookup.
+// LookupTXT resolves through the zone's server; it satisfies domainname.TXTLookup.
 func (z *Zone) LookupTXT(ctx context.Context, name string) ([]string, error) {
 	return z.r.LookupTXT(ctx, name)
 }

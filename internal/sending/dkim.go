@@ -17,6 +17,8 @@ import (
 	"net"
 	"slices"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/domainname"
 )
 
 // dkimKeyBits is the RSA key size for DKIM. 2048 is the modern floor mailbox
@@ -93,16 +95,12 @@ func DMARCRecord(domain string) (host, value string) {
 	return "_dmarc." + domain, "v=DMARC1; p=none;"
 }
 
-// TXTLookup resolves TXT records for a name. net.Resolver satisfies it; tests
-// inject a stub.
-type TXTLookup func(ctx context.Context, name string) ([]string, error)
-
 // VerifyDKIM reports whether the DKIM TXT published at "<selector>._domainkey.
 // <domain>" carries the same public key as expectedPubTXT. It is tolerant of TXT
 // chunking (records split into multiple strings) and whitespace differences in
 // the p= tag. A missing record verifies false with a nil error; a resolver
 // failure returns the error.
-func VerifyDKIM(ctx context.Context, lookup TXTLookup, selector, domain, expectedPubTXT string) (bool, error) {
+func VerifyDKIM(ctx context.Context, lookup domainname.TXTLookup, selector, domain, expectedPubTXT string) (bool, error) {
 	host, _ := DKIMRecord(selector, domain, expectedPubTXT)
 	// Fully qualified: a relative name would be retried through the host's resolv.conf
 	// search suffixes, which can turn a SERVFAIL into a misleading "not found".

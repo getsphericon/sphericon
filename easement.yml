@@ -81,11 +81,19 @@ components:
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 
+  # The job runner is a driver, like the API surfaces (review rule 5): it receives a job, calls a
+  # domain module and records the result. Only the wiring builds it; a package with jobs of its own
+  # hands them in as a jobextension.Extension.
+  runner:
+    in: internal/jobs
+    allow_importers: [wiring]
+    because: the job runner is a driver that only the wiring builds; a package with jobs of its own hands them in as a jobextension.Extension, never importing the runner
+
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
   # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
-  # `FenceOn`, `bindings` only `PruneStartTokens`) are left to review. The composition roots and `internal/api/auth` are in the doc's
-  # list too; they sit in `wiring` and `api-auth`, which do not forbid the client.
+  # `FenceOn`, `bindings` only `PruneStartTokens`) are left to review. The composition roots, `internal/api/auth` and the job
+  # runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`, which do not forbid the client.
   core-raw:
     in:
       [
@@ -100,7 +108,6 @@ components:
         internal/events,
         internal/instance,
         internal/instanceaudit,
-        internal/jobs,
         internal/joindomains,
         internal/machine,
         internal/oauthserver,
@@ -171,6 +178,10 @@ rules:
     may_depend_on: [core]
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+  runner:
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
+    because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   ee-api:
     <<: *no-raw-client
     may_depend_on: [api-problem, core, core-raw, ee]
@@ -197,6 +208,7 @@ rules:
         api-staff,
         api-auth,
         api-problem,
+        runner,
       ]
     because: wiring is where the program is assembled
 

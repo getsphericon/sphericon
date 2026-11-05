@@ -8,7 +8,7 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/jobextension"
 )
 
 // releaseLookupTimeout bounds one ask: the source's own client waits much longer.
@@ -112,8 +112,8 @@ func (w *releaseCheckWorker) Work(ctx context.Context, _ *river.Job[ReleaseCheck
 
 // Jobs is the daily Release check, handed to the job client as an extension. A restart
 // checks again at once, which is harmless: the check sends nothing.
-func (m *Module) Jobs() jobs.Extension {
-	return jobs.Extension{
+func (m *Module) Jobs() jobextension.Extension {
+	return jobextension.Extension{
 		Workers: func(w *river.Workers) { river.AddWorker(w, &releaseCheckWorker{m: m}) },
 		PeriodicJobs: []*river.PeriodicJob{
 			river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour),

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -196,12 +197,12 @@ func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 // page speaks of emails, texts or Telegram messages, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
-func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target tracking.UnsubTarget) string {
+func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target linktarget.Unsubscribe) string {
 	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr) + "&channel=" + url.QueryEscape(string(target.Channel))
 	if target.Source == eligibility.SourceEverything {
 		return base
 	}
-	allURL, err := tracker.UnsubscribeURL(tracking.UnsubTarget{
+	allURL, err := tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel:     target.Channel,
 		Source:      eligibility.SourceEverything,
 		Destination: target.Destination,

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holdreason"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -133,7 +134,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 		return out, nil
 	}
 
-	unsub := tracking.UnsubTarget{
+	unsub := linktarget.Unsubscribe{
 		Channel:     channels.Email,
 		Source:      req.Source,
 		Destination: dest,

@@ -18,9 +18,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // RecordUnsubscribe writes a per-(channel, destination, sending source) opt-out
@@ -31,7 +31,7 @@ import (
 // counter, the automation enrollment exit, and the engagement event) live in one
 // transaction gated on the existence check, so a repeated POST (mailbox retry or a
 // double click) is a complete no-op and concurrent POSTs are counted exactly once.
-func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.UnsubTarget) error {
+func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target linktarget.Unsubscribe) error {
 	dest := suppression.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
@@ -115,7 +115,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 // number's Channel-wide one (ADR 0077), whatever source the link names, with the same effects as a
 // STOP (optout.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
 // goes on: its next text is Skipped like any other, and a step on another Channel still runs.
-func recordSMSLink(ctx context.Context, sc *ent.Scoped, target tracking.UnsubTarget, number string) error {
+func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string) error {
 	before, err := optout.SMSOptOut(ctx, sc, number)
 	if err != nil || before != nil {
 		return err
@@ -134,7 +134,7 @@ func recordSMSLink(ctx context.Context, sc *ent.Scoped, target tracking.UnsubTar
 // publishTelegramUnsubscribed records telegram.unsubscribed for the Contact a Telegram unsubscribe
 // link was issued to (the opt-out itself is the source-scoped row written above). A link with no
 // Contact, or one whose Contact is gone, has nobody to name.
-func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target tracking.UnsubTarget, dest string) error {
+func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string) error {
 	if target.ContactID == 0 {
 		return nil
 	}

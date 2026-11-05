@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -72,7 +73,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/segments"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
@@ -103,7 +103,7 @@ import (
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
 // already built): Clock, Version, Database, SystemSender, Enqueuer, SigninOptions,
 // IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
-// *credentials.Hasher, *messaging.Catalog, outbound.Senders, sending.TXTLookup, machine.Source,
+// *credentials.Hasher, *messaging.Catalog, outbound.Senders, domainname.TXTLookup, machine.Source,
 // *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
 // difference from production is configuration.
 //
@@ -330,7 +330,7 @@ var messagingPackage = do.Package(
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
 	// server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records. The e2e suite's
 	// domains self-verify (WithE2EDKIMLookup).
-	do.Lazy(func(i do.Injector) (sending.TXTLookup, error) {
+	do.Lazy(func(i do.Injector) (domainname.TXTLookup, error) {
 		return dnsResolver(do.MustInvoke[*config.Config](i).DNSAddr).LookupTXT, nil
 	}),
 )
@@ -513,6 +513,7 @@ var jobsPackage = do.Package(
 			AppURL:          cfg.AppURL,
 			OutboundAllow:   cfg.OutboundAllow,
 			Retention:       jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:        edition.Webhooks,
 		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), do.MustInvoke[*instance.Module](i).Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
 		if err != nil {
 			return nil, err
@@ -521,7 +522,7 @@ var jobsPackage = do.Package(
 	}),
 	// The Sending domain checks a person waits for (the Verify button, ADR 0010).
 	do.Lazy(func(i do.Injector) (*domainverify.Module, error) {
-		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[ownernotice.Notify](i)), nil
+		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[ownernotice.Notify](i)), nil
 	}),
 	// The enqueue side implements every enqueue seam: the platform mails, the Integration quota
 	// refresh and Sending domain verification. It inserts over the main pool, like the bus, and
@@ -650,7 +651,7 @@ var audiencePackage = do.Package(
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i), do.MustInvoke[*messaging.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
-		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[Clock](i),
+		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i),
 			do.MustInvoke[ownernotice.Notify](i)), nil
 	}),
 )

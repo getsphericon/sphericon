@@ -16,9 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -72,7 +72,7 @@ func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destinatio
 		return nil, err
 	}
 
-	target := tracking.UnsubTarget{Channel: channels.Email, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
+	target := linktarget.Unsubscribe{Channel: channels.Email, Source: source, Destination: dest, WorkspaceID: s.WorkspaceID()}
 	if c, err := s.Contact().Query().Where(contact.EmailEQ(dest)).First(ctx); err == nil {
 		target.ContactID = c.ID
 	} else if !ent.IsNotFound(err) {

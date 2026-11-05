@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -49,7 +50,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/providers"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -251,7 +251,7 @@ type setup struct {
 	noSystemFrom bool
 	// txt is the TXT resolver Sending domain and Join domain verification use; nil is the
 	// always-NXDOMAIN stub (WithTXTLookup).
-	txt sending.TXTLookup
+	txt domainname.TXTLookup
 	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
 	signinOpts []signin.Option
 }
@@ -259,7 +259,7 @@ type setup struct {
 // WithTXTLookup replaces the TXT resolver of Sending domain and Join domain verification, so a
 // test publishes and withdraws records in a zone of its own (dnstest.NewZone). The default
 // answers NXDOMAIN to everything.
-func WithTXTLookup(lookup sending.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
+func WithTXTLookup(lookup domainname.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
 
 // WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
 // test serves a document from an httptest TLS server (the production client refuses loopback).
@@ -409,7 +409,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
-	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {
+	var stubTXT domainname.TXTLookup = func(context.Context, string) ([]string, error) {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
 	if st.txt != nil {

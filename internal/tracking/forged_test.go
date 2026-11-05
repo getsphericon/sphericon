@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -59,7 +60,7 @@ func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 
 	got, err := tr.DecodeUnsub(signed(t, ok))
 	require.NoError(t, err)
-	assert.Equal(t, tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
+	assert.Equal(t, linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1, ContactID: 2, BroadcastID: 3}, got)
 
 	for name, claims := range map[string]jwt.MapClaims{
 		"missing ch":  with("ch", nil),
@@ -99,7 +100,7 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 
 	got, err := tr.DecodeConfirm(signed(t, with("dest", "a@b.com")))
 	require.NoError(t, err)
-	assert.Equal(t, tracking.ConfirmTarget{Destination: "a@b.com", WorkspaceID: 1, ContactID: 2}, got)
+	assert.Equal(t, linktarget.Confirmation{Destination: "a@b.com", WorkspaceID: 1, ContactID: 2}, got)
 
 	for name, claims := range map[string]jwt.MapClaims{
 		"missing dest": with("dest", nil),
@@ -122,14 +123,14 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 func TestURLsCarryDecodableTokens(t *testing.T) {
 	tr := tracking.New(forgeSecret, "https://app.test/")
 
-	u, err := tr.UnsubscribeURL(tracking.UnsubTarget{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
+	u, err := tr.UnsubscribeURL(linktarget.Unsubscribe{Channel: channels.Email, Source: "broadcasts", Destination: "a@b.com", WorkspaceID: 1})
 	require.NoError(t, err)
 	require.Contains(t, u, "https://app.test/e/u/")
 	target, err := tr.DecodeUnsub(u[len("https://app.test/e/u/"):])
 	require.NoError(t, err)
 	assert.Equal(t, "a@b.com", target.Destination)
 
-	c, err := tr.ConfirmURL(tracking.ConfirmTarget{Destination: "a@b.com", WorkspaceID: 1, ContactID: 2})
+	c, err := tr.ConfirmURL(linktarget.Confirmation{Destination: "a@b.com", WorkspaceID: 1, ContactID: 2})
 	require.NoError(t, err)
 	require.Contains(t, c, "https://app.test/e/confirm/")
 	ct, err := tr.DecodeConfirm(c[len("https://app.test/e/confirm/"):])

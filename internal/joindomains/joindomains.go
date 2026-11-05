@@ -26,10 +26,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -66,7 +66,7 @@ type Record struct {
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
-	lookup sending.TXTLookup
+	lookup domainname.TXTLookup
 	now    func() time.Time
 	notify ownernotice.Notify
 }
@@ -74,7 +74,7 @@ type Module struct {
 // New builds the module. lookup is the injectable TXT resolver Sending domain
 // verification uses; now is the clock the check times are stamped with; notify mails a
 // Workspace's Owners when it loses a verified domain.
-func New(client *ent.Client, bus *events.Bus, lookup sending.TXTLookup, now func() time.Time, notify ownernotice.Notify) *Module {
+func New(client *ent.Client, bus *events.Bus, lookup domainname.TXTLookup, now func() time.Time, notify ownernotice.Notify) *Module {
 	return &Module{client: client, bus: bus, lookup: lookup, now: now, notify: notify}
 }
 
@@ -96,7 +96,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.JoinDomain, er
 // already has is ErrAlreadyExists. Another Workspace's claim, pending or verified, never
 // blocks it.
 func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinDomain, error) {
-	domain, ok := sending.NormalizeDomain(raw)
+	domain, ok := domainname.Normalize(raw)
 	if !ok {
 		return nil, &validation.Error{Field: "domain", Message: i18n.T(i18n.ErrorsJoinDomainInvalid, nil)}
 	}

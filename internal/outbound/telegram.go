@@ -17,10 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/telegramrender"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // ReasonContentTooLong fails one Telegram message whose rendered text is over the limit (ADR 0078).
@@ -184,7 +184,7 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 	if onChannel == channels.SMS {
 		source = eligibility.SourceEverything
 	}
-	url, err := tr.UnsubscribeURL(tracking.UnsubTarget{
+	url, err := tr.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel:     onChannel,
 		Source:      source,
 		Destination: dest,

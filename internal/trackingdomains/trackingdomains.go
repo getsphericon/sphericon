@@ -34,11 +34,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
-	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -179,7 +179,7 @@ func (m *Module) ServingHost(ctx context.Context, s *ent.Scoped) (string, error)
 // CanonicalHost validates raw as a Tracking domain host and returns its canonical form: lower
 // case, IDN as punycode, below a registrable domain (never the apex, where a CNAME cannot sit).
 func CanonicalHost(raw string) (string, bool) {
-	host, ok := sending.NormalizeDomain(raw)
+	host, ok := domainname.Normalize(raw)
 	if !ok {
 		return "", false
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/jobextension"
 )
 
 // EventConsumer is the Erasures stream's consumer of the domain events (ADR 0101): every
@@ -126,8 +126,8 @@ func Periodic() *river.PeriodicJob {
 
 // Jobs is the river extension of the Erasures stream: the prune job over the instance's
 // Event retention window (ADR 0019, ADR 0045).
-func Jobs(client *ent.Client, lic *licensekey.License, retention time.Duration) jobs.Extension {
-	return jobs.Extension{
+func Jobs(client *ent.Client, lic *licensekey.License, retention time.Duration) jobextension.Extension {
+	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, NewWorker(client, lic, retention))
 			river.AddWorker(w, NewErasureEventWorker(client, lic))

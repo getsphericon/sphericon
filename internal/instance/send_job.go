@@ -6,7 +6,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/jobextension"
 )
 
 // reportCheckInterval is how often the job looks at whether a report is due: a report goes
@@ -31,8 +31,8 @@ func (w *sendReportWorker) Work(ctx context.Context, _ *river.Job[SendReportArgs
 }
 
 // Jobs is the sender's worker and periodic job, handed to the job client as an extension.
-func (s *Sender) Jobs() jobs.Extension {
-	return jobs.Extension{
+func (s *Sender) Jobs() jobextension.Extension {
+	return jobextension.Extension{
 		Workers: func(w *river.Workers) { river.AddWorker(w, &sendReportWorker{s: s}) },
 		PeriodicJobs: []*river.PeriodicJob{
 			river.NewPeriodicJob(river.PeriodicInterval(reportCheckInterval),

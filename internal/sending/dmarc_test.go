@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domainname"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
@@ -102,7 +103,7 @@ func FuzzLookupDMARC(f *testing.F) {
 	} {
 		f.Add(seed)
 	}
-	answer := func(records ...string) sending.TXTLookup {
+	answer := func(records ...string) domainname.TXTLookup {
 		return func(context.Context, string) ([]string, error) { return records, nil }
 	}
 	f.Fuzz(func(t *testing.T, record string) {

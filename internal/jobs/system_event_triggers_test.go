@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // queuedArgs are the args of the jobs of kind left on the queue, decoded as T.
@@ -150,7 +150,7 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 
 	onSMS := router.deliver(t)
 	afterSMS := runs()
-	require.NoError(t, consent.RecordConfirmation(ctx, env.Bus, tracking.ConfirmTarget{
+	require.NoError(t, consent.RecordConfirmation(ctx, env.Bus, linktarget.Confirmation{
 		Destination: fixtures.ContactTexterEmail, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactTexterID,
 	}, "203.0.113.10"))
 	onEmail := router.deliver(t)

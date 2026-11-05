@@ -15,8 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // tokenAfter returns the token segment of a tracker URL that follows marker.
@@ -35,7 +35,7 @@ func TestSitePublicConfirmationsPerform(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	url, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{
+	url, err := env.Tracker.ConfirmURL(linktarget.Confirmation{
 		Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestSitePublicConfirmationsPerform(t *testing.T) {
 
 	// An expired link is told apart from an invalid one (410), so the page can offer
 	// to sign up again instead of a generic failure.
-	expired := env.ExpiredConfirmToken(t, tracking.ConfirmTarget{
+	expired := env.ExpiredConfirmToken(t, linktarget.Confirmation{
 		Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: expired})
@@ -79,7 +79,7 @@ func TestSitePublicUnsubscribesPerform(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	url, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
+	url, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
@@ -112,7 +112,7 @@ func TestSitePublicConfirmationsPerformRecordsClientIP(t *testing.T) {
 	ctx := t.Context()
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	url, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{
+	url, err := env.Tracker.ConfirmURL(linktarget.Confirmation{
 		Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestSitePublicConsentWriteFailureIsAnError(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 	const poisoned = "a\x00b@example.com"
 
-	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
+	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: poisoned, WorkspaceID: fixtures.AcmeID,
 	})
@@ -148,7 +148,7 @@ func TestSitePublicConsentWriteFailureIsAnError(t *testing.T) {
 	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
 	require.Error(t, err, "a failed opt-out write must not answer 204")
 
-	confirmURL, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{Destination: poisoned, WorkspaceID: fixtures.AcmeID})
+	confirmURL, err := env.Tracker.ConfirmURL(linktarget.Confirmation{Destination: poisoned, WorkspaceID: fixtures.AcmeID})
 	require.NoError(t, err)
 	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
 	require.Error(t, err, "a failed confirmation write must not answer 204")
@@ -162,7 +162,7 @@ func TestSitePublicConsentForDeletedWorkspaceIsNoOp(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 	const goneWorkspace = 999999
 
-	unsubURL, err := env.Tracker.UnsubscribeURL(tracking.UnsubTarget{
+	unsubURL, err := env.Tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace,
 	})
@@ -170,7 +170,7 @@ func TestSitePublicConsentForDeletedWorkspaceIsNoOp(t *testing.T) {
 	err = anon.SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: tokenAfter(t, unsubURL, "/e/u/")})
 	require.NoError(t, err)
 
-	confirmURL, err := env.Tracker.ConfirmURL(tracking.ConfirmTarget{Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace})
+	confirmURL, err := env.Tracker.ConfirmURL(linktarget.Confirmation{Destination: fixtures.ContactAliceEmail, WorkspaceID: goneWorkspace})
 	require.NoError(t, err)
 	err = anon.SitePublicConfirmationsPerform(ctx, siteapi.SitePublicConfirmationsPerformParams{Token: tokenAfter(t, confirmURL, "/e/confirm/")})
 	require.NoError(t, err)
