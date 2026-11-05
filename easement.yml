@@ -215,7 +215,7 @@ rules:
     forbid_symbol: *raw-holder-no-hooks
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   bus:
-    may_depend_on: [core, core-raw]
+    may_depend_on: [core]
     must_not_depend_on:
       - name: suppression
         because: the suppression consumer is a job of the runner (internal/jobs), and suppression refers to the bus's names, never the reverse
