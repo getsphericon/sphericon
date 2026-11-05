@@ -39,6 +39,9 @@ func (m *Module) UsageList(ctx context.Context, period time.Time, p pagination.P
 // WorkspaceUsage reads one Workspace's stored figures for a period, scoped over the one
 // Workspace the call names after its row is loaded. ent.IsNotFound for an unknown Workspace.
 func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID string, period time.Time) (usage.WorkspaceUsage, error) {
+	if err := m.licensed(); err != nil {
+		return usage.WorkspaceUsage{}, err
+	}
 	s, err := m.scopeOver(ctx, workspaceID)
 	if err != nil {
 		return usage.WorkspaceUsage{}, err
