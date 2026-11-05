@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	eestaff "github.com/getsphericon/sphericon/ee/staff"
-
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/paths"

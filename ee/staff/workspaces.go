@@ -7,15 +7,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// ErrReasonRequired refuses a suspension with no reason: the owner is told why.
-var ErrReasonRequired = errors.New("a suspension needs a reason")
+var (
+	// ErrReasonRequired refuses a suspension with no reason: the owner is told why.
+	ErrReasonRequired = validation.RefuseField("reason", "staff: a suspension needs a reason", i18n.ErrorsSuspensionReasonRequired)
+	// ErrWorkspaceNotFound is an id no Workspace has, on the console and the service endpoints alike.
+	ErrWorkspaceNotFound = validation.NotFound("staff: workspace not found", i18n.ErrorsWorkspaceNotFound)
+)
 
 // SuspendWorkspace freezes the Workspace's outbound sending as the Staff member, through
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
@@ -64,14 +72,19 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 }
 
 // workspace loads a Workspace row by its id (ADR 0043), the only address the console and the
-// service endpoints take. ent.IsNotFound for an unknown id; the id is case-sensitive.
+// service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is case-sensitive.
 func (m *Module) workspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
-	return m.ent.Workspace.Query().Where(entworkspace.PublicID(publicID)).Only(ctx)
+	w, err := m.ent.Workspace.Query().Where(entworkspace.PublicID(publicID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrWorkspaceNotFound
+	}
+	return w, err
 }
 
-// publicIDs maps internal Workspace keys to their ids in one query, for the service
-// responses that name Workspaces in a list.
-func (m *Module) publicIDs(ctx context.Context, ids []int64) (map[int64]string, error) {
+// publicIDsOf maps the internal Workspace key of every item (key) to the Workspace's id in one
+// query, for the service responses that name Workspaces in a list.
+func publicIDsOf[T any](ctx context.Context, m *Module, items []T, key func(T) int64) (map[int64]string, error) {
+	ids := lo.Map(items, func(item T, _ int) int64 { return key(item) })
 	rows, err := m.ent.Workspace.Query().Where(entworkspace.IDIn(ids...)).Select(entworkspace.FieldID, entworkspace.FieldPublicID).All(ctx)
 	if err != nil {
 		return nil, err
@@ -85,7 +98,7 @@ func (m *Module) publicIDs(ctx context.Context, ids []int64) (map[int64]string, 
 
 // scopeOver loads the Workspace row and scopes over it: the one place the console and the
 // service endpoints turn a Workspace id into a scope (docs/architecture.md, scope list item 7).
-// ent.IsNotFound for an unknown Workspace.
+// ErrWorkspaceNotFound for an unknown Workspace.
 func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, error) {
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
@@ -117,8 +130,8 @@ func (m *Module) ListWorkspaces(ctx context.Context, review abuse.Review, search
 		})
 }
 
-// GetWorkspace is one Workspace's metadata row; an ent not-found error when it does
-// not exist.
+// GetWorkspace is one Workspace's metadata row; ErrWorkspaceNotFound when it does not
+// exist.
 func (m *Module) GetWorkspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err

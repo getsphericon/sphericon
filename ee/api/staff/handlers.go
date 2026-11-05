@@ -9,16 +9,13 @@ package staff
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
-
 	"github.com/getsphericon/sphericon/ee/abuse"
+	eestaff "github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -84,11 +81,7 @@ func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.StaffWorkspacesGetParams) (staffeeapi.StaffWorkspacesGetRes, error) {
-	id := string(params.WorkspaceId)
-	w, err := h.module.GetWorkspace(ctx, id)
-	if ent.IsNotFound(err) {
-		return workspaceNotFound(), nil
-	}
+	w, err := h.module.GetWorkspace(ctx, string(params.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}
@@ -124,39 +117,25 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 // StaffWorkspacesSetSendCap sets a Workspace's Send cap as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (staffeeapi.StaffWorkspacesSetSendCapRes, error) {
 	perDay := int(req.PerDay)
-	change, found, err := h.setSendCap(ctx, params.WorkspaceId, &perDay)
-	if !found {
-		p := staffeeapi.StaffWorkspacesSetSendCapNotFound(notFoundProblem())
-		return &p, nil
-	}
-	return change, err
+	return h.setSendCap(ctx, params.WorkspaceId, &perDay)
 }
 
 // StaffWorkspacesClearSendCap removes a Workspace's Send cap as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (staffeeapi.StaffWorkspacesClearSendCapRes, error) {
-	change, found, err := h.setSendCap(ctx, params.WorkspaceId, nil)
-	if !found {
-		p := staffeeapi.StaffWorkspacesClearSendCapNotFound(notFoundProblem())
-		return &p, nil
-	}
-	return change, err
+	return h.setSendCap(ctx, params.WorkspaceId, nil)
 }
 
-// setSendCap is the change both Send cap operations make. found is false for an unknown
-// Workspace; on an Instance with no Send caps the module's refusal is the error (404 as well).
-func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (change *staffeeapi.StaffSendCapChange, found bool, err error) {
+// setSendCap is the change both Send cap operations make.
+func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (*staffeeapi.StaffSendCapChange, error) {
 	w, changed, err := h.module.SetSendCap(ctx, string(wsID), staffmembers.Current(ctx), perDay)
-	if ent.IsNotFound(err) {
-		return nil, false, nil
-	}
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
 	sendCap, err := h.sendCap(ctx, w)
 	if err != nil {
-		return nil, true, err
+		return nil, err
 	}
-	return &staffeeapi.StaffSendCapChange{Changed: changed, SendCap: sendCap}, true, nil
+	return &staffeeapi.StaffSendCapChange{Changed: changed, SendCap: sendCap}, nil
 }
 
 // sendCap is the Workspace's Send cap with its sends over the last 24 hours.
@@ -170,19 +149,6 @@ func (h *Handlers) sendCap(ctx context.Context, w *ent.Workspace) (staffeeapi.St
 	return res, nil
 }
 
-func workspaceNotFound() *staffeeapi.StaffWorkspacesGetNotFound {
-	p := staffeeapi.StaffWorkspacesGetNotFound(notFoundProblem())
-	return &p
-}
-
-func notFoundProblem() staffeeapi.ProblemDetails {
-	return staffeeapi.ProblemDetails{
-		Status: staffeeapi.NewOptInt32(http.StatusNotFound),
-		Title:  staffeeapi.NewOptString(http.StatusText(http.StatusNotFound)),
-		Detail: staffeeapi.NewOptString(i18n.T(i18n.ErrorsWorkspaceNotFound, nil)),
-	}
-}
-
 func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.StaffSuspensionChange {
 	return &staffeeapi.StaffSuspensionChange{Changed: changed, Workspace: w}
 }
@@ -190,20 +156,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (staffeeapi.StaffWorkspacesSuspendRes, error) {
-	id := string(params.WorkspaceId)
-	w, changed, err := h.module.SuspendWorkspace(ctx, id, staffmembers.Current(ctx), req.Reason)
-	if errors.Is(err, eestaff.ErrReasonRequired) {
-		p := staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{
-			Status: staffeeapi.NewOptInt32(http.StatusUnprocessableEntity),
-			Title:  staffeeapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
-			Detail: staffeeapi.NewOptString(i18n.T(i18n.ErrorsSuspensionReasonRequired, nil)),
-		}
-		return &p, nil
-	}
-	if ent.IsNotFound(err) {
-		p := staffeeapi.StaffWorkspacesSuspendNotFound(notFoundProblem())
-		return &p, nil
-	}
+	w, changed, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx), req.Reason)
 	if err != nil {
 		return nil, err
 	}
@@ -212,12 +165,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (staffeeapi.StaffWorkspacesUnsuspendRes, error) {
-	id := string(params.WorkspaceId)
-	w, changed, err := h.module.UnsuspendWorkspace(ctx, id, staffmembers.Current(ctx))
-	if ent.IsNotFound(err) {
-		p := staffeeapi.StaffWorkspacesUnsuspendNotFound(notFoundProblem())
-		return &p, nil
-	}
+	w, changed, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), staffmembers.Current(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -227,35 +175,19 @@ func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeea
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
 // Staff member.
 func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (staffeeapi.StaffWorkspacesExemptRes, error) {
-	w, changed, notFound, err := h.setExempt(ctx, params.WorkspaceId, true)
-	if notFound {
-		p := staffeeapi.StaffWorkspacesExemptNotFound(notFoundProblem())
-		return &p, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(w)}, nil
+	return h.setExempt(ctx, params.WorkspaceId, true)
 }
 
 // StaffWorkspacesUnexempt puts a Workspace back under the abuse detector.
 func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (staffeeapi.StaffWorkspacesUnexemptRes, error) {
-	w, changed, notFound, err := h.setExempt(ctx, params.WorkspaceId, false)
-	if notFound {
-		p := staffeeapi.StaffWorkspacesUnexemptNotFound(notFoundProblem())
-		return &p, nil
-	}
+	return h.setExempt(ctx, params.WorkspaceId, false)
+}
+
+// setExempt is the change both exemption operations make.
+func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffExemptionChange, error) {
+	w, changed, err := h.module.SetAbuseExempt(ctx, string(wsID), staffmembers.Current(ctx), exempt)
 	if err != nil {
 		return nil, err
 	}
 	return &staffeeapi.StaffExemptionChange{Changed: changed, Workspace: staffMapper.WorkspaceToResource(w)}, nil
-}
-
-func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
-	id := string(wsID)
-	w, changed, err = h.module.SetAbuseExempt(ctx, id, staffmembers.Current(ctx), exempt)
-	if ent.IsNotFound(err) {
-		return nil, false, true, nil
-	}
-	return w, changed, false, err
 }

@@ -25,7 +25,7 @@ func (m *Module) SentLast24h(ctx context.Context, w *ent.Workspace) (int, error)
 // SetSendCap sets the Workspace's Send cap to perDay messages per rolling 24 hours, or clears it
 // with nil, as the Staff member, through the same core mechanism as suspension, audited with the
 // old and the new value. It reports whether the value changed. providerlimit.ErrNoSendCaps on an
-// Instance without Send caps; an ent not-found error for an unknown Workspace.
+// Instance without Send caps; ErrWorkspaceNotFound for an unknown Workspace.
 func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffMember, perDay *int) (*ent.Workspace, bool, error) {
 	if err := m.licensed(); err != nil {
 		return nil, false, err

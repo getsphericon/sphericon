@@ -1,7 +1,7 @@
 // Package resources holds goverter-generated mappers from ent rows and the platform read models
 // to the Enterprise Staff API (gen/staffee) and service API (gen/service) resources, plus the custom
 // conversions goverter cannot infer on its own. The implementations live in
-// staff_converter_gen.go and service_converter_gen.go; ee/staff instantiates them.
+// staff_converter_gen.go and service_converter_gen.go; ee/api/staff instantiates them.
 package resources
 
 import (
@@ -202,8 +202,8 @@ type ServiceConverter interface {
 	// goverter:ignore MailingsConsentChangedAt
 	TombstoneToResource(source *ent.UserTombstone) serviceapi.ServiceUserResource
 
-	// The change names the Workspace by its internal id; its public id is read by the handler
-	// for the whole page at once, so the handler attaches it.
+	// The change names the Workspace by its internal id; the module reads its public id for the
+	// whole page at once (eestaff.TrackingHostFeedEntry), and the handler attaches it.
 	// goverter:map CreatedAt ChangedAt
 	// goverter:ignore WorkspaceId
 	TrackingHostChangeToResource(source *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange

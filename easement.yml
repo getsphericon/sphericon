@@ -46,12 +46,17 @@ components:
   # endpoints), over their domain module in ee/staff. The Edition (ee/ee.go) builds them.
   ee-api:
     in: 'ee/api/**'
-    allow_importers: [ee]
-    because: an Enterprise surface is built by the Edition, which the wiring mounts
+    allow_importers: [ee-edition]
+    because: an Enterprise surface is built by the Edition (ee/ee.go), which the wiring mounts; no Enterprise module reaches a handler
+  # The Edition itself (ee/ee.go): the one package that assembles the Enterprise modules and surfaces.
+  ee-edition:
+    in: 'ee/*.go'
+    allow_importers: [wiring]
+    because: only the wiring assembles the Enterprise Edition
   # Enterprise Edition, one binary gated by the license key.
   ee:
     in: 'ee/**'
-    allow_importers: [wiring, ee-api]
+    allow_importers: [wiring, ee-api, ee-edition]
     because: the core never imports the Enterprise Edition; only the wiring assembles it, and an Enterprise surface calls its module
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
@@ -160,12 +165,17 @@ rules:
     may_depend_on: [core, core-raw, ee]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
-  ee:
-    may_depend_on: [core, core-raw, ee-api]
+  ee-edition:
+    may_depend_on: [core, core-raw, ee, ee-api]
     forbid_external: *no-container
-    because: the Enterprise Edition builds on the core and never on the open surfaces' handlers; the Edition builds its own surfaces
+    because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
+  ee:
+    may_depend_on: [core, core-raw]
+    forbid_external: *no-container
+    because: the Enterprise Edition builds on the core and never on a surface's handlers; the Edition (ee-edition) builds its own surfaces
   wiring:
-    may_depend_on: [core, core-raw, ee, api-site, api-external, api-collect, api-staff, api-auth]
+    may_depend_on:
+      [core, core-raw, ee, ee-edition, api-site, api-external, api-collect, api-staff, api-auth]
     because: wiring is where the program is assembled
 
   web-generated:
