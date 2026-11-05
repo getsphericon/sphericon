@@ -39,5 +39,5 @@ func (h *Handlers) SitePersonalTokensDelete(ctx context.Context, params siteapi.
 
 // SitePersonalTokensGrantableScopes returns the scopes the caller's Role may give a Personal token.
 func (h *Handlers) SitePersonalTokensGrantableScopes(ctx context.Context, _ siteapi.SitePersonalTokensGrantableScopesParams) ([]siteapi.PersonalScope, error) {
-	return apitokens.GrantableScopes(callerMembership(ctx).Role), nil
+	return mapper.PersonalScopesToResources(apitokens.GrantableScopes(callerMembership(ctx).Role)), nil
 }

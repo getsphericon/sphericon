@@ -8,6 +8,21 @@ x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
       because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
+# The scope vocabulary of the credentials a User gives is generated into internal/kernel/tokenscope;
+# its copy in the /site surface's generated package is the surface's own.
+x-scope-because: &scope-because the core reads the scope vocabulary from internal/kernel/tokenscope, generated from the same TypeSpec enums, never from a surface's generated package (ADR 0102)
+x-no-surface-scope-1: &no-surface-scope-1
+  name: github.com/getsphericon/sphericon/gen/site.GrantableScope
+  because: *scope-because
+x-no-surface-scope-2: &no-surface-scope-2
+  name: github.com/getsphericon/sphericon/gen/site.SendScope
+  because: *scope-because
+x-no-surface-scope-3: &no-surface-scope-3
+  name: github.com/getsphericon/sphericon/gen/site.SetupScope
+  because: *scope-because
+x-no-surface-scope-4: &no-surface-scope-4
+  name: github.com/getsphericon/sphericon/gen/site.PersonalScope
+  because: *scope-because
 x-no-container: &no-container
   - name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
@@ -183,11 +198,17 @@ rules:
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
+      - *no-surface-scope-1
+      - *no-surface-scope-2
+      - *no-surface-scope-3
+      - *no-surface-scope-4
     # internal/cleanup reads the container for its shutdown report, the one core exception the doc names.
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
     may_depend_on: [core]
+    forbid_symbol:
+      [*no-surface-scope-1, *no-surface-scope-2, *no-surface-scope-3, *no-surface-scope-4]
     forbid_external: *no-container
     forbid_symbol: &raw-holder-no-hooks
       - name: github.com/getsphericon/sphericon/internal/emailcase.Hook

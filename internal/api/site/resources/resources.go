@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/joindomains"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
@@ -657,6 +658,9 @@ type Converter interface {
 	PermissionsToResources(source []accounts.Permission) []siteapi.Permission
 	// goverter:useEmptyOnNil:map
 	RequiredPermissionsToResource(source map[string]accounts.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
+	// The scopes a User whose Role it is may give a Personal token.
+	// goverter:useEmptyOnNil:slice
+	PersonalScopesToResources(source []tokenscope.PersonalScope) []siteapi.PersonalScope
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -712,6 +716,8 @@ type Converter interface {
 	OptionalConsentDecisionToResource(source consentrecord.Decision) siteapi.SiteOptionalConsentDecision
 	// goverter:enum:transform value
 	PermissionToResource(source accounts.Permission) siteapi.Permission
+	// goverter:enum:transform value
+	PersonalScopeToResource(source tokenscope.PersonalScope) siteapi.PersonalScope
 	// goverter:enum:transform value
 	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
 	// goverter:enum:transform value

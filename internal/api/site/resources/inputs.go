@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/patch"
@@ -220,6 +221,8 @@ type Inputs interface {
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
 	MembershipRole(source siteapi.SiteMembershipRole) membership.Role
+	// goverter:enum:transform value
+	PersonalScope(source siteapi.PersonalScope) tokenscope.PersonalScope
 	// goverter:enum:transform value
 	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
 	// goverter:enum:transform value

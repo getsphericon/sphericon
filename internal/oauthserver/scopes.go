@@ -6,31 +6,31 @@ import (
 
 	"github.com/samber/lo"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 )
 
-// The scope vocabulary is declared once, in the contract (typespec/common/scopes.tsp):
-// GrantableScope is what an OAuth client is granted by default, SendScope and SetupScope
-// what need the user's explicit opt-in, each with a box of its own (ADR 0016, "Send is a
-// second lock"). Adding a scope means editing TypeSpec and regenerating.
+// The scope vocabulary is declared once, in the contract (typespec/common/scopes.tsp), and
+// generated into tokenscope: GrantableScope is what an OAuth client is granted by default,
+// SendScope and SetupScope what need the user's explicit opt-in, each with a box of its own
+// (ADR 0016, "Send is a second lock"). Adding a scope means editing TypeSpec and regenerating.
 
 func grantableScopes() []string {
-	return lo.Map(siteapi.GrantableScope("").AllValues(), func(s siteapi.GrantableScope, _ int) string { return string(s) })
+	return lo.Map(tokenscope.GrantableScopes, func(s tokenscope.GrantableScope, _ int) string { return string(s) })
 }
 
 func sendScopes() []string {
-	return lo.Map(siteapi.SendScope("").AllValues(), func(s siteapi.SendScope, _ int) string { return string(s) })
+	return lo.Map(tokenscope.SendScopes, func(s tokenscope.SendScope, _ int) string { return string(s) })
 }
 
 func setupScopes() []string {
-	return lo.Map(siteapi.SetupScope("").AllValues(), func(s siteapi.SetupScope, _ int) string { return string(s) })
+	return lo.Map(tokenscope.SetupScopes, func(s tokenscope.SetupScope, _ int) string { return string(s) })
 }
 
 // SupportedScopes lists every scope the authorization server can issue: the contract's
 // PersonalScope, what a User may give a credential of their own (ADR 0061), a Personal token's as
 // much as a Connection's.
 func SupportedScopes() []string {
-	return lo.Map(siteapi.PersonalScope("").AllValues(), func(s siteapi.PersonalScope, _ int) string { return string(s) })
+	return lo.Map(tokenscope.PersonalScopes, func(s tokenscope.PersonalScope, _ int) string { return string(s) })
 }
 
 // requestedScopes splits an OAuth scope parameter into the scopes granted by default,
@@ -54,7 +54,7 @@ func requestedScopes(scope string) (granted, send, setup []string) {
 		}
 	}
 	// Only the send class brings mcp:send: a setup scope is not listed behind it.
-	mcpSend := string(siteapi.SendScopeMcpSend)
+	mcpSend := string(tokenscope.SendScopeMcpSend)
 	if len(send) > 0 && !slices.Contains(send, mcpSend) {
 		send = append(send, mcpSend)
 	}

@@ -1,7 +1,7 @@
 // Package scopegen writes the access tables of the API surfaces (ADR 0026, ADR 0061) from what
 // the TypeSpec contract declares on each operation of an OpenAPI document, and the Go types of
-// the contract's access vocabularies (Permission, API token scope) in the core packages that read
-// them. A Table is one generated Go file; Tables lists every file `cmd/scopegen` writes. Every
+// the contract's access vocabularies (Permission, API token scope, the scopes a User may give) in
+// the core packages that read them. A Table is one generated Go file; Tables lists every file `cmd/scopegen` writes. Every
 // operation of a table's document must carry the declaration the table reads, and a missing or
 // misplaced one fails generation, so an operation is never open by omission: a surface refuses an
 // operation its table has no entry for.
@@ -117,7 +117,7 @@ func PerOperation(row func(Operation) (string, error)) func(Document) ([]string,
 // Tables are the files `cmd/scopegen` writes.
 var Tables = []Table{
 	ServiceScopes, ExternalScopes, ExternalPermissions, SitePermissions, GrantPermissions,
-	Permissions, TokenScopes,
+	Permissions, TokenScopes, UserScopes,
 }
 
 // Write reads the table's document and writes its Go file.

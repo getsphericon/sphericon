@@ -23,6 +23,7 @@ import (
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	outbound "github.com/getsphericon/sphericon/internal/outbound"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	rules "github.com/getsphericon/sphericon/internal/rules"
@@ -463,14 +464,84 @@ func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.R
 	}
 	return membershipRole
 }
+func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.PersonalScope {
+	var tokenscopePersonalScope tokenscope.PersonalScope
+	switch source {
+	case site.PersonalScopeAutomationsPublish:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsPublish
+	case site.PersonalScopeAutomationsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsRead
+	case site.PersonalScopeAutomationsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsWrite
+	case site.PersonalScopeBroadcastsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsRead
+	case site.PersonalScopeBroadcastsSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsSend
+	case site.PersonalScopeBroadcastsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsWrite
+	case site.PersonalScopeContactsExport:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsExport
+	case site.PersonalScopeContactsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsRead
+	case site.PersonalScopeContactsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsWrite
+	case site.PersonalScopeCustomFieldsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeCustomFieldsRead
+	case site.PersonalScopeCustomFieldsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeCustomFieldsWrite
+	case site.PersonalScopeEmailsSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEmailsSend
+	case site.PersonalScopeEnrollmentsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEnrollmentsRead
+	case site.PersonalScopeEventsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEventsRead
+	case site.PersonalScopeEventsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEventsWrite
+	case site.PersonalScopeIntegrationsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeIntegrationsRead
+	case site.PersonalScopeIntegrationsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeIntegrationsWrite
+	case site.PersonalScopeMcpSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeMcpSend
+	case site.PersonalScopeSegmentsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSegmentsRead
+	case site.PersonalScopeSegmentsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSegmentsWrite
+	case site.PersonalScopeSendingDomainsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSendingDomainsRead
+	case site.PersonalScopeSendingDomainsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSendingDomainsWrite
+	case site.PersonalScopeSuppressionsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSuppressionsWrite
+	case site.PersonalScopeTemplatesRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTemplatesRead
+	case site.PersonalScopeTemplatesWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTemplatesWrite
+	case site.PersonalScopeTrackingDomainsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTrackingDomainsRead
+	case site.PersonalScopeTrackingDomainsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTrackingDomainsWrite
+	case site.PersonalScopeWebhooksRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksRead
+	case site.PersonalScopeWebhooksRegenerate:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksRegenerate
+	case site.PersonalScopeWebhooksTest:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksTest
+	case site.PersonalScopeWebhooksWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksWrite
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return tokenscopePersonalScope
+}
 func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInput) apitokens.PersonalInput {
 	var apitokensPersonalInput apitokens.PersonalInput
 	if source != nil {
 		apitokensPersonalInput.Name = (*source).Name
 		if (*source).Scopes != nil {
-			apitokensPersonalInput.Scopes = make([]site.PersonalScope, len((*source).Scopes))
+			apitokensPersonalInput.Scopes = make([]tokenscope.PersonalScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
-				apitokensPersonalInput.Scopes[i] = c.siteapiPersonalScopeToSiteapiPersonalScope((*source).Scopes[i])
+				apitokensPersonalInput.Scopes[i] = c.PersonalScope((*source).Scopes[i])
 			}
 		}
 		apitokensPersonalInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
@@ -815,76 +886,6 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhooks.Upd
 		webhooksUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
 	return webhooksUpdateInput
-}
-func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.PersonalScope) site.PersonalScope {
-	var siteapiPersonalScope site.PersonalScope
-	switch source {
-	case site.PersonalScopeAutomationsPublish:
-		siteapiPersonalScope = site.PersonalScopeAutomationsPublish
-	case site.PersonalScopeAutomationsRead:
-		siteapiPersonalScope = site.PersonalScopeAutomationsRead
-	case site.PersonalScopeAutomationsWrite:
-		siteapiPersonalScope = site.PersonalScopeAutomationsWrite
-	case site.PersonalScopeBroadcastsRead:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsRead
-	case site.PersonalScopeBroadcastsSend:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsSend
-	case site.PersonalScopeBroadcastsWrite:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsWrite
-	case site.PersonalScopeContactsExport:
-		siteapiPersonalScope = site.PersonalScopeContactsExport
-	case site.PersonalScopeContactsRead:
-		siteapiPersonalScope = site.PersonalScopeContactsRead
-	case site.PersonalScopeContactsWrite:
-		siteapiPersonalScope = site.PersonalScopeContactsWrite
-	case site.PersonalScopeCustomFieldsRead:
-		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
-	case site.PersonalScopeCustomFieldsWrite:
-		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
-	case site.PersonalScopeEmailsSend:
-		siteapiPersonalScope = site.PersonalScopeEmailsSend
-	case site.PersonalScopeEnrollmentsRead:
-		siteapiPersonalScope = site.PersonalScopeEnrollmentsRead
-	case site.PersonalScopeEventsRead:
-		siteapiPersonalScope = site.PersonalScopeEventsRead
-	case site.PersonalScopeEventsWrite:
-		siteapiPersonalScope = site.PersonalScopeEventsWrite
-	case site.PersonalScopeIntegrationsRead:
-		siteapiPersonalScope = site.PersonalScopeIntegrationsRead
-	case site.PersonalScopeIntegrationsWrite:
-		siteapiPersonalScope = site.PersonalScopeIntegrationsWrite
-	case site.PersonalScopeMcpSend:
-		siteapiPersonalScope = site.PersonalScopeMcpSend
-	case site.PersonalScopeSegmentsRead:
-		siteapiPersonalScope = site.PersonalScopeSegmentsRead
-	case site.PersonalScopeSegmentsWrite:
-		siteapiPersonalScope = site.PersonalScopeSegmentsWrite
-	case site.PersonalScopeSendingDomainsRead:
-		siteapiPersonalScope = site.PersonalScopeSendingDomainsRead
-	case site.PersonalScopeSendingDomainsWrite:
-		siteapiPersonalScope = site.PersonalScopeSendingDomainsWrite
-	case site.PersonalScopeSuppressionsWrite:
-		siteapiPersonalScope = site.PersonalScopeSuppressionsWrite
-	case site.PersonalScopeTemplatesRead:
-		siteapiPersonalScope = site.PersonalScopeTemplatesRead
-	case site.PersonalScopeTemplatesWrite:
-		siteapiPersonalScope = site.PersonalScopeTemplatesWrite
-	case site.PersonalScopeTrackingDomainsRead:
-		siteapiPersonalScope = site.PersonalScopeTrackingDomainsRead
-	case site.PersonalScopeTrackingDomainsWrite:
-		siteapiPersonalScope = site.PersonalScopeTrackingDomainsWrite
-	case site.PersonalScopeWebhooksRead:
-		siteapiPersonalScope = site.PersonalScopeWebhooksRead
-	case site.PersonalScopeWebhooksRegenerate:
-		siteapiPersonalScope = site.PersonalScopeWebhooksRegenerate
-	case site.PersonalScopeWebhooksTest:
-		siteapiPersonalScope = site.PersonalScopeWebhooksTest
-	case site.PersonalScopeWebhooksWrite:
-		siteapiPersonalScope = site.PersonalScopeWebhooksWrite
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiPersonalScope
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

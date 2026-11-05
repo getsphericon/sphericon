@@ -9,9 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -25,14 +25,14 @@ var ErrPersonalTokenNotFound = validation.NotFound("apitokens: personal token no
 // a request that names one is not decoded.
 type PersonalInput struct {
 	Name      string
-	Scopes    []siteapi.PersonalScope
+	Scopes    []tokenscope.PersonalScope
 	ExpiresAt *time.Time
 }
 
 // GrantableScopes is the scopes a User whose Role is role may give a Personal token, in the
 // contract's order: each PersonalScope accounts.MayGrant allows the Role (ADR 0061).
-func GrantableScopes(role membership.Role) []siteapi.PersonalScope {
-	return lo.Filter(siteapi.PersonalScope("").AllValues(), func(scope siteapi.PersonalScope, _ int) bool {
+func GrantableScopes(role membership.Role) []tokenscope.PersonalScope {
+	return lo.Filter(tokenscope.PersonalScopes, func(scope tokenscope.PersonalScope, _ int) bool {
 		return accounts.MayGrant(role, []string{string(scope)}) == nil
 	})
 }
@@ -42,7 +42,7 @@ func GrantableScopes(role membership.Role) []siteapi.PersonalScope {
 // Connection's are on the consent screen: the first one beyond caller's Role refuses the whole
 // token. It is returned with its Membership and that Membership's User, and its secret, shown once.
 func MintPersonal(ctx context.Context, s *ent.Scoped, caller *ent.Membership, in PersonalInput) (Minted, error) {
-	requested := lo.Map(in.Scopes, func(scope siteapi.PersonalScope, _ int) string { return string(scope) })
+	requested := lo.Map(in.Scopes, func(scope tokenscope.PersonalScope, _ int) string { return string(scope) })
 	name, scopes, err := checked(Input{Name: in.Name, Scopes: requested})
 	if err != nil {
 		return Minted{}, err
