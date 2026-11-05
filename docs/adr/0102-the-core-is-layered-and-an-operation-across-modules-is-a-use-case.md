@@ -50,6 +50,10 @@ Other parts of the core are misplaced too:
 
 - **A domain module owns its tables and the rules of its own rows.** It calls only domain modules of its
   own context or of contexts below it.
+- **Only the owner writes a table.** A table is written only by the domain module that owns it. A use case
+  or another module reads it, and changes it only through its owner's functions. The `entrywrite` analyzer,
+  which forbids handlers to write through ent, holds an ownership map: each ent entity names its owning
+  module, and a write to it from any other package fails.
 - **The contexts are ordered:** identity → contacts → content → sending → orchestration → insights →
   instance. A module that targets or uses another sits above it. A Broadcast targets Contacts and uses a
   Template and an Integration, so orchestration sits above contacts, content and sending.
@@ -82,6 +86,8 @@ Other parts of the core are misplaced too:
 - **Names follow one rule.**
   - A domain module that owns a table is named after its ent entity, in the plural (`contacts`, `tags`,
     `workspaces`, `users`, `memberships`). The plural also keeps it apart from ent's singular packages.
+  - A domain module that owns several entities is named after the entity the others belong to, in the
+    plural. OAuth codes and refresh tokens belong to an OAuth client, so the module is `oauthclients`.
   - A domain module without a table is named after its glossary term in the singular (`condition`,
     `eligibility`).
   - A use case is `<subject><action>` in glossary words (`contacterasure`, `tagdeletion`,
