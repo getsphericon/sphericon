@@ -275,24 +275,21 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 
 // With a channel the preview also says how many of the matching contacts a Broadcast there would
 // take: on Telegram those with an eligible Binding on the routed Integration, not every contact.
+// Duff's bot has two Contacts bound, one of them in two chats.
 func TestSiteSegmentsPreviewCountsTheRecipientsOfATelegramBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	bot := env.AcmeTelegram(t)
-	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700001, 1)
-	env.BindTelegram(t, bot, fixtures.ContactAliceID, 700002, 2)
-	env.BindTelegram(t, bot, fixtures.ContactBobID, 700003, 3)
+	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
 
 	out, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
 		Channel:       siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelTelegram),
-		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
-	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
+		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationDuffTelegramID)),
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
 
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)
-	assert.Equal(t, siteapi.NewOptInt32(4), res.Recipients, "Alice and Bob, whatever the chats each has, and the fixture bot's Liam and Emma")
-	assert.Greater(t, res.Count, int32(4), "the Segment matches more contacts than are bound")
+	assert.Equal(t, siteapi.NewOptInt32(2), res.Recipients, "the two bound Contacts, whatever the chats each has")
+	assert.Greater(t, res.Count, int32(2), "the Segment matches more contacts than are bound")
 }
 
 func TestSiteSegmentsPreviewLeavesRecipientsOutWithoutAChannel(t *testing.T) {

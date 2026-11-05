@@ -55,8 +55,14 @@ func (env *TestEnv) AcmeTelegram(t *testing.T) TelegramBot {
 // acmeIntegration is a fixture Integration of Acme as the Site API reads it to its owner.
 func (env *TestEnv) acmeIntegration(t *testing.T, id int64) *siteapi.SiteIntegrationResource {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsGet(t.Context(),
-		siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+	return env.fixtureIntegration(t, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, id)
+}
+
+// fixtureIntegration is a fixture Integration of the Workspace as the Site API reads it to owner.
+func (env *TestEnv) fixtureIntegration(t *testing.T, owner, workspace string, id int64) *siteapi.SiteIntegrationResource {
+	t.Helper()
+	res, err := env.SiteActor(t, owner).SiteIntegrationsGet(t.Context(),
+		siteapi.SiteIntegrationsGetParams{WorkspaceId: siteapi.WorkspaceId(workspace), ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
 	row, ok := res.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "read the fixture Integration %d: got %T", id, res)

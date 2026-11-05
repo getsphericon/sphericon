@@ -628,6 +628,29 @@
   workspace_id: 76
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Duff (workspace 94): one Automation in each state its list filters by, created Alpha first: a
+# Draft (never published), an Active one and an Inactive one. Triggers unused elsewhere.
+- id: 7700 # fixture: AutomationDuffDraft
+  name: List probe Alpha
+  status: inactive
+  draft_version_id: 7700
+  workspace_id: 94
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7701 # fixture: AutomationDuffActive
+  name: List probe Beta
+  status: active
+  live_version_id: 7701
+  workspace_id: 94
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 7702 # fixture: AutomationDuffInactive
+  name: List probe Gamma
+  status: inactive
+  live_version_id: 7702
+  workspace_id: 94
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
 
 # Quahog (workspace 92): an HTTP step to the receiver (the Authorization header sealed, signed
 # unless the name says otherwise), then a tag step. They differ in the body. Inactive, so no Event

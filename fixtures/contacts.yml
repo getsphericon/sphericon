@@ -1453,6 +1453,124 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
+# Duff (workspace 94): the Contacts its site lists filter. Three by Tag and country (the filter test
+# narrows to @filter.test).
+- id: 7700 # fixture: ContactDuffVipGb
+  email: vip-gb@filter.test
+  country: GB
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7701 # fixture: ContactDuffVipDe
+  email: vip-de@filter.test
+  country: DE
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7702 # fixture: ContactDuffPlainGb
+  email: plain-gb@filter.test
+  country: GB
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Duff: the values of trial_ends in each shape a date leaf tells apart (Custom field 7700): three ISO
+# forms, text and Unix seconds.
+- id: 7703
+  email: zulu@duff.test
+  custom_fields: '{"trial_ends":"2026-01-15T10:00:00Z"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7704
+  email: bare@duff.test
+  custom_fields: '{"trial_ends":"2026-01-15"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7705
+  email: local@duff.test
+  custom_fields: '{"trial_ends":"2026-01-15T10:00:00"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7706
+  email: text@duff.test
+  custom_fields: '{"trial_ends":"soon"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7707
+  email: unix@duff.test
+  custom_fields: '{"trial_ends":1768435200}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Duff: renewal, a string field (Custom field 7701), holds text first and then an ISO string.
+- id: 7708
+  email: first@duff.test
+  custom_fields: '{"renewal":"soon"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7709
+  email: second@duff.test
+  custom_fields: '{"renewal":"2026-01-15T10:00:00Z"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Duff: the date fields ends_on and has_it (Custom fields 7702, 7703) the Segments 7700 and 7701 test.
+- id: 7710
+  email: dated@duff.test
+  custom_fields: '{"ends_on":"2026-01-15","has_it":"2026-01-15"}'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Duff: bound on its bot (bindings.yml), one in two chats and one in one.
+- id: 7711 # fixture: ContactDuffTwoChats
+  first_name: Tara
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7712 # fixture: ContactDuffOneChat
+  first_name: Otis
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Krusty (workspace 95): a phone with no SMS consent, one with a Confirmation (7720) and one whose
+# opt-out of everything on sms, recorded by hand, ended its consent (Unsubscribe 7720).
+- id: 7720 # fixture: ContactKrustyTexter
+  phone: '+13125557720'
+  first_name: Kim
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7721 # fixture: ContactKrustyConfirmed
+  phone: '+13125557721'
+  first_name: Cora
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7722 # fixture: ContactKrustyOptedOut
+  phone: '+13125557722'
+  first_name: Omar
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Krusty: the two numbers of its Segment "Bay Area numbers" (7720), only the first confirmed (7721).
+- id: 7723 # fixture: ContactKrustyBayConfirmed
+  phone: '+14155557723'
+  first_name: Tess
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7724 # fixture: ContactKrustyBayUnconfirmed
+  phone: '+14155557724'
+  first_name: Uma
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
 # --- Vehement (workspace 91): the Contact its tokens and Connections change ---
 - id: 7600 # fixture: ContactVehementVic
   email: vic@vehement.test

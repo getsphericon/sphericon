@@ -53,6 +53,18 @@ const (
 	AutomationArchivedName = "Old referral nudge"
 	// AutomationArchivedVersionID is from fixtures/automation_versions.
 	AutomationArchivedVersionID = 107
+	// AutomationDuffActiveID is from fixtures/automations.
+	AutomationDuffActiveID = 7701
+	// AutomationDuffActiveName is from fixtures/automations.
+	AutomationDuffActiveName = "List probe Beta"
+	// AutomationDuffDraftID is from fixtures/automations.
+	AutomationDuffDraftID = 7700
+	// AutomationDuffDraftName is from fixtures/automations.
+	AutomationDuffDraftName = "List probe Alpha"
+	// AutomationDuffInactiveID is from fixtures/automations.
+	AutomationDuffInactiveID = 7702
+	// AutomationDuffInactiveName is from fixtures/automations.
+	AutomationDuffInactiveName = "List probe Gamma"
 	// AutomationEmporiumClicksID is from fixtures/automations.
 	AutomationEmporiumClicksID = 7201
 	// AutomationEmporiumClicksName is from fixtures/automations.
@@ -997,6 +1009,14 @@ const (
 	ConfirmationGlobexDestination = "pat@globex.test"
 	// ConfirmationGlobexID is from fixtures/confirmations.
 	ConfirmationGlobexID = 900
+	// ConfirmationKrustyBayDestination is from fixtures/confirmations.
+	ConfirmationKrustyBayDestination = "+14155557723"
+	// ConfirmationKrustyBayID is from fixtures/confirmations.
+	ConfirmationKrustyBayID = 7721
+	// ConfirmationKrustyConfirmedDestination is from fixtures/confirmations.
+	ConfirmationKrustyConfirmedDestination = "+13125557721"
+	// ConfirmationKrustyConfirmedID is from fixtures/confirmations.
+	ConfirmationKrustyConfirmedID = 7720
 	// ConfirmationLiamDestination is from fixtures/confirmations.
 	ConfirmationLiamDestination = "liam.python@codebasics.dev"
 	// ConfirmationLiamID is from fixtures/confirmations.
@@ -1109,6 +1129,22 @@ const (
 	ContactComplainedEmail = "mia.data@codebasics.dev"
 	// ContactComplainedID is from fixtures/contacts.
 	ContactComplainedID = 109
+	// ContactDuffOneChatID is from fixtures/contacts.
+	ContactDuffOneChatID = 7712
+	// ContactDuffPlainGbEmail is from fixtures/contacts.
+	ContactDuffPlainGbEmail = "plain-gb@filter.test"
+	// ContactDuffPlainGbID is from fixtures/contacts.
+	ContactDuffPlainGbID = 7702
+	// ContactDuffTwoChatsID is from fixtures/contacts.
+	ContactDuffTwoChatsID = 7711
+	// ContactDuffVipDeEmail is from fixtures/contacts.
+	ContactDuffVipDeEmail = "vip-de@filter.test"
+	// ContactDuffVipDeID is from fixtures/contacts.
+	ContactDuffVipDeID = 7701
+	// ContactDuffVipGbEmail is from fixtures/contacts.
+	ContactDuffVipGbEmail = "vip-gb@filter.test"
+	// ContactDuffVipGbID is from fixtures/contacts.
+	ContactDuffVipGbID = 7700
 	// ContactEmmaEmail is from fixtures/contacts.
 	ContactEmmaEmail = "emma.sql@codebasics.dev"
 	// ContactEmmaID is from fixtures/contacts.
@@ -1151,6 +1187,26 @@ const (
 	ContactHostileQuotesID = 7411
 	// ContactJobsNoEmailID is from fixtures/contacts.
 	ContactJobsNoEmailID = 5560
+	// ContactKrustyBayConfirmedID is from fixtures/contacts.
+	ContactKrustyBayConfirmedID = 7723
+	// ContactKrustyBayConfirmedPhone is from fixtures/contacts.
+	ContactKrustyBayConfirmedPhone = "+14155557723"
+	// ContactKrustyBayUnconfirmedID is from fixtures/contacts.
+	ContactKrustyBayUnconfirmedID = 7724
+	// ContactKrustyBayUnconfirmedPhone is from fixtures/contacts.
+	ContactKrustyBayUnconfirmedPhone = "+14155557724"
+	// ContactKrustyConfirmedID is from fixtures/contacts.
+	ContactKrustyConfirmedID = 7721
+	// ContactKrustyConfirmedPhone is from fixtures/contacts.
+	ContactKrustyConfirmedPhone = "+13125557721"
+	// ContactKrustyOptedOutID is from fixtures/contacts.
+	ContactKrustyOptedOutID = 7722
+	// ContactKrustyOptedOutPhone is from fixtures/contacts.
+	ContactKrustyOptedOutPhone = "+13125557722"
+	// ContactKrustyTexterID is from fixtures/contacts.
+	ContactKrustyTexterID = 7720
+	// ContactKrustyTexterPhone is from fixtures/contacts.
+	ContactKrustyTexterPhone = "+13125557720"
 	// ContactLiamEmail is from fixtures/contacts.
 	ContactLiamEmail = "liam.python@codebasics.dev"
 	// ContactLiamID is from fixtures/contacts.
@@ -1317,6 +1373,24 @@ const (
 	DeletedWorkspaceOwnerDanName = "Dan"
 	// DeletedWorkspaceOwnerDanPassword is from fixtures/users.
 	DeletedWorkspaceOwnerDanPassword = "password"
+	// DuffCollectKey is from fixtures/workspaces.
+	DuffCollectKey = "omck_test_duff_collect_key"
+	// DuffDanMembershipID is from fixtures/memberships.
+	DuffDanMembershipID = 7700
+	// DuffID is from fixtures/workspaces.
+	DuffID = 94
+	// DuffName is from fixtures/workspaces.
+	DuffName = "Duff"
+	// DuffOwnerDanEmail is from fixtures/users.
+	DuffOwnerDanEmail = "dan@duff.test"
+	// DuffOwnerDanID is from fixtures/users.
+	DuffOwnerDanID = 7700
+	// DuffOwnerDanName is from fixtures/users.
+	DuffOwnerDanName = "Dan"
+	// DuffOwnerDanPassword is from fixtures/users.
+	DuffOwnerDanPassword = "password"
+	// DuffPublicID is from fixtures/workspaces.
+	DuffPublicID = "DuffWs94"
 	// DunderCollectKey is from fixtures/workspaces.
 	DunderCollectKey = "omck_test_dunder_collect_key"
 	// DunderEventPreviewEmail is from fixtures/contacts.
@@ -2037,6 +2111,14 @@ const (
 	IntegrationAcmeTelegramName = "Acme bot"
 	// IntegrationAcmeTelegramProvider is from fixtures/integrations.
 	IntegrationAcmeTelegramProvider = "telegram"
+	// IntegrationDuffTelegramID is from fixtures/integrations.
+	IntegrationDuffTelegramID = 7700
+	// IntegrationDuffTelegramIngestKey is from fixtures/integrations.
+	IntegrationDuffTelegramIngestKey = "omik_test_integrationdufftelegram"
+	// IntegrationDuffTelegramName is from fixtures/integrations.
+	IntegrationDuffTelegramName = "Duff bot"
+	// IntegrationDuffTelegramProvider is from fixtures/integrations.
+	IntegrationDuffTelegramProvider = "telegram"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
 	// IntegrationGlobexInboxID is from fixtures/integrations.
@@ -2069,6 +2151,14 @@ const (
 	IntegrationGlobexTelegramName = "Globex bot"
 	// IntegrationGlobexTelegramProvider is from fixtures/integrations.
 	IntegrationGlobexTelegramProvider = "telegram"
+	// IntegrationKrustySmsID is from fixtures/integrations.
+	IntegrationKrustySmsID = 7720
+	// IntegrationKrustySmsIngestKey is from fixtures/integrations.
+	IntegrationKrustySmsIngestKey = "omik_test_integrationkrustysms"
+	// IntegrationKrustySmsName is from fixtures/integrations.
+	IntegrationKrustySmsName = "Krusty Twilio"
+	// IntegrationKrustySmsProvider is from fixtures/integrations.
+	IntegrationKrustySmsProvider = "twilio"
 	// IntegrationMeridianArchivedID is from fixtures/integrations.
 	IntegrationMeridianArchivedID = 7406
 	// IntegrationMeridianArchivedIngestKey is from fixtures/integrations.
@@ -2335,6 +2425,24 @@ const (
 	KramericaOwnerNewmanPassword = "password"
 	// KramericaPublicID is from fixtures/workspaces.
 	KramericaPublicID = "KramrWs8"
+	// KrustyCollectKey is from fixtures/workspaces.
+	KrustyCollectKey = "omck_test_krusty_collect_key"
+	// KrustyID is from fixtures/workspaces.
+	KrustyID = 95
+	// KrustyKentMembershipID is from fixtures/memberships.
+	KrustyKentMembershipID = 7720
+	// KrustyName is from fixtures/workspaces.
+	KrustyName = "Krusty"
+	// KrustyOwnerKentEmail is from fixtures/users.
+	KrustyOwnerKentEmail = "kent@krusty.test"
+	// KrustyOwnerKentID is from fixtures/users.
+	KrustyOwnerKentID = 7720
+	// KrustyOwnerKentName is from fixtures/users.
+	KrustyOwnerKentName = "Kent"
+	// KrustyOwnerKentPassword is from fixtures/users.
+	KrustyOwnerKentPassword = "password"
+	// KrustyPublicID is from fixtures/workspaces.
+	KrustyPublicID = "KrstyW95"
 	// LumonCollectKey is from fixtures/workspaces.
 	LumonCollectKey = "omck_test_lumon_collect_key"
 	// LumonID is from fixtures/workspaces.
@@ -3029,6 +3137,10 @@ const (
 	SegmentGlobexID = 900
 	// SegmentGlobexName is from fixtures/segments.
 	SegmentGlobexName = "Globex only"
+	// SegmentKrustyBayAreaID is from fixtures/segments.
+	SegmentKrustyBayAreaID = 7720
+	// SegmentKrustyBayAreaName is from fixtures/segments.
+	SegmentKrustyBayAreaName = "Bay Area numbers"
 	// SegmentNewsletterID is from fixtures/segments.
 	SegmentNewsletterID = 2
 	// SegmentNewsletterName is from fixtures/segments.
@@ -3651,6 +3763,10 @@ const (
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.
 	UnsubscribeGlobexID = 900
+	// UnsubscribeKrustyOptedOutDestination is from fixtures/unsubscribes.
+	UnsubscribeKrustyOptedOutDestination = "+13125557722"
+	// UnsubscribeKrustyOptedOutID is from fixtures/unsubscribes.
+	UnsubscribeKrustyOptedOutID = 7720
 	// UnsubscribeTexterConfirmedBroadcastsDestination is from fixtures/unsubscribes.
 	UnsubscribeTexterConfirmedBroadcastsDestination = "+13125557504"
 	// UnsubscribeTexterConfirmedBroadcastsID is from fixtures/unsubscribes.

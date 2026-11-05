@@ -104,28 +104,15 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 	assert.Empty(t, emails("pat@globex.test"), "another Workspace's contact is never returned")
 }
 
+// Duff's three Contacts at @filter.test: two VIPs (one also in beta), in GB and DE, and a plain one
+// in GB.
 func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
 	ctx := context.Background()
 
-	create := func(email, country string, tags ...string) {
-		in := &siteapi.SiteCreateContactInput{
-			Email: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(email)),
-			Tags:  tags,
-		}
-		if country != "" {
-			in.Country = siteapi.NewOptNilCountryCode(siteapi.CountryCode(country))
-		}
-		_, err := c.SiteContactsCreate(ctx, in, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-		require.NoError(t, err)
-	}
-	create("vip-gb@filter.test", "GB", "filter-vip")
-	create("vip-de@filter.test", "DE", "filter-vip", "filter-beta")
-	create("plain-gb@filter.test", "GB")
-
 	emails := func(params siteapi.SiteContactsListParams) []string {
-		params.WorkspaceId = fixtures.AcmePublicID
+		params.WorkspaceId = fixtures.DuffPublicID
 		params.Email = siteapi.NewOptString("@filter.test")
 		res, err := c.SiteContactsList(ctx, params)
 		require.NoError(t, err)
@@ -138,13 +125,13 @@ func TestSiteContactsListFiltersByTagAndCountry(t *testing.T) {
 		return out
 	}
 
-	assert.ElementsMatch(t, []string{"vip-gb@filter.test", "vip-de@filter.test"},
+	assert.ElementsMatch(t, []string{fixtures.ContactDuffVipGbEmail, fixtures.ContactDuffVipDeEmail},
 		emails(siteapi.SiteContactsListParams{Tag: siteapi.NewOptString("filter-vip")}))
 	assert.Empty(t, emails(siteapi.SiteContactsListParams{Tag: siteapi.NewOptString("filter")}),
 		"a tag matches by its whole name")
-	assert.ElementsMatch(t, []string{"vip-gb@filter.test", "plain-gb@filter.test"},
+	assert.ElementsMatch(t, []string{fixtures.ContactDuffVipGbEmail, fixtures.ContactDuffPlainGbEmail},
 		emails(siteapi.SiteContactsListParams{Country: siteapi.NewOptCountryCode("GB")}))
-	assert.Equal(t, []string{"vip-gb@filter.test"}, emails(siteapi.SiteContactsListParams{
+	assert.Equal(t, []string{fixtures.ContactDuffVipGbEmail}, emails(siteapi.SiteContactsListParams{
 		Tag:     siteapi.NewOptString("filter-vip"),
 		Country: siteapi.NewOptCountryCode("GB"),
 	}), "the filters narrow together")

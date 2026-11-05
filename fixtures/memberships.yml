@@ -266,6 +266,18 @@
   role: owner
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+- id: 7700 # fixture: DuffDanMembership
+  user_id: 7700
+  workspace_id: 94
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7720 # fixture: KrustyKentMembership
+  user_id: 7720
+  workspace_id: 95
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 # Vehement's roster: one owner, one admin, one member.
 - id: 7600 # fixture: VehementOwnerMembership
   user_id: 7600

@@ -62,6 +62,25 @@ func (env *TestEnv) AcmeTwilio(t *testing.T) TwilioAccount {
 	return TwilioAccount{Integration: env.acmeIntegration(t, fixtures.IntegrationAcmeSmsID), Account: account, NumberSID: number}
 }
 
+// The account of the fixture Integration IntegrationKrustySms, as fixtures/integrations.yml stores
+// it, sending from TwilioNumber like Acme's.
+const (
+	KrustyTwilioAccountSID = "AC00000000000000000000000000007720"
+	KrustyTwilioAuthToken  = "fixturekrustytwilioauthtoken7720"
+)
+
+// KrustyTwilio is AcmeTwilio for Krusty's fixture Integration IntegrationKrustySms: the SMS
+// Integration of a Workspace whose audiences are no other test's.
+func (env *TestEnv) KrustyTwilio(t *testing.T) TwilioAccount {
+	t.Helper()
+	account := env.Twilio.AddAccountOf(KrustyTwilioAccountSID, KrustyTwilioAuthToken)
+	number := env.Twilio.AddNumber(account, TwilioNumber)
+	return TwilioAccount{
+		Integration: env.fixtureIntegration(t, fixtures.KrustyOwnerKentEmail, fixtures.KrustyPublicID, fixtures.IntegrationKrustySmsID),
+		Account:     account, NumberSID: number,
+	}
+}
+
 // ConnectTwilio adds an account with an API key and TwilioNumber to the fake REST API and connects
 // it as an SMS Integration of Acme, as its owner does in the app.
 func (env *TestEnv) ConnectTwilio(t *testing.T) TwilioAccount {

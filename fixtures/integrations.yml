@@ -492,3 +492,35 @@
   workspace_id: 85
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Duff (workspace 94): its only Integration, a Telegram bot the fake Bot API does not know: the
+# preview that counts its bound Contacts never calls Telegram.
+- id: 7700 # fixture: IntegrationDuffTelegram
+  ingest_key: omik_test_integrationdufftelegram
+  name: Duff bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7700:AAfixturetokenduffbot00000000000000\",\"bot_id\":7700,\"username\":\"duff_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-duff-webhook-secret\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Krusty (workspace 95): its Twilio account. `env.KrustyTwilio` adds the account and its number to
+# the fake Twilio.
+- id: 7720 # fixture: IntegrationKrustySms
+  ingest_key: omik_test_integrationkrustysms
+  name: Krusty Twilio
+  channel: sms
+  provider: twilio
+  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000007720\",\"secret\":\"fixturekrustytwilioauthtoken7720\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
+  preset: twilio
+  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixturekrustytwilioauthtoken7720\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 95
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

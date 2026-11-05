@@ -370,6 +370,22 @@
   password_hash: '{{argonHash "password"}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Duff's owner, who reads its lists through the Site API.
+- id: 7700 # fixture: DuffOwnerDan
+  name: Dan
+  email: dan@duff.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Krusty's owner, who sends its SMS Broadcast through the Site API.
+- id: 7720 # fixture: KrustyOwnerKent
+  name: Kent
+  email: kent@krusty.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Vehement's owner, admin and member, each holding a Personal token or a Connection there. None has
 # accepted anything, so putting the fixture terms in effect gates them.
 - id: 7600 # fixture: VehementOwnerVal

@@ -53,20 +53,19 @@ func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.Ent
 	require.IsTypef(t, &externalapi.SegmentResource{}, res, "got %T", res)
 }
 
-// createProContact records a Contact on the pro plan.
-func createProContact(t *testing.T, c *externalapi.Client, email string) {
+// moveToPro puts the Contact on the pro plan.
+func moveToPro(t *testing.T, c *externalapi.Client, contactID int64) {
 	t.Helper()
-	res, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
-		Email:        externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
+	res, err := c.ContactsUpdate(t.Context(), &externalapi.UpdateContactInput{
 		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),
-	})
+	}, externalapi.ContactsUpdateParams{ID: externalapi.EntityId(contactID)})
 	require.NoError(t, err)
 	require.IsTypef(t, &externalapi.ContactResource{}, res, "got %T", res)
 }
 
 // A scheduled Broadcast keeps the Condition its Segment had when it was scheduled (ADR 0065): a
 // token that can edit the Segment cannot change who receives it, while a Contact who comes to
-// match the copy after scheduling still does.
+// match the copy after scheduling (Carol, on no plan until then) still does.
 func TestExternalScheduledBroadcastSendsToTheConditionCopiedAtSchedule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, audienceScopes...)
@@ -74,11 +73,11 @@ func TestExternalScheduledBroadcastSendsToTheConditionCopiedAtSchedule(t *testin
 
 	scheduleBroadcast(t, c, id)
 	setSegmentCondition(t, c, proSegment, freePlanCondition)
-	createProContact(t, c, "late.pro@example.com")
+	moveToPro(t, c, fixtures.ContactCarolID)
 	env.DeliverQueuedBroadcasts(t)
 
 	got := recipientEmails(t, env, fixtures.BroadcastProSegmentID)
-	assert.Contains(t, got, "late.pro@example.com", "a Contact who matched after scheduling receives it")
+	assert.Contains(t, got, fixtures.ContactCarolEmail, "a Contact who matched after scheduling receives it")
 	assert.Contains(t, got, fixtures.ContactLiamEmail, "a pro Contact receives it")
 	assert.NotContains(t, got, fixtures.ContactNoahEmail, "a free Contact, who matches only the edited Segment, does not")
 }
