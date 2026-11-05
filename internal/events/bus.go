@@ -12,10 +12,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/emailcase"
-	"github.com/getsphericon/sphericon/internal/trackinghostlog"
-	"github.com/getsphericon/sphericon/internal/userfeed"
-	"github.com/getsphericon/sphericon/internal/workspacefeed"
+	"github.com/getsphericon/sphericon/internal/db"
 )
 
 // Publisher publishes a typed domain event. The implementation handed to Bus.WithinTx writes in
@@ -36,8 +33,8 @@ type Bus struct {
 }
 
 // New builds a Bus over the application's database pool.
-func New(db *sql.DB) *Bus {
-	return &Bus{db: db}
+func New(pool *sql.DB) *Bus {
+	return &Bus{db: pool}
 }
 
 // Use registers ent hooks on the transaction client of every later WithinTx, the way
@@ -74,8 +71,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	}()
 
 	// ent client bound to the *sql.Tx the event jobs are inserted on.
-	txClient := ent.NewClient(ent.Driver(newTxDriver(sqlTx)))
-	txClient.Use(emailcase.Hook, workspacefeed.Hook, userfeed.Hook, trackinghostlog.Hook)
+	txClient := db.NewTxClient(newTxDriver(sqlTx))
 	txClient.Use(b.hooks...)
 
 	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers}

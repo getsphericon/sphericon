@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"entgo.io/ent/dialect/sql"
-
 	"github.com/getsphericon/sphericon/ent"
 	entstaffmember "github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -180,9 +178,7 @@ func (m *Module) verifyCode(ctx context.Context, p login.Pending[*ent.StaffMembe
 }
 
 func (m *Module) verify(ctx context.Context, tx *ent.Tx, id int64, held, code string) error {
-	q := tx.StaffMember.Query().Where(entstaffmember.ID(id))
-	q.Modify(func(s *sql.Selector) { s.ForUpdate() })
-	op, err := q.Only(ctx)
+	op, err := tx.StaffMember.Query().Where(entstaffmember.ID(id)).ForUpdate().Only(ctx)
 	if err != nil {
 		return err
 	}

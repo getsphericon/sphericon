@@ -17,8 +17,7 @@ import (
 // NewEntClient is the plain client: it refuses a change to the Workspace and User feeds, which
 // is made only inside a transaction (events.Bus.WithinTx).
 func NewEntClient(sqlDB *sql.DB) *ent.Client {
-	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
-	c := ent.NewClient(ent.Driver(drv))
+	c := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
 	c.Use(emailcase.Hook, workspacefeed.Guard, userfeed.Guard, trackinghostlog.Guard)
 	return c
 }
@@ -27,7 +26,13 @@ func NewEntClient(sqlDB *sql.DB) *ent.Client {
 // transaction (go-txdb in tests), so a change to the Workspace or User feed takes its position
 // inside that transaction.
 func NewEntClientOnTx(sqlDB *sql.DB) *ent.Client {
-	drv := entsql.OpenDB(dialect.Postgres, sqlDB)
+	return NewTxClient(entsql.OpenDB(dialect.Postgres, sqlDB))
+}
+
+// NewTxClient is a client over a driver that runs inside one transaction (the events bus's): it
+// carries the hooks that write the feeds where NewEntClient only guards them. Every client
+// bound to a transaction is built here, so the two kinds of client keep the same hooks.
+func NewTxClient(drv dialect.Driver) *ent.Client {
 	c := ent.NewClient(ent.Driver(drv))
 	c.Use(emailcase.Hook, workspacefeed.Hook, userfeed.Hook, trackinghostlog.Hook)
 	return c

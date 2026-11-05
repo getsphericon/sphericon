@@ -19,8 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
@@ -260,9 +258,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 func (m *Module) Verify(ctx context.Context, userID int64, binding, code string) (Method, error) {
 	var method Method
 	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		q := tx.User.Query().Where(user.ID(userID))
-		q.Modify(func(s *sql.Selector) { s.ForUpdate() })
-		u, err := q.Only(ctx)
+		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
 		}
