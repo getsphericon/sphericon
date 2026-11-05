@@ -8,7 +8,7 @@
 // Two ent hooks keep it so no write path can forget it, the same pair as
 // internal/workspacefeed. Hook runs on every transaction client (the event bus's): the
 // change and its log row commit together, in the order the positions were taken. Guard
-// runs on the plain client (db.NewEntClient) and refuses a change to a host outside a
+// runs on the plain client (entclient.New) and refuses a change to a host outside a
 // transaction, where the log row would be a separate statement that a crash loses.
 // The hook reads the Tracking domains a change touches by id, across Workspaces for a bulk
 // write, which is why this package is on the closed list of raw-client packages in

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func TestTheSegmentArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *tes
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	archived, err := client.Segment.Query().Where(segment.Name("Archived audience")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Segment.Query().Where(segment.Name("Kept audience")).Only(t.Context())

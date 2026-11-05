@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -23,8 +23,8 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	s := db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB)
+	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
+	bus := events.New(sqlDB, entclient.NewTx)
 	segs, catalogue := segments.New(bus), tags.New(bus)
 
 	var saved int64

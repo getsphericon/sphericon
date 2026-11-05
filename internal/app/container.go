@@ -31,6 +31,7 @@ import (
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/attention"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -277,7 +278,7 @@ var storagePackage = do.Package(
 	// transaction client, so no path writes on a client without them. Closing it would close the
 	// pool under Database, which shuts down after it, so it needs no Shutdown of its own.
 	do.Lazy(func(i do.Injector) (*ent.Client, error) {
-		client := db.NewEntClient(do.MustInvoke[Database](i).DB)
+		client := entclient.New(do.MustInvoke[Database](i).DB)
 		client.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
 		return client, nil
 	}),
@@ -418,7 +419,7 @@ var editionPackage = do.Package(
 	// The domain-event bus over the main pool: a publish stores the Event and queues its jobs.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {
 		database := do.MustInvoke[Database](i)
-		bus := events.New(database.DB)
+		bus := events.New(database.DB, entclient.NewTx)
 		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
 		// is built after the bus, which its Audit log records through.
 		bus.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)

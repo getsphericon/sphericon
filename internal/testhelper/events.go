@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/export"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -146,7 +147,7 @@ func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error 
 // publish stores its Event row and inserts the jobs of core's and the Edition's consumers there.
 func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	t.Helper()
-	bus := events.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(inserter)

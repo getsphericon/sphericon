@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
@@ -98,7 +98,7 @@ func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 	pool, err := sql.Open("pgx", cfg.DatabaseURL)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	client := db.NewEntClient(pool)
+	client := entclient.New(pool)
 
 	err = client.TrackingDomain.UpdateOneID(fixtures.TrackingDomainServingID).
 		SetState(trackingdomain.StatePending).Exec(t.Context())

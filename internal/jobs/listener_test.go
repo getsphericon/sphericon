@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -38,8 +39,8 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	require.NoError(t, err)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
-	entClient := appdb.NewEntClient(pool)
-	bus := events.New(pool)
+	entClient := entclient.New(pool)
+	bus := events.New(pool, entclient.NewTx)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
 		Ent: entClient, Bus: bus, Outbound: outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local")),

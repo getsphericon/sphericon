@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/db"
 )
@@ -24,7 +25,7 @@ func migratedAt(t *testing.T, major int, floor string) *sql.DB {
 	sqlDB := openEmpty(t)
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	require.NoError(t, db.NewEntClient(sqlDB).SchemaState.UpdateOneID(1).SetMajor(major).SetFloor(floor).Exec(t.Context()))
+	require.NoError(t, entclient.New(sqlDB).SchemaState.UpdateOneID(1).SetMajor(major).SetFloor(floor).Exec(t.Context()))
 	return sqlDB
 }
 

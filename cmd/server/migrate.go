@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/app"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 )
 
@@ -31,8 +32,11 @@ func migrateCommand(env string) *cli.Command {
 			if err != nil {
 				return err
 			}
+			if status && asJSON {
+				return app.WriteSchemaBoundaries(ctx, cfg.DatabaseURL, out(cmd))
+			}
 			if status {
-				return appdb.WriteStatus(ctx, cfg.DatabaseURL, out(cmd), asJSON)
+				return appdb.WriteStatus(ctx, cfg.DatabaseURL, out(cmd))
 			}
 			applied, err := appdb.ApplyMigrations(ctx, cfg.DatabaseURL)
 			if err != nil {

@@ -10,7 +10,7 @@
 // Two ent hooks keep it so no write path can forget it, the same pair as internal/workspacefeed.
 // Hook runs on every transaction client (the event bus's): the change and its position commit
 // together, in the order the positions were taken. Guard runs on the plain client
-// (db.NewEntClient) and refuses a change to the feed outside a transaction, where the position
+// (entclient.New) and refuses a change to the feed outside a transaction, where the position
 // would be a separate statement that a crash loses and a concurrent change commits out of
 // order: every Consent record, whatever its item, is written in a transaction, so a writer that
 // forgets it is refused before it looks at any row. The hook reads Consent records and Sign-up

@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -58,7 +58,7 @@ func TestCappingOneWorkspaceLeavesAnotherUntouched(t *testing.T) {
 func TestConcurrentCapturesNeverLeaveMoreThanTheCap(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	s := client.Scoped(fixtures.GlobexID)
 	const kept = 5
 	c := capturedmessages.New(kept).Capturer(s, fixtures.IntegrationGlobexInboxID)

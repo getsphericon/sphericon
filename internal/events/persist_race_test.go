@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,7 +21,7 @@ import (
 func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	bus := testhelper.BusOn(t, sqlDB)
 	const action = "race_client_event"
 

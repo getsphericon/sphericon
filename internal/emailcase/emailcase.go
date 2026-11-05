@@ -5,7 +5,7 @@
 // Destination, which are stored lower-cased too.
 //
 // Hook lower-cases the email of every create and update of those three, so no write path can
-// forget it. It runs on every client (db.NewEntClient, db.NewEntClientOnTx and the event bus's
+// forget it. It runs on every client (entclient.New, entclient.NewOnTx and the event bus's
 // transaction client; a client from Tx inherits it). The CHECK constraints <table>_email_lower
 // (ent/schema LowerEmailCheck) refuse a write that went around it, so a missed path fails
 // loudly instead of making a second account.

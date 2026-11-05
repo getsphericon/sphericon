@@ -19,8 +19,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -31,7 +31,7 @@ func closedClient(t *testing.T) *ent.Client {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return db.NewEntClient(sqlDB)
+	return entclient.New(sqlDB)
 }
 
 func TestHasScopeAndWorkspaceIDOfTheTokenContext(t *testing.T) {

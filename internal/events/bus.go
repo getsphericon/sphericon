@@ -12,7 +12,6 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/db"
 )
 
 // Publisher publishes a typed domain event. The implementation handed to Bus.WithinTx writes in
@@ -32,11 +31,16 @@ type Bus struct {
 	consumers []Consumer
 	// stored run for every Event newly stored, once its transaction committed (OnStored).
 	stored []func(context.Context, DomainEvent)
+
+	// newTxClient builds the ent client bound to a transaction, with the hooks every such client
+	// carries (the wiring's internal/app/entclient.NewTx).
+	newTxClient func(dialect.Driver) *ent.Client
 }
 
-// New builds a Bus over the application's database pool.
-func New(pool *sql.DB) *Bus {
-	return &Bus{db: pool}
+// New builds a Bus over the application's database pool. newTxClient builds the ent client of
+// each transaction the bus opens; the wiring passes the one that carries the application's hooks.
+func New(pool *sql.DB, newTxClient func(dialect.Driver) *ent.Client) *Bus {
+	return &Bus{db: pool, newTxClient: newTxClient}
 }
 
 // Use registers ent hooks on the transaction client of every later WithinTx, the way
@@ -81,7 +85,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	}()
 
 	// ent client bound to the *sql.Tx the event jobs are inserted on.
-	txClient := db.NewTxClient(newTxDriver(sqlTx))
+	txClient := b.newTxClient(newTxDriver(sqlTx))
 	txClient.Use(b.hooks...)
 
 	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, stored: b.stored}

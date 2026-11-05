@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -202,8 +202,8 @@ func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
-	bus := events.New(sqlDB)
+	client := entclient.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	acc := accounts.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus))
 	s := client.Scoped(fixtures.InitechID)
 
@@ -227,8 +227,8 @@ func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
-	bus := events.New(sqlDB)
+	client := entclient.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	acc := accounts.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus))
 
 	errs := make([]error, 2)

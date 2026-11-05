@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -122,7 +123,7 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(db.NewEntClient(sqlDB), events.New(sqlDB), 5,
+	return build(entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5,
 		func(acc *accounts.Accounts, cfg *signup.Config) { cfg.Store = &lateStore{store: store{acc}} })
 }
 

@@ -58,7 +58,7 @@ why no fixture can hold it, with the same `// test writes:` comment.
 
 **`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
 carries the Guards of `internal/workspacefeed`, `internal/userfeed` and `internal/trackinghostlog`
-(`db.NewEntClient`), and only the bus's transaction client runs their Hooks, so a module that
+(`entclient.New`), and only the bus's transaction client runs their Hooks, so a module that
 writes a Workspace's deletion, an owner change, a User, a Consent record, the mailings mark or a
 Tracking host outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup
 that marks a Workspace deleted or changes a User's address, or the write a test of a feed's Hook

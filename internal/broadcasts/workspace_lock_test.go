@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -85,8 +85,8 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	s := db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB)
+	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
+	bus := events.New(sqlDB, entclient.NewTx)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, tracking.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
@@ -123,8 +123,8 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	s := db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB)
+	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
+	bus := events.New(sqlDB, entclient.NewTx)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, tracking.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)

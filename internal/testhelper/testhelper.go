@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -135,7 +136,7 @@ type TestEnv struct {
 	// Instance is the module the server shares: run its Release check with CheckRelease.
 	Instance *instance.Module
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
-	// the test finishes. Like production's (db.NewEntClient) it refuses a change the Workspace
+	// the test finishes. Like production's (entclient.New) it refuses a change the Workspace
 	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
 	// module that forgets the transaction fails its tests.
 	DB *ent.Client
@@ -486,7 +487,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	// The client of a test's own writes of rows the feeds watch, on the same transaction, with
 	// the Edition's hooks like every other client.
-	feedClient := db.NewEntClientOnTx(txDB)
+	feedClient := entclient.NewOnTx(txDB)
 	feedClient.Use(ee.Hooks(lic, st.now)...)
 
 	return &TestEnv{

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func TestTheAutomationArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	archived, err := client.Automation.Query().Where(automation.Name("Archived nudge")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Automation.Query().Where(automation.Name("Kept welcome")).Only(t.Context())

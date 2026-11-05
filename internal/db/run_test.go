@@ -3,7 +3,6 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
 func emptyConfig(t *testing.T, autoMigrate bool) *config.Config {
@@ -32,7 +30,7 @@ func emptyConfig(t *testing.T, autoMigrate bool) *config.Config {
 func statusText(t *testing.T, url string) string {
 	t.Helper()
 	var out bytes.Buffer
-	require.NoError(t, db.WriteStatus(t.Context(), url, &out, false))
+	require.NoError(t, db.WriteStatus(t.Context(), url, &out))
 	return out.String()
 }
 
@@ -130,19 +128,4 @@ func TestWriteStatusListsPendingAndChangesNothing(t *testing.T) {
 	require.Contains(t, after, "pending: none")
 	last := db.Majors[len(db.Majors)-1]
 	require.Contains(t, after, fmt.Sprintf("state:   Major %d, oldest release that runs: %s (this binary: Major %d)", last.Major, last.Floor, last.Major))
-}
-
-// `migrate --status --json` is what `upgrade` reads from the release it is about to install: the
-// database's state and the binary's table of Majors.
-func TestWriteStatusJSONCarriesTheStateAndTheTableOfMajors(t *testing.T) {
-	cfg := emptyConfig(t, false)
-
-	var out bytes.Buffer
-	require.NoError(t, db.WriteStatus(t.Context(), cfg.DatabaseURL, &out, true))
-
-	var b upgrade.Boundaries
-	require.NoError(t, json.Unmarshal(out.Bytes(), &b))
-	require.Equal(t, 1, b.State.Major, "an empty database reports Major 1 until it is migrated")
-	require.Len(t, b.Majors, len(db.Majors))
-	require.Equal(t, db.Majors[len(db.Majors)-1].Major, b.Majors[len(b.Majors)-1].Major)
 }

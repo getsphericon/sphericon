@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -13,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
 // guardTimeout bounds the guard at start and `migrate --status`, which only read.
@@ -71,29 +69,23 @@ func migrateOnStart(ctx context.Context, cfg *config.Config) error {
 }
 
 // WriteStatus is `sphericon migrate --status`: it prints the schema's state, the newest
-// migration the binary knows and the pending ones, and changes nothing. asJSON prints instead
-// what the Major walk of `upgrade` reads from the release it is about to install: the
-// database's state and this binary's table of Majors (upgrade.Boundaries).
-func WriteStatus(ctx context.Context, url string, w io.Writer, asJSON bool) error {
-	ctx, cancel := context.WithTimeout(ctx, guardTimeout)
-	defer cancel()
-	st, err := withDB(url, func(sqlDB *sql.DB) (SchemaStatus, error) { return Status(ctx, sqlDB) })
+// migration the binary knows and the pending ones, and changes nothing. The JSON form that the
+// Major walk of `upgrade` reads is the wiring's (app.WriteSchemaBoundaries), over ReadStatus.
+func WriteStatus(ctx context.Context, url string, w io.Writer) error {
+	st, err := ReadStatus(ctx, url)
 	if err != nil {
 		return err
-	}
-	if asJSON {
-		return json.NewEncoder(w).Encode(boundaries(st))
 	}
 	writeStatusText(w, st)
 	return nil
 }
 
-func boundaries(st SchemaStatus) upgrade.Boundaries {
-	b := upgrade.Boundaries{State: upgrade.MajorFloor{Major: st.State.Major, Floor: st.State.Floor}}
-	for _, m := range Majors {
-		b.Majors = append(b.Majors, upgrade.MajorFloor{Major: m.Major, Floor: m.Floor})
-	}
-	return b
+// ReadStatus reads the schema's state on a short-lived connection to url, within the guard's
+// time limit, and changes nothing.
+func ReadStatus(ctx context.Context, url string) (SchemaStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, guardTimeout)
+	defer cancel()
+	return withDB(url, func(sqlDB *sql.DB) (SchemaStatus, error) { return Status(ctx, sqlDB) })
 }
 
 func writeStatusText(w io.Writer, st SchemaStatus) {

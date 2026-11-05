@@ -5,14 +5,15 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // closedClient is an ent client, and a bus, whose database is gone: every query fails.
@@ -21,7 +22,7 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return db.NewEntClient(sqlDB), events.New(sqlDB)
+	return entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx)
 }
 
 // A storage failure surfaces as the underlying error: it is never mistaken for a

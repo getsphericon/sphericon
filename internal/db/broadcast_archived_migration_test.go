@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -23,7 +24,7 @@ func TestTheBroadcastArchiveMigrationKeepsTheStampAndRenamesTheAuditActions(t *t
 
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	archived, err := client.Broadcast.Query().Where(broadcast.Name("Archived newsletter")).Only(t.Context())
 	require.NoError(t, err)
 	kept, err := client.Broadcast.Query().Where(broadcast.Name("Kept draft")).Only(t.Context())

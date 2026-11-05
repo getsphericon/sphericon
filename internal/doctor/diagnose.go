@@ -13,9 +13,9 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainname"
 )
 
@@ -75,7 +75,7 @@ func Diagnose(ctx context.Context, env string, s Seams, w io.Writer, asJSON bool
 			in.DBErr = err
 		} else {
 			defer cleanup.Close(db, "database")
-			in.DB, in.Ent = db, appdb.NewEntClient(db)
+			in.DB, in.Ent = db, entclient.New(db)
 		}
 	}
 

@@ -11,8 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,7 +52,7 @@ func entClientOn(t *testing.T, url string) *ent.Client {
 	t.Helper()
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	t.Cleanup(func() { cleanup.Close(client, "the test's ent client") })
 	return client
 }

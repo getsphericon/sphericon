@@ -15,7 +15,7 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/collect"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -143,10 +143,10 @@ func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	h := collect.NewHandlers(events.New(sqlDB), nil)
+	h := collect.NewHandlers(events.New(sqlDB, entclient.NewTx), nil)
 
 	err = h.CollectEventsCreate(
-		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: db.NewEntClient(sqlDB).Scoped(fixtures.AcmeID)}),
+		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.New(sqlDB).Scoped(fixtures.AcmeID)}),
 		&collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{{VisitorId: "dev", Action: "x"}}},
 	)
 	require.Error(t, err)

@@ -14,7 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -82,8 +82,8 @@ func TestADeletedRuleTakesNoMove(t *testing.T) {
 func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
-	m := rules.New(nil, events.New(sqlDB))
+	client := entclient.New(sqlDB)
+	m := rules.New(nil, events.New(sqlDB, entclient.NewTx))
 	s := client.Scoped(fixtures.AcmeID)
 	_, err := m.Deactivate(t.Context(), s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)

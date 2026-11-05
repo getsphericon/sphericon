@@ -12,7 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -185,7 +185,7 @@ func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
 // which serializes statements, so this one runs on a database of its own, with a
 // pool of real connections.
 func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
-	client := db.NewEntClient(testhelper.RealDB(t))
+	client := entclient.New(testhelper.RealDB(t))
 	const email = "race@attempts.test"
 
 	a := accounts.NewAttempts(client, accounts.WithRule(accounts.KindPasswordReset, accounts.ResetRule(3)))

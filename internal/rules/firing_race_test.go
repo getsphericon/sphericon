@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -24,9 +24,9 @@ func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	s := client.Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	bus.UseJobs(testhelper.AcceptingQueue{})
 	m := rules.New(nil, bus)
 

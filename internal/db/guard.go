@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/jackc/pgerrcode"
@@ -45,9 +48,11 @@ type SchemaState struct {
 var initialState = SchemaState{Major: 1, Floor: "v0.0.0"}
 
 // ReadState reads the state row. A database with no row yet (empty, or migrated before the row
-// existed) is Major 1.
+// existed) is Major 1. It only reads, so a client without the application's hooks (which act on
+// writes) reads it as the wiring's would.
 func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
-	row, err := NewEntClient(sqlDB).SchemaState.Get(ctx, 1)
+	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
+	row, err := client.SchemaState.Get(ctx, 1)
 	switch {
 	case err == nil:
 		return SchemaState{Major: row.Major, Floor: row.Floor}, nil

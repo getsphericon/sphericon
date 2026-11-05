@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -93,7 +93,7 @@ func newRealEnv(t *testing.T) *realEnv {
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
 
@@ -110,7 +110,7 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	bus := events.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	queue, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(wrap(queue))
