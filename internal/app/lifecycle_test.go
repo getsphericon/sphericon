@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// The event router and the job workers have no outside face: that Close stops them is checked
+// The job workers have no outside face: that Close stops them is checked
 // by the goleak guard in main_test.go, which fails the package on a goroutine left running.
 
 // answers reports whether url answers at all, with any status.

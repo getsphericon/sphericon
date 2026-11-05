@@ -16,9 +16,9 @@ import (
 )
 
 // Attribution (ADR 0064): an Order is credited, once, to the Broadcast or Automation whose email
-// its Contact last clicked inside the Attribution window. Clicks are stored as the tracker and
-// the persist subscriber leave them; the Orders Completed are handed to the module as the orders
-// subscriber hands them over.
+// its Contact last clicked inside the Attribution window. Clicks are stored as the tracker
+// publishes them; the Orders Completed are handed to the module as the orders
+// consumer hands them over.
 
 const day = 24 * time.Hour
 
@@ -55,16 +55,14 @@ func clickedOnSMS(t *testing.T, env *testhelper.TestEnv, click events.SmsClicked
 	store(t, env, &click, at)
 }
 
-// store publishes the Event and stores it as the persist subscriber would, at the given time.
+// store publishes the Event, which stores it, and moves it to the given time.
 func store(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent, at time.Time) {
 	t.Helper()
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), ev)
 	}))
-	sent := env.OutboxEnvelopes(t, ev.EventName())
-	stored := sent[len(sent)-1]
-	stored.OccurredAt = at
-	require.NoError(t, events.Persist(t.Context(), env.DB, stored))
+	sent := env.QueuedEnvelopes(t, ev.EventName())
+	env.BackdateEvent(t, sent[len(sent)-1], at)
 }
 
 // completed is an Order Completed of 20.00 USD by the Contact at the given time.

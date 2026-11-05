@@ -203,7 +203,7 @@ func TestAnEnrollmentIsMadeEndedByAnExitOrGoalEventRecordedSinceTheTrigger(t *te
 			assert.Equal(t, tc.wantEnrolled, enrolled, "a step is to run")
 			assert.Equal(t, tc.wantStatus, status)
 			assert.Zero(t, againID, "enrolled once ever: no second Enrollment is made")
-			recorded := lo.Map(env.OutboxEnvelopes(t,
+			recorded := lo.Map(env.QueuedEnvelopes(t,
 				events.NameAutomationEnrolled, events.NameAutomationExited, events.NameAutomationGoalReached),
 				func(e events.Envelope, _ int) string { return e.Name })
 			assert.Equal(t, tc.wantEvents, recorded, "entered, and left at once when made ended")

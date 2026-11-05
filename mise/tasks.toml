@@ -148,7 +148,7 @@ env = { SPHERICON_ENV = "test", SPHERICON_DATABASE_URL = "{{env.SPHERICON_TEST_D
 run = "go run ./cmd/db drop"
 
 ["db:migrate"]
-description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read)"
+description = "Apply the migrations: the app schema and river's tables (`sphericon migrate`: goose, the runner the start guard and the tests read)"
 depends = ["db:up"]
 run = "go run ./cmd/server migrate"
 

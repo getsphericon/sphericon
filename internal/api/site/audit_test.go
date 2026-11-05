@@ -25,7 +25,7 @@ func promoteMary(t *testing.T, env *testhelper.TestEnv) {
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteMembershipResource{}, res)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 }
 
 func auditList(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteAuditListRes {
@@ -109,7 +109,7 @@ func TestAuditIsTenantIsolated(t *testing.T) {
 func TestAuditRedeliveryDoesNotDuplicate(t *testing.T) {
 	env := testhelper.Setup(t)
 	promoteMary(t, env)
-	env.DeliverToEE(t) // the bus redelivers the same envelope
+	env.WorkEditionJobs(t) // the bus redelivers the same envelope
 
 	page := auditPage(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 	assert.Len(t, page.Items, 2)
@@ -130,7 +130,7 @@ func TestAuditWithoutLicenseStoresNothingAndChangesNoBehaviour(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.SiteMembershipRoleAdmin, updated.Role)
 
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	stored, err := env.DB.AuditEntry.Query().Count(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, before, stored, "nothing was stored for the change")
@@ -148,7 +148,7 @@ func TestAuditCursorPaginates(t *testing.T) {
 		require.NoError(t, err)
 		require.IsType(t, &siteapi.SiteMembershipResource{}, res)
 	}
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 
 	first, err := owner.SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID, Limit: siteapi.NewOptInt32(2)})
 	require.NoError(t, err)

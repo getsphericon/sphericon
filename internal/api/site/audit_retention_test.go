@@ -42,7 +42,7 @@ func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {
 	got := retentionOf(t, owner, fixtures.AcmePublicID).(*siteapi.SiteAuditRetention)
 	assert.Equal(t, siteapi.RetentionDays(90), got.RetentionDays.Value)
 
-	got2 := env.OutboxEvents(t, events.NameAuditEntry)
+	got2 := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got2, 1)
 	e := got2[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
@@ -52,9 +52,9 @@ func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {
 
 	// Setting the same value again records nothing; clearing records the change back.
 	setRetention(t, owner, fixtures.AcmePublicID, siteapi.NewNilRetentionDays(90))
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1)
+	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)
 	setRetention(t, owner, fixtures.AcmePublicID, siteapi.NilRetentionDays{Null: true})
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 2)
+	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 2)
 	assert.True(t, retentionOf(t, owner, fixtures.AcmePublicID).(*siteapi.SiteAuditRetention).RetentionDays.Null)
 }
 

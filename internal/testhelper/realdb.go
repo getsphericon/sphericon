@@ -27,7 +27,7 @@ import (
 
 // RealDB is a database of the test's own on the test server, at the fixture state and
 // NOT inside a transaction: whatever the test commits is committed, and a second
-// connection sees it. For code that needs a real commit (the outbox router, concurrent
+// connection sees it. For code that needs a real commit (a river runtime, concurrent
 // workers, a whole app). It is cloned from this process's baseline (see baselineDB) and
 // dropped when the test ends, so nothing is cleaned up by hand. The ordinary tests ride
 // go-txdb (Setup).

@@ -19,6 +19,7 @@ var ErrNoJobQueue = errors.New("events: the bus has no job queue")
 // commits; a delete (Erasure's purge, see QueuePurger) commits or rolls back with it too.
 type JobQueue interface {
 	InsertTx(ctx context.Context, tx *sql.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+	InsertManyTx(ctx context.Context, tx *sql.Tx, params []river.InsertManyParams) ([]*rivertype.JobInsertResult, error)
 	JobDeleteManyTx(ctx context.Context, tx *sql.Tx, params *river.JobDeleteManyParams) (*river.JobDeleteManyResult, error)
 }
 

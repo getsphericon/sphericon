@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -63,7 +61,7 @@ func TestExternalContactsEraseRemovesUnsentBroadcastRecipients(t *testing.T) {
 	assert.Equal(t, 1, figures[still.ID].Recipients)
 }
 
-func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
+func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -80,7 +78,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 		}
 		return nil
 	}))
-	require.Len(t, env.Outbox(t, events.NameEmailSent, events.NameContactCreated), 3)
+	require.Len(t, env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated), 3)
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
@@ -90,7 +88,7 @@ func TestExternalContactsEraseClearsOutboxAndJobArguments(t *testing.T) {
 
 	eraseErasable(t, env)
 
-	left := env.Outbox(t, events.NameEmailSent, events.NameContactCreated)
+	left := env.QueuedMessages(t, events.NameEmailSent, events.NameContactCreated)
 	require.Len(t, left, 1, "only the bystander's envelope is left")
 	assert.Equal(t, strconv.FormatInt(bystanderID, 10), fmt.Sprint(left[0].Data["contactId"]))
 
@@ -157,57 +155,4 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 	require.NoError(t, err)
 	require.NotNil(t, kept.FailureExcerpt)
 	assert.Equal(t, "ben@initech.test rejected", *kept.FailureExcerpt)
-}
-
-// A dead letter naming the erased Contact, by id or by address, goes with its outbox envelopes.
-func TestExternalContactsEraseClearsDeadLetters(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		for _, ev := range []events.DomainEvent{
-			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Email: "erin@initech.test"},
-			&events.ContactCreated{WorkspaceID: fixtures.InitechID, Email: "Erin@Initech.test"},
-			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Email: "ben@initech.test"},
-		} {
-			if err := pub.Publish(ctx, ev); err != nil {
-				return err
-			}
-		}
-		return nil
-	}))
-	for _, row := range env.DB.OutboxMessage.Query().AllX(ctx) {
-		// test writes: a dead letter is written by the router's poison queue, which no test of
-		// Erasure runs; this one copies the envelopes as the router would.
-		env.DB.OutboxDeadLetter.Create().SetUUID(row.UUID).SetCreatedAt(row.CreatedAt).SetTransactionID(row.TransactionID).
-			SetPayload(row.Payload).SetMetadata(row.Metadata).ExecX(ctx)
-	}
-
-	eraseErasable(t, env)
-
-	left := env.DB.OutboxDeadLetter.Query().AllX(ctx)
-	require.Len(t, left, 1, "only the bystander's dead letter is left")
-	assert.Contains(t, string(left[0].Payload), "ben@initech.test")
-}
-
-// An outbox row published before the envelope moved to the metadata (the whole envelope as its
-// payload) that names the erased Contact goes too.
-func TestExternalContactsEraseClearsOutboxRowsOfThePreviousShape(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	for i, data := range []string{
-		fmt.Sprintf(`{"contactId":%d,"email":"erin@initech.test"}`, fixtures.ContactErasableID),
-		`{"email":"Erin@Initech.test"}`,
-		fmt.Sprintf(`{"contactId":%d,"email":"ben@initech.test"}`, fixtures.ContactBystanderID),
-	} {
-		// test writes: a row of the previous shape is only ever written by the previous version.
-		env.DB.OutboxMessage.Create().SetUUID(fmt.Sprintf("old-%d", i)).SetCreatedAt(time.Now()).SetTransactionID("1").
-			SetPayload([]byte(fmt.Sprintf(`{"id":"old-%d","name":"email.sent","version":1,"workspaceId":%d,"data":%s}`, i, fixtures.InitechID, data))).
-			ExecX(ctx)
-	}
-
-	eraseErasable(t, env)
-
-	left := env.DB.OutboxMessage.Query().Where(outboxmessage.UUIDHasPrefix("old-")).AllX(ctx)
-	require.Len(t, left, 1, "only the bystander's row is left")
-	assert.Contains(t, string(left[0].Payload), "ben@initech.test")
 }

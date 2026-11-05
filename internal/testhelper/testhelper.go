@@ -168,11 +168,13 @@ type TestEnv struct {
 	// Outbound module.
 	Holds *holds.Holds
 
-	// Orders is the orders subscriber's module, which DeliverOrders drives, for a test that hands
+	// Orders is the orders consumer's module, which WorkOrderJobs drives, for a test that hands
 	// it an order Event itself.
 	Orders *orders.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
+	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
+	license *licensekey.License
 
 	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
@@ -394,7 +396,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	// All queries ride the SAME transaction (the cleaner limits the pool to one
 	// connection); it is rolled back when the test ends. The bus opens a nested (savepoint)
-	// transaction on it, so producer writes, outbox inserts and the jobs queued in a bus
+	// transaction on it, so producer writes, Event rows and the jobs queued in a bus
 	// transaction roll back with the test; no worker runs them.
 	txDB := cleaner.DB(t)
 
@@ -503,6 +505,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Holds:           do.MustInvoke[*holds.Holds](injector),
 		Orders:          do.MustInvoke[*orders.Module](injector),
 		edition:         edition,
+		license:         lic,
 		sender:          do.MustInvoke[*outbound.Module](injector),
 		jwtSecret:       cfg.JWTSecret,
 		now:             st.now,
@@ -624,8 +627,8 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 }
 
 // migrateSchema applies the embedded migrations to an empty database: the same files, the same
-// way (goose), that production gets, so the app schema, river's tables and the domain-event
-// outbox all come from them. The worker databases are cloned from a template that has just
+// way (goose), that production gets, so the app schema and river's tables
+// come from them. The worker databases are cloned from a template that has just
 // this (see initBaseline).
 func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 	_, err := db.Migrate(ctx, sqlDB)

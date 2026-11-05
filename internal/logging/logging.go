@@ -2,8 +2,8 @@
 // carries a per-request correlation id through context.
 //
 // Wiring model: the process installs one configured logger as slog.Default via
-// Setup, so every subsystem that already logs through slog — river, watermill
-// (via NewSlogLogger), and the HTTP handlers — shares the same level, format,
+// Setup, so every subsystem that already logs through slog (river and the HTTP
+// handlers) shares the same level, format,
 // and sink without threading a *slog.Logger through every constructor. Request
 // scoping is done via context (FromContext), not by injecting a logger.
 package logging
@@ -93,7 +93,7 @@ func (h jobLogs) WithAttrs(attrs []slog.Attr) slog.Handler {
 func (h jobLogs) WithGroup(name string) slog.Handler { return jobLogs{h.Handler.WithGroup(name)} }
 
 // Setup installs the configured logger as the process-wide slog default, so
-// river, watermill, and every slog.Default() call site emit through it.
+// river and every slog.Default() call site emit through it.
 func Setup(cfg *config.Config) {
 	slog.SetDefault(New(cfg))
 }

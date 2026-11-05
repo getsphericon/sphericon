@@ -51,7 +51,7 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 
 	actions := map[string]*events.AuditEntry{}
 	var all strings.Builder
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
 		e := ev.(*events.AuditEntry)
 		actions[e.Action] = e
 		b, merr := json.Marshal(e)
@@ -89,7 +89,7 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
@@ -116,7 +116,7 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 
-	updates := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e := ev.(*events.AuditEntry)
 		return e, e.Action == "api_token.update"
 	})

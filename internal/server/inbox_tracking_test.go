@@ -56,8 +56,8 @@ func TestOpeningAndFollowingALinkOfACapturedMessageIsTrackedLikeAnyOther(t *test
 
 	assert.Equal(t, http.StatusFound, followed.Code)
 	assert.NotEmpty(t, followed.Header().Get("Location"))
-	assert.Len(t, env.OutboxEvents(t, events.NameEmailOpened), 2, "one email.opened Event per hit")
-	assert.Len(t, env.OutboxEvents(t, events.NameEmailClicked), 1)
+	assert.Len(t, env.QueuedEvents(t, events.NameEmailOpened), 2, "one email.opened Event per hit")
+	assert.Len(t, env.QueuedEvents(t, events.NameEmailClicked), 1)
 	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastGlobexID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, got[fixtures.BroadcastGlobexID].Opened, "the recipient's rollup counts the open once")

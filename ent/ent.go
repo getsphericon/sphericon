@@ -47,9 +47,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/outboxdeadletter"
-	"github.com/getsphericon/sphericon/ent/outboxmessage"
-	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/pendingsignup"
@@ -177,9 +174,6 @@ func checkColumn(t, c string) error {
 			order.Table:                order.ValidColumn,
 			ordermovement.Table:        ordermovement.ValidColumn,
 			outboundmessage.Table:      outboundmessage.ValidColumn,
-			outboxdeadletter.Table:     outboxdeadletter.ValidColumn,
-			outboxmessage.Table:        outboxmessage.ValidColumn,
-			outboxoffset.Table:         outboxoffset.ValidColumn,
 			passkey.Table:              passkey.ValidColumn,
 			passkeychallenge.Table:     passkeychallenge.ValidColumn,
 			pendingsignup.Table:        pendingsignup.ValidColumn,

@@ -18,8 +18,8 @@ import (
 // the Orders credited to it, in the Reporting currency, never stored. Which Order is credited to
 // which is the orders module's, tested there; these tests read what the reports sum.
 
-// clicked stores one email.clicked Event of Alice at the given time, as the tracker and the
-// persist subscriber would have left it: the click an Order of hers after it is credited by.
+// clicked stores one email.clicked Event of Alice at the given time, as the tracker would have
+// left it: the click an Order of hers after it is credited by.
 func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement, at time.Time) {
 	t.Helper()
 	click.Action = events.NameEmailClicked
@@ -30,10 +30,8 @@ func clicked(t *testing.T, env *testhelper.TestEnv, click events.EmailEngagement
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(t.Context(), &click)
 	}))
-	sent := env.OutboxEnvelopes(t, events.NameEmailClicked)
-	stored := sent[len(sent)-1]
-	stored.OccurredAt = at
-	require.NoError(t, events.Persist(t.Context(), env.DB, stored))
+	sent := env.QueuedEnvelopes(t, events.NameEmailClicked)
+	env.BackdateEvent(t, sent[len(sent)-1], at)
 }
 
 func setupCredit(t *testing.T) *testhelper.TestEnv {
@@ -98,7 +96,7 @@ func TestABroadcastShowsItsOrdersAndNetRevenueAndARefundLowersItOnItsDay(t *test
 
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-1", "20.00"))
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-2", "30.00", "currency", `"EUR"`)) // another currency: counted in no sum
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 	before := broadcastRevenue(t, c, id)
 	assert.Equal(t, siteapi.NewNilCurrencyCode("USD"), before.ReportingCurrency)
 	assert.EqualValues(t, 1, before.Orders)
@@ -107,7 +105,7 @@ func TestABroadcastShowsItsOrdersAndNetRevenueAndARefundLowersItOnItsDay(t *test
 	assert.EqualValues(t, 2000, days[reportDay(3)])
 
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("B-1", "5.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	after := broadcastRevenue(t, c, id)
 	assert.EqualValues(t, 1, after.Orders, "a refund is not another order")
@@ -128,7 +126,7 @@ func TestAnAutomationShowsItsOrdersAndNetRevenueOnItsReportItsListAndItsRead(t *
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("A-1", "40.00"))
 	s.at(noonDaysAgo(2), "Order Cancelled", orderProps("A-1", "0"))
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("A-2", "10.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	report, listed, got := automationRevenue(t, c, id)
 	assert.EqualValues(t, 2, report.Orders)
@@ -145,7 +143,7 @@ func TestBeforeTheFirstOrderThereIsNoFigureAndItsOrderCountsAtOnce(t *testing.T)
 	unset := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
 
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-1", "20.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	set := broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID))
 	assert.True(t, unset.ReportingCurrency.Null)
@@ -159,7 +157,7 @@ func TestAnUnattributedOrderIsCreditedToNoBroadcastAndNoAutomation(t *testing.T)
 	env := setupCredit(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 	newShop(t, env).at(noonDaysAgo(3), "Order Completed", orderProps("U-1", "20.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	assert.Zero(t, broadcastRevenue(t, c, int64(fixtures.BroadcastSentUntrackedID)).Amount)
 	report, _, _ := automationRevenue(t, c, int64(fixtures.AutomationWelcomeSeriesID))
@@ -174,7 +172,7 @@ func TestTheOverviewCountsThePartOfRevenueCreditedToMessages(t *testing.T) {
 	clicked(t, env, events.EmailEngagement{BroadcastID: fixtures.BroadcastSentUntrackedID}, noonDaysAgo(4))
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("B-1", "20.00"))
 	s.at(noonDaysAgo(10), "Order Completed", orderProps("U-1", "7.25"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 

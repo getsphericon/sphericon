@@ -38,7 +38,7 @@ func TestCollectAnswers503WithRetryAfterWhenTheDatabaseIsUnavailable(t *testing.
 	require.Equal(t, http.StatusServiceUnavailable, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.NotEmpty(t, rec.Header().Get("Retry-After"))
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameCollected), "the request changed nothing")
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "the request changed nothing")
 }
 
 func TestCollectKeepsAnswering500ForAFailureThatIsNotTheDatabaseBeingGone(t *testing.T) {

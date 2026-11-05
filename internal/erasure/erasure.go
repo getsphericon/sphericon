@@ -5,7 +5,7 @@
 // removed, anonymized or kept.
 //
 // The whole erasure is one transaction, opened through events.Bus.WithinScopedPurgeTx so
-// the Contact change and the domain-event outbox commit together. Inside it the work
+// the Contact change, its events and the purge of its queued jobs commit together. Inside it the work
 // is an ordered list of steps (see Module.steps), each a small function over the
 // resolved Target; extending Erasure (another identifier kind, another dependent
 // table, another signal published in the same transaction) means resolving the new
@@ -179,7 +179,7 @@ func (m *Module) steps() []step {
 		cancelBroadcastWork,
 		cancelAutomationWork,
 		cancelRuleWork,
-		purgeOutbox,
+		purgeEventJobs,
 		purgeWebhookDeliveries,
 		eraseShortLinks,
 		eraseTelegram,

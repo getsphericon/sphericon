@@ -25,7 +25,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.TagResource{}, res)
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, "tag.create", e.Action)
@@ -33,7 +33,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	assert.Equal(t, "api-tag", e.TargetName)
 
 	// The owner reads it on /site, attributed to the token.
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteAuditEntryList)

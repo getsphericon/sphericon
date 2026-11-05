@@ -22,7 +22,7 @@ import (
 func enrollmentEvents(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) map[string]int {
 	t.Helper()
 	out := map[string]int{}
-	messages := env.Outbox(t,
+	messages := env.QueuedMessages(t,
 		events.NameAutomationEnrolled, events.NameAutomationCompleted,
 		events.NameAutomationGoalReached, events.NameAutomationExited)
 	for i := range messages {
@@ -34,7 +34,7 @@ func enrollmentEvents(t *testing.T, env *testhelper.TestEnv, automationID, conta
 	return out
 }
 
-// jsonID is an id as the outbox payload decodes it.
+// jsonID is an id as a published payload decodes it.
 func jsonID(id int64) json.Number { return json.Number(strconv.FormatInt(id, 10)) }
 
 func TestAnEnrollmentRecordsItsBeginningAndItsCompletion(t *testing.T) {

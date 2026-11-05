@@ -41,7 +41,7 @@ func TestAutomationOpensAndClicksAreEventsCarryingTheAutomation(t *testing.T) {
 	assert.Equal(t, linkA, resp.Header().Get("Location"))
 
 	for _, name := range []string{events.NameEmailOpened, events.NameEmailClicked} {
-		got := env.OutboxEvents(t, name)
+		got := env.QueuedEvents(t, name)
 		require.Len(t, got, 1, name)
 		e, ok := got[0].(*events.EmailEngagement)
 		require.True(t, ok)
@@ -95,7 +95,6 @@ func TestAutomationReportShowsOpensClicksAndTheLinkTable(t *testing.T) {
 	}
 	// The mail of another Automation is not this one's figure.
 	trackingGet(t, env, openPath(t, env, fixtures.OutboundMessageAutomationOnOpenID))
-	persistEngagement(t, env)
 
 	report := automationReport(t, env, fixtures.AutomationWelcomeSeriesID)
 	assert.EqualValues(t, 2, report.Opens)

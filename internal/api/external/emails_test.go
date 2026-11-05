@@ -167,7 +167,7 @@ func TestExternalEmailsSendScope(t *testing.T) {
 }
 
 // A successful send writes a durable record (the trace), resolves the destination
-// to a contact when one exists, and publishes email.sent onto the outbox so the
+// to a contact when one exists, and publishes email.sent so the
 // send is segmentable like broadcast/automation sends.
 func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -195,7 +195,7 @@ func TestExternalEmailsSendRecordsTrace(t *testing.T) {
 	require.NotNil(t, rec.ContactID)
 	assert.Equal(t, contact.ID, *rec.ContactID, "destination resolved to the contact")
 
-	sent := env.OutboxCount(t, "email.sent", map[string]any{"email": fixtures.ContactAliceEmail})
+	sent := env.QueuedCount(t, "email.sent", map[string]any{"email": fixtures.ContactAliceEmail})
 	assert.Equal(t, 1, sent, "email.sent published once")
 }
 
@@ -251,7 +251,7 @@ func TestExternalEmailsSendSuppressedRecordsNoEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessage.StatusSkipped, rec.Status)
 
-	events := env.OutboxCount(t, "email.sent", map[string]any{"email": fixtures.SuppressionGhostBounceDestination})
+	events := env.QueuedCount(t, "email.sent", map[string]any{"email": fixtures.SuppressionGhostBounceDestination})
 	assert.Zero(t, events, "no send happened, so no email.sent")
 }
 

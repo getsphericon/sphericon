@@ -25,13 +25,20 @@ var sendKind = broadcasts.SendArgs{}.Kind()
 // failingQueue is a job queue that cannot take the job: it fails the insert, and first runs
 // onInsert (a request that dies together with its queue cancels its context there).
 type failingQueue struct {
-	events.JobQueue // only InsertTx is called
+	events.JobQueue // only the inserts are called
 
 	err      error
 	onInsert func()
 }
 
 func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	if q.onInsert != nil {
+		q.onInsert()
+	}
+	return nil, q.err
+}
+
+func (q failingQueue) InsertManyTx(context.Context, *sql.Tx, []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
 	if q.onInsert != nil {
 		q.onInsert()
 	}

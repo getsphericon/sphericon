@@ -5,28 +5,25 @@ import (
 	"strconv"
 	"strings"
 
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ent/outboxmessage"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 )
 
-// QueuePurger removes what the internal queues still hold about a data subject: the
-// domain-event outbox and the river job table. The Publisher handed to
-// Bus.WithinTx implements it over the same transaction, so a purge commits (or
-// rolls back) with the state change that asks for it. Erasure is its only caller
-// (ADR 0021); it is a separate interface so ordinary producers cannot reach it.
+// QueuePurger removes what the river job table still holds about a data subject. The Publisher
+// handed to Bus.WithinTx implements it over the same transaction, so a purge commits (or rolls
+// back) with the state change that asks for it. Erasure is its only caller (ADR 0021); it is a
+// separate interface so ordinary producers cannot reach it.
 //
 // The job deletes go through river's own delete (JobDeleteManyTx) on the same transaction;
 // a Where predicate matches the args.
 type QueuePurger interface {
-	// PurgeOutbox deletes the Workspace's outbox envelopes and dead letters that name the Contact,
-	// by id or by one of its destinations, an address or a phone number (matched case-insensitively).
-	PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error
+	// PurgeEventJobs deletes the Workspace's event consumer jobs (QueueEvents) whose envelope names
+	// the Contact by id or by one of its destinations, an address (matched case-insensitively) or a
+	// phone number, in any state but running: queued, retrying and discarded ones alike. A running
+	// (or locked) job is left to finish: its worker re-checks that what it refers to still exists.
+	PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
 	// A running job, or one a fetch holds locked to start it, is left to finish: its
 	// worker re-checks that what it refers to still exists.
@@ -36,62 +33,6 @@ type QueuePurger interface {
 	// destinations (data.email case-insensitively, or data.phone). The body is the event payload
 	// the endpoint would receive. A running (or locked) delivery is left to finish.
 	PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
-}
-
-func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
-	lowered := lowerAll(destinations)
-	// contactID 0 is "no Contact" (an address erased on its own); events with no
-	// Contact carry contactId 0 or none, so 0 must never match.
-	id := ""
-	if contactID != 0 {
-		id = strconv.FormatInt(contactID, 10)
-	}
-	names := namesSubject(workspaceID, id, lowered)
-	if _, err := p.client.OutboxMessage.Delete().Where(predicate.OutboxMessage(names)).Exec(ctx); err != nil {
-		return err
-	}
-	// A dead letter is an outbox envelope that waits to be replayed: the same payload.
-	_, err := p.client.OutboxDeadLetter.Delete().Where(predicate.OutboxDeadLetter(names)).Exec(ctx)
-	return err
-}
-
-// namesSubject selects a Workspace's outbox envelopes (or dead letters, which have the same
-// columns) that name a data subject. An envelope's Workspace is its metadata's workspace_id, and
-// its payload is the event, which names the Contact as contactId, the address as email and the
-// phone number as phone. A row published before the envelope moved to the metadata (EnvelopeFrom)
-// has the whole envelope as its payload: its Workspace is workspaceId and the event is under data.
-// The paths are ent's JSON predicates; only the case-insensitive match is written by hand (the
-// lower() of a JSON path has no predicate), around ent's own path expression.
-func namesSubject(workspaceID int64, contactID string, lowered []string) func(*sql.Selector) {
-	return func(s *sql.Selector) {
-		payload, metadata := s.C(outboxmessage.FieldPayload), s.C(outboxmessage.FieldMetadata)
-		s.Where(sql.And(
-			sql.Or(
-				sqljson.ValueEQ(metadata, strconv.FormatInt(workspaceID, 10), sqljson.Path(MetaWorkspaceID)),
-				sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
-			),
-			sql.Or(
-				sqljson.ValueEQ(payload, contactID, sqljson.Path("contactId")),
-				sqljson.ValueEQ(payload, contactID, sqljson.Path("data", "contactId")),
-				addressIn(payload, lowered, sqljson.Path("email")),
-				addressIn(payload, lowered, sqljson.Path("data", "email")),
-				addressIn(payload, lowered, sqljson.Path("phone")),
-				addressIn(payload, lowered, sqljson.Path("data", "phone")),
-			),
-		))
-	}
-}
-
-// addressIn matches the address at path of the JSON column, case-insensitively, against the
-// lowered addresses.
-func addressIn(column string, lowered []string, path sqljson.Option) *sql.Predicate {
-	// raw sql: lower() of a JSON path compared with ANY(array); ent's JSON predicates have no
-	// function over a path.
-	return sql.P(func(b *sql.Builder) {
-		b.WriteString("lower(").
-			Join(sqljson.ValuePath(column, path, sqljson.Unquote(true))).
-			WriteString(") = ANY(").Arg(lowered).WriteString(")")
-	})
 }
 
 // purgeBatch is how many jobs one delete of a purge removes. river deletes at most a batch per
@@ -135,6 +76,25 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[])"+
 			" OR b.body->'data'->>'phone' = any(@purge_addresses::text[]))",
 			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
+}
+
+func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
+	id := ""
+	if contactID != 0 {
+		id = strconv.FormatInt(contactID, 10)
+	}
+	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event at
+	// data, which names the Contact as contactId, the address as email and the phone as phone.
+	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Queues(QueueEvents).
+		// raw sql: a field of the args matched against a value; river's delete filters stop at a
+		// job's own columns.
+		Where("args->>'workspaceId' = @purge_workspace::text",
+			river.NamedArgs{"purge_workspace": strconv.FormatInt(workspaceID, 10)}).
+		// raw sql: the event's fields inside the args, the address case-insensitively.
+		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
+			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
+			" OR args->'data'->>'phone' = any(@purge_event_addresses::text[]))",
+			river.NamedArgs{"purge_event_contact": id, "purge_event_addresses": lowerAll(destinations)}))
 }
 
 // deleteJobs deletes the jobs params selects through river, on the purge's transaction, a batch

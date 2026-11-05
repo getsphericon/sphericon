@@ -27,7 +27,8 @@ import (
 // while the job runs.
 
 // Work runs one job of args through worker the way river would (args are encoded and decoded,
-// the worker's timeout and middleware apply) and returns the error the worker returned.
+// the worker's timeout and the application's plugins and middleware apply, jobs.BaseConfig) and
+// returns the error the worker returned.
 func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Worker[T], args T) error {
 	tb.Helper()
 	initBaseline()
@@ -44,7 +45,7 @@ func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Work
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
-	w := rivertest.NewWorker(tb, riverdatabasesql.New(pool), &river.Config{}, worker)
+	w := rivertest.NewWorker(tb, riverdatabasesql.New(pool), jobs.BaseConfig(), worker)
 	_, err = w.Work(ctx, tb, tx, args, nil)
 	return err
 }

@@ -129,7 +129,7 @@ func TestSitePublicConfirmationsPerformRecordsClientIP(t *testing.T) {
 	env.Server.ServeHTTP(w, req)
 	require.Equal(t, http.StatusNoContent, w.Code)
 
-	confirmed := env.Outbox(t, "marketing.confirmed")
+	confirmed := env.QueuedMessages(t, "marketing.confirmed")
 	require.Len(t, confirmed, 1)
 	ip := confirmed[0].Data["ip"]
 	assert.Equal(t, "203.0.113.7", ip)

@@ -256,7 +256,7 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, m.Delete(ctx, s, r.ID))
 
-	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
 		return e, ok && e.TargetType == "rule" && e.TargetID == strconv.FormatInt(r.ID, 10)
 	})

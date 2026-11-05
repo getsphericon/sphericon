@@ -1,6 +1,6 @@
 // Package events is the internal domain-event system: a domain event is published
-// once, inside the same transaction that commits the state change (transactional
-// outbox), and fanned out to independent subscribers over watermill. See
+// once, inside the same transaction that commits the state change, which stores its
+// Event row and inserts one River job for every consumer that wants it (ADR 0101). See
 // docs/design/domain-events.md.
 //
 // Two categories of events, never conflated:
@@ -10,13 +10,14 @@
 //     to us, stored as-is. Ingesting one is itself OUR typed event, CollectedEvent,
 //     whose body carries the user's action + properties verbatim.
 //
-// On the wire the envelope carries the typed event as Data (json); subscribers
-// decode it back into the concrete type via the name registry and call Project().
+// An event job carries the envelope, with the typed event as Data (json); a consumer
+// decodes it back into the concrete type via the name registry and calls Project().
 package events
 
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -25,10 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
-
-// TopicDomainEvents is the single watermill topic all domain events flow through.
-// watermill-sql maps it to "watermill_domain_events", which is the outbox table.
-const TopicDomainEvents = "domain_events"
 
 // Bus event names — the stable type discriminators (registry keys). These are
 // OURS and finite. A customer's action name is NOT one of these; it lives inside
@@ -148,15 +145,15 @@ const (
 // Envelope is the generic bus message. It carries transport metadata plus the
 // typed event as Data; subscribers decode Data via the registry.
 type Envelope struct {
-	ID          string          `json:"id"`          // ULID; the watermill message id
+	ID          string          `json:"id"`          // ULID; the event's own id
 	Name        string          `json:"name"`        // bus event type (registry key)
 	Version     int             `json:"version"`     // schema version of Data
 	WorkspaceID int64           `json:"workspaceId"` // every event is workspace-scoped
 	OccurredAt  time.Time       `json:"occurredAt"`
 	Data        json.RawMessage `json:"data"` // the typed event, marshaled
-	// DedupKey is the persist idempotency key. Empty ⇒ use ID. An event with a
-	// natural upstream id (a provider notification) sets it so at-least-once
-	// redelivery dedupes, while ID stays a short ULID for the message-id column.
+	// DedupKey is the Event row's source id. Empty ⇒ use ID. An event with a
+	// natural upstream id (a provider notification) sets it so a redelivery is a
+	// repeat Publish drops, while ID stays the event's own ULID.
 	DedupKey string `json:"dedupKey,omitempty"`
 	// RecordedAt is when the event was published, as opposed to OccurredAt, which a client may
 	// backdate. Rules act only on events recorded after they were activated (ADR 0054).
@@ -227,8 +224,8 @@ type DomainEvent interface {
 
 // identifiable is an optional DomainEvent capability: an event with a stable
 // upstream id (a provider notification, an external message) implements it so the
-// publisher records that id as the envelope's DedupKey, making at-least-once
-// redelivery idempotent at the persist layer (which dedupes on source_id). The
+// publisher records that id as the envelope's DedupKey, which its Event row is
+// stored under (source_id): a redelivery finds the row and is not published. The
 // id does NOT become the message id, which stays a short ULID.
 type identifiable interface {
 	EventID() string
@@ -286,6 +283,11 @@ var registry = map[string]func() DomainEvent{
 	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }
 
+// Names are the bus types of every event Decode knows, sorted.
+func Names() []string {
+	return slices.Sorted(maps.Keys(registry))
+}
+
 // Decode reconstructs the typed event from an envelope.
 func Decode(env Envelope) (DomainEvent, error) {
 	newEvent, ok := registry[env.Name]
@@ -329,7 +331,7 @@ type ContactErased struct {
 	// The keys Erasure matched on (ADR 0045), for the Erasures Export stream: the erased
 	// Contact's id (the row is gone, so the id points at nothing), the anonymous devices
 	// erased with it, and SHA-256 (hex) of the lowercased address and of the phone, computed
-	// before publishing so no address or phone reaches the outbox. Empty when there was none.
+	// before publishing so no address or phone reaches an event job. Empty when there was none.
 	ContactID  int64    `json:"contactId,omitempty"`
 	VisitorIDs []string `json:"visitorIds,omitempty"`
 	EmailHash  string   `json:"emailHash,omitempty"`
@@ -350,7 +352,7 @@ func (e *ContactErased) Project() Projection {
 // EmailEngagement is emitted when one of our emails is sent to a recipient, or
 // when the recipient opens, clicks, or unsubscribes from a broadcast email.
 // Action is the specific name; URL is set for clicks only. DedupID, when set,
-// makes the persist projection idempotent under at-least-once redelivery — the
+// makes a second publish of the same send a repeat that is dropped — the
 // send path sets it (a deterministic per-recipient/per-step key) so a job retry
 // can't write a second email.sent row; open/click/unsubscribe leave it empty and
 // fall back to the envelope ULID.
@@ -451,7 +453,7 @@ type EmailDelivery struct {
 	BroadcastID       int64  `json:"broadcastId,omitempty"`
 	AutomationID      int64  `json:"automationId,omitempty"`
 	// DedupID is the stable upstream id (e.g. SNS messageId + recipient) used as
-	// the envelope id so a redelivered provider notification dedupes at persist.
+	// the Event's source id, so a redelivered provider notification is dropped as a repeat.
 	DedupID string `json:"dedupId,omitempty"`
 	// Captured is set when the message went through a sender that delivers nowhere outside.
 	Captured bool `json:"captured,omitempty"`
@@ -572,7 +574,7 @@ type CollectedEvent struct {
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
-	// DedupID is the persist idempotency key of an event the client gave a clientEventId
+	// DedupID is the Event's source id when the client gave it a clientEventId
 	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
 	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls

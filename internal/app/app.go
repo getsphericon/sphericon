@@ -1,5 +1,5 @@
 // Package app composes the application: it registers every singleton in the dependency container
-// and starts and stops the servers, the event router and the job workers.
+// and starts and stops the servers and the job workers.
 package app
 
 import (
@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -51,13 +50,11 @@ type App struct {
 
 	injector       *do.RootScope
 	listener       net.Listener // caller-provided; nil means listen on Config.Port
-	events         *eventsRuntime
 	jobs           *jobsClient
 	shutdownOnce   sync.Once
 	closeOnce      sync.Once
 	closeErr       error
 	cancel         context.CancelFunc
-	eventsDone     chan struct{}
 	jobsStarted    bool // river's Start was attempted: its Stopped channel closes on success and on failure
 	done           chan error
 	shutdownReport *do.ShutdownReport
@@ -137,22 +134,12 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
 		return nil, abort(injector, err)
 	}
-	evRuntime, err := do.Invoke[*eventsRuntime](injector)
-	if err != nil {
-		return nil, abort(injector, err)
-	}
 	jobsCli, err := do.Invoke[*jobsClient](injector)
 	if err != nil {
 		return nil, abort(injector, err)
 	}
-	// Operational gauges (outbox lag, dead letters, queue depth), read on scrape; the container
-	// takes them off the meter when it shuts down.
-	if _, err := do.Invoke[*outboxLagGauge](injector); err != nil {
-		return nil, abort(injector, err)
-	}
-	if _, err := do.Invoke[*deadLetterGauge](injector); err != nil {
-		return nil, abort(injector, err)
-	}
+	// The operational gauge (queue depth and lag), read on scrape; the container takes it off
+	// the meter when it shuts down.
 	if _, err := do.Invoke[*queueDepthGauge](injector); err != nil {
 		return nil, abort(injector, err)
 	}
@@ -193,7 +180,6 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 		},
 		injector: injector,
 		done:     make(chan error, 1),
-		events:   evRuntime,
 		jobs:     jobsCli,
 	}, nil
 }
@@ -205,7 +191,7 @@ var ErrNotServable = errors.New("app: this app has no servers to start")
 var ErrAlreadyStarted = errors.New("app: already started")
 
 // NewCommandApp builds the minimal app the commands need (config, database,
-// ent client, system sender) without the HTTP server, the event router or the job
+// ent client, system sender) without the HTTP server or the job
 // workers. Providers are lazy, so only what a command invokes is ever constructed;
 // that keeps `sphericon workspace …` quick to start and to shut down.
 func NewCommandApp(env string) (*App, error) {
@@ -224,7 +210,7 @@ func abort(injector do.Injector, err error) error {
 }
 
 // Start brings the application up and returns without blocking: it binds the metrics
-// listener, starts the domain-event router and the job queue, then serves the public
+// listener, starts the job queue, then serves the public
 // HTTP server. It returns the first startup error after unwinding whatever it had
 // already started (the container included), so a failed Start leaves nothing running.
 //
@@ -294,22 +280,6 @@ func (a *App) start(ctx context.Context) error {
 		}
 	}()
 
-	eventsErr := make(chan error, 1)
-	a.eventsDone = make(chan struct{})
-	go func() {
-		defer close(a.eventsDone)
-		if err := a.runEvents(ctx); err != nil {
-			eventsErr <- err
-		}
-	}()
-	select {
-	case <-a.events.router.Running():
-	case err := <-eventsErr:
-		return fmt.Errorf("start event router: %w", err)
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-
 	// Marked before the attempt: a Start that fails partway still closes river's Stopped
 	// channel, and Close waits for it so no worker outlives the unwind.
 	a.jobsStarted = true
@@ -339,7 +309,7 @@ func (a *App) WarmDocuments(ctx context.Context) error {
 // failed before serving. A binary waits on it next to its signals.
 func (a *App) Done() <-chan error { return a.done }
 
-// Close cancels the event router and the job workers, waits for them to stop, shuts
+// Close cancels the job workers, waits for them to stop, shuts
 // the HTTP servers down and then the container. Safe to call more than once and after
 // a failed Start; every call returns the first call's result.
 func (a *App) Close(ctx context.Context) error {
@@ -352,13 +322,6 @@ func (a *App) close(ctx context.Context) error {
 		a.cancel()
 	}
 	var errs []error
-	if a.eventsDone != nil {
-		select {
-		case <-a.eventsDone:
-		case <-ctx.Done():
-			errs = append(errs, fmt.Errorf("event router did not stop: %w", ctx.Err()))
-		}
-	}
 	if a.jobsStarted {
 		select {
 		case <-a.jobs.Stopped():
@@ -401,12 +364,6 @@ func (a *App) stop(ctx context.Context) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-// runEvents runs the domain-event router (persist/automations/webhooks
-// subscribers). Blocks until ctx is cancelled; stop happens via Shutdown.
-func (a *App) runEvents(ctx context.Context) error {
-	return a.events.router.Run(ctx)
 }
 
 // runJobs starts the river worker pool. It returns once started; workers run
@@ -521,24 +478,6 @@ func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
 		return err
 	}
 	return members.ResetTOTP(ctx, email)
-}
-
-// ReplayDeadLetters runs the dead letters of a consumer group through that group's handler and
-// returns how many it replayed (events.ReplayDeadLetters).
-func (a *App) ReplayDeadLetters(ctx context.Context, group string) (int, error) {
-	handlers, err := do.Invoke[events.ConsumerHandlers](a.injector)
-	if err != nil {
-		return 0, err
-	}
-	handle, ok := handlers.Of(group)
-	if !ok {
-		return 0, fmt.Errorf("no consumer group %q; the groups are %s", group, strings.Join(events.ConsumerGroups(), ", "))
-	}
-	client, err := do.Invoke[*ent.Client](a.injector)
-	if err != nil {
-		return 0, err
-	}
-	return events.ReplayDeadLetters(ctx, client, group, handle)
 }
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its

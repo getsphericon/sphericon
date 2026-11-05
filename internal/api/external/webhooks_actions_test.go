@@ -102,7 +102,7 @@ func TestExternalWebhookActionsAreAuditedAsTheAPIToken(t *testing.T) {
 	require.NoError(t, err)
 
 	actions := map[string]*events.AuditEntry{}
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
 		e := ev.(*events.AuditEntry)
 		actions[e.Action] = e
 	}

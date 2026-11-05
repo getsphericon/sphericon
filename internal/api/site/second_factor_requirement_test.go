@@ -100,7 +100,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	assert.True(t, time.Time(w.SecondFactorGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)),
 		"an existing Membership gets 7 days from the requirement's start")
 
-	entries := env.OutboxEvents(t, events.NameAuditEntry)
+	entries := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, entries, 1)
 	e := entries[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
@@ -110,7 +110,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	c.t = at.Add(48 * time.Hour)
 	again := requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).(*siteapi.SiteWorkspaceResource)
 	assert.True(t, time.Time(again.SecondFactorRequiredAt.Value).Equal(at))
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1)
+	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 1)
 
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 	assert.IsType(t, &siteapi.SiteWorkspacesLiftSecondFactorRequirementForbidden{}, liftRequirement(t, mary, fixtures.AcmePublicID))
@@ -121,7 +121,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	cleared := liftRequirement(t, sam, fixtures.UmbrellaPublicID)
 	require.IsType(t, &siteapi.SiteWorkspaceResource{}, cleared, "an admin may clear it")
 	assert.False(t, cleared.(*siteapi.SiteWorkspaceResource).SecondFactorRequiredAt.Set)
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 2)
+	assert.Len(t, env.QueuedEvents(t, events.NameAuditEntry), 2)
 }
 
 func TestGraceEndsSevenDaysAfterTheLaterOfTheRequirementAndTheMembership(t *testing.T) {

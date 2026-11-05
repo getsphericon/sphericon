@@ -148,12 +148,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
      token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
-  4. jobs and event subscribers, right after the row that names the Workspace is loaded
+  4. jobs and event consumers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
-     contact and scopes from its Workspace; `events.Persist`/`Suppress`, and the webhooks
-     consumer, which builds the scope it hands to `Dispatch` from the event envelope: the
-     bus subscriber is the raw-client entry, an envelope carries only a Workspace id; and the
-     orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
+     contact and scopes from its Workspace; `events.Suppress`, and the webhooks
+     consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
+     event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
+     id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
      client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
      `orders.Module.Record`), and
      `secondfactor.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
@@ -223,12 +223,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step (one per
   Workspace-owned table, the Send cap's bucket `send_cap_limiters` among them), scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`
-  (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
+  (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
   index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
-  `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log bus
-  subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/export` (the Export streams' bus
-  subscriber, which writes the Erasures rows from `contact.erased`, and their prune job over every
+  `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log's event
+  consumer: its envelope carries only a Workspace id, ADR 0022), `ee/export` (the Export streams'
+  event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
   Workspace's rows, ADR 0045), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
@@ -259,11 +259,12 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
 
 - **Enterprise Edition (`ee/`)**: same binary, gated by the runtime license key (`SPHERICON_LICENSE_KEY`,
   verified by `ee/licensekey`; empty = plain core, a bad key fails boot). `ee.New` builds the
-  `Edition` (extra bus consumers + read seams) in `internal/app` and in `testhelper.Setup`
+  `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/audit`. An Audit entry is
-  an unprojected event (`events.Unprojected`): persist, automations and webhooks skip it.
+  an unprojected event (`events.Unprojected`): it has no Event row, and automations and
+  webhooks skip it.
   The Audit table's only remover is `ee/retention` (the `retention` license feature, a
   Workspace `retention_days` window, one hourly river job registered through `Edition.Jobs()`).
   An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
@@ -273,8 +274,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   have no scope to take the actor from (a User's action goes to each of their Workspaces, a
   suspension names its Staff actor), so the scoped client has no recorder of its own. `ee.New`
   takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.
-  In tests the router does not run, so call `env.DeliverToEE(t)` to hand the outbox to the EE
-  subscribers.
+  The Edition's consumers of the domain events (`ee.EventConsumers`: the Audit log's and the
+  Erasures stream's) are registered on the bus beside core's; their workers come with
+  `Edition.Jobs()` and `ExportJobs()`. In tests nothing works the queue, so call
+  `env.WorkEditionJobs(t)` to work the jobs a publish inserted.
   **Audit capture in the scoped client (ADR 0022):** an `*ent.Scoped` carries its actor
   (`s.As(actor, opener)`, set at the construction points: `Accounts.Scope` user,
   `HandleBearerAuth` api_token, collect/SES/consent/bootstrap `events.Ingest`; `bus.Act` for
@@ -308,8 +311,14 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
   that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
   builds the one that mails the Owners through the system sender.
-- **Async**: `internal/pubsub` (watermill over Postgres) — handlers registered in
-  `pubsub.RegisterHandlers`, router run in a goroutine from `cmd/server/main.go`.
+- **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
+  `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
+  the state change: it writes the Event row (a repeated `source_id` publishes nothing) and
+  inserts one job per consumer whose filter wants the envelope (`events.Consumer`, registered in
+  `internal/app`: `jobs.EventConsumers` and `ee.EventConsumers`). A producer never names a
+  consumer; a new consumer is an args type embedding `events.EventJob`, a worker and a registry
+  entry, its jobs in the `events` queue. Every event job runs in the context of handling its
+  envelope (`events.JobChain`), so what it publishes is caused by that event.
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
   exist iff a state change commits is queued in that transaction with
   `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and

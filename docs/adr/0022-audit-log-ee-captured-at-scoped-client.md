@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded in part by ADR 0101 (an audit entry reaches its subscriber as a River job, not over the outbox)
 ---
 
 # Audit log: Enterprise, captured at the scoped client, delivered over the outbox

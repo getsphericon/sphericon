@@ -24,11 +24,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// entriesNamed delivers the outbox to the EE subscriber and returns the entries of
+// entriesNamed works the audit jobs and returns the entries of
 // one action as the Workspace's owner sees them, newest first.
 func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.SiteAuditEntryResource {
 	t.Helper()
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	var out []siteapi.SiteAuditEntryResource
 	items := auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items
 	for i := range items {
@@ -302,7 +302,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 
 	var seen []string
-	for _, ev := range env.OutboxEvents(t, events.NameAuditEntry) {
+	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
 		seen = append(seen, ev.(*events.AuditEntry).Action)
 	}
 	slices.Sort(seen)
@@ -352,7 +352,7 @@ func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	ctx := context.Background()
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	list := func(p siteapi.SiteAuditListParams) int {

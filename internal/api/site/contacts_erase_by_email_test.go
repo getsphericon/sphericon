@@ -91,7 +91,7 @@ func TestSiteContactsEraseByEmailRecordsTheUserRequester(t *testing.T) {
 	res := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactExportSubjectEmail)
 	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
 
-	msgs := env.Outbox(t, events.NameContactErased)
+	msgs := env.QueuedMessages(t, events.NameContactErased)
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "user", msgs[0].Data["requesterKind"])
 	assert.NotZero(t, msgs[0].Data["requesterId"])

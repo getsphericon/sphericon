@@ -92,7 +92,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	require.NoError(t, err)
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
+	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
@@ -141,18 +141,11 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.EmailChangeConfirm("a@example.com", "tok", true)))
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: "a@example.com", InviteURL: "https://x/invite", WorkspaceName: "Acme", InviterName: "Jane"}))
 	require.NoError(t, e.client.Enqueue(ctx, mailjobs.SecondFactorRequired(fixtures.UmbrellaID)))
-	created, err := json.Marshal(&events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail})
-	require.NoError(t, err)
-	require.NoError(t, e.client.OnEvent(ctx, events.AutomationEvent{
-		ContactID: fixtures.ContactAliceID, Action: events.NameContactCreated,
-		Envelope: events.Envelope{ID: "evt_enqueue", Name: events.NameContactCreated, Version: 1, WorkspaceID: fixtures.AcmeID, Data: created},
-	}))
 
 	assert.Equal(t, []string{
 		"send_welcome",
 		"send_auth_mail", "send_auth_mail", "send_auth_mail",
 		"send_member_invite", "second_factor_required_notify",
-		"automation_evaluate_trigger",
 	}, e.queued(t))
 }
 
@@ -187,15 +180,15 @@ func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	ctx := context.Background()
 
 	// Endpoint 100 filters to three event types; 101 is disabled.
-	require.NoError(t, e.client.Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "email.opened", "d-1", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "email.opened", "d-1", []byte(`{}`)))
 	assert.Equal(t, []string{"deliver_webhook"}, e.queued(t))
 
 	// Filtered out: no endpoint of the workspace subscribes to it.
-	require.NoError(t, e.client.Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
 	assert.Len(t, e.queued(t), 1)
 
 	// An endpoint with no filter receives every event (Globex's, workspace 2).
-	require.NoError(t, e.client.Dispatch(ctx, e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
 	assert.Len(t, e.queued(t), 2)
 }
 
@@ -219,11 +212,11 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 	ctx := context.Background()
 	initech := e.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, e.client.Dispatch(ctx, initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 
 	e.clearQueue(t)
-	require.NoError(t, e.client.Dispatch(ctx, initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
 	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 
@@ -545,7 +538,7 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	}
 
 	// The Audit entry is the system actor's, and is the only one: the counter writes are not audited.
-	entries := lo.FilterMap(h.env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(h.env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		a := ev.(*events.AuditEntry)
 		return a, a.Action == "webhook_endpoint.update"
 	})
@@ -637,14 +630,18 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: 424242})))
 }
 
-// failingQueue is a job queue that cannot take the job.
+// failingQueue is a job queue that cannot take a job.
 type failingQueue struct {
-	events.JobQueue // only InsertTx is called
+	events.JobQueue // only the inserts are called
 
 	err error
 }
 
 func (q failingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
+	return nil, q.err
+}
+
+func (q failingQueue) InsertManyTx(context.Context, *sql.Tx, []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
 	return nil, q.err
 }
 

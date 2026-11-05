@@ -56,23 +56,46 @@ func (env *TestEnv) EnqueueJobs(t *testing.T, args ...river.JobArgs) {
 }
 
 // EnqueueRunningJob puts one job of args into the queue already in the running state, as
-// a worker holds it. river's insert API only creates waiting jobs, so this goes through
-// the driver's full insert, which takes a state.
+// a worker holds it.
 func (env *TestEnv) EnqueueRunningJob(t *testing.T, args river.JobArgs) {
+	t.Helper()
+	env.enqueueIn(t, args, rivertype.JobStateRunning)
+}
+
+// EnqueueDiscardedJob puts one job of args into the queue already discarded, as river leaves
+// a job that ran out of attempts.
+func (env *TestEnv) EnqueueDiscardedJob(t *testing.T, args river.JobArgs) {
+	t.Helper()
+	env.enqueueIn(t, args, rivertype.JobStateDiscarded)
+}
+
+// enqueueIn puts one job of args into its queue (the args' own InsertOpts, else the default) in
+// state. river's insert API only creates waiting jobs, so this goes through the driver's full
+// insert, which takes a state.
+func (env *TestEnv) enqueueIn(t *testing.T, args river.JobArgs, state rivertype.JobState) {
 	t.Helper()
 	encoded, err := json.Marshal(args)
 	require.NoError(t, err)
+	queue := river.QueueDefault
+	if withOpts, ok := args.(river.JobArgsWithInsertOpts); ok && withOpts.InsertOpts().Queue != "" {
+		queue = withOpts.InsertOpts().Queue
+	}
 	now := time.Now()
+	var finalized *time.Time
+	if state == rivertype.JobStateDiscarded {
+		finalized = &now
+	}
 	_, err = riverdatabasesql.New(env.SQLDB).GetExecutor().JobInsertFull(t.Context(), &riverdriver.JobInsertFullParams{
 		Attempt:     1,
 		AttemptedAt: &now,
 		AttemptedBy: []string{"test-worker"},
 		EncodedArgs: encoded,
+		FinalizedAt: finalized,
 		Kind:        args.Kind(),
 		MaxAttempts: river.MaxAttemptsDefault,
 		Priority:    river.PriorityDefault,
-		Queue:       river.QueueDefault,
-		State:       rivertype.JobStateRunning,
+		Queue:       queue,
+		State:       state,
 	})
 	require.NoError(t, err)
 }
@@ -80,8 +103,16 @@ func (env *TestEnv) EnqueueRunningJob(t *testing.T, args river.JobArgs) {
 // JobsOf returns the args of the queued jobs of kind, oldest first.
 func (env *TestEnv) JobsOf(t *testing.T, kind string) []map[string]any {
 	t.Helper()
-	res, err := env.riverClient(t).JobList(t.Context(), river.NewJobListParams().Kinds(kind).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
+	return listArgs(t, env.riverClient(t), river.NewJobListParams().Kinds(kind))
+}
+
+// listArgs is the args of the jobs params selects, oldest first. It fails the test when the read
+// reaches its bound, so a test never asserts on part of the queue.
+func listArgs(t *testing.T, rc *river.Client[*sql.Tx], params *river.JobListParams) []map[string]any {
+	t.Helper()
+	res, err := rc.JobList(t.Context(), params.OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs))
 	require.NoError(t, err)
+	require.Less(t, len(res.Jobs), maxQueuedJobs, "the test queued more jobs than a read returns")
 	out := make([]map[string]any, 0, len(res.Jobs))
 	for _, job := range res.Jobs {
 		var args map[string]any

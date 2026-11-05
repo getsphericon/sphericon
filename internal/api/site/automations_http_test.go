@@ -63,7 +63,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	assert.Equal(t, "Bearer hunter2", opened.Headers["Authorization"])
 	assert.Equal(t, "whsec_topsecret", opened.Secret)
 
-	entries := env.OutboxEvents(t, events.NameAuditEntry)
+	entries := env.QueuedEvents(t, events.NameAuditEntry)
 	require.NotEmpty(t, entries)
 	for _, e := range entries {
 		raw, err := json.Marshal(e)

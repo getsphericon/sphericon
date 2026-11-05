@@ -119,11 +119,9 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 		dedupID := ""
 		if evt.ClientEventID != "" {
 			dedupID = events.DedupKey(events.SourceCollect, s.WorkspaceID(), evt.ClientEventID)
-			// Already stored: a retry of an event that arrived. One still on the outbox, or
-			// racing this call, is published again and the persist subscriber's unique
-			// source_id keeps one Event row; the webhook id is the same key, so a receiver
-			// drops the duplicate. Enrolling a Contact is once per
-			// Automation, so a trigger evaluated twice in that window enrolls once.
+			// Already stored: a retry of an event that arrived, skipped before it touches the
+			// visitor. One racing this call is a repeat Publish drops when it finds the Event's
+			// row, so it is reacted to once.
 			seen, err := s.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
 			if err != nil {
 				return err
@@ -133,7 +131,7 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 			}
 		}
 		// Resolve identity and publish in one transaction: the visitor upsert and the
-		// outbox row commit together. The collected event is the customer's own — its
+		// event commit together. The collected event is the customer's own — its
 		// action and properties are stored as-is.
 		if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 			res, err := resolveIdentity(ctx, ts, visitorID)

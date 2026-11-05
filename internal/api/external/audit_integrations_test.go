@@ -27,12 +27,12 @@ func tokenActor(t *testing.T, env *testhelper.TestEnv) events.Actor {
 	return events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(tok.ID, 10), Name: tok.Name}
 }
 
-// assertTokenAudited checks the outbox holds exactly the wanted actions, in order, for one
+// assertTokenAudited checks the queued events hold exactly the wanted actions, in order, for one
 // target: every entry is attributed to the token, and no secret (nor any sealed value the
 // row held) reaches an entry; a sensitive field appears in a diff only as "changed".
 func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID externalapi.EntityId, targetName string, wantActions, sensitiveFields, secrets []string) {
 	t.Helper()
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, len(wantActions))
 	actor := tokenActor(t, env)
 	actions := make([]string, 0, len(got))
@@ -115,7 +115,7 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 		[]string{"dkim_private_key_encrypted"},
 		[]string{"PRIVATE KEY", row.DkimPrivateKeyEncrypted, updated.DkimPrivateKeyEncrypted})
 
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteAuditEntryList)

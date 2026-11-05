@@ -38,8 +38,8 @@ func TestATransactionalSendThroughTheTestInboxIsMarkedCapturedAndAnotherIsNot(t 
 	assert.True(t, captured[int64(kept.ID)])
 	assert.Equal(t, 1, lo.CountBy(page.Items, func(item siteapi.SiteTransactionalEmailResource) bool { return item.Captured }),
 		"a message sent any other way is not captured")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": kept.ID, "captured": true}), "Activity says so too")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameEmailDelivered, map[string]any{"outboundMessageId": kept.ID, "captured": true}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailSent, map[string]any{"outboundMessageId": kept.ID, "captured": true}), "Activity says so too")
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameEmailDelivered, map[string]any{"outboundMessageId": kept.ID, "captured": true}))
 }
 
 func TestTheBroadcastReportCountsTheMessagesCapturedInATestInbox(t *testing.T) {

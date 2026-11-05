@@ -62,7 +62,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			attention := attentionOf(t, env)
 			_, named := itemAbout(attention, siteapi.SiteAttentionKindIntegrationProviderRefused, int64(account.Integration.ID))
 			assert.True(t, named, "the attention list names the Integration")
-			sentWhileHeld := env.OutboxCount(t, events.NameSmsSent, nil)
+			sentWhileHeld := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, sentWhileHeld)
 
 			env.Twilio.AcceptSends()
@@ -71,7 +71,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 
 			done := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
-			sent := env.OutboxCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -170,7 +170,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			assert.Equal(t, automationrun.StatusCompleted, done.Status)
 			inbox := env.Twilio.Messages()
 			assert.Equal(t, []string{fixtures.ContactTexterPhone}, recipientsOf(inbox), "the text went once, after the backoff")
-			sent := env.OutboxCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Equal(t, 1, sent)
 		})
 	}
@@ -210,7 +210,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 			assert.Empty(t, inbox, "a refusal of the number is not retried, though Twilio would accept it now")
 			suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(ctx)
 			assert.Zero(t, suppressed)
-			sent := env.OutboxCount(t, events.NameSmsSent, nil)
+			sent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, sent)
 		})
 	}

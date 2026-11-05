@@ -94,11 +94,19 @@ func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) tim
 	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
 }
 
+// NewWebhookDispatcher is the dispatcher that queues the deliveries of an event on queue.
+func NewWebhookDispatcher(queue Inserter) events.WebhookDispatcher {
+	return webhookDispatcher{queue: queue}
+}
+
+type webhookDispatcher struct {
+	queue Inserter
+}
+
 // Dispatch fans a domain event out to every enabled endpoint in the workspace
-// whose filter matches, enqueuing one delivery job each. Implements
-// events.WebhookDispatcher. The scope comes from the caller (the events bus
-// subscriber, a raw-client allowlist entry).
-func (c *Client) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
+// whose filter matches, enqueuing one delivery job each. The scope comes from the caller
+// (the webhooks consumer, which scopes to the event's Workspace).
+func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
 	endpoints, err := s.WebhookEndpoint().Query().
 		Where(webhookendpoint.DisabledAtIsNil()).
 		All(ctx)
@@ -109,7 +117,7 @@ func (c *Client) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliver
 		if !matchesEvent(e.EventTypes, eventName) {
 			continue
 		}
-		if _, err := c.river.Insert(ctx, DeliverWebhookArgs{
+		if _, err := d.queue.Insert(ctx, DeliverWebhookArgs{
 			EndpointID: e.ID,
 			EventName:  eventName,
 			DeliveryID: deliveryID,

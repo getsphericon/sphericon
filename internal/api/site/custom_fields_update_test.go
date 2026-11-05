@@ -181,7 +181,7 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	final, ok := byOwner.(*siteapi.SiteCustomFieldResource)
 	require.Truef(t, ok, "got %T", byOwner)
 	assert.Equal(t, "Nick", final.Name)
-	updates := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e := ev.(*events.AuditEntry)
 		return e, e.Action == "custom_field.update"
 	})

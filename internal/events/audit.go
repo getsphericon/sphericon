@@ -129,7 +129,7 @@ var ExplicitAuditActions = []string{
 }
 
 // Unprojected is an optional DomainEvent capability: an event that is not a
-// data-plane fact. The persist consumer (no Event row), the automation trigger
+// data-plane fact. Publish writes no Event row for it, the automation trigger
 // consumer and the webhooks consumer skip it, and an endpoint with an empty
 // subscription list never matches it (see IsUnprojected).
 type Unprojected interface {

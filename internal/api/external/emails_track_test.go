@@ -80,10 +80,10 @@ func TestTrackedTransactionalSendRecordsOpenAndClickAndStaysTransactional(t *tes
 	assert.Equal(t, http.StatusFound, redirect.Code)
 	assert.Equal(t, orderLink, redirect.Header().Get("Location"))
 
-	opened := env.OutboxEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, events.NameEmailOpened)
 	require.Len(t, opened, 1)
 	assert.EqualValues(t, fixtures.ContactLiamID, opened[0].(*events.EmailEngagement).ContactID)
-	clicked := env.OutboxEvents(t, events.NameEmailClicked)
+	clicked := env.QueuedEvents(t, events.NameEmailClicked)
 	require.Len(t, clicked, 1)
 	assert.Equal(t, orderLink, clicked[0].(*events.EmailEngagement).URL)
 }
@@ -97,7 +97,7 @@ func TestTrackedTransactionalSendToAnAddressWithNoContactRecordsByAddress(t *tes
 	require.NotEmpty(t, pixel)
 	assert.Equal(t, http.StatusOK, get(t, env, pixel).Code)
 
-	opened := env.OutboxEvents(t, events.NameEmailOpened)
+	opened := env.QueuedEvents(t, events.NameEmailOpened)
 	require.Len(t, opened, 1)
 	got := opened[0].(*events.EmailEngagement)
 	assert.Zero(t, got.ContactID)

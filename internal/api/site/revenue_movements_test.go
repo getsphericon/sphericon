@@ -66,8 +66,8 @@ func TestARefundSubtractsItsTotalOnItsOwnDayAndTwoRefundsAreTwoEvents(t *testing
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("A-1", "100.00"))
 	s.at(noonDaysAgo(2), "Order Refunded", orderProps("A-1", "10.00"))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "10.00"))
-	env.DeliverOrders(t)
-	env.DeliverOrders(t) // redelivery counts nothing twice, with or without a refund_id
+	env.WorkOrderJobs(t)
+	env.WorkOrderJobs(t) // redelivery counts nothing twice, with or without a refund_id
 
 	total, days := byDay(t, env)
 	assert.EqualValues(t, 8000, total)
@@ -83,7 +83,7 @@ func TestAResentRefundWithTheSameRefundIdIsANoOpAndWithoutOneEachEventCounts(t *
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "10.00", "refund_id", `"R-2"`))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "5.00"))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "5.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	total, _ := byDay(t, env)
 	assert.EqualValues(t, 10000-1000-1000-500-500, total)
@@ -96,7 +96,7 @@ func TestTheSameRefundIdOnAnotherOrderIsAnotherRefund(t *testing.T) {
 
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "10.00", "refund_id", `"R-1"`))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-2", "10.00", "refund_id", `"R-1"`))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	total, _ := byDay(t, env)
 	assert.EqualValues(t, 18000, total)
@@ -109,7 +109,7 @@ func TestARefundLargerThanWhatIsLeftIsAppliedOnlyUpToIt(t *testing.T) {
 	s.at(noonDaysAgo(2), "Order Refunded", orderProps("A-1", "25.00"))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "25.00"))
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "25.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	total, days := byDay(t, env)
 	assert.EqualValues(t, 0, total, "net revenue of an Order is never below zero")
@@ -123,7 +123,7 @@ func TestAnUpdateAddsTheDifferenceToTheNetTotalUpAndDown(t *testing.T) {
 	s.at(noonDaysAgo(3), "Order Refunded", orderProps("A-1", "20.00"))
 	s.at(noonDaysAgo(2), "Order Updated", orderProps("A-1", "130.00")) // net was 80: +50
 	s.at(noonDaysAgo(1), "Order Updated", orderProps("A-1", "90.00"))  // net was 130: -40
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	total, days := byDay(t, env)
 	assert.EqualValues(t, 9000, total)
@@ -137,7 +137,7 @@ func TestACancellationTakesBackWhatIsLeftOnItsDayAndLaterEventsAddNothingBelowZe
 	s.at(noonDaysAgo(2), "Order Refunded", orderProps("A-1", "40.00"))
 	s.at(noonDaysAgo(1), "Order Cancelled", map[string]string{"order_id": `"A-1"`, "cancel_reason": `"changed mind"`})
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("A-1", "10.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	total, days := byDay(t, env)
 	assert.EqualValues(t, 0, total)
@@ -150,11 +150,11 @@ func TestAnOrderEventBeforeItsCompletionIsKeptAndAppliedInTimeOrderOnArrival(t *
 	// Sent out of order: the update and the refund first, the completion last.
 	s.at(noonDaysAgo(1), "Order Updated", orderProps("A-1", "80.00"))
 	s.at(noonDaysAgo(2), "Order Refunded", orderProps("A-1", "30.00"))
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 	before, _ := byDay(t, env)
 	s.at(noonDaysAgo(3), "Order Completed", orderProps("A-1", "100.00"))
-	env.DeliverOrders(t)
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
+	env.WorkOrderJobs(t)
 
 	total, days := byDay(t, env)
 	assert.EqualValues(t, 0, before, "an Order not completed counts nothing")
@@ -168,7 +168,7 @@ func TestAnOrderEventForAnOrderThatNeverCompletesCountsNothing(t *testing.T) {
 
 	s.at(noonDaysAgo(1), "Order Refunded", orderProps("GHOST", "30.00"))
 	s.at(noonDaysAgo(1), "Order Cancelled", map[string]string{"order_id": `"GHOST"`})
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 0, got.Current.Total)
@@ -199,7 +199,7 @@ func TestRevenueIsBucketedByTheReportDayOfTheWorkspaceTimeZone(t *testing.T) {
 
 	s.at(lateUTC, "Order Completed", orderProps("A-1", "100.00"))
 	s.at(lateUTC.Add(-8*time.Hour), "Order Refunded", orderProps("A-1", "10.00")) // 08:00 UTC, 17:00 Tokyo the same day
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 
 	_, days := byDay(t, env)
 	assert.Equal(t, map[string]int64{

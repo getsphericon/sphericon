@@ -46,11 +46,11 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 	assert.Equal(t, siteapi.ConfirmationProvenanceImported, after.Confirmation.Value.Provenance)
 	assert.Equal(t, "phone call", after.Confirmation.Value.Source.Value)
 	assert.True(t, eligible.Eligible)
-	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
 		"phone": fixtures.ContactTexterPhone, "contactId": fixtures.ContactTexterID, "source": "phone call",
 	})
 	assert.Equal(t, 1, smsConfirmed)
-	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
 	assert.Equal(t, 0, marketingConfirmed, "marketing.confirmed is email's")
 
 	stopped, ok := optedOut.(*siteapi.SmsConsent)

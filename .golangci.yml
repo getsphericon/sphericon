@@ -167,7 +167,7 @@ linters:
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: sql\.DB\)?\.(Exec|Query|QueryRow)(Context)?$
-          msg: no direct SQL in tests; use ent (env.DB) or a testhelper abstraction (e.g. env.Outbox*)
+          msg: no direct SQL in tests; use ent (env.DB) or a testhelper abstraction (e.g. env.QueuedEnvelopes)
     depguard:
       rules:
         main:

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/samber/do/v2"
@@ -131,7 +130,7 @@ type Clock func() time.Time
 // Version is the running version the Instance module judges releases against.
 type Version string
 
-// Database is the main database/sql pool, which the ent client, the event bus and the outbox
+// Database is the main database/sql pool, which the ent client and the event bus
 // share (the job queue has a pool of its own).
 type Database struct {
 	*sql.DB
@@ -179,22 +178,6 @@ type InternalHandler struct {
 	http.Handler
 }
 
-// eventsRuntime is the consume side of the domain-event system: the watermill router hosting
-// the persist/automations/webhooks subscribers. (The produce side is the *events.Bus.) Start
-// runs the router; Shutdown closes it.
-type eventsRuntime struct {
-	router *message.Router
-}
-
-func (e *eventsRuntime) Shutdown() error {
-	// A router that never ran has nothing to drain, and Close would wait out its
-	// timeout for handlers that were never started.
-	if !e.router.IsRunning() && !e.router.IsClosed() {
-		return nil
-	}
-	return e.router.Close()
-}
-
 // riverPool is the database/sql pool river runs on (separate from the one the ent client and
 // pubsub use, so job workers cannot starve the API).
 // listener is the one connection river LISTENs on for job notifications (db.OpenRiverListener).
@@ -224,7 +207,7 @@ func (j *jobsClient) Shutdown() error {
 	return j.Stop(ctx)
 }
 
-// gauge is an operational gauge read on scrape (outbox lag, queue depth); Shutdown takes its
+// gauge is an operational gauge read on scrape (queue depth and lag); Shutdown takes its
 // callback off the global meter before the pool it reads closes.
 type gauge struct {
 	unregister func() error
@@ -232,11 +215,7 @@ type gauge struct {
 
 func (g *gauge) Shutdown() error { return g.unregister() }
 
-type (
-	outboxLagGauge  struct{ gauge }
-	deadLetterGauge struct{ gauge }
-	queueDepthGauge struct{ gauge }
-)
+type queueDepthGauge struct{ gauge }
 
 // externalAPI is the external (/api) ogen server; the MCP surface dispatches through it.
 type externalAPI struct{ http.Handler }
@@ -296,22 +275,6 @@ var storagePackage = do.Package(
 	// one per process, so a migration run from the error page clears what SchemaGuard cached.
 	do.Lazy(func(i do.Injector) (*db.SchemaWatch, error) {
 		return db.NewSchemaWatch(do.MustInvoke[Database](i).DB), nil
-	}),
-	// The outbox lag gauge reads on scrape through the shared pool.
-	do.Lazy(func(i do.Injector) (*outboxLagGauge, error) {
-		unregister, err := events.RegisterLagGauge(do.MustInvoke[*ent.Client](i))
-		if err != nil {
-			return nil, err
-		}
-		return &outboxLagGauge{gauge{unregister}}, nil
-	}),
-	// The dead letter gauge reads on scrape through the shared pool.
-	do.Lazy(func(i do.Injector) (*deadLetterGauge, error) {
-		unregister, err := events.RegisterDeadLetterGauge(do.MustInvoke[*ent.Client](i))
-		if err != nil {
-			return nil, err
-		}
-		return &deadLetterGauge{gauge{unregister}}, nil
 	}),
 )
 
@@ -423,7 +386,7 @@ var editionPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
 		return orders.New(do.MustInvoke[*accounts.Accounts](i)), nil
 	}),
-	// The producer side of the domain-event system: a transactional outbox over the main pool.
+	// The domain-event bus over the main pool: a publish stores the Event and queues its jobs.
 	do.Lazy(func(i do.Injector) (*events.Bus, error) {
 		database := do.MustInvoke[Database](i)
 		bus := events.New(database.DB)
@@ -435,28 +398,9 @@ var editionPackage = do.Package(
 			return nil, err
 		}
 		bus.UseJobs(inserter)
+		// The consumers of the domain events: a publish inserts a job for each that wants it.
+		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		return bus, nil
-	}),
-	// The consume side: the router with the consumers registered (the outbox tables come from
-	// the migrations). The automations subscriber enrolls and the webhooks subscriber
-	// dispatches via the river client.
-	do.Lazy(func(i do.Injector) (*eventsRuntime, error) {
-		db := do.MustInvoke[Database](i).DB
-		router, err := events.NewRouter(db)
-		if err != nil {
-			return nil, err
-		}
-		if err := events.RegisterSubscribers(router, db, do.MustInvoke[events.ConsumerHandlers](i)); err != nil {
-			return nil, err
-		}
-		return &eventsRuntime{router: router}, nil
-	}),
-	// Every consumer group's handler: the router runs them, and a replay of a group's dead
-	// letters runs that group's.
-	do.Lazy(func(i do.Injector) (events.ConsumerHandlers, error) {
-		edition := do.MustInvoke[*ee.Edition](i)
-		jc := do.MustInvoke[*jobsClient](i)
-		return events.Handlers(do.MustInvoke[*ent.Client](i), jc.Client, jc.Client, edition.Webhooks(jc.Client), do.MustInvoke[*orders.Module](i), edition.Consumers), nil
 	}),
 )
 
@@ -528,7 +472,7 @@ var jobsPackage = do.Package(
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
 			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomains.Module](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			edition.Jobs(bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
 		if err != nil {
 			return nil, err

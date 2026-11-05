@@ -145,7 +145,7 @@ func TestSiteIntegrationsDeleteIsAudited(t *testing.T) {
 
 	require.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, deleteIntegration(t, c, fixtures.IntegrationAcmeSesID))
 
-	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
+	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		entry, ok := ev.(*events.AuditEntry)
 		require.True(t, ok)
 		return entry

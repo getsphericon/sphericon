@@ -267,7 +267,7 @@ func TestAPersonalTokenActsAsItsUser(t *testing.T) {
 		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
-	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		entry, ok := e.(*events.AuditEntry)
 		return entry, ok && entry.Action == "contact.update"
 	})

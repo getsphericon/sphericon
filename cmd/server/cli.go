@@ -26,7 +26,6 @@ type commandOps interface {
 	staffOps
 	serviceCredentialOps
 	rekeyOps
-	eventsOps
 }
 
 // deps is what the commands reach outside themselves for.
@@ -40,7 +39,7 @@ type deps struct {
 	encryptionKey func() (string, error)
 	// doctor is what `doctor` reaches outside the process for.
 	doctor doctor.Seams
-	// open boots the minimal command app (no listener, no event router, no workers) and
+	// open boots the minimal command app (no listener, no workers) and
 	// returns its ops and the function that shuts it down. It runs only once the
 	// arguments have parsed.
 	open func(ctx context.Context) (commandOps, func(), error)
@@ -83,7 +82,6 @@ func newRoot(d deps) *cli.Command {
 			userCommand(d),
 			staffCommand(d),
 			serviceCredentialCommand(d),
-			eventsCommand(d),
 			presetCommand(),
 			healthcheckCommand(d),
 		},

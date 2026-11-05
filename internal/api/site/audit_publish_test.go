@@ -21,7 +21,7 @@ import (
 // auditedStatuses returns the status changes the Audit log recorded for one target, in order.
 func auditedStatuses(t *testing.T, env *testhelper.TestEnv, targetType string, id int64) []any {
 	t.Helper()
-	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
 		return e, ok && e.TargetType == targetType && e.TargetID == strconv.FormatInt(id, 10)
 	})
@@ -51,7 +51,7 @@ func TestSiteAutomationPublishAndDeactivateAreAudited(t *testing.T) {
 // draft pointers changed, in order.
 func auditedVersionMoves(t *testing.T, env *testhelper.TestEnv, id int64) []any {
 	t.Helper()
-	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
+	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)
 		return e, ok && e.TargetType == "automation" && e.TargetID == strconv.FormatInt(id, 10)
 	})

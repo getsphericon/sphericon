@@ -65,12 +65,12 @@ func TestADeliveredReportStampsTheTextAndRecordsSmsDelivered(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.NotNil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	delivered := env.OutboxCount(t, events.NameSmsDelivered, map[string]any{
+	delivered := env.QueuedCount(t, events.NameSmsDelivered, map[string]any{
 		"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "integrationId": account.Integration.ID,
 		"destination": fixtures.ContactTexterPhone,
 	})
 	assert.Equal(t, 1, delivered, "a redelivered report records nothing more")
-	undelivered := env.OutboxCount(t, events.NameSmsUndelivered, nil)
+	undelivered := env.QueuedCount(t, events.NameSmsUndelivered, nil)
 	assert.Zero(t, undelivered)
 }
 
@@ -87,11 +87,11 @@ func TestAnUndeliveredOrFailedReportStampsTheTextWithTheErrorCodeAndRecordsSmsUn
 			assert.Equal(t, "30003", lo.FromPtr(got.UndeliveredCode))
 			assert.Nil(t, got.DeliveredAt)
 			assert.Equal(t, outboundmessage.StatusSent, got.Status, "Twilio accepted it: it stays Sent")
-			undelivered := env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{
+			undelivered := env.QueuedCount(t, events.NameSmsUndelivered, map[string]any{
 				"contactId": fixtures.ContactTexterID, "outboundMessageId": msg.ID, "errorCode": "30003",
 			})
 			assert.Equal(t, 1, undelivered)
-			delivered := env.OutboxCount(t, events.NameSmsDelivered, nil)
+			delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
 			assert.Zero(t, delivered)
 			suppressions := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
 			assert.Zero(t, suppressions, "an unreachable handset is no dead number")
@@ -124,7 +124,7 @@ func TestAReportNeverMovesATextBackwards(t *testing.T) {
 			got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 			state := finalState{Delivered: got.DeliveredAt != nil, Undelivered: got.UndeliveredAt != nil, Code: lo.FromPtr(got.UndeliveredCode)}
 			assert.Equal(t, c.want, state)
-			reports := env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+			reports := env.QueuedEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
 			assert.Len(t, reports, 1)
 		})
 	}
@@ -148,7 +148,7 @@ func TestAReportOfAnUnknownTextChangesNothing(t *testing.T) {
 	got := env.DB.OutboundMessage.GetX(t.Context(), msg.ID)
 	assert.Nil(t, got.DeliveredAt)
 	assert.Nil(t, got.UndeliveredAt)
-	reports := env.OutboxEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
+	reports := env.QueuedEnvelopes(t, events.NameSmsDelivered, events.NameSmsUndelivered)
 	assert.Empty(t, reports)
 	suppressions := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(entsuppression.ChannelSms)).CountX(t.Context())
 	assert.Zero(t, suppressions)
@@ -168,7 +168,7 @@ func TestAnUndeliveredReportOfADeadNumberSuppressesIt(t *testing.T) {
 			assert.Equal(t, fixtures.ContactTexterPhone, suppressed.Destination)
 			assert.Equal(t, entsuppression.ReasonBounce, suppressed.Reason)
 			assert.Equal(t, int64(fixtures.ContactTexterID), lo.FromPtr(suppressed.ContactID))
-			undelivered := env.OutboxCount(t, events.NameSmsUndelivered, map[string]any{"errorCode": code})
+			undelivered := env.QueuedCount(t, events.NameSmsUndelivered, map[string]any{"errorCode": code})
 			assert.Equal(t, 1, undelivered)
 		})
 	}

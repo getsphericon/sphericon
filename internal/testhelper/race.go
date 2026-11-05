@@ -89,9 +89,18 @@ func HoldWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release fu
 
 // AcceptingQueue is a job queue for a bus over a RealDB that takes every job and keeps none: a race
 // test asks what the transactions committed, not what they queued.
-type AcceptingQueue struct{ events.JobQueue } // only InsertTx is called
+type AcceptingQueue struct{ events.JobQueue } // only the inserts are called
 
 // InsertTx accepts the job and inserts nothing.
 func (AcceptingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
 	return &rivertype.JobInsertResult{}, nil
+}
+
+// InsertManyTx accepts the jobs and inserts nothing.
+func (AcceptingQueue) InsertManyTx(_ context.Context, _ *sql.Tx, params []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
+	out := make([]*rivertype.JobInsertResult, len(params))
+	for i := range out {
+		out[i] = &rivertype.JobInsertResult{}
+	}
+	return out, nil
 }

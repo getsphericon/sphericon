@@ -23,7 +23,7 @@ func Serve(ctx context.Context, env string) error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	// Install the configured logger process-wide; river, watermill, and every
+	// Install the configured logger process-wide; river and every
 	// request-scoped handler emit through it from here on.
 	logging.Setup(cfg)
 	build := buildinfo.Current()
@@ -54,7 +54,7 @@ func Serve(ctx context.Context, env string) error {
 		return fmt.Errorf("init app: %w", err)
 	}
 
-	// Start binds the opt-in metrics listener, starts the event router and the job queue and
+	// Start binds the opt-in metrics listener, starts the job queue and
 	// serves HTTP; any of them failing is fatal (a degraded instance that drops Broadcasts or
 	// runs unmonitored is worse than none), after Start has unwound what it began.
 	if err := application.Start(ctx); err != nil {

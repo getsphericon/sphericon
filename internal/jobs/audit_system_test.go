@@ -19,7 +19,7 @@ func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 
 	require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(&fakeSender{}))))
 
-	got := env.OutboxEvents(t, events.NameAuditEntry)
+	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	e := got[0].(*events.AuditEntry)
 	assert.Equal(t, "tag.create", e.Action)

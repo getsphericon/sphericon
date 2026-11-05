@@ -87,7 +87,7 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Equal(t, int64(c.ID), lo.FromPtr(stop.ContactID))
 	consent := smsConfirmationOf(t, env, knownNumber)
 	assert.Nil(t, consent, "the stop drops the consent it ends")
-	replies := env.OutboxCount(t, events.NameSmsReceived, nil)
+	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
 	assert.Zero(t, replies, "a STOP is no reply")
 }
 
@@ -123,7 +123,7 @@ func TestAStopInsideASentenceIsAReplyNotAnOptOut(t *testing.T) {
 	assert.Nil(t, stop)
 	dec := textable(t, env, knownNumber)
 	assert.True(t, dec.Eligible)
-	replies := env.OutboxCount(t, events.NameSmsReceived, map[string]any{"text": "please don't stop"})
+	replies := env.QueuedCount(t, events.NameSmsReceived, map[string]any{"text": "please don't stop"})
 	assert.Equal(t, 1, replies)
 }
 
@@ -163,13 +163,13 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 	require.NotNil(t, consent)
 	assert.Equal(t, confirmation.ProvenanceKeyword, consent.Provenance)
 	assert.Equal(t, int64(c.ID), lo.FromPtr(consent.ContactID))
-	smsConfirmed := env.OutboxCount(t, events.NameSmsConfirmed, map[string]any{
+	smsConfirmed := env.QueuedCount(t, events.NameSmsConfirmed, map[string]any{
 		"provenance": "keyword", "contactId": c.ID,
 	})
 	assert.Equal(t, 1, smsConfirmed)
-	marketingConfirmed := env.OutboxCount(t, events.NameMarketingConfirmed, nil)
+	marketingConfirmed := env.QueuedCount(t, events.NameMarketingConfirmed, nil)
 	assert.Zero(t, marketingConfirmed, "SMS consent is not email's")
-	replies := env.OutboxCount(t, events.NameSmsReceived, nil)
+	replies := env.QueuedCount(t, events.NameSmsReceived, nil)
 	assert.Zero(t, replies, "a START is no reply")
 
 	contact := env.DB.Contact.GetX(t.Context(), int64(c.ID))

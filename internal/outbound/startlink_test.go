@@ -40,7 +40,7 @@ func TestAnEmailWithTheStartTagCarriesALinkThatBindsItsRecipient(t *testing.T) {
 	bound := env.DB.Binding.Query().Where(binding.Destination("6100")).OnlyX(t.Context())
 	require.NotNil(t, bound.ContactID)
 	assert.Equal(t, int64(fixtures.ContactAliceID), *bound.ContactID)
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactAliceID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactAliceID}))
 }
 
 func TestAnEmailWithoutTheStartTagIssuesNoToken(t *testing.T) {

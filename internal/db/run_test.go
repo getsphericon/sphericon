@@ -3,7 +3,6 @@ package db_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -37,9 +36,9 @@ func statusText(t *testing.T, url string) string {
 	return out.String()
 }
 
-// On an empty database ApplyMigrations creates the app schema, river's tables and the
-// domain-event outbox, and is safe to run again.
-func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T) {
+// On an empty database ApplyMigrations creates the app schema and river's tables, and is safe to
+// run again.
+func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
 	cfg := emptyConfig(t, false)
 
 	_, err := db.ApplyMigrations(t.Context(), cfg.DatabaseURL)
@@ -55,16 +54,6 @@ func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T)
 	res, err := migrator.Validate(t.Context(), nil)
 	require.NoError(t, err)
 	require.True(t, res.OK, "river migrations pending: %v", res.Messages)
-
-	// The outbox the producer writes and the consumers read exists.
-	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	client := db.NewEntClient(sqlDB)
-	_, err = client.OutboxMessage.Query().Exist(t.Context())
-	require.NoError(t, err)
-	_, err = client.OutboxOffset.Query().Exist(t.Context())
-	require.NoError(t, err)
 }
 
 // Without auto-migrate the start refuses a database that has not run the binary's migrations;

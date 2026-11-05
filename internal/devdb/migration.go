@@ -61,7 +61,7 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 		return errors.New("the diff database's driver cannot normalize a schema")
 	}
 	// Inspect mode reads only the tables the ent schema names, so goose's version table, river's
-	// tables and the outbox are not in the diff.
+	// tables are not in the diff.
 	if err := migrate.NamedDiff(ctx, diffURL, name,
 		schema.WithDir(sumlessDir{gooseDir}),
 		schema.WithMigrationMode(schema.ModeInspect),

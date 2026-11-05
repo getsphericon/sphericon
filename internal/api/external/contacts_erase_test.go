@@ -312,16 +312,16 @@ func TestExternalContactsEraseDoesNotBlockReappearance(t *testing.T) {
 	assert.Equal(t, 1, n, "the opt-out outlives the gap")
 }
 
-// Erasure leaves one PII-free contact.erased Event (ADR 0021): the outbox message that
-// projects it names the Workspace, the requester and the identifier kind, and the
-// customer's subject_id rides only in that message, which the webhook delivers.
+// Erasure leaves one PII-free contact.erased Event (ADR 0021): the published event names the
+// Workspace, the requester and the identifier kind, and the customer's subject_id rides only in
+// it, which the webhook delivers, never in the stored Event.
 func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
 	eraseErasable(t, env)
 
-	envelopes := env.OutboxEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 	require.Len(t, envelopes, 1, "once per Erasure")
 	assert.EqualValues(t, fixtures.InitechID, envelopes[0].WorkspaceID)
 
@@ -335,7 +335,6 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	assert.NotContains(t, data, "phone")
 
 	// The stored Event holds no PII and no Contact reference.
-	require.NoError(t, events.Persist(ctx, env.DB, envelopes[0]))
 	stored, err := env.DB.Event.Query().Where(event.Action(events.NameContactErased)).Only(ctx)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.InitechID, stored.WorkspaceID)
@@ -359,7 +358,7 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.ContactsDeleteNoContent{}, res)
 
-	envelopes := env.OutboxEnvelopes(t, events.NameContactErased)
+	envelopes := env.QueuedEnvelopes(t, events.NameContactErased)
 	require.Len(t, envelopes, 1)
 	var data map[string]any
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
@@ -374,5 +373,5 @@ func TestExternalContactsEraseRefusedEmitsNoContactErased(t *testing.T) {
 		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.ContactsDeleteNotFound{}, res)
-	assert.Empty(t, env.OutboxEnvelopes(t, events.NameContactErased))
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameContactErased))
 }

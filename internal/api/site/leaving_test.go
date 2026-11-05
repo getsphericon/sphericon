@@ -85,7 +85,7 @@ func TestLeavingIsAuditedWithTheUserAsActor(t *testing.T) {
 	env := testhelper.Setup(t)
 	_, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionMembershipDelete)
 	require.Len(t, got, 1)

@@ -118,10 +118,10 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 
-	// Each automation send publishes email.sent onto the transactional outbox, so an
+	// Each automation send publishes email.sent, so an
 	// automation send is segmentable through the same Event log as broadcast sends.
 	// Two email steps mean two send facts for this contact.
-	sent := env.OutboxCount(t, "email.sent", map[string]any{"email": *alice.Email})
+	sent := env.QueuedCount(t, "email.sent", map[string]any{"email": *alice.Email})
 	assert.Equal(t, 2, sent)
 }
 

@@ -87,7 +87,7 @@ func TestAnSMSStepSendsTheRenderedTextToTheConfirmedPhone(t *testing.T) {
 	assert.Equal(t, outboundmessage.ChannelSms, msg.Channel)
 	assert.Equal(t, fixtures.ContactTexterPhone, msg.Destination)
 	assert.Equal(t, sent[0].SID, lo.FromPtr(msg.ProviderMessageID), "Twilio's SID is the provider reference")
-	smsSent := env.OutboxCount(t, events.NameSmsSent, map[string]any{
+	smsSent := env.QueuedCount(t, events.NameSmsSent, map[string]any{
 		"contactId": fixtures.ContactTexterID, "automationId": automationID, "destination": fixtures.ContactTexterPhone,
 		"integrationId": account.Integration.ID, "outboundMessageId": msg.ID,
 	})
@@ -165,7 +165,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 			assert.Equal(t, outboundmessage.StatusSkipped, skipped.Status)
 			assert.Equal(t, outboundmessage.ChannelSms, skipped.Channel)
 			assert.Equal(t, tc.reason, lo.FromPtr(skipped.Reason))
-			smsSent := env.OutboxCount(t, events.NameSmsSent, nil)
+			smsSent := env.QueuedCount(t, events.NameSmsSent, nil)
 			assert.Zero(t, smsSent)
 		})
 	}

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
@@ -24,11 +22,11 @@ type OrderEvent struct {
 }
 
 // OrderRecorder reads order Events into Orders (ADR 0064), the attribution of each Order
-// included. The orders subscriber delegates to it, like the webhooks subscriber does to its
-// dispatcher: the subscriber owns the transaction and the lock, the recorder everything else.
+// included. The orders consumer delegates to it, like the webhooks consumer does to its
+// dispatcher: the consumer owns the transaction and the lock, the recorder everything else.
 type OrderRecorder interface {
 	// IsOrderAction reports whether a collected Event's action is an order Event. The
-	// subscriber opens no transaction for any other.
+	// consumer opens no transaction for any other.
 	IsOrderAction(action string) bool
 	// Prepare does what commits on its own before the Event's transaction opens (the first
 	// Order Completed sets the Reporting currency), so the transaction never waits on a second
@@ -38,22 +36,8 @@ type OrderRecorder interface {
 	Record(ctx context.Context, s *ent.Scoped, ev OrderEvent) error
 }
 
-// ordersConsumer reads the order Events (ADR 0064) into Orders. Like the other subscribers it
-// is a raw-client entry: an envelope carries only a Workspace id, so the scope is built here,
-// in the transaction of the write. A Backfilled Event is read too: a Backfill triggers
-// Automations and Rules, not this consumer.
-func ordersConsumer(client *ent.Client, recorder OrderRecorder) message.NoPublishHandlerFunc {
-	return func(msg *message.Message) error {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return err
-		}
-		return RecordOrder(msg.Context(), client, recorder, env)
-	}
-}
-
-// RecordOrder is the orders subscriber's work on one envelope; exported, like Persist and
-// Suppress, so it can be driven without running the router. An order Event is handed to the
+// RecordOrder is the orders consumer's work on one envelope, which its job (internal/jobs)
+// runs. An order Event is handed to the
 // recorder; every other event is passed over.
 func RecordOrder(ctx context.Context, client *ent.Client, recorder OrderRecorder, env Envelope) error {
 	ev, err := Decode(env)

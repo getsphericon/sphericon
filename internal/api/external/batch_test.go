@@ -21,7 +21,7 @@ func eventsClock() time.Time { return eventsNow }
 
 func contactsCreatedFor(t *testing.T, env *testhelper.TestEnv, email string) int {
 	t.Helper()
-	return env.OutboxCount(t, "contact.created", map[string]any{"email": email})
+	return env.QueuedCount(t, "contact.created", map[string]any{"email": email})
 }
 
 // A batch mixing new, existing and unidentifiable contacts reports each item and
@@ -114,7 +114,7 @@ func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
 		assert.NotEmpty(t, r.Error.Or(""))
 	}
 
-	actions := lo.Map(outboxCollected(t, env), func(r collectedRow, _ int) string { return r.event.Action })
+	actions := lo.Map(queuedCollected(t, env), func(r collectedRow, _ int) string { return r.event.Action })
 	assert.ElementsMatch(t, []string{"batch_a", "batch_d"}, actions, "only the valid items were published")
 }
 
@@ -128,8 +128,8 @@ func TestExternalEventsBatchSubmitScope(t *testing.T) {
 	assert.IsType(t, &externalapi.EventsBatchSubmitForbidden{}, res)
 }
 
-// A backfilled batch is accepted per item and published as history; a client event id rides along as
-// the dedup key.
+// A backfilled batch is accepted per item and stored as history, which no consumer is handed; a
+// client event id rides along as the Event's source id.
 func TestExternalEventsBatchBackfill(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "events:write")
@@ -150,7 +150,12 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
 
 	dedupID := events.DedupKey(events.SourceAPI, fixtures.AcmeID, "order-1")
-	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": dedupID}))
+	stored := env.StoredEvents(t, "order_paid")
+	require.Len(t, stored, 1)
+	assert.True(t, stored[0].Backfill)
+	require.NotNil(t, stored[0].SourceID)
+	assert.Equal(t, dedupID, *stored[0].SourceID)
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "history reaches no consumer")
 }
 
 // The live path refuses history and the system's own actions; the all-or-nothing endpoint

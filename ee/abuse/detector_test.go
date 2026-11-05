@@ -224,7 +224,7 @@ func TestAFreezeIsAuditedAsTheSystemAndSendsNoWarning(t *testing.T) {
 
 	_, err := detector(t, env).Run(t.Context(), at(overDay))
 	require.NoError(t, err)
-	env.DeliverToEE(t)
+	env.WorkEditionJobs(t)
 
 	entries := env.DB.Scoped(fixtures.VandelayID).AuditEntry().Query().
 		Where(auditentry.Action(events.ActionWorkspaceSuspend)).AllX(t.Context())

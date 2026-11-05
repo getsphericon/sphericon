@@ -174,7 +174,7 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 	_, err = c.SiteAutomationsUnarchive(context.Background(), siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.AutomationNotifySlackID})
 	require.NoError(t, err)
 
-	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
+	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
 		entry, ok := ev.(*events.AuditEntry)
 		require.True(t, ok)
 		return entry

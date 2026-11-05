@@ -15,19 +15,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// collectedRow is an outbox row decoded back into its CollectedEvent.
+// collectedRow is a queued event decoded back into its CollectedEvent.
 type collectedRow struct {
 	envelope events.Envelope
 	event    *events.CollectedEvent
 }
 
-// outboxCollected reads every domain-event outbox row and decodes it as a
-// CollectedEvent. External ingest now publishes through the bus (the persist
-// subscriber writes the Event row asynchronously; the router isn't run under
-// txdb), so the outbox is where the assertions land.
-func outboxCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
+// queuedCollected reads every event the test's publishes queued and decodes it as a
+// CollectedEvent: what external ingest published.
+func queuedCollected(t *testing.T, env *testhelper.TestEnv) []collectedRow {
 	t.Helper()
-	envelopes := env.OutboxEnvelopes(t)
+	envelopes := env.QueuedEnvelopes(t)
 	out := make([]collectedRow, 0, len(envelopes))
 	for i := range envelopes {
 		envlp := &envelopes[i]
@@ -77,7 +75,7 @@ func TestExternalContactsCRUD(t *testing.T) {
 }
 
 // A contact created through /api enrolls into Automations like a UI-created one:
-// it publishes contact.created onto the outbox in the same transaction.
+// it publishes contact.created in the same transaction.
 func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	c := env.ExternalScoped(t, "contacts:write")
@@ -89,7 +87,7 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	created, ok := res.(*externalapi.ContactResource)
 	require.Truef(t, ok, "got %T", res)
 
-	n := env.OutboxCount(t, "contact.created", map[string]any{"email": "published@example.com", "contactId": created.ID})
+	n := env.QueuedCount(t, "contact.created", map[string]any{"email": "published@example.com", "contactId": created.ID})
 	assert.Equal(t, 1, n, "contact.created published once")
 }
 
@@ -144,10 +142,10 @@ func TestExternalEventsCreate(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.EventsCreateNoContent{}, res)
 
-	// Both events are published to the outbox as CollectedEvents, scoped to the
+	// Both events are published as CollectedEvents, scoped to the
 	// token's workspace, with every optional field carried as-is.
 	byID := map[string]collectedRow{}
-	rows := outboxCollected(t, env)
+	rows := queuedCollected(t, env)
 	require.Len(t, rows, 2)
 	for _, r := range rows {
 		assert.EqualValues(t, fixtures.AcmeID, r.envelope.WorkspaceID) // token belongs to Acme
@@ -236,7 +234,7 @@ func TestExternalEventsWorkspaceIsolation(t *testing.T) {
 		Events: []externalapi.EventInput{{SubjectId: "user:fred@example.com", Action: "ws1_write"}},
 	})
 	require.NoError(t, err)
-	rows := outboxCollected(t, env)
+	rows := queuedCollected(t, env)
 	require.Len(t, rows, 1)
 	assert.Equal(t, "user:fred@example.com", rows[0].event.SubjectID)
 	assert.EqualValues(t, fixtures.AcmeID, rows[0].envelope.WorkspaceID)

@@ -71,7 +71,7 @@ func TestAStartLinkBindsTheChatToItsContact(t *testing.T) {
 	assert.Equal(t, http.StatusOK, posted.Code)
 	assert.Equal(t, http.StatusOK, redelivered.Code)
 	assert.Equal(t, []string{fmt.Sprintf("contact:%d", fixtures.ContactBobID)}, bindingsOf(t, env, "555"))
-	bound := env.OutboxCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID})
+	bound := env.QueuedCount(t, events.NameTelegramBound, map[string]any{"contactId": fixtures.ContactBobID, "integrationId": bot.Integration.ID})
 	assert.Equal(t, 1, bound, "a redelivered update records nothing more")
 }
 
@@ -101,7 +101,7 @@ func TestAStartLinkLapsesAfterThirtyDays(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, startUpdate(901, 556, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "556"))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
 }
 
 func TestAStartLinkWorksOnce(t *testing.T) {
@@ -114,7 +114,7 @@ func TestAStartLinkWorksOnce(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, startUpdate(903, 558, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "558"), "the second chat to use the token binds nothing")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, nil))
 }
 
 func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
@@ -128,7 +128,7 @@ func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 	env.PostTelegramUpdate(t, second, startUpdate(904, 559, "/start "+token))
 
 	assert.Empty(t, bindingsOf(t, env, "559"))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
 }
 
 func TestABareStartBindsNothing(t *testing.T) {
@@ -139,7 +139,7 @@ func TestABareStartBindsNothing(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, startUpdate(906, 560, "/start not-a-token"))
 
 	assert.Empty(t, bindingsOf(t, env, "560"))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
 }
 
 func TestAStartInAGroupBindsNothing(t *testing.T) {
@@ -153,7 +153,7 @@ func TestAStartInAGroupBindsNothing(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, posted.Code)
 	assert.Empty(t, bindingsOf(t, env, "561"))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramBound, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramBound, nil))
 }
 
 func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T) {
@@ -169,9 +169,9 @@ func TestAChatThatStartsWithAnotherContactsTokenMovesToThatContact(t *testing.T)
 	assert.Equal(t, []string{fmt.Sprintf("contact:%d", fixtures.ContactCarolID)}, bindingsOf(t, env, "562"))
 	byBob := map[string]any{"contactId": fixtures.ContactBobID}
 	byCarol := map[string]any{"contactId": fixtures.ContactCarolID}
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnbound, byBob), "the old Contact is told")
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramBound, byCarol))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramUnbound, byCarol))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, byBob), "the old Contact is told")
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramBound, byCarol))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramUnbound, byCarol))
 }
 
 func TestStartLinkRefusals(t *testing.T) {

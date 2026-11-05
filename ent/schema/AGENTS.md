@@ -9,9 +9,8 @@
   production; `cmd/upgradecheck` runs Squawk over the added files; and `cmd/upgradecheck immutable`
   fails a PR that rewrites a migration already on `main` unless its body has `History-Collapse:`
   (ADR 0047). A developer whose dev database predates this runs `mise run db:reset` once.
-- **`migrations/` is the whole schema**: the app tables (diffed from ent), river's tables and the
-  domain-event outbox (watermill-sql's two tables, a hand-written migration: `ent/schema/outbox_*.go`
-  model them as skipped entities, ent's diff leaves them alone). Nothing creates schema at boot: the
+- **`migrations/` is the whole schema**: the app tables (diffed from ent) and river's tables.
+  Nothing creates schema at boot: the
   server runs the same goose migrations (`internal/db.Migrate`, `sphericon migrate`), and the
   tests' template databases are built by that same function, so tests run against the schema
   production gets. After an `ent/schema` edit the tests fail until `mise run db:generate` has written
@@ -41,7 +40,7 @@
   repository squashes with the PR title and the commit messages).
 - The schema is plain tables: no database functions, triggers or views (`CODING_STANDARDS.md`).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the history
-  collapse (`20261024175209_init.sql` holds the whole app schema, the outbox and river's tables stay
+  collapse (`20261024175209_init.sql` holds the whole app schema, river's tables stay
   their own migrations) needs a `db:reset`. The project is greenfield, so the next collapse is the
   same one `History-Collapse:` line and a `db:reset` for everyone.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see docs/agents/dev-environment.md.

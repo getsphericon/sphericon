@@ -82,7 +82,7 @@ func TestAMemberCannotChangeTheRevenueSettings(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsForbidden{}, member)
 	assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsNotFound{}, outsider)
 	assert.True(t, revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Null)
-	assert.Empty(t, env.OutboxEvents(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
 func TestAnUnknownCurrencyCodeIsRefusedWithAReasonAndNothingChanges(t *testing.T) {
@@ -95,7 +95,7 @@ func TestAnUnknownCurrencyCodeIsRefusedWithAReasonAndNothingChanges(t *testing.T
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Errors.Value["reportingCurrency"][0], "unknown currency")
 	assert.True(t, revenueSettings(t, owner).ReportingCurrency.Null)
-	assert.Empty(t, env.OutboxEvents(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
 func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
@@ -111,7 +111,7 @@ func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
 	}
 
 	assert.Equal(t, siteapi.AttributionWindowDays(5), revenueSettings(t, owner).AttributionWindowDays)
-	assert.Empty(t, env.OutboxEvents(t, events.NameAuditEntry))
+	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
 func TestEveryChangeOfTheRevenueSettingsIsAuditedAndARepeatIsNot(t *testing.T) {
@@ -127,7 +127,7 @@ func TestEveryChangeOfTheRevenueSettingsIsAuditedAndARepeatIsNot(t *testing.T) {
 		AttributionWindowDays: siteapi.NewOptAttributionWindowDays(10),
 	})
 
-	published := env.OutboxEvents(t, events.NameAuditEntry)
+	published := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, published, 1)
 	entry := published[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWorkspaceUpdate, entry.Action)
@@ -145,13 +145,13 @@ func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *tes
 	s := newShop(t, env)
 
 	s.completed("A-1", "10.00", "EUR")
-	env.DeliverOrders(t)
+	env.WorkOrderJobs(t)
 	s.completed("A-2", "10.00", "USD")
-	env.DeliverOrders(t)
-	env.DeliverOrders(t) // at-least-once delivery: the whole outbox again
+	env.WorkOrderJobs(t)
+	env.WorkOrderJobs(t) // river retries a job: every orders job again
 
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Value)
-	published := env.OutboxEvents(t, events.NameAuditEntry)
+	published := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, published, 1)
 	entry := published[0].(*events.AuditEntry)
 	assert.Equal(t, events.ActionWorkspaceUpdate, entry.Action)

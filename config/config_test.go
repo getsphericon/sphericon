@@ -217,22 +217,6 @@ func TestConfigLoadBodyLimitDefaults(t *testing.T) {
 	require.Equalf(t, (config.BodyLimits{Default: 1 << 20, Collect: 500 << 10, CollectEvent: 32 << 10}), cfg.BodyLimits, "defaults = %+v", cfg.BodyLimits)
 }
 
-func TestConfigLoadOutboxFloor(t *testing.T) {
-	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	require.Equalf(t, 7*24*time.Hour, cfg.OutboxFloor, "default OutboxFloor = %v, want 7 days", cfg.OutboxFloor)
-
-	t.Setenv("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS", "14")
-	cfg, err = config.Load("test")
-	require.NoError(t, err)
-	require.Equalf(t, 14*24*time.Hour, cfg.OutboxFloor, "OutboxFloor = %v, want 14 days", cfg.OutboxFloor)
-
-	t.Setenv("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS", "-1")
-	_, err = config.Load("test")
-	require.Error(t, err, "a negative floor must be rejected")
-}
-
 func TestConfigLoadEventsRetention(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load("test")
@@ -727,7 +711,6 @@ func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
 		"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE=-1":                   "SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative",
 		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR=-1": "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative",
 		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR=-1":          "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative",
-		"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS=-1":                     "SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative",
 		"SPHERICON_EVENTS_RETENTION_DAYS=-1":                           "SPHERICON_EVENTS_RETENTION_DAYS must not be negative",
 		"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS=-1":                  "SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative",
 		"SPHERICON_EVENT_LIVE_WINDOW_HOURS=0":                          "SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1",

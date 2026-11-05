@@ -103,11 +103,11 @@ func TestEachWayToStopIsTheChannelWideOptOutAndTelegramUnsubscribed(t *testing.T
 				unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram), unsubscribe.Destination(strconv.FormatInt(optOutUser, 10)),
 			).OnlyX(t.Context())
 			assert.Equal(t, w.via, string(lo.FromPtr(row.Via)), "the opt-out keeps how the person stopped")
-			recorded := env.Outbox(t, events.NameTelegramUnsubscribed)
+			recorded := env.QueuedMessages(t, events.NameTelegramUnsubscribed)
 			require.Len(t, recorded, 1)
 			assert.Equal(t, strconv.Itoa(fixtures.ContactBobID), fmt.Sprint(recorded[0].Data["contactId"]))
 			assert.Equal(t, w.via, recorded[0].Data["via"])
-			assert.Zero(t, env.OutboxCount(t, events.NameTelegramReceived, nil), "a stop is not a message")
+			assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil), "a stop is not a message")
 		})
 	}
 }
@@ -120,7 +120,7 @@ func TestStoppingTwiceRecordsOneOptOut(t *testing.T) {
 	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/stop"))
 
 	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(unsubscribe.ChannelTelegram)).CountX(t.Context()))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil))
 }
 
 func TestAStopFromAnUnknownDestinationIsKeptAndNothingElseIsRecorded(t *testing.T) {
@@ -130,8 +130,8 @@ func TestAStopFromAnUnknownDestinationIsKeptAndNothingElseIsRecorded(t *testing.
 	env.PostTelegramUpdate(t, bot, said(1, 9191, "STOP"))
 
 	assert.True(t, optedOut(t, env, 9191))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramUnsubscribed, nil))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramReceived, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramReceived, nil))
 }
 
 func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
@@ -214,9 +214,9 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnbound, map[string]any{"contactId": fixtures.ContactBobID}))
 	assert.False(t, optedOut(t, env, optOutUser))
-	assert.Zero(t, env.OutboxCount(t, events.NameTelegramUnsubscribed, nil))
+	assert.Zero(t, env.QueuedCount(t, events.NameTelegramUnsubscribed, nil))
 }
 
 func TestAPressOnTheUnsubscribeButtonIsAttributedAndAnswered(t *testing.T) {
@@ -238,7 +238,7 @@ func TestAPressOnTheUnsubscribeButtonIsAttributedAndAnswered(t *testing.T) {
 
 	assert.Equal(t, 200, posted.Code)
 	assert.True(t, optedOut(t, env, optOutUser))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, map[string]any{
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{
 		"contactId": fixtures.ContactBobID, "automationId": automationID, "via": events.UnsubscribedByButton,
 	}), "attributed to the Automation the message came from")
 	answers := env.Telegram.RequestsOf(telegramtest.AnswerCallbackQuery)
@@ -280,7 +280,7 @@ func TestABlockedSendIsTheOptOutAndTheBindingIsNotAccepted(t *testing.T) {
 
 	assert.True(t, optedOut(t, env, optOutUser))
 	assert.False(t, optedOut(t, env, 4102))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, map[string]any{"via": events.UnsubscribedByBlock, "automationId": automationID}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"via": events.UnsubscribedByBlock, "automationId": automationID}))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 	assert.Equal(t, "4102", msg.Destination, "the first Binding that accepted it, not the blocked one")
@@ -317,7 +317,7 @@ func TestARecordedOptOutByHandOnTelegramCoversTheUser(t *testing.T) {
 	assert.Equal(t, externalapi.ConsentChannelTelegram, created.Channel)
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
 	assert.True(t, optedOut(t, env, optOutUser))
-	assert.Equal(t, 1, env.OutboxCount(t, events.NameTelegramUnsubscribed, map[string]any{"via": events.UnsubscribedByManual}))
+	assert.Equal(t, 1, env.QueuedCount(t, events.NameTelegramUnsubscribed, map[string]any{"via": events.UnsubscribedByManual}))
 }
 
 func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
