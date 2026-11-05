@@ -154,3 +154,33 @@
   workspace_id: 20
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
+
+# Duff (workspace 94): the fields its Contacts' writes inferred, named by their keys.
+- id: 7700
+  key: trial_ends
+  name: trial_ends
+  type: datetime
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7701
+  key: renewal
+  name: renewal
+  type: string
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7702
+  key: ends_on
+  name: ends_on
+  type: datetime
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7703
+  key: has_it
+  name: has_it
+  type: datetime
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

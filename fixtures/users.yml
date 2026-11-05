@@ -114,9 +114,12 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
-# Unverified Users (ADR 0030), a registration whose verify link was never used: no password,
-# no Verified email. StaleUnverified registered 30 days ago and is what the prune job removes
-# at the 7-day window; StaleUnverifiedMember is as old but holds a Membership (in Hooli); FreshUnverified registered a day ago.
+# Unverified Users (ADR 0030), a registration whose verify link was never used: no Verified email.
+# StaleUnverified registered 30 days ago and is what the prune job removes at the 7-day window;
+# StaleUnverifiedMember is as old but holds a Membership (in Hooli); FreshUnverified registered a
+# day ago and has a pending Invitation to Acme (InvitationAcmeFreshUnverified). None has a password
+# but VictimGmailSquatter, a stranger's Sign-up of victim@gmail.com a day ago with its pending
+# password, which the address's owner takes over by signing in with Google.
 - id: 15 # fixture: StaleUnverifiedUser
   name: Stale
   email: stale@unverified.test
@@ -130,6 +133,12 @@
 - id: 17 # fixture: FreshUnverifiedUser
   name: Fresh
   email: fresh@unverified.test
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7804 # fixture: VictimGmailSquatter
+  name: Squatter
+  email: victim@gmail.com
+  password_hash: '{{argonHash "squatter-password-1"}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 # Owner of Hooli, the Workspace with nothing on it (Setup checklist tests); owns nothing else.
@@ -370,3 +379,42 @@
   password_hash: '{{argonHash "password"}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Duff's owner, who reads its lists through the Site API.
+- id: 7700 # fixture: DuffOwnerDan
+  name: Dan
+  email: dan@duff.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Krusty's owner, who sends its SMS Broadcast through the Site API.
+- id: 7720 # fixture: KrustyOwnerKent
+  name: Kent
+  email: kent@krusty.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+# Vehement's owner, admin and member, each holding a Personal token or a Connection there. None has
+# accepted anything, so putting the fixture terms in effect gates them.
+- id: 7600 # fixture: VehementOwnerVal
+  name: Val
+  email: val@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7601 # fixture: VehementAdminAda
+  name: Ada
+  email: ada@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7602 # fixture: VehementMemberMel
+  name: Mel
+  email: mel@vehement.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

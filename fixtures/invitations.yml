@@ -90,8 +90,8 @@
 
 # Pending invitations a test accepts, each to an address no other test invites (the raw token
 # is the catalog's <Name>Token): Oscar, a Verified User with no Membership, as admin; new
-# addresses as member, and Nina's Google address as admin; addresses a test first signs up
-# unverified (victim@example.com, victim@gmail.com, the survey address).
+# addresses as member, and Nina's Google address as admin; the addresses of Unverified Users
+# (FreshUnverifiedUser, VictimGmailSquatter) and the survey address, which a test first signs up.
 - id: 7310 # fixture: InvitationAcmeOscar
   workspace_id: 1
   email: oscar@nowhere.test
@@ -110,20 +110,20 @@
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
-- id: 7312 # fixture: InvitationAcmeVictim
-  workspace_id: 1
-  email: victim@example.com
-  role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_victim" }}'
-  invited_by: 1
-  expires_at: '{{daysAhead 7}}'
-  created_at: '{{daysAgo 1}}'
-  updated_at: '{{daysAgo 1}}'
 - id: 7313 # fixture: InvitationAcmeVictimGmail
   workspace_id: 1
   email: victim@gmail.com
   role: member
   token_hash: '{{ inviteHash "inv_fixture_token_acme_victim_gmail" }}'
+  invited_by: 1
+  expires_at: '{{daysAhead 7}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7805 # fixture: InvitationAcmeFreshUnverified
+  workspace_id: 1
+  email: fresh@unverified.test
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_acme_fresh_unverified" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'

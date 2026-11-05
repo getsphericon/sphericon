@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -44,13 +45,30 @@ func connect(t *testing.T, env *testhelper.TestEnv, scope string) tokenResponse 
 	return decodeToken(t, rec)
 }
 
-// connector is the Connection the fixture client's grant lives in.
-func connector(t *testing.T, env *testhelper.TestEnv) *ent.ApiToken {
+// connectionOf is the Connection the access token was issued for.
+func connectionOf(t *testing.T, env *testhelper.TestEnv, accessToken string) *ent.ApiToken {
 	t.Helper()
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector"), apitoken.MembershipIDNotNil()).Only(t.Context())
+	parsed := credentials.ParseToken(accessToken)
+	require.NotNil(t, parsed, "an access token is an API token")
+	row, err := env.DB.ApiToken.Query().Where(apitoken.Prefix(parsed.Prefix)).Only(t.Context())
 	require.NoError(t, err)
 	return row
 }
+
+// connection is the fixture Connection with the id, as it is stored now.
+func connection(t *testing.T, env *testhelper.TestEnv, id int64) *ent.ApiToken {
+	t.Helper()
+	return env.DB.ApiToken.GetX(t.Context(), id)
+}
+
+// The access tokens of the fixture Connections (fixtures/api_tokens.yml), as the client was issued
+// them; their refresh tokens are fixtures.VehementOwnerRefreshToken and VehementMemberRefreshToken.
+var (
+	valsConnection  = credentials.TokenValue(fixtures.VehementOwnerConnectionPrefix, fixtures.VehementOwnerConnectionSecret)
+	adasConnection  = credentials.TokenValue(fixtures.VehementAdminConnectionPrefix, fixtures.VehementAdminConnectionSecret)
+	melsConnection  = credentials.TokenValue(fixtures.VehementMemberConnectionPrefix, fixtures.VehementMemberConnectionSecret)
+	ritasConnection = credentials.TokenValue(fixtures.UmbrellaRitaConnectionPrefix, fixtures.UmbrellaRitaConnectionSecret)
+)
 
 func refreshForm(refreshToken string) url.Values {
 	return url.Values{
@@ -83,7 +101,7 @@ func TestCodeExchangeIssuesAnExpiringTokenAndARefreshToken(t *testing.T) {
 
 	assert.Equal(t, 3600, tok.ExpiresIn)
 	assert.NotEmpty(t, tok.RefreshToken)
-	row := connector(t, env)
+	row := connectionOf(t, env, tok.AccessToken)
 	require.NotNil(t, row.ExpiresAt)
 	assert.WithinDuration(t, row.CreatedAt.Add(time.Hour), *row.ExpiresAt, time.Minute)
 	refresh, err := env.DB.OAuthRefreshToken.Query().Where(oauthrefreshtoken.APITokenID(row.ID)).Only(t.Context())
@@ -94,50 +112,46 @@ func TestCodeExchangeIssuesAnExpiringTokenAndARefreshToken(t *testing.T) {
 
 func TestAnExpiredAccessTokenIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connect(t, env, "contacts:read")
-	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, valsConnection))
 
-	row := connector(t, env)
+	row := connection(t, env, fixtures.VehementOwnerConnectionID)
 	_, err := env.DB.ApiToken.UpdateOneID(row.ID).SetExpiresAt(row.CreatedAt.Add(-time.Minute)).Save(t.Context())
 	require.NoError(t, err)
 
-	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, valsConnection))
 }
 
 func TestRefreshRotatesTheTokenInPlace(t *testing.T) {
 	env := testhelper.Setup(t)
-	first := connect(t, env, "contacts:read segments:read")
-	before := connector(t, env)
+	before := connection(t, env, fixtures.VehementOwnerConnectionID)
 
-	rec := exchange(t, env, refreshForm(first.RefreshToken))
+	rec := exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken))
 
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	second := decodeToken(t, rec)
 	assert.Equal(t, 3600, second.ExpiresIn)
 	assert.Equal(t, "contacts:read segments:read", second.Scope)
-	assert.NotEqual(t, first.AccessToken, second.AccessToken)
-	assert.NotEqual(t, first.RefreshToken, second.RefreshToken)
+	assert.NotEqual(t, valsConnection, second.AccessToken)
+	assert.NotEqual(t, fixtures.VehementOwnerRefreshToken, second.RefreshToken)
 
 	// The Connection keeps its row; the old secret is dead and the new one works.
 	assert.True(t, strings.HasPrefix(second.AccessToken, "omtk_"+before.Prefix+"_"), "the prefix stays")
-	after := connector(t, env)
-	assert.Equal(t, before.ID, after.ID)
+	after := connection(t, env, fixtures.VehementOwnerConnectionID)
 	assert.Nil(t, after.RevokedAt)
 	assert.NotEqual(t, before.SecretHash, after.SecretHash)
-	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, first.AccessToken))
+	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, valsConnection))
 	assert.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, second.AccessToken))
 
 	// The old refresh token is kept, used, so a replay is recognised.
 	spent, err := env.DB.OAuthRefreshToken.Query().
-		Where(oauthrefreshtoken.APITokenID(before.ID), oauthrefreshtoken.UsedAtNotNil()).Exist(t.Context())
+		Where(oauthrefreshtoken.ID(fixtures.VehementOwnerRefreshID), oauthrefreshtoken.UsedAtNotNil()).Exist(t.Context())
 	require.NoError(t, err)
 	assert.True(t, spent)
 }
 
 func TestRefreshNarrowsTheGrantForGood(t *testing.T) {
 	env := testhelper.Setup(t)
-	first := connect(t, env, "contacts:read segments:read")
-	form := refreshForm(first.RefreshToken)
+	form := refreshForm(fixtures.VehementOwnerRefreshToken)
 	form.Set("scope", "segments:read")
 
 	rec := exchange(t, env, form)
@@ -145,7 +159,7 @@ func TestRefreshNarrowsTheGrantForGood(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	narrowed := decodeToken(t, rec)
 	assert.Equal(t, "segments:read", narrowed.Scope)
-	assert.Equal(t, []string{"segments:read"}, connector(t, env).Scopes)
+	assert.Equal(t, []string{"segments:read"}, connection(t, env, fixtures.VehementOwnerConnectionID).Scopes)
 
 	// It cannot be widened back to the original scopes.
 	wider := refreshForm(narrowed.RefreshToken)
@@ -155,39 +169,35 @@ func TestRefreshNarrowsTheGrantForGood(t *testing.T) {
 
 func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
 	env := testhelper.Setup(t)
-	first := connect(t, env, "contacts:read")
-	rotated := decodeToken(t, exchange(t, env, refreshForm(first.RefreshToken)))
+	rotated := decodeToken(t, exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken)))
 
-	replay := exchange(t, env, refreshForm(first.RefreshToken))
+	replay := exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken))
 
 	assert.Equal(t, http.StatusBadRequest, replay.Code)
 	assert.Equal(t, "invalid_grant", decodeToken(t, replay).Error)
-	assert.NotNil(t, connector(t, env).RevokedAt)
+	assert.NotNil(t, connection(t, env, fixtures.VehementOwnerConnectionID).RevokedAt)
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, rotated.AccessToken))
 	assert.Equal(t, http.StatusBadRequest, exchange(t, env, refreshForm(rotated.RefreshToken)).Code, "the newest refresh token died with the grant")
 }
 
 func TestRevokingTheConnectionKillsItsRefreshToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connect(t, env, "contacts:read")
-	row := connector(t, env)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{
-		WorkspaceId: fixtures.AcmePublicID,
-		ID:          siteapi.EntityId(row.ID),
+	res, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{
+		WorkspaceId: fixtures.VehementPublicID,
+		ID:          siteapi.EntityId(fixtures.VehementOwnerConnectionID),
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteConnectionsDeleteNoContent{}, res)
 
-	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
-	rec := exchange(t, env, refreshForm(tok.RefreshToken))
+	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, valsConnection))
+	rec := exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken))
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "invalid_grant", decodeToken(t, rec).Error)
 }
 
 func TestRefreshRefusals(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connect(t, env, "contacts:read")
 
 	for name, tc := range map[string]struct {
 		form url.Values
@@ -195,17 +205,17 @@ func TestRefreshRefusals(t *testing.T) {
 	}{
 		"unknown token": {refreshForm("nope"), "invalid_grant"},
 		"other client": {func() url.Values {
-			f := refreshForm(tok.RefreshToken)
+			f := refreshForm(fixtures.VehementOwnerRefreshToken)
 			f.Set("client_id", "someone-else")
 			return f
 		}(), "invalid_grant"},
 		"wider scope": {func() url.Values {
-			f := refreshForm(tok.RefreshToken)
+			f := refreshForm(fixtures.VehementOwnerRefreshToken)
 			f.Set("scope", "contacts:read contacts:write")
 			return f
 		}(), "invalid_scope"},
 		"foreign resource": {func() url.Values {
-			f := refreshForm(tok.RefreshToken)
+			f := refreshForm(fixtures.VehementOwnerRefreshToken)
 			f.Set("resource", "https://elsewhere.example/mcp")
 			return f
 		}(), "invalid_target"},
@@ -218,20 +228,18 @@ func TestRefreshRefusals(t *testing.T) {
 	}
 
 	// None of the refusals spent the token.
-	assert.Equal(t, http.StatusOK, exchange(t, env, refreshForm(tok.RefreshToken)).Code)
+	assert.Equal(t, http.StatusOK, exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken)).Code)
 }
 
 func TestAnExpiredRefreshTokenIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connect(t, env, "contacts:read")
-	row := connector(t, env)
-	_, err := env.DB.OAuthRefreshToken.Update().
-		Where(oauthrefreshtoken.APITokenID(row.ID)).
+	row := connection(t, env, fixtures.VehementOwnerConnectionID)
+	_, err := env.DB.OAuthRefreshToken.UpdateOneID(fixtures.VehementOwnerRefreshID).
 		SetExpiresAt(row.CreatedAt.Add(-time.Minute)).
 		Save(t.Context())
 	require.NoError(t, err)
 
-	rec := exchange(t, env, refreshForm(tok.RefreshToken))
+	rec := exchange(t, env, refreshForm(fixtures.VehementOwnerRefreshToken))
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "invalid_grant", decodeToken(t, rec).Error)

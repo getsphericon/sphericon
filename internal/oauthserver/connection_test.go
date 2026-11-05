@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -41,7 +42,7 @@ func TestAMemberMakesAConnectionOfHerOwn(t *testing.T) {
 	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read contacts:write")
 
 	assert.Equal(t, "contacts:read contacts:write", tok.Scope)
-	row := connector(t, env)
+	row := connectionOf(t, env, tok.AccessToken)
 	assert.Equal(t, new(int64(fixtures.AcmeMemberMembershipID)), row.MembershipID)
 	_, err := env.MCPClient(t, tok.AccessToken).ListTools(t.Context(), nil)
 	require.NoError(t, err)
@@ -108,22 +109,27 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 	}
 }
 
+// demoteVehementAdmin makes the Vehement admin Ada a member.
+func demoteVehementAdmin(t *testing.T, env *testhelper.TestEnv) {
+	t.Helper()
+	demoted, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
+		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementAdminMembershipID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
+}
+
 // A Connection can do what its scopes and its User's current Role allow: an admin's Connection to
 // the webhook endpoints loses them on the request after the admin is made a member.
 func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.AdminAliceEmail, fixtures.AcmePublicID, "webhooks:read")
-	api := env.ExternalWithToken(t, tok.AccessToken)
+	api := env.ExternalWithToken(t, adasConnection)
 
 	before, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.WebhooksListOK{}, before)
 
-	demoted, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteMembershipsUpdate(t.Context(),
-		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AcmeAdminMembershipID)})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
+	demoteVehementAdmin(t, env)
 
 	after, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	require.NoError(t, err)
@@ -158,16 +164,11 @@ func TestAnOwnerOrAdminGrantsExportAndSuppressions(t *testing.T) {
 // refused write leaves no row.
 func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.AdminAliceEmail, fixtures.AcmePublicID, "contacts:export suppressions:write")
-	api := env.ExternalWithToken(t, tok.AccessToken)
+	api := env.ExternalWithToken(t, adasConnection)
 
-	demoted, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteMembershipsUpdate(t.Context(),
-		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AcmeAdminMembershipID)})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
+	demoteVehementAdmin(t, env)
 
-	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactBobID))})
+	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactVehementVicID))})
 	require.NoError(t, err)
 	refusedExport, isRefused := exported.(*externalapi.ContactsExportForbidden)
 	require.Truef(t, isRefused, "got %T", exported)
@@ -183,104 +184,102 @@ func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 	assert.False(t, added, "the refused call suppressed nothing")
 }
 
-// assertConnectionEnded checks that the Connection tok was issued is over: its access token is
-// refused on /mcp and /api, its refresh token is no grant, and no Connection row is left.
-func assertConnectionEnded(t *testing.T, env *testhelper.TestEnv, tok tokenResponse) {
+// assertMelsConnectionEnded checks that Mel's Connection is over: its access token is refused on
+// /mcp and /api, its refresh token is no grant, and no row of her Membership is left.
+func assertMelsConnectionEnded(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
-	listed, err := env.ExternalWithToken(t, tok.AccessToken).ContactsList(t.Context(), externalapi.ContactsListParams{})
+	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
+	listed, err := env.ExternalWithToken(t, melsConnection).ContactsList(t.Context(), externalapi.ContactsListParams{})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, listed)
-	assert.Equal(t, "invalid_grant", decodeToken(t, exchange(t, env, refreshForm(tok.RefreshToken))).Error)
-	remaining, err := env.DB.ApiToken.Query().Where(apitoken.MembershipIDNotNil()).Count(t.Context())
+	assert.Equal(t, "invalid_grant", decodeToken(t, exchange(t, env, refreshForm(fixtures.VehementMemberRefreshToken))).Error)
+	remaining, err := env.DB.ApiToken.Query().Where(apitoken.MembershipID(fixtures.VehementMemberMembershipID)).Exist(t.Context())
 	require.NoError(t, err)
-	assert.Zero(t, remaining)
+	assert.False(t, remaining)
 }
 
 // A Connection ends with its Membership: Leaving the Workspace removes it and its token is
 // refused from then on.
 func TestLeavingEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
-	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	left, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.AcmePublicID})
+	left, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteWorkspacesLeave(t.Context(), siteapi.SiteWorkspacesLeaveParams{WorkspaceId: fixtures.VehementPublicID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, left)
 
-	assertConnectionEnded(t, env, tok)
+	assertMelsConnectionEnded(t, env)
 }
 
 // A Connection ends when an Owner or Admin removes its User's Membership.
 func TestRemovalEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
-	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	removed, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteMembershipsDelete(t.Context(),
-		siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AcmeMemberMembershipID)})
+	removed, err := env.SiteActor(t, fixtures.VehementAdminAdaEmail).SiteMembershipsDelete(t.Context(),
+		siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementMemberMembershipID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, removed)
 
-	assertConnectionEnded(t, env, tok)
+	assertMelsConnectionEnded(t, env)
 }
 
 // A Connection ends when its User deletes themself.
 func TestUserDeletionEndsTheUsersConnections(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
-	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, melsConnection))
 
-	deleted, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
-		Email:           fixtures.MemberMaryEmail,
-		CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
+	deleted, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
+		Email:           fixtures.VehementMemberMelEmail,
+		CurrentPassword: siteapi.NewOptString(fixtures.VehementMemberMelPassword),
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, deleted)
 
-	assertConnectionEnded(t, env, tok)
+	assertMelsConnectionEnded(t, env)
 }
 
 // What a Connection does is recorded in the Audit log as done by its User, named through the
 // client the User approved (ADR 0061).
 func TestAConnectionActsAsItsUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:write")
 
-	_, err := env.ExternalWithToken(t, tok.AccessToken).ContactsUpdate(t.Context(),
+	_, err := env.ExternalWithToken(t, melsConnection).ContactsUpdate(t.Context(),
 		&externalapi.UpdateContactInput{FirstName: externalapi.NewOptNilString("Renamed")},
-		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactBobID)})
+		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactVehementVicID)})
 	require.NoError(t, err)
 
 	got := env.QueuedEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.MemberMaryID), Name: fixtures.MemberMaryName + " via Fixture Connector"},
+	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberConnectionName},
 		got[0].(*events.AuditEntry).Actor)
 }
 
 // Each User sees and revokes their own Connections; members:manage sees and revokes anyone's.
 func TestConnectionsAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 	env := testhelper.Setup(t)
-	connectAs(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "contacts:read")
-	owners := connector(t, env)
-	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
-	params := siteapi.SiteConnectionsListParams{WorkspaceId: fixtures.AcmePublicID}
+	owners := siteapi.EntityId(fixtures.VehementOwnerConnectionID)
+	mel := env.SiteActor(t, fixtures.VehementMemberMelEmail)
+	params := siteapi.SiteConnectionsListParams{WorkspaceId: fixtures.VehementPublicID}
+	connectionIDs := func(r siteapi.SiteConnectionResource, _ int) siteapi.EntityId { return r.ID }
 
-	maryList, err := mary.SiteConnectionsList(t.Context(), params)
+	melList, err := mel.SiteConnectionsList(t.Context(), params)
 	require.NoError(t, err)
-	assert.Empty(t, *maryList.(*siteapi.SiteConnectionsListOKApplicationJSON), "a member does not see another User's Connection")
-	refused, err := mary.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(owners.ID)})
+	melSees := lo.Map(*melList.(*siteapi.SiteConnectionsListOKApplicationJSON), connectionIDs)
+	assert.Equal(t, []siteapi.EntityId{fixtures.VehementMemberConnectionID}, melSees, "a member sees only her own Connection")
+	refused, err := mel.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
 	require.NoError(t, err)
 	assert.IsTypef(t, &siteapi.SiteConnectionsDeleteNotFound{}, refused, "another User's Connection is not the member's to find: got %T", refused)
 
-	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
+	admin := env.SiteActor(t, fixtures.VehementAdminAdaEmail)
 	adminList, err := admin.SiteConnectionsList(t.Context(), params)
 	require.NoError(t, err)
-	assert.Len(t, *adminList.(*siteapi.SiteConnectionsListOKApplicationJSON), 1, "members:manage sees anyone's")
-	revoked, err := admin.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(owners.ID)})
+	adminSees := lo.Map(*adminList.(*siteapi.SiteConnectionsListOKApplicationJSON), connectionIDs)
+	assert.ElementsMatch(t, []siteapi.EntityId{owners, fixtures.VehementAdminConnectionID, fixtures.VehementMemberConnectionID}, adminSees, "members:manage sees anyone's")
+	revoked, err := admin.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.VehementPublicID, ID: owners})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteConnectionsDeleteNoContent{}, revoked)
-	assert.NotNil(t, connector(t, env).RevokedAt)
+	assert.NotNil(t, connection(t, env, fixtures.VehementOwnerConnectionID).RevokedAt)
 }
 
 // The Workspace's Two-factor requirement applies to a Connection as to its User's session: once
@@ -290,12 +289,11 @@ func TestTheTwoFactorRequirementWithholdsAConnection(t *testing.T) {
 	graceEnds := time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
 	clock := &shiftingClock{at: graceEnds.Add(-time.Hour)}
 	env := testhelper.Setup(t, testhelper.WithClock(clock.now))
-	tok := connectAs(t, env, fixtures.UmbrellaOwnerRitaEmail, fixtures.UmbrellaPublicID, "contacts:read")
-	require.NotEqual(t, http.StatusForbidden, mcpStatus(t, env, tok.AccessToken))
+	require.NotEqual(t, http.StatusForbidden, mcpStatus(t, env, ritasConnection))
 
 	clock.at = graceEnds.Add(time.Hour)
 
-	rec := serve(env, mcpRequest(t, tok.AccessToken))
+	rec := serve(env, mcpRequest(t, ritasConnection))
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 	var problem struct {
 		Code string `json:"code"`

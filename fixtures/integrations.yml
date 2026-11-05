@@ -292,9 +292,23 @@
   created_at: '{{daysAgo 15}}'
   updated_at: '{{daysAgo 15}}'
 
-# Telegram bots (ADR 0074): a kept one of Acme and one of Globex, neither the default of its
-# Channel. `env.AcmeTelegram` adds Acme's bot to the fake Bot API; Globex's is not in it, so only
-# what never calls Telegram uses that one.
+# Telegram bots (ADR 0074): two kept ones of Acme and one of Globex, none the default of its
+# Channel. `env.AcmeTelegram` adds Acme's bot to the fake Bot API, and `env.AcmeSecondTelegram`
+# Acme's second one (no Binding), for a test that needs a bot besides the first; Globex's is not
+# in it, so only what never calls Telegram uses that one.
+- id: 7806 # fixture: IntegrationAcmeSecondTelegram
+  ingest_key: omik_test_integrationacmesecondtelegram
+  name: Acme second bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7800:AAfixturetokenacmesecondbot00000000\",\"bot_id\":7800,\"username\":\"acme_second_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-acme-second-webhook-secret\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
 - id: 9 # fixture: IntegrationAcmeTelegram
   ingest_key: omik_test_integrationacmetelegram
   name: Acme bot
@@ -490,5 +504,37 @@
   provider_max_per_day: 200
   provider_quota_checked_at: '2026-01-01 00:00:00'
   workspace_id: 85
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Duff (workspace 94): its only Integration, a Telegram bot the fake Bot API does not know: the
+# preview that counts its bound Contacts never calls Telegram.
+- id: 7700 # fixture: IntegrationDuffTelegram
+  ingest_key: omik_test_integrationdufftelegram
+  name: Duff bot
+  channel: telegram
+  provider: telegram
+  config_encrypted: '{{ encrypt "{\"token\":\"7700:AAfixturetokenduffbot00000000000000\",\"bot_id\":7700,\"username\":\"duff_fixture_bot\"}" }}'
+  preset: telegram
+  params_encrypted: '{{ encrypt "{\"secret\":\"fixture-duff-webhook-secret\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Krusty (workspace 95): its Twilio account. `env.KrustyTwilio` adds the account and its number to
+# the fake Twilio.
+- id: 7720 # fixture: IntegrationKrustySms
+  ingest_key: omik_test_integrationkrustysms
+  name: Krusty Twilio
+  channel: sms
+  provider: twilio
+  config_encrypted: '{{ encrypt "{\"account_sid\":\"AC00000000000000000000000000007720\",\"secret\":\"fixturekrustytwilioauthtoken7720\",\"from\":\"+15017250604\",\"callbacks_set\":true}" }}'
+  preset: twilio
+  params_encrypted: '{{ encrypt "{\"auth_token\":\"fixturekrustytwilioauthtoken7720\"}" }}'
+  enabled: true
+  is_default: true
+  workspace_id: 95
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

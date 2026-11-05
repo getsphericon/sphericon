@@ -158,15 +158,14 @@ func TestTokenEndpointIssuesAConnectionOfTheApprovingUser(t *testing.T) {
 
 	// It is a Connection: a scoped token of the workspace tied to the owner's Membership, and /mcp
 	// accepts it.
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector")).Only(t.Context())
-	require.NoError(t, err)
+	row := connectionOf(t, env, tok["access_token"].(string))
 	assert.Equal(t, []string{"contacts:read", "segments:read"}, row.Scopes)
 	assert.Equal(t, int64(fixtures.AcmeID), row.WorkspaceID)
 	assert.Equal(t, new(int64(fixtures.AcmeOwnerMembershipID)), row.MembershipID)
 	assert.Nil(t, row.RevokedAt)
 
 	session := env.MCPClient(t, tok["access_token"].(string))
-	_, err = session.ListTools(t.Context(), nil)
+	_, err := session.ListTools(t.Context(), nil)
 	require.NoError(t, err)
 }
 

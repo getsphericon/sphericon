@@ -1,7 +1,6 @@
 package testhelper
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -16,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
-// TelegramBot is a bot connected as a Telegram Integration of Acme through the Site API, as the
-// fake Bot API (env.Telegram) knows it.
+// TelegramBot is a fixture Telegram Integration of Acme and its bot, as the fake Bot API
+// (env.Telegram) knows it.
 type TelegramBot struct {
-	// Integration is the Integration as the create answered it.
+	// Integration is the Integration as the Site API reads it.
 	Integration *siteapi.SiteIntegrationResource
 	ID          int64
 	Username    string
@@ -41,48 +40,59 @@ const (
 // AcmeTelegram adds the bot of the fixture Integration IntegrationAcmeTelegram to the fake Bot API
 // and returns it: the Telegram Integration of Acme a test sends through, binds on or posts updates
 // to. It is not the default of its Channel (MakeDefaultTelegram). A test of connecting a bot
-// connects one of its own (ConnectTelegram).
+// connects one of its own through the API.
 func (env *TestEnv) AcmeTelegram(t *testing.T) TelegramBot {
 	t.Helper()
-	env.Telegram.AddBotToken(AcmeTelegramBotID, AcmeTelegramUsername, AcmeTelegramToken)
-	return TelegramBot{
-		Integration: env.acmeIntegration(t, fixtures.IntegrationAcmeTelegramID),
-		ID:          AcmeTelegramBotID, Username: AcmeTelegramUsername, Token: AcmeTelegramToken,
+	return env.fixtureTelegram(t, fixtures.IntegrationAcmeTelegramID, TelegramBot{
+		ID: AcmeTelegramBotID, Username: AcmeTelegramUsername, Token: AcmeTelegramToken,
 		HookPath: "/hooks/" + fixtures.IntegrationAcmeTelegramIngestKey, Secret: AcmeTelegramSecret,
-	}
+	})
+}
+
+// The bot of the fixture Integration IntegrationAcmeSecondTelegram, as fixtures/integrations.yml
+// stores it.
+const (
+	AcmeSecondTelegramBotID    = 7800
+	AcmeSecondTelegramUsername = "acme_second_fixture_bot"
+	AcmeSecondTelegramToken    = "7800:AAfixturetokenacmesecondbot00000000"
+	AcmeSecondTelegramSecret   = "fixture-acme-second-webhook-secret"
+)
+
+// AcmeSecondTelegram adds the bot of the fixture Integration IntegrationAcmeSecondTelegram to the
+// fake Bot API and returns it: a Telegram Integration of Acme besides AcmeTelegram's, for a test
+// that needs two bots. It is not the default of its Channel and holds no Binding.
+func (env *TestEnv) AcmeSecondTelegram(t *testing.T) TelegramBot {
+	t.Helper()
+	return env.fixtureTelegram(t, fixtures.IntegrationAcmeSecondTelegramID, TelegramBot{
+		ID: AcmeSecondTelegramBotID, Username: AcmeSecondTelegramUsername, Token: AcmeSecondTelegramToken,
+		HookPath: "/hooks/" + fixtures.IntegrationAcmeSecondTelegramIngestKey, Secret: AcmeSecondTelegramSecret,
+	})
+}
+
+// fixtureTelegram adds the bot of a fixture Telegram Integration of Acme to the fake Bot API and
+// returns it with the Integration as the Site API reads it.
+func (env *TestEnv) fixtureTelegram(t *testing.T, integrationID int64, bot TelegramBot) TelegramBot {
+	t.Helper()
+	env.Telegram.AddBotToken(bot.ID, bot.Username, bot.Token)
+	bot.Integration = env.acmeIntegration(t, integrationID)
+	return bot
 }
 
 // acmeIntegration is a fixture Integration of Acme as the Site API reads it to its owner.
 func (env *TestEnv) acmeIntegration(t *testing.T, id int64) *siteapi.SiteIntegrationResource {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsGet(t.Context(),
-		siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+	return env.fixtureIntegration(t, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, id)
+}
+
+// fixtureIntegration is a fixture Integration of the Workspace as the Site API reads it to owner.
+func (env *TestEnv) fixtureIntegration(t *testing.T, owner, workspace string, id int64) *siteapi.SiteIntegrationResource {
+	t.Helper()
+	res, err := env.SiteActor(t, owner).SiteIntegrationsGet(t.Context(),
+		siteapi.SiteIntegrationsGetParams{WorkspaceId: siteapi.WorkspaceId(workspace), ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
 	row, ok := res.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "read the fixture Integration %d: got %T", id, res)
 	return row
-}
-
-// ConnectTelegram adds a bot of id and username to the fake Bot API and connects it as a Telegram
-// Integration of Acme, as its owner does in the app. The webhook secret is read from the fake's
-// record of setWebhook: the API never shows it.
-func (env *TestEnv) ConnectTelegram(t *testing.T, id int64, username string) TelegramBot {
-	t.Helper()
-	token := env.Telegram.AddBot(id, username)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
-		Name: username,
-		Config: siteapi.IntegrationConfigInput{OneOf: siteapi.NewTelegramConfigInputIntegrationConfigInputSum(
-			siteapi.TelegramConfigInput{Kind: siteapi.TelegramConfigInputKindTelegram, Token: token})},
-	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	row, ok := res.(*siteapi.SiteIntegrationResource)
-	require.Truef(t, ok, "connect the Telegram bot: got %T", res)
-	hookURL, secret, ok := env.Telegram.Webhook(id)
-	require.True(t, ok, "the bot's webhook was set")
-	return TelegramBot{
-		Integration: row, ID: id, Username: username, Token: token,
-		HookPath: strings.TrimPrefix(hookURL, env.AppURL), Secret: secret,
-	}
 }
 
 // PostTelegramUpdate posts a Bot API update (its JSON) to the bot's Ingest hook as Telegram does,

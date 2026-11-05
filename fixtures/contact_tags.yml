@@ -139,3 +139,10 @@
   tag_id: 20005
 - contact_id: 20044
   tag_id: 20005
+# Duff (workspace 94): filter-vip on both VIPs, filter-beta on the German one.
+- contact_id: 7700
+  tag_id: 7700
+- contact_id: 7701
+  tag_id: 7700
+- contact_id: 7701
+  tag_id: 7701

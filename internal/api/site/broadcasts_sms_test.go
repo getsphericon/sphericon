@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
@@ -21,9 +20,16 @@ import (
 // confirmed numbers of its Segment through the fake Twilio, its figures leave opened, delivered,
 // bounced and complained null, and its Test send goes to a number the author types.
 
-// createSMSBroadcast creates an SMS Broadcast through the account with text, to the Segment when
-// one is given, and returns it.
-func createSMSBroadcast(t *testing.T, c *siteapi.Client, account testhelper.TwilioAccount, text string, segment *siteapi.EntityId) *siteapi.SiteBroadcastResource {
+// createSMSBroadcast creates an SMS Broadcast of Acme through the account with text, to every
+// Contact, and returns it.
+func createSMSBroadcast(t *testing.T, c *siteapi.Client, account testhelper.TwilioAccount, text string) *siteapi.SiteBroadcastResource {
+	t.Helper()
+	return createSMSBroadcastIn(t, c, fixtures.AcmePublicID, account, text, nil)
+}
+
+// createSMSBroadcastIn creates an SMS Broadcast of the Workspace through the account with text, to
+// the Segment when one is given, and returns it.
+func createSMSBroadcastIn(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, account testhelper.TwilioAccount, text string, segment *siteapi.EntityId) *siteapi.SiteBroadcastResource {
 	t.Helper()
 	in := &siteapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.SiteSMS(text),
@@ -32,43 +38,27 @@ func createSMSBroadcast(t *testing.T, c *siteapi.Client, account testhelper.Twil
 	if segment != nil {
 		in.SegmentId = siteapi.NewOptNilEntityId(*segment)
 	}
-	res, err := c.SiteBroadcastsCreate(t.Context(), in, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	res, err := c.SiteBroadcastsCreate(t.Context(), in, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspace})
 	require.NoError(t, err)
 	b, ok := res.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", res)
 	return b
 }
 
-// confirmNumber records the SMS Confirmation an API client asserts for the number.
-func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
-	t.Helper()
-	_, err := env.ExternalScoped(t, "contacts:write").ConfirmationsCreate(t.Context(), &externalapi.CreateConfirmationInput{
-		Channel: externalapi.ConsentChannelSMS, Destination: number,
-		Wording: "Yes, text me offers from Acme. Reply STOP to opt out.", Source: "checkout form", Brand: "Acme",
-	})
-	require.NoError(t, err)
-}
-
+// Krusty's Segment "Bay Area numbers" holds two numbers, only Tess's confirmed.
 func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	account := env.AcmeTwilio(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	confirmNumber(t, env, fixtures.ContactTexterPhone)
-	seg, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
-		Name:      "Bay Area numbers",
-		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"phone","operator":"beginsWith","value":"+1415555"}]}`),
-	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	segment, ok := seg.(*siteapi.SiteSegmentResource)
-	require.Truef(t, ok, "got %T", seg)
-	made := createSMSBroadcast(t, c, account, "Hi {{ first_name }}, 20% off today", &segment.ID)
+	account := env.KrustyTwilio(t)
+	c := env.SiteActor(t, fixtures.KrustyOwnerKentEmail)
+	segment := idStr(fixtures.SegmentKrustyBayAreaID)
+	made := createSMSBroadcastIn(t, c, fixtures.KrustyPublicID, account, "Hi {{ first_name }}, 20% off today", &segment)
 
-	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
+	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: fixtures.KrustyPublicID, ID: made.ID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteBroadcastResource{}, sent)
 	env.DeliverQueuedBroadcasts(t)
-	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
+	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.KrustyPublicID, ID: made.ID})
 	require.NoError(t, err)
 	read, ok := got.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", got)
@@ -79,7 +69,7 @@ func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(
 	assert.Empty(t, made.Warnings, "email's lint does not apply to a text")
 	texts := env.Twilio.Messages()
 	require.Len(t, texts, 1, "the Segment's other phone has no Confirmation")
-	assert.Equal(t, fixtures.ContactTexterPhone, texts[0].To)
+	assert.Equal(t, fixtures.ContactKrustyBayConfirmedPhone, texts[0].To)
 	assert.Equal(t, "Hi Tess, 20% off today", texts[0].Body)
 	assert.Equal(t, siteapi.SiteBroadcastStatusSent, read.Status)
 	st := read.Stats
@@ -118,7 +108,7 @@ func TestSiteSMSBroadcastTestSendGoesToTheTypedNumberAndLeavesNoMessage(t *testi
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, "Hi {{ first_name }}, stop: {{ unsubscribe_url }}", nil)
+	b := createSMSBroadcast(t, c, account, "Hi {{ first_name }}, stop: {{ unsubscribe_url }}")
 	testSend := func(in siteapi.TestSendBroadcastInput) siteapi.SiteBroadcastsTestSendRes {
 		res, err := c.SiteBroadcastsTestSend(ctx, &in, siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
 		require.NoError(t, err)
@@ -169,7 +159,7 @@ func TestSiteSMSBroadcastTestSendRefusedByTwilioSuppressesAndHoldsNothing(t *tes
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	b := createSMSBroadcast(t, c, account, "Hello", nil)
+	b := createSMSBroadcast(t, c, account, "Hello")
 	testSend := func() siteapi.SiteBroadcastsTestSendRes {
 		res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Phone: siteapi.NewOptString("+14155550199")},
 			siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: b.ID})
@@ -232,7 +222,7 @@ func TestSiteSMSBroadcastSaveCountsTrackedLinksAsShortLinks(t *testing.T) {
 	require.NoError(t, err)
 	text := strings.Repeat("a", 1400) + " https://shop.example/" + strings.Repeat("p", 200)
 
-	b := createSMSBroadcast(t, c, account, text, nil)
+	b := createSMSBroadcast(t, c, account, text)
 	untracked := testhelper.SiteSMS(text)
 	untracked.OneOf.SmsBroadcastContentInput.LinkTracking = siteapi.NewOptBool(false)
 	edited, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Content: siteapi.NewOptBroadcastContentInput(untracked)},

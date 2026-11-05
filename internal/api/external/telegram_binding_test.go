@@ -120,7 +120,7 @@ func TestAStartLinkWorksOnce(t *testing.T) {
 func TestAnotherBotsStartLinkBindsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	first := env.AcmeTelegram(t)
-	second := env.ConnectTelegram(t, 7104, "acme_second_bot")
+	second := env.AcmeSecondTelegram(t)
 	c := env.ExternalScoped(t, "contacts:write")
 	firstID := int64(first.Integration.ID)
 	token, _ := issue(t, c, fixtures.ContactBobID, &firstID)

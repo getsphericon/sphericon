@@ -46,15 +46,16 @@ func tagNames(t *testing.T, env *testhelper.TestEnv, contactID int64) []string {
 // A Contact who cannot be emailed walks past both email steps to the tag step and completes: the
 // skips do not end the sequence, and the report counts one skip at each email step.
 func TestASkippedEmailMovesTheEnrollmentOnToTheStepsAfterIt(t *testing.T) {
-	cannotBeEmailed := map[string]int64{
-		"no email address":        fixtures.ContactJobsNoEmailID,
-		"suppressed":              fixtures.ContactComplainedID,
-		"unsubscribed everything": fixtures.ContactUnsubscribedEverythingID,
+	cannotBeEmailed := map[string]struct{ runID, contactID int64 }{
+		"no email address":        {fixtures.AutomationRunJobsEmailsThenTagNoEmailID, fixtures.ContactJobsNoEmailID},
+		"suppressed":              {fixtures.AutomationRunJobsEmailsThenTagComplainedID, fixtures.ContactComplainedID},
+		"unsubscribed everything": {fixtures.AutomationRunJobsEmailsThenTagUnsubscribedEverythingID, fixtures.ContactUnsubscribedEverythingID},
 	}
-	for name, contactID := range cannotBeEmailed {
+	for name, enrolled := range cannotBeEmailed {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			runID := enrollVia(t, env, fixtures.AutomationJobsEmailsThenTagID, contactID)
+			runID, contactID := enrolled.runID, enrolled.contactID
+			queueStep(t, env, runID)
 			fs := &fakeSender{}
 
 			env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
@@ -71,7 +72,8 @@ func TestASkippedEmailMovesTheEnrollmentOnToTheStepsAfterIt(t *testing.T) {
 // the second through the Mailgun relay.
 func TestEachEmailStepSendsThroughItsOwnIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
-	runID := enrollVia(t, env, fixtures.AutomationJobsEmailsThenTagID, fixtures.ContactAliceID)
+	runID := int64(fixtures.AutomationRunJobsEmailsThenTagAliceID)
+	queueStep(t, env, runID)
 	fs := &fakeSender{}
 	var through []int64
 
@@ -101,7 +103,8 @@ func TestAHeldIntegrationStopsOnlyTheStepsThatSendThroughIt(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
 			makeUnusable(env)
-			runID := enrollVia(t, env, fixtures.AutomationJobsEmailsThenTagID, fixtures.ContactAliceID)
+			runID := int64(fixtures.AutomationRunJobsEmailsThenTagAliceID)
+			queueStep(t, env, runID)
 			fs := &fakeSender{}
 			var through []int64
 			mod := stepperOf(env, recordingSenders(fs, &through))

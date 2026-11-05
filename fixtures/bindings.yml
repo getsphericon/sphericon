@@ -30,3 +30,34 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Duff (workspace 94): ContactDuffTwoChats in two chats of its bot, ContactDuffOneChat in one.
+- id: 7700
+  integration_id: 7700
+  channel: telegram
+  destination: '77001'
+  chat_id: '77001'
+  contact_id: 7711
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7701
+  integration_id: 7700
+  channel: telegram
+  destination: '77002'
+  chat_id: '77002'
+  contact_id: 7711
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7702
+  integration_id: 7700
+  channel: telegram
+  destination: '77003'
+  chat_id: '77003'
+  contact_id: 7712
+  bound_at: '2026-01-01 00:00:00'
+  workspace_id: 94
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

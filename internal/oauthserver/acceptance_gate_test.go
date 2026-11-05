@@ -15,7 +15,7 @@ import (
 )
 
 // The acceptance gate on a User's Connections (ADR 0062): once the fixture terms are in effect,
-// MemberMary, who accepted only their stale version, is gated, and a Connection acts as her.
+// Vehement's member Mel, who has accepted none of them, is gated, and her Connection acts as her.
 
 // listContacts is the answer of /api to a contacts list on the bearer.
 func listContacts(t *testing.T, env *testhelper.TestEnv, bearer string) externalapi.ContactsListRes {
@@ -44,11 +44,10 @@ func isAcceptancePending(res externalapi.ContactsListRes) bool {
 
 func TestAConnectionOfAGatedUserIsRefusedWithAcceptancePending(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	api := listContacts(t, env, tok.AccessToken)
-	status, code := mcpRefusal(t, env, tok.AccessToken)
+	api := listContacts(t, env, melsConnection)
+	status, code := mcpRefusal(t, env, melsConnection)
 
 	assert.Truef(t, isAcceptancePending(api), "got %#v", api)
 	assert.Equal(t, http.StatusForbidden, status)
@@ -57,18 +56,17 @@ func TestAConnectionOfAGatedUserIsRefusedWithAcceptancePending(t *testing.T) {
 
 func TestAConnectionWorksAgainOnceItsUserAccepts(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	refused := listContacts(t, env, tok.AccessToken)
+	refused := listContacts(t, env, melsConnection)
 	require.Truef(t, isAcceptancePending(refused), "refused while the terms are pending, got %#v", refused)
 
-	accepted, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteUserAcceptPending(t.Context(), &siteapi.SiteAcceptPendingInput{
+	accepted, err := env.SiteActor(t, fixtures.VehementMemberMelEmail).SiteUserAcceptPending(t.Context(), &siteapi.SiteAcceptPendingInput{
 		Items: []siteapi.SiteAcceptance{{Key: fixtures.ServiceTermsKey, Version: fixtures.ServiceTermsCurrentLabel}},
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteUserResource{}, accepted)
-	api := listContacts(t, env, tok.AccessToken)
-	status := mcpStatus(t, env, tok.AccessToken)
+	api := listContacts(t, env, melsConnection)
+	status := mcpStatus(t, env, melsConnection)
 
 	assert.IsType(t, &externalapi.ContactsListOK{}, api)
 	assert.NotEqual(t, http.StatusForbidden, status)
@@ -77,11 +75,10 @@ func TestAConnectionWorksAgainOnceItsUserAccepts(t *testing.T) {
 // The Workspace's API token is no User's (ADR 0061): it keeps working while a member is gated.
 func TestAnAPITokenOfTheWorkspaceIsNeverGated(t *testing.T) {
 	env := testhelper.Setup(t)
-	connection := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	refused := listContacts(t, env, connection.AccessToken)
+	refused := listContacts(t, env, melsConnection)
 	require.Truef(t, isAcceptancePending(refused), "the member is gated, got %#v", refused)
-	bearer := env.ScopedBearer(t, "contacts:read")
+	bearer := env.ScopedBearerFor(t, fixtures.VehementID, "contacts:read")
 
 	api := listContacts(t, env, bearer)
 	status := mcpStatus(t, env, bearer)

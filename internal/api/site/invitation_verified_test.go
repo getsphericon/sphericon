@@ -69,15 +69,14 @@ func TestAnInvitationForAVerifiedUserAcceptsTheirSessionAndReadsNoPassword(t *te
 
 func TestAnInvitationForAnUnverifiedAddressNeedsNoSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	signUpLink(t, env, "Squatter", fixtures.InvitationAcmeVictimEmail)
-	token := fixtures.InvitationAcmeVictimToken
+	token := fixtures.InvitationAcmeFreshUnverifiedToken // to FreshUnverifiedUser
 
 	// A signed-in stranger does not get in the way of the invitee's own accept.
 	res := acceptInvitation(t, env.SiteActor(t, fixtures.OwnerJaneEmail), token, &siteapi.SiteAcceptInvitationInput{
 		Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1"),
 	})
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
-	assert.True(t, isMemberOfAcme(t, env, fixtures.InvitationAcmeVictimEmail))
+	assert.True(t, isMemberOfAcme(t, env, fixtures.FreshUnverifiedUserEmail))
 }
 
 func TestAStaleSessionDoesNotBlockAnInvitationForAnUnverifiedAddress(t *testing.T) {

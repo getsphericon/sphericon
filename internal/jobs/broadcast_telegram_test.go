@@ -64,7 +64,7 @@ func TestATelegramBroadcastFreezesOnlyBoundContactsAndSendsOncePerBinding(t *tes
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	bot := env.AcmeTelegram(t)
-	other := env.ConnectTelegram(t, 7402, "acme_other_bot")
+	other := env.AcmeSecondTelegram(t)
 	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600001, 1)
 	env.BindTelegram(t, bot, fixtures.ContactAliceID, 600002, 2)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 600003, 3)

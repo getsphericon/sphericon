@@ -214,23 +214,22 @@ func TestSigninTheVisitorSeesTheSameWhetherOrNotTheAddressExisted(t *testing.T) 
 
 func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testing.T) {
 	env, fake := signinEnv(t)
-	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
-	squatter := userByEmail(t, env, "victim@gmail.com")
+	squatter := userByEmail(t, env, fixtures.VictimGmailSquatterEmail)
 	require.Nil(t, squatter.EmailVerifiedAt)
-	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
+	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: fixtures.VictimGmailSquatterEmail, EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
 
 	resp := signInWith(t, fake, b, victim, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
 	assert.Equal(t, http.StatusOK, meStatus(t, b))
-	after := userByEmail(t, env, "victim@gmail.com")
+	after := userByEmail(t, env, fixtures.VictimGmailSquatterEmail)
 	assert.Equal(t, squatter.ID, after.ID, "the same row, no duplicate")
 	assert.NotNil(t, after.EmailVerifiedAt, "the provider's proof makes it Verified")
 	assert.NotNil(t, after.EmailProvenAt)
 	assert.Empty(t, after.PasswordHash, "the stranger's pending password is gone")
 	assert.Equal(t, "Victim", after.Name)
-	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "victim@gmail.com", "squatter-password-1"))
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.VictimGmailSquatterEmail, fixtures.VictimGmailSquatterPassword))
 	workspaces, err := after.QueryMemberships().Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, workspaces, "the first Workspace is made as a verify link makes it")
@@ -238,20 +237,18 @@ func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testi
 
 func TestSigninATakeoverWithANameNoUserMayHaveKeepsTheRegisteredName(t *testing.T) {
 	env, fake := signinEnv(t)
-	signUpPending(t, env, "Victor", "victim@gmail.com", "squatter-password-1")
-	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim\nBcc: all@example.com"}
+	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: fixtures.VictimGmailSquatterEmail, EmailVerified: true, Name: "Victim\nBcc: all@example.com"}
 
 	resp := signInWith(t, fake, env.NewRedirectBrowser(t), victim, "")
 
 	assert.Equal(t, "/", resp.Header.Get("Location"))
-	assert.Equal(t, "Victor", userByEmail(t, env, "victim@gmail.com").Name)
+	assert.Equal(t, fixtures.VictimGmailSquatterName, userByEmail(t, env, fixtures.VictimGmailSquatterEmail).Name)
 }
 
 func TestSigninATakenOverSignUpKeepsThePendingInvitation(t *testing.T) {
 	env, fake := signinEnv(t)
-	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
-	token := fixtures.InvitationAcmeVictimGmailToken // to victim@gmail.com
-	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
+	token := fixtures.InvitationAcmeVictimGmailToken // to the squatted address
+	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: fixtures.VictimGmailSquatterEmail, EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
 	signInWith(t, fake, b, victim, "")
 
@@ -260,15 +257,14 @@ func TestSigninATakenOverSignUpKeepsThePendingInvitation(t *testing.T) {
 	require.NoError(t, err)
 	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
 	require.Truef(t, ok, "got %T", lookup)
-	assert.Equal(t, "victim@gmail.com", string(found.Email))
+	assert.Equal(t, fixtures.VictimGmailSquatterEmail, string(found.Email))
 }
 
 func TestSigninATakeoverOfAnUnverifiedAddressSendsNoNotice(t *testing.T) {
 	env, fake := signinEnv(t)
-	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
 	before := len(env.SystemMail.Messages())
 
-	signInWith(t, fake, env.NewRedirectBrowser(t), testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}, "")
+	signInWith(t, fake, env.NewRedirectBrowser(t), testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: fixtures.VictimGmailSquatterEmail, EmailVerified: true, Name: "Victim"}, "")
 
 	assert.Len(t, env.SystemMail.Messages(), before, "the address's owner is the one signing in")
 }

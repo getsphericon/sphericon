@@ -199,3 +199,51 @@
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Quahog (workspace 92): Firings of RuleQuahogHook for Quinn on a rule_http Event.
+# Its Actions still to run.
+- id: 7650 # fixture: RuleFiringQuahogHookToRun
+  rule_id: 7650
+  version_id: 7650
+  contact_id: 7650
+  action: rule_http
+  source_id: 'fixture:quahog-hook-7650'
+  results: '[]'
+  workspace_id: 92
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# The Actions job ran: the call is Pending on its own job, the tag applied.
+- id: 7651 # fixture: RuleFiringQuahogHookPending
+  rule_id: 7650
+  version_id: 7650
+  contact_id: 7650
+  action: rule_http
+  source_id: 'fixture:quahog-hook-7651'
+  results: '[{"type":"http","status":"pending"},{"type":"apply_tag","status":"succeeded"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# As RuleFiringQuahogHookPending, on an Event with a plan to put in the body.
+- id: 7652 # fixture: RuleFiringQuahogHookEventPending
+  rule_id: 7650
+  version_id: 7651
+  contact_id: 7650
+  action: rule_http
+  properties: '{"plan":"pro \"plus\""}'
+  source_id: 'fixture:quahog-hook-7652'
+  results: '[{"type":"http","status":"pending"},{"type":"apply_tag","status":"succeeded"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+# As RuleFiringQuahogHookPending, on an Event whose n is not a number.
+- id: 7653 # fixture: RuleFiringQuahogHookNumberPending
+  rule_id: 7650
+  version_id: 7652
+  contact_id: 7650
+  action: rule_http
+  properties: '{"n":"not a number"}'
+  source_id: 'fixture:quahog-hook-7653'
+  results: '[{"type":"http","status":"pending"},{"type":"apply_tag","status":"succeeded"}]'
+  workspace_id: 92
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

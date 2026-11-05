@@ -1543,3 +1543,101 @@
     created_at: '{{daysAgo 9}}',
     updated_at: '{{hoursAgo 1}}',
   }
+
+# Jobs emails then tag (5568), at its first step: Alice, who can be emailed, and three Contacts
+# who cannot (no address, suppressed, unsubscribed from everything). A test queues the step.
+- id: 7800 # fixture: AutomationRunJobsEmailsThenTagAlice
+  automation_id: 5568
+  version_id: 5568
+  contact_id: 1
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7801 # fixture: AutomationRunJobsEmailsThenTagNoEmail
+  automation_id: 5568
+  version_id: 5568
+  contact_id: 5560
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7802 # fixture: AutomationRunJobsEmailsThenTagComplained
+  automation_id: 5568
+  version_id: 5568
+  contact_id: 109
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7803 # fixture: AutomationRunJobsEmailsThenTagUnsubscribedEverything
+  automation_id: 5568
+  version_id: 5568
+  contact_id: 121
+  workspace_id: 1
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
+# Quahog (workspace 92): Quinn's Enrollments in its HTTP Automations, on the HTTP step. The one in
+# AutomationQuahogHookEvent began on the http_demo Event and carries it.
+- id: 7650 # fixture: AutomationRunQuahogHookSigned
+  automation_id: 7650
+  version_id: 7650
+  contact_id: 7650
+  workspace_id: 92
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7651 # fixture: AutomationRunQuahogHookEvent
+  automation_id: 7651
+  version_id: 7651
+  contact_id: 7650
+  workspace_id: 92
+  status: active
+  current_step: 0
+  event_action: http_demo
+  event_properties: '{"amount":"€49","plan":"<b>Pro</b> \"annual\""}'
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7652 # fixture: AutomationRunQuahogHookUnsigned
+  automation_id: 7652
+  version_id: 7652
+  contact_id: 7650
+  workspace_id: 92
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7653 # fixture: AutomationRunQuahogHook
+  automation_id: 7653
+  version_id: 7653
+  contact_id: 7650
+  workspace_id: 92
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7654 # fixture: AutomationRunQuahogHookNumber
+  automation_id: 7654
+  version_id: 7654
+  contact_id: 7650
+  workspace_id: 92
+  status: active
+  current_step: 0
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

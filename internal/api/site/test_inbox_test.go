@@ -246,24 +246,20 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	assert.NotEqual(t, broadcast.StatusSent, status, "held, not sent")
 }
 
+// Globex's Test inbox as its default: its suppressed bounce@globex.test is not sent to, and once
+// Globex is suspended nothing is.
 func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	inbox := createInbox(t, c, fixtures.AcmePublicID).(*siteapi.SiteIntegrationResource)
-	makeDefault(t, c, fixtures.AcmePublicID, int64(inbox.ID))
-	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(ctx)
-	env.SuppressDestination(ctx, "blocked@example.com")
-	external := env.ExternalScoped(t, "emails:send")
-	template := externalapi.EntityId(fixtures.TemplateWithVariablesID)
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	makeDefault(t, jane, fixtures.GlobexPublicID, fixtures.IntegrationGlobexInboxID)
+	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 
-	skipped, err := external.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{TemplateId: template, Destination: "blocked@example.com"}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
+	skipped := sendGlobexTransactional(t, env, fixtures.SuppressionGlobexDestination)
+	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.GlobexID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
 	require.True(t, suspended)
-	frozen, err := external.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{TemplateId: template, Destination: "free@example.com"}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
+	frozen := sendGlobexTransactional(t, env, "free@example.com")
 
 	suppressedResult, ok := skipped.(*externalapi.SendTransactionalEmailResponse)
 	require.Truef(t, ok, "got %T", skipped)
@@ -271,7 +267,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 	heldResult, ok := frozen.(*externalapi.EmailsSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", frozen)
 	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
-	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(ctx)
+	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }
 

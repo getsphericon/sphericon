@@ -18,7 +18,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -311,8 +310,7 @@ func TestEveryExportStreamOfASuspendedWorkspaceStillReads(t *testing.T) {
 	for _, stream := range allExportStreams {
 		t.Run(stream.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, stream.workspaceID, suspension.CLI, "abuse")
-			require.NoError(t, err)
+			env.SuspendWorkspace(t.Context(), stream.workspaceID, time.Now())
 
 			page := readExportStream(t, exportClient(t, env, stream.workspaceID), stream, "", 0)
 

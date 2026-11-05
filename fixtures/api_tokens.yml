@@ -115,3 +115,82 @@
   workspace_id: 20
   created_at: '{{hoursAgo 24}}'
   updated_at: '{{hoursAgo 24}}'
+
+# Personal tokens (ADR 0061): an API token of a Membership, minted on /site, with no client. Mel's
+# and Ada's in Vehement (workspace 91), Rita's in Umbrella (workspace 4, the Two-factor
+# requirement). The token is credentials.TokenValue(<Name>Prefix, <Name>Secret).
+- id: 7600 # fixture: VehementMemberPersonalToken
+  name: import script
+  prefix: vehmelpers01
+  secret_hash: '{{secretHash "vehement-member-personal-secret-00000000"}}'
+  scopes: '["contacts:read","contacts:write"]'
+  workspace_id: 91
+  membership_id: 7602
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7601 # fixture: VehementAdminPersonalToken
+  name: admin script
+  prefix: vehadapers01
+  secret_hash: '{{secretHash "vehement-admin-personal-secret-000000000"}}'
+  scopes: '["webhooks:read","contacts:read"]'
+  workspace_id: 91
+  membership_id: 7601
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7602 # fixture: UmbrellaRitaPersonalToken
+  name: import script
+  prefix: umbritapers1
+  secret_hash: '{{secretHash "umbrella-rita-personal-secret-0000000000"}}'
+  scopes: '["contacts:read"]'
+  workspace_id: 4
+  membership_id: 10
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Connections (ADR 0061): an API token of a Membership that the fixture OAuth client (id 1) was
+# approved for, named after it and expiring like an issued access token. Its refresh tokens are in
+# oauth_refresh_tokens.yml. Val's, Ada's and Mel's in Vehement, Rita's in Umbrella.
+- id: 7610 # fixture: VehementOwnerConnection
+  name: Fixture Connector
+  prefix: vehvalconn01
+  secret_hash: '{{secretHash "vehement-owner-connection-secret-0000000"}}'
+  scopes: '["contacts:read","segments:read"]'
+  workspace_id: 91
+  membership_id: 7600
+  oauth_client_id: 1
+  expires_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7611 # fixture: VehementAdminConnection
+  name: Fixture Connector
+  prefix: vehadaconn01
+  secret_hash: '{{secretHash "vehement-admin-connection-secret-0000000"}}'
+  scopes: '["webhooks:read","contacts:export","suppressions:write"]'
+  workspace_id: 91
+  membership_id: 7601
+  oauth_client_id: 1
+  expires_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7612 # fixture: VehementMemberConnection
+  name: Fixture Connector
+  prefix: vehmelconn01
+  secret_hash: '{{secretHash "vehement-member-connection-secret-000000"}}'
+  scopes: '["contacts:read","contacts:write"]'
+  workspace_id: 91
+  membership_id: 7602
+  oauth_client_id: 1
+  expires_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7613 # fixture: UmbrellaRitaConnection
+  name: Fixture Connector
+  prefix: umbritaconn1
+  secret_hash: '{{secretHash "umbrella-rita-connection-secret-00000000"}}'
+  scopes: '["contacts:read"]'
+  workspace_id: 4
+  membership_id: 10
+  oauth_client_id: 1
+  expires_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

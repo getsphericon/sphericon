@@ -15,7 +15,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -33,55 +32,28 @@ func recoverAfterFirstCall(rcv *hookReceiver) {
 	}
 }
 
-const testSigner = "dGVzdC1zZWNyZXQ="
-
 func ruleRunners(env *testhelper.TestEnv) rules.ActionRunners {
 	return jobs.RuleActionRunners(newMod(env, nil), env.Bus)
 }
 
-// httpRuleHarness fires a Rule that calls a receiver and then applies a tag, runs the Actions job,
-// and works the call's job the way river would.
+// httpRuleHarness works the pending call of a fixture Firing of RuleQuahogHook, whose Actions
+// call the receiver and then apply a tag, the way river would.
 type httpRuleHarness struct {
-	env    *testhelper.TestEnv
-	rcv    *hookReceiver
-	firing *ent.RuleFiring
-	clock  time.Time
+	env      *testhelper.TestEnv
+	rcv      *hookReceiver
+	firingID int64
+	clock    time.Time
 }
 
-// fireHTTPRule creates and publishes the Rule, fires it for Bob with the Event's properties and
-// runs its Actions job, which leaves the call Pending on a job of its own.
-func fireHTTPRule(t *testing.T, env *testhelper.TestEnv, body string, props map[string]any) *httpRuleHarness {
+// pendingHTTPRule is the harness of the Firing, whose Actions job has run: the call is Pending on
+// a job of its own.
+func pendingHTTPRule(t *testing.T, env *testhelper.TestEnv, firingID int64) *httpRuleHarness {
 	t.Helper()
-	ctx := context.Background()
-	rcv := newHookReceiver(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	m := rules.New(env.Cipher, env.Bus)
-	r, err := m.Create(ctx, s, rules.CreateInput{
-		Name:          "Call the hook",
-		TriggerEvents: []string{"rule_http"},
-		Actions: []rules.Action{
-			{
-				Type: rules.ActionHTTP, URL: rcv.srv.URL, Body: body, Secret: testSigner,
-				Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer hunter2"}},
-			},
-			{Type: rules.ActionApplyTag, Tag: "after-hook"},
-		},
-	})
-	require.NoError(t, err)
-	_, err = m.Publish(ctx, s, r.ID)
-	require.NoError(t, err)
-	fired, err := m.Evaluate(ctx, s, rules.Event{
-		ContactID: fixtures.ContactBobID, Action: "rule_http", SourceID: "evt-http",
-		RecordedAt: time.Now(), Properties: props,
-	})
-	require.NoError(t, err)
-	require.Len(t, fired, 1)
-	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, ruleRunners(env)))
-	return &httpRuleHarness{env: env, rcv: rcv, firing: fired[0], clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
+	return &httpRuleHarness{env: env, rcv: newHookReceiver(t), firingID: firingID, clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
 }
 
 func (h *httpRuleHarness) reload() *ent.RuleFiring {
-	return h.env.DB.RuleFiring.GetX(context.Background(), h.firing.ID)
+	return h.env.DB.RuleFiring.GetX(context.Background(), h.firingID)
 }
 
 func (h *httpRuleHarness) worker(client webhook.Doer) *jobs.RunRuleHTTPWorker {
@@ -89,14 +61,14 @@ func (h *httpRuleHarness) worker(client webhook.Doer) *jobs.RunRuleHTTPWorker {
 }
 
 func (h *httpRuleHarness) allowing() *jobs.RunRuleHTTPWorker {
-	return h.worker(webhook.NewClientAllowing(2*time.Second, h.rcv.allow))
+	return h.worker(h.rcv.routed(webhook.NewClientAllowing(2*time.Second, h.rcv.allow)))
 }
 
 // attempt works the call's job as river's attempt-th try; the last one is the job's MaxAttempts.
 func (h *httpRuleHarness) attempt(w *jobs.RunRuleHTTPWorker, attempt int) error {
 	return w.Work(context.Background(), &river.Job[jobs.RunRuleHTTPArgs]{
 		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: jobs.RunRuleHTTPArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
-		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firing.ID},
+		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firingID},
 	})
 }
 
@@ -104,30 +76,32 @@ func (h *httpRuleHarness) lastAttempt() int { return jobs.RunRuleHTTPArgs{}.Inse
 
 func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	env := testhelper.Setup(t)
+	rcv := newHookReceiver(t)
+	quahog := env.DB.Scoped(fixtures.QuahogID)
 
-	h := fireHTTPRule(t, env, `{}`, nil)
+	require.NoError(t, rules.New(env.Cipher, env.Bus).RunActions(context.Background(), quahog, fixtures.RuleFiringQuahogHookToRunID, ruleRunners(env)))
 
-	f := h.reload()
+	f := env.DB.RuleFiring.GetX(context.Background(), fixtures.RuleFiringQuahogHookToRunID)
 	results := resultsOf(t, f)
 	require.Len(t, results, 2)
 	assert.Equal(t, rules.Result{Type: rules.ActionHTTP, Status: rules.Pending}, results[0])
 	assert.Equal(t, rules.Succeeded, results[1].Status, "the next Action does not wait for the call")
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
-	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactBobID))
-	assert.Empty(t, h.rcv.received(), "the Actions job makes no call")
-	assert.Equal(t, []map[string]any{{"firing_id": float64(h.firing.ID), "index": float64(0)}}, env.JobsOf(t, jobs.RunRuleHTTPArgs{}.Kind()))
+	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
+	assert.Empty(t, rcv.received(), "the Actions job makes no call")
+	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0)}}, env.JobsOf(t, jobs.RunRuleHTTPArgs{}.Kind()))
 }
 
 func TestAnHTTPActionPostsTheContactAndTheEventAndFinishesTheFiring(t *testing.T) {
 	env := testhelper.Setup(t)
-	body := `{"email":"{{ email }}","event":"{{ event.action }}","plan":"{{ event.properties.plan }}","missing":"[{{ event.properties.nope }}]"}`
-	h := fireHTTPRule(t, env, body, map[string]any{"plan": `pro "plus"`})
+	// The body puts in the Contact's email, the Event's action, its plan and a property it lacks.
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookEventPendingID)
 
 	require.NoError(t, h.attempt(h.allowing(), 1))
 
 	calls := h.rcv.received()
 	require.Len(t, calls, 1)
-	assert.JSONEq(t, `{"email":"bob@example.com","event":"rule_http","plan":"pro \"plus\"","missing":"[]"}`, calls[0].body)
+	assert.JSONEq(t, `{"email":"`+fixtures.ContactQuahogQuinnEmail+`","event":"rule_http","plan":"pro \"plus\"","missing":"[]"}`, calls[0].body)
 	assert.Equal(t, "Bearer hunter2", calls[0].header.Get("Authorization"))
 	assert.NotEmpty(t, calls[0].header.Get(standardwebhooks.HeaderWebhookSignature), "a secret signs the call")
 	f := h.reload()
@@ -140,7 +114,7 @@ func TestAnHTTPActionPostsTheContactAndTheEventAndFinishesTheFiring(t *testing.T
 
 func TestAnHTTPActionRetriesAServerErrorWithoutRecordingIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	recoverAfterFirstCall(h.rcv)
 	w := h.allowing()
 
@@ -161,7 +135,7 @@ func TestAnHTTPActionRetriesAServerErrorWithoutRecordingIt(t *testing.T) {
 
 func TestAnHTTPActionThatKeepsFailingIsRecordedFailedWithTheStatusAndTheAnswerOnItsLastAttempt(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	h.rcv.respond(http.StatusInternalServerError, "boom", "")
 	w := h.allowing()
 
@@ -178,7 +152,7 @@ func TestAnHTTPActionThatKeepsFailingIsRecordedFailedWithTheStatusAndTheAnswerOn
 
 func TestAnHTTPActionIsNotRetriedOnAClientError(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	h.rcv.respond(http.StatusNotFound, "gone", "")
 
 	require.NoError(t, h.attempt(h.allowing(), 1), "a 404 would answer the same: the job ends")
@@ -191,7 +165,7 @@ func TestAnHTTPActionIsNotRetriedOnAClientError(t *testing.T) {
 
 func TestAnHTTPActionKeepsOnlyTheFirstKiBOfTheAnswer(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	h.rcv.respond(http.StatusBadRequest, strings.Repeat("x", 5000), "")
 
 	require.NoError(t, h.attempt(h.allowing(), h.lastAttempt()))
@@ -201,23 +175,23 @@ func TestAnHTTPActionKeepsOnlyTheFirstKiBOfTheAnswer(t *testing.T) {
 
 func TestAnHTTPActionDoesNotCallABlockedAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 
 	// The Instance allowlist does not name the receiver's loopback address, and no retry opens it.
-	require.NoError(t, h.attempt(h.worker(webhook.NewClient(2*time.Second)), 1))
+	require.NoError(t, h.attempt(h.worker(h.rcv.routed(webhook.NewClient(2*time.Second))), 1))
 
 	assert.Empty(t, h.rcv.received())
 	results := resultsOf(t, h.reload())
 	assert.Equal(t, rules.Failed, results[0].Status)
 	assert.Equal(t, string(webhook.KindBlockedAddress), results[0].Detail)
-	assert.NotContains(t, results[0].Detail, h.rcv.srv.URL, "the URL is a secret")
+	assert.NotContains(t, results[0].Detail, fixtureHookHost, "the URL is a secret")
+	assert.NotContains(t, results[0].Detail, h.rcv.srv.URL)
 }
 
 func TestAnHTTPActionWithABodyThatDoesNotRenderFailsWithoutCalling(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Valid as saved (no Contact, no Event), invalid once the property is not a number.
-	body := `{"n":{{ event.properties.n | default: 0 }}}`
-	h := fireHTTPRule(t, env, body, map[string]any{"n": "not a number"})
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookNumberPendingID)
 
 	require.NoError(t, h.attempt(h.allowing(), 1))
 
@@ -229,7 +203,7 @@ func TestAnHTTPActionWithABodyThatDoesNotRenderFailsWithoutCalling(t *testing.T)
 
 func TestAnHTTPActionRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	h.rcv.respond(http.StatusTooManyRequests, "slow down", "120")
 
 	// Even the last attempt is not failed by a 429: it snoozes.
@@ -243,14 +217,14 @@ func TestAnHTTPActionRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 
 func TestAnHTTPActionRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	h.rcv.respond(http.StatusTooManyRequests, "", "")
 	w := h.allowing()
 	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
 
 	err := w.Work(context.Background(), &river.Job[jobs.RunRuleHTTPArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
-		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firing.ID},
+		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firingID},
 	})
 
 	require.NoError(t, err)
@@ -261,7 +235,7 @@ func TestAnHTTPActionRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 
 func TestAnHTTPActionAlreadyRecordedIsNotCalledAgain(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 	w := h.allowing()
 	require.NoError(t, h.attempt(w, 1))
 
@@ -272,8 +246,8 @@ func TestAnHTTPActionAlreadyRecordedIsNotCalledAgain(t *testing.T) {
 
 func TestAnHTTPActionOfAnErasedFiringCallsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
-	env.DB.RuleFiring.DeleteOneID(h.firing.ID).ExecX(context.Background())
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
+	env.DB.RuleFiring.DeleteOneID(h.firingID).ExecX(context.Background())
 
 	require.NoError(t, h.attempt(h.allowing(), 1))
 
@@ -282,7 +256,7 @@ func TestAnHTTPActionOfAnErasedFiringCallsNothing(t *testing.T) {
 
 func TestAnHTTPActionRunsOnAQueueOfItsOwnWithTheRetryHorizonOfAHook(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := fireHTTPRule(t, env, `{}`, nil)
+	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 
 	// The Actions job queues the call with the options its args declare.
 	opts := jobs.RunRuleHTTPArgs{}.InsertOpts()

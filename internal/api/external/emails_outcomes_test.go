@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,9 +51,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
 	tmpl := variablesTemplate(env.DB)
-	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
-	require.NoError(t, err)
-	require.True(t, suspended)
+	env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	res, err := c.EmailsSend(ctx, &externalapi.SendTransactionalEmailInput{
 		TemplateId: templateID(tmpl), Destination: "held@example.com",

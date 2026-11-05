@@ -11,7 +11,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -107,21 +106,19 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 	}
 }
 
-// A Staff member's id cannot be probed through /api either.
+// A Staff member's id cannot be probed through /api either: Initech's log holds an entry by a
+// Staff member (InitechAuditStaffSuspend).
 func TestExternalAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse")
-	require.NoError(t, err)
-	env.WorkEditionJobs(t)
-	c := env.ExternalScoped(t, "audit:read")
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "audit:read"))
 
 	count := func(p externalapi.AuditEntriesListParams) int {
 		res, err := c.AuditEntriesList(ctx, p)
 		require.NoError(t, err)
 		return len(res.(*externalapi.AuditEntryList).Items)
 	}
-	assert.Zero(t, count(externalapi.AuditEntriesListParams{ActorId: externalapi.NewOptString("op-42")}))
+	assert.Zero(t, count(externalapi.AuditEntriesListParams{ActorId: externalapi.NewOptString("op-fixture")}))
 	assert.Equal(t, 1, count(externalapi.AuditEntriesListParams{
 		ActorKind: externalapi.NewOptAuditActorKind(externalapi.AuditActorKindStaff), ActorId: externalapi.NewOptString("anything")}))
 }

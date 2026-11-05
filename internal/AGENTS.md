@@ -48,8 +48,9 @@ and the pending Outbound message are lapsed and stale, and `env.ExtendHold`, `en
 `env.ClaimRecipient`, `env.PlaceRecipient` (parked recipients), `env.SuppressDestination` and
 `env.UnsubscribeFromBroadcasts` (the lifted Suppression and a per-Automation opt-out) move them.
 A test that sends through Telegram or Twilio uses the fixture Integrations: `env.AcmeTelegram` and
-`env.AcmeTwilio` add their bot and account to the fakes. `ConnectTelegram` and `ConnectTwilio`
-connect one through the API, for a test of connecting or one that needs a second bot or an API key.
+`env.AcmeTwilio` add their bot and account to the fakes, and `env.AcmeSecondTelegram` a second bot
+of Acme for a test that needs two. `ConnectTwilio` connects an account through the API, for a test
+of connecting or one that needs another account or an API key.
 The `testwrites` analyzer reads the harness as it reads tests: a helper that creates a row names
 why no fixture can hold it, with the same `// test writes:` comment.
 

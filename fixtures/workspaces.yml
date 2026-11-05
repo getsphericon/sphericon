@@ -317,3 +317,36 @@
   collect_key: omck_test_virtucon_collect_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Duff: the site lists a test filters, kept off Acme so its lists and counts stay as they are: three
+# Contacts with countries and Tags, an Automation in each state, the Contacts whose custom fields
+# made its Custom fields (two Segments test them), and a Telegram bot with two bound Contacts.
+- id: 94 # fixture: Duff
+  name: Duff
+  public_id: DuffWs94
+  collect_key: omck_test_duff_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Krusty: SMS through a Twilio account of its own, kept off Acme's SMS audiences: a phone with no
+# consent, a confirmed one and one opted out, and a Segment of numbers, one of them confirmed.
+- id: 95 # fixture: Krusty
+  name: Krusty
+  public_id: KrstyW95
+  collect_key: omck_test_krusty_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Vehement: the Personal tokens and the Connections (ADR 0061) the token and OAuth tests use, of
+# its owner, admin and member, kept off Acme so its token lists and Connections stay as they are.
+- id: 91 # fixture: Vehement
+  name: Vehement
+  public_id: VhmntW91
+  collect_key: omck_test_vehement_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Quahog: the receiver tests of the HTTP Actions and steps (internal/jobs). Its Rule and
+# Automations call http://hooks.quahog.test/notify, a host the tests route to their receiver.
+- id: 92 # fixture: Quahog
+  name: Quahog
+  public_id: QuahgW92
+  collect_key: omck_test_quahog_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

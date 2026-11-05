@@ -18,27 +18,22 @@ func smsConsentOf(contactID int64) externalapi.SmsConsentsGetParams {
 
 // An API client (and so an agent over MCP) reads a Contact's SMS consent as the Contact card does:
 // the Confirmation with its provenance and evidence, then the opt-out that ends it (ADR 0077).
+// Krusty has a phone of each: no consent yet, a Confirmation, and an opt-out recorded by hand.
 func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.KrustyID, "contacts:read"))
 
-	before, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
+	before, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactKrustyTexterID))
 	require.NoError(t, err)
-	_, err = c.ConfirmationsCreate(ctx, smsConsent(fixtures.ContactTexterPhone))
+	confirmed, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactKrustyConfirmedID))
 	require.NoError(t, err)
-	confirmed, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
-	require.NoError(t, err)
-	_, err = c.UnsubscribesCreate(ctx, &externalapi.CreateUnsubscribeInput{
-		Channel: externalapi.NewOptConsentChannel(externalapi.ConsentChannelSMS), Destination: fixtures.ContactTexterPhone,
-	})
-	require.NoError(t, err)
-	stopped, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactTexterID))
+	stopped, err := c.SmsConsentsGet(ctx, smsConsentOf(fixtures.ContactKrustyOptedOutID))
 	require.NoError(t, err)
 
 	none, ok := before.(*externalapi.SmsConsent)
 	require.Truef(t, ok, "got %T", before)
-	assert.Equal(t, fixtures.ContactTexterPhone, none.Phone.Value)
+	assert.Equal(t, fixtures.ContactKrustyTexterPhone, none.Phone.Value)
 	assert.False(t, none.Confirmation.Set, "no consent yet")
 	assert.False(t, none.OptOut.Set, "no opt-out yet")
 
@@ -47,9 +42,9 @@ func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	require.True(t, consent.Confirmation.Set)
 	evidence := consent.Confirmation.Value
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, evidence.Provenance)
-	assert.Equal(t, "Yes, text me offers from Acme. Reply STOP to opt out.", evidence.Wording.Value)
+	assert.Equal(t, "Yes, text me offers from Krusty. Reply STOP to opt out.", evidence.Wording.Value)
 	assert.Equal(t, "checkout form", evidence.Source.Value)
-	assert.Equal(t, "Acme", evidence.Brand.Value)
+	assert.Equal(t, "Krusty", evidence.Brand.Value)
 	confirmedAt := time.Time(evidence.ConfirmedAt)
 	assert.False(t, confirmedAt.IsZero(), "when the number consented")
 
@@ -57,7 +52,7 @@ func TestAnAPIClientReadsAContactsSMSConfirmationAndOptOut(t *testing.T) {
 	require.Truef(t, ok, "got %T", stopped)
 	require.True(t, optedOut.OptOut.Set, "opted out")
 	assert.Equal(t, externalapi.OptOutViaManual, optedOut.OptOut.Value.Via)
-	assert.False(t, optedOut.Confirmation.Set, "the opt-out ends the consent")
+	assert.False(t, optedOut.Confirmation.Set, "the opt-out ended the consent")
 }
 
 func TestReadingSMSConsentNeedsContactsReadAndStaysInTheWorkspace(t *testing.T) {
