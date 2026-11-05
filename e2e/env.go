@@ -3,8 +3,8 @@
 // Package e2e is the end-to-end suite (ADR 0024): the whole application runs in the
 // test process on a real listener, a Workspace's SMTP Integration points at a Mailpit
 // started by the suite, everything is driven through the public HTTP API and the
-// result is observed only in the Mailpit inbox. Tests never read the database, the
-// outbox or an in-memory sender.
+// result is observed only in the Mailpit inbox and the test receivers. Tests never read the
+// database, the job queue or an in-memory sender.
 //
 // Scenarios are written as domain steps on a [Workspace] (ImportContacts,
 // SendBroadcast, Inbox.Wait ...); the HTTP transport stays inside this package, so a

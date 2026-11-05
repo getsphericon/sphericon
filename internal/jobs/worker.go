@@ -69,8 +69,6 @@ type Extension struct {
 
 // Retention groups the data-retention settings of the prune jobs.
 type Retention struct {
-	// OutboxFloor is the minimum age of a pruned outbox row.
-	OutboxFloor time.Duration
 	// Events is the age past which analytical Events are deleted (0 disables).
 	Events time.Duration
 	// UnverifiedUsers is the age past which an Unverified User with no Membership is
@@ -85,7 +83,7 @@ type Retention struct {
 // their own dependencies (ent client, sender resolver, secrets cipher, the
 // platform system sender). appURL is the public origin used to build the links
 // in account emails (reset/verify/change). outboundAllow is the Instance's internal allowlist for
-// webhook deliveries (ADR 0039). The instance-wide outbox and Event prunes
+// webhook deliveries (ADR 0039). The instance-wide Event prunes
 // run on entClient, the raw client; retention carries the prune settings. ext plugs in the
 // Enterprise Edition's workers and periodic jobs. driver is river's database/sql driver over the
 // job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
@@ -129,7 +127,6 @@ func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outb
 	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
 	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, catalog))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient))
-	river.AddWorker(workers, NewPruneOutboxWorker(entClient, retention.OutboxFloor))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(ranges))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, retention.Events))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, retention.CapturedMessages))
@@ -298,14 +295,6 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 			river.PeriodicInterval(secondFactorReminderInterval),
 			func() (river.JobArgs, *river.InsertOpts) {
 				return RemindSecondFactorArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
-		// Prune the domain-events outbox below the slowest consumer (ADR 0019).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(outboxPruneInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneOutboxArgs{}, nil
 			},
 			&river.PeriodicJobOpts{RunOnStart: true},
 		),

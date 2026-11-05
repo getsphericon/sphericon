@@ -6,7 +6,7 @@ GitHub API / npm on **2026-06-28** (push date, latest tag, archived flag, stars)
 Re-verify before adopting — these numbers age.
 
 Already in use (don't re-introduce; `go.mod` and `package.json` are the full list): ent, ogen,
-goverter, chi, pgx, goose, river, watermill (+ watermill-sql), samber/do, samber/lo, caarlos0/env,
+goverter, chi, pgx, goose, river, samber/do, samber/lo, caarlos0/env,
 go-playground/validator, qmuntal/stateless, go-pkgz/auth, go-webauthn, golang-jwt, tink-go,
 go-crypt/crypt, osteele/liquid, bluemonday, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
 goja, gojq, otter, golang.org/x/net, ariga.io/atlas (the diff library in cmd/db); frontend: React 19,
@@ -42,7 +42,7 @@ Build on what we already run:
 | -------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Delays / timers / step execution             | **river** (already in repo)             | ✅                                                                | durable retries/backoff/scheduling on Postgres                                                                                                                                                                                       |
 | State machine (trigger→state→action, guards) | **qmuntal/stateless**                   | ✅ 2026-02, v1.8.0, 1.4k★                                         | fresher than looplab/fsm (🟡 2025-05); we own persistence (ent)                                                                                                                                                                      |
-| Event-driven transitions                     | **watermill** (already)                 | ✅                                                                |                                                                                                                                                                                                                                      |
+| Event-driven transitions                     | **river** (already, ADR 0101)           | ✅                                                                |                                                                                                                                                                                                                                      |
 | Frontend visual builder                      | **@workflowbuilder/sdk** (synergycodes) | ✅ npm 2.1.0 (2026-06-16), repo push 2026-06-26, Apache-2.0, 241★ | React Flow (xyflow) based, custom node types + theming; emits a workflow graph we execute with our river engine (their reference backend is Temporal — we ignore that). New peer deps: xyflow, JSON Forms (i18next already present). |
 
 Temporal stays a roadmap escape hatch only if orchestration glue becomes the dominant

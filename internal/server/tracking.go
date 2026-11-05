@@ -220,7 +220,7 @@ func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target 
 // no figure.
 //
 // The record* helpers commit the rollup stamp and publish the engagement event in one
-// transaction (transactional outbox). Every hit is an Event of its own, with its URL for a
+// transaction. Every hit is an Event of its own, with its URL for a
 // click (ADR 0053): a repeated open or a second click is a real engagement, not a duplicate.
 // What is counted once is the Outbound message's stamp, a conditional UPDATE
 // (... WHERE opened_at IS NULL, in the outbound module) that backs the unique figures of

@@ -2,6 +2,7 @@ package testhelper
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -125,6 +126,20 @@ func (env *TestEnv) StoredEvents(t *testing.T, actions ...string) []*ent.Event {
 	rows, err := q.All(t.Context())
 	require.NoError(t, err)
 	return rows
+}
+
+// Publisher is a Publisher onto this test's bus, for a test that calls a function taking the
+// Publisher of a transaction it owns (automations.Enroll) without opening one: each event is
+// published in a bus transaction of its own, which rides the test's.
+func (env *TestEnv) Publisher() events.Publisher { return PublisherOn(env.Bus) }
+
+// PublisherOn is Publisher for a test that holds a bus of its own (one over a real database).
+func PublisherOn(bus *events.Bus) events.Publisher { return busPublisher{bus: bus} }
+
+type busPublisher struct{ bus *events.Bus }
+
+func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error { return pub.Publish(ctx, ev) })
 }
 
 // BusOn is the application's event bus over a database a test writes to for real (RealDB): a

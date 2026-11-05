@@ -84,12 +84,6 @@ func eraseFirings(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgin
 	return rules.EraseFirings(ctx, s, t.ContactID)
 }
 
-// purgeOutbox deletes the domain-event outbox rows that name the subject; the bus is the
-// only owner of that table, and the purge shares Erasure's transaction.
-func purgeOutbox(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
-	return purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
-}
-
 // purgeEventJobs deletes the queued event consumer jobs whose envelope names the subject; the
 // bus inserted them, and the purge shares Erasure's transaction.
 func purgeEventJobs(ctx context.Context, s *ent.Scoped, t *Target, purger events.PurgingPublisher) error {
@@ -226,7 +220,7 @@ func eraseEvents(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purging
 		}
 	}
 	// An SMS delivery report's source id is the provider's key of the report (ingest.Tx.DedupKey),
-	// which names the message in Twilio's log; the dedupe it served is over once the outbox is purged.
+	// which names the message in Twilio's log; once the Event is anonymized it identifies no repeat.
 	for _, chunk := range lo.Chunk(reported, idChunk) {
 		if _, err := s.Event().Update().Where(event.IDIn(chunk...)).ClearSourceID().Save(ctx); err != nil {
 			return err

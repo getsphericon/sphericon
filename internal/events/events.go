@@ -1,6 +1,6 @@
 // Package events is the internal domain-event system: a domain event is published
-// once, inside the same transaction that commits the state change (transactional
-// outbox), and fanned out to independent subscribers over watermill. See
+// once, inside the same transaction that commits the state change, which stores its
+// Event row and inserts one River job for every consumer that wants it (ADR 0101). See
 // docs/design/domain-events.md.
 //
 // Two categories of events, never conflated:
@@ -10,8 +10,8 @@
 //     to us, stored as-is. Ingesting one is itself OUR typed event, CollectedEvent,
 //     whose body carries the user's action + properties verbatim.
 //
-// On the wire the envelope carries the typed event as Data (json); subscribers
-// decode it back into the concrete type via the name registry and call Project().
+// An event job carries the envelope, with the typed event as Data (json); a consumer
+// decodes it back into the concrete type via the name registry and calls Project().
 package events
 
 import (
@@ -26,10 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
-
-// TopicDomainEvents is the single watermill topic all domain events flow through.
-// watermill-sql maps it to "watermill_domain_events", which is the outbox table.
-const TopicDomainEvents = "domain_events"
 
 // Bus event names — the stable type discriminators (registry keys). These are
 // OURS and finite. A customer's action name is NOT one of these; it lives inside
@@ -149,7 +145,7 @@ const (
 // Envelope is the generic bus message. It carries transport metadata plus the
 // typed event as Data; subscribers decode Data via the registry.
 type Envelope struct {
-	ID          string          `json:"id"`          // ULID; the watermill message id
+	ID          string          `json:"id"`          // ULID; the event's own id
 	Name        string          `json:"name"`        // bus event type (registry key)
 	Version     int             `json:"version"`     // schema version of Data
 	WorkspaceID int64           `json:"workspaceId"` // every event is workspace-scoped
@@ -157,7 +153,7 @@ type Envelope struct {
 	Data        json.RawMessage `json:"data"` // the typed event, marshaled
 	// DedupKey is the Event row's source id. Empty ⇒ use ID. An event with a
 	// natural upstream id (a provider notification) sets it so a redelivery is a
-	// repeat Publish drops, while ID stays a short ULID for the message-id column.
+	// repeat Publish drops, while ID stays the event's own ULID.
 	DedupKey string `json:"dedupKey,omitempty"`
 	// RecordedAt is when the event was published, as opposed to OccurredAt, which a client may
 	// backdate. Rules act only on events recorded after they were activated (ADR 0054).
@@ -335,7 +331,7 @@ type ContactErased struct {
 	// The keys Erasure matched on (ADR 0045), for the Erasures Export stream: the erased
 	// Contact's id (the row is gone, so the id points at nothing), the anonymous devices
 	// erased with it, and SHA-256 (hex) of the lowercased address and of the phone, computed
-	// before publishing so no address or phone reaches the outbox. Empty when there was none.
+	// before publishing so no address or phone reaches an event job. Empty when there was none.
 	ContactID  int64    `json:"contactId,omitempty"`
 	VisitorIDs []string `json:"visitorIds,omitempty"`
 	EmailHash  string   `json:"emailHash,omitempty"`

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func outboxCount(t *testing.T, env *testhelper.TestEnv) int {
+func publishedCount(t *testing.T, env *testhelper.TestEnv) int {
 	t.Helper()
 	return len(env.QueuedEnvelopes(t))
 }
@@ -30,18 +30,18 @@ func dataFor(t *testing.T, ev events.DomainEvent) []byte {
 	return b
 }
 
-// The load-bearing requirement: the state row and the outbox row commit together.
-func TestBusWithinTxCommitsStateAndOutbox(t *testing.T) {
+// The load-bearing requirement: the state row and the event commit together.
+func TestBusWithinTxCommitsStateAndEvent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	before := outboxCount(t, env)
+	before := publishedCount(t, env)
 
 	var created *ent.Contact
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// test writes: transaction commit and rollback through the bus is the subject
 		c, err := tx.Contact.Create().
 			SetWorkspaceID(fixtures.AcmeID).
-			SetEmail("outbox-commit@example.com").
+			SetEmail("bus-commit@example.com").
 			Save(ctx)
 		if err != nil {
 			return err
@@ -52,40 +52,40 @@ func TestBusWithinTxCommitsStateAndOutbox(t *testing.T) {
 	require.NoError(t, err)
 
 	// State row committed (visible through the shared txdb connection)...
-	got, err := env.DB.Contact.Query().Where(contact.Email("outbox-commit@example.com")).Only(ctx)
+	got, err := env.DB.Contact.Query().Where(contact.Email("bus-commit@example.com")).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, created.ID, got.ID)
-	// ...and exactly one outbox row was appended in the same transaction.
-	assert.Equal(t, before+1, outboxCount(t, env))
+	// ...and exactly one event was published in the same transaction.
+	assert.Equal(t, before+1, publishedCount(t, env))
 }
 
 // If the unit of work fails, neither the state nor the event is published.
 func TestBusWithinTxRollsBackBoth(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	before := outboxCount(t, env)
+	before := publishedCount(t, env)
 
 	boom := errors.New("boom")
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// test writes: transaction commit and rollback through the bus is the subject
 		if _, err := tx.Contact.Create().
 			SetWorkspaceID(fixtures.AcmeID).
-			SetEmail("outbox-rollback@example.com").
+			SetEmail("bus-rollback@example.com").
 			Save(ctx); err != nil {
 			return err
 		}
-		if err := pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, Email: "outbox-rollback@example.com"}); err != nil {
+		if err := pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, Email: "bus-rollback@example.com"}); err != nil {
 			return err
 		}
 		return boom
 	})
 	require.ErrorIs(t, err, boom)
 
-	exists, err := env.DB.Contact.Query().Where(contact.Email("outbox-rollback@example.com")).Exist(ctx)
+	exists, err := env.DB.Contact.Query().Where(contact.Email("bus-rollback@example.com")).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, exists, "contact must not be committed when the unit of work fails")
-	assert.Equal(t, before, outboxCount(t, env), "no event published on rollback")
-	stored, err := env.DB.Event.Query().Where(event.Email("outbox-rollback@example.com")).Exist(ctx)
+	assert.Equal(t, before, publishedCount(t, env), "no event published on rollback")
+	stored, err := env.DB.Event.Query().Where(event.Email("bus-rollback@example.com")).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, stored, "no Event stored on rollback")
 }
@@ -172,7 +172,7 @@ func TestDeletingAContactKeepsItsEvents(t *testing.T) {
 // error, and it is neither stored nor published again.
 func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	before := outboxCount(t, env)
+	before := publishedCount(t, env)
 	bounce := &events.EmailDelivery{
 		Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, Email: "repeat@example.com",
 		BounceKind: events.BounceKindHard, DedupID: "sns-1/repeat@example.com",
@@ -184,5 +184,5 @@ func TestARepeatedEventIsStoredAndPublishedOnce(t *testing.T) {
 	n, err := env.DB.Event.Query().Where(event.SourceID("sns-1/repeat@example.com")).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "one row")
-	assert.Equal(t, before+1, outboxCount(t, env), "published once")
+	assert.Equal(t, before+1, publishedCount(t, env), "published once")
 }

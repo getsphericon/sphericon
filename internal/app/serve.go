@@ -23,7 +23,7 @@ func Serve(ctx context.Context, env string) error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	// Install the configured logger process-wide; river, watermill, and every
+	// Install the configured logger process-wide; river and every
 	// request-scoped handler emit through it from here on.
 	logging.Setup(cfg)
 	build := buildinfo.Current()

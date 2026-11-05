@@ -5,53 +5,39 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	"github.com/ThreeDotsLabs/watermill"
-	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
+	"github.com/oklog/ulid/v2"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 	"github.com/getsphericon/sphericon/internal/userfeed"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
-	"github.com/oklog/ulid/v2"
 )
 
-// outboxSchema / outboxOffsets are the single source of truth for the
-// domain_events topic layout. The producer (WithinTx publisher) and the subscribers
-// (NewSubscriber) reference these, so the table the producer writes and the table the
-// consumers read cannot drift apart. The tables themselves come from the migrations
-// (migrations/*_domain_events_outbox.sql), which mirror this layout.
-var (
-	outboxSchema  = watermillsql.DefaultPostgreSQLSchema{}
-	outboxOffsets = watermillsql.DefaultPostgreSQLOffsetsAdapter{}
-)
-
-// Publisher publishes a typed domain event onto the bus. The implementation
-// handed to Bus.WithinTx writes into the same transaction as the state change,
-// so the event is published iff the state commits (transactional outbox).
+// Publisher publishes a typed domain event. The implementation handed to Bus.WithinTx writes in
+// the same transaction as the state change: the Event's row and its consumers' jobs, so the event
+// is published iff the state commits.
 type Publisher interface {
 	Publish(_ context.Context, ev DomainEvent) error
 }
 
-// Bus is the producer-side entry point. It owns the database pool and opens a
-// transaction per WithinTx call that carries both the ent writes and the outbox
-// insert.
+// Bus is the producer-side entry point. It owns the database pool and opens a transaction per
+// WithinTx call that carries the ent writes, the Event rows and the event jobs.
 type Bus struct {
-	db     *sql.DB
-	logger watermill.LoggerAdapter
-	hooks  []ent.Hook
-	jobs   JobQueue
+	db    *sql.DB
+	hooks []ent.Hook
+	jobs  JobQueue
 	// consumers are the consumers every Publish inserts jobs for (UseConsumers).
 	consumers []Consumer
 }
 
 // New builds a Bus over the application's database pool.
 func New(db *sql.DB) *Bus {
-	return &Bus{db: db, logger: watermill.NewSlogLogger(slog.Default())}
+	return &Bus{db: db}
 }
 
 // Use registers ent hooks on the transaction client of every later WithinTx, the way
@@ -62,10 +48,10 @@ func (b *Bus) Use(hooks ...ent.Hook) {
 	b.hooks = append(b.hooks, hooks...)
 }
 
-// WithinTx runs fn inside a single SQL transaction. The *ent.Client handed to fn
-// is bound to that transaction, and so is the Publisher: any event published via
-// pub is inserted into the outbox table in the same tx. The tx commits iff fn
-// returns nil — guaranteeing state and event commit (or roll back) atomically.
+// WithinTx runs fn inside a single SQL transaction. The *ent.Client handed to fn is bound to
+// that transaction, and so is the Publisher: what an event published via pub writes, its Event
+// row and its consumers' jobs, joins the transaction. The tx commits iff fn returns nil, so state
+// and events commit (or roll back) together.
 //
 // In tests this rides go-txdb's savepoint nesting, so the commit here is a
 // RELEASE SAVEPOINT contained by the per-test rollback.
@@ -87,23 +73,12 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 		}
 	}()
 
-	// ent client bound to the same *sql.Tx the outbox publisher uses.
+	// ent client bound to the *sql.Tx the event jobs are inserted on.
 	txClient := ent.NewClient(ent.Driver(newTxDriver(sqlTx)))
 	txClient.Use(emailcase.Hook, workspacefeed.Hook, userfeed.Hook, trackinghostlog.Hook)
 	txClient.Use(b.hooks...)
 
-	// watermill-sql forbids AutoInitializeSchema on a tx handle (a CREATE TABLE
-	// would implicitly commit). The outbox tables are created by the migrations.
-	wm, err := watermillsql.NewPublisher(watermillsql.TxFromStdSQL(sqlTx), watermillsql.PublisherConfig{
-		SchemaAdapter:        outboxSchema,
-		AutoInitializeSchema: false,
-	}, b.logger)
-	if err != nil {
-		_ = sqlTx.Rollback()
-		return fmt.Errorf("outbox publisher: %w", err)
-	}
-
-	pub := &txPublisher{wm: wm, tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers}
+	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers}
 	if err := fn(txClient, pub); err != nil {
 		_ = sqlTx.Rollback()
 		return err
@@ -161,14 +136,13 @@ type nopTx struct {
 func (nopTx) Commit() error   { return nil }
 func (nopTx) Rollback() error { return nil }
 
-// txPublisher serializes a DomainEvent into an Envelope and inserts it onto the
-// outbox topic via the tx-bound watermill publisher.
+// txPublisher stamps a DomainEvent's Envelope and writes what publishing it means, all on tx.
 type txPublisher struct {
-	wm *watermillsql.Publisher
 	tx *sql.Tx
-	// client is the ent client bound to tx, so a purge of the outbox rolls back with it.
+	// client is the ent client bound to tx, which the Event rows are written with.
 	client *ent.Client
-	// jobs is the bus's job queue (nil when it was given none); a purge of the queue runs on tx.
+	// jobs is the bus's job queue (nil when it was given none); the event jobs are inserted and
+	// a purge of the queue runs on tx.
 	jobs JobQueue
 	// consumers are the bus's consumers, whose jobs Publish inserts on tx.
 	consumers []Consumer
@@ -190,9 +164,9 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	if occurred.IsZero() {
 		occurred = time.Now().UTC()
 	}
-	// The message id is always a fresh ULID (short, fits the outbox uuid column).
-	// An event with a natural upstream id supplies a DedupKey instead, which its Event
-	// row is stored under (source_id), so a redelivery is told from a new event.
+	// The envelope id is always a fresh ULID. An event with a natural upstream id supplies a
+	// DedupKey besides, which its Event row is stored under (source_id), so a redelivery is
+	// told from a new event.
 	var dedupKey string
 	if idv, ok := ev.(identifiable); ok {
 		dedupKey = idv.EventID()
@@ -222,7 +196,5 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	if err := p.queueConsumers(ctx, env, ev); err != nil {
 		return fmt.Errorf("queue the consumers of %q: %w", env.Name, err)
 	}
-	msg := Message(env)
-	injectTrace(ctx, msg)
-	return p.wm.Publish(TopicDomainEvents, msg)
+	return nil
 }

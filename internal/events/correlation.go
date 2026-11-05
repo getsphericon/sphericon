@@ -4,27 +4,23 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/oklog/ulid/v2"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/getsphericon/sphericon/internal/logging"
 )
 
 // Every event carries a correlation id, shared by the whole chain it belongs to, and, when it was
 // published while another was being handled, a causation id: the id of that event. A chain
-// starts at a request (its request id) or, outside one, at a fresh id. The ids travel as message
-// metadata, and through the context from a handler to what it publishes, directly or through a
-// river job it queues (JobCorrelation). The OpenTelemetry trace context of the publisher travels
-// in the metadata too, and the handler's span is linked to it.
+// starts at a request (its request id) or, outside one, at a fresh id. The ids travel in the
+// envelope, and through the context from a consumer to what it publishes, directly or through a
+// river job it queues (JobCorrelation). The OpenTelemetry trace context travels in each job's
+// metadata (otelriver's trace propagation), and the span of its work is linked to it.
 
-// The metadata keys of the chain an event belongs to. The correlation id's is watermill's own.
+// The job metadata keys of the chain a job was queued in.
 const (
-	MetaCorrelationID = middleware.CorrelationIDMetadataKey
+	MetaCorrelationID = "correlation_id"
 	MetaCausationID   = "causation_id"
 )
 
@@ -54,8 +50,7 @@ func chainOf(ctx context.Context) chain {
 }
 
 // Handling is ctx for handling env: what is published in it is caused by env and shares its
-// correlation id. The router does it for every handler (correlationMiddleware), and JobChain for
-// every event consumer's job.
+// correlation id. JobChain does it for every event consumer's job.
 func Handling(ctx context.Context, env Envelope) context.Context {
 	correlation := env.CorrelationID
 	if correlation == "" {
@@ -68,23 +63,6 @@ func Handling(ctx context.Context, env Envelope) context.Context {
 func stamp(ctx context.Context, env *Envelope) {
 	c := chainOf(ctx)
 	env.CorrelationID, env.CausationID = c.Correlation, c.Cause
-}
-
-// injectTrace puts the trace context of ctx in msg's metadata, for the handler's span to link to.
-func injectTrace(ctx context.Context, msg *message.Message) {
-	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(msg.Metadata))
-}
-
-// correlationMiddleware makes the context of every handler that of handling its event (Handling).
-func correlationMiddleware(next message.HandlerFunc) message.HandlerFunc {
-	return func(msg *message.Message) ([]*message.Message, error) {
-		env, err := EnvelopeOf(msg)
-		if err != nil {
-			return next(msg) // the handler reports the undecodable message itself
-		}
-		msg.SetContext(Handling(msg.Context(), env))
-		return next(msg)
-	}
 }
 
 // JobCorrelation is the river middleware that carries the chain of an event through the jobs

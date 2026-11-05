@@ -72,8 +72,8 @@ func TestSuppressIgnoresNonSuppressingActions(t *testing.T) {
 }
 
 // Publishing an EmailDelivery with a long natural id must succeed: the
-// id becomes the envelope DedupKey, while the (short ULID) message id fills the
-// outbox uuid column. Regression test for overflowing that column with the id.
+// id becomes the envelope DedupKey and the Event's source id, while the envelope keeps a short
+// ULID of its own.
 func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

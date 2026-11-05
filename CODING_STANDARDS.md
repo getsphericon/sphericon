@@ -160,14 +160,14 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 
 ## Go tests
 
-- **Tests use the ent client or river's own API for data (rule 4)**: `env.DB`. The
-  domain-event outbox is modelled in ent too (`OutboxMessage`, `OutboxOffset`: watermill owns the
-  tables, `entsql.Skip` keeps them out of migrations, only the client is generated), so
-  `env.Outbox*`, `env.OutboxCount` and the cursor helpers sit on the generated client.
+- **Tests use the ent client or river's own API for data (rule 4)**: `env.DB`. What a publish
+  left is read the same way: its Event rows through ent (`env.StoredEvents`) and its event jobs
+  through river (`env.QueuedEnvelopes`, `env.EventJobs`), and a consumer's job is worked through
+  river's test worker (`testhelper.WorkEventJobs`).
   `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in `_test.go` files.
   Inject faults with ent hooks/interceptors, never DDL or triggers.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
-  commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
+  commit (a river runtime, concurrent workers, a whole app) takes a database of its own from
   `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (a clone of the process's baseline database, or an empty one), dropped when the test ends; every
   other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its

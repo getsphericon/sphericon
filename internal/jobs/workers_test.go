@@ -92,7 +92,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	require.NoError(t, err)
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
+	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)

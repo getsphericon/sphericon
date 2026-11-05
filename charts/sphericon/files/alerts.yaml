@@ -66,40 +66,6 @@ groups:
           description: The 95th percentile of request duration has been above 2 seconds for 15 minutes.
           runbook_url: https://getsphericon.com/docs/operations/runbook#sphericonrequestlatencyhigh
 
-  - name: sphericon.events
-    rules:
-      - alert: SphericonOutboxLagHigh
-        expr: max by (consumer_group) (outbox_lag_seconds) > 300
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: Event consumer {{ $labels.consumer_group }} is {{ $value | humanizeDuration }} behind
-          description: The oldest unprocessed domain event for {{ $labels.consumer_group }} is older than 5 minutes.
-          runbook_url: https://getsphericon.com/docs/operations/runbook#sphericonoutboxlaghigh
-
-      - alert: SphericonDomainEventsDeadLettered
-        expr: max by (consumer_group) (outbox_dead_letters) > 0
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: '{{ $value }} domain events of {{ $labels.consumer_group }} are dead-lettered'
-          description: The {{ $labels.consumer_group }} handler gave up on these events after its retries. Fix the cause, then run `sphericon events replay {{ $labels.consumer_group }}`.
-          runbook_url: https://getsphericon.com/docs/operations/runbook#sphericondomaineventsdeadlettered
-
-      - alert: SphericonEventHandlerErrors
-        expr: |
-          sum by (handler) (rate(watermill_messages_processed_total{error="true"}[10m]))
-            / sum by (handler) (rate(watermill_messages_processed_total[10m])) > 0.05
-        for: 15m
-        labels:
-          severity: warning
-        annotations:
-          summary: Event handler {{ $labels.handler }} fails {{ $value | humanizePercentage }} of messages
-          description: More than 5% of messages handled by {{ $labels.handler }} returned an error for 15 minutes.
-          runbook_url: https://getsphericon.com/docs/operations/runbook#sphericoneventhandlererrors
-
   - name: sphericon.jobs
     rules:
       - alert: SphericonJobQueueBacklog

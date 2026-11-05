@@ -259,7 +259,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
 
 - **Enterprise Edition (`ee/`)**: same binary, gated by the runtime license key (`SPHERICON_LICENSE_KEY`,
   verified by `ee/licensekey`; empty = plain core, a bad key fails boot). `ee.New` builds the
-  `Edition` (extra bus consumers + read seams) in `internal/app` and in `testhelper.Setup`
+  `Edition` (extra event consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
   (`site.AuditLog`, `events.Consumer`). The audit table's ent schema sits in `ent/schema`
   (ent has one schema package) but is written and read only by `ee/audit`. An Audit entry is
@@ -274,8 +274,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   have no scope to take the actor from (a User's action goes to each of their Workspaces, a
   suspension names its Staff actor), so the scoped client has no recorder of its own. `ee.New`
   takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.
-  In tests the router does not run, so call `env.DeliverToEE(t)` to hand the outbox to the EE
-  subscribers.
+  The Edition's consumers of the domain events (`ee.EventConsumers`: the Audit log's and the
+  Erasures stream's) are registered on the bus beside core's; their workers come with
+  `Edition.Jobs()` and `ExportJobs()`. In tests nothing works the queue, so call
+  `env.WorkEditionJobs(t)` to work the jobs a publish inserted.
   **Audit capture in the scoped client (ADR 0022):** an `*ent.Scoped` carries its actor
   (`s.As(actor, opener)`, set at the construction points: `Accounts.Scope` user,
   `HandleBearerAuth` api_token, collect/SES/consent/bootstrap `events.Ingest`; `bus.Act` for
@@ -309,8 +311,14 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   webhooks, suspension, the abuse detector) takes an `ownernotice.Notify` (`internal/ownernotice`, a leaf, so
   that modules `accounts` imports can share it) and calls `Tell` or `TellBestEffort`; `accounts.OwnerNotifier`
   builds the one that mails the Owners through the system sender.
-- **Async**: `internal/pubsub` (watermill over Postgres) — handlers registered in
-  `pubsub.RegisterHandlers`, router run in a goroutine from `cmd/server/main.go`.
+- **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
+  `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
+  the state change: it writes the Event row (a repeated `source_id` publishes nothing) and
+  inserts one job per consumer whose filter wants the envelope (`events.Consumer`, registered in
+  `internal/app`: `jobs.EventConsumers` and `ee.EventConsumers`). A producer never names a
+  consumer; a new consumer is an args type embedding `events.EventJob`, a worker and a registry
+  entry, its jobs in the `events` queue. Every event job runs in the context of handling its
+  envelope (`events.JobChain`), so what it publishes is caused by that event.
   `internal/jobs` uses river (Postgres-backed queue, `database/sql` driver, polling). A job that must
   exist iff a state change commits is queued in that transaction with
   `events.Bus.WithinScopedEnqueueTx` (a Broadcast's claim and its send job); never claim first and

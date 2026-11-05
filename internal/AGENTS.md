@@ -17,7 +17,7 @@ floor) is configuration, set on the test's config.
 **Ride the transaction unless the test cannot.** A transaction costs the same however much the
 test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,
 a worker called directly. A test that needs a **real commit** (code that opens its own connection,
-the outbox router, concurrent workers, a lock one transaction holds against another, a statement
+concurrent workers, a lock one transaction holds against another, a statement
 that fails and must not abort the rest, a whole `app.App`, a river runtime) cannot ride one. It takes
 a database of its own instead: `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g.
 `t.Setenv("SPHERICON_DATABASE_URL", ...)` for an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh

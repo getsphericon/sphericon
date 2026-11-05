@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 )
@@ -76,3 +77,9 @@ func (s staffEnterpriseCookieSource) ApiKeyAuth(context.Context, staffeeapi.Oper
 var JobsUIStub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("jobs ui " + r.URL.Path))
 })
+
+// Abuse is the abuse detector as the composition root builds it (ADR 0026), over the
+// env's bus and platform sender; a pass is Run(ctx, now).
+func (env *TestEnv) Abuse() *abuse.Detector {
+	return env.edition.Abuse(env.Bus, env.SystemMail)
+}

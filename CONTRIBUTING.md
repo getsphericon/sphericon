@@ -62,8 +62,8 @@ workspace-scoped (multi-tenant): contacts, events, API tokens, and tracking enti
 belong to a `workspace`.
 
 - **Backend** — Go + [ogen](https://ogen.dev/) (HTTP servers in `gen/*`), ORM
-  [ent](https://entgo.io/), queues [river](https://riverqueue.com/), pub/sub
-  [watermill](https://watermill.io/), migrations diffed by ent, applied by [goose](https://github.com/pressly/goose).
+  [ent](https://entgo.io/), queues and domain events [river](https://riverqueue.com/),
+  migrations diffed by ent, applied by [goose](https://github.com/pressly/goose).
 - **Frontend** — React 19 + Vite, [Mantine](https://mantine.dev/),
   [TanStack Router/Query](https://tanstack.com/), and the generated
   [`@hey-api/openapi-ts`](https://heyapi.dev/) client + react-query hooks.

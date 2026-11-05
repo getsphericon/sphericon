@@ -2,13 +2,13 @@ package telemetry_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/mailjobs"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -40,9 +39,9 @@ import (
 var forbiddenLabel = regexp.MustCompile(`(?i)workspace|contact|email|recipient`)
 
 // The metric label policy (ADR 0018) is enforced against the real exposition of the
-// metrics listener after real instrumented work ran: a domain event handled by the
-// watermill router (carrying a Workspace id and a Contact email) and a job run by the
-// river runtime. Any tenant-bearing label or label value would show up here.
+// metrics listener after real instrumented work ran: jobs worked by the river runtime, a
+// domain event's job among them (its envelope carrying a Workspace id and a Contact email).
+// Any tenant-bearing label or label value would show up here.
 func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	ctx := context.Background()
 
@@ -64,14 +63,12 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	workspace := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	contactEmail := fixtures.ContactAliceEmail
 
-	runHandledDomainEvent(t, srv.Addr(), contactEmail)
 	runJob(t, env, cfg, srv.Addr(), contactEmail)
 
 	code, body := testhelper.HTTPGet(t, "http://"+srv.Addr()+"/metrics")
 	require.Equal(t, http.StatusOK, code)
 
 	// Proof that the instrumented paths ran: their metrics are in the exposition.
-	require.Contains(t, body, "watermill_messages_processed", "domain-event handler metrics missing")
 	require.Contains(t, body, "river_", "job metrics missing")
 
 	parser := expfmt.NewTextParser(model.UTF8Validation)
@@ -90,46 +87,6 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	}
 }
 
-// runHandledDomainEvent publishes a tenant-bearing event through the outbox and waits
-// until the real router (with the OTel middleware) has handled it.
-func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
-	t.Helper()
-	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-
-	router, err := events.NewRouter(sqlDB)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(router, "router") })
-	sub, err := events.NewSubscriber(sqlDB, "label-policy", testhelper.PrivateOutbox())
-	require.NoError(t, err)
-	handled := make(chan struct{}, 1)
-	router.AddConsumerHandler("label_policy", events.TopicDomainEvents, sub, func(msg *message.Message) error {
-		if _, err := events.EnvelopeOf(msg); err != nil {
-			return err
-		}
-		select {
-		case handled <- struct{}{}:
-		default:
-		}
-		return nil
-	})
-	runCtx, cancel := context.WithCancel(ctx)
-	t.Cleanup(cancel)
-	go func() { cleanup.Report("run the router", router.Run(runCtx)) }()
-	<-router.Running()
-
-	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: contactEmail})
-	}))
-	select {
-	case <-handled:
-	case <-time.After(10 * time.Second):
-		t.Fatal("domain event was not handled within 10s")
-	}
-	// The middleware records its metrics right after the handler returns.
-	require.Eventually(t, func() bool { return exposes(t, srvAddr, "watermill_messages_processed") }, 10*time.Second, 50*time.Millisecond)
-}
-
 // runJob runs a real river runtime and waits for a job to be worked.
 func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, contactEmail string) {
 	t.Helper()
@@ -140,12 +97,12 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outbound.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
-	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
+	client, err := jobs.NewClient(riverdatabasesql.New(pool), env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	admin, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
 	require.NoError(t, err)
 	purge := func() {
-		_, err := admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks))
+		_, err := admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, events.QueueEvents))
 		require.NoError(t, err)
 	}
 	purge()
@@ -164,6 +121,21 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 		return false
 	}, 10*time.Second, 50*time.Millisecond)
 	require.Eventually(t, func() bool { return exposes(t, srvAddr, "river_") }, 10*time.Second, 50*time.Millisecond)
+
+	// A domain event's job, which carries the event's Workspace and Contact address in its args. A
+	// soft bounce is one the suppression consumer turns down without a write, so nothing commits to
+	// this process's database.
+	data, err := json.Marshal(&events.EmailDelivery{
+		Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
+		Email: contactEmail, BounceKind: events.BounceKindSoft,
+	})
+	require.NoError(t, err)
+	_, err = admin.Insert(ctx, jobs.SuppressEventArgs{
+		ID: "01JLABELPOLICY", Name: events.NameEmailBounced, Version: 1, WorkspaceID: fixtures.AcmeID, Data: data,
+	}, nil)
+	require.NoError(t, err)
+	worked := `kind="` + jobs.SuppressEventArgs{}.Kind() + `"`
+	require.Eventually(t, func() bool { return exposes(t, srvAddr, worked) }, 10*time.Second, 50*time.Millisecond, "the event job was worked")
 	// The fetch metrics come from otelriver's hook, which only a plugin installs.
 	require.Eventually(t, func() bool { return exposes(t, srvAddr, "river_job_get_available") }, 10*time.Second, 50*time.Millisecond)
 }

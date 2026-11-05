@@ -5,8 +5,6 @@ go 1.27.3
 require (
 	ariga.io/atlas v1.3.0
 	entgo.io/ent v0.14.6
-	github.com/ThreeDotsLabs/watermill v1.5.3
-	github.com/ThreeDotsLabs/watermill-sql/v4 v4.1.5
 	github.com/aws/aws-sdk-go-v2 v1.47.5
 	github.com/aws/aws-sdk-go-v2/config v1.33.13
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.13
@@ -172,7 +170,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
-	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
 	github.com/matryer/moq v0.8.1 // indirect
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
@@ -184,7 +181,6 @@ require (
 	github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 // indirect
 	github.com/oasdiff/yaml v0.1.3 // indirect
 	github.com/oasdiff/yaml3 v0.0.16 // indirect
-	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/osteele/tuesday v1.1.1 // indirect
 	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/philhofer/fwd v1.2.1 // indirect
@@ -203,7 +199,6 @@ require (
 	github.com/sethvargo/go-retry v0.5.0 // indirect
 	github.com/shopspring/decimal v1.6.0 // indirect
 	github.com/smartystreets/assertions v1.1.0 // indirect
-	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/termie/go-shutil v0.0.0-20140729215957-bcacb06fecae // indirect
 	github.com/tidwall/gjson v1.20.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect

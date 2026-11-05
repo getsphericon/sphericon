@@ -157,9 +157,6 @@ type Config struct {
 	MigrateTimeout time.Duration
 	BodyLimits     BodyLimits
 	RateLimits     RateLimits
-	// OutboxFloor is the minimum age of a domain-event outbox row before the
-	// prune job may delete it (SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
-	OutboxFloor time.Duration
 	// EventsRetention is the age past which analytical Events are deleted
 	// (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
 	EventsRetention time.Duration
@@ -434,9 +431,6 @@ type environment struct {
 	// RateLimits carry their variables, rules and doc comments on their own fields.
 	RateLimits RateLimits
 
-	// The minimum age, in days, of a domain-event outbox row every consumer has processed before
-	// the prune job, which runs every 10 minutes, may delete it (ADR 0019).
-	OutboxFloorDays int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
 	// The age, in days, past which analytical Events are deleted by a daily job; `0` disables it
 	// (ADR 0019). Evidentiary Events (`marketing.confirmed`, `sms.confirmed`, `email.complained`,
 	// `email.unsubscribed`, a permanent `email.bounced`) are never deleted by age.
@@ -740,7 +734,6 @@ func Load(envName string) (*Config, error) {
 			ConnMaxLifetime: e.DBConnMaxLifetime,
 			RiverMaxConns:   e.RiverMaxConns,
 		},
-		OutboxFloor:             time.Duration(e.OutboxFloorDays) * 24 * time.Hour,
 		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
 		EventLiveWindow:         time.Duration(e.EventLiveWindowHours) * time.Hour,
 		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,

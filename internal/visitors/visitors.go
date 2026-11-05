@@ -131,7 +131,7 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 			}
 		}
 		// Resolve identity and publish in one transaction: the visitor upsert and the
-		// outbox row commit together. The collected event is the customer's own — its
+		// event commit together. The collected event is the customer's own — its
 		// action and properties are stored as-is.
 		if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 			res, err := resolveIdentity(ctx, ts, visitorID)

@@ -25,7 +25,7 @@ type SchemaStatus struct {
 }
 
 // Migrate applies the embedded migrations to sqlDB with goose and reports how many it ran: the
-// app schema, river's tables and the domain-event outbox all come from them. It is the one
+// app schema and river's tables come from them. It is the one
 // path the server (`sphericon migrate`) and the test databases share, so a test runs against
 // the schema production gets.
 //
