@@ -12,6 +12,9 @@ status: accepted
 > with its evidence (an `imported` SMS Confirmation), is an authoring operation on `/api` and MCP, in
 > `POST /confirmations` and in a batch upsert's consent columns. It never lifts an opt-out or a
 > Suppression, which stay absent.
+>
+> Amended by [[0102-the-core-is-layered-and-an-operation-across-modules-is-a-use-case]]: a package that
+> owns one domain's rows is a domain module, and a use case is only an operation that spans several of them.
 
 sphericon is operated by agents through an MCP server mounted at `/mcp` in the same binary
 (Streamable HTTP, official `modelcontextprotocol/go-sdk`). Its tools are **projected from the
