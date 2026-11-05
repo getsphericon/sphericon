@@ -50,20 +50,6 @@ func (_u *CustomFieldUpdate) SetNillableWorkspaceID(v *int64) *CustomFieldUpdate
 	return _u
 }
 
-// SetKey sets the "key" field.
-func (_u *CustomFieldUpdate) SetKey(v string) *CustomFieldUpdate {
-	_u.mutation.SetKey(v)
-	return _u
-}
-
-// SetNillableKey sets the "key" field if the given value is not nil.
-func (_u *CustomFieldUpdate) SetNillableKey(v *string) *CustomFieldUpdate {
-	if v != nil {
-		_u.SetKey(*v)
-	}
-	return _u
-}
-
 // SetName sets the "name" field.
 func (_u *CustomFieldUpdate) SetName(v string) *CustomFieldUpdate {
 	_u.mutation.SetName(v)
@@ -146,11 +132,6 @@ func (_u *CustomFieldUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CustomFieldUpdate) check() error {
-	if v, ok := _u.mutation.Key(); ok {
-		if err := customfield.KeyValidator(v); err != nil {
-			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "CustomField.key": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := customfield.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "CustomField.name": %w`, err)}
@@ -187,9 +168,6 @@ func (_u *CustomFieldUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(customfield.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.Key(); ok {
-		_spec.SetField(customfield.FieldKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(customfield.FieldName, field.TypeString, value)
@@ -264,20 +242,6 @@ func (_u *CustomFieldUpdateOne) SetWorkspaceID(v int64) *CustomFieldUpdateOne {
 func (_u *CustomFieldUpdateOne) SetNillableWorkspaceID(v *int64) *CustomFieldUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
-	}
-	return _u
-}
-
-// SetKey sets the "key" field.
-func (_u *CustomFieldUpdateOne) SetKey(v string) *CustomFieldUpdateOne {
-	_u.mutation.SetKey(v)
-	return _u
-}
-
-// SetNillableKey sets the "key" field if the given value is not nil.
-func (_u *CustomFieldUpdateOne) SetNillableKey(v *string) *CustomFieldUpdateOne {
-	if v != nil {
-		_u.SetKey(*v)
 	}
 	return _u
 }
@@ -377,11 +341,6 @@ func (_u *CustomFieldUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CustomFieldUpdateOne) check() error {
-	if v, ok := _u.mutation.Key(); ok {
-		if err := customfield.KeyValidator(v); err != nil {
-			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "CustomField.key": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := customfield.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "CustomField.name": %w`, err)}
@@ -435,9 +394,6 @@ func (_u *CustomFieldUpdateOne) sqlSave(ctx context.Context) (_node *CustomField
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(customfield.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.Key(); ok {
-		_spec.SetField(customfield.FieldKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(customfield.FieldName, field.TypeString, value)

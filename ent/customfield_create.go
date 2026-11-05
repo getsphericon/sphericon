@@ -327,18 +327,6 @@ func (u *CustomFieldUpsert) UpdateWorkspaceID() *CustomFieldUpsert {
 	return u
 }
 
-// SetKey sets the "key" field.
-func (u *CustomFieldUpsert) SetKey(v string) *CustomFieldUpsert {
-	u.Set(customfield.FieldKey, v)
-	return u
-}
-
-// UpdateKey sets the "key" field to the value that was provided on create.
-func (u *CustomFieldUpsert) UpdateKey() *CustomFieldUpsert {
-	u.SetExcluded(customfield.FieldKey)
-	return u
-}
-
 // SetName sets the "name" field.
 func (u *CustomFieldUpsert) SetName(v string) *CustomFieldUpsert {
 	u.Set(customfield.FieldName, v)
@@ -382,6 +370,9 @@ func (u *CustomFieldUpsertOne) UpdateNewValues() *CustomFieldUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(customfield.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.Key(); exists {
+			s.SetIgnore(customfield.FieldKey)
 		}
 	}))
 	return u
@@ -439,20 +430,6 @@ func (u *CustomFieldUpsertOne) SetWorkspaceID(v int64) *CustomFieldUpsertOne {
 func (u *CustomFieldUpsertOne) UpdateWorkspaceID() *CustomFieldUpsertOne {
 	return u.Update(func(s *CustomFieldUpsert) {
 		s.UpdateWorkspaceID()
-	})
-}
-
-// SetKey sets the "key" field.
-func (u *CustomFieldUpsertOne) SetKey(v string) *CustomFieldUpsertOne {
-	return u.Update(func(s *CustomFieldUpsert) {
-		s.SetKey(v)
-	})
-}
-
-// UpdateKey sets the "key" field to the value that was provided on create.
-func (u *CustomFieldUpsertOne) UpdateKey() *CustomFieldUpsertOne {
-	return u.Update(func(s *CustomFieldUpsert) {
-		s.UpdateKey()
 	})
 }
 
@@ -669,6 +646,9 @@ func (u *CustomFieldUpsertBulk) UpdateNewValues() *CustomFieldUpsertBulk {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(customfield.FieldCreatedAt)
 			}
+			if _, exists := b.mutation.Key(); exists {
+				s.SetIgnore(customfield.FieldKey)
+			}
 		}
 	}))
 	return u
@@ -726,20 +706,6 @@ func (u *CustomFieldUpsertBulk) SetWorkspaceID(v int64) *CustomFieldUpsertBulk {
 func (u *CustomFieldUpsertBulk) UpdateWorkspaceID() *CustomFieldUpsertBulk {
 	return u.Update(func(s *CustomFieldUpsert) {
 		s.UpdateWorkspaceID()
-	})
-}
-
-// SetKey sets the "key" field.
-func (u *CustomFieldUpsertBulk) SetKey(v string) *CustomFieldUpsertBulk {
-	return u.Update(func(s *CustomFieldUpsert) {
-		s.SetKey(v)
-	})
-}
-
-// UpdateKey sets the "key" field to the value that was provided on create.
-func (u *CustomFieldUpsertBulk) UpdateKey() *CustomFieldUpsertBulk {
-	return u.Update(func(s *CustomFieldUpsert) {
-		s.UpdateKey()
 	})
 }
 

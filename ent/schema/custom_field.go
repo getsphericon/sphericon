@@ -34,9 +34,10 @@ func (CustomField) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		// Machine key — how values are addressed in Contact.custom_fields and segment
-		// rules. Stable; the display name is renameable independently.
+		// rules. Never changes; the display name is renameable independently.
 		field.String("key").
-			NotEmpty(),
+			NotEmpty().
+			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
 		// Inferred on first sight, changed by a person afterwards. A later value of another

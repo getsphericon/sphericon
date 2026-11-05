@@ -69,7 +69,8 @@ func (Event) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.String("action").
-			NotEmpty(),
+			NotEmpty().
+			Immutable(),
 		field.JSON("properties", map[string]any{}).
 			Optional(),
 		// When the Event happened (ADR 0044): the source's time, or the publish time when the
@@ -110,7 +111,8 @@ func (Event) Fields() []ent.Field {
 		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
 		// receives it and no Rule fires on it.
 		field.Bool("backfill").
-			Default(false),
+			Default(false).
+			Immutable(),
 	}
 }
 
