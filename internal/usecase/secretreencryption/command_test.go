@@ -60,7 +60,7 @@ func TestAKeysetChangeNeedsAKeyset(t *testing.T) {
 func TestReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
+	err := secretreencryption.WriteReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")
@@ -70,7 +70,7 @@ func TestReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 func TestReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
+	err := secretreencryption.WriteReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "run it once more")
@@ -79,7 +79,7 @@ func TestReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 func TestReportOfARunThatFoundEverythingCurrentPointsToRetire(t *testing.T) {
 	var out bytes.Buffer
 
-	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
+	err := secretreencryption.WriteReport(&out, []secrets.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "can be retired")
@@ -89,7 +89,7 @@ func TestReportOfARunThatStoppedShowsWhatItDidAndFails(t *testing.T) {
 	var out bytes.Buffer
 	stopped := errors.New("webhook_endpoints.secret_encrypted: row 4: invalid or corrupt ciphertext")
 
-	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
+	err := secretreencryption.WriteReport(&out, []secrets.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
 
 	require.ErrorIs(t, err, stopped)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")

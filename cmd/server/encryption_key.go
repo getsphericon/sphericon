@@ -7,13 +7,14 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
 // rekeyOps is what `encryption-key reencrypt` needs from the app. The app implements it
 // (internal/app).
 type rekeyOps interface {
-	Reencrypt(ctx context.Context) ([]secretreencryption.Count, error)
+	Reencrypt(ctx context.Context) ([]secrets.Count, error)
 }
 
 // reencryptTimeout bounds a sweep of every stored secret.

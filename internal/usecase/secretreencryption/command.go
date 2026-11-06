@@ -46,7 +46,7 @@ func change(current string, apply func(string) (string, error), next string) (Ch
 // once more while it rewrote or skipped a value, retire the older keys once it found every
 // value current. A run that stopped (runErr) shows what it did before it stopped and returns
 // the error.
-func WriteReport(w io.Writer, counts []Count, runErr error) error {
+func WriteReport(w io.Writer, counts []secrets.Count, runErr error) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "COLUMN\tREWRITTEN\tCURRENT\tRACED")
 	moved := 0

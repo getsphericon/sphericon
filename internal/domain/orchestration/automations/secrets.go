@@ -12,22 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
-// Secrets are the sealed fields of the HTTP steps of every Automation version of every Workspace:
-// every version, not only the latest, since an Enrollment still stands on an old one. It holds the
-// raw client, which it uses only to re-encrypt them (docs/architecture.md, Workspace scoping).
-type Secrets struct {
-	client *ent.Client
-}
-
-// NewSecrets builds the sealed fields of the Automation versions on the raw client.
-func NewSecrets(client *ent.Client) *Secrets { return &Secrets{client: client} }
-
-// Reencrypt stores every version whose HTTP steps hold a field sealed under an older key again,
-// each field under the primary key of cipher, by id and compare-and-swap of the whole steps
-// (secrets.Cipher.Reencrypt).
-func (s *Secrets) Reencrypt(ctx context.Context, cipher *secrets.Cipher) ([]secrets.Count, error) {
-	c := s.client
-	return cipher.Reencrypt(ctx, secrets.Sweep{
+// SecretSweeps are the sealed fields of the HTTP steps of every Automation version of every
+// Workspace: every version, not only the latest, since an Enrollment still stands on an old one;
+// each field is sealed on its own, and a version is swapped whole, as the Secret re-encryption
+// sweeps them (secrets.Cipher.Reencrypt). They read and swap on the raw client, and use it for
+// nothing else (docs/architecture.md, Workspace scoping).
+func SecretSweeps(c *ent.Client) []secrets.Sweep {
+	return []secrets.Sweep{{
 		Column: "automation_versions.steps",
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
 			rs, err := c.AutomationVersion.Query().Where(automationversion.IDGT(after)).Order(ent.Asc(automationversion.FieldID)).Limit(n).All(ctx)
@@ -37,8 +28,8 @@ func (s *Secrets) Reencrypt(ctx context.Context, cipher *secrets.Cipher) ([]secr
 			n, err := c.AutomationVersion.Update().Where(automationversion.ID(id), automationversion.Steps(prev)).SetSteps(next).Save(ctx)
 			return n > 0, err
 		},
-		Seal: func(stored string) (string, bool, error) { return rewrapSteps(cipher, stored) },
-	})
+		Seal: rewrapSteps,
+	}}
 }
 
 // rewrapSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header

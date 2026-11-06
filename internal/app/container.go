@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -93,7 +94,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
-	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
@@ -754,9 +754,6 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*contactintake.UseCase, error) {
 		return contactintake.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i)), nil
 	}),
-	do.Lazy(func(_ do.Injector) (*customfieldretyping.UseCase, error) {
-		return customfieldretyping.New(), nil
-	}),
 	// The transactional send surface of /api: a Template sent through Outbound send.
 	do.Lazy(func(i do.Injector) (*transactionalsend.UseCase, error) {
 		return transactionalsend.New(do.MustInvoke[*emailtemplates.Module](i), do.MustInvoke[*outboundmessages.Module](i)), nil
@@ -774,18 +771,14 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// `sphericon encryption-key reencrypt`: each owner sweeps its stored secrets on the raw client.
+	// `sphericon encryption-key reencrypt`: each owner's columns of stored secrets, swept on the raw
+	// client in this order.
 	do.Lazy(func(i do.Injector) (*secretreencryption.UseCase, error) {
 		client := do.MustInvoke[*ent.Client](i)
-		return secretreencryption.New(secretreencryption.Owners{
-			Integrations:     integrations.NewSecrets(client),
-			WebhookEndpoints: webhookendpoints.NewSecrets(client),
-			SendingDomains:   sendingdomains.NewSecrets(client),
-			Users:            users.NewSecrets(client),
-			StaffMembers:     staffmembers.NewSecrets(client),
-			Automations:      automations.NewSecrets(client),
-			Rules:            rules.NewSecrets(client),
-		}, do.MustInvoke[*secrets.Cipher](i)), nil
+		return secretreencryption.New(slices.Concat(
+			integrations.SecretSweeps(client), webhookendpoints.SecretSweeps(client), sendingdomains.SecretSweeps(client),
+			users.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
+		), do.MustInvoke[*secrets.Cipher](i)), nil
 	}),
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
@@ -961,9 +954,8 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Audit:                 edition.Audit,
 		Export:                edition.Export,
 
-		CustomFieldRetyping: do.MustInvoke[*customfieldretyping.UseCase](i),
-		Intake:              do.MustInvoke[*contactintake.UseCase](i),
-		Unsubscribe:         do.MustInvoke[*unsubscriberecording.UseCase](i),
+		Intake:      do.MustInvoke[*contactintake.UseCase](i),
+		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
 }
 
@@ -1005,7 +997,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Erasure:                  do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
 		TagDeletion:              do.MustInvoke[*tagdeletion.UseCase](i),
-		CustomFieldRetyping:      do.MustInvoke[*customfieldretyping.UseCase](i),
 		Unsubscribe:              do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Bindings:                 do.MustInvoke[*bindings.Module](i),
 		Templates:                do.MustInvoke[*emailtemplates.Module](i),

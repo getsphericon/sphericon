@@ -9,6 +9,7 @@ package tagdeletion
 
 import (
 	"context"
+	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -56,29 +57,21 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 
 // tagUsers is what names the Tag: Segments, kept Automations, kept Rules and armed Broadcasts.
 func tagUsers(ctx context.Context, s *ent.Scoped, name string) ([]liveuse.User, error) {
-	var users []liveuse.User
 	segs, err := segments.UsingTag(ctx, s, name)
 	if err != nil {
 		return nil, err
-	}
-	for _, seg := range segs {
-		users = append(users, liveuse.User{Kind: liveuse.Segment, ID: seg.ID, Name: seg.Name})
 	}
 	autos, err := automations.UsingTag(ctx, s, name)
 	if err != nil {
 		return nil, err
 	}
-	for _, a := range autos {
-		users = append(users, liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name})
-	}
 	live, err := rules.UsingTag(ctx, s, name)
 	if err != nil {
 		return nil, err
 	}
-	users = append(users, liveuse.Rules(live)...)
 	armed, err := broadcasts.UsingTag(ctx, s, name)
 	if err != nil {
 		return nil, err
 	}
-	return append(users, liveuse.Broadcasts(armed)...), nil
+	return slices.Concat(liveuse.Segments(segs), liveuse.Automations(autos), liveuse.Rules(live), liveuse.Broadcasts(armed)), nil
 }

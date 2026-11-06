@@ -100,8 +100,8 @@ module, so the API tests reach it through the actors; a direct test builds it wi
 `New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
 case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
 module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
-`env.TelemetryReport`. The re-encryption is built over each owner's `Secrets` on `env.DB`
-(`integrations.NewSecrets(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
+`env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
+(`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactor`), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;

@@ -775,9 +775,9 @@ components:
   # The raw-client components follow the closed list "The raw *ent.Client is allowed only in" of
   # docs/architecture.md (Workspace scoping), kept in step with it. A package is the unit, so the
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
-  # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and `Secrets`,
-  # `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and `staffmembers` only their
-  # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
+  # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and
+  # `SecretSweeps`, `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and
+  # `staffmembers` only their `SecretSweeps` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
   # which do not forbid the client.
   #
@@ -1098,8 +1098,6 @@ rules:
         domain-insights,
         domain-instance-raw,
         domain-instance,
-        domain-identity-raw,
-        domain-identity-users,
         domain-identity-base,
         domain-contacts,
         domain-content,

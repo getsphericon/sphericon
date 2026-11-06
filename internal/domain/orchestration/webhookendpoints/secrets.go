@@ -10,20 +10,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
-// Secrets are the signing secrets of the Webhook endpoints of every Workspace. It holds the raw
-// client, which it uses only to re-encrypt them (docs/architecture.md, Workspace scoping).
-type Secrets struct {
-	client *ent.Client
-}
-
-// NewSecrets builds the signing secrets of the Webhook endpoints on the raw client.
-func NewSecrets(client *ent.Client) *Secrets { return &Secrets{client: client} }
-
-// Reencrypt stores every signing secret sealed under an older key again under the primary key of
-// cipher, by id and compare-and-swap (secrets.Cipher.Reencrypt).
-func (s *Secrets) Reencrypt(ctx context.Context, cipher *secrets.Cipher) ([]secrets.Count, error) {
-	c := s.client
-	return cipher.Reencrypt(ctx, secrets.Sweep{
+// SecretSweeps are the signing secrets of the Webhook endpoints of every Workspace, as the Secret
+// re-encryption sweeps them (secrets.Cipher.Reencrypt). They read and swap on the raw client, and
+// use it for nothing else (docs/architecture.md, Workspace scoping).
+func SecretSweeps(c *ent.Client) []secrets.Sweep {
+	return []secrets.Sweep{{
 		Column: "webhook_endpoints.secret_encrypted",
 		Page: func(ctx context.Context, after int64, n int) ([]secrets.Stored, error) {
 			rs, err := c.WebhookEndpoint.Query().Where(webhookendpoint.IDGT(after)).Order(ent.Asc(webhookendpoint.FieldID)).Limit(n).All(ctx)
@@ -35,5 +26,5 @@ func (s *Secrets) Reencrypt(ctx context.Context, cipher *secrets.Cipher) ([]secr
 			n, err := c.WebhookEndpoint.Update().Where(webhookendpoint.ID(id), webhookendpoint.SecretEncrypted(prev)).SetSecretEncrypted(next).Save(ctx)
 			return n > 0, err
 		},
-	})
+	}}
 }

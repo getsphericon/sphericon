@@ -1,6 +1,8 @@
 package secretreencryption_test
 
 import (
+	"slices"
+
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -13,16 +15,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
-// reencryption builds the use case the way the wiring does, on the owners' stored secrets over the
-// test's raw client, with cipher as the target.
+// reencryption builds the use case the way the wiring does, on the owners' columns of stored
+// secrets over the test's raw client, with cipher as the target.
 func reencryption(env *testhelper.TestEnv, cipher *secrets.Cipher) *secretreencryption.UseCase {
-	return secretreencryption.New(secretreencryption.Owners{
-		Integrations:     integrations.NewSecrets(env.DB),
-		WebhookEndpoints: webhookendpoints.NewSecrets(env.DB),
-		SendingDomains:   sendingdomains.NewSecrets(env.DB),
-		Users:            users.NewSecrets(env.DB),
-		StaffMembers:     staffmembers.NewSecrets(env.DB),
-		Automations:      automations.NewSecrets(env.DB),
-		Rules:            rules.NewSecrets(env.DB),
-	}, cipher)
+	return secretreencryption.New(slices.Concat(
+		integrations.SecretSweeps(env.DB), webhookendpoints.SecretSweeps(env.DB), sendingdomains.SecretSweeps(env.DB),
+		users.SecretSweeps(env.DB), staffmembers.SecretSweeps(env.DB), automations.SecretSweeps(env.DB), rules.SecretSweeps(env.DB),
+	), cipher)
 }

@@ -6,6 +6,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 )
 
 // SiteCustomFieldsList returns the workspace's Custom field definitions — the typed,
@@ -26,7 +27,7 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 // SiteCustomFieldsUpdate renames a Custom field or changes its type through the Custom field
 // retyping use case (owners and admins: the operation's Permission).
 func (h *Handlers) SiteCustomFieldsUpdate(ctx context.Context, req *siteapi.SiteUpdateCustomFieldInput, params siteapi.SiteCustomFieldsUpdateParams) (*siteapi.SiteCustomFieldResource, error) {
-	field, err := h.customFieldRetyping.Update(ctx, workspaceScope(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	field, err := customfieldretyping.Update(ctx, workspaceScope(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
 	}

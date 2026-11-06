@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
@@ -546,7 +547,7 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 
 // Reencrypt seals every stored secret under the primary key of the encryption keyset
 // (`sphericon encryption-key reencrypt`) and returns what it did per column.
-func (a *App) Reencrypt(ctx context.Context) ([]secretreencryption.Count, error) {
+func (a *App) Reencrypt(ctx context.Context) ([]secrets.Count, error) {
 	reencryption, err := do.Invoke[*secretreencryption.UseCase](a.injector)
 	if err != nil {
 		return nil, err

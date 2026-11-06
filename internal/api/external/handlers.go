@@ -31,7 +31,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
-	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -78,8 +77,6 @@ type Handlers struct {
 	bootstrapToken        string
 	audit                 AuditLog
 	export                ExportStreams
-	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
-	customFieldRetyping *customfieldretyping.UseCase
 	// intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
 	intake *contactintake.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
@@ -143,8 +140,6 @@ type Deps struct {
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now); the security handler reads it.
 	Clock func() time.Time
-	// CustomFieldRetyping edits a Custom field (a use case, ADR 0102).
-	CustomFieldRetyping *customfieldretyping.UseCase
 	// Intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
 	Intake *contactintake.UseCase
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
@@ -156,7 +151,7 @@ func NewHandlers(d Deps) *Handlers {
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
-		audit: d.Audit, export: d.Export, customFieldRetyping: d.CustomFieldRetyping,
+		audit: d.Audit, export: d.Export,
 		intake: d.Intake, unsubscribe: d.Unsubscribe,
 	}
 }

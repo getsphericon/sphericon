@@ -6,6 +6,7 @@
 package liveuse
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -62,6 +63,20 @@ type User struct {
 // Enrollments is the User that stands for count Enrollments of the Automation.
 func Enrollments(automationID int64, name string, count int) User {
 	return User{Kind: Enrollment, ID: automationID, Name: name, Count: count}
+}
+
+// Segments maps Segments to their Users, in the order given.
+func Segments(rows []*ent.Segment) []User {
+	return lo.Map(rows, func(seg *ent.Segment, _ int) User {
+		return User{Kind: Segment, ID: seg.ID, Name: seg.Name}
+	})
+}
+
+// Automations maps Automations to their Users, in the order given.
+func Automations(rows []*ent.Automation) []User {
+	return lo.Map(rows, func(a *ent.Automation, _ int) User {
+		return User{Kind: Automation, ID: a.ID, Name: a.Name}
+	})
 }
 
 // Broadcasts maps Broadcasts to their Users, in the order given.
@@ -126,6 +141,21 @@ type Send struct {
 // Uses reports whether the send goes through the Integration with the id.
 func (s Send) Uses(integrationID int64) bool {
 	return s.Integration != nil && s.Integration.ID == integrationID
+}
+
+// Sends is the Live use that sends (ADR 0099), read through each reader in the order given: the
+// Broadcasts' and the Automations' (broadcasts.LiveSends, automations.LiveSends), which import this
+// package and so cannot be named here.
+func Sends(ctx context.Context, s *ent.Scoped, readers ...func(context.Context, *ent.Scoped) ([]Send, error)) ([]Send, error) {
+	var sends []Send
+	for _, read := range readers {
+		more, err := read(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		sends = append(sends, more...)
+	}
+	return sends, nil
 }
 
 // SendUsers is the work of the sends, each named once, in the order of sends.

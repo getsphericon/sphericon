@@ -28,7 +28,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -181,22 +190,69 @@ func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Re
 // Contact's rows through ids already resolved into the Target.
 func (u *UseCase) steps() []step {
 	return []step{
-		cancelBroadcastWork,
-		cancelAutomationWork,
-		cancelRuleWork,
-		purgeEventJobs,
-		purgeWebhookDeliveries,
-		eraseShortLinks,
-		eraseTelegram,
-		eraseEvents,
-		eraseVisitors,
-		eraseConfirmations,
-		eraseRuns,
-		eraseFirings,
+		// The Broadcast delivery module cancels the Contact's unsent recipients; a Broadcast left
+		// with nothing pending settles.
+		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+			return broadcasts.CancelPending(ctx, s, t.ContactID, pub)
+		},
+		// The Automation module cancels the queued step calls and trigger evaluations that name the
+		// Contact or its runs (a failure's response excerpt sits on the run, which goes below).
+		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+			return automations.CancelPending(ctx, s, t.ContactID, pub)
+		},
+		// The Rule module cancels the queued evaluations that name the Contact.
+		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+			return rules.CancelPending(ctx, s, t.ContactID, pub)
+		},
+		// The queued event consumer jobs whose envelope names the subject: the bus inserted them,
+		// and the purge shares Erasure's transaction.
+		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+			return pub.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+		},
+		// The queued webhook deliveries whose payload names the subject; the event envelope's
+		// owner knows that payload shape.
+		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+		},
+		// The Outbound message module deletes the short links of the Contact's messages, before
+		// anonymizeDelivery clears the contact_id they are found by.
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return outboundmessages.EraseShortLinks(ctx, s, t.ContactID)
+		},
+		// The Binding module deletes the Bindings and Start tokens of the Contact and of its
+		// Visitors, so before the Visitors go. Telegram opt-outs are not here: they are keyed by
+		// the user id and stay (detachOptOuts).
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return bindings.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
+		},
+		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
+		// anonymizes its system Events in place.
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return events.EraseSubject(ctx, s, t.ContactID, t.Phone, t.VisitorIDs)
+		},
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return visitors.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
+		},
+		// The Confirmation and its evidence; losing it fails safe (re-confirmation).
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return confirmations.EraseContact(ctx, s, t.ContactID, t.Phone)
+		},
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return automations.EraseRuns(ctx, s, t.ContactID)
+		},
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return rules.EraseFirings(ctx, s, t.ContactID)
+		},
 		detachOptOuts,
 		anonymizeDelivery,
-		eraseCapturedMessages,
-		eraseContact,
+		// The Captured messages (Test inbox, ADR 0058) addressed to the subject's Destinations.
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return capturedmessages.EraseTo(ctx, s, t.Destinations)
+		},
+		// The Contact itself; its Tag links and Custom field values go with the row.
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return contacts.DeleteIn(ctx, s, t.ContactID)
+		},
 		publishErased,
 	}
 }
@@ -209,7 +265,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 	if c == nil {
 		return resolveContactless(ctx, s, id)
 	}
-	visitors, err := s.Visitor().Query().Where(visitorOf(c.ID)).All(ctx)
+	seen, err := s.Visitor().Query().Where(visitorOf(c.ID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +273,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 	if c.SubjectID != nil && *c.SubjectID != "" {
 		t.SubjectID = *c.SubjectID
 	}
-	for _, v := range visitors {
+	for _, v := range seen {
 		t.VisitorIDs = append(t.VisitorIDs, v.VisitorID)
 	}
 	if c.Email != nil {

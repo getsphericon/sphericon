@@ -73,15 +73,10 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 // resolution a send takes (messaging.Through, messaging.EffectiveFrom), Broadcasts first, then
 // Automations.
 func (u *UseCase) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([]liveuse.User, error) {
-	sends, err := broadcasts.LiveSends(ctx, s)
+	sends, err := liveuse.Sends(ctx, s, broadcasts.LiveSends, automations.LiveSends)
 	if err != nil {
 		return nil, err
 	}
-	steps, err := automations.LiveSends(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-	sends = append(sends, steps...)
 	senders := map[int64]messaging.EmailSender{}
 	var onDomain []liveuse.Send
 	for _, send := range sends {

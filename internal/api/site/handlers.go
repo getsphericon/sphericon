@@ -53,7 +53,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -142,8 +141,6 @@ type Handlers struct {
 	login *login.Module[*ent.User]
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
-	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
-	customFieldRetyping *customfieldretyping.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
 	unsubscribe *unsubscriberecording.UseCase
 }
@@ -273,8 +270,6 @@ type Deps struct {
 	// Migrations runs the pending migrations from the error page of a development server
 	// (ADR 0033); nil on any other, which leaves the operation answering 404.
 	Migrations Migrations
-	// CustomFieldRetyping edits a Custom field (a use case, ADR 0102).
-	CustomFieldRetyping *customfieldretyping.UseCase
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
 }
@@ -292,7 +287,7 @@ func NewHandlers(d *Deps) *Handlers {
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
+		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,

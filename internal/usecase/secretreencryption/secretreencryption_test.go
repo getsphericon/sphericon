@@ -19,10 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
-func total(counts []secretreencryption.Count, pick func(secretreencryption.Count) int) int {
+func total(counts []secrets.Count, pick func(secrets.Count) int) int {
 	var n int
 	for _, c := range counts {
 		n += pick(c)
@@ -70,15 +69,15 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	counts, err := reencryption(env, rotated).Run(ctx)
 	require.NoError(t, err)
-	assert.Positive(t, total(counts, func(c secretreencryption.Count) int { return c.Rewritten }))
-	assert.Zero(t, total(counts, func(c secretreencryption.Count) int { return c.Raced }))
+	assert.Positive(t, total(counts, func(c secrets.Count) int { return c.Rewritten }))
+	assert.Zero(t, total(counts, func(c secrets.Count) int { return c.Raced }))
 	for _, c := range counts {
 		assert.Positive(t, c.Rewritten, "%s holds a fixture that was rewritten", c.Column)
 	}
 
 	again, err := reencryption(env, rotated).Run(ctx)
 	require.NoError(t, err)
-	assert.Zero(t, total(again, func(c secretreencryption.Count) int { return c.Rewritten }), "a second run is idempotent")
+	assert.Zero(t, total(again, func(c secrets.Count) int { return c.Rewritten }), "a second run is idempotent")
 	for i, c := range again {
 		assert.GreaterOrEqual(t, c.Current, counts[i].Rewritten, "%s: everything rewritten is current now", c.Column)
 	}

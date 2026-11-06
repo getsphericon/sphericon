@@ -36,8 +36,9 @@ type Sweep struct {
 	// Swap compares and swaps: it stores next on the row only while it still holds prev, and
 	// reports whether it did.
 	Swap func(ctx context.Context, id int64, prev, next string) (bool, error)
-	// Seal maps a stored value to the one to store; nil rewraps it whole (Rewrap).
-	Seal func(value string) (string, bool, error)
+	// Seal maps a stored value to the one to store under the primary key of the cipher; nil
+	// rewraps it whole (Cipher.Rewrap).
+	Seal func(c *Cipher, value string) (string, bool, error)
 }
 
 // Reencrypt sweeps the columns in order, each in id order and page by page, and stores every
@@ -61,7 +62,7 @@ func (c *Cipher) sweep(ctx context.Context, s Sweep) (Count, error) {
 	n := Count{Column: s.Column}
 	seal := s.Seal
 	if seal == nil {
-		seal = c.Rewrap
+		seal = (*Cipher).Rewrap
 	}
 	var after int64
 	for {
@@ -74,7 +75,7 @@ func (c *Cipher) sweep(ctx context.Context, s Sweep) (Count, error) {
 			if r.Value == "" {
 				continue
 			}
-			next, changed, err := seal(r.Value)
+			next, changed, err := seal(c, r.Value)
 			if err != nil {
 				return n, fmt.Errorf("row %d: %w", r.ID, err)
 			}

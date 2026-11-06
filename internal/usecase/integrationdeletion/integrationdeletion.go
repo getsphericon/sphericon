@@ -73,14 +73,9 @@ func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 // liveUsers is the Live use of the Integration (ADR 0099): the work whose sends go through it, by
 // the same resolution a send takes (messaging.Through), Broadcasts first, then Automations.
 func liveUsers(ctx context.Context, s *ent.Scoped, id int64) ([]liveuse.User, error) {
-	sends, err := broadcasts.LiveSends(ctx, s)
+	sends, err := liveuse.Sends(ctx, s, broadcasts.LiveSends, automations.LiveSends)
 	if err != nil {
 		return nil, err
 	}
-	steps, err := automations.LiveSends(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-	sends = append(sends, steps...)
 	return liveuse.SendUsers(lo.Filter(sends, func(send liveuse.Send, _ int) bool { return send.Uses(id) })), nil
 }
