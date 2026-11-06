@@ -65,6 +65,7 @@ require (
 	github.com/riverqueue/river/rivershared v0.51.0
 	github.com/riverqueue/river/rivertype v0.51.0
 	github.com/riverqueue/rivercontrib/otelriver v0.12.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.11.1
 	github.com/samber/do/v2 v2.1.0
 	github.com/samber/lo v1.53.0

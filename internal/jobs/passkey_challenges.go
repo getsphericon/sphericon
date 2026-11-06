@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 )
 
-// passkeyChallengesHourUTC is the off-peak hour the spent-challenge prune runs at.
-const passkeyChallengesHourUTC = 5
+// passkeyChallengesSchedule is when the spent-challenge prune runs: daily at an off-peak hour, 05:00 UTC.
+var passkeyChallengesSchedule = mustParseCron("CRON_TZ=UTC 0 5 * * *")
 
 // PrunePasskeyChallengesArgs is the daily tick that deletes spent Passkey challenges (ADR 0051).
 type PrunePasskeyChallengesArgs struct{}
