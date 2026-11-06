@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The goal Event is evaluated before the trigger's evaluation has run: its own evaluation finds no
@@ -28,8 +28,8 @@ func TestAGoalEventConsumedBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *test
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: paid,
 	})
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0))
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationPaymentRecoveryID), automationrun.ContactID(fixtures.ContactAliceID)).

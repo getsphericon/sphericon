@@ -130,6 +130,30 @@ func Open(c *secrets.Cipher, s Spec) (Opened, error) {
 	return out, err
 }
 
+// Rewrap rewraps in place a stored call's sealed URL, signing secret and header values under the
+// primary key of c (secrets.Cipher.Rewrap), and reports whether any was under an older key.
+func Rewrap(c *secrets.Cipher, target, secret *string, headers []Header) (bool, error) {
+	fields := make([]*string, 0, 2+len(headers))
+	fields = append(fields, target, secret)
+	for j := range headers {
+		fields = append(fields, &headers[j].Value)
+	}
+	var changed bool
+	for _, f := range fields {
+		if *f == "" {
+			continue
+		}
+		next, did, err := c.Rewrap(*f)
+		if err != nil {
+			return false, err
+		}
+		if did {
+			*f, changed = next, true
+		}
+	}
+	return changed, nil
+}
+
 func open(c *secrets.Cipher, sealed string) (string, error) {
 	if sealed == "" {
 		return "", nil

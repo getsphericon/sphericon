@@ -152,7 +152,9 @@ components:
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
   # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
-  # `FenceOn`, `bindings` only `PruneStartTokens`, `sendingdomains` only `Due` and `DevTXTLookup`) are left to review. The composition roots, `internal/api/auth` and the job
+  # `FenceOn`, `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and `Secrets`,
+  # `integrations`, `webhooks`, `rules`, `automations`, `users` and `staffmembers` only their
+  # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth` and the job
   # runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`, which do not forbid the client.
   core-raw:
     in:
@@ -162,13 +164,14 @@ components:
         internal/capturedmessages,
         internal/consent,
         internal/consentrecords,
+        internal/integrations,
         internal/instancestates,
         internal/instanceaudit,
         internal/invitations,
         internal/joindomains,
         internal/machine,
         internal/oauthserver,
-        internal/rekey,
+        internal/rules,
         internal/secondfactor,
         internal/sendingdomains,
         internal/signupitems,
@@ -179,6 +182,7 @@ components:
         internal/trackinghostlog,
         internal/userfeed,
         internal/users,
+        internal/webhooks,
         internal/workspacedeletion,
         internal/workspacefeed,
       ]

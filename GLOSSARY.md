@@ -1383,6 +1383,19 @@ event. Every release between two Majors only adds. An Upgrade may skip any relea
 but passes through the last release of each Major it crosses; before 1.0 each `0.MINOR` is a Major.
 _Avoid_: Breaking release
 
+**Encryption key**:
+The keyset an Instance seals its stored secrets with (provider credentials, signing secrets, DKIM
+private keys, Second factor secrets, the sealed fields of HTTP steps and actions), set by the
+Self-hoster. Rotating it adds a new primary key and keeps the older ones for reading; once a Secret
+re-encryption has found every value current, the older keys can be retired.
+_Avoid_: Master key, encryption secret
+
+**Secret re-encryption**:
+Storing every secret the database holds again under the primary key of the Encryption key, so that
+the older keys can be retired. No secret changes its value, only the key it is sealed under; a value
+saved while it runs is skipped, and a second run finds it current.
+_Avoid_: Rekey, key migration
+
 ### On-site forms
 
 **On-site form**:

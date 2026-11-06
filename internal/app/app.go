@@ -28,15 +28,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
@@ -540,14 +539,10 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 
 // Reencrypt seals every stored secret under the primary key of the encryption keyset
 // (`sphericon encryption-key reencrypt`) and returns what it did per column.
-func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
-	client, err := do.Invoke[*ent.Client](a.injector)
+func (a *App) Reencrypt(ctx context.Context) ([]secretreencryption.Count, error) {
+	reencryption, err := do.Invoke[*secretreencryption.UseCase](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	cipher, err := do.Invoke[*secrets.Cipher](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return rekey.New(client, cipher).Run(ctx)
+	return reencryption.Run(ctx)
 }

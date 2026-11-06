@@ -14,9 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // holdClock is the clock the Staff hold read uses, moved by the test.
@@ -70,12 +70,12 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	clock := &holdClock{t: time.Now()}
 	fs := &fakeSender{}
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	runIDs := enrollmentsOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))
 
-	held := stepperWith(env, heldMod(env, clock, resolvingTo(fs)), stepping.WithClock(clock.now))
+	held := stepperWith(env, heldMod(env, clock, resolvingTo(fs)), stepexecution.WithClock(clock.now))
 	require.True(t, env.RunNextStep(t, held))
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)

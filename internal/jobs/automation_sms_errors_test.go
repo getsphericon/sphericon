@@ -19,8 +19,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // What Twilio answers at send time is sorted by whom it concerns (ADR 0079): the account, the rate,
@@ -47,7 +47,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			automationID := smsAutomation(t, env, smsStep(account, "Hello"))
 			confirmSMS(t, env, fixtures.ContactTexterPhone)
 			runID := enrollVia(t, env, automationID, fixtures.ContactTexterID)
-			mod := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
+			mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
 			refuse(t, env, account)
 
 			require.True(t, env.RunNextStep(t, mod))
@@ -85,7 +85,7 @@ func TestAHeldTwilioIntegrationSendsNothingUntilItIsSavedAgain(t *testing.T) {
 	account := env.AcmeTwilio(t)
 	runID := int64(fixtures.AutomationRunJobsSMSHelloConfirmedID)
 	queueStep(t, env, runID)
-	mod := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
+	mod := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
 	env.Twilio.RefuseSends(twiliotest.AccountNotActive)
 	require.True(t, env.RunNextStep(t, mod))
 	env.Twilio.AcceptSends()
@@ -156,7 +156,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			assert.Equal(t, automationrun.StatusActive, deferred.Status)
 			recorded := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).CountX(ctx)
 			assert.Zero(t, recorded, "nothing is recorded")
-			jobs := env.JobRowsOf(t, stepping.RunStepArgs{}.Kind())
+			jobs := env.JobRowsOf(t, stepexecution.RunStepArgs{}.Kind())
 			require.Len(t, jobs, 1)
 			assert.GreaterOrEqual(t, jobs[0].ScheduledAt.Sub(before), outbound.DeferralBackoff)
 

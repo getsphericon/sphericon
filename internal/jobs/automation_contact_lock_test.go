@@ -17,9 +17,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // writer is one side of a race over a Contact: a transaction the test starts and names.
@@ -77,7 +77,7 @@ func enrolledForTheExit(t *testing.T, e *realEnv) (int64, writer) {
 	ending := e.bus(t)
 	return runID, writer{name: "exit", run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-		return stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, left, 0)
+		return stepexecution.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, left, 0)
 	}}
 }
 

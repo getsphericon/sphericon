@@ -18,8 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // holdingQueue holds the transaction that queues a job open, once the work before the queueing
@@ -78,7 +78,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 
 	enrolled := make(chan error, 1)
 	go func() {
-		enrolled <- stepping.OnEvent(ctx, enrolling, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0)
+		enrolled <- stepexecution.OnEvent(ctx, enrolling, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0)
 	}()
 	<-hold.reached
 	stored(t, e, &events.CollectedEvent{
@@ -87,7 +87,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	ending := e.bus(t)
 	ended, endDone := make(chan error, 1), make(chan struct{})
 	go func() {
-		ended <- stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0)
+		ended <- stepexecution.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0)
 		close(endDone)
 	}()
 	require.Eventually(t, func() bool {

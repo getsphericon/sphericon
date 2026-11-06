@@ -128,7 +128,8 @@ coding standards in `CODING_STANDARDS.md`.
   one domain module into the modules above it: a base module knows no module that uses it. The use
   case is a `UseCase` type built by `New` from what it needs (the bus), registered in
   `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
-  included: the Sending domain re-check jobs call `domainverification`). It takes the
+  included: the Sending domain re-check jobs call `domainverification`, the step jobs of an
+  Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a Live use check opens it with
   `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`), reads them, and changes their rows only through their functions
@@ -150,7 +151,14 @@ coding standards in `CODING_STANDARDS.md`.
   rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
   the Instance state module (`internal/instancestates`), whose functions make the Instance-wide
-  reads on its raw client, and hold no client themselves.
+  reads on its raw client, and hold no client themselves. The Secret re-encryption
+  (`internal/usecase/secretreencryption`, `sphericon encryption-key reencrypt`) spans every
+  Workspace and the Users and Staff members besides: it takes the `Secrets` of each module that owns
+  a table with stored secrets (`integrations`, `webhooks`, `sendingdomains`, `users`,
+  `staffmembers`, `automations`, `rules`), which the wiring builds on the raw client, and calls their
+  `Reencrypt` in a fixed order; the sweep they share, by id and compare-and-swap, is
+  `secrets.Cipher.Reencrypt`. A re-encrypt function only stores the value it read again under the
+  primary key, so no check guards it and it is not in `x-unchecked-removals`.
   A use case need not guard a removal: an operation that writes no table itself but reads or
   changes several modules' rows is one too. The Ingest hook's reading of a provider's callbacks
   (`ingesthook`) opens the request's transaction and changes Outbound messages, Suppressions,
@@ -294,7 +302,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
+  codes, ADR 0020: they belong to the User, not a Workspace), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/integrations`, `internal/webhooks` and `internal/rules` (only `Secrets`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has `Secrets` of `users`, `staffmembers`, `sendingdomains` and `automations`; every other function of these three takes a `*ent.Scoped`), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
   that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; `HoldsReleaseRead` reads the Memberships of every live Workspace for the Release check to tell an owner of any of them of a newer release, and `Figures` reads the Instance-wide counts the Telemetry report rounds; `DefaultSendCapIn` reads the default Send cap on the transaction of `users` that creates a Workspace, ADR 0067), `internal/instanceaudit` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
@@ -304,10 +312,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits; `Tokens` reads every Workspace's claim of a domain for the end-to-end
   suite's resolver), `internal/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
   listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
-  `internal/usecase/domainverification` that Workspace's scope; and `DevTXTLookup`, the end-to-end suite's resolver; every other
+  `internal/usecase/domainverification` that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `Secrets`, the DKIM private keys the re-encryption rewrites; every other
   function takes a `*ent.Scoped`), `internal/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
   Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
-  Workspace's scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
+  Workspace's scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `Secrets`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
   suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
   the Owners' deleted ones, which have no scope yet, opens a transaction per erase step (one per
   Workspace-owned table, the Send cap's bucket `send_cap_limiters` among them), scopes to the
@@ -437,7 +445,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).
-- **Automation HTTP Steps**: `stepping.Module.ExecuteHTTP` selects the Enrollment's pinned Step,
+- **Automation HTTP Steps**: `stepexecution.UseCase.ExecuteHTTP` (`internal/usecase/stepexecution`) selects the Enrollment's pinned Step,
   checks its lifecycle and position, opens and renders its stored call, and executes it through
   the protected HTTP adapter under the Enrollment's exit fence. Success advances and queues the
   next Step in one transaction; final failure records the Enrollment's failure. Ordinary attempt

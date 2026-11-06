@@ -14,8 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 func listAutomations(t *testing.T, c *siteapi.Client, archived bool) []int64 {
@@ -91,18 +91,18 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 
 	_, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
-	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "an archived Automation starts no Enrollment")
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+	assert.Empty(t, env.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), "an archived Automation starts no Enrollment")
 
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
-	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "the unarchived Automation is inactive")
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+	assert.Empty(t, env.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), "the unarchived Automation is inactive")
 
 	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
-	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+	assert.Len(t, env.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
 }
 
 // An Automation is archived, never deleted (ADR 0100): one never published and one that has sent

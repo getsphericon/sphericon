@@ -1,10 +1,13 @@
-// Package stepping walks an Enrollment through its Automation's steps: one operation
-// executes one step of one Enrollment, moves it and queues the job of the next step in the
-// same transaction. The Automations module keeps the Enrollment's state and lifecycle
-// (ADR 0046); it cannot hold the loop because the Tags module imports it. The module holds
-// no raw database client: a job adapter loads the Enrollment's row, builds the Workspace
-// scope from it (the job entry point of ADR 0017) and passes the scope in.
-package stepping
+// Package stepexecution is the use case that walks an Enrollment through its Automation's steps
+// (ADR 0102): one operation executes one step of one Enrollment, moves it and queues the job of
+// the next step in the same transaction. It spans several domain modules and changes their rows
+// only through their functions: the Enrollment's state and lifecycle are the Automations
+// module's (ADR 0046; automations.Advance, Complete, Fail, ExitRun, the Enroll functions), a tag
+// step's change of the Contact's Tags is the Tags module's (tags.ApplyIn, RemoveIn) and a send
+// step is one Outbound send. It holds no raw database client: a job adapter loads the
+// Enrollment's row, builds the Workspace scope from it (the job entry point of ADR 0017) and
+// passes the scope in.
+package stepexecution
 
 import (
 	"context"
@@ -141,26 +144,26 @@ func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *
 	return made, err
 }
 
-// Module executes the steps of Enrollments.
-type Module struct {
+// UseCase executes the steps of Enrollments.
+type UseCase struct {
 	bus   *events.Bus
 	out   *outbound.Module
 	fence automations.Fencer
 	now   func() time.Time
 }
 
-// Option configures the module.
-type Option func(*Module)
+// Option configures the use case.
+type Option func(*UseCase)
 
-// WithClock replaces the wall clock the module reads to honour an Enrollment's resume time
+// WithClock replaces the wall clock the use case reads to honour an Enrollment's resume time
 // and to time a wait.
-func WithClock(now func() time.Time) Option { return func(m *Module) { m.now = now } }
+func WithClock(now func() time.Time) Option { return func(m *UseCase) { m.now = now } }
 
-// New builds the module. The bus runs a move and the job that follows it in one transaction;
+// New builds the use case. The bus runs a move and the job that follows it in one transaction;
 // out sends an email step and acts as the `system` actor for a tag step; fence orders a send
 // against an exit of the Enrollment.
-func New(bus *events.Bus, out *outbound.Module, fence automations.Fencer, opts ...Option) *Module {
-	m := &Module{bus: bus, out: out, fence: fence, now: time.Now}
+func New(bus *events.Bus, out *outbound.Module, fence automations.Fencer, opts ...Option) *UseCase {
+	m := &UseCase{bus: bus, out: out, fence: fence, now: time.Now}
 	for _, o := range opts {
 		o(m)
 	}
@@ -173,9 +176,9 @@ func New(bus *events.Bus, out *outbound.Module, fence automations.Fencer, opts .
 // than step because this job was delivered twice or a competing writer moved it. A step that
 // runs before the Enrollment's recorded resume time queues itself for that time and does
 // nothing else. A send step is one Outbound send under the Automation's Sending source
-// (ADR 0015): the module owns eligibility, the unsubscribe footer and the send record, and
+// (ADR 0015): the Outbound module owns eligibility, the unsubscribe footer and the send record, and
 // Step only turns its Outcome into the Enrollment's next state.
-func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
+func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int) error {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -254,7 +257,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 // the step's Outbound message for its report, except an unsubscribe from this Automation, which
 // exits the Enrollment. A Failed send fails the Enrollment, except one the provider refused for
 // that message alone (Result.MessageOnly), which moves on too.
-func (m *Module) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.SendStep) error {
+func (m *UseCase) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, st automations.SendStep) error {
 	content, err := st.Content()
 	if err != nil {
 		return m.fail(ctx, s, run.ID, err)
@@ -321,7 +324,7 @@ type move struct {
 // advance moves the Enrollment from step to the next one and queues that step's job, in one
 // transaction with mv's own writes. A move that finds the Enrollment gone or elsewhere, or its
 // Contact gone, writes nothing and returns nil.
-func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv move) error {
+func (m *UseCase) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv move) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
 			locked, err := automations.LockContact(ctx, ts, mv.contactID)
@@ -343,11 +346,11 @@ func (m *Module) advance(ctx context.Context, s *ent.Scoped, runID int64, from i
 }
 
 // requeue queues the same step again for at.
-func (m *Module) requeue(ctx context.Context, s *ent.Scoped, runID int64, step int, at time.Time) error {
+func (m *UseCase) requeue(ctx context.Context, s *ent.Scoped, runID int64, step int, at time.Time) error {
 	return m.enqueue(ctx, s, RunStepArgs{RunID: runID, Step: step}, &at)
 }
 
-func (m *Module) enqueue(ctx context.Context, s *ent.Scoped, args river.JobArgs, at *time.Time) error {
+func (m *UseCase) enqueue(ctx context.Context, s *ent.Scoped, args river.JobArgs, at *time.Time) error {
 	return m.bus.WithinScopedEnqueueTx(ctx, s, func(_ *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		return q.Enqueue(ctx, args, scheduled(at))
 	})
@@ -361,7 +364,7 @@ func scheduled(at *time.Time) *river.InsertOpts {
 }
 
 // complete ends the Enrollment `completed`; one that is no longer active stays as it is.
-func (m *Module) complete(ctx context.Context, s *ent.Scoped, runID int64) error {
+func (m *UseCase) complete(ctx context.Context, s *ent.Scoped, runID int64) error {
 	return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return automations.Complete(ctx, ts, pub, runID, m.now())
 	}))
@@ -369,7 +372,7 @@ func (m *Module) complete(ctx context.Context, s *ent.Scoped, runID int64) error
 
 // fail ends the Enrollment `failed` and returns cause for the job, or nothing when the run
 // had already left `active`. A failed write is returned with the cause, never dropped.
-func (m *Module) fail(ctx context.Context, s *ent.Scoped, runID int64, cause error) error {
+func (m *UseCase) fail(ctx context.Context, s *ent.Scoped, runID int64, cause error) error {
 	err := automations.Fail(ctx, s, runID, m.now(), automations.Failure{})
 	if automations.Stale(err) {
 		return nil

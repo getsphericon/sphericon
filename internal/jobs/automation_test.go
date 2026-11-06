@@ -18,9 +18,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // passingClock is a clock that has passed a year more every time it is read: whatever time a
@@ -34,25 +34,25 @@ func passingClock() func() time.Time {
 	}
 }
 
-// stepperOf is the stepping module over the sender resolver, its clock passing every wait.
-func stepperOf(env *testhelper.TestEnv, resolver outbound.Senders) *stepping.Module {
-	return stepperWith(env, newMod(env, resolver), stepping.WithClock(passingClock()))
+// stepperOf is the Step execution use case over the sender resolver, its clock passing every wait.
+func stepperOf(env *testhelper.TestEnv, resolver outbound.Senders) *stepexecution.UseCase {
+	return stepperWith(env, newMod(env, resolver), stepexecution.WithClock(passingClock()))
 }
 
-// stepperWith is the stepping module over mod, as configured.
-func stepperWith(env *testhelper.TestEnv, mod *outbound.Module, opts ...stepping.Option) *stepping.Module {
-	return stepping.New(env.Bus, mod, noFence, opts...)
+// stepperWith is the Step execution use case over mod, as configured.
+func stepperWith(env *testhelper.TestEnv, mod *outbound.Module, opts ...stepexecution.Option) *stepexecution.UseCase {
+	return stepexecution.New(env.Bus, mod, noFence, opts...)
 }
 
 // queueStep queues the step job of an Enrollment standing on a fixture, as the enroll or the
 // previous step would have.
 func queueStep(t *testing.T, env *testhelper.TestEnv, runID int64) {
 	t.Helper()
-	env.EnqueueJob(t, stepping.RunStepArgs{RunID: runID, Step: env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep})
+	env.EnqueueJob(t, stepexecution.RunStepArgs{RunID: runID, Step: env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep})
 }
 
 // stepOnce executes the step an Enrollment of Acme stands on, and returns what the step returned.
-func stepOnce(t *testing.T, env *testhelper.TestEnv, mod *stepping.Module, runID int64) error {
+func stepOnce(t *testing.T, env *testhelper.TestEnv, mod *stepexecution.UseCase, runID int64) error {
 	t.Helper()
 	return mod.Step(t.Context(), env.DB.Scoped(fixtures.AcmeID), runID, env.DB.AutomationRun.GetX(t.Context(), runID).CurrentStep)
 }
@@ -60,7 +60,7 @@ func stepOnce(t *testing.T, env *testhelper.TestEnv, mod *stepping.Module, runID
 // queuedSteps are the args of the step jobs waiting in the queue.
 func queuedSteps(t *testing.T, env *testhelper.TestEnv) []map[string]any {
 	t.Helper()
-	return env.JobsOf(t, stepping.RunStepArgs{}.Kind())
+	return env.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
 }
 
 // stepJob is the args of a queued step job as JobsOf reads them.
@@ -84,7 +84,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	require.NoError(t, stepping.OnEvent(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, automations.Event{Action: triggerOf(t, env, automationID), OccurredAt: time.Now()}, 0))
 	runIDs := enrollmentsOf(t, env, automationID, contactID)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -105,7 +105,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}, 0))
 	assert.Equal(t, []int64{runID}, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, alice.ID))
 
 	fs := &fakeSender{}
@@ -176,7 +176,7 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationWinBackID), OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationWinBackID), OccurredAt: time.Now()}, 0))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationWinBackID, fixtures.ContactAliceID), "the win-back automation is a draft")
 }
 
@@ -192,7 +192,7 @@ func TestAutomationWaitParksTheEnrollmentAndQueuesTheNextStepForTheResumeTime(t 
 	require.NotNil(t, run.ResumeAt)
 	assert.Equal(t, 1, run.CurrentStep)
 	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step after the wait is queued, and nothing else")
-	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0], time.Second, "for the resume time")
+	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0], time.Second, "for the resume time")
 	assert.Empty(t, fs.sent)
 }
 
@@ -213,7 +213,7 @@ func TestAStepRunningBeforeTheResumeTimeQueuesItselfAndDoesNothingElse(t *testin
 	assert.Equal(t, 1, run.CurrentStep, "the Enrollment stays on the step after the wait")
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, env), "the step waits for its time")
-	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0], time.Second)
+	assert.WithinDuration(t, *run.ResumeAt, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0], time.Second)
 }
 
 // A step job delivered again after its transaction committed (the queue completes a job in a
@@ -423,10 +423,10 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, fixtures.AutomationOnOpenID))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, fixtures.AutomationOnOpenID))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, fixtures.AutomationWelcomeSeriesID))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: events.NameEmailOpened, OccurredAt: time.Now()}, fixtures.AutomationWelcomeSeriesID))
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
 }
 
@@ -440,11 +440,11 @@ func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	failed := time.Now().Add(-2 * time.Minute)
 	paid := failed.Add(time.Minute)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
 	enrolled := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
 	require.Len(t, enrolled, 1)
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, fixtures.AutomationPaymentRecoveryID))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, fixtures.AutomationPaymentRecoveryID))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -464,8 +464,8 @@ func TestAGoalEventHandledBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *testi
 	contactID := int64(fixtures.ContactPaidBeforeEnrolledID)
 	failed := time.Now().Add(-4 * 24 * time.Hour) // the fixture's payment_succeeded is 3 days ago
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: "payment_succeeded", OccurredAt: failed.Add(24 * time.Hour)}, 0))
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: "payment_succeeded", OccurredAt: failed.Add(24 * time.Hour)}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -486,7 +486,7 @@ func TestATriggerJobWithoutWhenTheEventOccurredBeginsTheEnrollmentNow(t *testing
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactPaidBeforeEnrolledID, automations.Event{Action: "payment_failed", OccurredAt: time.Time{}}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, fixtures.ContactPaidBeforeEnrolledID, automations.Event{Action: "payment_failed", OccurredAt: time.Time{}}, 0))
 	latest := time.Now()
 	runs := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaidBeforeEnrolledID)
 	require.Len(t, runs, 1)

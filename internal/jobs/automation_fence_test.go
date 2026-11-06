@@ -31,9 +31,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // noFence is the Fencer of the ordinary tests, whose database is one transaction on one
@@ -117,12 +117,12 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	return bus
 }
 
-// stepper is the stepping module over a provider that sends through sender.
-func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepping.Module {
+// stepper is the Step execution use case over a provider that sends through sender.
+func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecution.UseCase {
 	t.Helper()
 	bus := e.bus(t)
 	mod := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
-	return stepping.New(bus, mod, e.fence)
+	return stepexecution.New(bus, mod, e.fence)
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
@@ -222,13 +222,13 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, cipher, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, cipher, stepexecution.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
 
 	workDone := make(chan error, 1)
 	go func() {
-		workDone <- w.Work(workCtx, &river.Job[stepping.RunHTTPStepArgs]{
-			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   stepping.RunHTTPStepArgs{RunID: runID},
+		workDone <- w.Work(workCtx, &river.Job[stepexecution.RunHTTPStepArgs]{
+			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
+			Args:   stepexecution.RunHTTPStepArgs{RunID: runID},
 		})
 	}()
 	<-started

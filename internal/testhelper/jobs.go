@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // Tests work the jobs a request queues at once (enqueue.go), so a test that needs a job to be
@@ -165,11 +165,11 @@ func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(
 // queue. It reports whether there was a job. The job is run whatever its schedule says: a step
 // that is early for its Enrollment's resume time queues itself again, so a test that lets
 // waits pass gives the module a clock past them.
-func (env *TestEnv) RunNextStep(t *testing.T, mod *stepping.Module) bool {
+func (env *TestEnv) RunNextStep(t *testing.T, mod *stepexecution.UseCase) bool {
 	t.Helper()
 	rc := env.riverClient(t)
 	res, err := rc.JobList(t.Context(), river.NewJobListParams().
-		Kinds(stepping.RunStepArgs{}.Kind()).
+		Kinds(stepexecution.RunStepArgs{}.Kind()).
 		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).
 		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1))
 	require.NoError(t, err)
@@ -177,9 +177,9 @@ func (env *TestEnv) RunNextStep(t *testing.T, mod *stepping.Module) bool {
 		return false
 	}
 	row := res.Jobs[0]
-	var args stepping.RunStepArgs
+	var args stepexecution.RunStepArgs
 	require.NoError(t, json.Unmarshal(row.EncodedArgs, &args))
-	require.NoError(t, jobs.NewRunStepWorker(env.DB, mod).Work(t.Context(), &river.Job[stepping.RunStepArgs]{JobRow: row, Args: args}))
+	require.NoError(t, jobs.NewRunStepWorker(env.DB, mod).Work(t.Context(), &river.Job[stepexecution.RunStepArgs]{JobRow: row, Args: args}))
 	_, err = rc.JobDelete(t.Context(), row.ID)
 	require.NoError(t, err)
 	return true
@@ -207,7 +207,7 @@ func (env *TestEnv) JobSchedules(t *testing.T, kind string) []time.Time {
 // RunQueuedSteps runs the waiting step jobs through mod, oldest first, until none is left: the
 // steps an Enrollment's own jobs queue are run too, so an Automation is driven to its end
 // (or to the HTTP step job, which this does not run).
-func (env *TestEnv) RunQueuedSteps(t *testing.T, mod *stepping.Module) {
+func (env *TestEnv) RunQueuedSteps(t *testing.T, mod *stepexecution.UseCase) {
 	t.Helper()
 	for range maxQueuedJobs {
 		if !env.RunNextStep(t, mod) {

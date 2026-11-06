@@ -1,4 +1,4 @@
-package rekey_test
+package secretreencryption_test
 
 import (
 	"context"
@@ -17,12 +17,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
-func total(counts []rekey.Count, pick func(rekey.Count) int) int {
+func total(counts []secretreencryption.Count, pick func(secretreencryption.Count) int) int {
 	var n int
 	for _, c := range counts {
 		n += pick(c)
@@ -68,17 +68,17 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		require.NoError(t, err, "integration %d under the rotated keyset", row.ID)
 	}
 
-	counts, err := rekey.New(env.DB, rotated).Run(ctx)
+	counts, err := reencryption(env, rotated).Run(ctx)
 	require.NoError(t, err)
-	assert.Positive(t, total(counts, func(c rekey.Count) int { return c.Rewritten }))
-	assert.Zero(t, total(counts, func(c rekey.Count) int { return c.Raced }))
+	assert.Positive(t, total(counts, func(c secretreencryption.Count) int { return c.Rewritten }))
+	assert.Zero(t, total(counts, func(c secretreencryption.Count) int { return c.Raced }))
 	for _, c := range counts {
 		assert.Positive(t, c.Rewritten, "%s holds a fixture that was rewritten", c.Column)
 	}
 
-	again, err := rekey.New(env.DB, rotated).Run(ctx)
+	again, err := reencryption(env, rotated).Run(ctx)
 	require.NoError(t, err)
-	assert.Zero(t, total(again, func(c rekey.Count) int { return c.Rewritten }), "a second run is idempotent")
+	assert.Zero(t, total(again, func(c secretreencryption.Count) int { return c.Rewritten }), "a second run is idempotent")
 	for i, c := range again {
 		assert.GreaterOrEqual(t, c.Current, counts[i].Rewritten, "%s: everything rewritten is current now", c.Column)
 	}
@@ -180,7 +180,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 
 	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
 	require.NoError(t, err)
-	_, err = rekey.New(env.DB, cipherFor(t, rotatedKeyset)).Run(ctx)
+	_, err = reencryption(env, cipherFor(t, rotatedKeyset)).Run(ctx)
 	require.NoError(t, err)
 	retiredKeyset, err := secrets.Retire(rotatedKeyset)
 	require.NoError(t, err)
@@ -214,7 +214,7 @@ func TestReencryptStopsOnAValueNoKeyReads(t *testing.T) {
 	require.NoError(t, err)
 	foreignKey := cipherFor(t, foreign)
 
-	counts, err := rekey.New(env.DB, foreignKey).Run(ctx)
+	counts, err := reencryption(env, foreignKey).Run(ctx)
 	require.ErrorIs(t, err, secrets.ErrCiphertext)
 	require.ErrorContains(t, err, "integrations.config_encrypted")
 	assert.Empty(t, counts)

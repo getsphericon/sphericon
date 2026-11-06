@@ -23,8 +23,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The Telegram send step (ADR 0081): a bound Contact gets the rendered text through the bot the
@@ -56,7 +56,7 @@ func telegramStep(bot testhelper.TelegramBot, text string) automationsteps.Step 
 // runSteps drives the queued steps through the harness's own Outbound module.
 func runSteps(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	env.RunQueuedSteps(t, stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock())))
+	env.RunQueuedSteps(t, stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock())))
 }
 
 func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T) {

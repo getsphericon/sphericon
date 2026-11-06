@@ -1,4 +1,4 @@
-package rekey_test
+package secretreencryption_test
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/rekey"
+	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 )
 
 func TestRotateKeepsTheOldKeyForDecryptionAndSaysToReencrypt(t *testing.T) {
@@ -19,7 +19,7 @@ func TestRotateKeepsTheOldKeyForDecryptionAndSaysToReencrypt(t *testing.T) {
 	sealed, err := oldCipher.Encrypt([]byte("x"))
 	require.NoError(t, err)
 
-	change, err := rekey.Rotate(old)
+	change, err := secretreencryption.Rotate(old)
 
 	require.NoError(t, err)
 	rotated := cipherFor(t, change.Keyset)
@@ -41,7 +41,7 @@ func TestRetireKeepsOnlyThePrimary(t *testing.T) {
 	sealed, err := oldCipher.Encrypt([]byte("x"))
 	require.NoError(t, err)
 
-	change, err := rekey.Retire(rotated)
+	change, err := secretreencryption.Retire(rotated)
 
 	require.NoError(t, err)
 	retired := cipherFor(t, change.Keyset)
@@ -50,17 +50,17 @@ func TestRetireKeepsOnlyThePrimary(t *testing.T) {
 }
 
 func TestAKeysetChangeNeedsAKeyset(t *testing.T) {
-	_, rotateErr := rekey.Rotate("")
-	_, retireErr := rekey.Retire("")
+	_, rotateErr := secretreencryption.Rotate("")
+	_, retireErr := secretreencryption.Retire("")
 
-	require.ErrorIs(t, rotateErr, rekey.ErrNoKeyset)
-	require.ErrorIs(t, retireErr, rekey.ErrNoKeyset)
+	require.ErrorIs(t, rotateErr, secretreencryption.ErrNoKeyset)
+	require.ErrorIs(t, retireErr, secretreencryption.ErrNoKeyset)
 }
 
 func TestReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := rekey.WriteReport(&out, []rekey.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
+	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Rewritten: 3, Current: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")
@@ -70,7 +70,7 @@ func TestReportOfARunThatRewroteSaysToRunAgain(t *testing.T) {
 func TestReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 	var out bytes.Buffer
 
-	err := rekey.WriteReport(&out, []rekey.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
+	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Current: 1, Raced: 1}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "run it once more")
@@ -79,7 +79,7 @@ func TestReportOfARunThatRacedSaysToRunAgain(t *testing.T) {
 func TestReportOfARunThatFoundEverythingCurrentPointsToRetire(t *testing.T) {
 	var out bytes.Buffer
 
-	err := rekey.WriteReport(&out, []rekey.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
+	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "webhook_endpoints.secret_encrypted", Current: 2}}, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "can be retired")
@@ -89,7 +89,7 @@ func TestReportOfARunThatStoppedShowsWhatItDidAndFails(t *testing.T) {
 	var out bytes.Buffer
 	stopped := errors.New("webhook_endpoints.secret_encrypted: row 4: invalid or corrupt ciphertext")
 
-	err := rekey.WriteReport(&out, []rekey.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
+	err := secretreencryption.WriteReport(&out, []secretreencryption.Count{{Column: "integrations.config_encrypted", Rewritten: 3}}, stopped)
 
 	require.ErrorIs(t, err, stopped)
 	assert.Contains(t, out.String(), "integrations.config_encrypted")

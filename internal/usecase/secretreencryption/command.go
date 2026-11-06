@@ -1,4 +1,4 @@
-package rekey
+package secretreencryption
 
 import (
 	"errors"

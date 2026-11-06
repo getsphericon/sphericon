@@ -15,7 +15,6 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -28,9 +27,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -81,9 +80,11 @@ type Deps struct {
 	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	DomainVerification *domainverification.UseCase
-	JoinDomains        *joindomains.Module
-	TrackingDomains    *trackingdomains.Module
-	Machine            *machine.Detector
+	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
+	StepExecution   *stepexecution.UseCase
+	JoinDomains     *joindomains.Module
+	TrackingDomains *trackingdomains.Module
+	Machine         *machine.Detector
 	// Clock is the Instance's clock; nil is time.Now.
 	Clock func() time.Time
 	// AppURL is the public origin of the links in account emails (reset, verify, change).
@@ -110,7 +111,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
-	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
+	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
@@ -228,10 +229,10 @@ func BaseConfig() *river.Config {
 // Queues are the queues the worker client works, each with its number of workers.
 func Queues() map[string]river.QueueConfig {
 	return map[string]river.QueueConfig{
-		river.QueueDefault:      {MaxWorkers: 5},
-		broadcasts.Queue:        {MaxWorkers: 10},
-		QueueWebhooks:           {MaxWorkers: 5},
-		stepping.QueueHTTPSteps: {MaxWorkers: 5},
+		river.QueueDefault:           {MaxWorkers: 5},
+		broadcasts.Queue:             {MaxWorkers: 10},
+		QueueWebhooks:                {MaxWorkers: 5},
+		stepexecution.QueueHTTPSteps: {MaxWorkers: 5},
 		// The domain events' consumers (ADR 0101): short jobs, most of which only queue more.
 		events.QueueEvents: {MaxWorkers: 10},
 	}

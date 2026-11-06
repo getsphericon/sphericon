@@ -93,7 +93,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
@@ -530,6 +532,7 @@ var jobsPackage = do.Package(
 			Orders:             do.MustInvoke[*orders.Module](i),
 			Deletion:           do.MustInvoke[*workspacedeletion.Module](i),
 			DomainVerification: do.MustInvoke[*domainverification.UseCase](i),
+			StepExecution:      do.MustInvoke[*stepexecution.UseCase](i),
 			JoinDomains:        do.MustInvoke[*joindomains.Module](i),
 			TrackingDomains:    do.MustInvoke[*trackingdomains.Module](i),
 			Machine:            do.MustInvoke[*machine.Detector](i),
@@ -732,6 +735,24 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i)), nil
+	}),
+	// `sphericon encryption-key reencrypt`: each owner sweeps its stored secrets on the raw client.
+	do.Lazy(func(i do.Injector) (*secretreencryption.UseCase, error) {
+		client := do.MustInvoke[*ent.Client](i)
+		return secretreencryption.New(secretreencryption.Owners{
+			Integrations:     integrations.NewSecrets(client),
+			WebhookEndpoints: webhooks.NewSecrets(client),
+			SendingDomains:   sendingdomains.NewSecrets(client),
+			Users:            users.NewSecrets(client),
+			StaffMembers:     staffmembers.NewSecrets(client),
+			Automations:      automations.NewSecrets(client),
+			Rules:            rules.NewSecrets(client),
+		}, do.MustInvoke[*secrets.Cipher](i)), nil
+	}),
+	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
+	// exit of its Enrollment on the raw client.
+	do.Lazy(func(i do.Injector) (*stepexecution.UseCase, error) {
+		return stepexecution.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outbound.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i))), nil
 	}),
 	do.Lazy(func(i do.Injector) (*eventlog.UseCase, error) {
 		policy := eventlog.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}

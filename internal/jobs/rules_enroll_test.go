@@ -14,8 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
@@ -61,7 +61,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
 	require.NoError(t, err)
 
-	made, err := stepping.EnrollOnRule(ctx, env.Bus, s, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID, "evt-deactivated")
+	made, err := stepexecution.EnrollOnRule(ctx, env.Bus, s, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID, "evt-deactivated")
 
 	require.ErrorIs(t, err, automations.ErrInactive)
 	assert.False(t, made)

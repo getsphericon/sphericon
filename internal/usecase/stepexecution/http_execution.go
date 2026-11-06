@@ -1,4 +1,4 @@
-package stepping
+package stepexecution
 
 import (
 	"context"
@@ -28,7 +28,7 @@ type HTTPExecution struct {
 // Enrollment's exit fence, then advances or fails the Enrollment. The adapter supplies only the
 // Workspace scope, ordinary attempt data, clock and existing secret and HTTP dependencies. An
 // accepted request whose advancement fails can be repeated; external delivery is not exactly-once.
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, step int, attempt httpcall.Attempt, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
+func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, step int, attempt httpcall.Attempt, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) (HTTPExecution, error) {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if ent.IsNotFound(err) {
 		return HTTPExecution{}, nil
@@ -98,7 +98,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, st
 	return HTTPExecution{Retry: sendErr}, nil
 }
 
-func (m *Module) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure, decision HTTPExecution) (HTTPExecution, error) {
+func (m *UseCase) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f automations.Failure, decision HTTPExecution) (HTTPExecution, error) {
 	if err := quiet(automations.Fail(ctx, s, runID, m.now(), f)); err != nil {
 		return HTTPExecution{}, err
 	}
