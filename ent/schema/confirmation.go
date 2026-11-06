@@ -8,7 +8,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/getsphericon/sphericon/internal/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Confirmation is the derived read-model row for a confirmed subscription on a (workspace,
@@ -21,7 +21,7 @@ import (
 // On email it is consulted only when the workspace opts into confirmed opt-in; single-opt-in
 // workspaces never read it. On sms it is always required (ADR 0077). A deliberate "everything"
 // unsubscribe deletes the row (stale consent never silently reactivates); the Event log is
-// preserved. A Confirmation is replaced only by a stronger one (consent.Stronger).
+// preserved. A Confirmation is replaced only by a stronger one (confirmations.Stronger).
 type Confirmation struct {
 	ent.Schema
 }

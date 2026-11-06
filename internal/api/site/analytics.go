@@ -5,21 +5,21 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 )
 
 // analyticsReport is the shell every report handler shares: it reads the selected window and hands
 // it, with the scope of the Workspace of the path, to build, which maps the module's report onto
 // the operation's response.
-func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analytics.Window) (Res, error)) (Res, error) {
+func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analyticsreport.Window) (Res, error)) (Res, error) {
 	// 7d is the window of a request that names none.
 	return build(workspaceScope(ctx), inputs.AnalyticsWindow(rng.Or(siteapi.SiteAnalyticsRange7d)))
 }
 
-// SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
+// SiteAnalyticsOverview maps the Analytics report use case's Overview onto the DTO.
 func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.SiteAnalyticsOverviewParams) (*siteapi.SiteAnalyticsOverview, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsOverview, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsOverview, error) {
 		ov, err := h.analytics.Overview(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -28,9 +28,9 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 	})
 }
 
-// SiteAnalyticsEvents maps the analytics module's Events report onto the DTO.
+// SiteAnalyticsEvents maps the Analytics report use case's Events report onto the DTO.
 func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteAnalyticsEventsParams) (*siteapi.SiteAnalyticsEvents, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsEvents, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsEvents, error) {
 		rows, err := h.analytics.Events(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteA
 
 // SiteAnalyticsDeliverability maps the Deliverability report onto the DTO.
 func (h *Handlers) SiteAnalyticsDeliverability(ctx context.Context, params siteapi.SiteAnalyticsDeliverabilityParams) (*siteapi.SiteAnalyticsDeliverability, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsDeliverability, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsDeliverability, error) {
 		report, err := h.analytics.Deliverability(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -53,7 +53,7 @@ func (h *Handlers) SiteAnalyticsDeliverability(ctx context.Context, params sitea
 
 // SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.
 func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params siteapi.SiteAnalyticsSubscribedPeopleParams) (*siteapi.SiteAnalyticsSubscribedPeople, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsSubscribedPeople, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsSubscribedPeople, error) {
 		report, err := h.analytics.SubscribedPeople(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -62,10 +62,10 @@ func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params sit
 	})
 }
 
-// SiteAnalyticsClicksByLink maps the analytics module's Clicks by link report onto the DTO, with
+// SiteAnalyticsClicksByLink maps the Analytics report use case's Clicks by link report onto the DTO, with
 // the Event retention the counts cover.
 func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi.SiteAnalyticsClicksByLinkParams) (*siteapi.SiteAnalyticsClicksByLink, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsClicksByLink, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsClicksByLink, error) {
 		links, err := h.analytics.ClicksByLink(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -77,9 +77,9 @@ func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi
 	})
 }
 
-// SiteAnalyticsOpensByHour maps the analytics module's Opens by hour report onto the DTO.
+// SiteAnalyticsOpensByHour maps the Analytics report use case's Opens by hour report onto the DTO.
 func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.SiteAnalyticsOpensByHourParams) (*siteapi.SiteAnalyticsOpensByHour, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteAnalyticsOpensByHour, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteAnalyticsOpensByHour, error) {
 		report, err := h.analytics.OpensByHour(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -90,7 +90,7 @@ func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.
 
 // SiteAnalyticsNewPeople maps the New people report onto the DTO.
 func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.SiteAnalyticsNewPeopleParams) (*siteapi.SiteNewPeopleReport, error) {
-	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (*siteapi.SiteNewPeopleReport, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analyticsreport.Window) (*siteapi.SiteNewPeopleReport, error) {
 		report, err := h.analytics.NewPeople(ctx, s, w)
 		if err != nil {
 			return nil, err

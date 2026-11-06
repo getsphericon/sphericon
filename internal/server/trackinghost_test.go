@@ -14,12 +14,13 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
 )
 
 const edgeHeader = "X-Edge-Host"
@@ -62,11 +63,11 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 	host := fixtures.TrackingDomainServingHost
 
 	unsubFor := func(ws int64) string {
-		full, err := tr.UnsubscribeURL(tracking.UnsubTarget{
+		full, err := tr.UnsubscribeURL(linktarget.Unsubscribe{
 			Channel: channels.Email,
 			Source:  eligibility.SourceBroadcasts, Destination: "pat@umbrella.test", WorkspaceID: ws,
 		})
@@ -97,7 +98,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, hostReq(env, http.MethodPost, host, foreign).Code)
 
 	// Confirm links redirect to the Instance's host too.
-	confirmURL, err := tr.ConfirmURL(tracking.ConfirmTarget{Destination: "pat@umbrella.test", WorkspaceID: fixtures.UmbrellaID, ContactID: 1})
+	confirmURL, err := tr.ConfirmURL(linktarget.Confirmation{Destination: "pat@umbrella.test", WorkspaceID: fixtures.UmbrellaID, ContactID: 1})
 	require.NoError(t, err)
 	_, ctoken, _ := strings.Cut(confirmURL, "/e/confirm/")
 	resp = hostReq(env, http.MethodGet, host, "/e/confirm/"+ctoken)

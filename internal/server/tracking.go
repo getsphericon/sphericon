@@ -10,16 +10,17 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/clientip"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
 // pixelGIF is a 1x1 transparent GIF served by the open-tracking endpoint.
@@ -55,7 +56,7 @@ var pixelGIF = []byte{
 //
 // The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter, detector *machine.Detector, appURL string) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
@@ -141,7 +142,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 		// Performs the opt-out — the target of the mailbox provider's one-click POST
 		// (List-Unsubscribe=One-Click body) and the confirm page's button. No page is
 		// returned; the SPA transitions its UI client-side on 204.
-		if err := consent.RecordUnsubscribe(r.Context(), bus, target); err != nil {
+		if err := unsubscribe.RecordLink(r.Context(), client.Scoped(target.WorkspaceID), target); err != nil {
 			logging.FromContext(r.Context()).Error("tracking: unsubscribe failed", "workspace_id", target.WorkspaceID, "contact_id", target.ContactID, "source", target.Source, "err", err)
 			// Not a 204: a mailbox provider must see the failure and retry, and a
 			// person must not be told they are unsubscribed when nothing was recorded.
@@ -196,12 +197,12 @@ func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 // page speaks of emails, texts or Telegram messages, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
-func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target tracking.UnsubTarget) string {
+func confirmRedirect(tracker *messagetoken.Tracker, appURL, tokenStr string, target linktarget.Unsubscribe) string {
 	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr) + "&channel=" + url.QueryEscape(string(target.Channel))
 	if target.Source == eligibility.SourceEverything {
 		return base
 	}
-	allURL, err := tracker.UnsubscribeURL(tracking.UnsubTarget{
+	allURL, err := tracker.UnsubscribeURL(linktarget.Unsubscribe{
 		Channel:     target.Channel,
 		Source:      eligibility.SourceEverything,
 		Destination: target.Destination,
@@ -285,7 +286,7 @@ func (e engaged) engagement(action, dest string, software bool) *events.EmailEng
 
 // isMachine judges a hit from its user-agent and client address (ADR 0053). Both are read for the
 // verdict and dropped: neither reaches the Event or the log.
-func isMachine(r *http.Request, detector *machine.Detector) bool {
+func isMachine(r *http.Request, detector *privaterelayranges.Detector) bool {
 	return detector.IsMachine(r.Context(), clientip.UserAgentFromContext(r.Context()), clientip.FromContext(r.Context()))
 }
 
@@ -318,7 +319,7 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messag
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outbound.StampOpened(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampOpened(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}
@@ -336,7 +337,7 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messa
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outbound.StampClicked(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampClicked(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}

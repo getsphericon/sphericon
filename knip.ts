@@ -6,7 +6,7 @@ const config: KnipConfig = {
     'packages/analytics/src/generated/**',
     'packages/node/src/generated/**',
     'internal/server/assets/**',
-    'internal/emaildoc/assets/**',
+    'internal/kernel/emaildoc/assets/**',
     // Violating and clean examples for cmd/contractcopy's own tests.
     'internal/contractcopy/testdata/**',
   ],

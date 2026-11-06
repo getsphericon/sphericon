@@ -15,7 +15,7 @@ import (
 // Event except the evidentiary ones (consent proof, complaints, unsubscribes and
 // hard bounces). A bounce with no bounceKind counts as soft. It is the
 // single source of truth for both the partial index below and the retention
-// delete (internal/events.PruneEvents), so the delete can always use the index.
+// delete (internal/infra/events.PruneEvents), so the delete can always use the index.
 const ExpirableEventPredicate = `action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')`
 
 type Event struct {
@@ -94,7 +94,7 @@ func (Event) Fields() []ent.Field {
 			Default(false).
 			Immutable(),
 		// The Broadcast whose email the Event is about. Like the url, cleared when an Erasure
-		// anonymizes the Event (internal/erasure), as the properties drop their copy.
+		// anonymizes the Event (events.EraseSubject), as the properties drop their copy.
 		field.Int64("broadcast_id").
 			Optional().
 			Nillable().

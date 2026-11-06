@@ -5,8 +5,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListParams) (*externalapi.TagsListOK, error) {
@@ -33,7 +33,7 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
+	t, err := h.contacts.ApplyTag(ctx, scoped, id, req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -45,17 +45,17 @@ func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemove
 	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	err := h.tags.Remove(ctx, scoped, id, params.Name)
+	err := h.contacts.RemoveTag(ctx, scoped, id, params.Name)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// TagsDelete deletes a Tag from the catalogue unless a Segment rule or an Automation step names
-// it (ADR 0049).
+// TagsDelete deletes a Tag from the catalogue through the Tag deletion use case, which refuses
+// while a Segment, an Automation, a Rule or an armed Broadcast names it (ADR 0049).
 func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDeleteParams) error {
-	err := h.tags.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	err := h.tagDeletion.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return err
 	}

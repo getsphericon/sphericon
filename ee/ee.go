@@ -15,26 +15,40 @@ import (
 	entgo "entgo.io/ent"
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
 	staffhandlers "github.com/getsphericon/sphericon/ee/api/staff"
-	"github.com/getsphericon/sphericon/ee/audit"
-	"github.com/getsphericon/sphericon/ee/export"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/retention"
-	"github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
+	"github.com/getsphericon/sphericon/ee/usecase/retention"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/abusewatch"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
-	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
+
+// ExportStreams is the Enterprise side of the Export streams (ADR 0045): the `export` license
+// gate core asks before it serves a stream. The paging, the cursor and the row encoding are core
+// (internal/domain/insights/exportstream); the stream that needs Enterprise state, the Erasures,
+// is ee/domain/insights/erasures.
+type ExportStreams struct {
+	lic *licensekey.License
+}
+
+// Licensed reports whether the `export` feature is licensed; unlicensed, every stream
+// answers 404 like the /staff surface (ADR 0045).
+func (s *ExportStreams) Licensed() bool { return s != nil && s.lic.Has(licensekey.FeatureExport) }
 
 // Edition is the Enterprise surface of one running instance.
 type Edition struct {
@@ -43,17 +57,20 @@ type Edition struct {
 
 	// Audit is the read side of the Audit log; unlicensed, it reports so and the
 	// /site page answers 402.
-	Audit *audit.Log
+	Audit *auditentries.Log
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
-	Export *export.Streams
-	// Staff is the domain of the console's Enterprise sections and of the service endpoints
+	Export *ExportStreams
+	// Staff is the use case of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
-	Staff *staff.Module
+	Staff *workspaceoversight.UseCase
+	// ServiceCredentials issues and checks the Service credentials of the service endpoints
+	// (ADR 0026); every call refuses without the `staff` license.
+	ServiceCredentials *servicecredentials.Module
 
 	staffSessions *staffmembers.Sessions
-	notify        ownernotice.Notify
+	notify        memberships.Notify
 	suspend       *suspension.Suspender
-	abuseCfg      abuse.Config
+	abuseCfg      abusedetection.Config
 	now           func() time.Time
 }
 
@@ -70,7 +87,7 @@ type Deps struct {
 	// StaffSessions are the core Staff member's sessions, nil while its sign-in is off.
 	StaffSessions *staffmembers.Sessions
 	// Notify tells a Workspace's owners through the platform's (system) sender, nil for none.
-	Notify ownernotice.Notify
+	Notify memberships.Notify
 	// Suspender suspends a Workspace and tells its owners (ADR 0007).
 	Suspender *suspension.Suspender
 	// Reputation computes a Workspace's rates, which the console shows.
@@ -82,24 +99,26 @@ type Deps struct {
 // what they want whatever the license: each job checks the license itself (Jobs, ExportJobs), so
 // a key added later needs no rewiring and an unlicensed instance stores nothing.
 func EventConsumers() []events.Consumer {
-	return []events.Consumer{audit.EventConsumer(), export.EventConsumer()}
+	return []events.Consumer{auditentries.EventConsumer(), erasures.EventConsumer()}
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
 // Staff member's sessions, so the `staff` feature refuses to start without them.
-func New(deps Deps, staffCfg staff.Config) (*Edition, error) {
+func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	lic, staffSessions := deps.License, deps.StaffSessions
-	auditLog := audit.NewLog(lic, deps.Bus)
+	auditLog := auditentries.NewLog(lic, deps.Bus)
 	e := &Edition{
 		lic:     lic,
 		client:  deps.Client,
 		notify:  deps.Notify,
 		suspend: deps.Suspender,
 		Audit:   auditLog,
-		Export:  export.New(lic),
-		Staff:   staff.NewModule(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
+		Export:  &ExportStreams{lic: lic},
+		Staff:   workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
+
+		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
 	}
-	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
+	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
 	if e.now == nil {
 		e.now = time.Now
@@ -124,7 +143,7 @@ func Hooks(lic *licensekey.License, now func() time.Time) []entgo.Hook {
 	if !lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
-	return []entgo.Hook{usage.Hook(lic, now)}
+	return []entgo.Hook{usages.Hook(lic, now)}
 }
 
 // StaffSections is the Enterprise part of the /staff API (ADR 0026, ADR 0063) for the
@@ -148,7 +167,7 @@ func (e *Edition) Service() interface {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staffhandlers.NewServiceSurface(e.Staff)
+	return staffhandlers.NewServiceSurface(e.Staff, e.ServiceCredentials)
 }
 
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
@@ -171,43 +190,42 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
-func (e *Edition) Abuse() *abuse.Detector {
-	return abuse.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
+func (e *Edition) Abuse() *abusedetection.Detector {
+	return abusedetection.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
 // without the `staff` license.
-func (e *Edition) AbuseWatch() abusewatch.Watch { return abuseWatchAdapter{e.Staff.Watch()} }
+func (e *Edition) AbuseWatch() abusewarning.Watch { return abuseWatchAdapter{e.Staff.Watch()} }
 
-type abuseWatchAdapter struct{ watch *abuse.Watch }
+type abuseWatchAdapter struct{ watch *abusedetector.Watch }
 
-func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*abusewatch.Warning, error) {
+func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*abusewarning.Warning, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
 	b, err := w.watch.Warning(ctx, s, ws, now)
-	if err != nil || b.Tier == abuse.TierNone {
+	if err != nil || b.Tier == abusedetector.TierNone {
 		return nil, err
 	}
-	return &abusewatch.Warning{Domain: b.Domain, Metric: b.Metric, Rate: b.Rate()}, nil
+	return &abusewarning.Warning{Domain: b.Domain, Metric: b.Metric, Rate: b.Rate()}, nil
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
 // which removes nothing without the retention license, the usage job (ADR 0009) and the
 // abuse detector (ADR 0026), which do nothing without the staff license.
-func (e *Edition) Jobs() jobs.Extension {
+func (e *Edition) Jobs() jobextension.Extension {
 	detector := e.Abuse()
-	return jobs.Extension{
+	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
-			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
-			river.AddWorker(w, abuse.NewWorker(detector))
+			river.AddWorker(w, usages.NewWorker(e.client, e.lic))
+			river.AddWorker(w, abusedetection.NewWorker(detector))
 			// The Audit log's consumer (EventConsumers), which stores nothing without the audit license.
-			river.AddWorker(w, audit.NewEntryEventWorker(e.client, e.lic))
+			river.AddWorker(w, auditentries.NewEntryEventWorker(e.client, e.lic))
 		},
-		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
-		Webhooks:     e.Webhooks,
+		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usages.Periodic(), abusedetection.Periodic()},
 	}
 }
 
@@ -215,12 +233,12 @@ func (e *Edition) Jobs() jobs.Extension {
 // Erasures stream over the instance's Event retention window (0 keeps every row), and the
 // stream's consumer of the domain events (EventConsumers). It is separate from Jobs because the
 // prune needs that window, a core setting; neither does anything without the `export` license.
-func (e *Edition) ExportJobs(eventsRetention time.Duration) jobs.Extension {
-	return export.Jobs(e.client, e.lic, eventsRetention)
+func (e *Edition) ExportJobs(eventsRetention time.Duration) jobextension.Extension {
+	return erasures.Jobs(e.client, e.lic, eventsRetention)
 }
 
 // Webhooks gates the webhook dispatcher by license: `audit.entry` is forwarded to
 // Webhook endpoints only when the Audit feature is licensed.
 func (e *Edition) Webhooks(next events.WebhookDispatcher) events.WebhookDispatcher {
-	return audit.Forwarder(next, e.lic)
+	return auditentries.Forwarder(next, e.lic)
 }

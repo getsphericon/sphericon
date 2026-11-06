@@ -49,3 +49,57 @@ type Scoped struct{}
 func (*Scoped) Tag() *TagScoped                               { return &TagScoped{} }
 func (*Scoped) WorkspaceID() int64                            { return 0 }
 func (*Scoped) Workspace(context.Context) (*Workspace, error) { return nil, nil }
+
+// The types below stand in for what the ownership map is tested on: a second entity with its
+// own owner (Contact), an archivable one (Segment), a Versioned definition (Automation and its
+// pointers), the lifecycle's store and an entity the map does not name (Ghost).
+
+type TagScopedDelete struct{}
+
+func (d *TagScopedDelete) Where(...int64) *TagScopedDelete { return d }
+func (*TagScopedDelete) Exec(context.Context) (int, error) { return 0, nil }
+
+func (*TagScoped) Delete() *TagScopedDelete { return &TagScopedDelete{} }
+
+type ContactScopedUpdateOne struct{}
+
+func (u *ContactScopedUpdateOne) AddTagIDs(...int64) *ContactScopedUpdateOne { return u }
+func (*ContactScopedUpdateOne) Exec(context.Context) error                    { return nil }
+
+type ContactScoped struct{}
+
+func (*ContactScoped) UpdateOneID(int64) *ContactScopedUpdateOne { return &ContactScopedUpdateOne{} }
+
+func (*Scoped) Contact() *ContactScoped { return &ContactScoped{} }
+
+type SegmentScoped struct{}
+
+func (*SegmentScoped) Archive(context.Context, int64) error { return nil }
+func (*SegmentScoped) Purge() *TagScopedDelete              { return &TagScopedDelete{} }
+
+func (*Scoped) Segment() *SegmentScoped { return &SegmentScoped{} }
+
+type AutomationPointers struct{}
+
+func (*AutomationPointers) SetDraft(context.Context, int64, int64) error { return nil }
+
+type AutomationScoped struct{}
+
+func (*AutomationScoped) Pointers() *AutomationPointers { return &AutomationPointers{} }
+
+func (*Scoped) Automation() *AutomationScoped { return &AutomationScoped{} }
+
+// VersionedStore is what the owner of a Versioned definition binds its pointers to.
+type VersionedStore[O, V any] interface {
+	SetDraft(ctx context.Context, id, versionID int64) error
+}
+
+type GhostCreate struct{}
+
+func (*GhostCreate) Save(context.Context) error { return nil }
+
+type GhostClient struct{}
+
+func (*GhostClient) Create() *GhostCreate { return &GhostCreate{} }
+
+func (*Client) Ghost() *GhostClient { return &GhostClient{} }

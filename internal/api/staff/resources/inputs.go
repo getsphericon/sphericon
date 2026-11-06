@@ -3,13 +3,13 @@ package resources
 import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
 // handler only hands the module what the request says. The extends below bind the generated option
-// types of this surface to the shared conversions of internal/convert.
+// types of this surface to the shared conversions of internal/kernel/convert.
 //
 // goverter:converter
 // goverter:annotate:unmapped

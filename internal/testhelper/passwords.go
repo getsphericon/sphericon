@@ -3,7 +3,7 @@ package testhelper
 import (
 	"sync"
 
-	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 )
 
 // Passwords is the password hasher of the test process: the minimum argon2id cost, as the

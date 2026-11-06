@@ -8,8 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 )
 
-// The Tracking domain operations are thin adapters over internal/trackingdomains (ADR 0071), the
-// module /site shares. No operation can set a state: only the live check does.
+// The Tracking domain operations are thin adapters over internal/domain/sending/trackingdomains
+// (ADR 0071), the module /site shares. No operation can set a state: only the live check does.
 
 // trackingDomainResource maps the row, then attaches the CNAME to publish, whose target the
 // module knows and the mapper cannot see.

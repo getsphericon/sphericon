@@ -7,7 +7,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 )
 
 // SiteRuleGroup builds a site API rule group from its JSON, so a test reads as the rule

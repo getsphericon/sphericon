@@ -59,7 +59,7 @@ func TestReleaseCheckStoresANewerReleaseAndTheBannerShowsItToAnOwner(t *testing.
 	_, url := newReleases(t, "v0.2.0")
 	env, now := releaseEnv(t, "0.1.0", url)
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
 			_, url := newReleases(t, tag)
 			env, _ := releaseEnv(t, "0.1.0", url)
 
-			require.NoError(t, env.Instance.CheckRelease(t.Context()))
+			require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 			row, err := env.Instance.Ensure(t.Context())
 			require.NoError(t, err)
@@ -91,12 +91,12 @@ func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
 func TestReleaseCheckKeepsThePreviousResultWhenTheSourceIsDown(t *testing.T) {
 	src, url := newReleases(t, "v0.2.0")
 	env, now := releaseEnv(t, "0.1.0", url)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 	first := *now
 
 	*now = now.Add(24 * time.Hour)
 	src.status.Store(http.StatusBadGateway)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
@@ -119,7 +119,7 @@ func TestReleaseCheckSwitchedOffAsksNobodyAndShowsNothing(t *testing.T) {
 		c.Telemetry = &on
 	})
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	row, err := env.Instance.Ensure(t.Context())
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestReleaseCheckIgnoresTheTelemetrySwitches(t *testing.T) {
 		c.DoNotTrack = true
 	})
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	setting, err := env.Instance.Setting(t.Context())
 	require.NoError(t, err)
@@ -161,7 +161,7 @@ func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "dev", srv.URL)
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	row, err := env.Instance.Ensure(t.Context())
 	require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestADevelopmentEnvironmentNeverAsksForANewerRelease(t *testing.T) {
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "0.1.0", srv.URL, func(c *config.Config) { c.IsDev = true })
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	row, err := env.Instance.Ensure(t.Context())
 	require.NoError(t, err)

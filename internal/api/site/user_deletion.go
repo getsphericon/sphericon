@@ -5,9 +5,10 @@ import (
 	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
 // SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050), after
@@ -19,7 +20,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.DeletionSubject(ctx, userID, string(req.Email))
+	u, err := h.users.DeletionSubject(ctx, userID, string(req.Email))
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +45,8 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		}
 	}
 
-	deleted, err := h.accounts.DeleteUser(ctx, u.ID, &accounts.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
-	if errors.Is(err, secondfactor.ErrDeletionCodeInvalid) {
+	deleted, err := h.users.DeleteUser(ctx, u.ID, &users.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
+	if errors.Is(err, secondfactorcheck.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025).
 		if cerr := h.login.CountFailure(ctx, u.Email); cerr != nil {
 			return nil, cerr
@@ -69,7 +70,7 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return err
 	}
-	u, err := h.accounts.DeletionSubject(ctx, userID, string(req.Email))
+	u, err := h.users.DeletionSubject(ctx, userID, string(req.Email))
 	if err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	}
 	// Like the email-change link, every request takes a slot of the address's budget; a spent
 	// budget queues a mail job that sends nothing.
-	granted, err := h.attempts.Take(ctx, accounts.KindEmailChange, u.Email)
+	granted, err := h.attempts.Take(ctx, throttle.KindEmailChange, u.Email)
 	if err != nil {
 		return err
 	}

@@ -15,23 +15,23 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // webhookDeliveryTimeout bounds a single outbound webhook request.
@@ -46,16 +46,6 @@ const QueueWebhooks = "webhooks"
 // scheduled. The modules queue work through a Queue, which needs none of what the workers drive.
 type Client struct {
 	river *river.Client[*sql.Tx]
-}
-
-// Extension plugs extra workers and periodic jobs into the client without core
-// importing them: the composition root hands in the Enterprise Edition's (ADR 0014).
-type Extension struct {
-	Workers      func(*river.Workers)
-	PeriodicJobs []*river.PeriodicJob
-	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
-	// Edition's license gate on Audit entries, ADR 0022).
-	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
 }
 
 // Retention groups the data-retention settings of the prune jobs.
@@ -78,21 +68,23 @@ type Deps struct {
 	// Workspace, and of the instance-wide prunes.
 	Ent      *ent.Client
 	Bus      *events.Bus
-	Outbound *outbound.Module
+	Outbound *outboundmessages.Module
 	Cipher   *secrets.Cipher
 	// SystemSender is the platform's own sender of the account mails.
 	SystemSender messaging.EmailSender
 	Catalog      *messaging.Catalog
 	Rules        *rules.Module
-	Accounts     *accounts.Accounts
+	Users        *users.Module
 	Orders       *orders.Module
-	Deletion     *workspacedeletion.Module
-	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
+	Deletion     *workspacedeletion.UseCase
+	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
-	SendingDomains  *domainverify.Module
+	DomainVerification *domainverification.UseCase
+	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
+	StepExecution   *stepexecution.UseCase
 	JoinDomains     *joindomains.Module
 	TrackingDomains *trackingdomains.Module
-	Machine         *machine.Detector
+	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock; nil is time.Now.
 	Clock func() time.Time
 	// AppURL is the public origin of the links in account emails (reset, verify, change).
@@ -100,14 +92,17 @@ type Deps struct {
 	// OutboundAllow is the Instance's internal allowlist for webhook deliveries (ADR 0039).
 	OutboundAllow webhook.Allowlist
 	Retention     Retention
+	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
+	// Edition's license gate on Audit entries, ADR 0022).
+	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
 }
 
 // NewClient builds the river client with every worker registered over deps. ext plugs in the
-// Enterprise Edition's workers and periodic jobs. driver is river's database/sql driver over the
+// workers and periodic jobs of the Enterprise Edition and of the Instance. driver is river's database/sql driver over the
 // job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
 // connection that tells the client of a new job, a cancellation or a paused queue at once, and
 // built with riverdatabasesql.New (tests on one transaction) the client only polls.
-func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*Client, error) {
+func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.Extension) (*Client, error) {
 	entClient, mod, bus, cipher, systemSender, appURL := deps.Ent, deps.Outbound, deps.Bus, deps.Cipher, deps.SystemSender, deps.AppURL
 	now := deps.Clock
 	if now == nil {
@@ -116,7 +111,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*C
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
-	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
+	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, bus, now))
@@ -130,8 +125,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*C
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
-	river.AddWorker(workers, NewVerifySendingDomainWorker(deps.SendingDomains))
-	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
+	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.DomainVerification))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewVerifyTrackingDomainWorker(deps.TrackingDomains))
@@ -144,27 +139,28 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...Extension) (*C
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages))
-	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Accounts, deps.Retention.UnverifiedUsers))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Accounts, now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion, now))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
 	c := &Client{}
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
+	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
 	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
 	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
 	dispatcher := NewWebhookDispatcher(clientInserter{c})
+	if deps.Webhooks != nil {
+		dispatcher = deps.Webhooks(dispatcher)
+	}
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
 		if e.Workers != nil {
 			e.Workers(workers)
-		}
-		if e.Webhooks != nil {
-			dispatcher = e.Webhooks(dispatcher)
 		}
 		extraPeriodic = append(extraPeriodic, e.PeriodicJobs...)
 	}
@@ -234,10 +230,10 @@ func BaseConfig() *river.Config {
 // Queues are the queues the worker client works, each with its number of workers.
 func Queues() map[string]river.QueueConfig {
 	return map[string]river.QueueConfig{
-		river.QueueDefault:      {MaxWorkers: 5},
-		broadcasts.Queue:        {MaxWorkers: 10},
-		QueueWebhooks:           {MaxWorkers: 5},
-		stepping.QueueHTTPSteps: {MaxWorkers: 5},
+		river.QueueDefault:           {MaxWorkers: 5},
+		broadcasts.Queue:             {MaxWorkers: 10},
+		QueueWebhooks:                {MaxWorkers: 5},
+		stepexecution.QueueHTTPSteps: {MaxWorkers: 5},
 		// The domain events' consumers (ADR 0101): short jobs, most of which only queue more.
 		events.QueueEvents: {MaxWorkers: 10},
 	}

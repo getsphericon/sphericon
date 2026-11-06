@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -227,7 +227,7 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	require.NoError(t, err)
 	delivered := env.TryDeliverQueuedBroadcasts(t)
 
-	require.ErrorContains(t, delivered, outbound.HoldUnverifiedDomain)
+	require.ErrorContains(t, delivered, outboundmessages.HoldUnverifiedDomain)
 	assert.Equal(t, before, env.DB.CapturedMessage.Query().CountX(t.Context()))
 	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastGlobexID).Status
 	assert.NotEqual(t, broadcast.StatusSent, status, "held, not sent")
@@ -251,7 +251,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, suppressedResult.Status)
 	heldResult := testhelper.ExternalRefusal(t, frozen, http.StatusUnprocessableEntity)
-	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outboundmessages.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }

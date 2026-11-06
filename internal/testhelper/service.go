@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 )
 
 const serviceBase = "http://local/service"

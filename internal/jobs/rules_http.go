@@ -7,10 +7,10 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/httpcall"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // RunRuleHTTPArgs is one http Action of one Firing. It carries no personal data: the Firing is
@@ -28,7 +28,7 @@ func (RunRuleHTTPArgs) Kind() string { return "rule_http_action" }
 // retried for days and must not hold the Actions job, or the Actions after it.
 func (RunRuleHTTPArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
-		Queue:       stepping.QueueHTTPSteps,
+		Queue:       stepexecution.QueueHTTPSteps,
 		MaxAttempts: webhook.HookMaxAttempts(),
 		UniqueOpts:  river.UniqueOpts{ByArgs: true},
 	}

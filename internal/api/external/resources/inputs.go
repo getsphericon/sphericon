@@ -7,31 +7,32 @@ import (
 	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/eventlog"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/patch"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/segments"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
-	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
+	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
 // handler only hands the module what the request says. An update becomes the module's patch
-// (internal/patch): an absent key keeps, an explicit null clears, a value sets. The extends below
-// bind the generated option types of this surface to the shared conversions of internal/convert.
+// (internal/kernel/patch): an absent key keeps, an explicit null clears, a value sets. The extends below
+// bind the generated option types of this surface to the shared conversions of internal/kernel/convert.
 //
 // goverter:converter
 // goverter:annotate:unmapped
@@ -93,8 +94,8 @@ import (
 // goverter:extend smsConsentIn
 type Inputs interface {
 	// goverter:ignore Prepared
-	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
-	TemplateUpdate(source *externalapi.UpdateTemplateInput) templates.UpdateInput
+	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
+	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -109,8 +110,8 @@ type Inputs interface {
 	// goverter:ignore Statuses
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
 
-	WebhookCreate(source *externalapi.CreateWebhookInput) webhooks.CreateInput
-	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhooks.UpdateInput
+	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
+	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
 
 	// goverter:map DkimSelector Selector
 	SendingDomainCreate(source *externalapi.CreateSendingDomainInput) sendingdomains.CreateInput
@@ -131,7 +132,10 @@ type Inputs interface {
 	// goverter:map . Core
 	// goverter:ignore GuessedTimeZone GuessedLocale
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
-	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.UpsertInput
+	// An import row: the Contact it asserts and the SMS consent it carries.
+	// goverter:map . UpsertInput
+	ContactIntake(source externalapi.UpsertContactInput) contactintake.Input
+	ContactIntakes(source []externalapi.UpsertContactInput) []contactintake.Input
 
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *externalapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
@@ -143,8 +147,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source externalapi.AutomationStep) automationsteps.Step
-	AutomationSteps(source []externalapi.AutomationStep) []automationsteps.Step
+	AutomationStep(source externalapi.AutomationStep) automationstep.Step
+	AutomationSteps(source []externalapi.AutomationStep) []automationstep.Step
 	TelegramButton(source externalapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
@@ -174,7 +178,7 @@ type Inputs interface {
 	// goverter:enum:map AutomationsReportPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source externalapi.AutomationsReportPeriod) automations.ReportPeriod
 	// goverter:enum:transform value
-	AutomationStepType(source externalapi.AutomationStepType) automationsteps.Kind
+	AutomationStepType(source externalapi.AutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
@@ -185,14 +189,14 @@ type Inputs interface {
 	ConsentChannel(source externalapi.ConsentChannel) channels.Channel
 
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
-	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
-	ConsentEvidence(source externalapi.ConsentEvidence) consent.Evidence
+	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
+	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
-	TestAddress(source *externalapi.TestSendBroadcastInput) outbound.TestAddress
+	TestAddress(source *externalapi.TestSendBroadcastInput) outboundmessages.TestAddress
 }
 
 // smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
-func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *consent.Evidence {
+func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evidence {
 	v, ok := o.Get()
 	if !ok {
 		return nil
@@ -291,7 +295,7 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationsteps.Step {
+func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}

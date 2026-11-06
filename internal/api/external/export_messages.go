@@ -5,7 +5,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/exportstream"
+	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 )
 
 // ExportMessages serves the Outbound messages stream (ADR 0045): the same NDJSON page, cursor

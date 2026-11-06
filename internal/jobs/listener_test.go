@@ -10,16 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	appdb "github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	appdb "github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // A client that LISTENs works a job another process inserted as soon as the insert commits: it
@@ -38,11 +39,11 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	require.NoError(t, err)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
-	entClient := appdb.NewEntClient(pool)
-	bus := events.New(pool)
+	entClient := entclient.New(pool)
+	bus := events.New(pool, entclient.NewTx)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
-		Ent: entClient, Bus: bus, Outbound: outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local")),
+		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local")),
 		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
 	})
 	require.NoError(t, err)

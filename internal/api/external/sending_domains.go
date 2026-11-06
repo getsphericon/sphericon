@@ -6,10 +6,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// The Sending domain operations are thin adapters over internal/sendingdomains, the
+// The Sending domain operations are thin adapters over internal/domain/sending/sendingdomains, the
 // module /site shares: validation, DKIM keypair minting and sealing, and the verify
 // trigger live there. The private key is never part of a response, and no operation
 // can set `verified`: only the live DKIM check does.
@@ -58,7 +58,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 // SendingDomainsDelete deletes a Sending domain for good (ADR 0049): it leaves the list. Live
 // sends from it refuse it with 409.
 func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.SendingDomainsDeleteParams) error {
-	return h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	return h.sendingDomainDeletion.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 }
 
 // SendingDomainsVerify runs the live DNS check and returns the domain as the check left it
@@ -66,7 +66,7 @@ func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.
 func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (*externalapi.SendingDomainResource, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	row, err := h.sendingDomains.Verify(ctx, s, id)
+	row, err := h.domainVerification.Verify(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

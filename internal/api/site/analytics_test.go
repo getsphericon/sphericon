@@ -16,7 +16,7 @@ import (
 )
 
 // The Events report needs a session, is refused for a foreign Workspace and is open to every
-// role (its rules are tested in internal/analytics).
+// role (its rules are tested in internal/usecase/analyticsreport).
 func TestSiteAnalyticsEventsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
@@ -69,8 +69,8 @@ func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
 
-// The handler only maps the analytics module's Overview (rules are tested in
-// internal/analytics): the range param picks the window and the fields carry over.
+// The handler only maps the Analytics report use case's Overview (rules are tested in
+// internal/usecase/analyticsreport): the range param picks the window and the fields carry over.
 func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -128,7 +128,7 @@ func TestSubscribedPeopleRequiresAuth(t *testing.T) {
 	require.Error(t, err)
 }
 
-// The handler maps the module's report (rules are tested in internal/analytics).
+// The handler maps the module's report (rules are tested in internal/usecase/analyticsreport).
 func TestSubscribedPeopleMapsTheModule(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -157,7 +157,7 @@ func TestSiteAnalyticsClicksByLinkRequireAuth(t *testing.T) {
 }
 
 // Every Membership role reads the report; the handler maps the module's links with their
-// owners and the configured Event retention in days (rules are tested in internal/analytics).
+// owners and the configured Event retention in days (rules are tested in internal/usecase/analyticsreport).
 func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
@@ -180,7 +180,7 @@ func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testi
 }
 
 // The Opens by hour report is open to every role, refused without a session, and reads the
-// Workspace time zone (cells are tested in internal/analytics).
+// Workspace time zone (cells are tested in internal/usecase/analyticsreport).
 func TestSiteAnalyticsOpensByHourRequiresAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)

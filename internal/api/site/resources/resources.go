@@ -28,52 +28,53 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/abusewatch"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	"github.com/getsphericon/sphericon/internal/attention"
-	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/holdreason"
-	"github.com/getsphericon/sphericon/internal/httpcall"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/providers"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/smsrender"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/dkimstate"
-	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/linkclicks"
-	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
-	"github.com/getsphericon/sphericon/internal/reportday"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/setupchecklist"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
-	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -206,13 +207,13 @@ type Converter interface {
 	// goverter:ignore McpUrl
 	// goverter:ignore TrackerUrl
 	// goverter:ignore TrackingTarget
-	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
 	// The length of a short tracked link depends on the Workspace's serving Tracking domain
-	// (outbound.Module.ShortLinkLength): the handler attaches it.
+	// (outboundmessages.Module.ShortLinkLength): the handler attaches it.
 	// goverter:ignore ShortLinkLength
-	// The SMS provider's length limit is the send path's (outbound.Module.SMSLengthLimit): the
+	// The SMS provider's length limit is the send path's (outboundmessages.Module.SMSLengthLimit): the
 	// handler attaches it through SmsLengthLimitToResource.
 	// goverter:ignore SmsMaxLength
 	// The numeric key stays internal: the contract's id is the Workspace id.
@@ -232,48 +233,48 @@ type Converter interface {
 	// attached by the handler.
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
-	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
+	AnalyticsOverviewToResource(source *analyticsreport.Overview) *siteapi.SiteAnalyticsOverview
 	// goverter:map Window WindowHours | windowHours
 	// goverter:useEmptyOnNil:slice
-	AnalyticsDeliverabilityToResource(source analytics.Deliverability) siteapi.SiteAnalyticsDeliverability
+	AnalyticsDeliverabilityToResource(source analyticsreport.Deliverability) siteapi.SiteAnalyticsDeliverability
 	// goverter:map SendingDomainID SendingDomainId
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
-	AnalyticsDomainRatesToResource(source analytics.DomainRates) siteapi.SiteSendingDomainRates
+	AnalyticsDomainRatesToResource(source analyticsreport.DomainRates) siteapi.SiteSendingDomainRates
 	AnalyticsRateToResource(source reputation.Rate) siteapi.SiteRate
-	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
-	AnalyticsPeriodToResource(source analytics.Period) siteapi.SiteAnalyticsPeriod
+	AnalyticsContactsToResource(source analyticsreport.Contacts) siteapi.SiteAnalyticsContacts
+	AnalyticsPeriodToResource(source analyticsreport.Period) siteapi.SiteAnalyticsPeriod
 	// goverter:map Sent SentCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
-	AnalyticsEmailToResource(source analytics.Email) siteapi.SiteAnalyticsEmail
+	AnalyticsEmailToResource(source analyticsreport.Email) siteapi.SiteAnalyticsEmail
 	// The Events and Clicks by link reports are lists, which goverter cannot map onto their
 	// envelopes: the handler builds those, of one list each.
 	// goverter:useEmptyOnNil:slice
-	AnalyticsEventActionsToResources(source []analytics.EventAction) []siteapi.SiteAnalyticsEventAction
+	AnalyticsEventActionsToResources(source []analyticsreport.EventAction) []siteapi.SiteAnalyticsEventAction
 	// goverter:useEmptyOnNil:slice
-	AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *siteapi.SiteAnalyticsSubscribedPeople
+	AnalyticsSubscribedPeopleToResource(source *analyticsreport.SubscribedPeople) *siteapi.SiteAnalyticsSubscribedPeople
 	// goverter:useEmptyOnNil:slice
-	AnalyticsLinksToResources(source []analytics.LinkClicks) []siteapi.SiteAnalyticsLink
+	AnalyticsLinksToResources(source []analyticsreport.LinkClicks) []siteapi.SiteAnalyticsLink
 	// goverter:useEmptyOnNil:slice
-	AnalyticsOpensByHourToResource(source *analytics.OpensByHour) *siteapi.SiteAnalyticsOpensByHour
+	AnalyticsOpensByHourToResource(source *analyticsreport.OpensByHour) *siteapi.SiteAnalyticsOpensByHour
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
-	AnalyticsNewPeopleToResource(source *analytics.NewPeople) *siteapi.SiteNewPeopleReport
-	AbuseWarningToResource(source abusewatch.Warning) siteapi.SiteAbuseWarning
+	AnalyticsNewPeopleToResource(source *analyticsreport.NewPeople) *siteapi.SiteNewPeopleReport
+	AbuseWarningToResource(source abusewarning.Warning) siteapi.SiteAbuseWarning
 
 	// What needs attention maps whole from the module's items; an absent subject, start, hold
 	// reason or rate is left out.
 	// goverter:useEmptyOnNil:slice
-	AttentionItemsToResources(source []attention.Item) []siteapi.SiteAttentionItem
-	AttentionSubjectToResource(source attention.Subject) siteapi.SiteAttentionSubject
+	AttentionItemsToResources(source []needsattentionreport.Item) []siteapi.SiteAttentionItem
+	AttentionSubjectToResource(source needsattentionreport.Subject) siteapi.SiteAttentionSubject
 
 	// The email's subject is not on the Event: the handler reads it from the Outbound message.
 	// goverter:ignore EmailSubject
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
-	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
+	LinkClicksToResource(source []linkclick.Clicks) []siteapi.SiteLinkClicks
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
 	// goverter:map Currency ReportingCurrency
@@ -403,7 +404,7 @@ type Converter interface {
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
 	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SiteSendCap
-	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	// The Send cap that applies (outboundmessages.Module.SendCapStatus), null when none does.
 	SendCapStatusToResource(source *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
@@ -424,10 +425,10 @@ type Converter interface {
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
-	SmsConsentToResource(source consent.ContactSMS) siteapi.SmsConsent
-	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
+	SmsConsentToResource(source confirmations.ContactSMS) siteapi.SmsConsent
+	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
-	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SmsOptOut
+	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
 	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
 	// goverter:map CreatedAt ConfirmedAt
@@ -552,26 +553,26 @@ type Converter interface {
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
-	BrandKitToResource(source brandkit.Kit) siteapi.SiteBrandKitResource
+	BrandKitToResource(source brandkits.Kit) siteapi.SiteBrandKitResource
 
 	// goverter:map . Actor
 	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
-	AuditEntryToResource(source auditapi.View) siteapi.SiteAuditEntryResource
+	AuditEntryToResource(source auditlog.View) siteapi.SiteAuditEntryResource
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditapi.View) []siteapi.SiteAuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []siteapi.SiteAuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditapi.View) siteapi.SiteAuditActor
+	AuditActorToResource(source auditlog.View) siteapi.SiteAuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditapi.View) siteapi.SiteAuditTarget
+	AuditTargetToResource(source auditlog.View) siteapi.SiteAuditTarget
 	// goverter:useEmptyOnNil:slice
-	AuditFacetsToResource(source auditapi.Facets) siteapi.SiteAuditFacets
-	AuditFacetActorToResource(source auditapi.Actor) siteapi.SiteAuditActor
+	AuditFacetsToResource(source auditlog.Facets) siteapi.SiteAuditFacets
+	AuditFacetActorToResource(source auditlog.Actor) siteapi.SiteAuditActor
 
 	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
 	// the handler attaches it. The failure state is derived from the failure columns, and an
@@ -605,7 +606,7 @@ type Converter interface {
 	OptionalConsentToSite(source consentrecords.OptionalConsent) siteapi.SiteOptionalConsent
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
-	InstanceReleaseToResource(source instance.Release) siteapi.SiteInstanceRelease
+	InstanceReleaseToResource(source releasecheck.Release) siteapi.SiteInstanceRelease
 
 	// Pages: a list response is the module's pagination.Page mapped whole, its items through
 	// the list methods above. Items the handler maps itself (an extra per item) arrive as a
@@ -654,9 +655,12 @@ type Converter interface {
 
 	// The Permissions a Role holds, and the one each requested OAuth scope needs.
 	// goverter:useEmptyOnNil:slice
-	PermissionsToResources(source []accounts.Permission) []siteapi.Permission
+	PermissionsToResources(source []memberships.Permission) []siteapi.Permission
 	// goverter:useEmptyOnNil:map
-	RequiredPermissionsToResource(source map[string]accounts.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
+	RequiredPermissionsToResource(source map[string]memberships.Permission) siteapi.SiteOAuthAuthorizationRequestRequiredPermissions
+	// The scopes a User whose Role it is may give a Personal token.
+	// goverter:useEmptyOnNil:slice
+	PersonalScopesToResources(source []tokenscope.PersonalScope) []siteapi.PersonalScope
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -667,17 +671,17 @@ type Converter interface {
 	// goverter:enum:map ReportPeriod90Days SiteAutomationReportPeriod90d
 	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
+	AbuseMetricToResource(source abusewarning.Metric) siteapi.SiteAbuseMetric
 	// goverter:enum:transform value
-	AttentionKindToResource(source attention.Kind) siteapi.SiteAttentionKind
+	AttentionKindToResource(source needsattentionreport.Kind) siteapi.SiteAttentionKind
 	// goverter:enum:transform value
-	AttentionSeverityToResource(source attention.Severity) siteapi.SiteAttentionSeverity
+	AttentionSeverityToResource(source needsattentionreport.Severity) siteapi.SiteAttentionSeverity
 	// goverter:enum:transform value
-	AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) siteapi.SiteAnalyticsOwnerKind
+	AnalyticsOwnerKindToResource(source linkclick.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationsteps.Kind) siteapi.SiteAutomationStepType
+	AutomationStepTypeToResource(source automationstep.Kind) siteapi.SiteAutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
@@ -711,7 +715,9 @@ type Converter interface {
 	// goverter:enum:map DecisionShown @panic
 	OptionalConsentDecisionToResource(source consentrecord.Decision) siteapi.SiteOptionalConsentDecision
 	// goverter:enum:transform value
-	PermissionToResource(source accounts.Permission) siteapi.Permission
+	PermissionToResource(source memberships.Permission) siteapi.Permission
+	// goverter:enum:transform value
+	PersonalScopeToResource(source tokenscope.PersonalScope) siteapi.PersonalScope
 	// goverter:enum:transform value
 	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
 	// goverter:enum:transform value
@@ -745,7 +751,7 @@ type Converter interface {
 	WebhookErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
 }
 
-// ExportMapper adapts the Converter to contactexport.Mapper.
+// ExportMapper adapts the Converter to dataexport.Mapper.
 type ExportMapper struct{ Converter }
 
 func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return new(m.ContactToExport(r)) }
@@ -769,7 +775,7 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 }
 
 // providerDisplayName is what a sign-in provider is called to a person.
-func providerDisplayName(provider string) string { return signin.DisplayName(provider) }
+func providerDisplayName(provider string) string { return signinprovider.DisplayName(provider) }
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
@@ -814,7 +820,7 @@ func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSmsCo
 }
 
 // optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
-func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSmsOptOut {
+func optNilSmsOptOut(c Converter, v *confirmations.SMSOptOut) siteapi.OptNilSmsOptOut {
 	if v == nil {
 		return siteapi.OptNilSmsOptOut{}
 	}
@@ -1073,7 +1079,7 @@ func eraseAt(discardedAt *time.Time) siteapi.Timestamp {
 	if discardedAt == nil {
 		return siteapi.Timestamp{}
 	}
-	return siteapi.Timestamp(workspacedeletion.EraseDate(*discardedAt))
+	return siteapi.Timestamp(workspaces.EraseDate(*discardedAt))
 }
 
 // inviterEmail is the inviting User's address when the inviter edge is loaded.
@@ -1113,7 +1119,7 @@ func cnameRecordType(trackingdomains.Record) siteapi.SiteCnameRecordType {
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.
-func brandKitUpdatedAt(k brandkit.Kit) siteapi.OptNilTimestamp {
+func brandKitUpdatedAt(k brandkits.Kit) siteapi.OptNilTimestamp {
 	if !k.Saved {
 		return siteapi.OptNilTimestamp{}
 	}
@@ -1257,12 +1263,12 @@ func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperato
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.
-func optAttentionSubject(c Converter, v *attention.Subject) siteapi.OptNilSiteAttentionSubject {
+func optAttentionSubject(c Converter, v *needsattentionreport.Subject) siteapi.OptNilSiteAttentionSubject {
 	return convert.OptVia[siteapi.OptNilSiteAttentionSubject](v, c.AttentionSubjectToResource)
 }
 
 // optAbuseWarning is the rate behind a deliverability warning, absent on every other item.
-func optAbuseWarning(c Converter, v *abusewatch.Warning) siteapi.OptNilSiteAbuseWarning {
+func optAbuseWarning(c Converter, v *abusewarning.Warning) siteapi.OptNilSiteAbuseWarning {
 	return convert.OptVia[siteapi.OptNilSiteAbuseWarning](v, c.AbuseWarningToResource)
 }
 

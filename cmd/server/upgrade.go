@@ -6,7 +6,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 )
 
 // exitNewerRelease is the exit status of `upgrade --check` when a newer release exists

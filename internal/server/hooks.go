@@ -8,13 +8,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/ingest"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // hooksHandler serves inbound provider callbacks (ADR 0037): POST /hooks/{key}. The key
@@ -26,16 +26,16 @@ import (
 //
 // The Integration's Preset verifies the request (a bad signature or wrong source is 4xx)
 // and turns the payload into facts (Delivery notices, Inbound messages, Reachability
-// changes), which the core interprets by the Integration's Channel (internal/ingest) in one
-// transaction before the 2xx; our own failure is 5xx so the provider retries; a valid
-// request the Preset does not handle is 2xx with nothing recorded.
+// changes), which the Ingest hook use case (internal/usecase/callbackinterpretation) interprets by the
+// Integration's Channel in one transaction before the 2xx; our own failure is 5xx so the
+// provider retries; a valid request the Preset does not handle is 2xx with nothing recorded.
 func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) http.Handler {
 	if now == nil {
 		now = time.Now
 	}
 	h := &hook{
 		ent:    client,
-		ingest: ingest.New(bus, integ),
+		ingest: callbackinterpretation.New(bus, integ),
 		integ:  integ,
 		now:    now,
 	}
@@ -46,7 +46,7 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 
 type hook struct {
 	ent    *ent.Client
-	ingest *ingest.Module
+	ingest *callbackinterpretation.UseCase
 	integ  *integrations.Module
 	now    func() time.Time
 }
@@ -54,7 +54,7 @@ type hook struct {
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	row, err := h.ent.Integration.Query().
-		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(accounts.Live())).
+		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		http.NotFound(w, r)

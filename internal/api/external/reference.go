@@ -6,9 +6,10 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 )
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
@@ -20,9 +21,10 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (*externalapi.CustomFie
 	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
-// CustomFieldsUpdate renames a Custom field or changes its type.
+// CustomFieldsUpdate renames a Custom field or changes its type through the Custom field retyping
+// use case.
 func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (*externalapi.CustomFieldResource, error) {
-	field, err := contacts.UpdateCustomField(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	field, err := customfieldretyping.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
 	}

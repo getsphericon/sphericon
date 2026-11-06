@@ -5,9 +5,9 @@ import (
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // SiteSecondFactorGetStatus answers whether the User has a Second factor, a pending
@@ -21,7 +21,7 @@ func (h *Handlers) SiteSecondFactorGetStatus(ctx context.Context) (*siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func sessionUserID(ctx context.Context) (int64, error) {
 // session, so it needs no store and ends by itself.
 const identityProofTTL = 5 * time.Minute
 
-// proveIdentity is the proof the steps that ask for the password need (accounts.ProveIdentity,
+// proveIdentity is the proof the steps that ask for the password need (users.ProveIdentity,
 // ADR 0020, ADR 0048) for the User of the session: the password through the login module's one
 // prove path, or for a User with none a Sign-in provider login or a Passkey check of the last
 // identityProofTTL, carried by the session. It returns the User's id once the proof holds, and
@@ -124,11 +124,11 @@ func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString
 	if err != nil {
 		return 0, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return 0, err
 	}
-	if err := accounts.ProveIdentity(ctx, u, password.Value, h.identityProofFresh(ctx), h.proveCurrentPassword); err != nil {
+	if err := users.ProveIdentity(ctx, u, password.Value, h.identityProofFresh(ctx), h.proveCurrentPassword); err != nil {
 		return 0, err
 	}
 	return userID, nil

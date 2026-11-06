@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -58,7 +58,7 @@ func TestAnExpiredLicenseKeyBootsAsTheCore(t *testing.T) {
 
 	_, err := john.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired, "the Audit log is dark without its feature")
-	report, err := env.Instance.Report(t.Context())
+	report, err := env.TelemetryReport.Report(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionCore, report.Edition, "a lapsed key reports the core")
@@ -84,7 +84,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	// Renewal: the same database read under the renewed key, as after a restart.
 	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)
 	require.NoError(t, err)
-	log := audit.NewLog(renewed, env.Bus)
+	log := auditentries.NewLog(renewed, env.Bus)
 	require.True(t, log.Licensed())
 	entries, _, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
 	require.NoError(t, err)

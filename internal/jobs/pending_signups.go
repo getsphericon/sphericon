@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // pendingSignupsInterval is how often expired pending sign-ups are pruned: a pending sign-up lives
@@ -21,21 +21,21 @@ type PrunePendingSignupsArgs struct{}
 func (PrunePendingSignupsArgs) Kind() string { return "pending_signups_prune" }
 
 // PrunePendingSignupsWorker deletes the provider sign-ups whose Sign-up items were never answered;
-// the accounts module decides which are expired.
+// the users module decides which are expired.
 type PrunePendingSignupsWorker struct {
 	river.WorkerDefaults[PrunePendingSignupsArgs]
 
-	accounts *accounts.Accounts
-	now      func() time.Time
+	users *users.Module
+	now   func() time.Time
 }
 
 // NewPrunePendingSignupsWorker builds the prune of the pending sign-ups expired by the clock now.
-func NewPrunePendingSignupsWorker(acc *accounts.Accounts, now func() time.Time) *PrunePendingSignupsWorker {
-	return &PrunePendingSignupsWorker{accounts: acc, now: now}
+func NewPrunePendingSignupsWorker(acc *users.Module, now func() time.Time) *PrunePendingSignupsWorker {
+	return &PrunePendingSignupsWorker{users: acc, now: now}
 }
 
 func (w *PrunePendingSignupsWorker) Work(ctx context.Context, _ *river.Job[PrunePendingSignupsArgs]) error {
-	deleted, err := w.accounts.PruneExpiredPendingSignups(ctx, w.now())
+	deleted, err := w.users.PruneExpiredPendingSignups(ctx, w.now())
 	if err != nil {
 		return err
 	}

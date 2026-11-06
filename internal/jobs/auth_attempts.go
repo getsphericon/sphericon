@@ -6,7 +6,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
 
 // PurgeAuthAttemptsArgs is the periodic tick that removes stale failed-attempt rows
@@ -28,6 +28,6 @@ func NewPurgeAuthAttemptsWorker(client *ent.Client) *PurgeAuthAttemptsWorker {
 }
 
 func (w *PurgeAuthAttemptsWorker) Work(ctx context.Context, _ *river.Job[PurgeAuthAttemptsArgs]) error {
-	_, err := accounts.NewAttempts(w.ent).Purge(ctx)
+	_, err := throttle.NewAttempts(w.ent).Purge(ctx)
 	return err
 }

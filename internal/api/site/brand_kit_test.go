@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -80,7 +80,8 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	names := make([]string, 0, len(starters))
 	for _, tpl := range starters {
 		names = append(names, tpl.Name)
-		// The brand is written into the document; what the export makes of it is internal/brandkit's.
+		// The brand is written into the document; what the export makes of it is
+		// internal/domain/content/brandkits's.
 		assert.NotEmpty(t, tpl.Doc, "%s is written as a document", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "#f0f4f8", "%s carries the background", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "Verdana, sans-serif", "%s carries the body font", tpl.Name)

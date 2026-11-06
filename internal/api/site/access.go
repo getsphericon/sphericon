@@ -7,10 +7,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // access is what an operation of /site declares in the contract (ADR 0061); cmd/scopegen
@@ -19,7 +21,7 @@ type access struct {
 	// workspace is an operation of the Workspace its workspaceId path parameter names.
 	workspace bool
 	// permissions are what the caller's Role must hold there; none means any member.
-	permissions []accounts.Permission
+	permissions []memberships.Permission
 	// whileWithheld lets a caller the Two-factor requirement withholds through (ADR 0020): only
 	// switching the requirement off.
 	whileWithheld bool
@@ -36,14 +38,14 @@ var errUndeclared = validation.Forbidden("site: the operation declares no access
 
 // Access is the ogen middleware of /site (ADR 0061), and the site's construction point of the
 // scoped client (ADR 0017). For an operation of a Workspace it loads the caller's Membership of
-// the Workspace its workspaceId names; it then admits the signed-in User (accounts.Admit: a
+// the Workspace its workspaceId names; it then admits the signed-in User (users.Admit: a
 // required acceptance pending, then the Workspace's Two-factor requirement, each unless the
 // operation lets it through), checks the Permissions the operation declares and puts the
 // Workspace's *ent.Scoped (acting as the caller, ADR 0022) and the Membership in the context,
 // where the handler reads them with workspaceScope and callerMembership. A request without a
 // session passes to an operation of no Workspace (an anonymous operation, or an optional session
 // not given). A Workspace that does not exist or of which the caller is not a member is
-// accounts.ErrWorkspaceNotFound (404); a Role without a Permission is its refusal (403
+// workspaces.ErrNotFound (404); a Role without a Permission is its refusal (403
 // permission_required). Every refusal is rendered by the server's error handler.
 func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middleware.Response, error) {
 	a, ok := operationAccess[req.OperationName]
@@ -53,7 +55,7 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 	session := auth.GetSiteAuth(req.Context)
 	if session == nil {
 		if a.workspace {
-			return middleware.Response{}, accounts.ErrWorkspaceNotFound
+			return middleware.Response{}, workspaces.ErrNotFound
 		}
 		return next(req)
 	}
@@ -61,13 +63,13 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 	if a.workspace {
 		id, _ := req.Params.Path("workspaceId")
 		publicID, _ := id.(siteapi.WorkspaceId)
-		s, m, err := h.accounts.Scope(req.Context, session.UserID, string(publicID))
+		s, m, err := h.memberships.Scope(req.Context, session.UserID, string(publicID))
 		if err != nil {
 			return middleware.Response{}, err
 		}
 		c = caller{scoped: s, membership: m}
 	}
-	err := h.accounts.Admit(req.Context, accounts.Admission{
+	err := h.users.Admit(req.Context, users.Admission{
 		UserID:                 session.UserID,
 		Membership:             c.membership,
 		StrongSession:          currentSession(req.Context).Method.Strong(),
@@ -82,7 +84,7 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 		return next(req)
 	}
 	for _, p := range a.permissions {
-		if err := accounts.Require(c.membership.Role, p); err != nil {
+		if err := memberships.Require(c.membership.Role, p); err != nil {
 			return middleware.Response{}, err
 		}
 	}

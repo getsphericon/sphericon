@@ -13,10 +13,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	appdb "github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
 // ErrChecksFailed is what Diagnose returns when a check failed: the report it printed already
@@ -36,7 +36,7 @@ type Seams struct {
 	Now       func() time.Time
 	DialSMTP  func(ctx context.Context, cfg *config.Config) error
 	HTTP      *http.Client
-	LookupTXT sending.TXTLookup
+	LookupTXT domainname.TXTLookup
 }
 
 // DefaultSeams are the real ones: the clock, the system relay, the network and the host's
@@ -75,7 +75,7 @@ func Diagnose(ctx context.Context, env string, s Seams, w io.Writer, asJSON bool
 			in.DBErr = err
 		} else {
 			defer cleanup.Close(db, "database")
-			in.DB, in.Ent = db, appdb.NewEntClient(db)
+			in.DB, in.Ent = db, entclient.New(db)
 		}
 	}
 

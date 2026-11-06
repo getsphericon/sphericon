@@ -11,49 +11,59 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
-	"github.com/getsphericon/sphericon/internal/attention"
-	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/eventlog"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/problem"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
-	"github.com/getsphericon/sphericon/internal/segments"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/setupchecklist"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/signup"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
-	"github.com/getsphericon/sphericon/internal/tags"
-	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // mapper turns ent entities into site API resources (generated by goverter).
@@ -63,12 +73,15 @@ var mapper = &resources.ConverterImpl{}
 var inputs = &resources.InputsImpl{}
 
 type Handlers struct {
-	accounts        *accounts.Accounts
+	users           *users.Module
+	invitations     *invitations.Module
+	workspaces      *workspaces.Module
+	memberships     *memberships.Module
 	passwords       *credentials.Hasher
-	deletion        *workspacedeletion.Module
-	attempts        *accounts.Attempts
+	deletion        *workspacedeletion.UseCase
+	attempts        *throttle.Attempts
 	bus             *events.Bus
-	webhooks        *webhooks.Module
+	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
 	mail            mailjobs.Enqueuer
 	sendingDomains  *sendingdomains.Module
@@ -76,41 +89,48 @@ type Handlers struct {
 	joinDomains     *joindomains.Module
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
-	links           *accounts.Links
-	tracker         *tracking.Tracker
+	links           *users.Links
+	tracker         *messagetoken.Tracker
 	appURL          string
-	outbound        *outbound.Module
+	outbound        *outboundmessages.Module
 	segments        *segments.Module
-	eventlog        *eventlog.Module
+	eventlog        *eventlog.UseCase
 	contacts        *contacts.Module
-	erasure         *erasure.Module
+	erasure         *contacterasure.UseCase
 	tags            *tags.Module
-	bindings        *bindings.Module
-	templates       *templates.Module
-	brandKit        *brandkit.Module
-	automations     *automations.Module
-	rules           *rules.Module
-	oauth           *oauthserver.Service
-	audit           AuditLog
-	attention       *attention.Module
-	setupChecklist  *setupchecklist.Module
-	supportEmail    string
-	analytics       *analytics.Module
-	sessions        *auth.Sessions
-	secondFactor    *secondfactor.Module
-	passkeys        *secondfactor.Passkeys
-	now             func() time.Time
-	accountLink     *accountlink.Link
-	migrations      Migrations
-	instance        *instance.Module
-	holds           *holds.Holds
-	origins         Origins
+	tagDeletion     *tagdeletion.UseCase
+	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one.
+	integrationDeletion   *integrationdeletion.UseCase
+	sendingDomainDeletion *sendingdomaindeletion.UseCase
+	domainVerification    *domainverification.UseCase
+	bindings              *bindings.Module
+	templates             *emailtemplates.Module
+	brandKit              *brandkits.Module
+	automations           *automations.Module
+	rules                 *rules.Module
+	oauth                 *oauthclients.Module
+	audit                 AuditLog
+	attention             *needsattentionreport.UseCase
+	setupChecklist        *setupchecklist.Module
+	supportEmail          string
+	analytics             *analyticsreport.UseCase
+	sessions              *auth.Sessions
+	secondFactor          *secondfactorcheck.UseCase
+	workspaceCreation     *workspacecreation.UseCase
+	passkeys              *passkeys.Module
+	now                   func() time.Time
+	accountLink           *accountlink.Link
+	migrations            Migrations
+	release               *releasecheck.UseCase
+	holds                 *holds.Holds
+	origins               Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
 	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
 	// and the submit.
-	signupSurvey *signupsurvey.Module
+	signupSurvey *signupsurveyresponses.Module
 	// signupItems is the Instance's Sign-up items and their Legal documents (ADR 0062).
 	signupItems *signupitems.Module
 	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
@@ -119,14 +139,14 @@ type Handlers struct {
 	challenges *authtoken.Signer
 	// login is the password step of signing in (ADR 0020).
 	login *login.Module[*ent.User]
-	// signup is the Sign-up (ADR 0030).
-	signup *signup.Module
 	// signin is the Sign-in providers of the Instance (ADR 0048).
-	signin *signin.Providers
+	signin *signinprovider.Providers
+	// unsubscribe records an opt-out (a use case, ADR 0102).
+	unsubscribe *unsubscriberecording.UseCase
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/audit. Core knows only this interface: without a license Licensed is false and
+// ee/domain/insights/auditentries. Core knows only this interface: without a license Licensed is false and
 // the page answers 402.
 type AuditLog interface {
 	Licensed() bool
@@ -137,7 +157,7 @@ type AuditLog interface {
 	// function that writes the entries matching the filter, newest first, as CSV.
 	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
 	// Facets returns the actors, actions and target types that occur in the log, sorted.
-	Facets(ctx context.Context, s *ent.Scoped) (auditapi.Facets, error)
+	Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error)
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
 	RetentionLicensed() bool
 }
@@ -154,28 +174,35 @@ type Origins struct {
 // the shared singletons the composition root registers once, so /site and /api
 // cannot diverge on how a module is constructed.
 type Deps struct {
-	Accounts *accounts.Accounts
+	Users *users.Module
+	// Invitations issues, revokes and looks up the Invitations of a Workspace (ADR 0102).
+	Invitations *invitations.Module
+	// Workspaces is the Workspace with its settings; Memberships the lookup of a scope, the Roles
+	// and their changes (ADR 0102).
+	Workspaces  *workspaces.Module
+	Memberships *memberships.Module
 	// Passwords hashes the password a User sets (sign-up, reset, a verified link's new one).
 	Passwords *credentials.Hasher
 	// Deletion is the Workspace deletion cycle (ADR 0043).
-	Deletion *workspacedeletion.Module
-	// Instance is the Instance state no Workspace owns (ADR 0032).
-	Instance *instance.Module
+	Deletion *workspacedeletion.UseCase
+	// Release is the Release check (ADR 0032), whose newer release an owner is told of.
+	Release *releasecheck.UseCase
 	// Attempts counts failed logins and password-reset mails per account (ADR
 	// 0025); login and forgot-password share it.
-	Attempts    *accounts.Attempts
-	OAuth       *oauthserver.Service
+	Attempts    *throttle.Attempts
+	OAuth       *oauthclients.Module
 	Bus         *events.Bus
-	Webhooks    *webhooks.Module
-	Outbound    *outbound.Module
+	Webhooks    *webhookendpoints.Module
+	Outbound    *outboundmessages.Module
 	Segments    *segments.Module
-	EventLog    *eventlog.Module
+	EventLog    *eventlog.UseCase
 	Contacts    *contacts.Module
-	Erasure     *erasure.Module
+	Erasure     *contacterasure.UseCase
 	Tags        *tags.Module
+	TagDeletion *tagdeletion.UseCase
 	Bindings    *bindings.Module
-	Templates   *templates.Module
-	BrandKit    *brandkit.Module
+	Templates   *emailtemplates.Module
+	BrandKit    *brandkits.Module
 	Automations *automations.Module
 	Rules       *rules.Module
 	Broadcasts  *broadcasts.Module
@@ -186,28 +213,37 @@ type Deps struct {
 	TrackingDomains *trackingdomains.Module
 	JoinDomains     *joindomains.Module
 	Integrations    *integrations.Module
+	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
+	IntegrationDeletion   *integrationdeletion.UseCase
+	SendingDomainDeletion *sendingdomaindeletion.UseCase
+	DomainVerification    *domainverification.UseCase
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
-	Tracker          *tracking.Tracker
+	Tracker          *messagetoken.Tracker
 	AppURL           string
 	Audit            AuditLog
 	// Attention reads what in a Workspace needs a member's action now.
-	Attention *attention.Module
+	Attention *needsattentionreport.UseCase
 	// SetupChecklist reads the Setup checklist and stamps its first completion.
 	SetupChecklist *setupchecklist.Module
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// Origins are the public origins a Workspace's pages point at besides the app's own.
 	Origins   Origins
-	Analytics *analytics.Module
+	Analytics *analyticsreport.UseCase
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
-	SecondFactor *secondfactor.Module
+	SecondFactor *secondfactorcheck.UseCase
+	// WorkspaceCreation creates a Workspace, and makes a User Verified with its first one (a use
+	// case, ADR 0102): the verification and reset links, a Sign-up without verification and the
+	// provider sign-in.
+	WorkspaceCreation *workspacecreation.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
-	Passkeys *secondfactor.Passkeys
+	Passkeys *passkeys.Module
 	// Clock is the time the site session's expiry and a Two-factor requirement's
 	// grace are checked against (ADR 0020); nil means time.Now. Tests inject one to
 	// move past a session's lifetime or a grace period.
@@ -222,18 +258,20 @@ type Deps struct {
 	// a Sign-up takes a password and yields a Verified User at once, and login
 	// checks no verification.
 	RequireEmailVerification bool
-	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
-	SignupSurvey *signupsurvey.Module
+	// SignupSurvey is the Sign-up survey module (built with signupsurveyresponses.Enabled).
+	SignupSurvey *signupsurveyresponses.Module
 	// SignupItems is the Instance's Sign-up items and their Legal documents.
 	SignupItems *signupitems.Module
 	// ConsentRecords is the Users' decisions on the Sign-up items.
 	ConsentRecords *consentrecords.Module
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
 	// no provider is configured.
-	Signin *signin.Providers
+	Signin *signinprovider.Providers
 	// Migrations runs the pending migrations from the error page of a development server
 	// (ADR 0033); nil on any other, which leaves the operation answering 404.
 	Migrations Migrations
+	// Unsubscribe records an opt-out (a use case, ADR 0102).
+	Unsubscribe *unsubscriberecording.UseCase
 }
 
 // Migrations is the seam of the error page's button: it runs the migrations the database has
@@ -242,30 +280,29 @@ type Migrations interface {
 	Apply(ctx context.Context) (int, error)
 }
 
-func NewHandlers(d Deps) *Handlers {
+func NewHandlers(d *Deps) *Handlers {
 	now := d.Clock
 	if now == nil {
 		now = time.Now
 	}
 	h := &Handlers{
-		accounts: d.Accounts, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
+		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
+		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 	h.login = h.newLogin()
-	h.signup = h.newSignUp()
 	return h
 }
 
 var _ siteapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *siteapi.ProblemDetailsStatusCode {
 	return problem.Site(ctx, err)
 }
@@ -279,7 +316,7 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 		return events.Actor{}
 	}
 	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(a.UserID, 10)}
-	if u, err := h.accounts.User(ctx, a.UserID); err == nil {
+	if u, err := h.users.User(ctx, a.UserID); err == nil {
 		actor.Name = u.Name
 	}
 	return actor

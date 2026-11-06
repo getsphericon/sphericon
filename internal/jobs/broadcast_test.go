@@ -11,16 +11,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/starttoken"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -158,7 +158,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 
 	id := env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	env.UnsubscribeFromBroadcasts(ctx, suppression.NormalizeDestination(*c.Email))
+	env.UnsubscribeFromBroadcasts(ctx, suppressions.NormalizeDestination(*c.Email))
 
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, id))
 	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(id)).OnlyX(ctx).Status)
@@ -327,7 +327,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 	err := jobs.SendBroadcast(ctx, env.DB, newMod(env, failingResolver(messaging.ErrNoProvider)), fixtures.BroadcastDraftID)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldNoIntegration, held.Reason)
+	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.NotEqual(t, broadcast.StatusFailed, got.Status)
@@ -336,8 +336,8 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
-func newMod(env *testhelper.TestEnv, resolver outbound.Senders) *outbound.Module {
-	return outbound.New(env.Bus, env.Holds, resolver, tracking.New("test-secret", "http://local"))
+func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local"))
 }
 
 // The synchronous adapter runs the production sequence: the module plans, paces and settles

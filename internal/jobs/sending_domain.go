@@ -6,9 +6,11 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -27,16 +29,23 @@ func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
 
-	mod *domainverify.Module
+	ent          *ent.Client
+	verification *domainverification.UseCase
 }
 
 // NewVerifySendingDomainWorker builds the worker that verifies one Sending domain.
-func NewVerifySendingDomainWorker(mod *domainverify.Module) *VerifySendingDomainWorker {
-	return &VerifySendingDomainWorker{mod: mod}
+func NewVerifySendingDomainWorker(client *ent.Client, verification *domainverification.UseCase) *VerifySendingDomainWorker {
+	return &VerifySendingDomainWorker{ent: client, verification: verification}
 }
 
+// Work reads the domain by id to learn its Workspace, before any scope exists, and checks it in
+// that Workspace's scope. An unknown id is an error.
 func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[VerifySendingDomainArgs]) error {
-	return w.mod.Verify(ctx, job.Args.SendingDomainID)
+	dom, err := w.ent.SendingDomain.Get(ctx, job.Args.SendingDomainID)
+	if err != nil {
+		return err
+	}
+	return w.verification.Recheck(ctx, w.ent.Scoped(dom.WorkspaceID), dom.ID)
 }
 
 // --- periodic re-check of all domains (verified is a live property, ADR 0010) ---
@@ -48,18 +57,18 @@ func (RecheckSendingDomainsArgs) Kind() string { return "sending_domain_recheck"
 type RecheckSendingDomainsWorker struct {
 	river.WorkerDefaults[RecheckSendingDomainsArgs]
 
-	mod *domainverify.Module
+	ent *ent.Client
 }
 
 // NewRecheckSendingDomainsWorker builds the worker that queues a check of every Sending domain due one.
-func NewRecheckSendingDomainsWorker(mod *domainverify.Module) *RecheckSendingDomainsWorker {
-	return &RecheckSendingDomainsWorker{mod: mod}
+func NewRecheckSendingDomainsWorker(client *ent.Client) *RecheckSendingDomainsWorker {
+	return &RecheckSendingDomainsWorker{ent: client}
 }
 
 // Work fans the periodic tick out into one VerifySendingDomain job per due domain, giving each
 // check its own isolation and retry and reusing the path of the "Verify" button.
 func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckSendingDomainsArgs]) error {
-	ids, err := w.mod.Due(ctx, recheckBatchSize)
+	ids, err := sendingdomains.Due(ctx, w.ent, recheckBatchSize)
 	if err != nil {
 		return err
 	}

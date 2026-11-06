@@ -30,7 +30,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
-# Initech's roster for the Role invariant tests (internal/accounts): two owners, an admin and
+# Initech's roster for the Role invariant tests (internal/domain/identity/memberships): two owners, an admin and
 # a member. None of them logs in, so they add no audit rows anywhere.
 - id: 5 # fixture: InitechOwnerOlga
   name: Olga

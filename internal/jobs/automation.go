@@ -7,10 +7,10 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobkind"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // --- trigger evaluation: enroll contacts into matching automations ---
@@ -22,7 +22,7 @@ type EvaluateTriggerArgs struct {
 	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
 	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
-	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepping.OnEvent).
+	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepexecution.OnEvent).
 	OccurredAt time.Time `json:"occurred_at"`
 	// SourceID is the id the Event's row is stored under (events.Envelope.SourceID): an Enrollment
 	// the job makes copies that row's properties (#752). The properties themselves stay on the row,
@@ -41,7 +41,7 @@ type EvaluateTriggerWorker struct {
 }
 
 // NewEvaluateTriggerWorker builds the worker that hands an Event of a Contact to the Automations
-// (stepping.OnEvent): the Enrollments it ends and the ones it makes.
+// (stepexecution.OnEvent): the Enrollments it ends and the ones it makes.
 func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTriggerWorker {
 	return &EvaluateTriggerWorker{ent: client, bus: bus}
 }
@@ -61,25 +61,25 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	}
 	args := job.Args
 	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt}
-	return stepping.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, ev, args.SourceAutomationID)
+	return stepexecution.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, ev, args.SourceAutomationID)
 }
 
-// --- run stepping: the adapter of the Enrollment stepping module (internal/stepping) ---
+// --- run a step: the adapter of the Step execution use case (internal/usecase/stepexecution) ---
 
 // RunStepWorker executes one step of one Enrollment.
 type RunStepWorker struct {
-	river.WorkerDefaults[stepping.RunStepArgs]
+	river.WorkerDefaults[stepexecution.RunStepArgs]
 
 	ent *ent.Client
-	mod *stepping.Module
+	mod *stepexecution.UseCase
 }
 
 // NewRunStepWorker builds the worker over the raw client the job entry point scopes from.
-func NewRunStepWorker(client *ent.Client, mod *stepping.Module) *RunStepWorker {
+func NewRunStepWorker(client *ent.Client, mod *stepexecution.UseCase) *RunStepWorker {
 	return &RunStepWorker{ent: client, mod: mod}
 }
 
-func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[stepping.RunStepArgs]) error {
+func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[stepexecution.RunStepArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded Enrollment's Workspace.
 	// One erased with its Contact after the job was queued (ADR 0021) ends the job quietly.
 	run, err := w.ent.AutomationRun.Get(ctx, job.Args.RunID)

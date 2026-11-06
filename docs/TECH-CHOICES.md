@@ -23,7 +23,7 @@ message editor, ADR 0040).
 
 Keep hand-rolled (no worthwhile library): pagination math, RFC 7807 `problem+json` renderer
 (every candidate lib is abandoned / sub-50★), ogen Opt→pointer converters, the messaging
-provider catalog, and the `internal/segments` rule compiler (domain-specific, already
+provider catalog, and the `internal/domain/contacts/segments` rule compiler (domain-specific, already
 library-grade and extractable).
 
 ## Phase 3 — email templates

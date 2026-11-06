@@ -10,9 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 )
 
 func listIntegrations(t *testing.T, c *siteapi.Client) []siteapi.SiteIntegrationResource {
@@ -166,7 +167,7 @@ func TestAnEmptyStoredDefinitionAllowsPublishingAndRemovingItsUnusedIntegration(
 	_, needsAttention := cannotSendOf(items, fixtures.AutomationMeridianEmptyID)
 	assert.False(t, needsAttention, "no Step sends through the disabled Integration")
 
-	require.NoError(t, env.Integrations.Delete(ctx, s, fixtures.IntegrationMeridianDisabledID), "an empty stored definition must not disagree with Publish")
+	require.NoError(t, integrationdeletion.New(env.Bus, env.Integrations).Delete(ctx, s, fixtures.IntegrationMeridianDisabledID), "an empty stored definition must not disagree with Publish")
 	deleted, err := env.Integrations.Get(ctx, s, fixtures.IntegrationMeridianDisabledID)
 	require.NoError(t, err)
 	assert.NotNil(t, deleted.DiscardedAt)

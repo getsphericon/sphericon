@@ -1,4 +1,4 @@
-// Command db runs the development database tasks of internal/devdb: it creates and drops this
+// Command db runs the development database tasks of internal/infra/devdb: it creates and drops this
 // checkout's database, writes the next goose migration from the ent schema and writes the
 // migration for river's schema.
 package main
@@ -13,7 +13,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/devdb"
+	"github.com/getsphericon/sphericon/internal/infra/devdb"
 )
 
 func main() {

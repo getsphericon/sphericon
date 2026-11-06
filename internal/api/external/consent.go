@@ -5,8 +5,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 )
 
 // Consent narrows through /api (ADR 0016): these operations add a Suppression or record an
@@ -17,7 +17,7 @@ import (
 func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (*externalapi.SuppressionResource, error) {
 	s := auth.TokenScoped(ctx)
 
-	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
+	created, err := suppressions.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (*externalapi.UnsubscribeResource, error) {
 	channel := inputs.ConsentChannel(req.Channel.Or(externalapi.ConsentChannelEmail))
-	u, err := consent.OptOut(ctx, h.bus, auth.TokenScoped(ctx), channel, req.Destination, req.SendingSource.Or(""))
+	u, err := h.unsubscribe.OptOut(ctx, auth.TokenScoped(ctx), channel, req.Destination, req.SendingSource.Or(""))
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (*externalapi.ConfirmationResource, error) {
-	c, err := consent.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
+	c, err := confirmations.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
 	if err != nil {
 		return nil, err
 	}

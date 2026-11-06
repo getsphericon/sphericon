@@ -12,11 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -131,9 +131,9 @@ func TestATestSendOfAnSMSBroadcastShowsTheShortLinksAndTheirClicksRecordNothing(
 	b := env.DB.Broadcast.GetX(ctx, id)
 	mod := env.OutboundModule()
 
-	_, err := mod.SendBroadcastTest(ctx, s, b, outbound.TestAddress{Phone: "+14155550199"}, nil)
+	_, err := mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"}, nil)
 	require.NoError(t, err)
-	_, err = mod.SendBroadcastTest(ctx, s, b, outbound.TestAddress{Phone: "+14155550199"}, nil)
+	_, err = mod.SendBroadcastTest(ctx, s, b, outboundmessages.TestAddress{Phone: "+14155550199"}, nil)
 	require.NoError(t, err)
 
 	sent := env.Twilio.Messages()

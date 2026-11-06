@@ -16,25 +16,30 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/rekey"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/sidelistener"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
-	"github.com/getsphericon/sphericon/internal/suspension"
-	"github.com/getsphericon/sphericon/internal/telemetry"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
+	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 type App struct {
@@ -117,13 +122,13 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	if o.e2eDKIMLookup {
 		// The e2e suite's domains self-verify through DevTXTLookup, which echoes a Sending
 		// domain's own stored key.
-		do.Override(injector, func(i do.Injector) (sending.TXTLookup, error) {
-			return domainverify.DevTXTLookup(do.MustInvoke[*ent.Client](i)), nil
+		do.Override(injector, func(i do.Injector) (domainname.TXTLookup, error) {
+			return sendingdomains.DevTXTLookup(do.MustInvoke[*ent.Client](i)), nil
 		})
 	}
 
 	// Set the process-wide locale for system emails and API validation messages
-	// (internal/i18n). Instance-global, read-only after this point.
+	// (internal/kernel/i18n). Instance-global, read-only after this point.
 	i18n.Configure(cfg.Locale)
 
 	handler, err := do.Invoke[Handler](injector)
@@ -239,17 +244,21 @@ const unwindTimeout = 15 * time.Second
 
 func (a *App) start(ctx context.Context) error {
 	// The first start creates the Instance state row and its random Instance id (ADR 0032).
-	inst, err := do.Invoke[*instance.Module](a.injector)
+	inst, err := do.Invoke[*instancestates.Module](a.injector)
 	if err != nil {
 		return err
 	}
 	if _, err := inst.Ensure(ctx); err != nil {
 		return err
 	}
-	if err := inst.AnnounceRelease(ctx); err != nil {
+	release, err := do.Invoke[*releasecheck.UseCase](a.injector)
+	if err != nil {
 		return err
 	}
-	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
+	if err := release.AnnounceRelease(ctx); err != nil {
+		return err
+	}
+	if err := telemetry.ObserveReleaseAvailable(release.LatestRelease); err != nil {
 		return err
 	}
 	edition, err := do.Invoke[*ee.Edition](a.injector)
@@ -381,7 +390,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
+	id, err := workspaces.IDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -398,7 +407,7 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspen
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
+	id, err := workspaces.IDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -418,16 +427,16 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	id, err := client.User.Query().Where(user.Email(accounts.NormalizeEmail(email))).OnlyID(ctx)
+	id, err := client.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).OnlyID(ctx)
 	if err != nil {
 		return false, fmt.Errorf("user %q: %w", email, err)
 	}
-	sf, err := do.Invoke[*secondfactor.Module](a.injector)
+	sf, err := do.Invoke[*secondfactorcheck.UseCase](a.injector)
 	if err != nil {
 		return false, err
 	}
 	err = sf.ResetByStaff(ctx, id, "cli")
-	if errors.Is(err, secondfactor.ErrNothingToReset) {
+	if errors.Is(err, secondfactorcheck.ErrNothingToReset) {
 		return false, nil
 	}
 	return err == nil, err
@@ -436,11 +445,11 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
 // (ADR 0042): an Owner made from a shell, with no Sign-up.
 func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	acc, err := do.Invoke[*accounts.Accounts](a.injector)
+	creation, err := do.Invoke[*workspacecreation.UseCase](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return acc.CreateOwner(ctx, email, name)
+	return creation.CreateOwner(ctx, email, name)
 }
 
 // CreateStaffMember makes a platform Staff member (ADR 0026, ADR 0063) and returns its one-time
@@ -467,22 +476,22 @@ func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
 // value, shown once. Only the Staff member's command line makes one: no endpoint can.
-func (a *App) IssueServiceCredential(ctx context.Context, in staff.IssueInput) (*staff.Issued, error) {
+func (a *App) IssueServiceCredential(ctx context.Context, in servicecredentials.IssueInput) (*servicecredentials.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.IssueServiceCredential(ctx, in)
+	return edition.ServiceCredentials.IssueServiceCredential(ctx, in)
 }
 
 // RotateServiceCredential issues a new credential with the name and scopes of an active
 // one, leaving the old one active until it is revoked.
-func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error) {
+func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*servicecredentials.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.RotateServiceCredential(ctx, id, expiresAt)
+	return edition.ServiceCredentials.RotateServiceCredential(ctx, id, expiresAt)
 }
 
 // RevokeServiceCredential ends a Service credential.
@@ -491,7 +500,7 @@ func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return edition.Staff.RevokeServiceCredential(ctx, id)
+	return edition.ServiceCredentials.RevokeServiceCredential(ctx, id)
 }
 
 // ServiceCredentials lists the Service credentials with their state, narrowed to one
@@ -501,14 +510,26 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.ServiceCredentials(ctx, name)
+	return edition.ServiceCredentials.ServiceCredentials(ctx, name)
 }
 
-// Accounts is the product's Accounts module from the DI container, for harnesses that
+// Users is the product's Users module from the DI container, for harnesses that
 // arrange users and Workspaces through the same instance the HTTP surface runs on
 // (the end-to-end suite), so they open no second connection pool.
-func (a *App) Accounts() (*accounts.Accounts, error) {
-	return do.Invoke[*accounts.Accounts](a.injector)
+func (a *App) Users() (*users.Module, error) {
+	return do.Invoke[*users.Module](a.injector)
+}
+
+// WorkspaceCreation is the product's Workspace creation use case from the DI container, for the
+// same harnesses: they create a Workspace for a User they made.
+func (a *App) WorkspaceCreation() (*workspacecreation.UseCase, error) {
+	return do.Invoke[*workspacecreation.UseCase](a.injector)
+}
+
+// Memberships is the product's Memberships module from the DI container, for the same harnesses:
+// they scope to a Workspace and change its Roles through it.
+func (a *App) Memberships() (*memberships.Module, error) {
+	return do.Invoke[*memberships.Module](a.injector)
 }
 
 // Bus is the event bus from the DI container, for harnesses that must change data
@@ -526,14 +547,10 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 
 // Reencrypt seals every stored secret under the primary key of the encryption keyset
 // (`sphericon encryption-key reencrypt`) and returns what it did per column.
-func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
-	client, err := do.Invoke[*ent.Client](a.injector)
+func (a *App) Reencrypt(ctx context.Context) ([]secrets.Count, error) {
+	reencryption, err := do.Invoke[*secretreencryption.UseCase](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	cipher, err := do.Invoke[*secrets.Cipher](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return rekey.New(client, cipher).Run(ctx)
+	return reencryption.Run(ctx)
 }

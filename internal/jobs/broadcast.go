@@ -10,10 +10,10 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/jobkind"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
 // recipientInsertChunk bounds a single InsertMany so a very large audience is enqueued in
@@ -45,7 +45,7 @@ type SendBroadcastWorker struct {
 }
 
 // NewSendBroadcastWorker builds the worker that plans a Broadcast's audience and sends through mod.
-func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {
+func NewSendBroadcastWorker(client *ent.Client, mod *outboundmessages.Module) *SendBroadcastWorker {
 	return &SendBroadcastWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
@@ -114,7 +114,7 @@ type SendRecipientWorker struct {
 }
 
 // NewSendRecipientWorker builds the worker that sends one Broadcast recipient through mod.
-func NewSendRecipientWorker(client *ent.Client, mod *outbound.Module) *SendRecipientWorker {
+func NewSendRecipientWorker(client *ent.Client, mod *outboundmessages.Module) *SendRecipientWorker {
 	return &SendRecipientWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
@@ -141,7 +141,7 @@ func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecip
 	// with it, so the job is not silently lost.
 	if job.Attempt >= job.MaxAttempts {
 		if gerr := w.del.GiveUp(ctx, s, job.Args.RecipientID, err); gerr != nil {
-			if errors.Is(gerr, outbound.ErrInProgress) {
+			if errors.Is(gerr, outboundmessages.ErrInProgress) {
 				// Another attempt holds a live claim and may still reach the provider, so
 				// nothing is failed yet. A snooze spends no attempt: the job runs again once
 				// the lease is out, and gives up (or replays the recorded send) then.
@@ -182,7 +182,7 @@ func classify(err error) outcome {
 //
 // Audience = workspace contacts with an email address (optionally narrowed by a
 // segment) minus the ineligible (suppressed / unsubscribed, derived per ADR 0001).
-func SendBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module, broadcastID int64) error {
+func SendBroadcast(ctx context.Context, client *ent.Client, mod *outboundmessages.Module, broadcastID int64) error {
 	s, err := broadcastScope(ctx, client, broadcastID)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (i inlineSends) Schedule(ctx context.Context, _ int64, sends []broadcasts.S
 			// path has no retry runtime: a failed send is terminal, so give the recipient up
 			// at once (a bad recipient must not abort the batch).
 			if gerr := i.del.GiveUp(ctx, i.s, send.RecipientID, serr); gerr != nil {
-				if errors.Is(gerr, outbound.ErrInProgress) {
+				if errors.Is(gerr, outboundmessages.ErrInProgress) {
 					return gerr // a live claim: stop and leave the rest pending, like a hold
 				}
 				return errors.Join(serr, gerr)

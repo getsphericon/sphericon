@@ -1,6 +1,6 @@
 // Builds dist/emaildoc.js: the editor's own export code as one IIFE for the Go binary's embedded
 // JavaScript runtime (goja), and dist/schema.json: the node and mark listing derived from the same
-// extensions. `mise run build:emaildoc` runs it and copies both into internal/emaildoc/.
+// extensions. `mise run build:emaildoc` runs it and copies both into internal/kernel/emaildoc/.
 import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { runInThisContext } from 'node:vm'
@@ -39,7 +39,7 @@ function imageChunk() {
 //   machine, 15 or more on one a full test run shares), and their regular expressions are nearly
 //   all of the bundle's compile (2 of its 2 seconds), which a document without a code block never
 //   needs. The registration becomes `registerCodeLanguages`, which the host calls before it
-//   renders a code block (internal/emaildoc), and its source a string that only that call
+//   renders a code block (internal/kernel/emaildoc), and its source a string that only that call
 //   compiles; the first read of `Prism.languages` still runs it, in case the host does not. The
 //   same languages register in the same order, so a code block exports as before, and the bundle
 //   compiles in about 0.2 seconds and starts a runtime in about 0.1.

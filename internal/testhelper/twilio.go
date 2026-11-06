@@ -11,7 +11,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 )
 
 // TwilioNumber is the number the Twilio helpers send from, as the fake account holds it.

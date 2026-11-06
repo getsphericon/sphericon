@@ -10,20 +10,23 @@ import (
 	"strings"
 	"time"
 
+	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/ogen-go/ogen/ogenerrors"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
-	gptoken "github.com/go-pkgz/auth/v2/token"
-	"github.com/ogen-go/ogen/ogenerrors"
-	"github.com/samber/lo"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 )
 
 // ErrUnauthorized is returned by security handlers when a request is not authorized.
@@ -78,10 +81,10 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 
 // ExternalSecurityHandler implements externalapi.SecurityHandler (Bearer token auth).
 type ExternalSecurityHandler struct {
-	ent      *ent.Client
-	bus      *events.Bus
-	accounts *accounts.Accounts
-	now      func() time.Time
+	ent   *ent.Client
+	bus   *events.Bus
+	users *users.Module
+	now   func() time.Time
 }
 
 // ExternalSecurityDeps is what the Bearer-token handler is built from.
@@ -90,8 +93,8 @@ type ExternalSecurityDeps struct {
 	Ent *ent.Client
 	// Bus opens the transactions of audited writes made under the token (ADR 0022).
 	Bus *events.Bus
-	// Accounts admits a Connection's User as it admits their own session (Admit).
-	Accounts *accounts.Accounts
+	// Users admits a Connection's User as it admits their own session (Admit).
+	Users *users.Module
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now).
 	Clock func() time.Time
@@ -103,7 +106,7 @@ func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler
 	if now == nil {
 		now = time.Now
 	}
-	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, accounts: d.Accounts, now: now}
+	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, users: d.Users, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
@@ -112,7 +115,7 @@ var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 // when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
 // and, for a User's own token (a Connection or a Personal token), when its User's current Role
 // holds the Permission granting each of
-// those scopes needs (accounts.MayGrant) and each Permission op itself declares
+// those scopes needs (memberships.MayGrant) and each Permission op itself declares
 // (ExternalOperationPermissions). An operation absent from the scope table is refused to every
 // token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
 // a valid token without a scope of op is refused with 403, and a User's own token whose User's
@@ -134,7 +137,7 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 // budget is refused before the token is looked at, a failure counts against it, and a success
 // charges the Workspace's shared /api and /mcp budget. Rejections surface as
 // *ratelimit.LimitedError. A User's own token (a Connection or a Personal token) is admitted as the
-// User's session is (accounts.Admit): refused with 403 acceptance_pending while a required
+// User's session is (users.Admit): refused with 403 acceptance_pending while a required
 // acceptance is pending (ADR 0062), and with 403 second_factor_required once the Workspace's
 // Two-factor requirement withholds its User (ADR 0020); the Workspace's API token meets neither. /mcp
 // authenticates its requests with it; each tool call it dispatches to /api then meets the
@@ -153,7 +156,7 @@ func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalap
 
 // permitted reports, as a refusal, whether the token may call op: the contract must declare op,
 // the token must carry each of its scopes, and the User of a Connection or a Personal token must
-// hold, in their current Role, the Permission granting each scope needs (accounts.MayGrant) and
+// hold, in their current Role, the Permission granting each scope needs (memberships.MayGrant) and
 // each Permission op declares, so the token does no more than its User may on /site: a demotion
 // takes effect on the next request.
 func permitted(op externalapi.OperationName, auth *TokenAuth) error {
@@ -168,11 +171,11 @@ func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 	if auth.Membership == nil {
 		return nil
 	}
-	if err := accounts.MayGrant(auth.Membership.Role, lo.Map(required, func(s apitokens.Scope, _ int) string { return string(s) })); err != nil {
+	if err := memberships.MayGrant(auth.Membership.Role, lo.Map(required, func(s apitokens.Scope, _ int) string { return string(s) })); err != nil {
 		return err
 	}
 	for _, p := range ExternalOperationPermissions[op] {
-		if err := accounts.Require(auth.Membership.Role, p); err != nil {
+		if err := memberships.Require(auth.Membership.Role, p); err != nil {
 			return err
 		}
 	}
@@ -236,7 +239,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	}
 
 	token, err := h.ent.ApiToken.Query().
-		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(accounts.Live())).
+		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(workspaces.Live())).
 		WithMembership(func(q *ent.MembershipQuery) { q.WithUser().WithWorkspace() }).
 		First(ctx)
 	if ent.IsNotFound(err) {
@@ -264,7 +267,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		// without the application) through its own name. Each is admitted as the User's own
 		// session is (ADR 0061), and a token carries no Second factor step. The Workspace's API
 		// token is no User's and is not admitted.
-		if err := h.accounts.Admit(ctx, accounts.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
+		if err := h.users.Admit(ctx, users.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
 			return ctx, err
 		}
 		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)
@@ -349,7 +352,7 @@ func (h *CollectSecurityHandler) workspaceByKey(ctx context.Context, key string)
 	if key == "" {
 		return nil, ErrUnauthorized
 	}
-	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), accounts.Live()).Only(ctx)
+	ws, err := h.ent.Workspace.Query().Where(workspace.CollectKey(key), workspaces.Live()).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrUnauthorized
 	}

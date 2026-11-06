@@ -15,12 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/audit"
-	"github.com/getsphericon/sphericon/ee/export"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). Nothing
@@ -145,11 +147,12 @@ func (p busPublisher) Publish(ctx context.Context, ev events.DomainEvent) error 
 // publish stores its Event row and inserts the jobs of core's and the Edition's consumers there.
 func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
 	t.Helper()
-	bus := events.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(inserter)
 	bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
+	bus.OnStored(callbackinterpretation.RecordOutcome)
 	return bus
 }
 
@@ -183,6 +186,13 @@ func WorkEventJobs[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Wor
 func (env *TestEnv) WorkOrderJobs(t *testing.T) {
 	t.Helper()
 	WorkEventJobs(t, env, jobs.NewOrderEventWorker(env.DB, env.Orders))
+}
+
+// WorkBroadcastUnsubscribeJobs works every queued broadcasts job (WorkEventJobs): each counts a
+// Telegram opt-out on the Broadcast whose message it was made from.
+func (env *TestEnv) WorkBroadcastUnsubscribeJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, jobs.NewBroadcastUnsubscribeEventWorker(env.DB))
 }
 
 // WorkEventJobOf works the queued job of the kind worker works that the publish of published
@@ -236,8 +246,8 @@ func (env *TestEnv) WorkWebhookJobOf(t *testing.T, published events.Envelope) {
 // Each call works them all again, so calling it twice exercises a retried job.
 func (env *TestEnv) WorkEditionJobs(t *testing.T) {
 	t.Helper()
-	WorkEventJobs(t, env, audit.NewEntryEventWorker(env.DB, env.license))
-	WorkEventJobs(t, env, export.NewErasureEventWorker(env.DB, env.license))
+	WorkEventJobs(t, env, auditentries.NewEntryEventWorker(env.DB, env.license))
+	WorkEventJobs(t, env, erasures.NewErasureEventWorker(env.DB, env.license))
 }
 
 // QueuedDeliveries are the queued webhook deliveries, oldest first.

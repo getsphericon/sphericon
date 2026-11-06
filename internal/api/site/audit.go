@@ -2,15 +2,15 @@ package site
 
 import (
 	"context"
-	"github.com/getsphericon/sphericon/internal/problem"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"io"
 	"net/http"
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
@@ -32,7 +32,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 		IP:         params.IP.Or(""),
 		RequestID:  params.RequestId.Or(""),
 	}
-	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	cursor, err := auditlog.Page(params.Cursor.Or(""))
 	limit := int(params.Limit.Value)
 	if err != nil {
 		return nil, err
@@ -42,9 +42,9 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	if err != nil {
 		return nil, err
 	}
-	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditapi.ViewsOf(rows))}
+	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(rows))}
 	if next > 0 {
-		out.NextCursor = siteapi.NewOptNilString(auditapi.NextCursor(next))
+		out.NextCursor = siteapi.NewOptNilString(auditlog.NextCursor(next))
 	}
 	return out, nil
 }
@@ -113,7 +113,7 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAudi
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "audit retention needs an Enterprise license"}
 	}
-	ws, err := h.accounts.Workspace(ctx, s)
+	ws, err := h.workspaces.Get(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 		d := int(req.RetentionDays.Value)
 		days = &d
 	}
-	if err := h.accounts.SetAuditRetention(ctx, s, h.actor(ctx), days); err != nil {
+	if err := h.workspaces.SetAuditRetention(ctx, s, h.actor(ctx), days); err != nil {
 		return nil, err
 	}
 	return retentionResource(days), nil

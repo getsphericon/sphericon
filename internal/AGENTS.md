@@ -31,7 +31,7 @@ disables foreign-key triggers), as on the shared test database.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
-test builds itself (`templates.New(testhelper.Renderer())`), runs our own checks and fakes the
+test builds itself (`emailtemplates.New(testhelper.Renderer())`), runs our own checks and fakes the
 editor's schema check and export: the body is the document's text as paragraphs. A test of what the
 export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
 only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
@@ -57,13 +57,60 @@ The `testwrites` analyzer reads the harness as it reads tests: a helper that cre
 why no fixture can hold it, with the same `// test writes:` comment.
 
 **`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
-carries the Guards of `internal/workspacefeed`, `internal/userfeed` and `internal/trackinghostlog`
-(`db.NewEntClient`), and only the bus's transaction client runs their Hooks, so a module that
+carries the Guards of `internal/domain/identity/workspacefeed`, `internal/domain/identity/usertombstones` and `internal/domain/sending/trackinghostchanges`
+(`entclient.New`), and only the bus's transaction client runs their Hooks, so a module that
 writes a Workspace's deletion, an owner change, a User, a Consent record, the mailings mark or a
 Tracking host outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup
 that marks a Workspace deleted or changes a User's address, or the write a test of a feed's Hook
 makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A module
 under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
+
+## Domain contexts
+
+A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the order of the contexts
+and their easement components are "Domain contexts" in `docs/architecture.md`): identity,
+contacts, content, sending, orchestration, insights and instance
+(`internal/domain/identity/{workspaces,memberships,users,...}`,
+`internal/domain/contacts/{contacts,segments,tags,...}`, `internal/domain/content/{emailtemplates,...}`,
+`internal/domain/sending/{outboundmessages,integrations,...}`,
+`internal/domain/orchestration/{broadcasts,automations,rules,...}`,
+`internal/domain/insights/{setupchecklist,auditlog,...}`,
+`internal/domain/instance/{instancestates,upgrade,...}`). Nothing of the core is left flat under
+`internal/`: what is there besides the tiers is a driver, the wiring, a tool of `cmd/` or test
+support (`fixtures`, `dnstest`, `telemetryschema`). A module imports only modules of its own context and
+of the contexts below; its tests are not checked, so a test may build what it needs from the harness
+as before. A module moves with its tests, in the same `_test` package and with the same assertions.
+Only paths change: a relative path a test reads (`signinprovider`'s `../../../../openapi`) gets the new
+depth, and the list of `RecordAudit` call sites in `internal/api/site/audit_explicit_test.go` names
+the moved files. The move recipe is at the end of that section of `docs/architecture.md`.
+
+## Use cases
+
+A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
+`docs/architecture.md`) owns the tests of its operation, in its own `_test` package through its
+exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
+its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use refusal under the
+Workspace lock, `internal/usecase/integrationdeletion` the Integration's,
+`internal/usecase/domainverification` the Sending domain checks, `internal/usecase/stepexecution` the
+steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
+secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
+`internal/usecase/contactintake` an import's rows and `internal/usecase/visitoridentification` what Identify
+binds and stitches). The use case is built from the container like a
+module, so the API tests reach it through the actors; a direct test builds it with
+`New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
+case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
+module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
+`env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
+(`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
+owns holds the raw client: the Second factor's is `env.SecondFactor`
+(`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
+(`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
+a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
+(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`
+(the removals of the Enterprise Edition's tables the wiring hands in), and the OAuth token
+endpoint (`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
+The Sign-up (`workspacecreation.UseCase.SignUp`) is built with `New` and `WithSignUp`; its test of a
+race on a new address gives it a `Lookup` whose first lookup misses.
 
 ## Fixture catalog
 
@@ -102,7 +149,7 @@ same `Load` as the other rows; loading a table a second time would wipe the firs
 deletes every table of its files first), so volume never comes from a second loader. The generator
 reads a loop body once and refuses a `# fixture:` name inside one. Every row is one INSERT at the
 start of every test process, so keep the volume small and scale the code under test's thresholds
-down in the test (see `ee/abuse/detector_test.go`, whose scenarios are day offsets in `events.yml`).
+down in the test (see `ee/usecase/abusedetection/detector_test.go`, whose scenarios are day offsets in `events.yml`).
 
 ### Credentials and anchor identities
 

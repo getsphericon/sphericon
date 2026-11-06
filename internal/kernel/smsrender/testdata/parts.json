@@ -1,0 +1,275 @@
+{
+  "about": "The SMS counter's cases, read by both counters (internal/kernel/smsrender and src/utils/smsParts.ts). A text is its pieces, each a string repeated a number of times. The expected figures are worked out by hand: GSM-7 is 160 characters in one part or 153 per part, UCS-2 70 or 67; one character outside GSM-7 makes the whole text UCS-2; a GSM-7 extension character counts as two, and UCS-2 counts UTF-16 code units. The limit is the longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2, counted as the counter counts them), and each limit case says whether its text fits it.",
+  "cases": [
+    {
+      "name": "empty",
+      "text": [],
+      "encoding": "GSM-7",
+      "characters": 0,
+      "parts": 0
+    },
+    {
+      "name": "one GSM-7 letter",
+      "text": [["a", 1]],
+      "encoding": "GSM-7",
+      "characters": 1,
+      "parts": 1
+    },
+    {
+      "name": "160 GSM-7 characters fit one part",
+      "text": [["a", 160]],
+      "encoding": "GSM-7",
+      "characters": 160,
+      "parts": 1
+    },
+    {
+      "name": "161 GSM-7 characters take two parts",
+      "text": [["a", 161]],
+      "encoding": "GSM-7",
+      "characters": 161,
+      "parts": 2
+    },
+    {
+      "name": "306 GSM-7 characters fit two parts of 153",
+      "text": [["a", 306]],
+      "encoding": "GSM-7",
+      "characters": 306,
+      "parts": 2
+    },
+    {
+      "name": "307 GSM-7 characters take three parts",
+      "text": [["a", 307]],
+      "encoding": "GSM-7",
+      "characters": 307,
+      "parts": 3
+    },
+    {
+      "name": "1530 GSM-7 characters fit ten parts",
+      "text": [["a", 1530]],
+      "encoding": "GSM-7",
+      "characters": 1530,
+      "parts": 10
+    },
+    {
+      "name": "1531 GSM-7 characters take eleven parts",
+      "text": [["a", 1531]],
+      "encoding": "GSM-7",
+      "characters": 1531,
+      "parts": 11
+    },
+    {
+      "name": "the euro sign counts two",
+      "text": [
+        ["a", 159],
+        ["€", 1]
+      ],
+      "encoding": "GSM-7",
+      "characters": 161,
+      "parts": 2
+    },
+    {
+      "name": "158 letters and the euro sign fit one part",
+      "text": [
+        ["a", 158],
+        ["€", 1]
+      ],
+      "encoding": "GSM-7",
+      "characters": 160,
+      "parts": 1
+    },
+    {
+      "name": "every extension character counts two",
+      "text": [
+        ["{}[]~|\\^", 1],
+        ["\f", 1]
+      ],
+      "encoding": "GSM-7",
+      "characters": 18,
+      "parts": 1
+    },
+    {
+      "name": "accented letters of the GSM-7 set stay GSM-7",
+      "text": [["éèùìòÇØøÅåÆæßÉÄÖÑÜäöñüà", 1]],
+      "encoding": "GSM-7",
+      "characters": 23,
+      "parts": 1
+    },
+    {
+      "name": "Greek capitals and symbols of the GSM-7 set stay GSM-7",
+      "text": [["ΔΦΓΛΩΠΨΣΘΞ@£$¥¤§¡¿_", 1]],
+      "encoding": "GSM-7",
+      "characters": 19,
+      "parts": 1
+    },
+    {
+      "name": "line breaks are GSM-7",
+      "text": [["a\nb\r\nc", 1]],
+      "encoding": "GSM-7",
+      "characters": 6,
+      "parts": 1
+    },
+    {
+      "name": "a lowercase c cedilla is not GSM-7",
+      "text": [["ç", 1]],
+      "encoding": "UCS-2",
+      "characters": 1,
+      "parts": 1
+    },
+    {
+      "name": "a backtick is not GSM-7",
+      "text": [["`", 1]],
+      "encoding": "UCS-2",
+      "characters": 1,
+      "parts": 1
+    },
+    {
+      "name": "a curly quote is not GSM-7",
+      "text": [["’", 1]],
+      "encoding": "UCS-2",
+      "characters": 1,
+      "parts": 1
+    },
+    {
+      "name": "one Cyrillic letter makes 160 characters UCS-2",
+      "text": [
+        ["a", 159],
+        ["я", 1]
+      ],
+      "encoding": "UCS-2",
+      "characters": 160,
+      "parts": 3
+    },
+    {
+      "name": "70 UCS-2 characters fit one part",
+      "text": [["я", 70]],
+      "encoding": "UCS-2",
+      "characters": 70,
+      "parts": 1
+    },
+    {
+      "name": "71 UCS-2 characters take two parts",
+      "text": [["я", 71]],
+      "encoding": "UCS-2",
+      "characters": 71,
+      "parts": 2
+    },
+    {
+      "name": "134 UCS-2 characters fit two parts of 67",
+      "text": [["я", 134]],
+      "encoding": "UCS-2",
+      "characters": 134,
+      "parts": 2
+    },
+    {
+      "name": "135 UCS-2 characters take three parts",
+      "text": [["я", 135]],
+      "encoding": "UCS-2",
+      "characters": 135,
+      "parts": 3
+    },
+    {
+      "name": "670 UCS-2 characters fit ten parts",
+      "text": [["я", 670]],
+      "encoding": "UCS-2",
+      "characters": 670,
+      "parts": 10
+    },
+    {
+      "name": "671 UCS-2 characters take eleven parts",
+      "text": [["я", 671]],
+      "encoding": "UCS-2",
+      "characters": 671,
+      "parts": 11
+    },
+    {
+      "name": "the euro sign counts one in UCS-2",
+      "text": [
+        ["€", 1],
+        ["я", 1]
+      ],
+      "encoding": "UCS-2",
+      "characters": 2,
+      "parts": 1
+    },
+    {
+      "name": "an emoji counts two in UCS-2",
+      "text": [
+        ["Hi ", 1],
+        ["🙂", 1]
+      ],
+      "encoding": "UCS-2",
+      "characters": 5,
+      "parts": 1
+    },
+    {
+      "name": "35 emoji fill one part",
+      "text": [["🙂", 35]],
+      "encoding": "UCS-2",
+      "characters": 70,
+      "parts": 1
+    },
+    {
+      "name": "36 emoji take two parts",
+      "text": [["🙂", 36]],
+      "encoding": "UCS-2",
+      "characters": 72,
+      "parts": 2
+    },
+    {
+      "name": "a merge tag counts as written, its braces two each",
+      "text": [["Hi {{ first_name }}", 1]],
+      "encoding": "GSM-7",
+      "characters": 23,
+      "parts": 1
+    }
+  ],
+  "limit": {
+    "gsm7": 1600,
+    "ucs2": 700
+  },
+  "limitCases": [
+    {
+      "name": "1600 GSM-7 characters go",
+      "text": [["a", 1600]],
+      "fits": true
+    },
+    {
+      "name": "1601 GSM-7 characters are too long",
+      "text": [["a", 1601]],
+      "fits": false
+    },
+    {
+      "name": "1599 GSM-7 characters and a euro sign are 1601",
+      "text": [
+        ["a", 1599],
+        ["€", 1]
+      ],
+      "fits": false
+    },
+    {
+      "name": "671 UCS-2 characters, past ten segments, go",
+      "text": [["ж", 671]],
+      "fits": true
+    },
+    {
+      "name": "700 UCS-2 characters go",
+      "text": [["ж", 700]],
+      "fits": true
+    },
+    {
+      "name": "701 UCS-2 characters are too long",
+      "text": [["ж", 701]],
+      "fits": false
+    },
+    {
+      "name": "350 emoji are 700 code units and go",
+      "text": [["🙂", 350]],
+      "fits": true
+    },
+    {
+      "name": "351 emoji are too long",
+      "text": [["🙂", 351]],
+      "fits": false
+    }
+  ]
+}

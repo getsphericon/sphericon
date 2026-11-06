@@ -5,11 +5,11 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// The Captured message operations are thin adapters over internal/capturedmessages, the module
-// /site shares. Reading needs captured_messages:read, deleting captured_messages:write.
+// The Captured message operations are thin adapters over internal/domain/sending/capturedmessages,
+// the module /site shares. Reading needs captured_messages:read, deleting captured_messages:write.
 
 // CapturedMessagesList returns the Workspace's Captured messages, newest first, without content.
 func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.CapturedMessagesListParams) (*externalapi.CapturedMessagesListOK, error) {

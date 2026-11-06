@@ -11,14 +11,14 @@
   (ADR 0047). A developer whose dev database predates this runs `mise run db:reset` once.
 - **`migrations/` is the whole schema**: the app tables (diffed from ent) and river's tables.
   Nothing creates schema at boot: the
-  server runs the same goose migrations (`internal/db.Migrate`, `sphericon migrate`), and the
+  server runs the same goose migrations (`internal/infra/db.Migrate`, `sphericon migrate`), and the
   tests' template databases are built by that same function, so tests run against the schema
   production gets. After an `ent/schema` edit the tests fail until `mise run db:generate` has written
   its migration.
 - river's tables are one migration per river version (`*_river_00N.sql`, river applies each version
   in a transaction of its own), written by `mise run db:river-migration` from the river version in
   `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
-  `internal/db/run_test.go` tells you when it is due. Do not edit those files by hand.
+  `internal/infra/db/run_test.go` tells you when it is due. Do not edit those files by hand.
 - **Migrations are immutable.** `cmd/upgradecheck immutable` (in `check:upgrade`) fails a PR that
   modifies or deletes a goose `.sql` or Go migration already on `main`, naming each file; only a PR
   whose body has a line `History-Collapse: <reason>` may rewrite history.

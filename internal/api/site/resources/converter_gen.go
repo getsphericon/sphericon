@@ -24,71 +24,72 @@ import (
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
-	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
-	accounts "github.com/getsphericon/sphericon/internal/accounts"
-	analytics "github.com/getsphericon/sphericon/internal/analytics"
-	attention "github.com/getsphericon/sphericon/internal/attention"
-	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
-	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
-	bindings "github.com/getsphericon/sphericon/internal/bindings"
-	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
-	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	channels "github.com/getsphericon/sphericon/internal/channels"
-	consent "github.com/getsphericon/sphericon/internal/consent"
-	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
-	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
-	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
-	instance "github.com/getsphericon/sphericon/internal/instance"
-	integrations "github.com/getsphericon/sphericon/internal/integrations"
-	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
-	messaging "github.com/getsphericon/sphericon/internal/messaging"
-	orders "github.com/getsphericon/sphericon/internal/orders"
-	outbound "github.com/getsphericon/sphericon/internal/outbound"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
-	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
-	providers "github.com/getsphericon/sphericon/internal/providers"
-	reputation "github.com/getsphericon/sphericon/internal/reputation"
-	rules "github.com/getsphericon/sphericon/internal/rules"
-	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
-	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
-	smsrender "github.com/getsphericon/sphericon/internal/smsrender"
-	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
-	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
-	webhook "github.com/getsphericon/sphericon/internal/webhook"
+	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	memberships "github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	signupitems "github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	abusewarning "github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	setupchecklist "github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
+	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
+	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
+	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
+	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
+	smsrender "github.com/getsphericon/sphericon/internal/kernel/smsrender"
+	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
+	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	needsattentionreport "github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
+	releasecheck "github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"time"
 )
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) AbuseMetricToResource(source abusewatch.Metric) site.SiteAbuseMetric {
+func (c *ConverterImpl) AbuseMetricToResource(source abusewarning.Metric) site.SiteAbuseMetric {
 	var siteapiSiteAbuseMetric site.SiteAbuseMetric
 	switch source {
-	case abusewatch.MetricBounce:
+	case abusewarning.MetricBounce:
 		siteapiSiteAbuseMetric = site.SiteAbuseMetricBounce
-	case abusewatch.MetricComplaint:
+	case abusewarning.MetricComplaint:
 		siteapiSiteAbuseMetric = site.SiteAbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAbuseMetric
 }
-func (c *ConverterImpl) AbuseWarningToResource(source abusewatch.Warning) site.SiteAbuseWarning {
+func (c *ConverterImpl) AbuseWarningToResource(source abusewarning.Warning) site.SiteAbuseWarning {
 	var siteapiSiteAbuseWarning site.SiteAbuseWarning
 	siteapiSiteAbuseWarning.Domain = source.Domain
 	siteapiSiteAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
 	siteapiSiteAbuseWarning.Rate = source.Rate
 	return siteapiSiteAbuseWarning
 }
-func (c *ConverterImpl) AnalyticsContactsToResource(source analytics.Contacts) site.SiteAnalyticsContacts {
+func (c *ConverterImpl) AnalyticsContactsToResource(source analyticsreport.Contacts) site.SiteAnalyticsContacts {
 	var siteapiSiteAnalyticsContacts site.SiteAnalyticsContacts
 	siteapiSiteAnalyticsContacts.Total = count(source.Total)
 	siteapiSiteAnalyticsContacts.Active = count(source.Active)
 	siteapiSiteAnalyticsContacts.Unsubscribed = count(source.Unsubscribed)
 	return siteapiSiteAnalyticsContacts
 }
-func (c *ConverterImpl) AnalyticsDeliverabilityToResource(source analytics.Deliverability) site.SiteAnalyticsDeliverability {
+func (c *ConverterImpl) AnalyticsDeliverabilityToResource(source analyticsreport.Deliverability) site.SiteAnalyticsDeliverability {
 	var siteapiSiteAnalyticsDeliverability site.SiteAnalyticsDeliverability
 	siteapiSiteAnalyticsDeliverability.WindowHours = windowHours(source.Window)
 	siteapiSiteAnalyticsDeliverability.Domains = make([]site.SiteSendingDomainRates, len(source.Domains))
@@ -97,7 +98,7 @@ func (c *ConverterImpl) AnalyticsDeliverabilityToResource(source analytics.Deliv
 	}
 	return siteapiSiteAnalyticsDeliverability
 }
-func (c *ConverterImpl) AnalyticsDomainRatesToResource(source analytics.DomainRates) site.SiteSendingDomainRates {
+func (c *ConverterImpl) AnalyticsDomainRatesToResource(source analyticsreport.DomainRates) site.SiteSendingDomainRates {
 	var siteapiSiteSendingDomainRates site.SiteSendingDomainRates
 	siteapiSiteSendingDomainRates.SendingDomainId = site.EntityId(source.SendingDomainID)
 	siteapiSiteSendingDomainRates.Domain = source.Domain
@@ -105,7 +106,7 @@ func (c *ConverterImpl) AnalyticsDomainRatesToResource(source analytics.DomainRa
 	siteapiSiteSendingDomainRates.BounceRate = c.AnalyticsRateToResource(source.Bounce)
 	return siteapiSiteSendingDomainRates
 }
-func (c *ConverterImpl) AnalyticsEmailToResource(source analytics.Email) site.SiteAnalyticsEmail {
+func (c *ConverterImpl) AnalyticsEmailToResource(source analyticsreport.Email) site.SiteAnalyticsEmail {
 	var siteapiSiteAnalyticsEmail site.SiteAnalyticsEmail
 	siteapiSiteAnalyticsEmail.SentCount = count(source.Sent)
 	siteapiSiteAnalyticsEmail.OpenedCount = count(source.Opened)
@@ -115,82 +116,82 @@ func (c *ConverterImpl) AnalyticsEmailToResource(source analytics.Email) site.Si
 	siteapiSiteAnalyticsEmail.ClickToOpenRate = source.ClickToOpenRate
 	return siteapiSiteAnalyticsEmail
 }
-func (c *ConverterImpl) AnalyticsEventActionsToResources(source []analytics.EventAction) []site.SiteAnalyticsEventAction {
+func (c *ConverterImpl) AnalyticsEventActionsToResources(source []analyticsreport.EventAction) []site.SiteAnalyticsEventAction {
 	var siteapiSiteAnalyticsEventActionList []site.SiteAnalyticsEventAction
 	siteapiSiteAnalyticsEventActionList = make([]site.SiteAnalyticsEventAction, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAnalyticsEventActionList[i] = c.analyticsEventActionToSiteapiSiteAnalyticsEventAction(source[i])
+		siteapiSiteAnalyticsEventActionList[i] = c.analyticsreportEventActionToSiteapiSiteAnalyticsEventAction(source[i])
 	}
 	return siteapiSiteAnalyticsEventActionList
 }
-func (c *ConverterImpl) AnalyticsLinksToResources(source []analytics.LinkClicks) []site.SiteAnalyticsLink {
+func (c *ConverterImpl) AnalyticsLinksToResources(source []analyticsreport.LinkClicks) []site.SiteAnalyticsLink {
 	var siteapiSiteAnalyticsLinkList []site.SiteAnalyticsLink
 	siteapiSiteAnalyticsLinkList = make([]site.SiteAnalyticsLink, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAnalyticsLinkList[i] = c.analyticsLinkClicksToSiteapiSiteAnalyticsLink(source[i])
+		siteapiSiteAnalyticsLinkList[i] = c.analyticsreportLinkClicksToSiteapiSiteAnalyticsLink(source[i])
 	}
 	return siteapiSiteAnalyticsLinkList
 }
-func (c *ConverterImpl) AnalyticsNewPeopleToResource(source *analytics.NewPeople) *site.SiteNewPeopleReport {
+func (c *ConverterImpl) AnalyticsNewPeopleToResource(source *analyticsreport.NewPeople) *site.SiteNewPeopleReport {
 	var pSiteapiSiteNewPeopleReport *site.SiteNewPeopleReport
 	if source != nil {
 		var siteapiSiteNewPeopleReport site.SiteNewPeopleReport
 		siteapiSiteNewPeopleReport.Total = count((*source).Total)
 		siteapiSiteNewPeopleReport.Timeseries = make([]site.SiteNewPeoplePoint, len((*source).Series))
 		for i := 0; i < len((*source).Series); i++ {
-			siteapiSiteNewPeopleReport.Timeseries[i] = c.analyticsNewPeoplePointToSiteapiSiteNewPeoplePoint((*source).Series[i])
+			siteapiSiteNewPeopleReport.Timeseries[i] = c.analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint((*source).Series[i])
 		}
 		pSiteapiSiteNewPeopleReport = &siteapiSiteNewPeopleReport
 	}
 	return pSiteapiSiteNewPeopleReport
 }
-func (c *ConverterImpl) AnalyticsOpensByHourToResource(source *analytics.OpensByHour) *site.SiteAnalyticsOpensByHour {
+func (c *ConverterImpl) AnalyticsOpensByHourToResource(source *analyticsreport.OpensByHour) *site.SiteAnalyticsOpensByHour {
 	var pSiteapiSiteAnalyticsOpensByHour *site.SiteAnalyticsOpensByHour
 	if source != nil {
 		var siteapiSiteAnalyticsOpensByHour site.SiteAnalyticsOpensByHour
 		siteapiSiteAnalyticsOpensByHour.Cells = make([]site.SiteAnalyticsOpensCell, len((*source).Cells))
 		for i := 0; i < len((*source).Cells); i++ {
-			siteapiSiteAnalyticsOpensByHour.Cells[i] = c.analyticsHourCellToSiteapiSiteAnalyticsOpensCell((*source).Cells[i])
+			siteapiSiteAnalyticsOpensByHour.Cells[i] = c.analyticsreportHourCellToSiteapiSiteAnalyticsOpensCell((*source).Cells[i])
 		}
 		siteapiSiteAnalyticsOpensByHour.Total = count((*source).Total)
 		pSiteapiSiteAnalyticsOpensByHour = &siteapiSiteAnalyticsOpensByHour
 	}
 	return pSiteapiSiteAnalyticsOpensByHour
 }
-func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) *site.SiteAnalyticsOverview {
+func (c *ConverterImpl) AnalyticsOverviewToResource(source *analyticsreport.Overview) *site.SiteAnalyticsOverview {
 	var pSiteapiSiteAnalyticsOverview *site.SiteAnalyticsOverview
 	if source != nil {
 		var siteapiSiteAnalyticsOverview site.SiteAnalyticsOverview
 		siteapiSiteAnalyticsOverview.Contacts = c.AnalyticsContactsToResource((*source).Contacts)
-		siteapiSiteAnalyticsOverview.Automations = c.analyticsAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
+		siteapiSiteAnalyticsOverview.Automations = c.analyticsreportAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
 		siteapiSiteAnalyticsOverview.Current = c.AnalyticsPeriodToResource((*source).Current)
 		siteapiSiteAnalyticsOverview.Previous = c.AnalyticsPeriodToResource((*source).Previous)
 		siteapiSiteAnalyticsOverview.Timeseries = make([]site.SiteAnalyticsPoint, len((*source).Series))
 		for i := 0; i < len((*source).Series); i++ {
-			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
+			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsreportPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
 		}
 		siteapiSiteAnalyticsOverview.Deliverability = c.AnalyticsDeliverabilityToResource((*source).Deliverability)
 		pSiteapiSiteAnalyticsOverview = &siteapiSiteAnalyticsOverview
 	}
 	return pSiteapiSiteAnalyticsOverview
 }
-func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) site.SiteAnalyticsOwnerKind {
+func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclick.OwnerKind) site.SiteAnalyticsOwnerKind {
 	var siteapiSiteAnalyticsOwnerKind site.SiteAnalyticsOwnerKind
 	switch source {
-	case linkclicks.OwnerAutomation:
+	case linkclick.OwnerAutomation:
 		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindAutomation
-	case linkclicks.OwnerBroadcast:
+	case linkclick.OwnerBroadcast:
 		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindBroadcast
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAnalyticsOwnerKind
 }
-func (c *ConverterImpl) AnalyticsPeriodToResource(source analytics.Period) site.SiteAnalyticsPeriod {
+func (c *ConverterImpl) AnalyticsPeriodToResource(source analyticsreport.Period) site.SiteAnalyticsPeriod {
 	var siteapiSiteAnalyticsPeriod site.SiteAnalyticsPeriod
 	siteapiSiteAnalyticsPeriod.From = source.From
 	siteapiSiteAnalyticsPeriod.To = source.To
-	siteapiSiteAnalyticsPeriod.Sending = c.analyticsSendingToSiteapiSiteAnalyticsSending(source.Sending)
+	siteapiSiteAnalyticsPeriod.Sending = c.analyticsreportSendingToSiteapiSiteAnalyticsSending(source.Sending)
 	siteapiSiteAnalyticsPeriod.Email = c.AnalyticsEmailToResource(source.Email)
 	siteapiSiteAnalyticsPeriod.NewContacts = count(source.NewContacts)
 	return siteapiSiteAnalyticsPeriod
@@ -202,93 +203,93 @@ func (c *ConverterImpl) AnalyticsRateToResource(source reputation.Rate) site.Sit
 	siteapiSiteRate.Rate = nilFloat64(source.Rate)
 	return siteapiSiteRate
 }
-func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
+func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analyticsreport.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
 	var pSiteapiSiteAnalyticsSubscribedPeople *site.SiteAnalyticsSubscribedPeople
 	if source != nil {
 		var siteapiSiteAnalyticsSubscribedPeople site.SiteAnalyticsSubscribedPeople
 		siteapiSiteAnalyticsSubscribedPeople.Current = count((*source).Current)
 		siteapiSiteAnalyticsSubscribedPeople.Series = make([]site.SiteAnalyticsSubscribedPoint, len((*source).Series))
 		for i := 0; i < len((*source).Series); i++ {
-			siteapiSiteAnalyticsSubscribedPeople.Series[i] = c.analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint((*source).Series[i])
+			siteapiSiteAnalyticsSubscribedPeople.Series[i] = c.analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint((*source).Series[i])
 		}
 		pSiteapiSiteAnalyticsSubscribedPeople = &siteapiSiteAnalyticsSubscribedPeople
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
 }
-func (c *ConverterImpl) AttentionItemsToResources(source []attention.Item) []site.SiteAttentionItem {
+func (c *ConverterImpl) AttentionItemsToResources(source []needsattentionreport.Item) []site.SiteAttentionItem {
 	var siteapiSiteAttentionItemList []site.SiteAttentionItem
 	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAttentionItemList[i] = c.attentionItemToSiteapiSiteAttentionItem(source[i])
+		siteapiSiteAttentionItemList[i] = c.needsattentionreportItemToSiteapiSiteAttentionItem(source[i])
 	}
 	return siteapiSiteAttentionItemList
 }
-func (c *ConverterImpl) AttentionKindToResource(source attention.Kind) site.SiteAttentionKind {
+func (c *ConverterImpl) AttentionKindToResource(source needsattentionreport.Kind) site.SiteAttentionKind {
 	var siteapiSiteAttentionKind site.SiteAttentionKind
 	switch source {
-	case attention.KindAutomationCannotSend:
+	case needsattentionreport.KindAutomationCannotSend:
 		siteapiSiteAttentionKind = site.SiteAttentionKindAutomationCannotSend
-	case attention.KindBroadcastFailed:
+	case needsattentionreport.KindBroadcastFailed:
 		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastFailed
-	case attention.KindBroadcastHeld:
+	case needsattentionreport.KindBroadcastHeld:
 		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastHeld
-	case attention.KindDeliverabilityWarning:
+	case needsattentionreport.KindDeliverabilityWarning:
 		siteapiSiteAttentionKind = site.SiteAttentionKindDeliverabilityWarning
-	case attention.KindEnrollmentsFailed:
+	case needsattentionreport.KindEnrollmentsFailed:
 		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
-	case attention.KindIntegrationProviderProbation:
+	case needsattentionreport.KindIntegrationProviderProbation:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
-	case attention.KindIntegrationProviderRefused:
+	case needsattentionreport.KindIntegrationProviderRefused:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderRefused
-	case attention.KindIntegrationProviderSandbox:
+	case needsattentionreport.KindIntegrationProviderSandbox:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
-	case attention.KindIntegrationProviderStopped:
+	case needsattentionreport.KindIntegrationProviderStopped:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
-	case attention.KindProviderLimitSpent:
+	case needsattentionreport.KindProviderLimitSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
-	case attention.KindScheduledBroadcastOverSendCap:
+	case needsattentionreport.KindScheduledBroadcastOverSendCap:
 		siteapiSiteAttentionKind = site.SiteAttentionKindScheduledBroadcastOverSendCap
-	case attention.KindSendCapSpent:
+	case needsattentionreport.KindSendCapSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
-	case attention.KindSendingDomainNotBulkReady:
+	case needsattentionreport.KindSendingDomainNotBulkReady:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainNotBulkReady
-	case attention.KindSendingDomainVerificationLost:
+	case needsattentionreport.KindSendingDomainVerificationLost:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainVerificationLost
-	case attention.KindWebhookDisabled:
+	case needsattentionreport.KindWebhookDisabled:
 		siteapiSiteAttentionKind = site.SiteAttentionKindWebhookDisabled
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAttentionKind
 }
-func (c *ConverterImpl) AttentionSeverityToResource(source attention.Severity) site.SiteAttentionSeverity {
+func (c *ConverterImpl) AttentionSeverityToResource(source needsattentionreport.Severity) site.SiteAttentionSeverity {
 	var siteapiSiteAttentionSeverity site.SiteAttentionSeverity
 	switch source {
-	case attention.SeverityBlocked:
+	case needsattentionreport.SeverityBlocked:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityBlocked
-	case attention.SeverityDegraded:
+	case needsattentionreport.SeverityDegraded:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityDegraded
-	case attention.SeverityNotice:
+	case needsattentionreport.SeverityNotice:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityNotice
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAttentionSeverity
 }
-func (c *ConverterImpl) AttentionSubjectToResource(source attention.Subject) site.SiteAttentionSubject {
+func (c *ConverterImpl) AttentionSubjectToResource(source needsattentionreport.Subject) site.SiteAttentionSubject {
 	var siteapiSiteAttentionSubject site.SiteAttentionSubject
 	siteapiSiteAttentionSubject.ID = site.EntityId(source.ID)
 	siteapiSiteAttentionSubject.Name = source.Name
 	return siteapiSiteAttentionSubject
 }
-func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
+func (c *ConverterImpl) AuditActorToResource(source auditlog.View) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
 	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.ActorKind)
 	siteapiSiteAuditActor.ID = optNilString(source.ActorID)
 	siteapiSiteAuditActor.Name = optNilString(source.ActorName)
 	return siteapiSiteAuditActor
 }
-func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []site.SiteAuditEntryResource {
+func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResourceList []site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResourceList = make([]site.SiteAuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
@@ -296,7 +297,7 @@ func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []site.S
 	}
 	return siteapiSiteAuditEntryResourceList
 }
-func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAuditEntryResource {
+func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
 	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
@@ -309,14 +310,14 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return siteapiSiteAuditEntryResource
 }
-func (c *ConverterImpl) AuditFacetActorToResource(source auditapi.Actor) site.SiteAuditActor {
+func (c *ConverterImpl) AuditFacetActorToResource(source auditlog.Actor) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
 	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.Kind)
 	siteapiSiteAuditActor.ID = optNilString(source.ID)
 	siteapiSiteAuditActor.Name = optNilString(source.Name)
 	return siteapiSiteAuditActor
 }
-func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteAuditFacets {
+func (c *ConverterImpl) AuditFacetsToResource(source auditlog.Facets) site.SiteAuditFacets {
 	var siteapiSiteAuditFacets site.SiteAuditFacets
 	siteapiSiteAuditFacets.Actors = make([]site.SiteAuditActor, len(source.Actors))
 	for i := 0; i < len(source.Actors); i++ {
@@ -332,7 +333,7 @@ func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteA
 	}
 	return siteapiSiteAuditFacets
 }
-func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) site.SiteAuditTarget {
+func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) site.SiteAuditTarget {
 	var siteapiSiteAuditTarget site.SiteAuditTarget
 	siteapiSiteAuditTarget.Type = source.TargetType
 	siteapiSiteAuditTarget.ID = optNilString(source.TargetID)
@@ -463,22 +464,22 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return siteapiSiteAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automationstep.ApplyTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automationstep.Email:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automationstep.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
-	case automationsteps.SMS:
+	case automationstep.SMS:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeSMS
-	case automationsteps.Telegram:
+	case automationstep.Telegram:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -611,7 +612,7 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 	}
 	return siteapiSiteBindingResourceList
 }
-func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
+func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
 	siteapiSiteBrandKitResource.Saved = source.Saved
 	siteapiSiteBrandKitResource.AccentColor = source.AccentColor
@@ -1274,7 +1275,7 @@ func (c *ConverterImpl) IdentityToResource(source *ent.UserIdentity) site.SiteLi
 	}
 	return siteapiSiteLinkedIdentity
 }
-func (c *ConverterImpl) InstanceReleaseToResource(source instance.Release) site.SiteInstanceRelease {
+func (c *ConverterImpl) InstanceReleaseToResource(source releasecheck.Release) site.SiteInstanceRelease {
 	var siteapiSiteInstanceRelease site.SiteInstanceRelease
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
 	return siteapiSiteInstanceRelease
@@ -1413,12 +1414,12 @@ func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.Si
 	siteapiSiteLegalDocument.PublishedAt = timestamp(source.PublishedAt)
 	return siteapiSiteLegalDocument
 }
-func (c *ConverterImpl) LinkClicksToResource(source []linkclicks.Clicks) []site.SiteLinkClicks {
+func (c *ConverterImpl) LinkClicksToResource(source []linkclick.Clicks) []site.SiteLinkClicks {
 	var siteapiSiteLinkClicksList []site.SiteLinkClicks
 	if source != nil {
 		siteapiSiteLinkClicksList = make([]site.SiteLinkClicks, len(source))
 		for i := 0; i < len(source); i++ {
-			siteapiSiteLinkClicksList[i] = c.linkclicksClicksToSiteapiSiteLinkClicks(source[i])
+			siteapiSiteLinkClicksList[i] = c.linkclickClicksToSiteapiSiteLinkClicks(source[i])
 		}
 	}
 	return siteapiSiteLinkClicksList
@@ -1641,67 +1642,145 @@ func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site
 	}
 	return pSiteapiSitePendingSignup
 }
-func (c *ConverterImpl) PermissionToResource(source accounts.Permission) site.Permission {
+func (c *ConverterImpl) PermissionToResource(source memberships.Permission) site.Permission {
 	var siteapiPermission site.Permission
 	switch source {
-	case accounts.PermAccountLinkOpen:
+	case memberships.PermAccountLinkOpen:
 		siteapiPermission = site.PermissionAccountLinkOpen
-	case accounts.PermAuditConfigure:
+	case memberships.PermAuditConfigure:
 		siteapiPermission = site.PermissionAuditConfigure
-	case accounts.PermAuditRead:
+	case memberships.PermAuditRead:
 		siteapiPermission = site.PermissionAuditRead
-	case accounts.PermBrandKitManage:
+	case memberships.PermBrandKitManage:
 		siteapiPermission = site.PermissionBrandKitManage
-	case accounts.PermContactsErase:
+	case memberships.PermContactsErase:
 		siteapiPermission = site.PermissionContactsErase
-	case accounts.PermContactsExport:
+	case memberships.PermContactsExport:
 		siteapiPermission = site.PermissionContactsExport
-	case accounts.PermCustomFieldsManage:
+	case memberships.PermCustomFieldsManage:
 		siteapiPermission = site.PermissionCustomFieldsManage
-	case accounts.PermHoldsResolve:
+	case memberships.PermHoldsResolve:
 		siteapiPermission = site.PermissionHoldsResolve
-	case accounts.PermIntegrationsManage:
+	case memberships.PermIntegrationsManage:
 		siteapiPermission = site.PermissionIntegrationsManage
-	case accounts.PermJoinDomainsManage:
+	case memberships.PermJoinDomainsManage:
 		siteapiPermission = site.PermissionJoinDomainsManage
-	case accounts.PermMembersManage:
+	case memberships.PermMembersManage:
 		siteapiPermission = site.PermissionMembersManage
-	case accounts.PermOwnersManage:
+	case memberships.PermOwnersManage:
 		siteapiPermission = site.PermissionOwnersManage
-	case accounts.PermReleaseRead:
+	case memberships.PermReleaseRead:
 		siteapiPermission = site.PermissionReleaseRead
-	case accounts.PermRevenueConfigure:
+	case memberships.PermRevenueConfigure:
 		siteapiPermission = site.PermissionRevenueConfigure
-	case accounts.PermSecondFactorManage:
+	case memberships.PermSecondFactorManage:
 		siteapiPermission = site.PermissionSecondFactorManage
-	case accounts.PermSendingDomainsManage:
+	case memberships.PermSendingDomainsManage:
 		siteapiPermission = site.PermissionSendingDomainsManage
-	case accounts.PermSuppressionsManage:
+	case memberships.PermSuppressionsManage:
 		siteapiPermission = site.PermissionSuppressionsManage
-	case accounts.PermTokensManage:
+	case memberships.PermTokensManage:
 		siteapiPermission = site.PermissionTokensManage
-	case accounts.PermTrackingDomainsManage:
+	case memberships.PermTrackingDomainsManage:
 		siteapiPermission = site.PermissionTrackingDomainsManage
-	case accounts.PermWebhooksManage:
+	case memberships.PermWebhooksManage:
 		siteapiPermission = site.PermissionWebhooksManage
-	case accounts.PermWorkspaceDelete:
+	case memberships.PermWorkspaceDelete:
 		siteapiPermission = site.PermissionWorkspaceDelete
-	case accounts.PermWorkspaceTimezone:
+	case memberships.PermWorkspaceTimezone:
 		siteapiPermission = site.PermissionWorkspaceTimezone
-	case accounts.PermWorkspaceUpdate:
+	case memberships.PermWorkspaceUpdate:
 		siteapiPermission = site.PermissionWorkspaceUpdate
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiPermission
 }
-func (c *ConverterImpl) PermissionsToResources(source []accounts.Permission) []site.Permission {
+func (c *ConverterImpl) PermissionsToResources(source []memberships.Permission) []site.Permission {
 	var siteapiPermissionList []site.Permission
 	siteapiPermissionList = make([]site.Permission, len(source))
 	for i := 0; i < len(source); i++ {
 		siteapiPermissionList[i] = c.PermissionToResource(source[i])
 	}
 	return siteapiPermissionList
+}
+func (c *ConverterImpl) PersonalScopeToResource(source tokenscope.PersonalScope) site.PersonalScope {
+	var siteapiPersonalScope site.PersonalScope
+	switch source {
+	case tokenscope.PersonalScopeAutomationsPublish:
+		siteapiPersonalScope = site.PersonalScopeAutomationsPublish
+	case tokenscope.PersonalScopeAutomationsRead:
+		siteapiPersonalScope = site.PersonalScopeAutomationsRead
+	case tokenscope.PersonalScopeAutomationsWrite:
+		siteapiPersonalScope = site.PersonalScopeAutomationsWrite
+	case tokenscope.PersonalScopeBroadcastsRead:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsRead
+	case tokenscope.PersonalScopeBroadcastsSend:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsSend
+	case tokenscope.PersonalScopeBroadcastsWrite:
+		siteapiPersonalScope = site.PersonalScopeBroadcastsWrite
+	case tokenscope.PersonalScopeContactsExport:
+		siteapiPersonalScope = site.PersonalScopeContactsExport
+	case tokenscope.PersonalScopeContactsRead:
+		siteapiPersonalScope = site.PersonalScopeContactsRead
+	case tokenscope.PersonalScopeContactsWrite:
+		siteapiPersonalScope = site.PersonalScopeContactsWrite
+	case tokenscope.PersonalScopeCustomFieldsRead:
+		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
+	case tokenscope.PersonalScopeCustomFieldsWrite:
+		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
+	case tokenscope.PersonalScopeEmailsSend:
+		siteapiPersonalScope = site.PersonalScopeEmailsSend
+	case tokenscope.PersonalScopeEnrollmentsRead:
+		siteapiPersonalScope = site.PersonalScopeEnrollmentsRead
+	case tokenscope.PersonalScopeEventsRead:
+		siteapiPersonalScope = site.PersonalScopeEventsRead
+	case tokenscope.PersonalScopeEventsWrite:
+		siteapiPersonalScope = site.PersonalScopeEventsWrite
+	case tokenscope.PersonalScopeIntegrationsRead:
+		siteapiPersonalScope = site.PersonalScopeIntegrationsRead
+	case tokenscope.PersonalScopeIntegrationsWrite:
+		siteapiPersonalScope = site.PersonalScopeIntegrationsWrite
+	case tokenscope.PersonalScopeMcpSend:
+		siteapiPersonalScope = site.PersonalScopeMcpSend
+	case tokenscope.PersonalScopeSegmentsRead:
+		siteapiPersonalScope = site.PersonalScopeSegmentsRead
+	case tokenscope.PersonalScopeSegmentsWrite:
+		siteapiPersonalScope = site.PersonalScopeSegmentsWrite
+	case tokenscope.PersonalScopeSendingDomainsRead:
+		siteapiPersonalScope = site.PersonalScopeSendingDomainsRead
+	case tokenscope.PersonalScopeSendingDomainsWrite:
+		siteapiPersonalScope = site.PersonalScopeSendingDomainsWrite
+	case tokenscope.PersonalScopeSuppressionsWrite:
+		siteapiPersonalScope = site.PersonalScopeSuppressionsWrite
+	case tokenscope.PersonalScopeTemplatesRead:
+		siteapiPersonalScope = site.PersonalScopeTemplatesRead
+	case tokenscope.PersonalScopeTemplatesWrite:
+		siteapiPersonalScope = site.PersonalScopeTemplatesWrite
+	case tokenscope.PersonalScopeTrackingDomainsRead:
+		siteapiPersonalScope = site.PersonalScopeTrackingDomainsRead
+	case tokenscope.PersonalScopeTrackingDomainsWrite:
+		siteapiPersonalScope = site.PersonalScopeTrackingDomainsWrite
+	case tokenscope.PersonalScopeWebhooksRead:
+		siteapiPersonalScope = site.PersonalScopeWebhooksRead
+	case tokenscope.PersonalScopeWebhooksRegenerate:
+		siteapiPersonalScope = site.PersonalScopeWebhooksRegenerate
+	case tokenscope.PersonalScopeWebhooksTest:
+		siteapiPersonalScope = site.PersonalScopeWebhooksTest
+	case tokenscope.PersonalScopeWebhooksWrite:
+		siteapiPersonalScope = site.PersonalScopeWebhooksWrite
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPersonalScope
+}
+func (c *ConverterImpl) PersonalScopesToResources(source []tokenscope.PersonalScope) []site.PersonalScope {
+	var siteapiPersonalScopeList []site.PersonalScope
+	siteapiPersonalScopeList = make([]site.PersonalScope, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiPersonalScopeList[i] = c.PersonalScopeToResource(source[i])
+	}
+	return siteapiPersonalScopeList
 }
 func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SitePersonalTokenResource {
 	var siteapiSitePersonalTokenResource site.SitePersonalTokenResource
@@ -1792,7 +1871,7 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 	}
 	return siteapiSiteProviderLimitWarning
 }
-func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]accounts.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
+func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]memberships.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
 	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
 	siteapiSiteOAuthAuthorizationRequestRequiredPermissions = make(site.SiteOAuthAuthorizationRequestRequiredPermissions, len(source))
 	for key, value := range source {
@@ -2146,7 +2225,7 @@ func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site
 	}
 	return siteapiSmsConfirmation
 }
-func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SmsConsent {
+func (c *ConverterImpl) SmsConsentToResource(source confirmations.ContactSMS) site.SmsConsent {
 	var siteapiSmsConsent site.SmsConsent
 	siteapiSmsConsent.Phone = optNilString(source.Phone)
 	siteapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
@@ -2173,7 +2252,7 @@ func (c *ConverterImpl) SmsLengthLimitToResource(source smsrender.Limit) site.Si
 	siteapiSiteSmsLengthLimit.Ucs2 = count(source.UCS2)
 	return siteapiSiteSmsLengthLimit
 }
-func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SmsOptOut {
+func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) site.SmsOptOut {
 	var siteapiSmsOptOut site.SmsOptOut
 	if source != nil {
 		siteapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
@@ -2353,7 +2432,7 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	siteapiSiteTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteTemplatesListOK
 }
-func (c *ConverterImpl) TestSendResultToResource(source outbound.Result) site.SiteTestSendBroadcastResult {
+func (c *ConverterImpl) TestSendResultToResource(source outboundmessages.Result) site.SiteTestSendBroadcastResult {
 	var siteapiSiteTestSendBroadcastResult site.SiteTestSendBroadcastResult
 	siteapiSiteTestSendBroadcastResult.From = optEmail(source.From)
 	siteapiSiteTestSendBroadcastResult.Captured = source.Captured
@@ -2617,7 +2696,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 	}
 	return siteapiSiteWorkspaceResource
 }
-func (c *ConverterImpl) analyticsAutomationsToSiteapiSiteAnalyticsAutomations(source analytics.Automations) site.SiteAnalyticsAutomations {
+func (c *ConverterImpl) analyticsreportAutomationsToSiteapiSiteAnalyticsAutomations(source analyticsreport.Automations) site.SiteAnalyticsAutomations {
 	var siteapiSiteAnalyticsAutomations site.SiteAnalyticsAutomations
 	siteapiSiteAnalyticsAutomations.Total = count(source.Total)
 	siteapiSiteAnalyticsAutomations.Active = count(source.Active)
@@ -2625,7 +2704,7 @@ func (c *ConverterImpl) analyticsAutomationsToSiteapiSiteAnalyticsAutomations(so
 	siteapiSiteAnalyticsAutomations.RunsCompleted = count(source.RunsCompleted)
 	return siteapiSiteAnalyticsAutomations
 }
-func (c *ConverterImpl) analyticsEventActionToSiteapiSiteAnalyticsEventAction(source analytics.EventAction) site.SiteAnalyticsEventAction {
+func (c *ConverterImpl) analyticsreportEventActionToSiteapiSiteAnalyticsEventAction(source analyticsreport.EventAction) site.SiteAnalyticsEventAction {
 	var siteapiSiteAnalyticsEventAction site.SiteAnalyticsEventAction
 	siteapiSiteAnalyticsEventAction.Action = source.Action
 	siteapiSiteAnalyticsEventAction.Count = count(source.Count)
@@ -2633,26 +2712,26 @@ func (c *ConverterImpl) analyticsEventActionToSiteapiSiteAnalyticsEventAction(so
 	siteapiSiteAnalyticsEventAction.LastAt = timestamp(source.LastAt)
 	return siteapiSiteAnalyticsEventAction
 }
-func (c *ConverterImpl) analyticsHourCellToSiteapiSiteAnalyticsOpensCell(source analytics.HourCell) site.SiteAnalyticsOpensCell {
+func (c *ConverterImpl) analyticsreportHourCellToSiteapiSiteAnalyticsOpensCell(source analyticsreport.HourCell) site.SiteAnalyticsOpensCell {
 	var siteapiSiteAnalyticsOpensCell site.SiteAnalyticsOpensCell
 	siteapiSiteAnalyticsOpensCell.Weekday = count(source.Weekday)
 	siteapiSiteAnalyticsOpensCell.Hour = count(source.Hour)
 	siteapiSiteAnalyticsOpensCell.Opens = count(source.Opens)
 	return siteapiSiteAnalyticsOpensCell
 }
-func (c *ConverterImpl) analyticsLinkClicksToSiteapiSiteAnalyticsLink(source analytics.LinkClicks) site.SiteAnalyticsLink {
+func (c *ConverterImpl) analyticsreportLinkClicksToSiteapiSiteAnalyticsLink(source analyticsreport.LinkClicks) site.SiteAnalyticsLink {
 	var siteapiSiteAnalyticsLink site.SiteAnalyticsLink
 	siteapiSiteAnalyticsLink.URL = source.URL
 	siteapiSiteAnalyticsLink.Clicks = count(source.Clicks)
 	if source.Owners != nil {
 		siteapiSiteAnalyticsLink.Owners = make([]site.SiteAnalyticsLinkOwner, len(source.Owners))
 		for i := 0; i < len(source.Owners); i++ {
-			siteapiSiteAnalyticsLink.Owners[i] = c.analyticsOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source.Owners[i])
+			siteapiSiteAnalyticsLink.Owners[i] = c.analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source.Owners[i])
 		}
 	}
 	return siteapiSiteAnalyticsLink
 }
-func (c *ConverterImpl) analyticsNewPeoplePointToSiteapiSiteNewPeoplePoint(source analytics.NewPeoplePoint) site.SiteNewPeoplePoint {
+func (c *ConverterImpl) analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint(source analyticsreport.NewPeoplePoint) site.SiteNewPeoplePoint {
 	var siteapiSiteNewPeoplePoint site.SiteNewPeoplePoint
 	siteapiSiteNewPeoplePoint.Date = source.Date
 	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
@@ -2661,7 +2740,7 @@ func (c *ConverterImpl) analyticsNewPeoplePointToSiteapiSiteNewPeoplePoint(sourc
 	siteapiSiteNewPeoplePoint.Unknown = count(source.Unknown)
 	return siteapiSiteNewPeoplePoint
 }
-func (c *ConverterImpl) analyticsOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analytics.OwnerClicks) site.SiteAnalyticsLinkOwner {
+func (c *ConverterImpl) analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analyticsreport.OwnerClicks) site.SiteAnalyticsLinkOwner {
 	var siteapiSiteAnalyticsLinkOwner site.SiteAnalyticsLinkOwner
 	siteapiSiteAnalyticsLinkOwner.Kind = c.AnalyticsOwnerKindToResource(source.Kind)
 	siteapiSiteAnalyticsLinkOwner.ID = site.EntityId(source.ID)
@@ -2669,7 +2748,7 @@ func (c *ConverterImpl) analyticsOwnerClicksToSiteapiSiteAnalyticsLinkOwner(sour
 	siteapiSiteAnalyticsLinkOwner.Clicks = count(source.Clicks)
 	return siteapiSiteAnalyticsLinkOwner
 }
-func (c *ConverterImpl) analyticsPointToSiteapiSiteAnalyticsPoint(source analytics.Point) site.SiteAnalyticsPoint {
+func (c *ConverterImpl) analyticsreportPointToSiteapiSiteAnalyticsPoint(source analyticsreport.Point) site.SiteAnalyticsPoint {
 	var siteapiSiteAnalyticsPoint site.SiteAnalyticsPoint
 	siteapiSiteAnalyticsPoint.Date = source.Date
 	siteapiSiteAnalyticsPoint.Sent = count(source.Sent)
@@ -2677,7 +2756,7 @@ func (c *ConverterImpl) analyticsPointToSiteapiSiteAnalyticsPoint(source analyti
 	siteapiSiteAnalyticsPoint.Clicked = count(source.Clicked)
 	return siteapiSiteAnalyticsPoint
 }
-func (c *ConverterImpl) analyticsSendingToSiteapiSiteAnalyticsSending(source analytics.Sending) site.SiteAnalyticsSending {
+func (c *ConverterImpl) analyticsreportSendingToSiteapiSiteAnalyticsSending(source analyticsreport.Sending) site.SiteAnalyticsSending {
 	var siteapiSiteAnalyticsSending site.SiteAnalyticsSending
 	siteapiSiteAnalyticsSending.Broadcast = count(source.Broadcast)
 	siteapiSiteAnalyticsSending.Automation = count(source.Automation)
@@ -2687,7 +2766,7 @@ func (c *ConverterImpl) analyticsSendingToSiteapiSiteAnalyticsSending(source ana
 	siteapiSiteAnalyticsSending.Complained = count(source.Complained)
 	return siteapiSiteAnalyticsSending
 }
-func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint(source analytics.SubscribedPoint) site.SiteAnalyticsSubscribedPoint {
+func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint(source analyticsreport.SubscribedPoint) site.SiteAnalyticsSubscribedPoint {
 	var siteapiSiteAnalyticsSubscribedPoint site.SiteAnalyticsSubscribedPoint
 	siteapiSiteAnalyticsSubscribedPoint.Date = source.Date
 	siteapiSiteAnalyticsSubscribedPoint.Subscribed = count(source.Subscribed)
@@ -2695,7 +2774,20 @@ func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribed
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
 }
-func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention.Item) site.SiteAttentionItem {
+func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures(source automations.StepFigures) site.SiteAutomationStepFigures {
+	var siteapiSiteAutomationStepFigures site.SiteAutomationStepFigures
+	siteapiSiteAutomationStepFigures.Step = count(source.Step)
+	siteapiSiteAutomationStepFigures.Sent = count(source.Sent)
+	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
+	return siteapiSiteAutomationStepFigures
+}
+func (c *ConverterImpl) linkclickClicksToSiteapiSiteLinkClicks(source linkclick.Clicks) site.SiteLinkClicks {
+	var siteapiSiteLinkClicks site.SiteLinkClicks
+	siteapiSiteLinkClicks.URL = source.URL
+	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
+	return siteapiSiteLinkClicks
+}
+func (c *ConverterImpl) needsattentionreportItemToSiteapiSiteAttentionItem(source needsattentionreport.Item) site.SiteAttentionItem {
 	var siteapiSiteAttentionItem site.SiteAttentionItem
 	siteapiSiteAttentionItem.Kind = c.AttentionKindToResource(source.Kind)
 	siteapiSiteAttentionItem.Severity = c.AttentionSeverityToResource(source.Severity)
@@ -2706,19 +2798,6 @@ func (c *ConverterImpl) attentionItemToSiteapiSiteAttentionItem(source attention
 	siteapiSiteAttentionItem.Abuse = optAbuseWarning(c, source.Abuse)
 	siteapiSiteAttentionItem.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletionAt)
 	return siteapiSiteAttentionItem
-}
-func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures(source automations.StepFigures) site.SiteAutomationStepFigures {
-	var siteapiSiteAutomationStepFigures site.SiteAutomationStepFigures
-	siteapiSiteAutomationStepFigures.Step = count(source.Step)
-	siteapiSiteAutomationStepFigures.Sent = count(source.Sent)
-	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
-	return siteapiSiteAutomationStepFigures
-}
-func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
-	var siteapiSiteLinkClicks site.SiteLinkClicks
-	siteapiSiteLinkClicks.URL = source.URL
-	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
-	return siteapiSiteLinkClicks
 }
 func (c *ConverterImpl) ordersCurrencyOrdersToSiteapiSiteOrdersInCurrency(source orders.CurrencyOrders) site.SiteOrdersInCurrency {
 	var siteapiSiteOrdersInCurrency site.SiteOrdersInCurrency

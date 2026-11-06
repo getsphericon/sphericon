@@ -5,11 +5,11 @@ package resources
 
 import (
 	"fmt"
-	usage "github.com/getsphericon/sphericon/ee/usage"
+	usages "github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	ent "github.com/getsphericon/sphericon/ent"
 	trackinghostchange "github.com/getsphericon/sphericon/ent/trackinghostchange"
 	service "github.com/getsphericon/sphericon/gen/service"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 type ServiceConverterImpl struct{}
@@ -110,7 +110,7 @@ func (c *ServiceConverterImpl) TrackingHostStateToResource(source trackinghostch
 	}
 	return serviceapiServiceTrackingHostState
 }
-func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) service.UsageFigure {
+func (c *ServiceConverterImpl) UsageFigureToResource(source usages.Figure) service.UsageFigure {
 	var serviceapiUsageFigure service.UsageFigure
 	serviceapiUsageFigure.Metric = c.UsageMetricToResource(source.Metric)
 	serviceapiUsageFigure.Value = source.Value
@@ -127,21 +127,21 @@ func (c *ServiceConverterImpl) UsageListPage(source pagination.Page[service.Work
 	serviceapiServiceUsageListOK.TotalPages = count(source.TotalPages)
 	return &serviceapiServiceUsageListOK
 }
-func (c *ServiceConverterImpl) UsageMetricToResource(source usage.Metric) service.UsageMetric {
+func (c *ServiceConverterImpl) UsageMetricToResource(source usages.Metric) service.UsageMetric {
 	var serviceapiUsageMetric service.UsageMetric
 	switch source {
-	case usage.Contacts:
+	case usages.Contacts:
 		serviceapiUsageMetric = service.UsageMetricContacts
-	case usage.EmailsSent:
+	case usages.EmailsSent:
 		serviceapiUsageMetric = service.UsageMetricEmailsSent
-	case usage.InFlightSends:
+	case usages.InFlightSends:
 		serviceapiUsageMetric = service.UsageMetricInFlightSends
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return serviceapiUsageMetric
 }
-func (c *ServiceConverterImpl) UsageToResource(source usage.WorkspaceUsage) service.WorkspaceUsageResource {
+func (c *ServiceConverterImpl) UsageToResource(source usages.WorkspaceUsage) service.WorkspaceUsageResource {
 	var serviceapiWorkspaceUsageResource service.WorkspaceUsageResource
 	// serviceapiWorkspaceUsageResource.WorkspaceId: ignore
 	serviceapiWorkspaceUsageResource.Period = periodString(source.Period)

@@ -12,10 +12,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/changelog"
-	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/doctor"
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgradenote"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // commandOps is everything the staff member commands need from the app. The app
@@ -48,7 +48,7 @@ type deps struct {
 func newDeps(env string) deps {
 	return deps{
 		env:           env,
-		changelog:     changelog.Embedded(),
+		changelog:     upgradenote.Embedded(),
 		now:           time.Now,
 		encryptionKey: func() (string, error) { return config.EncryptionKey(env) },
 		doctor:        doctor.DefaultSeams(),

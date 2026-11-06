@@ -20,14 +20,16 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -38,11 +40,13 @@ type Env struct {
 	mailpit *Mailpit
 	hooks   *Hooks
 
-	accounts *accounts.Accounts
-	bus      *events.Bus
+	users       *users.Module
+	creation    *workspacecreation.UseCase
+	memberships *memberships.Module
+	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
 	// person: saving the Brand kit, which makes the starter Templates.
-	brandKit *brandkit.Module
+	brandKit *brandkits.Module
 	// sessions issues the cookie a signed-in User of the SPA carries.
 	sessions *apiauth.Sessions
 }
@@ -127,13 +131,25 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
-	// The arrange step goes through the product's own Accounts module, taken from the
-	// application's container (no second pool).
-	acc, err := a.Accounts()
+	// The arrange step goes through the product's own Users and Memberships modules and its
+	// Workspace creation, taken from the application's container (no second pool).
+	acc, err := a.Users()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
-		return nil, nil, fmt.Errorf("resolve accounts: %w", err)
+		return nil, nil, fmt.Errorf("resolve users: %w", err)
+	}
+	creation, err := a.WorkspaceCreation()
+	if err != nil {
+		cleanup.Report("close the application", a.Close(ctx))
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve workspace creation: %w", err)
+	}
+	ms, err := a.Memberships()
+	if err != nil {
+		cleanup.Report("close the application", a.Close(ctx))
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve memberships: %w", err)
 	}
 	bus, err := a.Bus()
 	if err != nil {
@@ -154,13 +170,15 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 	}
 	return &Env{
-		BaseURL:  a.Config.AppURL,
-		mailpit:  mp,
-		hooks:    hooks,
-		accounts: acc,
-		bus:      bus,
+		BaseURL:     a.Config.AppURL,
+		mailpit:     mp,
+		hooks:       hooks,
+		users:       acc,
+		creation:    creation,
+		memberships: ms,
+		bus:         bus,
 
-		brandKit: brandkit.New(bus, templates.New(emaildoc.New())),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

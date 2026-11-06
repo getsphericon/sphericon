@@ -9,13 +9,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobkind"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
 // DeliverWebhookArgs is one delivery attempt of an event to one endpoint. river
@@ -37,7 +37,7 @@ type DeliverWebhookWorker struct {
 	client webhook.Doer
 	now    func() time.Time
 	// mod keeps the endpoint's failure state, disables it and tells the owners.
-	mod *webhooks.Module
+	mod *webhookendpoints.Module
 }
 
 // NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now;
@@ -48,7 +48,7 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 		cipher: cipher,
 		client: doer,
 		now:    now,
-		mod:    webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(client, sender)),
+		mod:    webhookendpoints.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender)),
 	}
 }
 

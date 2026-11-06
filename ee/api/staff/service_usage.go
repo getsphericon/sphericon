@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceUsageList is the stored figures of every Workspace for a Usage period: Live
@@ -22,7 +22,7 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.UsageListPage(pagination.Map(page, func(e eestaff.UsageEntry) serviceapi.WorkspaceUsageResource {
+	return serviceMapper.UsageListPage(pagination.Map(page, func(e workspaceoversight.UsageEntry) serviceapi.WorkspaceUsageResource {
 		return usageResource(e.Usage, e.WorkspaceID)
 	})), nil
 }
@@ -53,7 +53,7 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 	return new(usageResource(got, id)), nil
 }
 
-func usageResource(w usage.WorkspaceUsage, publicID string) serviceapi.WorkspaceUsageResource {
+func usageResource(w usages.WorkspaceUsage, publicID string) serviceapi.WorkspaceUsageResource {
 	res := serviceMapper.UsageToResource(w)
 	res.WorkspaceId = serviceapi.WorkspaceId(publicID)
 	return res

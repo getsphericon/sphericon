@@ -6,11 +6,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (*externalapi.ContactsListOK, error) {
@@ -57,8 +57,8 @@ func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateCo
 }
 
 // tokenRequester is the API token behind the request, as the requester of an Erasure.
-func tokenRequester(ctx context.Context) erasure.Requester {
-	return erasure.Requester{Kind: erasure.RequesterAPIToken, ID: auth.GetTokenAuth(ctx).TokenID}
+func tokenRequester(ctx context.Context) contacterasure.Requester {
+	return contacterasure.Requester{Kind: contacterasure.RequesterAPIToken, ID: auth.GetTokenAuth(ctx).TokenID}
 }
 
 // ContactsDelete is Erasure (ADR 0021): deleting a Contact removes its personal data.
@@ -66,7 +66,7 @@ func tokenRequester(ctx context.Context) erasure.Requester {
 func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.ContactsDeleteParams) error {
 	id := int64(params.ID)
 
-	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), contacterasure.ByContactID(id),
 		tokenRequester(ctx))
 	if err != nil {
 		return err
@@ -76,9 +76,9 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 
 // ContactsEraseBy is Erasure by an email address or a visitor id (ADR 0021), under the
 // same scope and rules as deleting by id. Exactly one identifier is required: the erasure
-// module refuses anything else.
+// use case refuses anything else.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) error {
-	id, err := erasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
+	id, err := contacterasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (*externalapi.UpsertContactsResult, error) {
-	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactUpserts(req.Contacts))
+	outcomes := h.intake.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts))
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

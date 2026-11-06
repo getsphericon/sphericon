@@ -73,6 +73,18 @@ Contact owns many Visitors (the same person across devices). The tracker makes o
 has **Storage consent**.
 _Avoid_: Tracking visitor, session, device, anonymous user
 
+**Contact lock**:
+The row lock on a Contact that every write about that Contact takes first and holds to the end of its
+transaction: an Enrollment made or ended, a change of its Tags or Custom fields, its **Erasure**. Two
+such writes run one after the other, and each reads what the other committed.
+_Avoid_: Mutex, advisory lock
+
+**Email case**:
+Every stored email address is lower-cased (a User's, an Invitation's and a Contact's, and the
+Destinations of Suppressions and Unsubscribes), so one address is one row whatever case it was typed
+in, and it matches the same address wherever it is stored.
+_Avoid_: Case folding, normalization (unqualified)
+
 **Storage consent**:
 Whether the tracker may store and send what it keeps in a visitor's browser: `granted`, `pending`
 (waiting for the site's consent banner) or `denied`. Until it is granted the tracker keeps no
@@ -84,6 +96,12 @@ _Avoid_: Cookie consent, tracking consent, opt-in (that is a Confirmation)
 The act of binding a Visitor to a Contact and asserting that Contact's alias keys
 (subject_id / email / phone) and its core attributes. It stitches the Visitor's earlier anonymous
 Events onto the Contact, so pre-identify behavior becomes visible to segmentation.
+_Avoid_: Alias, merge, reconcile
+
+**Visitor identification**:
+One **Identify** carried out whole, in one transaction: the Contact upserted by its alias keys, the
+Visitor bound to it, the chats the Visitor started with a bot announced, and the Visitor's anonymous
+Events stitched onto the Contact.
 _Avoid_: Alias, merge, reconcile
 
 **Event**:
@@ -110,6 +128,13 @@ conditions know it by its action (`email.opened`). A customer's own Event is sho
 as it was tracked.
 _Avoid_: Predefined event, built-in event, reserved event
 
+**Event log**:
+A Workspace's Events as they are recorded and read: a customer's Events enter it through the API,
+attached to an existing Contact by stable identity (never creating one), and the app and the API
+list it, filter it and name its distinct actions. Append-only like the Events it holds.
+Not the **Audit log**, which records changes to the Workspace.
+_Avoid_: Event stream, activity feed
+
 **Import**:
 Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the
 same record again changes nothing. Contacts and Events are imported differently; Events are a
@@ -121,6 +146,12 @@ An **Import** of Events that happened before the Workspace came to sphericon, re
 time they really happened. To segmentation a backfilled Event is an ordinary Event; to Automations
 and webhooks it is history and never a trigger.
 _Avoid_: Historical import, replay, silent event
+
+**Contact intake**:
+The **Import** of Contacts: each row upserts its Contact in a transaction of its own and, when it
+carries the evidence of SMS consent the phone gave outside sphericon, records the phone's imported
+**Confirmation** in that same transaction. The whole batch is one `contact.import` Audit entry.
+_Avoid_: Sync, bulk create
 
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
@@ -315,10 +346,24 @@ confirmation page and changes nothing, `POST` performs the opt-out — so link s
 proxies that GET every email link cannot silently unsubscribe a live subscriber.
 _Avoid_: Opt-out flag, status
 
+**Unsubscribe recording**:
+Writing an **Unsubscribe** with everything it sets off, in one transaction: from the link in a
+message or from an API call, the opt-out, the **Confirmation** an opt-out of everything drops, the
+count on the Broadcast that provoked it and the end of the Enrollment of the Automation it names.
+A stop read in the Channel itself (a STOP keyword, a blocked bot) is recorded where it is read.
+_Avoid_: Unsubscription, opt-out flow
+
 The **scope** of an unsubscribe (what the contact is opted out of) is distinct from its
 **attribution** (which sent message provoked it). A broadcast unsubscribe has scope
 "broadcasts" (shared) yet is attributed to the one broadcast whose email triggered it — two
 separate facts, never one field.
+
+**Channel stop**:
+An opt-out a person makes in the Channel itself: a STOP keyword, `/stop` or a blocked bot, an
+unsubscribe button, a send the provider refuses because the number stopped it, or one recorded by
+hand. It is an **Unsubscribe** with the `everything` scope of that Channel, and it drops the
+Destination's **Confirmation** there; its reversal (START, a resume, an unblocked bot) lifts it.
+_Avoid_: Opt-out flag, STOP handling
 
 **Confirmation** (confirmed opt-in):
 The **positive** mirror of an Unsubscribe: a per-(workspace, channel, destination) consent fact,
@@ -753,6 +798,19 @@ unsubscribe link is not wrapped, and email keeps its signed click links. A click
 **Attribution window** credits an Order to.
 _Avoid_: Redirect link, shortener, vanity link
 
+**Message token**:
+The signed token the open pixel, the click links and the unsubscribe link of an email carry, naming
+the **Outbound message** (ADR 0053). Following it records the open or the click, or reaches the
+unsubscribe page; it holds no address and needs no row of its own. Telegram and SMS links use a
+**Short tracked link** instead.
+_Avoid_: Tracking token, tracking pixel id
+
+**Link click**:
+A follow of a link of a sent message (a Message token's click link or a Short tracked link), recorded
+as `email.clicked`, `telegram.clicked` or `sms.clicked`. One made by software is **Machine
+engagement** and counts in no report; the reports count the rest by link.
+_Avoid_: Hit, tracked click
+
 **Sending domain**:
 A workspace-scoped, DNS-verified domain that a Contact's mail may be sent _from_ — the
 authenticated **sending identity**, deliberately **independent of the Integration** (the
@@ -792,6 +850,13 @@ the same ones that suppress and that mailbox providers penalize — count in the
 the metric measures list hygiene, not temporary blips. One hard bounce is thus used two
 coherent ways: it suppresses (Suppression) and it is the Bounce-rate numerator.
 _Avoid_: Delivery-failure rate (that would fold in soft bounces)
+
+**Analytics report**:
+A read-only figure of a Workspace over a chosen window of **Report days**, read live from the rows
+that hold the facts and never stored: the Overview (Contacts, sends, **Engagement rates**,
+Automations and the daily series) and the reports beside it (Events, deliverability, subscribed
+and new people, clicks by link, opens by hour, Revenue).
+_Avoid_: Dashboard (that is the page), metrics, Telemetry report (that is the Instance's)
 
 **Engagement rates**:
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
@@ -904,6 +969,13 @@ With the Enterprise feature it also acts across Workspaces: it shows Workspace *
 content, or Events — and offers suspend and unsuspend. Impersonation is out of scope.
 _Avoid_: Admin panel, back office
 
+**Workspace oversight**:
+What a Staff member, or a service with a **Service credential**, reads and changes across Workspaces
+under the Enterprise feature: the Workspaces' metadata, deliverability and Usage, suspension, Staff
+holds, Send caps, the Abuse detector's exemption, the Audit log and the **Service feeds**, never a
+Workspace's Contacts, content or Events.
+_Avoid_: Admin panel, impersonation
+
 **Abuse detector**:
 The automated actor (`system`) that watches each Workspace's **Complaint rate** and **Bounce
 rate** and freezes sending through **Workspace suspension** when they cross a limit, above a
@@ -913,6 +985,12 @@ episode ends when the Workspace leaves the tier). It counts only
 events after the last time a suspension was cleared, never reverses a suspension itself (only an
 Staff member does), and skips a Workspace a Staff member has exempted. A SaaS/platform concept.
 _Avoid_: Spam filter, auto-ban
+
+**Abuse warning**:
+The **Abuse detector**'s lower tier as a Workspace's members see it: the Sending domain and the rate
+that crossed the warning limit, shown on the dashboard. It is computed from the rates, never stored,
+and freezes nothing.
+_Avoid_: Alert, strike
 
 **Webhook endpoint** (outbound):
 A workspace-scoped HTTP destination that **sphericon calls** when domain events occur — subscribes
@@ -936,6 +1014,13 @@ results, Inbound messages, Reachability changes), addressed by the Integration's
 decoded by the Integration's Preset. The opposite direction from a Webhook endpoint; it feeds
 Suppression, Unsubscribes, Bindings and System events, and never creates a Contact.
 _Avoid_: Webhook (unqualified), inbound webhook
+
+**Callback interpretation**:
+What the core makes of the facts a **Preset** parsed from an Integration's callbacks: a delivery
+result settles its **Outbound message** or adds a **Suppression** of the Destination, an **Inbound message** or a
+**Reachability change** is recorded, a stop is a **Channel stop**, all in one transaction before the
+**Ingest hook** answers. The Preset parses; the core interprets.
+_Avoid_: Webhook handling, callback processing
 
 **Preset**:
 A declarative description of one provider's callbacks — how its signature is verified and how its
@@ -1011,6 +1096,12 @@ figures, never stamps the Outbound message as opened or clicked and never starts
 the request's user-agent and source address, neither of which is stored. Detection is a partial
 signal, not proof: a proxy that hides itself is not caught.
 _Avoid_: Bot open, false open
+
+**Private relay range**:
+An address range a mail client's privacy proxy publishes for the requests it makes on its users'
+behalf (the egress ranges of Apple's iCloud Private Relay). An open or click from inside one is
+**Machine engagement**. The list is the one the proxy publishes, never edited by hand.
+_Avoid_: Proxy list, bot range
 
 **User**:
 A human who authenticates (email + password). A User reaches Workspaces through Memberships,
@@ -1138,6 +1229,19 @@ An Owner or Admin removing another User's Second factor and Passkeys so they can
 authenticator and Recovery codes. Recorded as an Audit entry.
 _Avoid_: Unlock, disable 2FA
 
+**Second factor check**:
+The check that comes before every change of a User's **Second factor**: a current code (or a
+**Recovery code**) to confirm, regenerate the codes or disable, a factor not yet active to enroll, and
+for a **Second factor reset** the resetter's Role; a code accepted at login is single-use. Each change
+then writes the User, its Recovery codes and, for a reset, its Passkeys in one transaction.
+_Avoid_: 2FA flow, MFA verification
+
+**Login**:
+The first step of signing in with an address and a password, the same on every surface: the
+password is checked under the **Login throttle**, the verification gate applies, and a User with a
+**Second factor** is asked for it next. A **Sign-in provider** replaces this step.
+_Avoid_: Sign-on, authentication (unqualified)
+
 **Login throttle**:
 The growing delay applied to an account's login after repeated failures (password, Second factor
 or Recovery code), during which even correct credentials are refused. It is never a permanent
@@ -1209,13 +1313,18 @@ endpoint that disabled itself). Every item is read live from the rows that hold 
 stored. A Workspace suspension and a Staff hold are banners of their own, not items.
 _Avoid_: Alerts, notifications, issues, health
 
+**Needs attention report**:
+The read of a Workspace's **Needs attention** items, each from the rows that hold its fact at the
+moment of the read.
+_Avoid_: Alert check, health check
+
 **Sign-up survey**:
 An optional set of four one-question screens (role, company size, main goal, how the User heard of the
 product) that a User who has just signed up, by password or through a Sign-in provider, answers once
 after the first sign-in and before the dashboard. An Instance turns it on explicitly and a Staff
-member reads the answers; they stay in the Instance's database and are never part of the Telemetry
-report. A User who accepts an Invitation, the first Owner made by the CLI and Users that existed
-when the survey was turned on are not asked. It completes nothing and personalizes nothing, so it is
+member reads the answers, one **Sign-up survey response** per User; they stay in the Instance's
+database and are never part of the Telemetry report. A User who accepts an Invitation, the first
+Owner made by the CLI and Users that existed when the survey was turned on are not asked. It completes nothing and personalizes nothing, so it is
 not the Setup checklist.
 _Avoid_: Onboarding wizard, questionnaire
 
@@ -1281,6 +1390,15 @@ downtime. The service endpoints are served only by a separate internal listener,
 port. Its writes are recorded in the Audit log under its name, which customers see only as
 "sphericon staff".
 _Avoid_: API key, API token (that is a Workspace's), service account, Staff member
+
+**Service feed**:
+The rows of one kind that changed, in the order of their changes, that a service reads page by page
+through the service endpoints with a **Service credential** to keep its own copy in step: the
+Workspaces with their Owners, the Users with their consent to mailings, and the hosts of the
+Tracking domains, one **Tracking host change** per host a Tracking domain starts or stops serving. A
+deleted User stays in the Users' feed as a **User tombstone**, so the service learns of the
+removal. Not an **Export stream**, which is one Workspace's rows for its own warehouse.
+_Avoid_: Sync, Export stream
 
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
@@ -1363,11 +1481,30 @@ needs, applied before the new version serves anything. An Upgrade never stops an
 running.
 _Avoid_: Update, migration (that is only the database part), deploy
 
+**Upgrade note**:
+What a Self-hoster must do for a release, written as an `Upgrade:` footer of its breaking change and
+read from that release's CHANGELOG.md, which the binary carries; `sphericon upgrade-notes` and an
+**Upgrade** show them.
+_Avoid_: Release note (all of a release's changes), migration note
+
 **Major**:
 A release that may remove what earlier releases added: a table, a column, a field of a queued job or
 event. Every release between two Majors only adds. An Upgrade may skip any releases inside a Major
 but passes through the last release of each Major it crosses; before 1.0 each `0.MINOR` is a Major.
 _Avoid_: Breaking release
+
+**Encryption key**:
+The keyset an Instance seals its stored secrets with (provider credentials, signing secrets, DKIM
+private keys, Second factor secrets, the sealed fields of HTTP steps and actions), set by the
+Self-hoster. Rotating it adds a new primary key and keeps the older ones for reading; once a Secret
+re-encryption has found every value current, the older keys can be retired.
+_Avoid_: Master key, encryption secret
+
+**Secret re-encryption**:
+Storing every secret the database holds again under the primary key of the Encryption key, so that
+the older keys can be retired. No secret changes its value, only the key it is sealed under; a value
+saved while it runs is skipped, and a second run finds it current.
+_Avoid_: Rekey, key migration
 
 ### On-site forms
 

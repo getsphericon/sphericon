@@ -14,7 +14,7 @@ func TestGeneratePermissionsDeclaresTheTypeAndAConstantPerValue(t *testing.T) {
 	require.NoError(t, err)
 
 	out := string(src)
-	require.Contains(t, out, "package accounts")
+	require.Contains(t, out, "package memberships")
 	require.Contains(t, out, "type Permission string")
 	require.Regexp(t, `PermMembersManage\s+Permission = "members:manage"`, out)
 	require.Regexp(t, `PermSendingDomainsManage\s+Permission = "sending_domains:manage"`, out)
@@ -31,8 +31,44 @@ func TestGenerateTokenScopesListsTheVocabularyInTheContractsOrder(t *testing.T) 
 	require.Regexp(t, `var Scopes = \[\]Scope\{\s+ScopeMcpSend,\s+ScopeCustomFieldsRead,\s+\}`, out)
 }
 
+func TestGenerateCredentialScopesWritesTheServiceVocabularyIntoItsModule(t *testing.T) {
+	src, err := scopegen.CredentialScopes.Generate([]byte(`{"components":{"schemas":{
+	 "ServiceScope":{"type":"string","enum":["usage:read","holds:write"]}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package servicecredentials")
+	require.NotContains(t, out, "import")
+	require.Regexp(t, `ScopeHoldsWrite\s+Scope = "holds:write"`, out)
+	require.Regexp(t, `var Scopes = \[\]Scope\{\s+ScopeUsageRead,\s+ScopeHoldsWrite,\s+\}`, out)
+}
+
 func TestGenerateAnEnumFileRefusesADocumentWithoutTheEnum(t *testing.T) {
 	_, err := scopegen.TokenScopes.Generate([]byte(`{"components":{"schemas":{}}}`))
 
 	require.ErrorContains(t, err, "the document has no ApiTokenScope enum")
+}
+
+func TestGenerateUserScopesDeclaresEachEnumOfTheContractInItsOrder(t *testing.T) {
+	src, err := scopegen.UserScopes.Generate([]byte(`{"components":{"schemas":{
+	 "GrantableScope":{"type":"string","enum":["contacts:read"]},
+	 "SendScope":{"type":"string","enum":["mcp:send","emails:send"]},
+	 "SetupScope":{"type":"string","enum":["integrations:write"]},
+	 "PersonalScope":{"type":"string","enum":["contacts:read","mcp:send","emails:send","integrations:write"]}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package tokenscope")
+	require.NotContains(t, out, "import")
+	require.Regexp(t, `GrantableScopeContactsRead\s+GrantableScope = "contacts:read"`, out)
+	require.Regexp(t, `var SendScopes = \[\]SendScope\{\s+SendScopeMcpSend,\s+SendScopeEmailsSend,\s+\}`, out)
+	require.Regexp(t, `var SetupScopes = \[\]SetupScope\{\s+SetupScopeIntegrationsWrite,\s+\}`, out)
+	require.Regexp(t, `var PersonalScopes = \[\]PersonalScope\{\s+PersonalScopeContactsRead,\s+PersonalScopeMcpSend,\s+PersonalScopeEmailsSend,\s+PersonalScopeIntegrationsWrite,\s+\}`, out)
+}
+
+func TestGenerateUserScopesRefusesADocumentWithoutOneOfTheEnums(t *testing.T) {
+	_, err := scopegen.UserScopes.Generate([]byte(`{"components":{"schemas":{
+	 "GrantableScope":{"type":"string","enum":["contacts:read"]}}}}`))
+
+	require.ErrorContains(t, err, "the document has no SendScope enum")
 }

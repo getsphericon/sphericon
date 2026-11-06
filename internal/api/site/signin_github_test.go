@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
-	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -96,7 +96,7 @@ func TestSigninGitHubRefusesWhenThereIsNoVerifiedPrimaryEmail(t *testing.T) {
 
 			resp := signInWithGitHub(t, fake, b, who)
 
-			assert.Equal(t, signin.ReasonEmailUnverified, refusalCode(t, resp, loginErrorPath))
+			assert.Equal(t, signinprovider.ReasonEmailUnverified, refusalCode(t, resp, loginErrorPath))
 			assert.Equal(t, http.StatusUnauthorized, meStatus(t, b))
 		})
 	}
@@ -117,7 +117,7 @@ func TestSigninGitHubADeniedConsentLandsOnLoginWithAnError(t *testing.T) {
 
 	denied := b.Get(t, fake.Deny(t, resp.Header.Get("Location")))
 
-	assert.Equal(t, signin.ReasonDenied, refusalCode(t, denied, loginErrorPath))
+	assert.Equal(t, signinprovider.ReasonDenied, refusalCode(t, denied, loginErrorPath))
 }
 
 func TestSigninGitHubANewPersonGetsAnAccountOnASelfHostedInstance(t *testing.T) {

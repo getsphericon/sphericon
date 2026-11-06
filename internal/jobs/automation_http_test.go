@@ -19,12 +19,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // hookReceiver is a third party's endpoint: it records every call and answers as told.
@@ -132,10 +132,10 @@ func (h *httpStepHarness) reachHTTPStep(t *testing.T, runID int64) {
 	t.Helper()
 	queueStep(t, h.TestEnv, runID)
 	require.True(t, h.RunNextStep(t, h.stepper()))
-	require.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepping.RunHTTPStepArgs{}.Kind()))
+	require.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
 }
 
-func (h *httpStepHarness) stepper() *stepping.Module {
+func (h *httpStepHarness) stepper() *stepexecution.UseCase {
 	return stepperOf(h.TestEnv, resolvingTo(h.sender))
 }
 
@@ -145,9 +145,9 @@ func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorke
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
 func (h *httpStepHarness) attempt(w *jobs.RunHTTPStepWorker, runID int64, attempt int) error {
-	return w.Work(h.workCtx(), &river.Job[stepping.RunHTTPStepArgs]{
-		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
-		Args:   stepping.RunHTTPStepArgs{RunID: runID},
+	return w.Work(h.workCtx(), &river.Job[stepexecution.RunHTTPStepArgs]{
+		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
+		Args:   stepexecution.RunHTTPStepArgs{RunID: runID},
 	})
 }
 
@@ -236,7 +236,7 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	require.Error(t, h.attempt(w, runID, 1))
 	assert.Equal(t, automationrun.StatusActive, h.run(runID).status, "a retry is still to come")
 
-	require.Error(t, h.attempt(w, runID, stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts))
+	require.Error(t, h.attempt(w, runID, stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts))
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusFailed, r.status)
 	assert.Equal(t, 0, r.step, "nothing is skipped")
@@ -303,7 +303,7 @@ func TestHTTPStepRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 	h.rcv.respond(http.StatusTooManyRequests, "slow down", "120")
 
 	// Even the last attempt is not failed by a 429: it snoozes.
-	err := h.attempt(h.worker(h.rcv.allow), runID, stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts)
+	err := h.attempt(h.worker(h.rcv.allow), runID, stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts)
 
 	var snooze *rivertype.JobSnoozeError
 	require.ErrorAs(t, err, &snooze)
@@ -318,9 +318,9 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	w := h.worker(h.rcv.allow)
 	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
 
-	err := w.Work(h.workCtx(), &river.Job[stepping.RunHTTPStepArgs]{
+	err := w.Work(h.workCtx(), &river.Job[stepexecution.RunHTTPStepArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
-		Args:   stepping.RunHTTPStepArgs{RunID: runID},
+		Args:   stepexecution.RunHTTPStepArgs{RunID: runID},
 	})
 
 	var cancelled *rivertype.JobCancelError
@@ -354,11 +354,11 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	listed := h.JobRowsOf(t, jobkind.HTTPStep.Kind)
 	require.Len(t, listed, 1)
 	queued := listed[0]
-	assert.Equal(t, stepping.QueueHTTPSteps, queued.Queue)
+	assert.Equal(t, stepexecution.QueueHTTPSteps, queued.Queue)
 	assert.NotEqual(t, jobs.QueueWebhooks, queued.Queue)
 	assert.Equal(t, webhook.HookMaxAttempts(), queued.MaxAttempts)
 
-	next := h.worker(h.rcv.allow).NextRetry(&river.Job[stepping.RunHTTPStepArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
+	next := h.worker(h.rcv.allow).NextRetry(&river.Job[stepexecution.RunHTTPStepArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
 	assert.Equal(t, webhook.HookNextRetry(h.clock, 2), next)
 }
 
@@ -385,5 +385,5 @@ func TestAStepJobExecutedTwiceOnAnHTTPStepQueuesTheCallOnce(t *testing.T) {
 
 	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.QuahogID), runID, 0))
 
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepping.RunHTTPStepArgs{}.Kind()))
+	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepexecution.RunHTTPStepArgs{}.Kind()))
 }

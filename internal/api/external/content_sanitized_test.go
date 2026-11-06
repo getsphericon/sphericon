@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The external API sanitizes a body where it is saved, like the site API (ADR 0040).

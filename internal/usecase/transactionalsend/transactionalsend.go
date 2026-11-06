@@ -1,0 +1,174 @@
+// Package transactionalsend is the Transactional send use case (ADR 0005, ADR 0102): a single-recipient
+// email rendered from a referenced Template with per-call variables. It owns everything up to
+// the Outbound send module: normalizing the destination, looking the Template up in the
+// Workspace, decoding the variables, resolving the Contact the address belongs to and building
+// the Outbound request. Idempotency, the freeze check, the Sending-domain gate, eligibility,
+// rendering, the provider call and the send record stay the Outbound module's (ADR 0015).
+//
+// The use case holds no database client: it takes the Workspace scope of the caller. Its Result
+// is closed. A Deferral from Outbound is not one of its variants: a Transactional request is
+// never rate limited or deferred (ADR 0023), so one that comes back is an ErrInvariant.
+package transactionalsend
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// Domain errors of a request that cannot be sent as asked. A send Outbound holds is
+// outboundmessages.ErrHeld, and a Template that cannot render with these variables is
+// emailrender.ErrInvalidContent, each with its reason.
+var (
+	// ErrEmptyDestination: the address is empty once normalized.
+	ErrEmptyDestination = validation.Refuse("transactional: destination must not be empty", i18n.ErrorsDestinationEmpty)
+	// ErrTemplateNotFound: no such Template in the Workspace.
+	ErrTemplateNotFound = validation.NotFound("transactional: template not found", i18n.ErrorsTemplateNotFound)
+	// ErrInvalidVariables: a per-call variable is not valid JSON; it is made With the variable
+	// and why.
+	ErrInvalidVariables = validation.Refuse("transactional: invalid variables", i18n.ErrorsVariablesInvalid)
+	// ErrInProgress: a send with this Idempotency-Key is still in flight.
+	ErrInProgress = validation.Conflict("transactional: a send with this key is in progress", i18n.ErrorsSendInProgress)
+	// ErrReplayedFailed: the Idempotency-Key was spent by a send that failed; retry under a new
+	// key.
+	ErrReplayedFailed = validation.Conflict("transactional: a send with this key failed", i18n.ErrorsSendKeyFailed)
+	// ErrInvariant: Outbound answered with something a Transactional request can never get.
+	// It is a bug, reported loudly, not a refusal the caller can act on.
+	ErrInvariant = errors.New("transactional: invariant violated")
+)
+
+// Status is how a Transactional request that was not refused ended.
+type Status string
+
+const (
+	// Sent: the provider accepted the message.
+	Sent Status = "sent"
+	// Suppressed: Suppression, the global hard floor, forbids the destination.
+	Suppressed Status = "suppressed"
+)
+
+// Result is the answer to a Request.
+type Result struct {
+	Status Status
+	// MessageID is the Outbound message of the request.
+	MessageID int64
+	// Destination is the normalized address.
+	Destination string
+}
+
+// Request is one Transactional send. Variables are raw JSON values, decoded here to their
+// natural Go types so merge tags like {{ amount }} render correctly.
+type Request struct {
+	TemplateID     int64
+	Destination    string
+	Variables      map[string]json.RawMessage
+	IdempotencyKey string
+	Track          bool
+}
+
+// Sender is the Outbound send module.
+type Sender interface {
+	Send(ctx context.Context, s *ent.Scoped, req outboundmessages.Request) (outboundmessages.Result, error)
+}
+
+// UseCase is the Transactional send operation.
+type UseCase struct {
+	templates *emailtemplates.Module
+	sender    Sender
+}
+
+// New builds the use case over the Templates module and the Outbound send module.
+func New(t *emailtemplates.Module, sender Sender) *UseCase {
+	return &UseCase{templates: t, sender: sender}
+}
+
+// Send runs the Transactional send in the Workspace of s.
+func (m *UseCase) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, error) {
+	dest := suppressions.NormalizeDestination(req.Destination)
+	if dest == "" {
+		return Result{}, ErrEmptyDestination
+	}
+
+	// Workspace-scoped: another Workspace's Template id is not found, never sent.
+	tmpl, err := m.templates.Get(ctx, s, req.TemplateID)
+	if errors.Is(err, emailtemplates.ErrNotFound) {
+		return Result{}, ErrTemplateNotFound
+	}
+	if err != nil {
+		return Result{}, err
+	}
+
+	vars, err := decodeVariables(req.Variables)
+	if err != nil {
+		return Result{}, err
+	}
+
+	// The Contact this destination resolves to, when one exists (transactional mail may go to
+	// an address with no Contact); the send fact attaches to it.
+	contactID, err := contacts.ResolveID(ctx, s, "", &dest, nil)
+	if err != nil {
+		return Result{}, err
+	}
+
+	// A client key makes the send idempotent; without one every call is its own send.
+	res, err := m.sender.Send(ctx, s, outboundmessages.Transactional(outboundmessages.TransactionalMessage{
+		ClientKey:   req.IdempotencyKey,
+		Destination: dest,
+		ContactID:   contactID,
+		TemplateID:  req.TemplateID,
+		Content:     outboundmessages.EmailContent{Subject: tmpl.Subject, Body: tmpl.Body},
+		Variables:   vars,
+		Track:       req.Track,
+	}))
+	if errors.Is(err, outboundmessages.ErrInProgress) {
+		return Result{}, ErrInProgress
+	}
+	if err != nil {
+		return Result{}, fmt.Errorf("transactional send: %w", err)
+	}
+
+	out := Result{MessageID: res.MessageID, Destination: dest}
+	switch res.Outcome {
+	case outboundmessages.Sent:
+		out.Status = Sent
+	case outboundmessages.Skipped:
+		// Transactional skips only on Suppression (the global hard floor).
+		out.Status = Suppressed
+	case outboundmessages.Failed:
+		if res.Replayed {
+			// A failed key is spent: the caller should retry under a fresh key.
+			return Result{}, ErrReplayedFailed
+		}
+		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
+	case outboundmessages.Held:
+		return Result{}, outboundmessages.ErrHeld.With(outboundmessages.Detail(res.Reason))
+	default:
+		// Deferral, and Refused (a Test send's outcome): a Transactional request is neither
+		// reserved against the Provider limit nor a Test send.
+		return Result{}, fmt.Errorf("%w: outbound answered a transactional send with %q", ErrInvariant, res.Outcome)
+	}
+	return out, nil
+}
+
+// decodeVariables turns the per-call variables into the binding map Liquid renders against.
+func decodeVariables(raw map[string]json.RawMessage) (map[string]any, error) {
+	out := make(map[string]any, len(raw))
+	for k, v := range raw {
+		var val any
+		if err := json.Unmarshal(v, &val); err != nil {
+			return nil, ErrInvalidVariables.With(fmt.Sprintf("variable %q: %v", k, err))
+		}
+		out[k] = val
+	}
+	return out, nil
+}

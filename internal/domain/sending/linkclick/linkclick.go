@@ -1,0 +1,112 @@
+// Package linkclick counts the Link clicks (GLOSSARY) of the messages of one Broadcast or Automation, or of the
+// whole Workspace, by link. It is a leaf the per-owner reports and the Clicks by link report share:
+// the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`, `sms.clicked`), machine clicks left out (ADR 0053), and takes a
+// scoped client like every Workspace read.
+package linkclick
+
+import (
+	"context"
+	"time"
+
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+)
+
+// Clicks is how often one link was clicked.
+type Clicks struct {
+	URL    string `json:"url"`
+	Clicks int    `json:"clicks"`
+}
+
+// OwnerKind is what carried a clicked link.
+type OwnerKind string
+
+const (
+	OwnerBroadcast  OwnerKind = "broadcast"
+	OwnerAutomation OwnerKind = "automation"
+)
+
+// OwnerClicks is how often one link was clicked in the emails of one Broadcast or Automation.
+type OwnerClicks struct {
+	URL    string
+	Kind   OwnerKind
+	ID     int64
+	Clicks int
+}
+
+// Between is the half-open span [Since, Until) the clicks happened in, by the Events'
+// `occurred_at` (ADR 0044); the zero value is all the retained history.
+type Between struct {
+	Since, Until time.Time
+}
+
+// ByLink counts the `email.clicked` Events that owner narrows to (the Events of one Broadcast or
+// Automation) within the span, by link, most clicked first. Every click is an Event, so these are
+// repeat counts that cover the Event retention window.
+func ByLink(ctx context.Context, s *ent.Scoped, in Between, owner predicate.Event) ([]Clicks, error) {
+	rows := []Clicks{}
+	err := clicks(s, in, owner).
+		Modify(func(sel *sql.Selector) {
+			url := sel.C(event.FieldURL)
+			sel.Select(sql.As(url, "url"), sql.As(sql.Count("*"), "clicks")).GroupBy(url).
+				OrderBy(sql.Desc("clicks"), url)
+		}).
+		Scan(ctx, &rows)
+	return rows, err
+}
+
+// ByOwner counts the human `email.clicked` Events of the whole Workspace within the span, by
+// link and by the Broadcast or Automation that carried it, most clicked first. A click that
+// carries neither (a Transactional send) belongs to no report and is left out.
+func ByOwner(ctx context.Context, s *ent.Scoped, in Between) ([]OwnerClicks, error) {
+	var rows []struct {
+		URL          string `json:"url"`
+		BroadcastID  *int64 `json:"broadcast_id"`
+		AutomationID *int64 `json:"automation_id"`
+		Clicks       int    `json:"clicks"`
+	}
+	err := clicks(s, in, event.Or(event.BroadcastIDNotNil(), event.AutomationIDNotNil())).
+		Modify(func(sel *sql.Selector) {
+			url, broadcast, automation := sel.C(event.FieldURL), sel.C(event.FieldBroadcastID), sel.C(event.FieldAutomationID)
+			sel.Select(
+				sql.As(url, "url"), sql.As(broadcast, "broadcast_id"), sql.As(automation, "automation_id"),
+				sql.As(sql.Count("*"), "clicks"),
+			).GroupBy(url, broadcast, automation).
+				OrderBy(sql.Desc("clicks"), url)
+		}).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	owners := make([]OwnerClicks, 0, len(rows))
+	for _, r := range rows {
+		if r.BroadcastID != nil {
+			owners = append(owners, OwnerClicks{URL: r.URL, Kind: OwnerBroadcast, ID: *r.BroadcastID, Clicks: r.Clicks})
+			continue
+		}
+		owners = append(owners, OwnerClicks{URL: r.URL, Kind: OwnerAutomation, ID: *r.AutomationID, Clicks: r.Clicks})
+	}
+	return owners, nil
+}
+
+// Total is the clicks over all the links.
+func Total(links []Clicks) int {
+	total := 0
+	for _, l := range links {
+		total += l.Clicks
+	}
+	return total
+}
+
+// clicks is the human click Events inside the span that owner narrows to.
+func clicks(s *ent.Scoped, in Between, owner predicate.Event) *ent.EventQuery {
+	q := s.Event().Query().Where(event.ActionIn(events.ClickActions...), events.HumanOnly(), owner)
+	if in != (Between{}) {
+		q.Where(event.OccurredAtGTE(in.Since), event.OccurredAtLT(in.Until))
+	}
+	return q
+}

@@ -45,7 +45,7 @@
   its own instance (`src/i18n.ts`), reached through `useTranslation`; the global `i18next` belongs to
   the workflow builder SDK and is used only in `AutomationBuilder.tsx` (`easement.yml` refuses it).
   **English is the only locale.** There are no `ru`/`es` (or any other) catalogs, in `locales/` or in
-  `internal/i18n/locales/`: a new string gets its `en` entry and nothing else, and no Russian or other
+  `internal/kernel/i18n/locales/`: a new string gets its `en` entry and nothing else, and no Russian or other
   non-English text goes into the repo. A key no code reads fails `check:i18n` and `mise run fix`
   deletes it; a key looked up by a value from the API (`$.rules.firingStatus[status]`) is invisible
   to the extractor, so its family goes into `preservePatterns` in `i18next.config.ts`.

@@ -18,7 +18,7 @@ import (
 // Verification is kept as moments, not a flag a job flips: verified_at is when the domain
 // most recently became verified, verification_lost_at when a re-check found the DKIM DNS gone
 // (nil again once it is verified anew). A domain is verified while verified_at is set and
-// verification_lost_at is not (internal/dkimstate). The private key is stored Tink-encrypted; the public key is
+// verification_lost_at is not (internal/infra/dkimstate). The private key is stored Tink-encrypted; the public key is
 // the TXT value and is safe to expose.
 type SendingDomain struct {
 	ent.Schema
@@ -46,7 +46,7 @@ func (SendingDomain) Fields() []ent.Field {
 		// DKIM selector; the DNS record is "<dkim_selector>._domainkey.<domain>".
 		field.String("dkim_selector").
 			NotEmpty(),
-		// Tink-encrypted PKCS#8 PEM private key (internal/secrets.Cipher).
+		// Tink-encrypted PKCS#8 PEM private key (internal/kernel/secrets.Cipher).
 		field.String("dkim_private_key_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),

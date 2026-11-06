@@ -12,9 +12,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
 
 func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
@@ -31,23 +31,23 @@ func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.Licens
 // staffSessions are the sessions of a Staff sign-in that is on.
 func staffSessions(t *testing.T) *staffmembers.Sessions {
 	t.Helper()
-	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: accounts.NewAttempts(nil)})
+	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: throttle.NewAttempts(nil)})
 	require.NoError(t, err)
 	return m.Sessions()
 }
 
 func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
-	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, staff.Config{})
+	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, workspaceoversight.Config{})
 
 	require.Error(t, err, "the Enterprise sections take the Staff member's sessions")
 }
 
 func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
-	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, staff.Config{})
+	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
-	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, staff.Config{})
+	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, workspaceoversight.Config{})
 	require.NoError(t, err, "an instance without the staff license needs no Staff sign-in")
-	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staff.Config{})
+	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
 
 	assert.Nil(t, plain.StaffSections())
@@ -56,7 +56,7 @@ func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staff.Config{})
+	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
 
 	jobs := e.Jobs()

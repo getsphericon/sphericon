@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -48,7 +48,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	assert.Equal(t, emaildoc.EditorVersion(), res.Draft.Value.Steps[0].EditorVersion.Value)
 	assert.False(t, res.Draft.Value.Steps[2].Doc.Set, "a step with no document stays HTML-only")
 
-	stored, err := automationsteps.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
+	stored, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(stored[0].Doc))
 	assert.Equal(t, res.Draft.Value.Steps[0].Body.Value, stored[0].Body)
@@ -74,7 +74,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	clr := cleared
 	assert.False(t, clr.Draft.Value.Steps[0].Doc.Set)
 	assert.False(t, clr.Draft.Value.Steps[0].EditorVersion.Set)
-	stored, err = automationsteps.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
+	stored, err = automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.Empty(t, stored[0].Doc)
 	assert.Empty(t, stored[0].EditorVersion)

@@ -8,19 +8,19 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	staff "github.com/getsphericon/sphericon/gen/staff"
-	instance "github.com/getsphericon/sphericon/internal/instance"
-	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	signupitems "github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	instancestates "github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 )
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) DefaultSendCapChangeToResource(source instance.DefaultSendCapChange) staff.StaffDefaultSendCapChange {
+func (c *ConverterImpl) DefaultSendCapChangeToResource(source instancestates.DefaultSendCapChange) staff.StaffDefaultSendCapChange {
 	var staffapiStaffDefaultSendCapChange staff.StaffDefaultSendCapChange
 	staffapiStaffDefaultSendCapChange.Changed = source.Changed
 	staffapiStaffDefaultSendCapChange.DefaultSendCap = c.DefaultSendCapToResource(source.DefaultSendCap)
 	return staffapiStaffDefaultSendCapChange
 }
-func (c *ConverterImpl) DefaultSendCapToResource(source instance.DefaultSendCap) staff.StaffDefaultSendCap {
+func (c *ConverterImpl) DefaultSendCapToResource(source instancestates.DefaultSendCap) staff.StaffDefaultSendCap {
 	var staffapiStaffDefaultSendCap staff.StaffDefaultSendCap
 	staffapiStaffDefaultSendCap.PerDay = nilMaxPerDay(source.PerDay)
 	return staffapiStaffDefaultSendCap
@@ -44,9 +44,9 @@ func (c *ConverterImpl) InstanceAuditEntryToResource(source *ent.InstanceAuditEn
 	}
 	return staffapiStaffInstanceAuditEntryResource
 }
-func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.StaffInstanceState {
+func (c *ConverterImpl) InstanceStateToResource(source instancestates.State) staff.StaffInstanceState {
 	var staffapiStaffInstanceState staff.StaffInstanceState
-	staffapiStaffInstanceState.Telemetry = c.instanceSettingToStaffapiStaffInstanceTelemetry(source.Telemetry)
+	staffapiStaffInstanceState.Telemetry = c.instancestatesSettingToStaffapiStaffInstanceTelemetry(source.Telemetry)
 	staffapiStaffInstanceState.NoticeAcknowledged = source.NoticeAcknowledged
 	staffapiStaffInstanceState.LatestRelease = optString(source.LatestRelease)
 	staffapiStaffInstanceState.LicenseExpiredAt = optLapse(source.LicenseExpiredAt)
@@ -54,14 +54,14 @@ func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.Sta
 	staffapiStaffInstanceState.DefaultSendCap = optDefaultSendCap(c, source.DefaultSendCap)
 	return staffapiStaffInstanceState
 }
-func (c *ConverterImpl) InstanceTelemetryLockToResource(source instance.Lock) staff.StaffInstanceTelemetryLock {
+func (c *ConverterImpl) InstanceTelemetryLockToResource(source instancestates.Lock) staff.StaffInstanceTelemetryLock {
 	var staffapiStaffInstanceTelemetryLock staff.StaffInstanceTelemetryLock
 	switch source {
-	case instance.LockDoNotTrack:
+	case instancestates.LockDoNotTrack:
 		staffapiStaffInstanceTelemetryLock = staff.StaffInstanceTelemetryLockDoNotTrack
-	case instance.LockEnvironment:
+	case instancestates.LockEnvironment:
 		staffapiStaffInstanceTelemetryLock = staff.StaffInstanceTelemetryLockEnvironment
-	case instance.LockNone:
+	case instancestates.LockNone:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -131,7 +131,7 @@ func (c *ConverterImpl) VersionsToResources(source []signupitems.Version) []staf
 	}
 	return staffapiStaffLegalDocumentVersionList
 }
-func (c *ConverterImpl) instanceSettingToStaffapiStaffInstanceTelemetry(source instance.Setting) staff.StaffInstanceTelemetry {
+func (c *ConverterImpl) instancestatesSettingToStaffapiStaffInstanceTelemetry(source instancestates.Setting) staff.StaffInstanceTelemetry {
 	var staffapiStaffInstanceTelemetry staff.StaffInstanceTelemetry
 	staffapiStaffInstanceTelemetry.Enabled = source.Enabled
 	staffapiStaffInstanceTelemetry.Locked = source.Locked

@@ -34,7 +34,7 @@ func (Workspace) Fields() []ent.Field {
 		// the erasure job blanks it on the tombstone (ADR 0043), so the schema allows it.
 		field.String(nameField),
 		// The Workspace id (ADR 0043): 8 random base62 characters, the Workspace's one public
-		// address. Assigned at creation, never changed, unique; internal/workspaceid makes it.
+		// address. Assigned at creation, never changed, unique; internal/kernel/workspaceid makes it.
 		field.String("public_id").
 			MinLen(8).
 			MaxLen(8).

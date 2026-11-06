@@ -31,7 +31,7 @@ var SitePermissions = Table{
 	Package: "site",
 	Imports: []string{
 		`siteapi "github.com/getsphericon/sphericon/gen/site"`,
-		`"github.com/getsphericon/sphericon/internal/accounts"`,
+		`"github.com/getsphericon/sphericon/internal/domain/identity/memberships"`,
 	},
 	Doc: []string{
 		"operationAccess is what each operation of /site declares in the contract: whether it",
@@ -73,7 +73,7 @@ func siteAccess(op Operation) (string, error) {
 		}
 		fields = append(fields, "workspace: true")
 		if len(perms) > 0 {
-			fields = append(fields, "permissions: []accounts.Permission"+names("accounts.Perm", perms))
+			fields = append(fields, "permissions: []memberships.Permission"+names("memberships.Perm", perms))
 		}
 		if withheld {
 			fields = append(fields, "whileWithheld: true")

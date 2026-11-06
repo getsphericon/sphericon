@@ -7,7 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // WebhookEndpoint is a workspace-scoped HTTP destination that receives domain
@@ -38,7 +38,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.String("url").
 			NotEmpty().
 			Annotations(Sensitive{}),
-		// HMAC signing secret, encrypted at rest via internal/secrets.Cipher.
+		// HMAC signing secret, encrypted at rest via internal/kernel/secrets.Cipher.
 		field.String("secret_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),

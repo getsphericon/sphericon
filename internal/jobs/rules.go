@@ -9,13 +9,14 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/jobkind"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // EvaluateRulesArgs is the evaluation of one Event against the Workspace's Rules (ADR 0054): the
@@ -85,9 +86,9 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 }
 
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
-// already does the thing for an Automation step; internal/rules imports none of them.
-func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
-	tagging := tags.New(bus)
+// already does the thing for an Automation step; internal/domain/orchestration/rules imports none of them.
+func RuleActionRunners(mod *outboundmessages.Module, bus *events.Bus) rules.ActionRunners {
+	tagging := contacts.New(bus)
 	return rules.ActionRunners{
 		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
 		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
@@ -98,7 +99,7 @@ func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunner
 
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
 // trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
-// (stepping.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
+// (stepexecution.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
 // Contact already enrolled is Skipped, not Failed. The read here answers early; the Enrollment
 // checks the Automation again under its lock, which is what decides (automations.ErrInactive). The Enrollment and the job that starts stepping
 // it commit together, so a retry never finds an enrolled Contact whose run never started.
@@ -116,7 +117,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	case auto.Status != automation.StatusActive:
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	}
-	enrolled, err := stepping.EnrollOnRule(ctx, a.bus, s, auto.ID, in.ContactID, in.Firing.SourceID)
+	enrolled, err := stepexecution.EnrollOnRule(ctx, a.bus, s, auto.ID, in.ContactID, in.Firing.SourceID)
 	switch {
 	case errors.Is(err, automations.ErrInactive):
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
@@ -131,8 +132,8 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 // tagAction applies or removes a Tag. The change is the `system` actor's (ADR 0022), as an
 // Automation's tag step is: a Tag the Action creates is audited.
 type tagAction struct {
-	mod   *outbound.Module
-	tags  *tags.Module
+	mod   *outboundmessages.Module
+	tags  *contacts.Module
 	apply bool
 }
 
@@ -140,9 +141,9 @@ func (a tagAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput)
 	sys := a.mod.AsSystem(s)
 	var err error
 	if a.apply {
-		_, err = a.tags.Apply(ctx, sys, in.ContactID, in.Action.Tag)
+		_, err = a.tags.ApplyTag(ctx, sys, in.ContactID, in.Action.Tag)
 	} else {
-		err = a.tags.Remove(ctx, sys, in.ContactID, in.Action.Tag)
+		err = a.tags.RemoveTag(ctx, sys, in.ContactID, in.Action.Tag)
 	}
 	switch {
 	case errors.Is(err, tags.ErrInvalidName), errors.Is(err, tags.ErrContactNotFound):

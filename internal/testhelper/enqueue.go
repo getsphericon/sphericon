@@ -11,12 +11,12 @@ import (
 	"github.com/riverqueue/river/rivertest"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/domainverify"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
 // The jobs a request queues are worked at once, each by its real river worker through
@@ -53,13 +53,13 @@ func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Work
 // testJobs is the enqueue side of the job queue in a test (app.Enqueuer): each job is worked
 // at once by its real worker.
 type testJobs struct {
-	tb      testing.TB
-	ent     *ent.Client
-	sender  messaging.EmailSender
-	domains *domainverify.Module
-	cipher  *secrets.Cipher
-	catalog *messaging.Catalog
-	appURL  string
+	tb           testing.TB
+	ent          *ent.Client
+	sender       messaging.EmailSender
+	verification *domainverification.UseCase
+	cipher       *secrets.Cipher
+	catalog      *messaging.Catalog
+	appURL       string
 }
 
 // Enqueue works the job of args now.
@@ -76,7 +76,7 @@ func (j *testJobs) Enqueue(ctx context.Context, args river.JobArgs) error {
 	case jobs.RefreshIntegrationQuotaArgs:
 		return Work(ctx, j.tb, jobs.NewRefreshIntegrationQuotaWorker(j.ent, j.cipher, j.catalog), a)
 	case jobs.VerifySendingDomainArgs:
-		return Work(ctx, j.tb, jobs.NewVerifySendingDomainWorker(j.domains), a)
+		return Work(ctx, j.tb, jobs.NewVerifySendingDomainWorker(j.ent, j.verification), a)
 	default:
 		return fmt.Errorf("testhelper: no worker for the job kind %q", args.Kind())
 	}
@@ -85,9 +85,4 @@ func (j *testJobs) Enqueue(ctx context.Context, args river.JobArgs) error {
 // EnqueueIntegrationQuotaRefresh reads the Integration's provider send quota now.
 func (j *testJobs) EnqueueIntegrationQuotaRefresh(ctx context.Context, integrationID int64) error {
 	return j.Enqueue(ctx, jobs.RefreshIntegrationQuotaArgs{IntegrationID: integrationID})
-}
-
-// VerifySendingDomain runs both checks of the Sending domain now, as the river client does.
-func (j *testJobs) VerifySendingDomain(ctx context.Context, sendingDomainID int64) error {
-	return j.domains.Verify(ctx, sendingDomainID)
 }

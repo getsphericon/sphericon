@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
 // SiteTelegramListBindings lists the Telegram chats a Contact is reached through.

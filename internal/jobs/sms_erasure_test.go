@@ -20,15 +20,15 @@ import (
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
-	"github.com/getsphericon/sphericon/internal/phone"
-	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // Erasing a Contact leaves nothing of its SMS life but its phone's hash (ADR 0021, #1032): the
@@ -59,8 +59,8 @@ func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	assert.Zero(t, consents, "no Confirmation")
 	stops := env.DB.Unsubscribe.Query().Where(unsubscribe.Destination(number)).CountX(ctx)
 	assert.Zero(t, stops, "no opt-out by the number")
-	suppressions := env.DB.Suppression.Query().Where(entsuppression.Destination(number)).CountX(ctx)
-	assert.Zero(t, suppressions, "no Suppression by the number")
+	suppressionCount := env.DB.Suppression.Query().Where(entsuppression.Destination(number)).CountX(ctx)
+	assert.Zero(t, suppressionCount, "no Suppression by the number")
 	envelopes := env.QueuedEnvelopes(t)
 	naming := lo.FilterMap(envelopes, func(e events.Envelope, _ int) (string, bool) {
 		return e.Name, strings.Contains(string(e.Data)+e.DedupKey, digits)
@@ -135,13 +135,13 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	erased := env.QueuedEvents(t, events.NameContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash
-	assert.Equal(t, erasure.Hash(number), hash, "the Erasure record holds the phone's hash")
+	assert.Equal(t, contacterasure.Hash(number), hash, "the Erasure record holds the phone's hash")
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Destination(hash)).OnlyX(ctx)
 	assert.Nil(t, optOut.ContactID, "the opt-out stays, by the hash, detached")
 	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(channels.SMS), entsuppression.Destination(hash)).OnlyX(ctx)
 	assert.Nil(t, suppressed.ContactID, "the Suppression stays, by the hash, detached")
 	// The Suppression is lifted, to see the opt-out refuse on its own.
-	require.NoError(t, suppression.Remove(ctx, s, suppressed.ID))
+	require.NoError(t, suppressions.Remove(ctx, s, suppressed.ID))
 
 	// The person is imported again with the same phone and a fresh Confirmation: no text goes.
 	again, err := env.ExternalScoped(t, "contacts:write").ContactsCreate(ctx, &externalapi.CreateContactInput{
@@ -213,12 +213,12 @@ func TestLiftingTheSuppressionOfANumberThatCameBackLiftsItsErasedTwin(t *testing
 	env.SuppressNumber(ctx, number)
 	eraseContact(t, env, fixtures.ContactTexterID)
 	reimport(t, env, number)
-	again, err := suppression.AddManual(ctx, s, channels.SMS, number)
+	again, err := suppressions.AddManual(ctx, s, channels.SMS, number)
 	require.NoError(t, err)
 	before, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 
-	require.NoError(t, suppression.Remove(ctx, s, again.ID))
+	require.NoError(t, suppressions.Remove(ctx, s, again.ID))
 
 	after, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
@@ -253,7 +253,7 @@ func TestTheExportOfAContactWithAnErasedNumberListsTheRefusalsItsHashKeeps(t *te
 	var doc externalapi.ContactExportDocument
 	require.NoError(t, doc.Decode(jx.DecodeBytes(raw)), string(raw))
 	stops := lo.Map(doc.Unsubscribes, func(u externalapi.ContactExportUnsubscribe, _ int) string { return u.Channel + ":" + u.Destination })
-	suppressions := lo.Map(doc.Suppressions, func(u externalapi.ContactExportSuppression, _ int) string { return u.Channel + ":" + u.Destination })
+	exportedSuppressions := lo.Map(doc.Suppressions, func(u externalapi.ContactExportSuppression, _ int) string { return u.Channel + ":" + u.Destination })
 	assert.Equal(t, []string{"sms:" + phone.Hash(number)}, stops)
-	assert.Equal(t, []string{"sms:" + phone.Hash(number)}, suppressions)
+	assert.Equal(t, []string{"sms:" + phone.Hash(number)}, exportedSuppressions)
 }

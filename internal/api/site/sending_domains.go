@@ -5,7 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
@@ -56,14 +56,14 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 // SiteSendingDomainsDelete deletes a sending domain for good (ADR 0049): it leaves the list. Live
 // sends from it refuse it with 409.
 func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.SiteSendingDomainsDeleteParams) error {
-	return h.sendingDomains.Delete(ctx, workspaceScope(ctx), int64(params.ID))
+	return h.sendingDomainDeletion.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
 func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (*siteapi.SiteSendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	d, err := h.sendingDomains.Verify(ctx, s, id)
+	d, err := h.domainVerification.Verify(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

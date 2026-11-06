@@ -10,7 +10,7 @@ import (
 )
 
 // Passkey is a WebAuthn credential a User registered to log in without a password
-// (ADR 0052). It belongs to the User, not a Workspace, and only internal/secondfactor
+// (ADR 0052). It belongs to the User, not a Workspace, and only internal/passkeys
 // reads and writes it. The columns are what go-webauthn needs to rebuild a credential
 // and check an assertion against it; the backup flags are stored as registered because
 // the library refuses an assertion whose Backup Eligible flag differs.

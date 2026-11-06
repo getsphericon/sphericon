@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // recoverAfterFirstCall makes the receiver answer 503 to the first call and 200 to every one after.
@@ -260,7 +260,7 @@ func TestAnHTTPActionRunsOnAQueueOfItsOwnWithTheRetryHorizonOfAHook(t *testing.T
 
 	// The Actions job queues the call with the options its args declare.
 	opts := jobs.RunRuleHTTPArgs{}.InsertOpts()
-	assert.Equal(t, stepping.QueueHTTPSteps, opts.Queue)
+	assert.Equal(t, stepexecution.QueueHTTPSteps, opts.Queue)
 	assert.NotEqual(t, jobs.QueueWebhooks, opts.Queue)
 	assert.Equal(t, webhook.HookMaxAttempts(), opts.MaxAttempts)
 	assert.True(t, opts.UniqueOpts.ByArgs, "a redelivered Actions job does not queue the call twice")

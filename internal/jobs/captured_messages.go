@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 )
 
 // capturedMessagesBatch bounds the rows one DELETE removes so a large backlog never holds a

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee/api/staff"
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -23,10 +23,10 @@ var (
 func TestACredentialCannotActOutsideItsScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	needsHolds := map[string][]serviceapi.ServiceScope{"NeedsHolds": {serviceapi.ServiceScopeHoldsWrite}, "NeedsNothing": nil}
-	security := staff.NewServiceSecurity(env.StaffEnterprise, needsHolds)
+	security := staff.NewServiceSecurity(env.ServiceCredentials, needsHolds)
 
 	_, err := security.HandleBearerAuth(t.Context(), "NeedsHolds", serviceapi.BearerAuth{Token: readOnly})
-	require.ErrorIs(t, err, eestaff.ErrForbidden, "a valid credential without the scope")
+	require.ErrorIs(t, err, servicecredentials.ErrForbidden, "a valid credential without the scope")
 
 	ctx, err := security.HandleBearerAuth(t.Context(), "NeedsHolds", serviceapi.BearerAuth{Token: primary})
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestACredentialCannotActOutsideItsScopes(t *testing.T) {
 	require.NoError(t, err, "an operation that needs no scope is open to any valid credential")
 
 	_, err = security.HandleBearerAuth(t.Context(), "NotListed", serviceapi.BearerAuth{Token: primary})
-	require.ErrorIs(t, err, eestaff.ErrForbidden, "an operation with no entry is refused to every credential")
+	require.ErrorIs(t, err, servicecredentials.ErrForbidden, "an operation with no entry is refused to every credential")
 }
 
 func TestEveryServiceOperationDeclaresItsScopes(t *testing.T) {

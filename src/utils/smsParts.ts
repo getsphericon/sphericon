@@ -1,7 +1,7 @@
 import type { SiteSmsLengthLimit } from '../generated/site/types.gen.ts'
 
-// The SMS counter (ADR 0078): what the editor shows as the marketer types. internal/smsrender
-// counts the same way for the save, and both agree on internal/smsrender/testdata/parts.json.
+// The SMS counter (ADR 0078): what the editor shows as the marketer types. internal/kernel/smsrender
+// counts the same way for the save, and both agree on internal/kernel/smsrender/testdata/parts.json.
 
 type SmsEncoding = 'GSM-7' | 'UCS-2'
 
@@ -41,7 +41,7 @@ export function tooLongForSms(size: SmsSize, limit: SiteSmsLengthLimit): boolean
 }
 
 // A link as a phone finds it: an absolute http(s) URL up to the next whitespace, a Liquid tag inside
-// it part of it, a lone `{` its end. Whitespace is spelled out, as in internal/smsrender/links.go:
+// it part of it, a lone `{` its end. Whitespace is spelled out, as in internal/kernel/smsrender/links.go:
 // the two regexp engines differ on what `\s` covers.
 const LINK = /https?:\/\/(?:\{\{.*?\}\}|\{%.*?%\}|[^\t\n\f\r {])+/g
 // The punctuation that ends a sentence rather than a link.

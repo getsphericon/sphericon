@@ -4,7 +4,7 @@ import (
 	"context"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 // StaffSignupItemsList is every Sign-up item of the Instance that is not deleted, in the order of

@@ -15,16 +15,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The Telegram send step (ADR 0081): a bound Contact gets the rendered text through the bot the
@@ -33,7 +33,7 @@ import (
 
 // telegramAutomation creates and publishes an Automation triggered on telegram.bound that runs
 // steps, and returns its id.
-func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationsteps.Step) int64 {
+func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationstep.Step) int64 {
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -48,15 +48,15 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 }
 
 // telegramStep is a Telegram step through the bot.
-func telegramStep(bot testhelper.TelegramBot, text string) automationsteps.Step {
+func telegramStep(bot testhelper.TelegramBot, text string) automationstep.Step {
 	id := int64(bot.Integration.ID)
-	return automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: &id, Text: text}
+	return automationstep.Step{Type: automationstep.Telegram, IntegrationID: &id, Text: text}
 }
 
 // runSteps drives the queued steps through the harness's own Outbound module.
 func runSteps(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	env.RunQueuedSteps(t, stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock())))
+	env.RunQueuedSteps(t, stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock())))
 }
 
 func TestATelegramStepSendsTheRenderedAndEscapedTextToTheBoundChat(t *testing.T) {

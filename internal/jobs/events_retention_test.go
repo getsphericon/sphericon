@@ -12,8 +12,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -120,14 +120,4 @@ func TestPruneEventsKeepsRuleFiringsWhenRetentionIsZero(t *testing.T) {
 	pruneEvents(t, env, 0)
 
 	assert.True(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
-}
-
-func TestPruneRuleFiringsDeletesInBoundedBatches(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	deleted, err := events.PruneRuleFirings(context.Background(), env.DB, eventsRetention, 1)
-
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), deleted)
-	assert.False(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
 }

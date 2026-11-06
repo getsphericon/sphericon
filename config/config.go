@@ -20,8 +20,8 @@ import (
 	"unicode"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/joho/godotenv"
 )
 
@@ -191,7 +191,7 @@ type Config struct {
 	// Locale is the instance-wide UI/email language (a SaaS deployment runs per
 	// country). One of the supported locales; anything else is coerced to "en".
 	// Drives both the SPA (injected into index.html) and the backend's own
-	// system emails and validation messages (internal/i18n).
+	// system emails and validation messages (internal/kernel/i18n).
 	Locale string
 
 	// Mode is the kind of deployment this Instance is (SPHERICON_MODE, ADR 0060). The settings
@@ -243,7 +243,7 @@ type Config struct {
 
 	// OtelServiceName is the service.name reported on OTel traces/metrics. The
 	// export destinations come from the declarative config file OTEL_CONFIG_FILE
-	// names (read by otelconf in internal/telemetry).
+	// names (read by otelconf in internal/infra/telemetry).
 	OtelServiceName string
 
 	// MetricsAddr (host:port) is where the opt-in Prometheus listener binds. Empty

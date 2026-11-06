@@ -10,15 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domainverify"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 func runStatus(ctx context.Context, t *testing.T, env *testhelper.TestEnv, id int64) automationrun.Status {
@@ -90,7 +91,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
 		assert.Equal(t, []map[string]any{stepJob(id, env.DB.AutomationRun.GetX(t.Context(), id).CurrentStep)}, queuedSteps(t, env), "the same step is queued again")
-		assert.True(t, env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0].After(time.Now().Add(10*time.Minute)))
+		assert.True(t, env.JobSchedules(t, stepexecution.RunStepArgs{}.Kind())[0].After(time.Now().Add(10*time.Minute)))
 		assert.Empty(t, fs.sent)
 		assert.Equal(t, automationrun.StatusActive, runStatus(t.Context(), t, env, id), "the enrollment is unchanged")
 	})
@@ -99,7 +100,7 @@ func TestRunStepOutcomes(t *testing.T) {
 	// queued: the job is finished, not retried.
 	t.Run("an unknown run is finished", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		env.EnqueueJob(t, stepping.RunStepArgs{RunID: 424242})
+		env.EnqueueJob(t, stepexecution.RunStepArgs{RunID: 424242})
 		env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 		assert.Empty(t, queuedSteps(t, env))
 	})
@@ -110,7 +111,7 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	ctx := context.Background()
 
 	// The greeting's trigger is shared by an active and an inactive automation; Bob is in neither.
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, automations.Event{Action: triggerOf(t, env, fixtures.AutomationJobsGreetingID), OccurredAt: time.Now()}, 0))
 
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID), 1)
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingInactiveID)).ExistX(ctx), "the inactive one enrolled nobody")
@@ -125,7 +126,7 @@ func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
 	require.NoError(t, err)
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
-	require.Error(t, suspension.NotifyOwners(ctx, env.DB, accounts.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
+	require.Error(t, suspension.NotifyOwners(ctx, env.DB, memberships.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
 }
 
 // A re-check that flips a domain to unverified notifies the owner, and a failed
@@ -134,7 +135,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

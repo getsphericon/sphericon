@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 
-import links from '../../internal/smsrender/testdata/links.json' with { type: 'json' }
-import table from '../../internal/smsrender/testdata/parts.json' with { type: 'json' }
+import links from '../../internal/kernel/smsrender/testdata/links.json' with { type: 'json' }
+import table from '../../internal/kernel/smsrender/testdata/parts.json' with { type: 'json' }
 import { measureSms, smsLinks, tooLongForSms } from './smsParts.ts'
 
-// The table the backend counter reads too (internal/smsrender): the two agree on every case.
+// The table the backend counter reads too (internal/kernel/smsrender): the two agree on every case.
 const cases = table.cases.map((c) => ({
   ...c,
   text: c.text.map(([piece, times]) => String(piece).repeat(Number(times))).join(''),
@@ -24,7 +24,7 @@ test.each(limitCases)('$name', ({ text, fits }) => {
   expect(tooLongForSms(measureSms(text), table.limit)).toBe(!fits)
 })
 
-// The links table (internal/smsrender/testdata/links.json): the links found, and the figures with
+// The links table (internal/kernel/smsrender/testdata/links.json): the links found, and the figures with
 // each one a short link.
 const linkCases = links.cases.map((c) => ({
   ...c,

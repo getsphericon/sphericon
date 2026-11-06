@@ -11,7 +11,7 @@ import (
 // (ADR 0067) and its sends over the last 24 hours; the Send cap is null when none applies.
 func (h *Handlers) WorkspaceGet(ctx context.Context) (*externalapi.WorkspaceResource, error) {
 	s := auth.TokenScoped(ctx)
-	ws, err := h.accounts.Workspace(ctx, s)
+	ws, err := h.workspaces.Get(ctx, s)
 	if err != nil {
 		return nil, err
 	}

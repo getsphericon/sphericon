@@ -10,60 +10,61 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
-	accounts "github.com/getsphericon/sphericon/internal/accounts"
-	analytics "github.com/getsphericon/sphericon/internal/analytics"
-	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
-	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
-	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
-	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	channels "github.com/getsphericon/sphericon/internal/channels"
-	consent "github.com/getsphericon/sphericon/internal/consent"
-	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
-	contacts "github.com/getsphericon/sphericon/internal/contacts"
-	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
-	integrations "github.com/getsphericon/sphericon/internal/integrations"
-	outbound "github.com/getsphericon/sphericon/internal/outbound"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
-	rules "github.com/getsphericon/sphericon/internal/rules"
-	segments "github.com/getsphericon/sphericon/internal/segments"
-	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	signup "github.com/getsphericon/sphericon/internal/signup"
-	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
-	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
-	templates "github.com/getsphericon/sphericon/internal/templates"
-	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
+	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	webhookendpoints "github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
+	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
+	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
+	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	workspacecreation "github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 type InputsImpl struct{}
 
-func (c *InputsImpl) AnalyticsRevenueWindow(source site.SiteAnalyticsRevenueRange) analytics.Window {
-	var analyticsWindow analytics.Window
+func (c *InputsImpl) AnalyticsRevenueWindow(source site.SiteAnalyticsRevenueRange) analyticsreport.Window {
+	var analyticsreportWindow analyticsreport.Window
 	switch source {
 	case site.SiteAnalyticsRevenueRange30d:
-		analyticsWindow = analytics.Window30Days
+		analyticsreportWindow = analyticsreport.Window30Days
 	case site.SiteAnalyticsRevenueRange7d:
-		analyticsWindow = analytics.Window7Days
+		analyticsreportWindow = analyticsreport.Window7Days
 	case site.SiteAnalyticsRevenueRange90d:
-		analyticsWindow = analytics.Window90Days
+		analyticsreportWindow = analyticsreport.Window90Days
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return analyticsWindow
+	return analyticsreportWindow
 }
-func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analytics.Window {
-	var analyticsWindow analytics.Window
+func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analyticsreport.Window {
+	var analyticsreportWindow analyticsreport.Window
 	switch source {
 	case site.SiteAnalyticsRange30d:
-		analyticsWindow = analytics.Window30Days
+		analyticsreportWindow = analyticsreport.Window30Days
 	case site.SiteAnalyticsRange7d:
-		analyticsWindow = analytics.Window7Days
+		analyticsreportWindow = analyticsreport.Window7Days
 	case site.SiteAnalyticsRange90d:
-		analyticsWindow = analytics.Window90Days
+		analyticsreportWindow = analyticsreport.Window90Days
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return analyticsWindow
+	return analyticsreportWindow
 }
 func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput
@@ -111,70 +112,70 @@ func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automation
 	}
 	return automationsState
 }
-func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationsteps.Step {
-	var automationstepsStep automationsteps.Step
-	automationstepsStep.Type = c.AutomationStepType(source.Type)
-	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
-	automationstepsStep.Subject = stringIn(source.Subject)
-	automationstepsStep.Body = stringIn(source.Body)
-	automationstepsStep.Doc = documentIn(source.Doc)
-	// automationstepsStep.EditorVersion: ignore
-	automationstepsStep.Seconds = int32In(source.Seconds)
-	automationstepsStep.Tag = stringIn(source.Tag)
-	automationstepsStep.Text = stringIn(source.Text)
-	automationstepsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
-	automationstepsStep.ImageURL = stringIn(source.ImageUrl)
+func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationstep.Step {
+	var automationstepStep automationstep.Step
+	automationstepStep.Type = c.AutomationStepType(source.Type)
+	automationstepStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
+	automationstepStep.Subject = stringIn(source.Subject)
+	automationstepStep.Body = stringIn(source.Body)
+	automationstepStep.Doc = documentIn(source.Doc)
+	// automationstepStep.EditorVersion: ignore
+	automationstepStep.Seconds = int32In(source.Seconds)
+	automationstepStep.Tag = stringIn(source.Tag)
+	automationstepStep.Text = stringIn(source.Text)
+	automationstepStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationstepStep.ImageURL = stringIn(source.ImageUrl)
 	if source.Buttons != nil {
-		automationstepsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		automationstepStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
 		for i := 0; i < len(source.Buttons); i++ {
-			automationstepsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+			automationstepStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
 		}
 	}
-	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
-	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
-	automationstepsStep.ID = stringIn(source.ID)
-	automationstepsStep.URL = stringIn(source.URL)
+	automationstepStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepStep.LinkTracking = boolPtrIn(source.LinkTracking)
+	automationstepStep.ID = stringIn(source.ID)
+	automationstepStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepsStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
-	automationstepsStep.Secret = stringIn(source.Secret)
-	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationstepsStep
+	automationstepStep.Secret = stringIn(source.Secret)
+	automationstepStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationstepStep
 }
-func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automationsteps.Kind {
-	var automationstepsKind automationsteps.Kind
+func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automationstep.Kind {
+	var automationstepKind automationstep.Kind
 	switch source {
 	case site.SiteAutomationStepTypeApplyTag:
-		automationstepsKind = automationsteps.ApplyTag
+		automationstepKind = automationstep.ApplyTag
 	case site.SiteAutomationStepTypeEmail:
-		automationstepsKind = automationsteps.Email
+		automationstepKind = automationstep.Email
 	case site.SiteAutomationStepTypeHTTP:
-		automationstepsKind = automationsteps.HTTP
+		automationstepKind = automationstep.HTTP
 	case site.SiteAutomationStepTypeRemoveTag:
-		automationstepsKind = automationsteps.RemoveTag
+		automationstepKind = automationstep.RemoveTag
 	case site.SiteAutomationStepTypeSMS:
-		automationstepsKind = automationsteps.SMS
+		automationstepKind = automationstep.SMS
 	case site.SiteAutomationStepTypeTelegram:
-		automationstepsKind = automationsteps.Telegram
+		automationstepKind = automationstep.Telegram
 	case site.SiteAutomationStepTypeWait:
-		automationstepsKind = automationsteps.Wait
+		automationstepKind = automationstep.Wait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationstepsKind
+	return automationstepKind
 }
-func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automationsteps.Step {
-	var automationstepsStepList []automationsteps.Step
+func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automationstep.Step {
+	var automationstepStepList []automationstep.Step
 	if source != nil {
-		automationstepsStepList = make([]automationsteps.Step, len(source))
+		automationstepStepList = make([]automationstep.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationstepsStepList[i] = c.AutomationStep(source[i])
+			automationstepStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationstepsStepList
+	return automationstepStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -208,20 +209,20 @@ func (c *InputsImpl) AutomationsSort(source site.SiteAutomationsSort) automation
 	}
 	return automationsSort
 }
-func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.Input {
-	var brandkitInput brandkit.Input
+func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkits.Input {
+	var brandkitsInput brandkits.Input
 	if source != nil {
-		brandkitInput.AccentColor = (*source).AccentColor
-		brandkitInput.TextColor = (*source).TextColor
-		brandkitInput.BackgroundColor = (*source).BackgroundColor
-		brandkitInput.HeadingFont = (*source).HeadingFont
-		brandkitInput.BodyFont = (*source).BodyFont
-		brandkitInput.LogoURL = (*source).LogoUrl
-		brandkitInput.ButtonTextColor = (*source).ButtonTextColor
-		brandkitInput.ButtonRadius = int32ToInt((*source).ButtonRadius)
-		brandkitInput.FooterText = (*source).FooterText
+		brandkitsInput.AccentColor = (*source).AccentColor
+		brandkitsInput.TextColor = (*source).TextColor
+		brandkitsInput.BackgroundColor = (*source).BackgroundColor
+		brandkitsInput.HeadingFont = (*source).HeadingFont
+		brandkitsInput.BodyFont = (*source).BodyFont
+		brandkitsInput.LogoURL = (*source).LogoUrl
+		brandkitsInput.ButtonTextColor = (*source).ButtonTextColor
+		brandkitsInput.ButtonRadius = int32ToInt((*source).ButtonRadius)
+		brandkitsInput.FooterText = (*source).FooterText
 	}
-	return brandkitInput
+	return brandkitsInput
 }
 func (c *InputsImpl) BroadcastChannel(source site.BroadcastChannel) channels.Channel {
 	var channelsChannel channels.Channel
@@ -315,14 +316,14 @@ func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts
 	}
 	return broadcastsOrder
 }
-func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) consent.Evidence {
-	var consentEvidence consent.Evidence
+func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
 	if source != nil {
-		consentEvidence.Wording = (*source).Wording
-		consentEvidence.Source = (*source).Source
-		consentEvidence.Brand = (*source).Brand
+		confirmationsEvidence.Wording = (*source).Wording
+		confirmationsEvidence.Source = (*source).Source
+		confirmationsEvidence.Brand = (*source).Brand
 	}
-	return consentEvidence
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -440,14 +441,14 @@ func (c *InputsImpl) InvitableRole(source site.SiteInvitableRole) invitation.Rol
 	}
 	return invitationRole
 }
-func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) accounts.InviteInput {
-	var accountsInviteInput accounts.InviteInput
+func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) invitations.InviteInput {
+	var invitationsInviteInput invitations.InviteInput
 	if source != nil {
-		accountsInviteInput.Email = string((*source).Email)
-		accountsInviteInput.Role = c.InvitableRole((*source).Role)
-		// accountsInviteInput.InvitedBy: ignore
+		invitationsInviteInput.Email = string((*source).Email)
+		invitationsInviteInput.Role = c.InvitableRole((*source).Role)
+		// invitationsInviteInput.InvitedBy: ignore
 	}
-	return accountsInviteInput
+	return invitationsInviteInput
 }
 func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.Role {
 	var membershipRole membership.Role
@@ -463,14 +464,84 @@ func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.R
 	}
 	return membershipRole
 }
+func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.PersonalScope {
+	var tokenscopePersonalScope tokenscope.PersonalScope
+	switch source {
+	case site.PersonalScopeAutomationsPublish:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsPublish
+	case site.PersonalScopeAutomationsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsRead
+	case site.PersonalScopeAutomationsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeAutomationsWrite
+	case site.PersonalScopeBroadcastsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsRead
+	case site.PersonalScopeBroadcastsSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsSend
+	case site.PersonalScopeBroadcastsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeBroadcastsWrite
+	case site.PersonalScopeContactsExport:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsExport
+	case site.PersonalScopeContactsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsRead
+	case site.PersonalScopeContactsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeContactsWrite
+	case site.PersonalScopeCustomFieldsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeCustomFieldsRead
+	case site.PersonalScopeCustomFieldsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeCustomFieldsWrite
+	case site.PersonalScopeEmailsSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEmailsSend
+	case site.PersonalScopeEnrollmentsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEnrollmentsRead
+	case site.PersonalScopeEventsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEventsRead
+	case site.PersonalScopeEventsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeEventsWrite
+	case site.PersonalScopeIntegrationsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeIntegrationsRead
+	case site.PersonalScopeIntegrationsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeIntegrationsWrite
+	case site.PersonalScopeMcpSend:
+		tokenscopePersonalScope = tokenscope.PersonalScopeMcpSend
+	case site.PersonalScopeSegmentsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSegmentsRead
+	case site.PersonalScopeSegmentsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSegmentsWrite
+	case site.PersonalScopeSendingDomainsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSendingDomainsRead
+	case site.PersonalScopeSendingDomainsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSendingDomainsWrite
+	case site.PersonalScopeSuppressionsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeSuppressionsWrite
+	case site.PersonalScopeTemplatesRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTemplatesRead
+	case site.PersonalScopeTemplatesWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTemplatesWrite
+	case site.PersonalScopeTrackingDomainsRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTrackingDomainsRead
+	case site.PersonalScopeTrackingDomainsWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeTrackingDomainsWrite
+	case site.PersonalScopeWebhooksRead:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksRead
+	case site.PersonalScopeWebhooksRegenerate:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksRegenerate
+	case site.PersonalScopeWebhooksTest:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksTest
+	case site.PersonalScopeWebhooksWrite:
+		tokenscopePersonalScope = tokenscope.PersonalScopeWebhooksWrite
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return tokenscopePersonalScope
+}
 func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInput) apitokens.PersonalInput {
 	var apitokensPersonalInput apitokens.PersonalInput
 	if source != nil {
 		apitokensPersonalInput.Name = (*source).Name
 		if (*source).Scopes != nil {
-			apitokensPersonalInput.Scopes = make([]site.PersonalScope, len((*source).Scopes))
+			apitokensPersonalInput.Scopes = make([]tokenscope.PersonalScope, len((*source).Scopes))
 			for i := 0; i < len((*source).Scopes); i++ {
-				apitokensPersonalInput.Scopes[i] = c.siteapiPersonalScopeToSiteapiPersonalScope((*source).Scopes[i])
+				apitokensPersonalInput.Scopes[i] = c.PersonalScope((*source).Scopes[i])
 			}
 		}
 		apitokensPersonalInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
@@ -578,15 +649,15 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 	}
 	return sendingdomainsCreateInput
 }
-func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.Input {
-	var signupInput signup.Input
+func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) workspacecreation.SignUpInput {
+	var workspacecreationSignUpInput workspacecreation.SignUpInput
 	if source != nil {
-		signupInput.Name = string((*source).Name)
-		signupInput.Email = string((*source).Email)
-		signupInput.Password = stringIn((*source).Password)
-		signupInput.SignupItems = c.SignupAnswers((*source).SignupItems)
+		workspacecreationSignUpInput.Name = string((*source).Name)
+		workspacecreationSignUpInput.Email = string((*source).Email)
+		workspacecreationSignUpInput.Password = stringIn((*source).Password)
+		workspacecreationSignUpInput.SignupItems = c.SignupAnswers((*source).SignupItems)
 	}
-	return signupInput
+	return workspacecreationSignUpInput
 }
 func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consentrecords.Answer {
 	var consentrecordsAnswerList []consentrecords.Answer
@@ -674,19 +745,19 @@ func (c *InputsImpl) SignupSource(source site.SiteSignupSource) signupsurveyresp
 	}
 	return signupsurveyresponseHeardFrom
 }
-func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurvey.Answers {
-	var signupsurveyAnswers signupsurvey.Answers
+func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurveyresponses.Answers {
+	var signupsurveyresponsesAnswers signupsurveyresponses.Answers
 	if source != nil {
-		signupsurveyAnswers.Role = c.SignupRole((*source).Role)
-		signupsurveyAnswers.RoleOther = stringPtrIn((*source).RoleOther)
-		signupsurveyAnswers.CompanySize = c.SignupCompanySize((*source).CompanySize)
-		signupsurveyAnswers.CompanySizeOther = stringPtrIn((*source).CompanySizeOther)
-		signupsurveyAnswers.MainGoal = c.SignupGoal((*source).MainGoal)
-		signupsurveyAnswers.MainGoalOther = stringPtrIn((*source).MainGoalOther)
-		signupsurveyAnswers.HeardFrom = signupSourcePtrIn(c, (*source).HeardFrom)
-		signupsurveyAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
+		signupsurveyresponsesAnswers.Role = c.SignupRole((*source).Role)
+		signupsurveyresponsesAnswers.RoleOther = stringPtrIn((*source).RoleOther)
+		signupsurveyresponsesAnswers.CompanySize = c.SignupCompanySize((*source).CompanySize)
+		signupsurveyresponsesAnswers.CompanySizeOther = stringPtrIn((*source).CompanySizeOther)
+		signupsurveyresponsesAnswers.MainGoal = c.SignupGoal((*source).MainGoal)
+		signupsurveyresponsesAnswers.MainGoalOther = stringPtrIn((*source).MainGoalOther)
+		signupsurveyresponsesAnswers.HeardFrom = signupSourcePtrIn(c, (*source).HeardFrom)
+		signupsurveyresponsesAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
 	}
-	return signupsurveyAnswers
+	return signupsurveyresponsesAnswers
 }
 func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput
@@ -750,34 +821,34 @@ func (c *InputsImpl) TelegramButton(source site.TelegramButton) telegramrender.B
 	telegramrenderButton.URL = source.URL
 	return telegramrenderButton
 }
-func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.CreateInput {
-	var templatesCreateInput templates.CreateInput
+func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) emailtemplates.CreateInput {
+	var emailtemplatesCreateInput emailtemplates.CreateInput
 	if source != nil {
-		templatesCreateInput.Name = (*source).Name
-		templatesCreateInput.Subject = stringPtrIn((*source).Subject)
-		templatesCreateInput.Body = stringPtrIn((*source).Body)
-		templatesCreateInput.Doc = documentIn((*source).Doc)
-		// templatesCreateInput.Prepared: ignore
+		emailtemplatesCreateInput.Name = (*source).Name
+		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
+		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
+		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
+		// emailtemplatesCreateInput.Prepared: ignore
 	}
-	return templatesCreateInput
+	return emailtemplatesCreateInput
 }
-func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) templates.UpdateInput {
-	var templatesUpdateInput templates.UpdateInput
+func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) emailtemplates.UpdateInput {
+	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
-		templatesUpdateInput.Name = stringPatch((*source).Name)
-		templatesUpdateInput.Subject = stringPatch((*source).Subject)
-		templatesUpdateInput.Body = stringPatch((*source).Body)
-		templatesUpdateInput.Doc = documentPatch((*source).Doc)
+		emailtemplatesUpdateInput.Name = stringPatch((*source).Name)
+		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
+		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)
+		emailtemplatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
-	return templatesUpdateInput
+	return emailtemplatesUpdateInput
 }
-func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outbound.TestAddress {
-	var outboundTestAddress outbound.TestAddress
+func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outboundmessages.TestAddress {
+	var outboundmessagesTestAddress outboundmessages.TestAddress
 	if source != nil {
-		outboundTestAddress.Email = emailIn((*source).Email)
-		outboundTestAddress.Phone = stringIn((*source).Phone)
+		outboundmessagesTestAddress.Email = emailIn((*source).Email)
+		outboundmessagesTestAddress.Phone = stringIn((*source).Phone)
 	}
-	return outboundTestAddress
+	return outboundmessagesTestAddress
 }
 func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
 	var apitokensInput apitokens.Input
@@ -793,98 +864,28 @@ func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.In
 	}
 	return apitokensInput
 }
-func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhooks.CreateInput {
-	var webhooksCreateInput webhooks.CreateInput
+func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhookendpoints.CreateInput {
+	var webhookendpointsCreateInput webhookendpoints.CreateInput
 	if source != nil {
-		webhooksCreateInput.URL = (*source).URL
+		webhookendpointsCreateInput.URL = (*source).URL
 		if (*source).EventTypes != nil {
-			webhooksCreateInput.EventTypes = make([]string, len((*source).EventTypes))
+			webhookendpointsCreateInput.EventTypes = make([]string, len((*source).EventTypes))
 			for i := 0; i < len((*source).EventTypes); i++ {
-				webhooksCreateInput.EventTypes[i] = (*source).EventTypes[i]
+				webhookendpointsCreateInput.EventTypes[i] = (*source).EventTypes[i]
 			}
 		}
-		webhooksCreateInput.Enabled = boolPtrIn((*source).Enabled)
+		webhookendpointsCreateInput.Enabled = boolPtrIn((*source).Enabled)
 	}
-	return webhooksCreateInput
+	return webhookendpointsCreateInput
 }
-func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhooks.UpdateInput {
-	var webhooksUpdateInput webhooks.UpdateInput
+func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpoints.UpdateInput {
+	var webhookendpointsUpdateInput webhookendpoints.UpdateInput
 	if source != nil {
-		webhooksUpdateInput.URL = stringPatch((*source).URL)
-		webhooksUpdateInput.EventTypes = listPatch((*source).EventTypes)
-		webhooksUpdateInput.Enabled = boolPatch((*source).Enabled)
+		webhookendpointsUpdateInput.URL = stringPatch((*source).URL)
+		webhookendpointsUpdateInput.EventTypes = listPatch((*source).EventTypes)
+		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
-	return webhooksUpdateInput
-}
-func (c *InputsImpl) siteapiPersonalScopeToSiteapiPersonalScope(source site.PersonalScope) site.PersonalScope {
-	var siteapiPersonalScope site.PersonalScope
-	switch source {
-	case site.PersonalScopeAutomationsPublish:
-		siteapiPersonalScope = site.PersonalScopeAutomationsPublish
-	case site.PersonalScopeAutomationsRead:
-		siteapiPersonalScope = site.PersonalScopeAutomationsRead
-	case site.PersonalScopeAutomationsWrite:
-		siteapiPersonalScope = site.PersonalScopeAutomationsWrite
-	case site.PersonalScopeBroadcastsRead:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsRead
-	case site.PersonalScopeBroadcastsSend:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsSend
-	case site.PersonalScopeBroadcastsWrite:
-		siteapiPersonalScope = site.PersonalScopeBroadcastsWrite
-	case site.PersonalScopeContactsExport:
-		siteapiPersonalScope = site.PersonalScopeContactsExport
-	case site.PersonalScopeContactsRead:
-		siteapiPersonalScope = site.PersonalScopeContactsRead
-	case site.PersonalScopeContactsWrite:
-		siteapiPersonalScope = site.PersonalScopeContactsWrite
-	case site.PersonalScopeCustomFieldsRead:
-		siteapiPersonalScope = site.PersonalScopeCustomFieldsRead
-	case site.PersonalScopeCustomFieldsWrite:
-		siteapiPersonalScope = site.PersonalScopeCustomFieldsWrite
-	case site.PersonalScopeEmailsSend:
-		siteapiPersonalScope = site.PersonalScopeEmailsSend
-	case site.PersonalScopeEnrollmentsRead:
-		siteapiPersonalScope = site.PersonalScopeEnrollmentsRead
-	case site.PersonalScopeEventsRead:
-		siteapiPersonalScope = site.PersonalScopeEventsRead
-	case site.PersonalScopeEventsWrite:
-		siteapiPersonalScope = site.PersonalScopeEventsWrite
-	case site.PersonalScopeIntegrationsRead:
-		siteapiPersonalScope = site.PersonalScopeIntegrationsRead
-	case site.PersonalScopeIntegrationsWrite:
-		siteapiPersonalScope = site.PersonalScopeIntegrationsWrite
-	case site.PersonalScopeMcpSend:
-		siteapiPersonalScope = site.PersonalScopeMcpSend
-	case site.PersonalScopeSegmentsRead:
-		siteapiPersonalScope = site.PersonalScopeSegmentsRead
-	case site.PersonalScopeSegmentsWrite:
-		siteapiPersonalScope = site.PersonalScopeSegmentsWrite
-	case site.PersonalScopeSendingDomainsRead:
-		siteapiPersonalScope = site.PersonalScopeSendingDomainsRead
-	case site.PersonalScopeSendingDomainsWrite:
-		siteapiPersonalScope = site.PersonalScopeSendingDomainsWrite
-	case site.PersonalScopeSuppressionsWrite:
-		siteapiPersonalScope = site.PersonalScopeSuppressionsWrite
-	case site.PersonalScopeTemplatesRead:
-		siteapiPersonalScope = site.PersonalScopeTemplatesRead
-	case site.PersonalScopeTemplatesWrite:
-		siteapiPersonalScope = site.PersonalScopeTemplatesWrite
-	case site.PersonalScopeTrackingDomainsRead:
-		siteapiPersonalScope = site.PersonalScopeTrackingDomainsRead
-	case site.PersonalScopeTrackingDomainsWrite:
-		siteapiPersonalScope = site.PersonalScopeTrackingDomainsWrite
-	case site.PersonalScopeWebhooksRead:
-		siteapiPersonalScope = site.PersonalScopeWebhooksRead
-	case site.PersonalScopeWebhooksRegenerate:
-		siteapiPersonalScope = site.PersonalScopeWebhooksRegenerate
-	case site.PersonalScopeWebhooksTest:
-		siteapiPersonalScope = site.PersonalScopeWebhooksTest
-	case site.PersonalScopeWebhooksWrite:
-		siteapiPersonalScope = site.PersonalScopeWebhooksWrite
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiPersonalScope
+	return webhookendpointsUpdateInput
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

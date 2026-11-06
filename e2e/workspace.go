@@ -17,10 +17,10 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // tokenScopes are everything the scenario steps need; a test's token carries them all.
@@ -90,18 +90,18 @@ func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (colle
 }
 
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
-// with internal/accounts and internal/apitokens (the bootstrap token is not used, it
+// with internal/domain/identity/users, internal/usecase/workspacecreation and internal/domain/identity/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
 func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	tb.Helper()
 	ctx := tb.Context()
 	id := uniq()
 
-	user, err := e.accounts.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
+	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
 	require.NoError(tb, err)
-	ws, err := e.accounts.CreateWorkspace(ctx, user.ID, "e2e "+id)
+	ws, err := e.creation.CreateWorkspace(ctx, user.ID, "e2e "+id)
 	require.NoError(tb, err)
-	scoped, _, err := e.accounts.Scope(ctx, user.ID, ws.PublicID)
+	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)
 	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
 	require.NoError(tb, err)
@@ -161,7 +161,7 @@ func (w *Workspace) AddOwner() []int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	id := uniq()
-	user, err := w.env.accounts.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
+	user, err := w.env.users.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
 	require.NoError(w.t, err)
 	// An owner change takes its Workspace feed position inside a transaction.
 	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -176,7 +176,7 @@ func (w *Workspace) AddOwner() []int64 {
 func (w *Workspace) OwnerMembershipIDs() []int64 {
 	w.t.Helper()
 	ids, err := w.scoped.Membership().Query().
-		Where(roles.Owners()).
+		Where(memberships.OwnerRole()).
 		Order(ent.Asc(membership.FieldID)).
 		IDs(w.t.Context())
 	require.NoError(w.t, err)
@@ -188,7 +188,7 @@ func (w *Workspace) OwnerMembershipIDs() []int64 {
 func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		_, err := w.env.accounts.ChangeMembershipRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
+		_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
 			membership.RoleOwner, ids[i], membership.RoleMember)
 		return err
 	})
@@ -199,7 +199,7 @@ func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 func (w *Workspace) RemoveConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
 	})
 }
 
@@ -209,11 +209,11 @@ func (w *Workspace) DemoteAndRemoveConcurrently(demote, remove int64) []error {
 	w.t.Helper()
 	return w.concurrently(2, func(i int) error {
 		if i == 0 {
-			_, err := w.env.accounts.ChangeMembershipRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
+			_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
 				membership.RoleOwner, demote, membership.RoleMember)
 			return err
 		}
-		return w.env.accounts.RemoveMembership(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
 	})
 }
 

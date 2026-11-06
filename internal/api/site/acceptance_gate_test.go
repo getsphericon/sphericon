@@ -10,8 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -189,7 +188,7 @@ func TestARequiredItemAddedAfterUsersExistGatesThem(t *testing.T) {
 func TestAnOwnerMadeByTheOperatorIsGated(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	_, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
+	_, err := env.WorkspaceCreation.CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	refused := send(t, env, "operator@example.com", http.MethodGet, "/site/workspaces", "")

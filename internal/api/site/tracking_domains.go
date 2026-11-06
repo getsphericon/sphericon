@@ -7,8 +7,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
-// The Tracking domain operations are thin adapters over internal/trackingdomains (ADR 0071), the
-// module /api shares.
+// The Tracking domain operations are thin adapters over internal/domain/sending/trackingdomains
+// (ADR 0071), the module /api shares.
 
 // trackingDomainResource maps the row, then attaches the CNAME to publish, whose target the
 // module knows and the mapper cannot see.

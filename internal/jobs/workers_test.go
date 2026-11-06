@@ -33,24 +33,25 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/stepping"
-	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // riverEnv is a real river client over the test database. The workers read and
@@ -102,7 +103,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	require.NoError(t, err)
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	enqueue, err := jobs.NewQueue(pool, nil)
+	enqueue, err := jobs.NewQueue(pool)
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, jobs: enqueue, cipher: cipher, cfg: cfg, sender: fs}
 	return e
@@ -118,7 +119,7 @@ func (e *riverEnv) workCtx() context.Context {
 // on its own. It rolls back with the test.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepping.QueueHTTPSteps))
+	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepexecution.QueueHTTPSteps))
 	require.NoError(t, err)
 }
 
@@ -567,13 +568,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, accounts.OwnerNotifier(env.DB, env.SystemMail))).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -585,7 +586,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)
@@ -616,26 +617,26 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.Bus).Work(ctx, job(jobs.EvaluateTriggerArgs{
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
-	require.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
+	require.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
 	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
 	// Step 1 sends and queues the next step; the wait step queues a delayed one; the last
 	// step finishes the run without queueing more.
 	w := jobs.NewRunStepWorker(e.DB, stepperOf(e.TestEnv, resolvingTo(e.sender)))
-	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 0})))
+	require.NoError(t, w.Work(ctx, job(stepexecution.RunStepArgs{RunID: run.ID, Step: 0})))
 	assert.Len(t, e.sender.sent, 1)
-	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 2)
-	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 1})))
-	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 3, "the wait step queues a delayed follow-up")
-	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 2})))
+	assert.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 2)
+	require.NoError(t, w.Work(ctx, job(stepexecution.RunStepArgs{RunID: run.ID, Step: 1})))
+	assert.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 3, "the wait step queues a delayed follow-up")
+	require.NoError(t, w.Work(ctx, job(stepexecution.RunStepArgs{RunID: run.ID, Step: 2})))
 	assert.Len(t, e.sender.sent, 2)
-	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 4)
-	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: run.ID, Step: 3})))
+	assert.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 4)
+	require.NoError(t, w.Work(ctx, job(stepexecution.RunStepArgs{RunID: run.ID, Step: 3})))
 	assert.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, run.ID).Status)
-	assert.Len(t, e.JobsOf(t, stepping.RunStepArgs{}.Kind()), 4, "a finished run queues nothing")
+	assert.Len(t, e.JobsOf(t, stepexecution.RunStepArgs{}.Kind()), 4, "a finished run queues nothing")
 
 	// An unknown run (erased with its Contact) is finished, not retried.
-	require.NoError(t, w.Work(ctx, job(stepping.RunStepArgs{RunID: 424242})))
+	require.NoError(t, w.Work(ctx, job(stepexecution.RunStepArgs{RunID: 424242})))
 }
 
 // failingQueue is a job queue that cannot take a job.
@@ -674,7 +675,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 
 	runs := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactLiamID)).AllX(ctx)
 	require.Len(t, runs, 1)
-	queued := e.JobsOf(t, stepping.RunStepArgs{}.Kind())
+	queued := e.JobsOf(t, stepexecution.RunStepArgs{}.Kind())
 	require.Len(t, queued, 1, "the Enrollment has its first step queued")
 	assert.EqualValues(t, runs[0].ID, queued[0]["run_id"])
 }
@@ -725,7 +726,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints")
 	require.NoError(t, err)
 	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
-	assert.Equal(t, outbound.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
+	assert.Equal(t, outboundmessages.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
 }
 
 func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {

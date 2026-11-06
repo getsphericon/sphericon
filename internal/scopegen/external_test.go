@@ -53,8 +53,8 @@ func TestGenerateExternalPermissionsEmitsTheOperationsThatDeclareThem(t *testing
 
 	out := string(src)
 	require.Contains(t, out, "package auth")
-	require.Regexp(t, `ContactsExportOperation:\s+\{accounts.PermContactsExport, accounts.PermContactsErase\},`, out)
-	require.Regexp(t, `SuppressionsCreateOperation:\s+\{accounts.PermSuppressionsManage\},`, out)
+	require.Regexp(t, `ContactsExportOperation:\s+\{memberships.PermContactsExport, memberships.PermContactsErase\},`, out)
+	require.Regexp(t, `SuppressionsCreateOperation:\s+\{memberships.PermSuppressionsManage\},`, out)
 	require.NotContains(t, out, "ContactsListOperation", "an operation that declares no Permission has no entry")
 }
 

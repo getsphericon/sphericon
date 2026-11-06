@@ -16,9 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -65,13 +65,13 @@ func signInWith(t *testing.T, fake *testhelper.FakeSignin, b *testhelper.Redirec
 
 // refusalCode is the Reason in the `error` of the page (the login page, or the settings page
 // for a link flow) a refused callback lands on.
-func refusalCode(t *testing.T, resp testhelper.Reply, page string) signin.Reason {
+func refusalCode(t *testing.T, resp testhelper.Reply, page string) signinprovider.Reason {
 	t.Helper()
 	require.Equal(t, http.StatusFound, resp.StatusCode)
 	u, err := url.Parse(resp.Header.Get("Location"))
 	require.NoError(t, err)
 	require.Equal(t, page, u.Path)
-	return signin.Reason(u.Query().Get("error"))
+	return signinprovider.Reason(u.Query().Get("error"))
 }
 
 // meStatus is what /site/me answers the browser: 200 when its session is live.
@@ -172,12 +172,12 @@ func TestSigninALinkedIdentityOfAFixtureUserSignsIn(t *testing.T) {
 func TestSigninRefusesWhatTheProviderDoesNotProve(t *testing.T) {
 	cases := map[string]struct {
 		who  testhelper.SigninIdentity
-		code signin.Reason
+		code signinprovider.Reason
 	}{
-		"an unverified email":               {testhelper.SigninIdentity{Subject: "s1", Email: "a@gmail.com", EmailVerified: false}, signin.ReasonEmailUnverified},
-		"a non-Gmail address without hd":    {testhelper.SigninIdentity{Subject: "s2", Email: "a@corp.test", EmailVerified: true}, signin.ReasonEmailNotTrusted},
-		"no email at all":                   {testhelper.SigninIdentity{Subject: "s3"}, signin.ReasonEmailUnverified},
-		"an unverified hosted-domain email": {testhelper.SigninIdentity{Subject: "s4", Email: "a@corp.test", EmailVerified: false, HostedDomain: "corp.test"}, signin.ReasonEmailUnverified},
+		"an unverified email":               {testhelper.SigninIdentity{Subject: "s1", Email: "a@gmail.com", EmailVerified: false}, signinprovider.ReasonEmailUnverified},
+		"a non-Gmail address without hd":    {testhelper.SigninIdentity{Subject: "s2", Email: "a@corp.test", EmailVerified: true}, signinprovider.ReasonEmailNotTrusted},
+		"no email at all":                   {testhelper.SigninIdentity{Subject: "s3"}, signinprovider.ReasonEmailUnverified},
+		"an unverified hosted-domain email": {testhelper.SigninIdentity{Subject: "s4", Email: "a@corp.test", EmailVerified: false, HostedDomain: "corp.test"}, signinprovider.ReasonEmailUnverified},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -208,7 +208,7 @@ func TestSigninADeniedConsentLandsOnLoginWithAnError(t *testing.T) {
 
 	resp := b.Get(t, fake.Deny(t, authURL))
 
-	assert.Equal(t, signin.ReasonDenied, refusalCode(t, resp, loginErrorPath))
+	assert.Equal(t, signinprovider.ReasonDenied, refusalCode(t, resp, loginErrorPath))
 	assert.Equal(t, http.StatusUnauthorized, meStatus(t, b))
 }
 
@@ -224,7 +224,7 @@ func TestSigninABadStateIsRefused(t *testing.T) {
 
 	resp := b.Get(t, callback.RequestURI())
 
-	assert.Equal(t, signin.ReasonInvalidState, refusalCode(t, resp, loginErrorPath))
+	assert.Equal(t, signinprovider.ReasonInvalidState, refusalCode(t, resp, loginErrorPath))
 	exists, err := env.DB.User.Query().Where(entuser.Email(newcomer.Email)).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, exists, "nothing was created")
@@ -237,7 +237,7 @@ func TestSigninACallbackFromAnotherBrowserIsRefused(t *testing.T) {
 
 	resp := elsewhere.Get(t, fake.Authorize(t, authURL, newcomer))
 
-	assert.Equal(t, signin.ReasonInvalidState, refusalCode(t, resp, loginErrorPath))
+	assert.Equal(t, signinprovider.ReasonInvalidState, refusalCode(t, resp, loginErrorPath))
 }
 
 func TestSigninACallbackCannotBeReplayed(t *testing.T) {
@@ -249,7 +249,7 @@ func TestSigninACallbackCannotBeReplayed(t *testing.T) {
 
 	resp := b.Get(t, callback)
 
-	assert.Equal(t, signin.ReasonProviderError, refusalCode(t, resp, loginErrorPath), "the provider's code works once")
+	assert.Equal(t, signinprovider.ReasonProviderError, refusalCode(t, resp, loginErrorPath), "the provider's code works once")
 }
 
 func TestSigninStartKeepsTheFlowInAHttpOnlyLaxCookieScopedToTheSigninPrefix(t *testing.T) {
@@ -300,7 +300,7 @@ func TestSigninACallbackForAProviderThatIsNotEnabledLandsOnLogin(t *testing.T) {
 
 	resp := env.NewRedirectBrowser(t).Get(t, "/site/auth/signin/gitlab/callback?code=x&state=y")
 
-	assert.Equal(t, signin.ReasonProviderUnavailable, refusalCode(t, resp, loginErrorPath))
+	assert.Equal(t, signinprovider.ReasonProviderUnavailable, refusalCode(t, resp, loginErrorPath))
 }
 
 // ADR 0063: sign-up is always open, so a provider's first login creates a User on a
@@ -314,7 +314,7 @@ func TestSigninANewPersonGetsAnAccountOnASelfHostedInstance(t *testing.T) {
 	spaces, err := env.SiteActor(t, newcomer.Email).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
+	assert.Equal(t, users.FirstWorkspaceName, spaces[0].Name)
 }
 
 // samIdentity is Sam, whose account has a Linked identity and an enrolled Second factor.

@@ -9,11 +9,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // withStats maps a Broadcast and attaches its delivery figures, which are derived from its
@@ -221,7 +221,7 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Test
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), &outbound.Asker{UserID: a.UserID, Email: a.Email})
+	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, inputs.TestAddress(req), &outboundmessages.Asker{UserID: a.UserID, Email: a.Email})
 	if err != nil {
 		return nil, err
 	}

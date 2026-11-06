@@ -1,7 +1,7 @@
 // Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
 // console's Enterprise sections under /staff, with the core Staff member's session check
-// (internal/staffmembers), and the service endpoints under /service, with the Service credential's.
-// A handler receives the request, calls the domain module ee/staff and maps what it returns; the
+// (internal/domain/identity/staffmembers), and the service endpoints under /service, with the Service credential's.
+// A handler receives the request, calls the use case ee/usecase/workspaceoversight and maps what it returns; the
 // Edition (ee) builds the surfaces and the composition root mounts them.
 //
 // Governed by ee/LICENSE, not the AGPL.
@@ -12,27 +12,27 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // Surface is the Enterprise part of the /staff API: the handlers and the security handler
 // over one Module, for the composition root to mount behind the core /staff surface. The
-// session is the core Staff member's (internal/staffmembers).
+// session is the core Staff member's (internal/domain/identity/staffmembers).
 type Surface struct {
 	handlers *Handlers
 	security *SecurityHandler
 }
 
 // NewSurface builds the surface.
-func NewSurface(m *eestaff.Module, s *staffmembers.Sessions) *Surface {
+func NewSurface(m *workspaceoversight.UseCase, s *staffmembers.Sessions) *Surface {
 	return &Surface{handlers: &Handlers{module: m}, security: &SecurityHandler{sessions: s}}
 }
 
@@ -45,13 +45,13 @@ func (s *Surface) Server(opts ...staffeeapi.ServerOption) (http.Handler, error) 
 
 // Handlers implements staffeeapi.Handler.
 type Handlers struct {
-	module *eestaff.Module
+	module *workspaceoversight.UseCase
 }
 
 var _ staffeeapi.Handler = (*Handlers)(nil)
 
 // NewError answers a refused or failed request with the contract's Problem: the status and
-// the body are decided once for every surface (internal/problem).
+// the body are decided once for every surface (internal/api/problem).
 func (*Handlers) NewError(ctx context.Context, err error) *staffeeapi.ProblemDetailsStatusCode {
 	return problem.Staffee(ctx, err)
 }
@@ -78,10 +78,10 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 }
 
 // review is the review state the list is filtered by; none narrows it to no state.
-func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
+func review(p staffeeapi.OptStaffWorkspaceReview) abusedetector.Review {
 	v, ok := p.Get()
 	if !ok {
-		return abuse.ReviewNone
+		return abusedetector.ReviewNone
 	}
 	return staffMapper.ReviewIn(v)
 }
@@ -107,7 +107,7 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 	res := staffMapper.WorkspaceDetailToResource(w)
 	res.Holds = staffMapper.HoldsToResources(active)
 	res.Abuse = staffMapper.AbuseToResource(w)
-	if breach.Tier != abuse.TierNone {
+	if breach.Tier != abusedetector.TierNone {
 		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d)

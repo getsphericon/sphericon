@@ -3,27 +3,28 @@ package site
 import (
 	"context"
 	"fmt"
-	"github.com/getsphericon/sphericon/internal/problem"
 	"net/http"
 
+	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/clientip"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 )
 
 // SitePublicConfirmationsPerform is the double opt-in confirmation page's button
 // (ADR 0013): the one place a confirmation is performed.
 func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params siteapi.SitePublicConfirmationsPerformParams) error {
 	target, err := h.tracker.DecodeConfirm(params.Token)
-	if tracking.IsExpired(err) {
+	if messagetoken.IsExpired(err) {
 		// Kept by hand: no refusal kind is a 410, the answer that offers a new link.
 		return &problem.Error{Status: http.StatusGone, Detail: "confirmation link expired"}
 	}
 	if err != nil {
 		return err
 	}
-	if err := consent.RecordConfirmation(ctx, h.bus, target, clientip.FromContext(ctx)); err != nil {
+	if err := confirmations.RecordConfirmation(ctx, h.bus, h.workspaces.LinkScope(target.WorkspaceID), target, clientip.FromContext(ctx)); err != nil {
 		return fmt.Errorf("record confirmation: %w", err)
 	}
 	return nil
@@ -36,7 +37,7 @@ func (h *Handlers) SitePublicUnsubscribesPerform(ctx context.Context, params sit
 	if err != nil {
 		return err
 	}
-	if err := consent.RecordUnsubscribe(ctx, h.bus, target); err != nil {
+	if err := h.unsubscribe.RecordLink(ctx, h.workspaces.LinkScope(target.WorkspaceID), target); err != nil {
 		return fmt.Errorf("record unsubscribe: %w", err)
 	}
 	return nil

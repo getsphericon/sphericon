@@ -6,9 +6,10 @@ import (
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
 // SiteOAuthDescribe validates an OAuth authorization request for the consent
@@ -35,20 +36,20 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 
 // SiteOAuthDecide records the signed-in user's consent decision. Approving creates a Connection
 // tied to the User's Membership of the chosen Workspace (ADR 0061), so any member may approve,
-// but only scopes their Role may grant: oauthserver.Decide refuses the rest with the Permission's
+// but only scopes their Role may grant: oauthclients.Module.Decide refuses the rest with the Permission's
 // refusal (403 permission_required). The Workspace is named in the body, not the path, so Access
 // does not resolve it: the handler loads the Membership itself and admits it as Access admits
 // the Membership of any operation of a Workspace.
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (*siteapi.SiteOAuthDecisionResult, error) {
 	session := auth.GetSiteAuth(ctx)
 	if session == nil {
-		return nil, accounts.ErrWorkspaceNotFound
+		return nil, workspaces.ErrNotFound
 	}
-	_, m, err := h.accounts.Scope(ctx, session.UserID, string(req.WorkspaceId))
+	_, m, err := h.memberships.Scope(ctx, session.UserID, string(req.WorkspaceId))
 	if err != nil {
 		return nil, err
 	}
-	err = h.accounts.Admit(ctx, accounts.Admission{
+	err = h.users.Admit(ctx, users.Admission{
 		UserID:        session.UserID,
 		Membership:    m,
 		StrongSession: currentSession(ctx).Method.Strong(),
@@ -58,7 +59,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 		return nil, err
 	}
 
-	target, err := h.oauth.Decide(ctx, oauthserver.Decision{
+	target, err := h.oauth.Decide(ctx, oauthclients.Decision{
 		ClientID:      req.ClientId,
 		RedirectURI:   req.RedirectUri,
 		State:         req.State.Or(""),

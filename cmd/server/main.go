@@ -13,8 +13,8 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/doctor"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )

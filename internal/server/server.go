@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -26,23 +25,25 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/accountlink"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
-	"github.com/getsphericon/sphericon/internal/clientip"
-	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/logging"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/paths"
-	"github.com/getsphericon/sphericon/internal/problem"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
+	"github.com/getsphericon/sphericon/internal/infra/logging"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/server/spa"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
 // New builds the top-level net/http handler wiring the three ogen-generated
@@ -52,7 +53,7 @@ import (
 // the site, external and collect handlers get none (ADR 0017). schema answers the development
 // schema guard (SchemaGuard). limiter is the process's request budgets, shared with the
 // internal listener.
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site apisite.Deps, detector *machine.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *privaterelayranges.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
@@ -72,7 +73,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
 		siteapi.WithPathPrefix("/site"),
 		siteapi.WithMiddleware(siteHandlers.Access),
-		siteapi.WithErrorHandler(ProblemErrorHandler),
+		siteapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -108,14 +109,14 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauthserver.New(site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
+	oauthauthorization.New(client, site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
-		apicollect.NewHandlers(bus, site.Bindings),
+		apicollect.NewHandlers(bus, site.Bindings, visitoridentification.New(bus)),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
-		collectapi.WithErrorHandler(ProblemErrorHandler),
+		collectapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -130,7 +131,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
-	trackingH := trackingHandler(client, bus, site.Tracker, limiter, detector, cfg.AppURL)
+	trackingH := trackingHandler(client, bus, site.Tracker, site.Unsubscribe, limiter, detector, cfg.AppURL)
 	mux.Handle("/e/", trackingH)
 	mux.Handle("/c/", trackingH)
 
@@ -173,7 +174,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 // clock.
 func ExternalSecurity(client *ent.Client, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
 	return apiauth.NewExternalSecurityHandler(apiauth.ExternalSecurityDeps{
-		Ent: client, Bus: deps.Bus, Accounts: deps.Accounts, Clock: deps.Clock,
+		Ent: client, Bus: deps.Bus, Users: deps.Users, Clock: deps.Clock,
 	})
 }
 
@@ -185,7 +186,7 @@ func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHan
 		apiexternal.NewHandlers(deps),
 		security,
 		externalapi.WithPathPrefix("/api"),
-		externalapi.WithErrorHandler(ProblemErrorHandler),
+		externalapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -203,28 +204,28 @@ type StaffSections interface {
 }
 
 // NewStaffAPI builds the /staff handler with RFC 7807 errors: the core ogen server
-// (internal/api/staff) over the Staff member module, the Sign-up items and the Instance state,
-// whose not-found handler is the Enterprise ogen server, so each contract routes its own paths
-// and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
+// (internal/api/staff) over the Staff member module, the Sign-up items, the Instance state and the
+// Telemetry report, whose not-found handler is the Enterprise ogen server, so each contract routes
+// its own paths and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
 // no handler, which New mounts as a 404; nil sections (no `staff` license) leave every path the
 // core does not route a 404.
 //
 // jobs is the job queue's UI (River UI), served under paths.StaffJobs to a signed-in Staff member
 // only; nil leaves that path to the contract's server (a 404).
-func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instance.Module, sections StaffSections, jobs http.Handler) (http.Handler, error) {
-	core := apistaff.NewSurface(members, items, inst)
+func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instancestates.Module, report *telemetryreport.UseCase, sections StaffSections, jobs http.Handler) (http.Handler, error) {
+	core := apistaff.NewSurface(members, items, inst, report)
 	if core == nil {
 		return nil, nil
 	}
 	rest := http.NotFoundHandler()
 	if sections != nil {
-		h, err := sections.Server(staffeeapi.WithErrorHandler(ProblemErrorHandler))
+		h, err := sections.Server(staffeeapi.WithErrorHandler(problem.ErrorHandler))
 		if err != nil {
 			return nil, err
 		}
 		rest = h
 	}
-	srv, err := core.Server(staffapi.WithErrorHandler(ProblemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
+	srv, err := core.Server(staffapi.WithErrorHandler(problem.ErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +255,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limi
 	mux := http.NewServeMux()
 	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
 	if surface != nil {
-		srv, err := surface.Server(serviceapi.WithErrorHandler(ProblemErrorHandler))
+		srv, err := surface.Server(serviceapi.WithErrorHandler(problem.ErrorHandler))
 		if err != nil {
 			return nil, err
 		}
@@ -263,31 +264,8 @@ func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limi
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
-// ProblemErrorHandler renders, as the contract's Problem (internal/problem), what fails in an
-// ogen server before or around a handler (a request it cannot decode), and the refusals of /mcp's
-// own token check. A handler's own error goes through its surface's NewError instead, which
-// answers through the same problem.Of.
-func ProblemErrorHandler(ctx context.Context, w http.ResponseWriter, _ *http.Request, err error) {
-	status, body := problem.Of(ctx, err)
-	writeBody(w, status, body)
-}
-
 func writeProblem(w http.ResponseWriter, status int, detail string) {
-	writeBody(w, status, problem.Body(status, detail))
-}
-
-// writeBody renders body as application/problem+json with status.
-func writeBody(w http.ResponseWriter, status int, body *siteapi.ProblemDetails) {
-	data, err := body.MarshalJSON()
-	if err != nil {
-		// The generated encoders do not fail on these bodies; a failure still answers the status.
-		slog.Warn("encode problem", "error", err)
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(status)
-	if _, err := w.Write(data); err != nil {
-		slog.Warn("write json response", "error", err)
-	}
+	problem.Write(w, status, problem.Body(status, detail))
 }
 
 // --- cross-cutting net/http middleware ---
@@ -329,7 +307,7 @@ func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
 				pending))
 			body.Code = siteapi.NewOptProblemCode(siteapi.ProblemCodeMigrationsPending)
-			writeBody(w, http.StatusServiceUnavailable, body)
+			problem.Write(w, http.StatusServiceUnavailable, body)
 		})
 	}
 }
@@ -355,7 +333,7 @@ func recoverer(next http.Handler) http.Handler {
 				if dbg := problem.Debug(r, w, fmt.Sprint(rec), stack); dbg != nil {
 					body.Debug = siteapi.NewOptProblemDebug(*dbg)
 				}
-				writeBody(w, http.StatusInternalServerError, body)
+				problem.Write(w, http.StatusInternalServerError, body)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -370,7 +348,7 @@ func isCollectPath(path string) bool { return strings.HasPrefix(path, collectPre
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
 // collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
-// body surfaces as *http.MaxBytesError, which ProblemErrorHandler renders as 413.
+// body surfaces as *http.MaxBytesError, which problem.ErrorHandler renders as 413.
 func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

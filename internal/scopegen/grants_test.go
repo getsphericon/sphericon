@@ -31,7 +31,7 @@ func TestGenerateGrantsEmitsTheScopesThatNeedAPermission(t *testing.T) {
 
 	out := string(src)
 	require.Contains(t, out, "Code generated")
-	require.Contains(t, out, "package accounts")
+	require.Contains(t, out, "package memberships")
 	require.Regexp(t, `"webhooks:read":\s+PermWebhooksManage,`, out)
 	require.Regexp(t, `"integrations:write":\s+PermIntegrationsManage,`, out)
 	require.NotContains(t, out, `"contacts:read"`, "a scope any member may grant has no row")

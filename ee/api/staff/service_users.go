@@ -3,9 +3,9 @@ package staff
 import (
 	"context"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceUserFeedList is the Users created, changed or deleted since a cursor, each with their
@@ -20,7 +20,7 @@ func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params servic
 
 // userFeedItem is a feed entry as a resource: a tombstone, or the User with the mailings consent
 // the entry carries.
-func userFeedItem(e eestaff.UserFeedEntry) serviceapi.ServiceUserResource {
+func userFeedItem(e workspaceoversight.UserFeedEntry) serviceapi.ServiceUserResource {
 	if e.Tombstone != nil {
 		return serviceMapper.TombstoneToResource(e.Tombstone)
 	}

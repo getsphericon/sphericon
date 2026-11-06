@@ -13,7 +13,7 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   uses them. A test that fails then shows which step produced the wrong value.
 - **No error is dropped silently, and `_ =` is not a way to drop one** (`errcheck` runs with
   `check-blank`). Handle it; for the step after the work is done (closing a connection, shutting
-  a server down, removing a temporary file) call `internal/cleanup`, which logs it. The functions
+  a server down, removing a temporary file) call `internal/kernel/cleanup`, which logs it. The functions
   whose error nobody can act on (terminal output, a response body that was only read, the rollback
   of a committed transaction) are listed with their reason under `errcheck` in `.golangci.yml`.
 - **An error is the standard library's: `fmt.Errorf("<operation>: %w", err)`, `errors.Is`,
@@ -23,7 +23,7 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
   (it only matches a condition) or a typed error (it needs the data), such as `validation.Error`
   for a refused input of a domain module.
 - **Narrowing an integer to the contract's `int32` goes through `narrow.Int32`**
-  (`internal/narrow`), which caps at the bounds instead of wrapping.
+  (`internal/kernel/narrow`), which caps at the bounds instead of wrapping.
 - **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
   `events.Became(to)`, or `events.ChangeOf(from, to)` for an optional field (a nil pointer is no
   value)**, keyed by the ent field constant (`membership.FieldRole`), not a literal.
@@ -89,22 +89,32 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
   (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
   (`internal/testhelper`) is the fixture tooling and is not read.
-- **Rule 5, `entrywrite`.** An entry point does not write through ent: a call that starts a mutation
-  (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
-  upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
-  client, a transaction, the scoped client and its wrappers) is a finding; test files are not read. The handlers
+- **Rule 5, `entrywrite`.** Only the owner writes a table (ADR 0102): `owners` in
+  `tools/analyzers/entrywrite` names, for every ent entity, the package that owns its table, and a write
+  to the entity from any other package is a finding, as is a write to an entity the map does not name (a
+  new entity names its owner in the change that adds it; a test of the analyzer fails when the map and
+  `ent/schema` differ or an owner's directory is gone, so a moved package updates the map). A write is a
+  call that starts a mutation (`Create`, `CreateBulk`, `MapCreateBulk`, `Update`, `UpdateOne`,
+  `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`), an upsert (`OnConflict`, `OnConflictColumns`,
+  `OnConflictColumnsWhere`), a soft-delete move (`Archive`, `Unarchive`, `Discard`, `Purge`, `PurgeOneID`)
+  or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
+  transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
+  builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
+  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
+  read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
+  function of the owner that makes the write, which the writer calls. An entry point does not write through
+  ent at all: there every write is a finding worded for the entry point. The handlers
   of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff` and `ee/api/staff`) do not read through ent either:
   a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
   is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
-  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The write
-  goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
-  point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
+  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
+  analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
-  `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
-  the module's error, and `internal/problem` (the surface's `NewError`) answers a module's sentinel refusal
+  `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
+  the module's error, and `internal/api/problem` (the surface's `NewError`) answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
@@ -113,9 +123,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
   field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
-  `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422
+  `detail`, an `*liveuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
-  `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
+  `workspaces.ErrNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
 - **Rule 15, `no-hand-written-problem-in-handlers` (ast-grep).** A handler in `internal/api/**`
@@ -123,18 +133,20 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (`siteapi`, `externalapi`, `collectapi`, `staffapi`, `staffeeapi`, `serviceapi`) and no
   `problem.Error`: every operation answers a refusal with the contract's one `Problem` (its
   `default` response), the handler returns the module's sentinel as its error, and the surface's
-  `NewError` answers it through `internal/problem`. The rule's `ignores` are the files that keep an
-  answer no refusal kind gives as a `problem.Error` (the 402 of a missing Enterprise license, the
-  410 of an expired confirmation link). A single answer kept by hand in a covered file carries
+  `NewError` answers it through `internal/api/problem`, which the rule does not cover: it is where
+  the problems are written. Its other `ignores` are the files that keep an answer no refusal kind
+  gives as a `problem.Error` (the 402 of a missing Enterprise license, the 410 of an expired
+  confirmation link). A single answer kept by hand in a covered file carries
   `// ast-grep-ignore: no-hand-written-problem-in-handlers` under a comment that says why. A batch
   that reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a
   Membership or an Invitation in a query; in TypeScript, a `role` or `.role`
-  compared with `'owner'`/`'admin'`/`'member'`. Access asks `accounts.Allows`/`Require`/`HoldersOf`
-  or `can(workspace, …)`; a Role fact that is not access calls `internal/accounts/roles`. Only that
-  package and the Permission table (`internal/accounts/permissions.go`) are not read, with tests and
+  compared with `'owner'`/`'admin'`/`'member'`. Access asks `memberships.Allows`/`Require`/`HoldersOf`
+  or `can(workspace, …)`; a Role fact that is not access calls the Role functions of
+  `internal/domain/identity/memberships/role.go`. Only that file and the Permission table
+  (`internal/domain/identity/memberships/permissions.go`) are not read, with tests and
   generated code. Setting a Role is not a comparison.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
@@ -150,11 +162,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `QueryContext`, `QueryRowContext`, `Exec`, `Query`, `QueryRow` on `database/sql`) or a raw fragment
   in an ent query (`sql.P`, `ExprFunc`, `Expr`, `ExprP`, `Raw`) carries `// raw sql: <why ent cannot
   express it>` on the line above it or its statement, or trailing. The advisory lock and the Postgres
-  version are written once, in `internal/postgres` (`LockTx`, `ServerMajor`); call those.
+  version are written once, in `internal/infra/postgres` (`LockTx`, `ServerMajor`); call those.
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
-  counter, a derived row) lives in Go: an ent hook (like `internal/workspacefeed` or
-  `internal/trackinghostlog`) or the domain module, inside the same transaction.
+  counter, a derived row) lives in Go: an ent hook (like `internal/domain/identity/workspacefeed` or
+  `internal/domain/sending/trackinghostchanges`) or the domain module, inside the same transaction.
 
 ## Go tests
 

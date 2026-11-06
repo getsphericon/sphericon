@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 // SitePersonalTokensList returns the Workspace's active Personal tokens the caller may see: their
@@ -39,5 +39,5 @@ func (h *Handlers) SitePersonalTokensDelete(ctx context.Context, params siteapi.
 
 // SitePersonalTokensGrantableScopes returns the scopes the caller's Role may give a Personal token.
 func (h *Handlers) SitePersonalTokensGrantableScopes(ctx context.Context, _ siteapi.SitePersonalTokensGrantableScopesParams) ([]siteapi.PersonalScope, error) {
-	return apitokens.GrantableScopes(callerMembership(ctx).Role), nil
+	return mapper.PersonalScopesToResources(apitokens.GrantableScopes(callerMembership(ctx).Role)), nil
 }

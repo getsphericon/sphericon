@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"riverqueue.com/riverui"
 
-	"github.com/getsphericon/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/internal/kernel/paths"
 )
 
 // NewJobsUI builds the job queue's UI (River UI) under paths.StaffJobs, over the job queue's

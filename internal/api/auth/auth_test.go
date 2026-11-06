@@ -17,11 +17,11 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -31,7 +31,7 @@ func closedClient(t *testing.T) *ent.Client {
 	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
 	require.NoError(t, err)
 	require.NoError(t, sqlDB.Close())
-	return db.NewEntClient(sqlDB)
+	return entclient.New(sqlDB)
 }
 
 func TestHasScopeAndWorkspaceIDOfTheTokenContext(t *testing.T) {
@@ -72,7 +72,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 
 func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
 
 	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
@@ -94,7 +94,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
@@ -133,7 +133,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 // unauthorized credential.
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, Users: users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
 	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)

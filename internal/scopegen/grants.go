@@ -29,8 +29,8 @@ type scopeRule struct {
 // declaration fails generation. The map holds the scopes that need a Permission.
 var GrantPermissions = Table{
 	Spec:    "openapi/site.openapi.json",
-	Out:     "internal/accounts/grant_permissions_gen.go",
-	Package: "accounts",
+	Out:     "internal/domain/identity/memberships/grant_permissions_gen.go",
+	Package: "memberships",
 	Doc: []string{
 		"GrantPermissions names the Permission a User must hold to grant a scope to a Connection, as",
 		"the contract declares it on each grantable scope (ADR 0061). A grantable scope absent here is",

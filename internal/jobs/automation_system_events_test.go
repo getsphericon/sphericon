@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // enrollmentEvents counts the System events of the Contact's Enrollment in the Automation, by
@@ -57,7 +57,7 @@ func TestAnEnrollmentRecordsReachingItsGoalAndLeaving(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	on := func(contactID int64, action string) {
 		t.Helper()
-		require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: action, OccurredAt: time.Now()}, 0))
+		require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, acme, contactID, automations.Event{Action: action, OccurredAt: time.Now()}, 0))
 	}
 
 	on(fixtures.ContactAliceID, "payment_failed")

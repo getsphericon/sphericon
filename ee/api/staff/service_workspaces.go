@@ -3,9 +3,9 @@ package staff
 import (
 	"context"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceWorkspaceFeedList is the Workspaces created or changed since a cursor, each
@@ -15,7 +15,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.WorkspaceFeedPage(pagination.MapCursor(page, func(e eestaff.FeedEntry) serviceapi.ServiceWorkspaceResource {
+	return serviceMapper.WorkspaceFeedPage(pagination.MapCursor(page, func(e workspaceoversight.FeedEntry) serviceapi.ServiceWorkspaceResource {
 		item := serviceMapper.WorkspaceToResource(e.Workspace)
 		item.Owners = serviceMapper.OwnersToResources(e.Owners)
 		return item

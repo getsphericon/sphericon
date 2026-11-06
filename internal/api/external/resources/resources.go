@@ -26,36 +26,36 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/dkimstate"
-	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/emailrender"
-	"github.com/getsphericon/sphericon/internal/holdreason"
-	"github.com/getsphericon/sphericon/internal/httpcall"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
-	"github.com/getsphericon/sphericon/internal/providers"
-	"github.com/getsphericon/sphericon/internal/reportday"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/transactional"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -280,12 +280,12 @@ type Converter interface {
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
 	SendCapToResource(source providerlimit.SendCapStatus) externalapi.SendCap
-	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	// The Send cap that applies (outboundmessages.Module.SendCapStatus), null when none does.
 	SendCapStatusToResource(source *providerlimit.SendCapStatus) externalapi.OptNilSendCap
 
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
-	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
@@ -343,28 +343,28 @@ type Converter interface {
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
-	BrandKitToResource(source brandkit.Kit) externalapi.BrandKitResource
+	BrandKitToResource(source brandkits.Kit) externalapi.BrandKitResource
 
 	// goverter:map . Actor
 	// goverter:map . Target
-	AuditEntryToResource(source auditapi.View) externalapi.AuditEntryResource
+	AuditEntryToResource(source auditlog.View) externalapi.AuditEntryResource
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditapi.View) []externalapi.AuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []externalapi.AuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditapi.View) externalapi.AuditActor
+	AuditActorToResource(source auditlog.View) externalapi.AuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditapi.View) externalapi.AuditTarget
+	AuditTargetToResource(source auditlog.View) externalapi.AuditTarget
 
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
 	ConfirmationToResource(source *ent.Confirmation) externalapi.ConfirmationResource
-	SmsConsentToResource(source consent.ContactSMS) externalapi.SmsConsent
-	SmsOptOutToResource(source *consent.SMSOptOut) externalapi.SmsOptOut
+	SmsConsentToResource(source confirmations.ContactSMS) externalapi.SmsConsent
+	SmsOptOutToResource(source *confirmations.SMSOptOut) externalapi.SmsOptOut
 	// goverter:map CreatedAt ConfirmedAt
 	SmsConfirmationToResource(source *ent.Confirmation) externalapi.SmsConfirmation
 
@@ -445,7 +445,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationsteps.Kind) externalapi.AutomationStepType
+	AutomationStepTypeToResource(source automationstep.Kind) externalapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
@@ -494,7 +494,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
-	TransactionalSendStatusToResource(source transactional.Status) externalapi.TransactionalSendStatus
+	TransactionalSendStatusToResource(source transactionalsend.Status) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
 	// goverter:enum:transform value
@@ -506,7 +506,7 @@ type Converter interface {
 	WebhookErrorKindToResource(source webhook.ErrorKind) externalapi.WebhookErrorKind
 }
 
-// ExportMapper adapts the Converter to contactexport.Mapper.
+// ExportMapper adapts the Converter to dataexport.Mapper.
 type ExportMapper struct{ Converter }
 
 func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return new(m.ContactToExport(r)) }
@@ -727,7 +727,7 @@ func cnameRecordType(trackingdomains.Record) externalapi.CnameRecordType {
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.
-func brandKitUpdatedAt(k brandkit.Kit) externalapi.OptNilTimestamp {
+func brandKitUpdatedAt(k brandkits.Kit) externalapi.OptNilTimestamp {
 	if !k.Saved {
 		return externalapi.OptNilTimestamp{}
 	}
@@ -865,7 +865,7 @@ func optNilSmsConfirmation(c Converter, v *ent.Confirmation) externalapi.OptNilS
 }
 
 // optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
-func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) externalapi.OptNilSmsOptOut {
+func optNilSmsOptOut(c Converter, v *confirmations.SMSOptOut) externalapi.OptNilSmsOptOut {
 	if v == nil {
 		return externalapi.OptNilSmsOptOut{}
 	}

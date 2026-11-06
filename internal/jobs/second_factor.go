@@ -10,13 +10,12 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/ownernotice"
-	"github.com/getsphericon/sphericon/internal/reportday"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
 // secondFactorReminderInterval is how often the reminder sweep runs: a User is
@@ -54,11 +53,11 @@ func (w *NotifySecondFactorRequiredWorker) Work(ctx context.Context, job *river.
 	}
 	var errs []error
 	for _, m := range members {
-		deadline, ok := accounts.SecondFactorDeadline(m)
+		deadline, ok := users.SecondFactorDeadline(m)
 		if !ok {
 			continue
 		}
-		if err := sendSecondFactorMail(ctx, w.sender, w.appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorRequiredSubject, Body: i18n.EmailSecondFactorRequiredBody}, m, deadline); err != nil {
+		if err := sendSecondFactorMail(ctx, w.sender, w.appURL, memberships.Notice{Subject: i18n.EmailSecondFactorRequiredSubject, Body: i18n.EmailSecondFactorRequiredBody}, m, deadline); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -68,7 +67,7 @@ func (w *NotifySecondFactorRequiredWorker) Work(ctx context.Context, job *river.
 // sendSecondFactorMail renders the mail (its subject and body messages)
 // for the Membership's User and sends it. The deadline is shown in the User time zone
 // (ADR 0068); the locale is the instance's.
-func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, appURL string, mail ownernotice.Notice, m *ent.Membership, deadline time.Time) error {
+func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, appURL string, mail memberships.Notice, m *ent.Membership, deadline time.Time) error {
 	u := m.Edges.User
 	data := map[string]any{
 		"Workspace": m.Edges.Workspace.Name,
@@ -86,7 +85,7 @@ func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, app
 }
 
 // RemindSecondFactorArgs is the periodic tick that reminds Users whose grace under a
-// Two-factor requirement ends within secondfactor.ReminderLead (ADR 0020).
+// Two-factor requirement ends within users.ReminderLead (ADR 0020).
 type RemindSecondFactorArgs struct{}
 
 func (RemindSecondFactorArgs) Kind() string { return "second_factor_remind" }
@@ -105,13 +104,13 @@ func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[Remind
 }
 
 // RemindSecondFactorDeadlines mails the reminder of every Membership the second-factor
-// module claims for this tick (secondfactor.RemindDeadlines).
+// module claims for this tick (users.RemindSecondFactorDeadlines).
 func RemindSecondFactorDeadlines(ctx context.Context, client *ent.Client, sender messaging.EmailSender, appURL string, now time.Time) error {
 	if sender == nil {
 		return errors.New("remind second factor: no system email sender configured")
 	}
-	return secondfactor.RemindDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
-		return sendSecondFactorMail(ctx, sender, appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorReminderSubject, Body: i18n.EmailSecondFactorReminderBody}, m, deadline)
+	return users.RemindSecondFactorDeadlines(ctx, client, now, func(ctx context.Context, m *ent.Membership, deadline time.Time) error {
+		return sendSecondFactorMail(ctx, sender, appURL, memberships.Notice{Subject: i18n.EmailSecondFactorReminderSubject, Body: i18n.EmailSecondFactorReminderBody}, m, deadline)
 	})
 }
 

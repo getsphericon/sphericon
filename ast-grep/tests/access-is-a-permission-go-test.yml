@@ -6,11 +6,11 @@ valid:
     }
   - |
     func check(role membership.Role) error {
-    	return accounts.Require(role, accounts.PermOwnersManage)
+    	return memberships.Require(role, memberships.PermOwnersManage)
     }
   - |
     func last(target *ent.Membership, owners int) bool {
-    	return roles.IsOwner(target.Role) && owners <= 1
+    	return memberships.IsOwner(target.Role) && owners <= 1
     }
   - |
     func create(ctx context.Context, ts *ent.Scoped, userID int64) error {
@@ -18,7 +18,7 @@ valid:
     }
   - |
     func owners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
-    	return s.Membership().Query().Where(roles.Owners()).IDs(ctx)
+    	return s.Membership().Query().Where(memberships.OwnerRole()).IDs(ctx)
     }
 invalid:
   - |

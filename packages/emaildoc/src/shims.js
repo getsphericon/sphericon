@@ -1,5 +1,5 @@
 // Runtime shims for goja (the split bug is rewritten at build time, see build.mjs). Each one is feature-detected, so the same bundle also loads in Node (the
-// build runs it there to derive the schema listing). goja itself (the Go side, internal/emaildoc)
+// build runs it there to derive the schema listing). goja itself (the Go side, internal/kernel/emaildoc)
 // provides `console`, `goUtf8Encode` and `goUtf8Decode`; everything else is here.
 ;(() => {
   const g = globalThis

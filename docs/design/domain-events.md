@@ -60,6 +60,11 @@ does the rest:
   the producer's transaction. The entries are registered on the bus when the application is wired
   (`internal/app`): core's (`jobs.EventConsumers`) and the Enterprise Edition's
   (`ee.EventConsumers`), so the events module imports no consumer module.
+- **After the commit**: what must happen once for a newly stored Event, outside any transaction, is
+  registered on the bus with `OnStored` and runs after the commit, so neither a repeat nor a
+  rolled-back Event reaches it: the send-outcome counter of a provider's bounce or complaint
+  (`callbackinterpretation.RecordOutcome`). The bus knows no domain module: the names it catalogs (`email.bounced`,
+  `email.complained`) are its own, and `suppressions` refers to them.
 
 Every event job carries the whole envelope (`events.EventJob`, embedded by each consumer's args), so a
 consumer reads the typed event, its version, its times and its chain. Every event job runs in the
@@ -68,15 +73,16 @@ its own lock (orders takes one per Workspace).
 
 ## The consumers
 
-| Consumer    | Job kind               | Wants                                                                                      | Does                                                                         |
-| ----------- | ---------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| suppression | `event_suppress`       | a hard bounce or a complaint                                                               | suppresses the address, once, keeping the first reason                       |
-| orders      | `event_order`          | a collected order Event, loaded history included                                           | records the Order and its Movements under the Workspace's lock (ADR 0064)    |
-| automations | `event_automation`     | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry) | queues the evaluation of the Event against the Automations                   |
-| rules       | `event_rule`           | what automations wants, except an event a Rule's Action published (`CausedBy`)             | queues the evaluation against the Rules; a Firing is unique on the source id |
-| webhooks    | `event_webhook`        | every live event                                                                           | queues one delivery per enabled endpoint whose filter matches (ADR 0039)     |
-| audit (EE)  | `event_audit`          | an Audit entry                                                                             | stores the entry, once, under the audit license (ADR 0022)                   |
-| export (EE) | `event_export_erasure` | `contact.erased`                                                                           | adds the Erasure to the Erasures stream under the export license (ADR 0045)  |
+| Consumer    | Job kind                      | Wants                                                                                      | Does                                                                         |
+| ----------- | ----------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| suppression | `event_suppress`              | a hard bounce or a complaint                                                               | suppresses the address, once, keeping the first reason                       |
+| orders      | `event_order`                 | a collected order Event, loaded history included                                           | records the Order and its Movements under the Workspace's lock (ADR 0064)    |
+| automations | `event_automation`            | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry) | queues the evaluation of the Event against the Automations                   |
+| rules       | `event_rule`                  | what automations wants, except an event a Rule's Action published (`CausedBy`)             | queues the evaluation against the Rules; a Firing is unique on the source id |
+| webhooks    | `event_webhook`               | every live event                                                                           | queues one delivery per enabled endpoint whose filter matches (ADR 0039)     |
+| broadcasts  | `event_broadcast_unsubscribe` | `telegram.unsubscribed` that names a Broadcast and its Contact                             | counts the unsubscribe on the Broadcast's recipient, once (ADR 0102)         |
+| audit (EE)  | `event_audit`                 | an Audit entry                                                                             | stores the entry, once, under the audit license (ADR 0022)                   |
+| export (EE) | `event_export_erasure`        | `contact.erased`                                                                           | adds the Erasure to the Erasures stream under the export license (ADR 0045)  |
 
 The Event row is written before any consumer runs, so an Automation's exit and goal checks and a
 Rule's Condition that counts the Contact's Events see the Event that triggered them (#751).

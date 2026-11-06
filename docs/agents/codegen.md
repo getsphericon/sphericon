@@ -16,27 +16,29 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
-ent + inuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/problem/mapping/converter_gen.go  (rendered by internal/problem)
-gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
+ent + liveuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
+gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/kernel/patch fields)
 gen/service request bodies  ──goverter──▶ ee/api/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)
-packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
+packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/kernel/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, from `@requiresServiceScopes`) ──cmd/scopegen──▶ ee/api/staff/service_scopes_gen.go (`ServiceOperationScopes`)
 openapi/external (`x-required-scopes` per operation, from `@requiresScopes`) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
 openapi/external (`x-required-permissions` from `@requiresPermissions`, optional per operation: what a Connection's User must hold) ──cmd/scopegen──▶ internal/api/auth/external_permissions_gen.go (`ExternalOperationPermissions`)
 openapi/site (`x-required-permissions`, `x-allowed-while-withheld`, `x-allowed-while-acceptance-pending` per operation, from `@requiresPermissions`, `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`)
-openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantable` and `@grantedWith`) ──cmd/scopegen──▶ internal/accounts/grant_permissions_gen.go (`GrantPermissions`)
-openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/accounts/permissions_gen.go (`Permission` and its `Perm…` constants)
-openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary); the files are `scopegen.Tables`
+openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantable` and `@grantedWith`) ──cmd/scopegen──▶ internal/domain/identity/memberships/grant_permissions_gen.go (`GrantPermissions`)
+openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/domain/identity/memberships/permissions_gen.go (`Permission` and its `Perm…` constants)
+openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/domain/identity/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary)
+openapi/service (`ServiceScope` enum) ──cmd/scopegen──▶ ee/domain/identity/servicecredentials/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary, so the Service credentials module never imports gen/service)
+openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums) ──cmd/scopegen──▶ internal/kernel/tokenscope/user_scopes_gen.go (each type, its constants and its list, so a core package never imports gen/site for them); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
-internal/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
+internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
 config (the `environment` struct: `env`, `envDefault` and `validate` tags, profile defaults, field doc comments)  ──cmd/configdoc──▶ docs/configuration.md (the configuration reference the docs site copies)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 
 - **goverter** also maps request bodies → module inputs (`Inputs` in each surface's
-  `resources/inputs.go`): an update becomes the module's patch (`internal/patch`: an absent key
+  `resources/inputs.go`): an update becomes the module's patch (`internal/kernel/patch`: an absent key
   keeps, null clears, a value sets). Its extends only bind this surface's Opt types to the shared
-  helpers of `internal/convert`.
+  helpers of `internal/kernel/convert`.
 - **goverter** maps ent entities → ogen resource DTOs. The `Converter` interface and its
   `// goverter:extend` helpers (ids, timestamps, optionals) are hand-written in
   each package's `resources.go`; the impl (`ConverterImpl`) is generated. Adding a DTO
@@ -56,7 +58,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   page of resources, is marked `goverter:skipCopySameType`; an unpaginated list is
   `pagination.Whole(items)`. `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the
-  handler. The extends' bodies are the generic helpers of `internal/convert` (`Opt`, `Nil`, `OptVia`, …),
+  handler. The extends' bodies are the generic helpers of `internal/kernel/convert` (`Opt`, `Nil`, `OptVia`, …),
   which hold the absent-or-null rule once for every surface.
 - **Enums go member by member.** `mise run generate:backend` runs our build of goverter
   (`cmd/goverter`), which adds the `value` transformer (`internal/goverterenum`): members match by
@@ -67,7 +69,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   converter's file does not import (it sees the package through ent's export data, without its
   constants), so the method is what makes the check happen. `TestAPIConvertsNoEnumByCast`
   (`internal/goverterenum`) fails on any enum-to-enum cast left in a converter or handler package or
-  in `internal/problem` (the refusals), generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
+  in `internal/api/problem` (the refusals), generated or hand-written; an optional enum goes through `convert.OptVia` (response) or
   `convert.PtrVia` (request) and the enum method.
 
 - **An error is the `default` response, never a status of its own.** Every operation of a
@@ -77,7 +79,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   deletion). ogen runs with `convenient_errors: on` (`ogen.yml`), so it reduces that response to one
   error type per surface (`*ProblemDetailsStatusCode`): a handler returns `(*T, error)` (or `error`
   when it answers no body), the Handler's `NewError` turns the error into the problem through
-  `internal/problem` (`problem.Site`, `problem.External`, …), and a client returns the success type
+  `internal/api/problem` (`problem.Site`, `problem.External`, …), and a client returns the success type
   or that error (`testhelper.SiteRefusal` and its kin read it in a test). An operation without the
   `default` response fails the generation (and `check:openapi`, rule `operation-declares-problem`);
   a status code listed beside it would bring a per-operation sum type back.
@@ -116,9 +118,9 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 
 The generated files are the ones [`.gitattributes`](../../.gitattributes) marks
 `linguist-generated` (GitHub collapses them in diffs and leaves them out of the language stats).
-All but the OpenAPI documents and `internal/emaildoc/assets/` carry a header (`// Code generated …
+All but the OpenAPI documents and `internal/kernel/emaildoc/assets/` carry a header (`// Code generated …
 DO NOT EDIT.`, or `// @ts-nocheck` on the frontend).
 `check:generated` (`mise/scripts/check-generated.ts`, part of `mise run check`) fails on a file with
 the header that no pattern marks and on a pattern that matches no file. Generated code lives in
 dedicated dirs (`gen/`, `ent/`, `openapi/`, the `generated/` dirs); `internal/` and `ee/` are
-hand-written but for the `*_gen.go` and `*_gen_test.go` files and `internal/emaildoc/assets/`.
+hand-written but for the `*_gen.go` and `*_gen_test.go` files and `internal/kernel/emaildoc/assets/`.

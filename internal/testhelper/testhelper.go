@@ -24,36 +24,41 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/messaging/twilio/twiliotest"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/providers"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -132,10 +137,14 @@ func initBaseline() {
 }
 
 type TestEnv struct {
-	// Instance is the module the server shares: run its Release check with CheckRelease.
-	Instance *instance.Module
+	// Instance is the Instance state module the server shares.
+	Instance *instancestates.Module
+	// ReleaseCheck is the Release check the server shares: run it with CheckRelease.
+	ReleaseCheck *releasecheck.UseCase
+	// TelemetryReport is the Telemetry report the server shares: its preview is Report.
+	TelemetryReport *telemetryreport.UseCase
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
-	// the test finishes. Like production's (db.NewEntClient) it refuses a change the Workspace
+	// the test finishes. Like production's (entclient.New) it refuses a change the Workspace
 	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
 	// module that forgets the transaction fails its tests.
 	DB *ent.Client
@@ -151,7 +160,7 @@ type TestEnv struct {
 	Internal http.Handler
 	// Tracker is the instance the server and the sender share: mint tracking,
 	// unsubscribe and confirmation tokens with it, never with a second one.
-	Tracker *tracking.Tracker
+	Tracker *messagetoken.Tracker
 	// Cipher is the instance the server seals with, for modules a test builds directly.
 	Cipher *secrets.Cipher
 	// Integrations is the module the server serves Integrations and their hooks with.
@@ -176,8 +185,8 @@ type TestEnv struct {
 	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
 	license *licensekey.License
 
-	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
-	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
+	sender    *outboundmessages.Module // the Outbound module the queued Broadcast sends run through
+	jwtSecret string                   // for tokens a test needs in a state the Tracker never mints
 
 	now        func() time.Time // the clock the server checks site session expiry against
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
@@ -199,7 +208,7 @@ type TestEnv struct {
 
 	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
 	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
-	Machine      *machine.Detector
+	Machine      *privaterelayranges.Detector
 	PrivateRelay *FakeRelayRanges
 
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
@@ -207,15 +216,22 @@ type TestEnv struct {
 
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
-	SecondFactor *secondfactor.Module
+	SecondFactor *secondfactorcheck.UseCase
+
+	// WorkspaceCreation is the use case the server creates Workspaces with, and makes Users
+	// Verified with their first one (ADR 0102).
+	WorkspaceCreation *workspacecreation.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
 	StaffMembers *staffmembers.Module
 
-	// StaffEnterprise is the module of the Staff console's Enterprise sections and of the
+	// StaffEnterprise is the use case of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
-	StaffEnterprise *staff.Module
+	StaffEnterprise *workspaceoversight.UseCase
+	// ServiceCredentials is the module of the service endpoints' Service credentials (ADR
+	// 0026); it refuses every call on an unlicensed env.
+	ServiceCredentials *servicecredentials.Module
 }
 
 // TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
@@ -251,15 +267,15 @@ type setup struct {
 	noSystemFrom bool
 	// txt is the TXT resolver Sending domain and Join domain verification use; nil is the
 	// always-NXDOMAIN stub (WithTXTLookup).
-	txt sending.TXTLookup
+	txt domainname.TXTLookup
 	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
-	signinOpts []signin.Option
+	signinOpts []signinprovider.Option
 }
 
 // WithTXTLookup replaces the TXT resolver of Sending domain and Join domain verification, so a
 // test publishes and withdraws records in a zone of its own (dnstest.NewZone). The default
 // answers NXDOMAIN to everything.
-func WithTXTLookup(lookup sending.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
+func WithTXTLookup(lookup domainname.TXTLookup) Option { return func(s *setup) { s.txt = lookup } }
 
 // WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
 // test serves a document from an httptest TLS server (the production client refuses loopback).
@@ -409,7 +425,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
-	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {
+	var stubTXT domainname.TXTLookup = func(context.Context, string) ([]string, error) {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
 	if st.txt != nil {
@@ -425,7 +441,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "load presets")
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {
-		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
+		oauthFetcher = oauthclients.NewFetcher(cfg.OutboundAllow)
 	}
 	fakeSES := &FakeSES{}
 	botAPI := telegramtest.New(t)
@@ -445,7 +461,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// SES's quota lookup is answered by a fake instead of the AWS API.
 	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL))
 	do.OverrideValue(injector, stubTXT)
-	do.OverrideValue[machine.Source](injector, relay)
+	do.OverrideValue[privaterelayranges.Source](injector, relay)
 	do.OverrideValue(injector, presets)
 	do.OverrideValue(injector, Renderer())
 	do.OverrideValue(injector, migrated)
@@ -456,7 +472,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.OverrideValue(injector, app.SigninOptions(st.signinOpts))
 	do.OverrideValue(injector, app.IntegrationOptions{integrations.WithSubscriptionConfirmer(confirmations.confirm)})
 	// A Workspace's mail lands in CustomerMail unless its Integration is a Test inbox.
-	do.Override(injector, func(i do.Injector) (outbound.Senders, error) {
+	do.Override(injector, func(i do.Injector) (outboundmessages.Senders, error) {
 		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
 	})
 	// Every job a request queues is worked at once by its real worker (enqueue.go), against the
@@ -464,13 +480,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.Override(injector, func(i do.Injector) (app.Enqueuer, error) {
 		client := do.MustInvoke[*ent.Client](i)
 		return &testJobs{
-			tb:      t,
-			ent:     client,
-			sender:  systemMail,
-			domains: do.MustInvoke[*domainverify.Module](i),
-			cipher:  do.MustInvoke[*secrets.Cipher](i),
-			catalog: do.MustInvoke[*messaging.Catalog](i),
-			appURL:  cfg.AppURL,
+			tb:           t,
+			ent:          client,
+			sender:       systemMail,
+			verification: do.MustInvoke[*domainverification.UseCase](i),
+			cipher:       do.MustInvoke[*secrets.Cipher](i),
+			catalog:      do.MustInvoke[*messaging.Catalog](i),
+			appURL:       cfg.AppURL,
 		}, nil
 	})
 
@@ -486,41 +502,46 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	// The client of a test's own writes of rows the feeds watch, on the same transaction, with
 	// the Edition's hooks like every other client.
-	feedClient := db.NewEntClientOnTx(txDB)
+	feedClient := entclient.NewOnTx(txDB)
 	feedClient.Use(ee.Hooks(lic, st.now)...)
 
 	return &TestEnv{
-		Instance:        do.MustInvoke[*instance.Module](injector),
-		AppURL:          cfg.AppURL,
-		DB:              do.MustInvoke[*ent.Client](injector),
-		FeedDB:          feedClient,
-		SQLDB:           txDB,
-		Bus:             do.MustInvoke[*events.Bus](injector),
-		Server:          handler.Handler,
-		Internal:        internal.Handler,
-		Tracker:         do.MustInvoke[*tracking.Tracker](injector),
-		Cipher:          do.MustInvoke[*secrets.Cipher](injector),
-		Integrations:    do.MustInvoke[*integrations.Module](injector),
-		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
-		Holds:           do.MustInvoke[*holds.Holds](injector),
-		Orders:          do.MustInvoke[*orders.Module](injector),
-		edition:         edition,
-		license:         lic,
-		sender:          do.MustInvoke[*outbound.Module](injector),
-		jwtSecret:       cfg.JWTSecret,
-		now:             st.now,
-		sessionTTL:      cfg.SessionTTL,
-		SystemMail:      systemMail,
-		CustomerMail:    customerMail,
-		SES:             fakeSES,
-		Telegram:        botAPI,
-		Twilio:          twilioAPI,
-		Machine:         do.MustInvoke[*machine.Detector](injector),
-		PrivateRelay:    relay,
-		Confirmations:   confirmations,
-		SecondFactor:    do.MustInvoke[*secondfactor.Module](injector),
-		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
-		StaffEnterprise: edition.Staff,
+		Instance:          do.MustInvoke[*instancestates.Module](injector),
+		ReleaseCheck:      do.MustInvoke[*releasecheck.UseCase](injector),
+		TelemetryReport:   do.MustInvoke[*telemetryreport.UseCase](injector),
+		AppURL:            cfg.AppURL,
+		DB:                do.MustInvoke[*ent.Client](injector),
+		FeedDB:            feedClient,
+		SQLDB:             txDB,
+		Bus:               do.MustInvoke[*events.Bus](injector),
+		Server:            handler.Handler,
+		Internal:          internal.Handler,
+		Tracker:           do.MustInvoke[*messagetoken.Tracker](injector),
+		Cipher:            do.MustInvoke[*secrets.Cipher](injector),
+		Integrations:      do.MustInvoke[*integrations.Module](injector),
+		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
+		Holds:             do.MustInvoke[*holds.Holds](injector),
+		Orders:            do.MustInvoke[*orders.Module](injector),
+		edition:           edition,
+		license:           lic,
+		sender:            do.MustInvoke[*outboundmessages.Module](injector),
+		jwtSecret:         cfg.JWTSecret,
+		now:               st.now,
+		sessionTTL:        cfg.SessionTTL,
+		SystemMail:        systemMail,
+		CustomerMail:      customerMail,
+		SES:               fakeSES,
+		Telegram:          botAPI,
+		Twilio:            twilioAPI,
+		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
+		PrivateRelay:      relay,
+		Confirmations:     confirmations,
+		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
+		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
+		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
+		StaffEnterprise:   edition.Staff,
+
+		ServiceCredentials: edition.ServiceCredentials,
 	}
 }
 

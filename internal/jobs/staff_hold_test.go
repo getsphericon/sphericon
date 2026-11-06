@@ -9,14 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // holdClock is the clock the Staff hold read uses, moved by the test.
@@ -26,8 +26,8 @@ func (c *holdClock) now() time.Time { return c.t }
 
 // heldMod is an Outbound module whose send gate reads Staff holds on the test clock, as the
 // running application's does.
-func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outbound.Senders) *outbound.Module {
-	return outbound.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, tracking.New("test-secret", "http://local"))
+func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outboundmessages.Senders) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, messagetoken.New("test-secret", "http://local"))
 }
 
 func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
@@ -70,12 +70,12 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	clock := &holdClock{t: time.Now()}
 	fs := &fakeSender{}
 
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+	require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	runIDs := enrollmentsOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 	require.Len(t, runIDs, 1)
 	setHold(t, env, clock.t.Add(time.Hour))
 
-	held := stepperWith(env, heldMod(env, clock, resolvingTo(fs)), stepping.WithClock(clock.now))
+	held := stepperWith(env, heldMod(env, clock, resolvingTo(fs)), stepexecution.WithClock(clock.now))
 	require.True(t, env.RunNextStep(t, held))
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)

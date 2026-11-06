@@ -15,10 +15,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/event"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -89,7 +89,7 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerUserPerHour(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	for i := range accounts.TestSendPerUserHour {
+	for i := range throttle.TestSendPerUserHour {
 		_, err := testSendAsJane(env, c, fixtures.OwnerJaneEmail)
 		require.NoError(t, err, "send %d", i+1)
 	}
@@ -101,9 +101,9 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerUserPerHour(t *testing.T) {
 	retryAfter, err := strconv.Atoi(limited.Header().Get("Retry-After"))
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusTooManyRequests), problem.Status)
-	assert.Equal(t, strconv.Itoa(accounts.TestSendPerUserHour), limited.Header().Get("X-Ratelimit-Limit"))
+	assert.Equal(t, strconv.Itoa(throttle.TestSendPerUserHour), limited.Header().Get("X-Ratelimit-Limit"))
 	assert.Positive(t, retryAfter)
-	assert.Len(t, env.SystemMail.Messages(), accounts.TestSendPerUserHour, "the refused one sent nothing")
+	assert.Len(t, env.SystemMail.Messages(), throttle.TestSendPerUserHour, "the refused one sent nothing")
 }
 
 func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T) {
@@ -112,8 +112,8 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T)
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
 	// Jane spends her hourly budget four times over, an hour apart: the Workspace's twenty.
-	for round := range accounts.TestSendPerWorkspaceDay / accounts.TestSendPerUserHour {
-		for i := range accounts.TestSendPerUserHour {
+	for round := range throttle.TestSendPerWorkspaceDay / throttle.TestSendPerUserHour {
+		for i := range throttle.TestSendPerUserHour {
 			_, err := testSendAsJane(env, jane, fixtures.OwnerJaneEmail)
 			require.NoError(t, err, "round %d send %d", round, i+1)
 		}
@@ -126,8 +126,8 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T)
 	var problem siteapi.ProblemDetails
 	require.NoError(t, problem.UnmarshalJSON(limited.Body.Bytes()))
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusTooManyRequests), problem.Status)
-	assert.Equal(t, strconv.Itoa(accounts.TestSendPerWorkspaceDay), limited.Header().Get("X-Ratelimit-Limit"))
-	assert.Len(t, env.SystemMail.Messages(), accounts.TestSendPerWorkspaceDay, "the refused one sent nothing")
+	assert.Equal(t, strconv.Itoa(throttle.TestSendPerWorkspaceDay), limited.Header().Get("X-Ratelimit-Limit"))
+	assert.Len(t, env.SystemMail.Messages(), throttle.TestSendPerWorkspaceDay, "the refused one sent nothing")
 }
 
 func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {

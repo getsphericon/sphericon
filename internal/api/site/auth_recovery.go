@@ -6,9 +6,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
 // SiteAuthForgotPassword mints a reset token and emails a link. It answers 202
@@ -25,11 +25,11 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 		return nil
 	}
 	// Unknown addresses spend their budget exactly like known ones.
-	granted, err := h.attempts.Take(ctx, accounts.KindPasswordReset, email)
+	granted, err := h.attempts.Take(ctx, throttle.KindPasswordReset, email)
 	if err != nil {
 		return err
 	}
-	u, err := h.accounts.UserByEmail(ctx, email)
+	u, err := h.users.UserByEmail(ctx, email)
 	if err != nil && !ent.IsNotFound(err) {
 		return err
 	}
@@ -50,9 +50,10 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	return nil
 }
 
-// SiteAuthResetPassword sets a new password from a reset link (accounts.Links).
+// SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
+// workspacecreation, which completes the Sign-up of an Unverified User).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
-	u, completedSignUp, err := h.links.ResetPassword(ctx, req.Token, req.Password)
+	u, completedSignUp, err := h.workspaceCreation.ResetPasswordLink(ctx, req.Token, req.Password)
 	if err != nil {
 		return err
 	}
@@ -64,14 +65,14 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	return nil
 }
 
-// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, accounts.Links): the
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, workspacecreation): the
 // token proves the address, so it stamps the Verified email, ends every earlier session,
 // creates the User's first Workspace and sends the welcome email, then starts the
 // session through the login issuer. The password stored at Sign-up stays only when
 // the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
-	verified, landing, err := h.links.VerifyEmail(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
+	verified, landing, err := h.workspaceCreation.VerifyEmailLink(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err := h.mail.Enqueue(ctx, mailjobs.Welcome(verified.Email, verified.Name)); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
-	// The session starts after the epoch bump VerifyEmail made, so it is the only one.
+	// The session starts after the epoch bump VerifyEmailLink made, so it is the only one.
 	cookie, err := h.sessions.Issue(verified, auth.Session{Method: auth.MethodEmail})
 	if err != nil {
 		return nil, err
@@ -116,7 +117,7 @@ func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.
 	}
 	res := &siteapi.SiteAuthConfirmEmailChangeOK{}
 	if acting {
-		u, err := h.accounts.User(ctx, uid)
+		u, err := h.users.User(ctx, uid)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +137,7 @@ func (h *Handlers) holdsSession(ctx context.Context, raw string, uid int64) (boo
 	if !ok || id != uid {
 		return false, nil
 	}
-	u, err := h.accounts.User(ctx, uid)
+	u, err := h.users.User(ctx, uid)
 	if err != nil {
 		return false, err
 	}

@@ -18,22 +18,22 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // noFence is the Fencer of the ordinary tests, whose database is one transaction on one
@@ -93,7 +93,7 @@ func newRealEnv(t *testing.T) *realEnv {
 	sqlDB, err := sql.Open("pgx", url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	client := db.NewEntClient(sqlDB)
+	client := entclient.New(sqlDB)
 	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
 }
 
@@ -110,19 +110,19 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	bus := events.New(sqlDB)
+	bus := events.New(sqlDB, entclient.NewTx)
 	queue, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	bus.UseJobs(wrap(queue))
 	return bus
 }
 
-// stepper is the stepping module over a provider that sends through sender.
-func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepping.Module {
+// stepper is the Step execution use case over a provider that sends through sender.
+func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecution.UseCase {
 	t.Helper()
 	bus := e.bus(t)
-	mod := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
-	return stepping.New(bus, mod, e.fence)
+	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local"))
+	return stepexecution.New(bus, mod, e.fence)
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:
@@ -207,12 +207,12 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		close(started)
 		<-gate
 	}
-	steps := []automationsteps.Step{{
-		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
+	steps := []automationstep.Step{{
+		Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), tracking.New("test-secret", "http://local"))
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local"))
 	mod := automations.New(cipher, bus, testhelper.Renderer(), out)
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
@@ -222,13 +222,13 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, testhelper.PublisherOn(e.bus(t)), fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, cipher, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, cipher, stepexecution.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
 
 	workDone := make(chan error, 1)
 	go func() {
-		workDone <- w.Work(workCtx, &river.Job[stepping.RunHTTPStepArgs]{
-			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepping.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   stepping.RunHTTPStepArgs{RunID: runID},
+		workDone <- w.Work(workCtx, &river.Job[stepexecution.RunHTTPStepArgs]{
+			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: stepexecution.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
+			Args:   stepexecution.RunHTTPStepArgs{RunID: runID},
 		})
 	}()
 	<-started

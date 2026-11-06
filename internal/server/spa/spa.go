@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // localeSentinel is the placeholder baked into index.html (see repo-root

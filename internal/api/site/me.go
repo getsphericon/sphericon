@@ -5,12 +5,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/mailjobs"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
@@ -20,7 +21,7 @@ func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	u, err := h.accounts.User(ctx, a.UserID)
+	u, err := h.users.User(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +53,14 @@ func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteA
 	if err := h.consentRecords.AcceptPending(ctx, a.UserID, inputs.ReAcceptances(req.Items)); err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, a.UserID)
+	u, err := h.users.User(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
 	return h.userResource(ctx, u)
 }
 
-// SiteUserUpdateMe changes the authenticated User's name, time zone, Regional format and/or password through accounts,
+// SiteUserUpdateMe changes the authenticated User's name, time zone, Regional format and/or password through users,
 // which holds the profile rules. The email is the login identity and is not editable here. A
 // password change ended every session; the acting one continues under a fresh cookie.
 func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (*siteapi.SiteUserResourceHeaders, error) {
@@ -67,11 +68,11 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	change := accounts.ProfileChange{
+	change := users.ProfileChange{
 		Name:                convert.StringPtr(req.Name),
 		Timezone:            convert.StringPtr(req.Timezone),
 		ClearTimezone:       req.Timezone.IsNull(),
@@ -80,7 +81,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		NewPassword:         req.NewPassword.Or(""),
 		CurrentPassword:     req.CurrentPassword.Or(""),
 	}
-	changed, err := h.accounts.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
+	changed, err := h.users.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +109,12 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	if err != nil {
 		return err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	newEmail, err := accounts.NewEmailFor(u, string(req.NewEmail))
+	newEmail, err := users.NewEmailFor(u, string(req.NewEmail))
 	if err != nil {
 		return err
 	}
@@ -125,11 +126,11 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	// request takes a slot of the address's budget, mints a token and queues exactly one
 	// mail job to that address. Free, it is the confirm link; Taken, it is a tokenless
 	// notice to its owner. A job with no mail due (budget spent) is a no-send one.
-	granted, err := h.attempts.Take(ctx, accounts.KindEmailChange, newEmail)
+	granted, err := h.attempts.Take(ctx, throttle.KindEmailChange, newEmail)
 	if err != nil {
 		return err
 	}
-	taken, err := h.accounts.EmailTaken(ctx, newEmail)
+	taken, err := h.users.EmailTaken(ctx, newEmail)
 	if err != nil {
 		return err
 	}
@@ -158,13 +159,13 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	if err := h.accounts.EndSessions(ctx, a.UserID); err != nil {
+	if err := h.users.EndSessions(ctx, a.UserID); err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
 
-// proveCurrentPassword is the profile's proof of the current password (accounts.Prove): the
+// proveCurrentPassword is the profile's proof of the current password (users.Prove): the
 // login module's one prove path (throttle first, decoy hash, a failure counted on the Login
 // budget). It returns nil when the password is the User's and login.ErrPasswordIncorrect when
 // it is not; while the address's delay runs it returns the 429 error even for a right password.

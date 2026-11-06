@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/providers"
 )
 
 // Integration is a workspace-scoped connection to an external sending provider.
@@ -44,7 +44,7 @@ func (Integration) Fields() []ent.Field {
 			Default("email"),
 		field.Enum("provider").
 			GoType(providers.Provider("")),
-		// Encrypted JSON blob produced by internal/secrets.Cipher.
+		// Encrypted JSON blob produced by internal/kernel/secrets.Cipher.
 		field.String("config_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),

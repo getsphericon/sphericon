@@ -1,0 +1,255 @@
+package throttle_test
+
+import (
+	"context"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+const unknownAddress = "nobody@attempts.test" // no account has it
+
+// clock is the injected `now` of the attempts module.
+type clock struct{ t time.Time }
+
+// now truncates to microseconds: Postgres stores no finer, so a nanosecond
+// clock makes a stored blocked_until read a few hundred nanoseconds short.
+func (c *clock) now() time.Time          { return c.t.Truncate(time.Microsecond) }
+func (c *clock) advance(d time.Duration) { c.t = c.t.Add(d) }
+
+func newAttempts(t *testing.T) (*throttle.Attempts, *clock, *testhelper.TestEnv) {
+	t.Helper()
+	env := testhelper.Setup(t)
+	c := &clock{t: time.Now()}
+	a := throttle.NewAttempts(env.DB,
+		throttle.WithClock(c.now),
+		throttle.WithRule(throttle.KindLogin, throttle.LoginRule(5)),
+	)
+	return a, c, env
+}
+
+func fail(t *testing.T, a *throttle.Attempts, email string, times int) {
+	t.Helper()
+	for range times {
+		require.NoError(t, a.RecordFailure(t.Context(), throttle.KindLogin, email))
+	}
+}
+
+func delay(t *testing.T, a *throttle.Attempts, email string) time.Duration {
+	t.Helper()
+	d, err := a.Delay(t.Context(), throttle.KindLogin, email)
+	require.NoError(t, err)
+	return d
+}
+
+func TestNoDelayBeforeTheThreshold(t *testing.T) {
+	a, _, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 4)
+	assert.Zero(t, delay(t, a, "x@attempts.test"))
+}
+
+func TestDelayDoublesPerFailureAndIsCapped(t *testing.T) {
+	a, _, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 5)
+	assert.Equal(t, 1*time.Second, delay(t, a, "x@attempts.test"))
+	want := []time.Duration{2 * time.Second, 4 * time.Second, 8 * time.Second}
+	for _, w := range want {
+		fail(t, a, "x@attempts.test", 1)
+		assert.Equal(t, w, delay(t, a, "x@attempts.test"))
+	}
+	fail(t, a, "x@attempts.test", 40)
+	assert.Equal(t, 15*time.Minute, delay(t, a, "x@attempts.test"), "capped at 15 minutes")
+}
+
+func TestDelayShrinksAsTheClockAdvancesAndEnds(t *testing.T) {
+	a, c, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 7) // 4 s
+	c.advance(3 * time.Second)
+	assert.Equal(t, 1*time.Second, delay(t, a, "x@attempts.test"))
+	c.advance(1 * time.Second)
+	assert.Zero(t, delay(t, a, "x@attempts.test"))
+}
+
+func TestSuccessResetsTheCounter(t *testing.T) {
+	a, _, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 4)
+	require.NoError(t, a.RecordSuccess(t.Context(), throttle.KindLogin, "x@attempts.test"))
+	fail(t, a, "x@attempts.test", 4)
+	assert.Zero(t, delay(t, a, "x@attempts.test"), "the earlier failures no longer count")
+}
+
+func TestFailuresOutsideTheWindowStartOver(t *testing.T) {
+	a, c, _ := newAttempts(t)
+	fail(t, a, "x@attempts.test", 4)
+	c.advance(16 * time.Minute)
+	fail(t, a, "x@attempts.test", 1)
+	assert.Zero(t, delay(t, a, "x@attempts.test"), "4 old failures plus 1 new one is not 5")
+}
+
+func TestEmailsAreNormalizedAndKindsAreSeparate(t *testing.T) {
+	a, _, env := newAttempts(t)
+	require.NoError(t, a.RecordFailure(t.Context(), throttle.KindLogin, " X@Attempts.Test "))
+	fail(t, a, "x@attempts.test", 4)
+	assert.Equal(t, 1*time.Second, delay(t, a, "X@ATTEMPTS.TEST"))
+
+	d, err := a.Delay(t.Context(), throttle.KindPasswordReset, "x@attempts.test")
+	require.NoError(t, err)
+	assert.Zero(t, d, "another kind has its own counter")
+
+	n, err := env.DB.AuthAttempt.Query().Where(authattempt.Email("x@attempts.test")).Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, n, "one login counter for every spelling of the address")
+}
+
+func TestUnknownEmailsGetRowsLikeKnownOnes(t *testing.T) {
+	a, _, env := newAttempts(t)
+	fail(t, a, unknownAddress, 5)
+	assert.Equal(t, 1*time.Second, delay(t, a, unknownAddress))
+	row, err := env.DB.AuthAttempt.Query().
+		Where(authattempt.Email(unknownAddress), authattempt.KindEQ(authattempt.KindLogin)).Only(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 5, row.Failures)
+}
+
+func TestDisabledRuleNeverDelaysOrWrites(t *testing.T) {
+	env := testhelper.Setup(t)
+	a := throttle.NewAttempts(env.DB, throttle.WithRule(throttle.KindLogin, throttle.LoginRule(0)))
+	fail(t, a, "x@attempts.test", 20)
+	assert.Zero(t, delay(t, a, "x@attempts.test"))
+	n, err := env.DB.AuthAttempt.Query().Where(authattempt.Email("x@attempts.test")).Count(t.Context())
+	require.NoError(t, err)
+	assert.Zero(t, n)
+}
+
+func TestPurgeRemovesStaleRowsOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	a := throttle.NewAttempts(env.DB)
+	removed, err := a.Purge(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, removed)
+
+	_, err = env.DB.AuthAttempt.Get(t.Context(), fixtures.StaleLoginAttemptID)
+	require.Error(t, err, "the stale row is gone")
+	_, err = env.DB.AuthAttempt.Get(t.Context(), fixtures.FreshLoginAttemptID)
+	assert.NoError(t, err, "the current row stays")
+}
+
+func TestResetBudgetGrantsThresholdSlotsAndReopensAfterTheWindow(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := &clock{t: time.Now()}
+	a := throttle.NewAttempts(env.DB,
+		throttle.WithClock(c.now),
+		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))
+	const email = "Reset@Attempts.test"
+	take := func() bool {
+		ok, err := a.Take(t.Context(), throttle.KindPasswordReset, email)
+		require.NoError(t, err)
+		return ok
+	}
+
+	for i := range 3 {
+		assert.True(t, take(), "slot %d is granted", i+1)
+	}
+	assert.False(t, take(), "the budget is spent")
+	c.advance(time.Minute)
+	assert.False(t, take(), "a refused request does not extend the window")
+	c.advance(time.Hour)
+	assert.True(t, take(), "the budget reopens an hour after the last granted slot")
+	assert.True(t, take())
+	assert.True(t, take())
+	assert.False(t, take(), "and counts from one again")
+}
+
+func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
+	env := testhelper.Setup(t)
+	a := throttle.NewAttempts(env.DB)
+	for range 5 {
+		ok, err := a.Take(t.Context(), throttle.KindPasswordReset, "x@attempts.test")
+		require.NoError(t, err)
+		assert.True(t, ok)
+	}
+}
+
+// Check and count are one statement, so concurrent requests for one address cannot
+// each see a free slot and all take it. The other tests ride one go-txdb transaction,
+// which serializes statements, so this one runs on a database of its own, with a
+// pool of real connections.
+func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
+	client := entclient.New(testhelper.RealDB(t))
+	const email = "race@attempts.test"
+
+	a := throttle.NewAttempts(client, throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))
+	const workers = 24
+	var granted atomic.Int32
+	var wg sync.WaitGroup
+	for range workers {
+		wg.Go(func() {
+			ok, err := a.Take(context.Background(), throttle.KindPasswordReset, email)
+			require.NoError(t, err)
+			if ok {
+				granted.Add(1)
+			}
+		})
+	}
+	wg.Wait()
+	assert.EqualValues(t, 3, granted.Load())
+}
+
+func TestTestSendIsCappedPerWorkspacePerDayAcrossUsers(t *testing.T) {
+	a, c, _ := newAttempts(t)
+	ctx := t.Context()
+
+	// Five Users, four sends each: no User passes its hourly cap, the Workspace passes its daily one.
+	for i := range throttle.TestSendPerWorkspaceDay {
+		got, err := a.TakeTestSend(ctx, int64(i/4+1), fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Zero(t, got, "send %d is within both caps", i+1)
+	}
+
+	got, err := a.TakeTestSend(ctx, 99, fixtures.GlobexID)
+	require.NoError(t, err)
+	assert.Equal(t, throttle.TestSendPerWorkspaceDay, got.Limit, "the 21st in a day is refused by the Workspace cap")
+	assert.Positive(t, got.Wait)
+
+	other, err := a.TakeTestSend(ctx, 99, fixtures.AcmeID)
+	require.NoError(t, err)
+	assert.Zero(t, other, "another Workspace has its own budget")
+
+	c.advance(24*time.Hour + time.Minute)
+	again, err := a.TakeTestSend(ctx, 98, fixtures.GlobexID)
+	require.NoError(t, err)
+	assert.Zero(t, again, "the window ends a day after the last granted send")
+}
+
+func TestTestSendRefusedByTheWorkspaceCapKeepsTheUsersSlot(t *testing.T) {
+	a, _, _ := newAttempts(t)
+	ctx := t.Context()
+	for i := range throttle.TestSendPerWorkspaceDay {
+		got, err := a.TakeTestSend(ctx, int64(i/4+1), fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Zero(t, got)
+	}
+
+	// User 99 is turned away by Globex's cap more often than its own hourly cap allows.
+	for range 2 * throttle.TestSendPerUserHour {
+		got, err := a.TakeTestSend(ctx, 99, fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Equal(t, throttle.TestSendPerWorkspaceDay, got.Limit)
+	}
+
+	for i := range throttle.TestSendPerUserHour {
+		got, err := a.TakeTestSend(ctx, 99, fixtures.AcmeID)
+		require.NoError(t, err)
+		require.Zero(t, got, "send %d: the refusals spent none of the User's slots", i+1)
+	}
+}

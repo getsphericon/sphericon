@@ -6,23 +6,24 @@ package resources
 import (
 	"fmt"
 	external "github.com/getsphericon/sphericon/gen/external"
-	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
-	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
-	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	channels "github.com/getsphericon/sphericon/internal/channels"
-	consent "github.com/getsphericon/sphericon/internal/consent"
-	contacts "github.com/getsphericon/sphericon/internal/contacts"
-	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
-	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
-	integrations "github.com/getsphericon/sphericon/internal/integrations"
-	outbound "github.com/getsphericon/sphericon/internal/outbound"
-	rules "github.com/getsphericon/sphericon/internal/rules"
-	segments "github.com/getsphericon/sphericon/internal/segments"
-	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
-	templates "github.com/getsphericon/sphericon/internal/templates"
-	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
+	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	webhookendpoints "github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
+	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	contactintake "github.com/getsphericon/sphericon/internal/usecase/contactintake"
+	eventlog "github.com/getsphericon/sphericon/internal/usecase/eventlog"
 )
 
 type InputsImpl struct{}
@@ -73,70 +74,70 @@ func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPer
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationsteps.Step {
-	var automationstepsStep automationsteps.Step
-	automationstepsStep.Type = c.AutomationStepType(source.Type)
-	automationstepsStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
-	automationstepsStep.Subject = stringIn(source.Subject)
-	automationstepsStep.Body = stringIn(source.Body)
-	automationstepsStep.Doc = documentIn(source.Doc)
-	// automationstepsStep.EditorVersion: ignore
-	automationstepsStep.Seconds = int32In(source.Seconds)
-	automationstepsStep.Tag = stringIn(source.Tag)
-	automationstepsStep.Text = stringIn(source.Text)
-	automationstepsStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
-	automationstepsStep.ImageURL = stringIn(source.ImageUrl)
+func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationstep.Step {
+	var automationstepStep automationstep.Step
+	automationstepStep.Type = c.AutomationStepType(source.Type)
+	automationstepStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
+	automationstepStep.Subject = stringIn(source.Subject)
+	automationstepStep.Body = stringIn(source.Body)
+	automationstepStep.Doc = documentIn(source.Doc)
+	// automationstepStep.EditorVersion: ignore
+	automationstepStep.Seconds = int32In(source.Seconds)
+	automationstepStep.Tag = stringIn(source.Tag)
+	automationstepStep.Text = stringIn(source.Text)
+	automationstepStep.UnsubscribeButton = stringIn(source.UnsubscribeButton)
+	automationstepStep.ImageURL = stringIn(source.ImageUrl)
 	if source.Buttons != nil {
-		automationstepsStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
+		automationstepStep.Buttons = make([]telegramrender.Button, len(source.Buttons))
 		for i := 0; i < len(source.Buttons); i++ {
-			automationstepsStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
+			automationstepStep.Buttons[i] = c.TelegramButton(source.Buttons[i])
 		}
 	}
-	automationstepsStep.LinkPreview = boolPtrIn(source.LinkPreview)
-	automationstepsStep.LinkTracking = boolPtrIn(source.LinkTracking)
-	automationstepsStep.ID = stringIn(source.ID)
-	automationstepsStep.URL = stringIn(source.URL)
+	automationstepStep.LinkPreview = boolPtrIn(source.LinkPreview)
+	automationstepStep.LinkTracking = boolPtrIn(source.LinkTracking)
+	automationstepStep.ID = stringIn(source.ID)
+	automationstepStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepsStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepsStep.Headers[j] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
 		}
 	}
-	automationstepsStep.Secret = stringIn(source.Secret)
-	automationstepsStep.ClearSecret = boolIn(source.ClearSecret)
-	return automationstepsStep
+	automationstepStep.Secret = stringIn(source.Secret)
+	automationstepStep.ClearSecret = boolIn(source.ClearSecret)
+	return automationstepStep
 }
-func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automationsteps.Kind {
-	var automationstepsKind automationsteps.Kind
+func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) automationstep.Kind {
+	var automationstepKind automationstep.Kind
 	switch source {
 	case external.AutomationStepTypeApplyTag:
-		automationstepsKind = automationsteps.ApplyTag
+		automationstepKind = automationstep.ApplyTag
 	case external.AutomationStepTypeEmail:
-		automationstepsKind = automationsteps.Email
+		automationstepKind = automationstep.Email
 	case external.AutomationStepTypeHTTP:
-		automationstepsKind = automationsteps.HTTP
+		automationstepKind = automationstep.HTTP
 	case external.AutomationStepTypeRemoveTag:
-		automationstepsKind = automationsteps.RemoveTag
+		automationstepKind = automationstep.RemoveTag
 	case external.AutomationStepTypeSMS:
-		automationstepsKind = automationsteps.SMS
+		automationstepKind = automationstep.SMS
 	case external.AutomationStepTypeTelegram:
-		automationstepsKind = automationsteps.Telegram
+		automationstepKind = automationstep.Telegram
 	case external.AutomationStepTypeWait:
-		automationstepsKind = automationsteps.Wait
+		automationstepKind = automationstep.Wait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return automationstepsKind
+	return automationstepKind
 }
-func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automationsteps.Step {
-	var automationstepsStepList []automationsteps.Step
+func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automationstep.Step {
+	var automationstepStepList []automationstep.Step
 	if source != nil {
-		automationstepsStepList = make([]automationsteps.Step, len(source))
+		automationstepStepList = make([]automationstep.Step, len(source))
 		for i := 0; i < len(source); i++ {
-			automationstepsStepList[i] = c.AutomationStep(source[i])
+			automationstepStepList[i] = c.AutomationStep(source[i])
 		}
 	}
-	return automationstepsStepList
+	return automationstepStepList
 }
 func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
@@ -199,14 +200,14 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
 	return broadcastsListFilter
 }
-func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) consent.Evidence {
-	var consentEvidence consent.Evidence
+func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
 	if source != nil {
-		consentEvidence.Wording = (*source).Wording
-		consentEvidence.Source = (*source).Source
-		consentEvidence.Brand = (*source).Brand
+		confirmationsEvidence.Wording = (*source).Wording
+		confirmationsEvidence.Source = (*source).Source
+		confirmationsEvidence.Brand = (*source).Brand
 	}
-	return consentEvidence
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Channel {
 	var channelsChannel channels.Channel
@@ -222,12 +223,12 @@ func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Cha
 	}
 	return channelsChannel
 }
-func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
-	var consentEvidence consent.Evidence
-	consentEvidence.Wording = source.Wording
-	consentEvidence.Source = source.Source
-	consentEvidence.Brand = source.Brand
-	return consentEvidence
+func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
+	confirmationsEvidence.Wording = source.Wording
+	confirmationsEvidence.Source = source.Source
+	confirmationsEvidence.Brand = source.Brand
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -253,6 +254,22 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
+func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contactintake.Input {
+	var contactintakeInput contactintake.Input
+	contactintakeInput.UpsertInput = c.ContactUpsert(source)
+	contactintakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
+	return contactintakeInput
+}
+func (c *InputsImpl) ContactIntakes(source []external.UpsertContactInput) []contactintake.Input {
+	var contactintakeInputList []contactintake.Input
+	if source != nil {
+		contactintakeInputList = make([]contactintake.Input, len(source))
+		for i := 0; i < len(source); i++ {
+			contactintakeInputList[i] = c.ContactIntake(source[i])
+		}
+	}
+	return contactintakeInputList
+}
 func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
@@ -274,18 +291,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
-	contactsUpsertInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
 	return contactsUpsertInput
-}
-func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.UpsertInput {
-	var contactsUpsertInputList []contacts.UpsertInput
-	if source != nil {
-		contactsUpsertInputList = make([]contacts.UpsertInput, len(source))
-		for i := 0; i < len(source); i++ {
-			contactsUpsertInputList[i] = c.ContactUpsert(source[i])
-		}
-	}
-	return contactsUpsertInputList
 }
 func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
@@ -528,57 +534,57 @@ func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrend
 	telegramrenderButton.URL = source.URL
 	return telegramrenderButton
 }
-func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) templates.CreateInput {
-	var templatesCreateInput templates.CreateInput
+func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) emailtemplates.CreateInput {
+	var emailtemplatesCreateInput emailtemplates.CreateInput
 	if source != nil {
-		templatesCreateInput.Name = (*source).Name
-		templatesCreateInput.Subject = stringPtrIn((*source).Subject)
-		templatesCreateInput.Body = stringPtrIn((*source).Body)
-		templatesCreateInput.Doc = documentIn((*source).Doc)
-		// templatesCreateInput.Prepared: ignore
+		emailtemplatesCreateInput.Name = (*source).Name
+		emailtemplatesCreateInput.Subject = stringPtrIn((*source).Subject)
+		emailtemplatesCreateInput.Body = stringPtrIn((*source).Body)
+		emailtemplatesCreateInput.Doc = documentIn((*source).Doc)
+		// emailtemplatesCreateInput.Prepared: ignore
 	}
-	return templatesCreateInput
+	return emailtemplatesCreateInput
 }
-func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) templates.UpdateInput {
-	var templatesUpdateInput templates.UpdateInput
+func (c *InputsImpl) TemplateUpdate(source *external.UpdateTemplateInput) emailtemplates.UpdateInput {
+	var emailtemplatesUpdateInput emailtemplates.UpdateInput
 	if source != nil {
-		templatesUpdateInput.Name = stringPatch((*source).Name)
-		templatesUpdateInput.Subject = stringPatch((*source).Subject)
-		templatesUpdateInput.Body = stringPatch((*source).Body)
-		templatesUpdateInput.Doc = documentPatch((*source).Doc)
+		emailtemplatesUpdateInput.Name = stringPatch((*source).Name)
+		emailtemplatesUpdateInput.Subject = stringPatch((*source).Subject)
+		emailtemplatesUpdateInput.Body = stringPatch((*source).Body)
+		emailtemplatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
-	return templatesUpdateInput
+	return emailtemplatesUpdateInput
 }
-func (c *InputsImpl) TestAddress(source *external.TestSendBroadcastInput) outbound.TestAddress {
-	var outboundTestAddress outbound.TestAddress
+func (c *InputsImpl) TestAddress(source *external.TestSendBroadcastInput) outboundmessages.TestAddress {
+	var outboundmessagesTestAddress outboundmessages.TestAddress
 	if source != nil {
-		outboundTestAddress.Email = emailIn((*source).Email)
-		outboundTestAddress.Phone = stringIn((*source).Phone)
+		outboundmessagesTestAddress.Email = emailIn((*source).Email)
+		outboundmessagesTestAddress.Phone = stringIn((*source).Phone)
 	}
-	return outboundTestAddress
+	return outboundmessagesTestAddress
 }
-func (c *InputsImpl) WebhookCreate(source *external.CreateWebhookInput) webhooks.CreateInput {
-	var webhooksCreateInput webhooks.CreateInput
+func (c *InputsImpl) WebhookCreate(source *external.CreateWebhookInput) webhookendpoints.CreateInput {
+	var webhookendpointsCreateInput webhookendpoints.CreateInput
 	if source != nil {
-		webhooksCreateInput.URL = (*source).URL
+		webhookendpointsCreateInput.URL = (*source).URL
 		if (*source).EventTypes != nil {
-			webhooksCreateInput.EventTypes = make([]string, len((*source).EventTypes))
+			webhookendpointsCreateInput.EventTypes = make([]string, len((*source).EventTypes))
 			for i := 0; i < len((*source).EventTypes); i++ {
-				webhooksCreateInput.EventTypes[i] = (*source).EventTypes[i]
+				webhookendpointsCreateInput.EventTypes[i] = (*source).EventTypes[i]
 			}
 		}
-		webhooksCreateInput.Enabled = boolPtrIn((*source).Enabled)
+		webhookendpointsCreateInput.Enabled = boolPtrIn((*source).Enabled)
 	}
-	return webhooksCreateInput
+	return webhookendpointsCreateInput
 }
-func (c *InputsImpl) WebhookUpdate(source *external.UpdateWebhookInput) webhooks.UpdateInput {
-	var webhooksUpdateInput webhooks.UpdateInput
+func (c *InputsImpl) WebhookUpdate(source *external.UpdateWebhookInput) webhookendpoints.UpdateInput {
+	var webhookendpointsUpdateInput webhookendpoints.UpdateInput
 	if source != nil {
-		webhooksUpdateInput.URL = stringPatch((*source).URL)
-		webhooksUpdateInput.EventTypes = listPatch((*source).EventTypes)
-		webhooksUpdateInput.Enabled = boolPatch((*source).Enabled)
+		webhookendpointsUpdateInput.URL = stringPatch((*source).URL)
+		webhookendpointsUpdateInput.EventTypes = listPatch((*source).EventTypes)
+		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
-	return webhooksUpdateInput
+	return webhookendpointsUpdateInput
 }
 func (c *InputsImpl) externalapiAutomationHttpHeaderToHttpcallHeader(source external.AutomationHttpHeader) httpcall.Header {
 	var httpcallHeader httpcall.Header

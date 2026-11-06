@@ -12,7 +12,7 @@ import (
 	"github.com/foxcpp/go-mockdns"
 	"github.com/miekg/dns"
 
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // Resolver serves zones (keys are fully qualified, with the trailing dot) and
@@ -75,7 +75,7 @@ func (z *Zone) PublishTXT(tb testing.TB, name, value string) {
 // WithdrawTXT removes every TXT record at name.
 func (z *Zone) WithdrawTXT(name string) { z.srv.RemoveRR(name, typeTXT) }
 
-// LookupTXT resolves through the zone's server; it satisfies sending.TXTLookup.
+// LookupTXT resolves through the zone's server; it satisfies domainname.TXTLookup.
 func (z *Zone) LookupTXT(ctx context.Context, name string) ([]string, error) {
 	return z.r.LookupTXT(ctx, name)
 }

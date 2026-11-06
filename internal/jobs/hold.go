@@ -6,8 +6,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 )
 
 // inProgressRetryDelay is how soon to look again at a send whose claim another attempt
@@ -32,13 +32,13 @@ func isHeld(err error) bool {
 // Workers call it on the error from their pure function.
 func snoozeIfDeferrable(err error) error {
 	if isHeld(err) {
-		retry := outbound.HoldRetry()
+		retry := outboundmessages.HoldRetry()
 		return river.JobSnooze(retry.After)
 	}
 	if d, deferred := asDeferred(err); deferred {
 		return river.JobSnooze(d.Delay)
 	}
-	if errors.Is(err, outbound.ErrInProgress) {
+	if errors.Is(err, outboundmessages.ErrInProgress) {
 		return river.JobSnooze(inProgressRetryDelay)
 	}
 	return err

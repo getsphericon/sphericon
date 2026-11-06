@@ -2,14 +2,17 @@ package jobs
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // The consumers of the domain events that core owns (ADR 0101). Each is a job kind with its args
@@ -25,6 +28,9 @@ func EventConsumers() []events.Consumer {
 		{Wants: triggers, Job: func(env events.Envelope) river.JobArgs { return AutomationEventArgs{events.EventJob{Envelope: env}} }},
 		{Wants: firesRules, Job: func(env events.Envelope) river.JobArgs { return RuleEventArgs{events.EventJob{Envelope: env}} }},
 		{Wants: reachesWebhooks, Job: func(env events.Envelope) river.JobArgs { return WebhookEventArgs{events.EventJob{Envelope: env}} }},
+		{Wants: countsOnBroadcast, Job: func(env events.Envelope) river.JobArgs {
+			return BroadcastUnsubscribeEventArgs{events.EventJob{Envelope: env}}
+		}},
 	}
 }
 
@@ -220,7 +226,7 @@ func (SuppressEventArgs) Kind() string { return "event_suppress" }
 func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
 	p := ev.Project()
 	kind, _ := p.Properties["bounceKind"].(string)
-	_, ok := suppression.ForEvent(p.Action, kind)
+	_, ok := suppressions.ForEvent(p.Action, kind)
 	return ok
 }
 
@@ -233,11 +239,85 @@ type SuppressEventWorker struct {
 }
 
 // NewSuppressEventWorker is the suppression consumer's worker over the raw client: the envelope
-// names the Workspace, which events.Suppress scopes to.
+// names the Workspace, which Work scopes to.
 func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
 	return &SuppressEventWorker{ent: client}
 }
 
+// Work adds the event's destination to the Workspace's Suppression list when the action implies a
+// global do-not-send (hard bounce, complaint). No-op for other actions or a missing email.
+// Idempotent: a redelivered or repeated event keeps the original entry rather than erroring or
+// overwriting its reason.
 func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressEventArgs]) error {
-	return events.Suppress(ctx, w.ent, job.Args.Envelope)
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	p := ev.Project()
+	kind, _ := p.Properties["bounceKind"].(string)
+	reason, ok := suppressions.ForEvent(p.Action, kind)
+	if !ok {
+		return nil
+	}
+	// The Workspace comes from the event envelope: a consumer has no membership or
+	// api token, so this is a scope source outside the site/external/job list.
+	s := w.ent.Scoped(env.WorkspaceID)
+	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	if errors.Is(err, suppressions.ErrDestinationEmpty) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("suppress %q: %w", p.Email, err)
+	}
+	return nil
+}
+
+// BroadcastUnsubscribeEventArgs is the broadcasts consumer's job: a Telegram opt-out made from a
+// Broadcast's message, which the Broadcast counts as an unsubscribe of its recipient.
+type BroadcastUnsubscribeEventArgs struct {
+	events.EventJob
+}
+
+func (BroadcastUnsubscribeEventArgs) Kind() string { return "event_broadcast_unsubscribe" }
+
+// countsOnBroadcast wants a telegram.unsubscribed that names a Broadcast and its Contact.
+func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
+	e, ok := ev.(*events.TelegramUnsubscribed)
+	return ok && e.BroadcastID != 0 && e.ContactID != 0
+}
+
+// BroadcastUnsubscribeEventWorker counts a Telegram opt-out on the Broadcast whose message it was
+// made from (broadcasts.RecordUnsubscribe). The opt-out is written by
+// internal/domain/contacts/channelstop, below the Broadcasts, and the recipient row is the broadcasts
+// module's (ADR 0102: only the owner writes a table), so the count follows the event: its job
+// commits with the opt-out, and a repeat counts nothing, the mark being set once.
+type BroadcastUnsubscribeEventWorker struct {
+	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
+
+	ent *ent.Client
+}
+
+// NewBroadcastUnsubscribeEventWorker is the broadcasts consumer's worker over the raw client: the
+// envelope names the Workspace, which Work scopes to.
+func NewBroadcastUnsubscribeEventWorker(client *ent.Client) *BroadcastUnsubscribeEventWorker {
+	return &BroadcastUnsubscribeEventWorker{ent: client}
+}
+
+// Work marks the Contact's recipient row of the Broadcast as unsubscribed, once.
+func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.Job[BroadcastUnsubscribeEventArgs]) error {
+	env := job.Args.Envelope
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	e, ok := ev.(*events.TelegramUnsubscribed)
+	if !ok || e.BroadcastID == 0 {
+		return nil
+	}
+	// The Workspace comes from the event envelope, as for every consumer.
+	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(env.WorkspaceID), e.BroadcastID, e.ContactID); err != nil {
+		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
+	}
+	return nil
 }

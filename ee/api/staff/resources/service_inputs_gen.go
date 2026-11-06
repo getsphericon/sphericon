@@ -5,7 +5,7 @@ package resources
 
 import (
 	service "github.com/getsphericon/sphericon/gen/service"
-	holds "github.com/getsphericon/sphericon/internal/holds"
+	holds "github.com/getsphericon/sphericon/internal/domain/sending/holds"
 )
 
 type ServiceInputsImpl struct{}

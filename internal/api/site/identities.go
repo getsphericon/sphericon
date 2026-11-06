@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // signinSettingsPath is the account page that lists the Linked identities: where a link flow
@@ -19,7 +19,7 @@ func (h *Handlers) SiteIdentitiesList(ctx context.Context) (*siteapi.SiteLinkedI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := h.accounts.Identities(ctx, userID)
+	rows, err := h.users.Identities(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteId
 	if err != nil {
 		return nil, err
 	}
-	authURL, flow, err := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
+	authURL, flow, err := h.signin.Start(params.Provider, signinprovider.SafeReturnTo(params.ReturnTo.Or("")))
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteId
 	}
 	return &siteapi.SiteIdentitiesLinkFound{
 		Location:  authURL,
-		SetCookie: h.sessions.SigninFlow(sealed, signin.FlowTTL).String(),
+		SetCookie: h.sessions.SigninFlow(sealed, signinprovider.FlowTTL).String(),
 	}, nil
 }
 
@@ -55,7 +55,7 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.UnlinkIdentity(ctx, userID, int64(params.ID))
+	u, err := h.users.UnlinkIdentity(ctx, userID, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -71,17 +71,17 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 // identity keeps the session's provider login time; every other session goes on), and lands on
 // the page the flow began from. Anything else is a refusal that lands on the settings page with
 // the Reason.
-func (h *Handlers) linkProvider(ctx context.Context, flow signin.Flow, session string, profile signin.Profile) (*siteapi.SiteAuthSigninCallbackFound, error) {
+func (h *Handlers) linkProvider(ctx context.Context, flow signinprovider.Flow, session string, profile signinprovider.Profile) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	holds, err := h.holdsSession(ctx, session, flow.LinkUserID)
 	if err != nil {
 		return nil, err
 	}
 	if !holds {
-		return h.signinRefused(flow, signin.ReasonInvalidState), nil
+		return h.signinRefused(flow, signinprovider.ReasonInvalidState), nil
 	}
-	u, added, err := h.accounts.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, profile.Subject)
-	if errors.Is(err, accounts.ErrIdentityInUse) {
-		return h.signinRefused(flow, signin.ReasonIdentityInUse), nil
+	u, added, err := h.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, profile.Subject)
+	if errors.Is(err, users.ErrIdentityInUse) {
+		return h.signinRefused(flow, signinprovider.ReasonIdentityInUse), nil
 	}
 	if err != nil {
 		return nil, err

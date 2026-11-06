@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // storedEventOf is a stored fixture Event as its trigger job hands it on (#752).
@@ -28,7 +28,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := storedEventOf(t, env, fixtures.EventPaymentFailedID)
 
-	require.NoError(t, stepping.OnEvent(t.Context(), env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactPaymentFailedID, ev, 0))
+	require.NoError(t, stepexecution.OnEvent(t.Context(), env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactPaymentFailedID, ev, 0))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 

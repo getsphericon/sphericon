@@ -11,10 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
 // What queues work never reaches the job client: Integrations and bindings, then Outbound send,
@@ -32,7 +32,7 @@ func TestQueueingWorkNeedsNoJobClient(t *testing.T) {
 	require.NoError(t, err)
 	_, err = do.Invoke[*bindings.Module](injector)
 	require.NoError(t, err)
-	_, err = do.Invoke[*outbound.Module](injector)
+	_, err = do.Invoke[*outboundmessages.Module](injector)
 	require.NoError(t, err)
 
 	for _, s := range injector.ListInvokedServices() {

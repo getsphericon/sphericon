@@ -18,17 +18,18 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // unsubPath turns a tracker UnsubscribeURL into the local "/e/u/<token>" path the
 // in-memory test server dispatches on.
-func unsubPath(t *testing.T, tr *tracking.Tracker, target tracking.UnsubTarget) string {
+func unsubPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Unsubscribe) string {
 	t.Helper()
 	full, err := tr.UnsubscribeURL(target)
 	require.NoError(t, err)
@@ -39,7 +40,7 @@ func unsubPath(t *testing.T, tr *tracking.Tracker, target tracking.UnsubTarget) 
 
 // confirmPath turns a tracker ConfirmURL into the local "/e/confirm/<token>" path
 // the in-memory test server dispatches on.
-func confirmPath(t *testing.T, tr *tracking.Tracker, target tracking.ConfirmTarget) string {
+func confirmPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Confirmation) string {
 	t.Helper()
 	full, err := tr.ConfirmURL(target)
 	require.NoError(t, err)
@@ -57,7 +58,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
@@ -73,7 +74,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	cPath := confirmPath(t, tr, tracking.ConfirmTarget{
+	cPath := confirmPath(t, tr, linktarget.Confirmation{
 		Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	})
 	confirmed := func() bool {
@@ -127,7 +128,7 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	post := func(path string) {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -146,14 +147,14 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	}
 
 	// A per-source (broadcasts) opt-out must NOT invalidate the confirmation.
-	post(unsubPath(t, tr, tracking.UnsubTarget{
+	post(unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
 	assert.True(t, confExists(), "per-source opt-out leaves the confirmation")
 
 	// The everything opt-out deletes the confirmation row.
-	post(unsubPath(t, tr, tracking.UnsubTarget{
+	post(unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceEverything, Destination: *c.Email, WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
 	}))
@@ -168,7 +169,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	// A recipient in fixture workspace Acme. Alice is not already
 	// unsubscribed from broadcasts (bob is, in the fixtures).
@@ -214,7 +215,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	// "broadcasts"-scoped token. GET is safe — it 303-redirects to the SPA confirm
 	// page and records nothing (a link scanner's GET must not opt anyone out); only
 	// POST performs the opt-out.
-	uPath := unsubPath(t, tr, tracking.UnsubTarget{
+	uPath := unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,
@@ -266,9 +267,9 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	target := tracking.UnsubTarget{
+	target := linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, OutboundMessageID: fixtures.OutboundMessageWelcomeID,
 	}
@@ -294,7 +295,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -309,7 +310,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	require.Equal(t, c.ID, run.ContactID, "Alice is enrolled")
 
 	// POST performs the opt-out (GET only renders the confirm page — ADR 0012).
-	resp := post(unsubPath(t, tr, tracking.UnsubTarget{
+	resp := post(unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.AutomationSource(a.ID), Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
@@ -336,7 +337,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
@@ -356,7 +357,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 
 	// GET the source unsubscribe → confirm-page redirect carrying the escalation
 	// URL in ?all=.
-	srcPath := unsubPath(t, tr, tracking.UnsubTarget{
+	srcPath := unsubPath(t, tr, linktarget.Unsubscribe{
 		Channel: channels.Email,
 		Source:  eligibility.SourceBroadcasts, Destination: *c.Email,
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, BroadcastID: b.ID,

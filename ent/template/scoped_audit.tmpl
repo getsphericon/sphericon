@@ -4,7 +4,7 @@ Audit capture in the scoped client (ADR 0022). The actor (kind, id) is part of
 open a transaction (or join the one the scope is already bound to), run the mutation and
 publish an audit change through the scope's AuditPublisher in it. A scope without an
 actor, or with the `ingest` actor, takes the plain path with no transaction and no
-entry. ent cannot import internal/events, so the transaction opener and the publisher
+entry. ent cannot import internal/infra/events, so the transaction opener and the publisher
 are small interfaces that the events bus implements.
 */}}
 {{ define "scoped_audit" }}

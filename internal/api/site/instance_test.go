@@ -36,7 +36,7 @@ func requireReleaseRefused(t *testing.T, c *siteapi.Client) {
 func TestTheReleaseBannerReachesAnOwnerOfAnyWorkspaceAndNoOneElse(t *testing.T) {
 	_, url := newReleases(t, "v0.2.0")
 	env, _ := releaseEnv(t, "0.1.0", url)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, env.ReleaseCheck.CheckRelease(t.Context()))
 
 	john := latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail))
 	jane := latestRelease(t, env.SiteActor(t, fixtures.OwnerJaneEmail))

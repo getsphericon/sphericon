@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/getsphericon/sphericon/internal/emaildoc"
+	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 )
 
 // RendererEnv set to "goja" makes Renderer the real one: the nightly suite runs the save paths
-// through the editor's own export, which a pull request leaves to internal/emaildoc and
-// internal/emailrender.
+// through the editor's own export, which a pull request leaves to internal/kernel/emaildoc and
+// internal/kernel/emailrender.
 const RendererEnv = "SPHERICON_TEST_EMAIL_RENDERER"
 
 var (

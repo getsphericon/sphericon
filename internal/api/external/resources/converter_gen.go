@@ -21,31 +21,31 @@ import (
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
-	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
-	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
-	bindings "github.com/getsphericon/sphericon/internal/bindings"
-	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
-	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	channels "github.com/getsphericon/sphericon/internal/channels"
-	consent "github.com/getsphericon/sphericon/internal/consent"
-	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
-	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
-	holdreason "github.com/getsphericon/sphericon/internal/holdreason"
-	integrations "github.com/getsphericon/sphericon/internal/integrations"
-	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
-	messaging "github.com/getsphericon/sphericon/internal/messaging"
-	orders "github.com/getsphericon/sphericon/internal/orders"
-	pagination "github.com/getsphericon/sphericon/internal/pagination"
-	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
-	providers "github.com/getsphericon/sphericon/internal/providers"
-	reputation "github.com/getsphericon/sphericon/internal/reputation"
-	rules "github.com/getsphericon/sphericon/internal/rules"
-	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	telegramrender "github.com/getsphericon/sphericon/internal/telegramrender"
-	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
-	transactional "github.com/getsphericon/sphericon/internal/transactional"
-	webhook "github.com/getsphericon/sphericon/internal/webhook"
+	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
+	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
+	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
+	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
+	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
+	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	transactionalsend "github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	jx "github.com/go-faster/jx"
 )
 
@@ -78,14 +78,14 @@ func (c *ConverterImpl) ApiTokensToInfos(source []*ent.ApiToken) []external.ApiT
 	}
 	return externalapiApiTokenInfoList
 }
-func (c *ConverterImpl) AuditActorToResource(source auditapi.View) external.AuditActor {
+func (c *ConverterImpl) AuditActorToResource(source auditlog.View) external.AuditActor {
 	var externalapiAuditActor external.AuditActor
 	externalapiAuditActor.Kind = external.AuditActorKind(source.ActorKind)
 	externalapiAuditActor.ID = optNilString(source.ActorID)
 	externalapiAuditActor.Name = optNilString(source.ActorName)
 	return externalapiAuditActor
 }
-func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []external.AuditEntryResource {
+func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []external.AuditEntryResource {
 	var externalapiAuditEntryResourceList []external.AuditEntryResource
 	externalapiAuditEntryResourceList = make([]external.AuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
@@ -93,7 +93,7 @@ func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []extern
 	}
 	return externalapiAuditEntryResourceList
 }
-func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.AuditEntryResource {
+func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) external.AuditEntryResource {
 	var externalapiAuditEntryResource external.AuditEntryResource
 	externalapiAuditEntryResource.ID = external.EntityId(source.ID)
 	externalapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
@@ -106,7 +106,7 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.Audi
 	externalapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return externalapiAuditEntryResource
 }
-func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) external.AuditTarget {
+func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) external.AuditTarget {
 	var externalapiAuditTarget external.AuditTarget
 	externalapiAuditTarget.Type = source.TargetType
 	externalapiAuditTarget.ID = optNilString(source.TargetID)
@@ -160,7 +160,7 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 	if source.Links != nil {
 		externalapiAutomationReport.Links = make([]external.LinkClicks, len(source.Links))
 		for i := 0; i < len(source.Links); i++ {
-			externalapiAutomationReport.Links[i] = c.linkclicksClicksToExternalapiLinkClicks(source.Links[i])
+			externalapiAutomationReport.Links[i] = c.linkclickClicksToExternalapiLinkClicks(source.Links[i])
 		}
 	}
 	externalapiAutomationReport.Results = c.AutomationResultsToResource(source.Results)
@@ -242,22 +242,22 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return externalapiAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) external.AutomationStepType {
 	var externalapiAutomationStepType external.AutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automationstep.ApplyTag:
 		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automationstep.Email:
 		externalapiAutomationStepType = external.AutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automationstep.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
-	case automationsteps.SMS:
+	case automationstep.SMS:
 		externalapiAutomationStepType = external.AutomationStepTypeSMS
-	case automationsteps.Telegram:
+	case automationstep.Telegram:
 		externalapiAutomationStepType = external.AutomationStepTypeTelegram
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		externalapiAutomationStepType = external.AutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -321,7 +321,7 @@ func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) []exter
 	}
 	return externalapiAutomationResourceList
 }
-func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKitResource {
+func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource
 	externalapiBrandKitResource.Saved = source.Saved
 	externalapiBrandKitResource.AccentColor = source.AccentColor
@@ -1387,7 +1387,7 @@ func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) exte
 	}
 	return externalapiSmsConfirmation
 }
-func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) external.SmsConsent {
+func (c *ConverterImpl) SmsConsentToResource(source confirmations.ContactSMS) external.SmsConsent {
 	var externalapiSmsConsent external.SmsConsent
 	externalapiSmsConsent.Phone = optNilString(source.Phone)
 	externalapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
@@ -1408,7 +1408,7 @@ func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) exte
 	}
 	return externalapiSmsFromKind
 }
-func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) external.SmsOptOut {
+func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) external.SmsOptOut {
 	var externalapiSmsOptOut external.SmsOptOut
 	if source != nil {
 		externalapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)
@@ -1625,12 +1625,12 @@ func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) ext
 	}
 	return externalapiTrackingState
 }
-func (c *ConverterImpl) TransactionalSendStatusToResource(source transactional.Status) external.TransactionalSendStatus {
+func (c *ConverterImpl) TransactionalSendStatusToResource(source transactionalsend.Status) external.TransactionalSendStatus {
 	var externalapiTransactionalSendStatus external.TransactionalSendStatus
 	switch source {
-	case transactional.Sent:
+	case transactionalsend.Sent:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSent
-	case transactional.Suppressed:
+	case transactionalsend.Suppressed:
 		externalapiTransactionalSendStatus = external.TransactionalSendStatusSuppressed
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1777,7 +1777,7 @@ func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
 	}
 	return jxRaw
 }
-func (c *ConverterImpl) linkclicksClicksToExternalapiLinkClicks(source linkclicks.Clicks) external.LinkClicks {
+func (c *ConverterImpl) linkclickClicksToExternalapiLinkClicks(source linkclick.Clicks) external.LinkClicks {
 	var externalapiLinkClicks external.LinkClicks
 	externalapiLinkClicks.URL = source.URL
 	externalapiLinkClicks.Clicks = count(source.Clicks)

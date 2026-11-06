@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 )
 
 // passkeyChallengesHourUTC is the off-peak hour the spent-challenge prune runs at.
@@ -20,7 +20,7 @@ type PrunePasskeyChallengesArgs struct{}
 func (PrunePasskeyChallengesArgs) Kind() string { return "passkey_challenges_prune" }
 
 // PrunePasskeyChallengesWorker deletes the spent challenges older than
-// secondfactor.SpentChallengeRetention, which outlasts any ceremony cookie. A challenge
+// passkeys.SpentChallengeRetention, which outlasts any ceremony cookie. A challenge
 // belongs to no User, so it works on the raw client.
 type PrunePasskeyChallengesWorker struct {
 	river.WorkerDefaults[PrunePasskeyChallengesArgs]
@@ -35,7 +35,7 @@ func NewPrunePasskeyChallengesWorker(client *ent.Client, now func() time.Time) *
 }
 
 func (w *PrunePasskeyChallengesWorker) Work(ctx context.Context, _ *river.Job[PrunePasskeyChallengesArgs]) error {
-	deleted, err := secondfactor.PruneSpentChallenges(ctx, w.ent, w.now().Add(-secondfactor.SpentChallengeRetention))
+	deleted, err := passkeys.PruneSpentChallenges(ctx, w.ent, w.now().Add(-passkeys.SpentChallengeRetention))
 	if err != nil {
 		return err
 	}

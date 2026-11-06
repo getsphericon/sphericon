@@ -10,37 +10,38 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/patch"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/segments"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/signup"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
-	"github.com/getsphericon/sphericon/internal/telegramrender"
-	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
+	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
+	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
 // handler only hands the module what the request says. An update becomes the module's patch
-// (internal/patch): an absent key keeps, an explicit null clears, a value sets. The extends below
-// bind the generated option types of this surface to the shared conversions of internal/convert.
+// (internal/kernel/patch): an absent key keeps, an explicit null clears, a value sets. The extends below
+// bind the generated option types of this surface to the shared conversions of internal/kernel/convert.
 //
 // goverter:converter
 // goverter:annotate:unmapped
@@ -104,12 +105,12 @@ import (
 // goverter:extend sortDirectionIn
 type Inputs interface {
 	// goverter:ignore Prepared
-	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
-	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
+	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
+	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
-	ConsentEvidence(source *siteapi.ConsentEvidence) consent.Evidence
+	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
-	TestAddress(source *siteapi.TestSendBroadcastInput) outbound.TestAddress
+	TestAddress(source *siteapi.TestSendBroadcastInput) outboundmessages.TestAddress
 
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -125,8 +126,8 @@ type Inputs interface {
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 
-	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
-	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhooks.UpdateInput
+	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
+	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
 
 	// goverter:map DkimSelector Selector
 	SendingDomainCreate(source *siteapi.CreateSendingDomainInput) sendingdomains.CreateInput
@@ -149,8 +150,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source siteapi.SiteAutomationStep) automationsteps.Step
-	AutomationSteps(source []siteapi.SiteAutomationStep) []automationsteps.Step
+	AutomationStep(source siteapi.SiteAutomationStep) automationstep.Step
+	AutomationSteps(source []siteapi.SiteAutomationStep) []automationstep.Step
 	TelegramButton(source siteapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
@@ -164,18 +165,18 @@ type Inputs interface {
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
 	PersonalTokenCreate(source *siteapi.SiteCreatePersonalTokenInput) apitokens.PersonalInput
 
-	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkit.Input
+	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkits.Input
 
-	SignUp(source *siteapi.SiteSignUpInput) signup.Input
+	SignUp(source *siteapi.SiteSignUpInput) workspacecreation.SignUpInput
 	SignupAnswers(source []siteapi.SiteSignupItemAnswer) []consentrecords.Answer
 	ReAcceptances(source []siteapi.SiteAcceptance) []consentrecords.ReAcceptance
 
 	// The inviting User is the session's, not the request's: the handler sets it.
 	// goverter:ignore InvitedBy
-	InvitationCreate(source *siteapi.SiteCreateInvitationInput) accounts.InviteInput
+	InvitationCreate(source *siteapi.SiteCreateInvitationInput) invitations.InviteInput
 
 	// Every answer was checked against the contract's enums when the request was decoded.
-	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurvey.Answers
+	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurveyresponses.Answers
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -183,13 +184,13 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRange90d Window90Days
-	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analytics.Window
+	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analyticsreport.Window
 	// goverter:enum:transform value
 	SuppressionChannel(source siteapi.SiteSuppressionChannel) channels.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
-	AnalyticsRevenueWindow(source siteapi.SiteAnalyticsRevenueRange) analytics.Window
+	AnalyticsRevenueWindow(source siteapi.SiteAnalyticsRevenueRange) analyticsreport.Window
 	// The contract names a period "7d", the module counts its days: each member is mapped.
 	// goverter:enum:map SiteAutomationReportsGetPeriod7d ReportPeriod7Days
 	// goverter:enum:map SiteAutomationReportsGetPeriod14d ReportPeriod14Days
@@ -215,11 +216,13 @@ type Inputs interface {
 	// goverter:enum:transform value
 	SortDirection(source siteapi.SortDirection) pagination.Direction
 	// goverter:enum:transform value
-	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
+	AutomationStepType(source siteapi.SiteAutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
 	MembershipRole(source siteapi.SiteMembershipRole) membership.Role
+	// goverter:enum:transform value
+	PersonalScope(source siteapi.PersonalScope) tokenscope.PersonalScope
 	// goverter:enum:transform value
 	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
 	// goverter:enum:transform value
@@ -317,7 +320,7 @@ func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyres
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationsteps.Step {
+func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}

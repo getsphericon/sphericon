@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 )
 
 // workspaceOps is what the `workspace` staff member commands need from the app. The

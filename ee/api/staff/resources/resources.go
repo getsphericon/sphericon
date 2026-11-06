@@ -9,20 +9,20 @@ import (
 
 	"github.com/go-faster/jx"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
+	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // PeriodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.
@@ -85,29 +85,29 @@ type StaffConverter interface {
 	// goverter:ignore Warning
 	AbuseToResource(source *ent.Workspace) staffeeapi.StaffAbuse
 	// goverter:map . Rate | breachRate
-	BreachToWarning(source abuse.Breach) staffeeapi.StaffAbuseWarning
+	BreachToWarning(source abusedetector.Breach) staffeeapi.StaffAbuseWarning
 
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
-	DomainRatesToResource(source abuse.DomainRates) staffeeapi.StaffDomainRates
+	DomainRatesToResource(source abusedetector.DomainRates) staffeeapi.StaffDomainRates
 	RateToResource(source reputation.Rate) staffeeapi.StaffRate
 	// goverter:map Window WindowHours | windowHours
-	DeliverabilityToResource(source abuse.Deliverability) staffeeapi.StaffDeliverability
+	DeliverabilityToResource(source abusedetector.Deliverability) staffeeapi.StaffDeliverability
 
 	// goverter:map . Actor
 	// goverter:map . Target
-	AuditEntryToResource(source auditapi.View) staffeeapi.StaffAuditEntryResource
+	AuditEntryToResource(source auditlog.View) staffeeapi.StaffAuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditapi.View) staffeeapi.StaffAuditActor
+	AuditActorToResource(source auditlog.View) staffeeapi.StaffAuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditapi.View) staffeeapi.StaffAuditTarget
+	AuditTargetToResource(source auditlog.View) staffeeapi.StaffAuditTarget
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditapi.View) []staffeeapi.StaffAuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []staffeeapi.StaffAuditEntryResource
 
 	// One User's Sign-up survey answers. The enums share the contract's values.
 	// goverter:map UserID UserId
@@ -124,7 +124,7 @@ type StaffConverter interface {
 	// goverter:map MainGoal.Others MainGoalOtherTexts
 	// goverter:map HeardFrom.Choices HeardFrom
 	// goverter:map HeardFrom.Others HeardFromOtherTexts
-	SignupSurveyCountsToResource(source signupsurvey.Counts) staffeeapi.StaffSignupSurveyCounts
+	SignupSurveyCountsToResource(source signupsurveyresponses.Counts) staffeeapi.StaffSignupSurveyCounts
 
 	// Pages: a list response is the module's pagination.Page mapped whole.
 	// goverter:useEmptyOnNil:slice
@@ -133,11 +133,11 @@ type StaffConverter interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abuse.Metric) staffeeapi.StaffAbuseMetric
+	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.StaffAbuseMetric
 	// The review state a list is filtered by: the input direction, the one enum the console sends.
 	// goverter:enum:transform value
 	// goverter:enum:map StaffWorkspaceReviewSystemFrozen ReviewSystemFrozen
-	ReviewIn(source staffeeapi.StaffWorkspaceReview) abuse.Review
+	ReviewIn(source staffeeapi.StaffWorkspaceReview) abusedetector.Review
 	// goverter:enum:transform value
 	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.StaffSignupCompanySize
 	// goverter:enum:transform value
@@ -203,17 +203,17 @@ type ServiceConverter interface {
 	TombstoneToResource(source *ent.UserTombstone) serviceapi.ServiceUserResource
 
 	// The change names the Workspace by its internal id; the module reads its public id for the
-	// whole page at once (eestaff.TrackingHostFeedEntry), and the handler attaches it.
+	// whole page at once (workspaceoversight.TrackingHostFeedEntry), and the handler attaches it.
 	// goverter:map CreatedAt ChangedAt
 	// goverter:ignore WorkspaceId
 	TrackingHostChangeToResource(source *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange
 
-	UsageFigureToResource(source usage.Figure) serviceapi.UsageFigure
+	UsageFigureToResource(source usages.Figure) serviceapi.UsageFigure
 	// The public id is the Workspace's, which the usage row does not carry: the handler
 	// attaches it.
 	// goverter:ignore WorkspaceId
 	// goverter:map Period Period | periodString
-	UsageToResource(source usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource
+	UsageToResource(source usages.WorkspaceUsage) serviceapi.WorkspaceUsageResource
 
 	// Pages: a list response is the module's pagination.Page mapped whole. Items the handler
 	// maps itself (an extra per item) arrive as a page of resources (pagination.Map).
@@ -238,7 +238,7 @@ type ServiceConverter interface {
 	// goverter:enum:transform value
 	TrackingHostStateToResource(source trackinghostchange.State) serviceapi.ServiceTrackingHostState
 	// goverter:enum:transform value
-	UsageMetricToResource(source usage.Metric) serviceapi.UsageMetric
+	UsageMetricToResource(source usages.Metric) serviceapi.UsageMetric
 }
 
 func staffTimestamp(t time.Time) staffeeapi.Timestamp { return staffeeapi.Timestamp(t) }
@@ -277,7 +277,7 @@ func serviceOptNilTimestampAt(t time.Time) serviceapi.OptNilTimestamp {
 
 func isSet(t *time.Time) bool { return t != nil }
 
-func breachRate(b abuse.Breach) float64 { return b.Rate() }
+func breachRate(b abusedetector.Breach) float64 { return b.Rate() }
 
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
 

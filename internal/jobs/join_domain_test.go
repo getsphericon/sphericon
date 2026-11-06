@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/joindomain"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,7 +25,7 @@ const (
 )
 
 func joinModule(env *testhelper.TestEnv, zone *dnstest.Zone) *joindomains.Module {
-	return joindomains.New(env.DB, env.Bus, zone.LookupTXT, time.Now, accounts.OwnerNotifier(env.DB, env.SystemMail))
+	return joindomains.New(env.DB, env.Bus, zone.LookupTXT, time.Now, memberships.OwnerNotifier(env.DB, env.SystemMail))
 }
 
 func TestVerifyJoinDomainWorkerKeepsADomainWhoseRecordIsStillPublished(t *testing.T) {
@@ -84,7 +84,7 @@ func TestVerifyJoinDomainWorkerKeepsStateOnAResolverFailureAndRetries(t *testing
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	failing := dnstest.Resolver(t, map[string]mockdns.Zone{acmeJoinRecord + ".": {Err: errors.New("servfail")}})
-	mod := joindomains.New(env.DB, env.Bus, failing.LookupTXT, time.Now, accounts.OwnerNotifier(env.DB, env.SystemMail))
+	mod := joindomains.New(env.DB, env.Bus, failing.LookupTXT, time.Now, memberships.OwnerNotifier(env.DB, env.SystemMail))
 
 	err := jobs.NewVerifyJoinDomainWorker(mod).
 		Work(ctx, job(jobs.VerifyJoinDomainArgs{JoinDomainID: fixtures.JoinDomainVerifiedID}))

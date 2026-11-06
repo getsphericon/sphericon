@@ -7,7 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// SuspendWorkspace leaves a Workspace suspended at `at` the way internal/suspension does: the
+// SuspendWorkspace leaves a Workspace suspended at `at` the way internal/domain/identity/suspension does: the
 // actor and the reason are written with suspended_at, as the table's check requires.
 func (env *TestEnv) SuspendWorkspace(ctx context.Context, id int64, at time.Time) {
 	env.DB.Workspace.Update().Where(workspace.ID(id)).

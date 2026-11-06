@@ -11,20 +11,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/ingest"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // Opting out and back in on Telegram (ADR 0077): every way of stopping is the person's Channel-wide
@@ -141,7 +144,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 	bot := boundBob(t, env)
 	automationID := telegramAutomation(t, env,
 		telegramStep(bot, "Telegram"),
-		automationsteps.Step{Type: automationsteps.Email, Subject: "Still here", Body: "<p>mail</p>"},
+		automationstep.Step{Type: automationstep.Email, Subject: "Still here", Body: "<p>mail</p>"},
 	)
 	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "/stop"))
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -212,7 +215,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := ingest.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
+	err := callbackinterpretation.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))
@@ -346,4 +349,55 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 	})
 
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+}
+
+// stopFrom is Bob stopping in Telegram from a message of Acme that came from broadcastID or
+// automationID, as a button press or a blocked send records it (channelstop.StopTelegram).
+func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID int64) {
+	t.Helper()
+	msg := &ent.OutboundMessage{ContactID: lo.ToPtr(int64(fixtures.ContactBobID))}
+	if broadcastID != 0 {
+		msg.BroadcastID = &broadcastID
+	}
+	if automationID != 0 {
+		msg.AutomationID = &automationID
+	}
+	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID), func(ts *ent.Scoped, pub events.Publisher) error {
+		return channelstop.StopTelegram(t.Context(), ts, pub, channelstop.TelegramStop{
+			Destination: strconv.Itoa(optOutUser), Via: events.UnsubscribedByButton, Message: msg,
+			Now: time.Now(), DedupKey: "test:stop",
+		})
+	})
+	require.NoError(t, err)
+}
+
+// The Broadcast counts a Telegram stop made from its message when the broadcasts consumer works
+// telegram.unsubscribed: the recipient row is the broadcasts module's (ADR 0102), and a repeated
+// job counts nothing more.
+func TestATelegramStopOfABroadcastsMessageCountsTheUnsubscribeOnceItsConsumerRuns(t *testing.T) {
+	env := testhelper.Setup(t)
+	boundBob(t, env)
+
+	stopFrom(t, env, fixtures.BroadcastArchivedID, 0)
+	before := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
+	env.WorkBroadcastUnsubscribeJobs(t)
+	counted := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
+	env.WorkBroadcastUnsubscribeJobs(t)
+	again := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
+
+	assert.Nil(t, before, "the opt-out's transaction leaves the count to the consumer")
+	require.NotNil(t, counted)
+	require.NotNil(t, again)
+	assert.True(t, counted.Equal(*again), "counted once")
+}
+
+func TestATelegramStopOfAMessageWithoutABroadcastCountsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	boundBob(t, env)
+
+	stopFrom(t, env, 0, fixtures.AutomationArchivedID)
+	env.WorkBroadcastUnsubscribeJobs(t)
+
+	assert.Empty(t, env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind()))
+	assert.Nil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt)
 }

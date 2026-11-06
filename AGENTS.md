@@ -41,7 +41,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. A generated file
 is regenerated, never edited by hand: `mise run generate`, or `mise run build:emaildoc` for
-`internal/emaildoc/assets/`. The generated files are the ones `.gitattributes` marks
+`internal/kernel/emaildoc/assets/`. The generated files are the ones `.gitattributes` marks
 `linguist-generated`; most also carry a header (`// Code generated … DO NOT EDIT.`, or
 `// @ts-nocheck` on the frontend), and `mise run check` (`check:generated`) fails when a file with
 the header is missing from that list or a pattern of the list matches nothing. Inside `ent/`,

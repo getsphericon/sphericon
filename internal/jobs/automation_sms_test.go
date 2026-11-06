@@ -15,15 +15,15 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/channels"
-	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
 // The SMS send step (ADR 0081): a Contact whose phone has a Confirmation on sms gets the rendered
@@ -35,7 +35,7 @@ const smsTrigger = "cart_abandoned"
 
 // smsAutomation creates and publishes an Automation triggered on smsTrigger that runs steps, and
 // returns its id.
-func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationsteps.Step) int64 {
+func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationstep.Step) int64 {
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -50,9 +50,9 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 }
 
 // smsStep is an SMS step through the connected account.
-func smsStep(account testhelper.TwilioAccount, text string) automationsteps.Step {
+func smsStep(account testhelper.TwilioAccount, text string) automationstep.Step {
 	id := int64(account.Integration.ID)
-	return automationsteps.Step{Type: automationsteps.SMS, IntegrationID: &id, Text: text}
+	return automationstep.Step{Type: automationstep.SMS, IntegrationID: &id, Text: text}
 }
 
 // confirmSMS records the Confirmation an API client asserts for the number.
@@ -228,7 +228,7 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	account := env.AcmeTwilio(t)
 	runID := int64(fixtures.AutomationRunJobsSMSFirstSecondConfirmedID)
 	queueStep(t, env, runID)
-	stepper := stepperWith(env, env.OutboundModule(), stepping.WithClock(passingClock()))
+	stepper := stepperWith(env, env.OutboundModule(), stepexecution.WithClock(passingClock()))
 	require.True(t, env.RunNextStep(t, stepper))
 	first := env.Twilio.Messages()
 	require.Len(t, first, 1)
