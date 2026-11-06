@@ -13,17 +13,14 @@ import (
 	"time"
 
 	entgo "entgo.io/ent"
-	"github.com/riverqueue/river"
 
 	staffhandlers "github.com/getsphericon/sphericon/ee/api/staff"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
-	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
-	"github.com/getsphericon/sphericon/ee/usecase/retention"
 	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
@@ -35,7 +32,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // ExportStreams is the Enterprise side of the Export streams (ADR 0045): the `export` license
@@ -92,14 +88,6 @@ type Deps struct {
 	Suspender *suspension.Suspender
 	// Reputation computes a Workspace's rates, which the console shows.
 	Reputation *reputation.Module
-}
-
-// EventConsumers are the Edition's consumers of the domain events (ADR 0101): the Audit log's and
-// the Erasures stream's, for the composition root to register on the bus beside core's. They want
-// what they want whatever the license: each job checks the license itself (Jobs, ExportJobs), so
-// a key added later needs no rewiring and an unlicensed instance stores nothing.
-func EventConsumers() []events.Consumer {
-	return []events.Consumer{auditentries.EventConsumer(), erasures.EventConsumer()}
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
@@ -210,31 +198,6 @@ func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.
 		return nil, err
 	}
 	return &abusewarning.Warning{Domain: b.Domain, Metric: b.Metric, Rate: b.Rate()}, nil
-}
-
-// Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
-// which removes nothing without the retention license, the usage job (ADR 0009) and the
-// abuse detector (ADR 0026), which do nothing without the staff license.
-func (e *Edition) Jobs() jobextension.Extension {
-	detector := e.Abuse()
-	return jobextension.Extension{
-		Workers: func(w *river.Workers) {
-			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
-			river.AddWorker(w, usages.NewWorker(e.client, e.lic))
-			river.AddWorker(w, abusedetection.NewWorker(detector))
-			// The Audit log's consumer (EventConsumers), which stores nothing without the audit license.
-			river.AddWorker(w, auditentries.NewEntryEventWorker(e.client, e.lic))
-		},
-		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usages.Periodic(), abusedetection.Periodic()},
-	}
-}
-
-// ExportJobs is the river extension of the Export streams (ADR 0045): the prune job of the
-// Erasures stream over the instance's Event retention window (0 keeps every row), and the
-// stream's consumer of the domain events (EventConsumers). It is separate from Jobs because the
-// prune needs that window, a core setting; neither does anything without the `export` license.
-func (e *Edition) ExportJobs(eventsRetention time.Duration) jobextension.Extension {
-	return erasures.Jobs(e.client, e.lic, eventsRetention)
 }
 
 // Webhooks gates the webhook dispatcher by license: `audit.entry` is forwarded to

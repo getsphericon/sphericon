@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/riverqueue/river"
-
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
@@ -22,41 +20,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
-// Interval is how often the prune job runs; the window is in days, so hourly is ample.
+// Interval is how often the Edition prunes (Prune); the window is in days, so hourly is ample.
 const Interval = time.Hour
-
-// PruneArgs is the periodic prune job.
-type PruneArgs struct{}
-
-func (PruneArgs) Kind() string { return "ee_retention_prune" }
-
-// Worker runs Prune on the periodic tick.
-type Worker struct {
-	river.WorkerDefaults[PruneArgs]
-
-	client *ent.Client
-	lic    *licensekey.License
-}
-
-// NewWorker builds the prune worker. It is the raw-client entry of the control: like a
-// job entry point it lists Workspaces, then scopes to each one.
-func NewWorker(client *ent.Client, lic *licensekey.License) *Worker {
-	return &Worker{client: client, lic: lic}
-}
-
-func (w *Worker) Work(ctx context.Context, _ *river.Job[PruneArgs]) error {
-	_, err := Prune(ctx, w.client, w.lic, time.Now())
-	return err
-}
-
-// Periodic is the river schedule of the prune job.
-func Periodic() *river.PeriodicJob {
-	return river.NewPeriodicJob(
-		river.PeriodicInterval(Interval),
-		func() (river.JobArgs, *river.InsertOpts) { return PruneArgs{}, nil },
-		&river.PeriodicJobOpts{RunOnStart: true},
-	)
-}
 
 // Prune deletes, in every Workspace that set a retention window, the Audit entries that
 // occurred before now minus that window, and returns how many it removed. A Workspace

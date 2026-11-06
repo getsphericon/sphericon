@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestWithoutALicenseSendingAndContactChangesWriteNoUsageRows(t *testing.T) {
 	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("new@example.com").Exec(t.Context()))
 	h.sendOnAPI(t, "unlicensed@example.com")
 
-	require.NoError(t, usages.NewWorker(h.env.DB, nil).Work(t.Context(), nil))
+	require.NoError(t, usages.Refresh(t.Context(), h.env.DB, nil, time.Now()))
 
 	assert.Equal(t, fixtureRows, h.env.DB.Usage.Query().CountX(t.Context()), "no snapshot, counter or live row is written")
 }

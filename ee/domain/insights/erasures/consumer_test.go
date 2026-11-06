@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
+	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -37,7 +37,7 @@ func countErasures(t *testing.T, env *testhelper.TestEnv) int {
 func TestAnErasureReachesTheStreamOnceThroughItsJob(t *testing.T) {
 	env := testhelper.Setup(t)
 	publishErased(t, env)
-	queued := env.EventJobs(t, erasures.ErasureEventArgs{}.Kind())
+	queued := env.EventJobs(t, ee.ErasureEventArgs{}.Kind())
 	require.Len(t, queued, 1)
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
@@ -52,7 +52,7 @@ func TestAnErasureReachesTheStreamOnceThroughItsJob(t *testing.T) {
 func TestAnUnlicensedInstanceStreamsNoErasure(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	publishErased(t, env)
-	queued := env.EventJobs(t, erasures.ErasureEventArgs{}.Kind())
+	queued := env.EventJobs(t, ee.ErasureEventArgs{}.Kind())
 	require.Len(t, queued, 1, "the job is queued whatever the license")
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)

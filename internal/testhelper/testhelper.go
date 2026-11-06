@@ -25,8 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
-	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
-	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
@@ -514,8 +512,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, jobs.NewBroadcastUnsubscribeEventWorker(client))
 		add(tb, p, txDB, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, auditentries.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, erasures.NewErasureEventWorker(client, lic))
+		add(tb, p, txDB, ee.NewEntryEventWorker(client, lic))
+		add(tb, p, txDB, ee.NewErasureEventWorker(client, lic))
 		return p
 	}
 
