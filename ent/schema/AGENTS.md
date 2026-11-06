@@ -15,10 +15,11 @@
   tests' template databases are built by that same function, so tests run against the schema
   production gets. After an `ent/schema` edit the tests fail until `mise run db:generate` has written
   its migration.
-- river's tables are one migration per river version (`*_river_00N.sql`, river applies each version
-  in a transaction of its own), written by `mise run db:river-migration` from the river version in
-  `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
-  `internal/infra/db/run_test.go` tells you when it is due. Do not edit those files by hand.
+- river's tables are river's own migrations. Versions 1 to 8 are the files `*_river_00N.sql`; every
+  later version is a Go migration, a `db.RiverMigration` added to `goMigrations`
+  (`internal/infra/db/gomigrations.go`), which runs river's migrator (`rivermigrate`), each river version in a transaction of its own. After a river upgrade
+  `rivermigrate.Validate` in `internal/infra/db/run_test.go` tells you when one is due. Do not edit
+  the river files by hand.
 - **Migrations are immutable.** `cmd/upgradecheck immutable` (in `check:upgrade`) fails a PR that
   modifies or deletes a goose `.sql` or Go migration already on `main`, naming each file; only a PR
   whose body has a line `History-Collapse: <reason>` may rewrite history.
