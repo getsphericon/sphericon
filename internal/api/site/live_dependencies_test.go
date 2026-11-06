@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 )
 
 func usedBy(refused siteapi.ProblemDetails) map[siteapi.UsedByKind][]string {
@@ -157,7 +158,7 @@ func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
 		SetSteps(`[{"type":"wait"},`).Exec(ctx)
 	require.NoError(t, err)
 
-	err = env.Integrations.Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	err = integrationdeletion.New(env.Bus, env.Integrations).Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
 
 	require.Error(t, err, "an unreadable definition cannot prove the Integration unused")
 	var used *inuse.Error
@@ -207,7 +208,7 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 			s := env.DB.Scoped(fixtures.MeridianID)
 			ctx := t.Context()
 
-			require.NoError(t, env.Integrations.Delete(ctx, s, tc.integration))
+			require.NoError(t, integrationdeletion.New(env.Bus, env.Integrations).Delete(ctx, s, tc.integration))
 
 			deleted, err := env.Integrations.Get(ctx, s, tc.integration)
 			require.NoError(t, err)

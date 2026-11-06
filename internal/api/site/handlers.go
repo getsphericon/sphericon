@@ -53,7 +53,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -92,26 +95,31 @@ type Handlers struct {
 	erasure         *erasure.Module
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
-	bindings        *bindings.Module
-	templates       *templates.Module
-	brandKit        *brandkit.Module
-	automations     *automations.Module
-	rules           *rules.Module
-	oauth           *oauthserver.Service
-	audit           AuditLog
-	attention       *attention.Module
-	setupChecklist  *setupchecklist.Module
-	supportEmail    string
-	analytics       *analytics.Module
-	sessions        *auth.Sessions
-	secondFactor    *secondfactor.Module
-	passkeys        *secondfactor.Passkeys
-	now             func() time.Time
-	accountLink     *accountlink.Link
-	migrations      Migrations
-	release         *releasecheck.UseCase
-	holds           *holds.Holds
-	origins         Origins
+	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one.
+	integrationDeletion   *integrationdeletion.UseCase
+	sendingDomainDeletion *sendingdomaindeletion.UseCase
+	domainVerification    *domainverification.UseCase
+	bindings              *bindings.Module
+	templates             *templates.Module
+	brandKit              *brandkit.Module
+	automations           *automations.Module
+	rules                 *rules.Module
+	oauth                 *oauthserver.Service
+	audit                 AuditLog
+	attention             *attention.Module
+	setupChecklist        *setupchecklist.Module
+	supportEmail          string
+	analytics             *analytics.Module
+	sessions              *auth.Sessions
+	secondFactor          *secondfactor.Module
+	passkeys              *secondfactor.Passkeys
+	now                   func() time.Time
+	accountLink           *accountlink.Link
+	migrations            Migrations
+	release               *releasecheck.UseCase
+	holds                 *holds.Holds
+	origins               Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
@@ -200,6 +208,11 @@ type Deps struct {
 	TrackingDomains *trackingdomains.Module
 	JoinDomains     *joindomains.Module
 	Integrations    *integrations.Module
+	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
+	IntegrationDeletion   *integrationdeletion.UseCase
+	SendingDomainDeletion *sendingdomaindeletion.UseCase
+	DomainVerification    *domainverification.UseCase
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
@@ -267,7 +280,7 @@ func NewHandlers(d Deps) *Handlers {
 		accounts: d.Accounts, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,

@@ -18,7 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -32,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -78,12 +78,12 @@ type Deps struct {
 	Accounts     *accounts.Accounts
 	Orders       *orders.Module
 	Deletion     *workspacedeletion.Module
-	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
+	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
-	SendingDomains  *domainverify.Module
-	JoinDomains     *joindomains.Module
-	TrackingDomains *trackingdomains.Module
-	Machine         *machine.Detector
+	DomainVerification *domainverification.UseCase
+	JoinDomains        *joindomains.Module
+	TrackingDomains    *trackingdomains.Module
+	Machine            *machine.Detector
 	// Clock is the Instance's clock; nil is time.Now.
 	Clock func() time.Time
 	// AppURL is the public origin of the links in account emails (reset, verify, change).
@@ -124,8 +124,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
-	river.AddWorker(workers, NewVerifySendingDomainWorker(deps.SendingDomains))
-	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
+	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.DomainVerification))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewVerifyTrackingDomainWorker(deps.TrackingDomains))

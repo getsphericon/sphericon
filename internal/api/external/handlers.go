@@ -31,6 +31,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -59,15 +62,20 @@ type Handlers struct {
 	erasure         *erasure.Module
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
-	bindings        *bindings.Module
-	templates       *templates.Module
-	transactional   *transactional.Module
-	brandKit        *brandkit.Module
-	automations     *automations.Module
-	rules           *rules.Module
-	bootstrapToken  string
-	audit           AuditLog
-	export          ExportStreams
+	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one.
+	integrationDeletion   *integrationdeletion.UseCase
+	sendingDomainDeletion *sendingdomaindeletion.UseCase
+	domainVerification    *domainverification.UseCase
+	bindings              *bindings.Module
+	templates             *templates.Module
+	transactional         *transactional.Module
+	brandKit              *brandkit.Module
+	automations           *automations.Module
+	rules                 *rules.Module
+	bootstrapToken        string
+	audit                 AuditLog
+	export                ExportStreams
 	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
 	customFieldRetyping *customfieldretyping.UseCase
 }
@@ -110,17 +118,22 @@ type Deps struct {
 	Erasure          *erasure.Module
 	Tags             *tags.Module
 	TagDeletion      *tagdeletion.UseCase
-	Bindings         *bindings.Module
-	Templates        *templates.Module
-	Transactional    *transactional.Module
-	BrandKit         *brandkit.Module
-	Automations      *automations.Module
-	Rules            *rules.Module
-	Broadcasts       *broadcasts.Module
-	Reputation       *reputation.Module
-	BootstrapToken   string
-	Audit            AuditLog
-	Export           ExportStreams
+	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind
+	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
+	IntegrationDeletion   *integrationdeletion.UseCase
+	SendingDomainDeletion *sendingdomaindeletion.UseCase
+	DomainVerification    *domainverification.UseCase
+	Bindings              *bindings.Module
+	Templates             *templates.Module
+	Transactional         *transactional.Module
+	BrandKit              *brandkit.Module
+	Automations           *automations.Module
+	Rules                 *rules.Module
+	Broadcasts            *broadcasts.Module
+	Reputation            *reputation.Module
+	BootstrapToken        string
+	Audit                 AuditLog
+	Export                ExportStreams
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now); the security handler reads it.
 	Clock func() time.Time
@@ -130,7 +143,7 @@ type Deps struct {
 
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
-		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
+		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export, customFieldRetyping: d.CustomFieldRetyping,

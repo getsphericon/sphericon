@@ -8,7 +8,7 @@
 // Workspace scopes. Everything else goes through the caller's *ent.Scoped. The periodic
 // re-check of verified domains (Due, Recheck) runs on the raw client too: a job lists the
 // due domains of every Workspace and scopes to each one's Workspace only after its row is
-// loaded.
+// loaded. Tokens reads every Workspace's claim of a domain for the end-to-end suite's resolver.
 package joindomains
 
 import (
@@ -298,4 +298,19 @@ func (m *Module) published(ctx context.Context, d *ent.JoinDomain) (bool, error)
 		return false, fmt.Errorf("lookup %s: %w", host, err)
 	}
 	return slices.Contains(records, d.Token), nil
+}
+
+// Tokens returns the tokens every Workspace's claim of the domain stores, pending or verified, in
+// no particular order; none when no Workspace claims it. It reads across Workspaces, before any
+// scope exists, for the end-to-end suite's resolver (sendingdomains.DevTXTLookup).
+func Tokens(ctx context.Context, client *ent.Client, domain string) ([]string, error) {
+	rows, err := client.JoinDomain.Query().Where(joindomain.Domain(domain)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tokens := make([]string, len(rows))
+	for i, row := range rows {
+		tokens[i] = row.Token
+	}
+	return tokens, nil
 }

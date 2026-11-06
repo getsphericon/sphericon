@@ -12,13 +12,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
 func runStatus(ctx context.Context, t *testing.T, env *testhelper.TestEnv, id int64) automationrun.Status {
@@ -134,7 +135,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

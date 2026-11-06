@@ -123,7 +123,7 @@ func (h *Handlers) PresetsList(_ context.Context) (*externalapi.PresetsListOK, e
 // IntegrationsDelete deletes an Integration for good (ADR 0049): it leaves the list and gives up
 // the default, unless live work uses it (409).
 func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.IntegrationsDeleteParams) error {
-	return h.integrations.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	return h.integrationDeletion.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 }
 
 // integrationOne renders a single row with its 24-hour usage.

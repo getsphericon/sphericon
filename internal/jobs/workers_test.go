@@ -35,7 +35,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -47,10 +46,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
 // riverEnv is a real river client over the test database. The workers read and
@@ -102,7 +103,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	require.NoError(t, err)
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	enqueue, err := jobs.NewQueue(pool, nil)
+	enqueue, err := jobs.NewQueue(pool)
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, jobs: enqueue, cipher: cipher, cfg: cfg, sender: fs}
 	return e
@@ -567,13 +568,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, memberships.OwnerNotifier(env.DB, env.SystemMail))).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail))).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -585,7 +586,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(domainverify.New(e.DB, nil, nil)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)

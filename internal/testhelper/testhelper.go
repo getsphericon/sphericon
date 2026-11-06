@@ -31,7 +31,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -55,6 +54,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 
@@ -471,13 +471,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.Override(injector, func(i do.Injector) (app.Enqueuer, error) {
 		client := do.MustInvoke[*ent.Client](i)
 		return &testJobs{
-			tb:      t,
-			ent:     client,
-			sender:  systemMail,
-			domains: do.MustInvoke[*domainverify.Module](i),
-			cipher:  do.MustInvoke[*secrets.Cipher](i),
-			catalog: do.MustInvoke[*messaging.Catalog](i),
-			appURL:  cfg.AppURL,
+			tb:           t,
+			ent:          client,
+			sender:       systemMail,
+			verification: do.MustInvoke[*domainverification.UseCase](i),
+			cipher:       do.MustInvoke[*secrets.Cipher](i),
+			catalog:      do.MustInvoke[*messaging.Catalog](i),
+			appURL:       cfg.AppURL,
 		}, nil
 	})
 

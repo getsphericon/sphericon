@@ -1,7 +1,8 @@
 // Package inuse is the one shape of a refused removal (ADR 0049): a row that live work still
-// uses is not removed, and the refusal names the users. Each domain module returns an *Error
-// from its delete; internal/api/problem renders it as the contracts' Problem (409, `usedBy`) on every
-// surface.
+// uses is not removed, and the refusal names the users. A delete that checks Live use (a domain
+// module's, or a use case's when the users are modules above it) returns an *Error;
+// internal/api/problem renders it as the contracts' Problem (409, `usedBy`) on every surface. A
+// Send is one send of the Live use that sends, the shape the orchestration modules read it in.
 package inuse
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Kind is what a user of a row is.
@@ -101,4 +103,33 @@ func As(err error) (*Error, bool) {
 	var e *Error
 	ok := errors.As(err, &e)
 	return e, ok
+}
+
+// Send is one send of Live use (ADR 0099): who sends, on which Channel, and the route it takes.
+// broadcasts.LiveSends and automations.LiveSends read them, by the Send route's own resolution of
+// the Integration (messaging.Through), so a removal check and the send path agree on where work
+// sends.
+type Send struct {
+	// User is the work that sends: a Broadcast, or an Automation for a send step of one of its
+	// versions.
+	User    User
+	Channel channels.Channel
+	// Integration is the Integration the send goes through (messaging.Through): the one it names,
+	// else its Channel's default, enabled or not. Nil when it names one that is gone or of another
+	// Channel, or names none while its Channel has no default.
+	Integration *ent.Integration
+	// From is the send's own From address on email, "" when it has none: it then goes out with the
+	// From of its Integration (messaging.EffectiveFrom). An Automation step carries none.
+	From string
+}
+
+// Uses reports whether the send goes through the Integration with the id.
+func (s Send) Uses(integrationID int64) bool {
+	return s.Integration != nil && s.Integration.ID == integrationID
+}
+
+// SendUsers is the work of the sends, each named once, in the order of sends.
+func SendUsers(sends []Send) []User {
+	users := lo.Map(sends, func(send Send, _ int) User { return send.User })
+	return lo.UniqBy(users, func(u User) User { return User{Kind: u.Kind, ID: u.ID} })
 }

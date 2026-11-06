@@ -40,7 +40,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -91,7 +90,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -169,7 +171,6 @@ type SystemSender struct {
 type Enqueuer interface {
 	mailjobs.Enqueuer
 	integrations.QuotaEnqueuer
-	sendingdomains.Verifier
 }
 
 // SigninOptions configure the Sign-in providers (ADR 0048); none in production.
@@ -516,41 +517,36 @@ var jobsPackage = do.Package(
 		edition := do.MustInvoke[*ee.Edition](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
-			Ent:             do.MustInvoke[*ent.Client](i),
-			Bus:             do.MustInvoke[*events.Bus](i),
-			Outbound:        do.MustInvoke[*outbound.Module](i),
-			Cipher:          do.MustInvoke[*secrets.Cipher](i),
-			SystemSender:    do.MustInvoke[SystemSender](i).EmailSender,
-			Catalog:         do.MustInvoke[*messaging.Catalog](i),
-			Rules:           do.MustInvoke[*rules.Module](i),
-			Accounts:        do.MustInvoke[*accounts.Accounts](i),
-			Orders:          do.MustInvoke[*orders.Module](i),
-			Deletion:        do.MustInvoke[*workspacedeletion.Module](i),
-			SendingDomains:  do.MustInvoke[*domainverify.Module](i),
-			JoinDomains:     do.MustInvoke[*joindomains.Module](i),
-			TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			Machine:         do.MustInvoke[*machine.Detector](i),
-			Clock:           do.MustInvoke[Clock](i),
-			AppURL:          cfg.AppURL,
-			OutboundAllow:   cfg.OutboundAllow,
-			Retention:       jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			Webhooks:        edition.Webhooks,
+			Ent:                do.MustInvoke[*ent.Client](i),
+			Bus:                do.MustInvoke[*events.Bus](i),
+			Outbound:           do.MustInvoke[*outbound.Module](i),
+			Cipher:             do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:       do.MustInvoke[SystemSender](i).EmailSender,
+			Catalog:            do.MustInvoke[*messaging.Catalog](i),
+			Rules:              do.MustInvoke[*rules.Module](i),
+			Accounts:           do.MustInvoke[*accounts.Accounts](i),
+			Orders:             do.MustInvoke[*orders.Module](i),
+			Deletion:           do.MustInvoke[*workspacedeletion.Module](i),
+			DomainVerification: do.MustInvoke[*domainverification.UseCase](i),
+			JoinDomains:        do.MustInvoke[*joindomains.Module](i),
+			TrackingDomains:    do.MustInvoke[*trackingdomains.Module](i),
+			Machine:            do.MustInvoke[*machine.Detector](i),
+			Clock:              do.MustInvoke[Clock](i),
+			AppURL:             cfg.AppURL,
+			OutboundAllow:      cfg.OutboundAllow,
+			Retention:          jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:           edition.Webhooks,
 		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), do.MustInvoke[*releasecheck.UseCase](i).Jobs(), do.MustInvoke[*telemetryreport.UseCase](i).Jobs())
 		if err != nil {
 			return nil, err
 		}
 		return &jobsClient{Client: jc}, nil
 	}),
-	// The Sending domain checks a person waits for (the Verify button, ADR 0010).
-	do.Lazy(func(i do.Injector) (*domainverify.Module, error) {
-		return domainverify.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i)), nil
-	}),
-	// The enqueue side implements every enqueue seam: the platform mails, the Integration quota
-	// refresh and Sending domain verification. It inserts over the main pool, like the bus, and
-	// works nothing, so what queues work never depends on the job client or on what its workers
-	// drive.
+	// The enqueue side implements every enqueue seam: the platform mails and the Integration quota
+	// refresh. It inserts over the main pool, like the bus, and works nothing, so what queues work
+	// never depends on the job client or on what its workers drive.
 	do.Lazy(func(i do.Injector) (Enqueuer, error) {
-		return jobs.NewQueue(do.MustInvoke[Database](i).DB, do.MustInvoke[*domainverify.Module](i))
+		return jobs.NewQueue(do.MustInvoke[Database](i).DB)
 	}),
 )
 
@@ -671,11 +667,21 @@ var audiencePackage = do.Package(
 		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[Enqueuer](i),
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
+	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
+		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*integrations.Module](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
-		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Enqueuer](i), do.MustInvoke[*messaging.Resolver](i)), nil
+		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*sendingdomaindeletion.UseCase, error) {
+		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[*messaging.Resolver](i)), nil
+	}),
+	// The Sending domain checks: the Verify button a person waits for and the re-check jobs (ADR 0010).
+	do.Lazy(func(i do.Injector) (*domainverification.UseCase, error) {
+		return domainverification.New(do.MustInvoke[*sendingdomains.Module](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[memberships.Notify](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*joindomains.Module, error) {
 		return joindomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i),
@@ -859,33 +865,36 @@ var surfacesPackage = do.Package(
 func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	edition := do.MustInvoke[*ee.Edition](i)
 	return apiexternal.Deps{
-		Clock:            do.MustInvoke[Clock](i),
-		Accounts:         do.MustInvoke[*accounts.Accounts](i),
-		Workspaces:       do.MustInvoke[*workspaces.Module](i),
-		Bus:              do.MustInvoke[*events.Bus](i),
-		Webhooks:         do.MustInvoke[*webhooks.Module](i),
-		Outbound:         do.MustInvoke[*outbound.Module](i),
-		Segments:         do.MustInvoke[*segments.Module](i),
-		EventLog:         do.MustInvoke[*eventlog.Module](i),
-		Contacts:         do.MustInvoke[*contacts.Module](i),
-		Erasure:          do.MustInvoke[*erasure.Module](i),
-		Tags:             do.MustInvoke[*tags.Module](i),
-		TagDeletion:      do.MustInvoke[*tagdeletion.UseCase](i),
-		Bindings:         do.MustInvoke[*bindings.Module](i),
-		Templates:        do.MustInvoke[*templates.Module](i),
-		Transactional:    do.MustInvoke[*transactional.Module](i),
-		BrandKit:         do.MustInvoke[*brandkit.Module](i),
-		Automations:      do.MustInvoke[*automations.Module](i),
-		Rules:            do.MustInvoke[*rules.Module](i),
-		Broadcasts:       do.MustInvoke[*broadcasts.Module](i),
-		Reputation:       do.MustInvoke[*reputation.Module](i),
-		Integrations:     do.MustInvoke[*integrations.Module](i),
-		CapturedMessages: do.MustInvoke[*capturedmessages.Module](i),
-		SendingDomains:   do.MustInvoke[*sendingdomains.Module](i),
-		TrackingDomains:  do.MustInvoke[*trackingdomains.Module](i),
-		BootstrapToken:   do.MustInvoke[*config.Config](i).BootstrapToken,
-		Audit:            edition.Audit,
-		Export:           edition.Export,
+		Clock:                 do.MustInvoke[Clock](i),
+		Accounts:              do.MustInvoke[*accounts.Accounts](i),
+		Workspaces:            do.MustInvoke[*workspaces.Module](i),
+		Bus:                   do.MustInvoke[*events.Bus](i),
+		Webhooks:              do.MustInvoke[*webhooks.Module](i),
+		Outbound:              do.MustInvoke[*outbound.Module](i),
+		Segments:              do.MustInvoke[*segments.Module](i),
+		EventLog:              do.MustInvoke[*eventlog.Module](i),
+		Contacts:              do.MustInvoke[*contacts.Module](i),
+		Erasure:               do.MustInvoke[*erasure.Module](i),
+		Tags:                  do.MustInvoke[*tags.Module](i),
+		TagDeletion:           do.MustInvoke[*tagdeletion.UseCase](i),
+		Bindings:              do.MustInvoke[*bindings.Module](i),
+		Templates:             do.MustInvoke[*templates.Module](i),
+		Transactional:         do.MustInvoke[*transactional.Module](i),
+		BrandKit:              do.MustInvoke[*brandkit.Module](i),
+		Automations:           do.MustInvoke[*automations.Module](i),
+		Rules:                 do.MustInvoke[*rules.Module](i),
+		Broadcasts:            do.MustInvoke[*broadcasts.Module](i),
+		Reputation:            do.MustInvoke[*reputation.Module](i),
+		Integrations:          do.MustInvoke[*integrations.Module](i),
+		CapturedMessages:      do.MustInvoke[*capturedmessages.Module](i),
+		SendingDomains:        do.MustInvoke[*sendingdomains.Module](i),
+		IntegrationDeletion:   do.MustInvoke[*integrationdeletion.UseCase](i),
+		SendingDomainDeletion: do.MustInvoke[*sendingdomaindeletion.UseCase](i),
+		DomainVerification:    do.MustInvoke[*domainverification.UseCase](i),
+		TrackingDomains:       do.MustInvoke[*trackingdomains.Module](i),
+		BootstrapToken:        do.MustInvoke[*config.Config](i).BootstrapToken,
+		Audit:                 edition.Audit,
+		Export:                edition.Export,
 
 		CustomFieldRetyping: do.MustInvoke[*customfieldretyping.UseCase](i),
 	}, nil
@@ -939,9 +948,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Broadcasts:               do.MustInvoke[*broadcasts.Module](i),
 		Mail:                     enqueue,
 		SendingDomains:           do.MustInvoke[*sendingdomains.Module](i),
+		SendingDomainDeletion:    do.MustInvoke[*sendingdomaindeletion.UseCase](i),
+		DomainVerification:       do.MustInvoke[*domainverification.UseCase](i),
 		TrackingDomains:          do.MustInvoke[*trackingdomains.Module](i),
 		JoinDomains:              do.MustInvoke[*joindomains.Module](i),
 		Integrations:             do.MustInvoke[*integrations.Module](i),
+		IntegrationDeletion:      do.MustInvoke[*integrationdeletion.UseCase](i),
 		CapturedMessages:         do.MustInvoke[*capturedmessages.Module](i),
 		Tokens:                   do.MustInvoke[*authtoken.Signer](i),
 		Sessions:                 do.MustInvoke[*apiauth.Sessions](i),

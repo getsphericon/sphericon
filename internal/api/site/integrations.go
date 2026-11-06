@@ -127,7 +127,7 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 // SiteIntegrationsDelete deletes an integration for good (ADR 0049): it leaves the list and gives
 // up the default, unless live work uses it (409). Owners and admins only.
 func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) error {
-	return h.integrations.Delete(ctx, workspaceScope(ctx), int64(params.ID))
+	return h.integrationDeletion.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
 // integrationToResource maps the row with goverter, then attaches what the mapper cannot

@@ -1,10 +1,8 @@
-package domainverify_test
+package domainverification_test
 
 import (
 	"context"
 	"errors"
-	"net"
-	"slices"
 	"testing"
 	"time"
 
@@ -12,18 +10,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/dnstest"
-	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
-func module(env *testhelper.TestEnv, lookup domainname.TXTLookup) *domainverify.Module {
-	return domainverify.New(env.DB, lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
+func module(env *testhelper.TestEnv, lookup domainname.TXTLookup) *domainverification.UseCase {
+	return domainverification.New(sendingdomains.New(env.Bus, nil), lookup, memberships.OwnerNotifier(env.DB, env.SystemMail))
 }
+
+// acme is the scope of the Workspace the checked fixture domains belong to.
+func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.AcmeID) }
 
 func TestVerifyDKIM_becomesVerified(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -33,7 +36,7 @@ func TestVerifyDKIM_becomesVerified(t *testing.T) {
 	require.False(t, dkimstate.Is(dom))
 
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.news.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
-	ok, err := module(env, lookup).VerifyDKIM(ctx, fixtures.SendingDomainUnverifiedID)
+	ok, err := module(env, lookup).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainUnverifiedID)
 	require.NoError(t, err)
 	assert.True(t, ok)
 
@@ -51,7 +54,7 @@ func TestVerifyDKIM_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) 
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
-	ok, err := module(env, gone).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	ok, err := module(env, gone).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	assert.False(t, ok)
 
@@ -70,7 +73,7 @@ func TestVerifyDKIM_flipsToUnverifiedWhenRecordGoneAndEmailsOwner(t *testing.T) 
 	assert.Contains(t, msgs[0].Text, "is now blocked")
 
 	// The flip self-clears: the next check finds it already unverified and tells nobody again.
-	_, err = module(env, gone).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	_, err = module(env, gone).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
 	assert.Len(t, env.SystemMail.Messages(), 1)
 	again, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -83,11 +86,11 @@ func TestVerifyDKIM_verifiedAgainClearsTheLoss(t *testing.T) {
 	ctx := context.Background()
 	dom, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
 	require.NoError(t, err)
-	_, err = module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(ctx, dom.ID)
+	_, err = module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(ctx, acme(env), dom.ID)
 	require.NoError(t, err)
 
 	back := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.mail.acme.com.": {TXT: []string{dom.DkimPublicKey}}}).LookupTXT
-	ok, err := module(env, back).VerifyDKIM(ctx, dom.ID)
+	ok, err := module(env, back).VerifyDKIM(ctx, acme(env), dom.ID)
 
 	require.NoError(t, err)
 	assert.True(t, ok)
@@ -103,7 +106,7 @@ func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 	ctx := context.Background()
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
-	ok, err := module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	ok, err := module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
 	assert.False(t, ok)
@@ -116,9 +119,9 @@ func TestVerifyDKIM_aFailingNoticeNeverFailsTheCheck(t *testing.T) {
 func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := domainverify.New(env.DB, dnstest.Resolver(t, nil).LookupTXT, nil)
+	m := domainverification.New(sendingdomains.New(env.Bus, nil), dnstest.Resolver(t, nil).LookupTXT, nil)
 
-	_, err := m.VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	_, err := m.VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -130,7 +133,7 @@ func TestVerifyDKIM_withoutANotifierStillFlips(t *testing.T) {
 func TestVerifyDKIM_unknownDomainIsAnError(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(context.Background(), 424242)
+	_, err := module(env, dnstest.Resolver(t, nil).LookupTXT).VerifyDKIM(context.Background(), acme(env), 424242)
 
 	require.Error(t, err)
 }
@@ -140,7 +143,7 @@ func TestVerifyDKIM_resolverErrorDoesNotChangeState(t *testing.T) {
 	ctx := context.Background()
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{"sphericon._domainkey.mail.acme.com.": {Err: errors.New("servfail")}}).LookupTXT
 
-	_, err := module(env, lookup).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	_, err := module(env, lookup).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 	require.Error(t, err)
 
 	reloaded, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -156,61 +159,15 @@ func TestVerifyDKIM_staleCheckDoesNotReportASecondFlip(t *testing.T) {
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
 	concurrent := func(ctx context.Context, name string) ([]string, error) {
-		_, err := module(env, gone).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+		_, err := module(env, gone).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 		require.NoError(t, err)
 		return gone(ctx, name)
 	}
 
-	_, err := module(env, concurrent).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	_, err := module(env, concurrent).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
 	assert.Len(t, env.SystemMail.Messages(), 1, "the owner is told once, by the check that won")
-}
-
-func TestDue_neverCheckedFirstAndArchivedSkipped(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	// Fixtures: the verified domain has last_checked_at set; the unverified one is never
-	// checked (NULL). NULLS FIRST must surface it ahead.
-	ids, err := module(env, nil).Due(context.Background(), 100)
-	require.NoError(t, err)
-	require.Contains(t, ids, int64(fixtures.SendingDomainUnverifiedID))
-	require.Contains(t, ids, int64(fixtures.SendingDomainVerifiedID))
-	assert.Less(t, slices.Index(ids, int64(fixtures.SendingDomainUnverifiedID)), slices.Index(ids, int64(fixtures.SendingDomainVerifiedID)),
-		"a never-checked domain is re-checked before an already-checked one")
-	assert.NotContains(t, ids, int64(fixtures.SendingDomainArchivedID))
-}
-
-func TestDevTXTLookup_trustsSeededDomains(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	ok, err := module(env, domainverify.DevTXTLookup(env.DB)).VerifyDKIM(context.Background(), fixtures.SendingDomainUnverifiedID)
-
-	require.NoError(t, err)
-	assert.True(t, ok, "dev lookup makes a seeded domain verify")
-}
-
-// The same lookup answers a Join domain's proof record from the stored token, so a domain an
-// Owner adds verifies in dev and e2e without DNS; a domain nobody claims is NXDOMAIN.
-func TestDevTXTLookup_answersAJoinDomainsRecordFromItsToken(t *testing.T) {
-	env := testhelper.Setup(t)
-	pending, err := env.DB.JoinDomain.Get(t.Context(), fixtures.JoinDomainPendingID)
-	require.NoError(t, err)
-
-	records, err := domainverify.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join."+pending.Domain+".")
-
-	require.NoError(t, err)
-	assert.Equal(t, []string{pending.Token}, records)
-}
-
-func TestDevTXTLookup_aJoinDomainNobodyClaimsIsNotFound(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := domainverify.DevTXTLookup(env.DB)(t.Context(), "_sphericon-join.unclaimed.test.")
-
-	var dnsErr *net.DNSError
-	require.ErrorAs(t, err, &dnsErr)
-	assert.True(t, dnsErr.IsNotFound)
 }
 
 // A check looks the DMARC record up next to DKIM and keeps when it found one: publishing the
@@ -224,7 +181,7 @@ func TestVerify_aPublishedDMARCRecordMakesTheDomainBulkReady(t *testing.T) {
 	// check runs a check of news.acme.com and reads when its DMARC record was found.
 	check := func() *time.Time {
 		t.Helper()
-		err := m.Verify(ctx, fixtures.SendingDomainUnverifiedID)
+		err := m.Recheck(ctx, acme(env), fixtures.SendingDomainUnverifiedID)
 		require.NoError(t, err)
 		row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
 		require.NoError(t, err)
@@ -267,7 +224,7 @@ func TestVerify_aFailedDMARCLookupChangesNothing(t *testing.T) {
 		"_dmarc.mail.acme.com.":               {Err: errors.New("servfail")},
 	}).LookupTXT
 
-	err = module(env, lookup).Verify(ctx, fixtures.SendingDomainVerifiedID)
+	err = module(env, lookup).Recheck(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
 	after, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)
@@ -290,7 +247,7 @@ func TestVerify_aFirstDMARCLookupThatFailsLeavesTheDomainUnjudged(t *testing.T) 
 		"_dmarc.news.acme.com.": {Err: errors.New("servfail")},
 	}).LookupTXT
 
-	err := module(env, lookup).Verify(ctx, fixtures.SendingDomainUnverifiedID)
+	err := module(env, lookup).Recheck(ctx, acme(env), fixtures.SendingDomainUnverifiedID)
 
 	require.NoError(t, err)
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainUnverifiedID)
@@ -298,19 +255,6 @@ func TestVerify_aFirstDMARCLookupThatFailsLeavesTheDomainUnjudged(t *testing.T) 
 	assert.NotNil(t, row.LastCheckedAt, "the DKIM check was stored")
 	assert.Nil(t, row.DmarcCheckedAt)
 	assert.Nil(t, row.DmarcFoundAt)
-}
-
-// The end-to-end resolver answers a Sending domain's DMARC record with the suggested one, so a
-// domain a scenario adds is bulk-ready too.
-func TestDevTXTLookup_answersASendingDomainsDMARCRecord(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	err := module(env, domainverify.DevTXTLookup(env.DB)).Verify(t.Context(), fixtures.SendingDomainUnverifiedID)
-
-	require.NoError(t, err)
-	row, err := env.DB.SendingDomain.Get(t.Context(), fixtures.SendingDomainUnverifiedID)
-	require.NoError(t, err)
-	assert.NotNil(t, row.DmarcFoundAt)
 }
 
 // A check queued before its domain was deleted checks again when it runs (ADR 0099): a deleted
@@ -322,7 +266,7 @@ func TestVerify_aDeletedDomainChangesNothingAndNotifiesNoOne(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, dkimstate.Is(before), "the deleted fixture domain was verified")
 
-	err = module(env, dnstest.Resolver(t, nil).LookupTXT).Verify(ctx, fixtures.SendingDomainArchivedID)
+	err = module(env, dnstest.Resolver(t, nil).LookupTXT).Recheck(ctx, acme(env), fixtures.SendingDomainArchivedID)
 
 	require.NoError(t, err)
 	after, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainArchivedID)
@@ -343,7 +287,7 @@ func TestVerifyDKIM_aDomainDeletedDuringTheCheckNotifiesNoOne(t *testing.T) {
 		return gone(ctx, name)
 	}
 
-	_, err := module(env, deleting).VerifyDKIM(ctx, fixtures.SendingDomainVerifiedID)
+	_, err := module(env, deleting).VerifyDKIM(ctx, acme(env), fixtures.SendingDomainVerifiedID)
 
 	require.NoError(t, err)
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainVerifiedID)

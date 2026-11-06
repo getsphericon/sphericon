@@ -71,11 +71,13 @@ A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
 `docs/architecture.md`) owns the tests of its operation, in its own `_test` package through its
 exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
 its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use refusal under the
-Workspace lock). The use case is built from the container like a module, so the API tests reach it
-through the actors; a direct test builds it with `New` over `env.Bus`, or over a bus on
-`testhelper.RealDB` when it races the Workspace lock. A use case of the whole Instance (the Release
-check, the Telemetry report) is built over the Instance state module instead
-(`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and `env.TelemetryReport`.
+Workspace lock, `internal/usecase/integrationdeletion` the Integration's, and
+`internal/usecase/domainverification` the Sending domain checks). The use case is built from the
+container like a module, so the API tests reach it through the actors; a direct test builds it with
+`New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
+case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
+module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
+`env.TelemetryReport`.
 
 ## Fixture catalog
 

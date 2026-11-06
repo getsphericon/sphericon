@@ -1,14 +1,20 @@
-// Package sendingdomains is the use-case module for a Workspace's Sending domains
-// (ADR 0010): domain validation, DKIM keypair minting and sealing, the selector change
-// rule, and triggering a live verification. /site and /api are thin adapters over it.
+// Package sendingdomains is the domain module of a Workspace's Sending domains (ADR 0010):
+// domain validation, DKIM keypair minting and sealing, the selector change rule, and the
+// verified moments a check stores. /site and /api are thin adapters over it.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
 // the row or a domain refusal: validation.Error (a 422), ErrAlreadyExists (a
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
-// Verification stays a live DKIM check done by a job; Verify only enqueues it. Nothing
-// here, or in either API, can set a domain verified.
+// Verification stays a live DKIM check, done by the use case internal/usecase/domainverification,
+// which stores its outcome through RecordDKIM and RecordDMARC; easement lets no other package call
+// them, so nothing in either API can set a domain verified. Deleting one is the use case internal/usecase/sendingdomaindeletion, which
+// checks its Live use first (ADR 0102).
+//
+// It holds the raw *ent.Client only in Due, which lists the domains of every Workspace due a
+// check before any scope exists, and in DevTXTLookup, the end-to-end suite's resolver
+// (docs/architecture.md, Workspace scoping).
 package sendingdomains
 
 import (
@@ -22,16 +28,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/inuse"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/sending"
 )
 
@@ -57,27 +59,14 @@ func notFound(err error) error {
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
 
-// Verifier checks the DNS of one Sending domain at once, when a person asks for it.
-type Verifier interface {
-	VerifySendingDomain(ctx context.Context, sendingDomainID int64) error
-}
-
-// Senders builds the EmailSender of an Integration, as a send through it does: the Live use check
-// reads the From it is configured with from it. *messaging.Resolver satisfies it.
-type Senders interface {
-	EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
-}
-
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
-	bus     *events.Bus
-	cipher  *secrets.Cipher
-	verify  Verifier
-	senders Senders
+	bus    *events.Bus
+	cipher *secrets.Cipher
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier, senders Senders) *Module {
-	return &Module{bus: bus, cipher: cipher, verify: verify, senders: senders}
+func New(bus *events.Bus, cipher *secrets.Cipher) *Module {
+	return &Module{bus: bus, cipher: cipher}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -144,7 +133,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		cur, err := editable(ctx, ts, id)
+		cur, err := Editable(ctx, ts, id)
 		if err != nil {
 			return err
 		}
@@ -180,76 +169,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
-// restored, and the record of mail sent from it stays. Its Live use (ADR 0099) refuses the delete
-// with an *inuse.Error naming that work. A domain is used through the domain of a From address, not
-// an id: a scheduled or sending Broadcast, the live version of an active Automation or a version an
-// unfinished Enrollment stands on uses the domain of the From its email goes out with, its own or,
-// without one, the From of the Integration it goes through (an Automation step carries none). A sent
-// or failed Broadcast is history and does not block. Deleting a deleted domain changes nothing; an
-// unknown id is ErrNotFound. The check and the discard hold the Workspace's lock (ADR 0099), so no
-// work becomes live between them.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := ts.SendingDomain().Get(ctx, id)
-		if err != nil {
-			return notFound(err)
-		}
-		if row.DiscardedAt != nil {
-			return nil
-		}
-		users, err := m.liveUsers(ctx, ts, row.Domain)
-		if err != nil {
-			return err
-		}
-		if len(users) > 0 {
-			return &inuse.Error{What: inuse.SubjectSendingDomain, Users: users}
-		}
-		return ts.SendingDomain().Discard(ctx, id)
-	})
-}
-
-// liveUsers is the Live use of the domain (ADR 0099): the work whose email goes out from an address
-// on it, its own From or, without one, the From of the Integration it goes through, by the same
-// resolution a send takes (messaging.Through, messaging.EffectiveFrom).
-func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([]inuse.User, error) {
-	sends, err := liveuse.Sends(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-	senders := map[int64]messaging.EmailSender{}
-	var onDomain []liveuse.Send
-	for _, send := range sends {
-		if send.Channel != channels.Email {
-			continue
-		}
-		var sender messaging.EmailSender
-		if send.Integration != nil {
-			if sender = senders[send.Integration.ID]; sender == nil {
-				if sender, err = m.senders.EmailSender(ctx, s, send.Integration); err != nil {
-					return nil, err
-				}
-				senders[send.Integration.ID] = sender
-			}
-		}
-		if from, _ := messaging.EffectiveFrom(sender, send.From, ""); messaging.DomainOf(from) == domain {
-			onDomain = append(onDomain, send)
-		}
-	}
-	return liveuse.Users(onDomain), nil
-}
-
-// Verify runs the live DNS check of the domain now and returns the domain as the check left
-// it: `verified`, `lastCheckedAt`, `dmarcCheckedAt` and `dmarcFoundAt` are the outcome. It confirms the domain is in the
-// Workspace and kept first: an unknown or a deleted domain is ErrNotFound.
-func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	if _, err := editable(ctx, s, id); err != nil {
-		return nil, err
-	}
-	if err := m.verify.VerifySendingDomain(ctx, id); err != nil {
-		return nil, err
-	}
-	return s.SendingDomain().Get(ctx, id)
+// DeleteIn discards the Sending domain row for good (ADR 0049) on the transaction's scoped client,
+// without asking whether work still sends from it: the unchecked removal behind the Sending domain
+// deletion use case (internal/usecase/sendingdomaindeletion), which checks its Live use under the
+// Workspace lock first and is the only caller easement allows. The record of mail sent from it
+// stays.
+func DeleteIn(ctx context.Context, ts *ent.Scoped, id int64) error {
+	return ts.SendingDomain().Discard(ctx, id)
 }
 
 // Record is one DNS TXT record to publish.
@@ -287,9 +213,9 @@ func validSelector(raw string) (string, error) {
 	return sel, nil
 }
 
-// editable returns the Sending domain of the id for its owner to change. A deleted one is read,
-// never changed (ADR 0100): it is ErrNotFound, as an unknown id is.
-func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+// Editable returns the Sending domain of the id for its owner to change or check. A deleted one is
+// read, never changed (ADR 0100): it is ErrNotFound, as an unknown id is.
+func Editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
 		return nil, notFound(err)

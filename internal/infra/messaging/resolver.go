@@ -166,3 +166,39 @@ func Through(ctx context.Context, s *ent.Scoped, channel channels.Channel, id *i
 	}
 	return row, err
 }
+
+// Throughs answers Through once per Channel and named Integration, for a read that routes many
+// sends at once (the Live use of a Workspace, ADR 0099).
+type Throughs struct {
+	s    *ent.Scoped
+	seen map[throughKey]*ent.Integration
+}
+
+type throughKey struct {
+	ch channels.Channel
+	id int64
+}
+
+// NewThroughs answers Through over s.
+func NewThroughs(s *ent.Scoped) *Throughs {
+	return &Throughs{s: s, seen: map[throughKey]*ent.Integration{}}
+}
+
+// Of is Through of the Channel and the Integration id names, nil when the send goes through none
+// (ErrNoProvider): it names one that is gone or of another Channel, or names none while its Channel
+// has no default.
+func (t *Throughs) Of(ctx context.Context, ch channels.Channel, id *int64) (*ent.Integration, error) {
+	key := throughKey{ch: ch}
+	if id != nil {
+		key.id = *id
+	}
+	if integ, seen := t.seen[key]; seen {
+		return integ, nil
+	}
+	integ, err := Through(ctx, t.s, ch, id)
+	if err != nil && !errors.Is(err, ErrNoProvider) {
+		return nil, err
+	}
+	t.seen[key] = integ
+	return integ, nil
+}

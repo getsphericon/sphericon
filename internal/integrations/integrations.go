@@ -1,7 +1,8 @@
-// Package integrations is the use-case module for a Workspace's sending-provider
-// Integrations: config validation, credential sealing, the default-per-channel rule and
-// the redacted read view. /site and /api are thin adapters over it, so the two surfaces
-// cannot diverge on how a credential is stored or what is refused.
+// Package integrations is the domain module of a Workspace's sending-provider Integrations:
+// config validation, credential sealing, the default-per-channel rule and the redacted read
+// view. /site and /api are thin adapters over it, so the two surfaces cannot diverge on how a
+// credential is stored or what is refused. Deleting one is the use case
+// internal/usecase/integrationdeletion, which checks its Live use first (ADR 0102).
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
 // the row or a domain error: validation.Error (a 422), ErrDefaultConflict (a 409), or
@@ -16,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -26,7 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -35,7 +34,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/preset"
 )
 
@@ -444,58 +442,27 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
-// Delete discards an Integration for good (ADR 0049): it leaves the lists and is never restored,
-// and what it sent keeps its history. Its Live use (ADR 0099) refuses the delete with an
-// *inuse.Error naming that work: a scheduled or sending Broadcast, the live version of an active
-// Automation or a version an unfinished Enrollment stands on, whose send goes through it, the
-// Integration it names or, naming none, its own Channel's default. A sent or failed Broadcast is
-// history and does not block. A deleted Integration gives up the default: its channel has none until another is
-// picked. Deleting a deleted Integration changes nothing. An unknown id is ErrNotFound. The check
-// and the discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	var released *ent.Integration
-	err := missing(m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		row, err := ts.Integration().Get(ctx, id)
-		if err != nil {
-			return err
+// DeleteIn discards the Integration row for good (ADR 0049) on the transaction's scoped client,
+// without asking whether work still sends through it: the unchecked removal behind the Integration
+// deletion use case (internal/usecase/integrationdeletion), which checks its Live use under the
+// Workspace lock first and is the only caller easement allows. A deleted Integration gives up the
+// default: its channel has none until another is picked. A missing row is ErrNotFound.
+func DeleteIn(ctx context.Context, ts *ent.Scoped, row *ent.Integration) error {
+	if row.IsDefault {
+		if err := ts.Integration().UpdateOneID(row.ID).SetIsDefault(false).Exec(ctx); err != nil {
+			return missing(err)
 		}
-		if row.DiscardedAt != nil {
-			return nil
-		}
-		if row.Provider == providers.Telegram && holdsWebhook(row.Enabled, nil) {
-			released = row
-		}
-		users, err := liveUsers(ctx, ts, row)
-		if err != nil {
-			return err
-		}
-		if len(users) > 0 {
-			return &inuse.Error{What: inuse.SubjectIntegration, Users: users}
-		}
-		if row.IsDefault {
-			if err := ts.Integration().UpdateOneID(id).SetIsDefault(false).Exec(ctx); err != nil {
-				return err
-			}
-		}
-		return ts.Integration().Discard(ctx, id)
-	}))
-	if err != nil {
-		return err
 	}
-	if released != nil {
-		m.release(ctx, released)
-	}
-	return nil
+	return missing(ts.Integration().Discard(ctx, row.ID))
 }
 
-// liveUsers is the Live use of the Integration (ADR 0099): the work whose sends go through it, by
-// the same resolution a send takes (messaging.Through).
-func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inuse.User, error) {
-	sends, err := liveuse.Sends(ctx, s)
-	if err != nil {
-		return nil, err
+// ReleaseDeleted lets the bot of a Telegram Integration that held its webhook go of it, best
+// effort, once the Integration's deletion has committed; row is the Integration as the deletion
+// read it. Any other Integration holds nothing to release.
+func (m *Module) ReleaseDeleted(ctx context.Context, row *ent.Integration) {
+	if row.Provider == providers.Telegram && holdsWebhook(row.Enabled, nil) {
+		m.release(ctx, row)
 	}
-	return liveuse.Users(lo.Filter(sends, func(send liveuse.Send, _ int) bool { return send.Uses(row.ID) })), nil
 }
 
 // requireProviderLimit refuses an SES Integration with its own endpoint that is left without

@@ -127,14 +127,18 @@ coding standards in `CODING_STANDARDS.md`.
   use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
   one domain module into the modules above it: a base module knows no module that uses it. The use
   case is a `UseCase` type built by `New` from what it needs (the bus), registered in
-  `internal/app/container.go` and handed to the drivers through their `Deps`. It takes the
+  `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
+  included: the Sending domain re-check jobs call `domainverification`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a Live use check opens it with
-  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was), reads them, and changes their rows only through their functions. easement
+  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was), reads them, and changes their rows only through their functions
+  (`domainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`).
+  Work that starts before any scope exists, such as a job given only a row's id, has its driver read
+  the row's Workspace and build the scope the use case takes. easement
   isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
   the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. A removal (or a change) that a use case guards with a check is the domain module's
-  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`),
+  unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` that may reach the core (`x-no-raw-client`,
@@ -289,8 +293,11 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
   re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
-  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/domainverify` (the Sending domain verification jobs' module, ADR 0010: it reads a
-  Sending domain by id to learn its Workspace before any scope exists, then writes through that scope), `internal/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
+  loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits; `Tokens` reads every Workspace's claim of a domain for the end-to-end
+  suite's resolver), `internal/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
+  listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
+  `internal/usecase/domainverification` that Workspace's scope; and `DevTXTLookup`, the end-to-end suite's resolver; every other
+  function takes a `*ent.Scoped`), `internal/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
   Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
   Workspace's scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
   suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
@@ -380,10 +387,13 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   returns it, and every API surface answers it with the contract's `Problem` (409, `usedBy`). When the
   users are modules above the removed row's module, the check is a use case (`tagdeletion` asks
   Segments, Automations, Rules and Broadcasts before `tags.DeleteIn`, `customfieldretyping` asks
-  Segments, Rules and Broadcasts before a Custom field's type changes; see "Use cases").
-  `internal/liveuse` finds the live work (today the active email Automations) for the modules that
-  cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
-  takes a `*ent.Scoped`, `inuse` only maps rows to users.
+  Segments, Rules and Broadcasts before a Custom field's type changes; `integrationdeletion` and
+  `sendingdomaindeletion` read the Live use that sends before `integrations.DeleteIn` and
+  `sendingdomains.DeleteIn`; see "Use cases"). The Live use that sends is read from the orchestration
+  modules that own it: `broadcasts.LiveSends` and `automations.LiveSends` return each send as an
+  `inuse.Send` (who sends, on which Channel, through which Integration by `messaging.Through`, from
+  which From), so the removal check and the send path agree on where work sends. `inuse` is a leaf
+  that holds no raw `*ent.Client`: it only maps rows to users and states these shapes.
 - **Stored Automation Steps:** `internal/automationsteps` owns the stored Step model, its kinds,
   decoding and whether a definition sends email. Publish, Needs attention and live-use checks
   share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
@@ -391,10 +401,11 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   dependencies use live, an Enrollment uses its pinned version. `internal/automations` keeps
   preparation for writing (normalization, HTML sanitization, validation and secret sealing), masked
   API views and the version lifecycle. The shared reader neither queries nor executes Steps.
-- **Owner notices**: a module that tells the Owners of a Workspace something (Join domains, Sending domains,
-  webhooks, suspension, the abuse detector) takes a `memberships.Notify` (`internal/memberships`, beside the
-  Owners, at the bottom of identity, so that every module can take it) and calls `Tell` or `TellBestEffort`;
-  `memberships.OwnerNotifier` builds the one that mails the Owners through the system sender.
+- **Owner notices**: a module or a use case that tells the Owners of a Workspace something (Join domains,
+  Sending domain verification, webhooks, suspension, the abuse detector) takes a `memberships.Notify`
+  (`internal/memberships`, beside the Owners, at the bottom of identity, so that every module can take it)
+  and calls `Tell` or `TellBestEffort`; `memberships.OwnerNotifier` builds the one that mails the Owners
+  through the system sender.
 - **Async**: one queue, river, for jobs and domain events alike (ADR 0101,
   `docs/design/domain-events.md`). `events.Bus` publishes an event inside the transaction of
   the state change: it writes the Event row (a repeated `source_id` publishes nothing) and

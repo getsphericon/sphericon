@@ -4,9 +4,10 @@
 version: 1
 
 # The rule parts several components share, merged with `<<`.
-# A domain module's unchecked removal is reachable only from its use case (ADR 0102): each is one
-# anchored item here, aliased into the forbid_symbol list of every component but `usecase` that
-# may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
+# A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
+# and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
+# here, aliased into the forbid_symbol list of every component but `usecase` that may reach the
+# core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
 # `raw-holder-forbids` (the runner, core-raw), `core`; api-auth, ee, ee-edition and wiring take this
 # list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion, which still lives in `accounts` (core-raw): core-raw alone may call it, so
@@ -23,6 +24,18 @@ x-unchecked-removals: &unchecked-removals
   - &contacts-update-custom-field-in
     name: github.com/getsphericon/sphericon/internal/contacts.UpdateCustomFieldIn
     because: editing a Custom field is the use case internal/usecase/customfieldretyping, which refuses a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065); call the use case
+  - &integrations-delete-in
+    name: github.com/getsphericon/sphericon/internal/integrations.DeleteIn
+    because: deleting an Integration is the use case internal/usecase/integrationdeletion, which checks the Integration's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+  - &sendingdomains-delete-in
+    name: github.com/getsphericon/sphericon/internal/sendingdomains.DeleteIn
+    because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which checks the domain's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
+  - &sendingdomains-record-dkim
+    name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDKIM
+    because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
+  - &sendingdomains-record-dmarc
+    name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDMARC
+    because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
@@ -30,6 +43,10 @@ x-no-raw-client: &no-raw-client
     - *tags-delete-in
     - *leave-doomed-workspace-in
     - *contacts-update-custom-field-in
+    - *integrations-delete-in
+    - *sendingdomains-delete-in
+    - *sendingdomains-record-dkim
+    - *sendingdomains-record-dmarc
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -130,7 +147,7 @@ components:
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
   # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
-  # `FenceOn`, `bindings` only `PruneStartTokens`) are left to review. The composition roots, `internal/api/auth` and the job
+  # `FenceOn`, `bindings` only `PruneStartTokens`, `sendingdomains` only `Due` and `DevTXTLookup`) are left to review. The composition roots, `internal/api/auth` and the job
   # runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`, which do not forbid the client.
   core-raw:
     in:
@@ -141,7 +158,6 @@ components:
         internal/capturedmessages,
         internal/consent,
         internal/consentrecords,
-        internal/domainverify,
         internal/instancestates,
         internal/instanceaudit,
         internal/joindomains,
@@ -149,6 +165,7 @@ components:
         internal/oauthserver,
         internal/rekey,
         internal/secondfactor,
+        internal/sendingdomains,
         internal/signupitems,
         internal/signupsurvey,
         internal/staffmembers,
@@ -242,6 +259,10 @@ rules:
       - *tags-delete-in
       - *leave-doomed-workspace-in
       - *contacts-update-custom-field-in
+      - *integrations-delete-in
+      - *sendingdomains-delete-in
+      - *sendingdomains-record-dkim
+      - *sendingdomains-record-dmarc
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
@@ -278,6 +299,10 @@ rules:
         because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
       - *tags-delete-in
       - *contacts-update-custom-field-in
+      - *integrations-delete-in
+      - *sendingdomains-delete-in
+      - *sendingdomains-record-dkim
+      - *sendingdomains-record-dmarc
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
@@ -305,9 +330,13 @@ rules:
       - *tags-delete-in
       - *leave-doomed-workspace-in
       - *contacts-update-custom-field-in
+      - *integrations-delete-in
+      - *sendingdomains-delete-in
+      - *sendingdomains-record-dkim
+      - *sendingdomains-record-dmarc
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   runner:
-    may_depend_on: [core, core-raw, identity-base]
+    may_depend_on: [core, core-raw, identity-base, usecase]
     forbid_external: *no-container
     forbid_symbol: *raw-driver-forbids
     because: the job runner calls the core, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
