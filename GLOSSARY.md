@@ -54,8 +54,8 @@ schemaless "trait". An unknown key arriving from Identify or an Event payload is
 _auto-created_ as a Custom field with an inferred type (declared-by-use), but it is a
 first-class, typed, renameable definition from the first sight, not an anonymous bag of
 keys — so the Segment builder always has a real, governed field list to offer. Its key never
-changes; a person may later change its name and its type, which reinterprets the stored values
-and rewrites none of them. Core fields and Custom fields together are a Contact's attributes.
+changes; a person may later change its name and its type (a **retype**), which reinterprets the stored
+values and rewrites none of them. Core fields and Custom fields together are a Contact's attributes.
 _Avoid_: Trait, property, attribute (unqualified), metadata
 
 **Tag**:
@@ -186,7 +186,8 @@ How long an Event is kept before it is deleted. Events split by purpose: **evide
 (consent proof such as `marketing.confirmed` and `sms.confirmed`, hard bounces and complaints, unsubscribes)
 are the audit and dispute record and are never deleted by age; **analytical** Events (opens, clicks,
 deliveries, customer-tracked actions) are deleted once older than the instance's retention window,
-so segment conditions cannot look back past it.
+so segment conditions cannot look back past it. With the Enterprise feature a Workspace also sets
+how long its **Audit log** keeps an Audit entry, which is otherwise never deleted.
 _Avoid_: TTL, expiry, purge, archive
 
 **Condition**:
@@ -635,7 +636,8 @@ _Avoid_: Run, automation run, journey instance, subscription
 
 **Step**:
 One node in an Automation's **ordered, linear** sequence; an Enrollment points at exactly one
-current Step. Five kinds today: **send** (a message on one Channel, the Channel fixed by the step,
+current Step, whose **execution** does what the Step says for the enrolled Contact and moves the
+Enrollment on. Five kinds today: **send** (a message on one Channel, the Channel fixed by the step,
 through the Integration the step names or that Channel's default; it holds its _own copy_ of
 Message content, per the marketing copy-at-author-time rule, except on WhatsApp, where it references
 a WhatsApp template), **wait** (a delay before the next
@@ -913,7 +915,8 @@ The access a User gave an application (an MCP client such as Claude) to one Work
 consenting to it. It belongs to that User's Membership, can do no more than the User's Role
 allows at the moment of each request, and ends with the Membership. Like the User's own session,
 it is refused while the User has a required acceptance pending or the Workspace's Two-factor
-requirement withholds them.
+requirement withholds them. It is **issued** when the application exchanges the code the consent
+gave it, and its secret rotates each time the application refreshes it.
 _Avoid_: OAuth grant, authorized application, API token (that is the Workspace's)
 
 **Key** (collect key / ingest key):
@@ -977,7 +980,7 @@ Workspace's Contacts, content or Events.
 _Avoid_: Admin panel, impersonation
 
 **Abuse detector**:
-The automated actor (`system`) that watches each Workspace's **Complaint rate** and **Bounce
+The automated actor (`system`) whose hourly **detection** watches each Workspace's **Complaint rate** and **Bounce
 rate** and freezes sending through **Workspace suspension** when they cross a limit, above a
 minimum send volume. A lower limit only **warns** the owner and freezes nothing: the warning is
 computed from the rates, never stored, and the owners get one email per tier per episode (an

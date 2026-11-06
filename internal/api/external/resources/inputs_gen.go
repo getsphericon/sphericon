@@ -23,7 +23,7 @@ import (
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	contactintake "github.com/getsphericon/sphericon/internal/usecase/contactintake"
-	eventlog "github.com/getsphericon/sphericon/internal/usecase/eventlog"
+	eventrecording "github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 )
 
 type InputsImpl struct{}
@@ -319,35 +319,35 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source external.EmailBroadcastCo
 	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
 	return broadcastsEmailContentPatch
 }
-func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
-	var eventlogInput eventlog.Input
-	eventlogInput.SubjectID = source.SubjectId
-	eventlogInput.Email = nilEmailPtrIn(source.Email)
-	eventlogInput.Phone = nilStringPtrIn(source.Phone)
-	eventlogInput.Action = source.Action
-	eventlogInput.OccurredAt = timestampIn(source.OccurredAt)
+func (c *InputsImpl) Event(source external.EventInput, context bool) (eventrecording.Input, error) {
+	var eventrecordingInput eventrecording.Input
+	eventrecordingInput.SubjectID = source.SubjectId
+	eventrecordingInput.Email = nilEmailPtrIn(source.Email)
+	eventrecordingInput.Phone = nilStringPtrIn(source.Phone)
+	eventrecordingInput.Action = source.Action
+	eventrecordingInput.OccurredAt = timestampIn(source.OccurredAt)
 	mapStringUnknown, err := eventPropertiesIn(source.Properties)
 	if err != nil {
-		return eventlogInput, err
+		return eventrecordingInput, err
 	}
-	eventlogInput.Properties = mapStringUnknown
-	eventlogInput.ClientEventID = nilStringIn(source.ClientEventId)
-	eventlogInput.Backfill = backfillIn(context)
-	return eventlogInput, nil
+	eventrecordingInput.Properties = mapStringUnknown
+	eventrecordingInput.ClientEventID = nilStringIn(source.ClientEventId)
+	eventrecordingInput.Backfill = backfillIn(context)
+	return eventrecordingInput, nil
 }
-func (c *InputsImpl) Events(source []external.EventInput, context bool) ([]eventlog.Input, error) {
-	var eventlogInputList []eventlog.Input
+func (c *InputsImpl) Events(source []external.EventInput, context bool) ([]eventrecording.Input, error) {
+	var eventrecordingInputList []eventrecording.Input
 	if source != nil {
-		eventlogInputList = make([]eventlog.Input, len(source))
+		eventrecordingInputList = make([]eventrecording.Input, len(source))
 		for i := 0; i < len(source); i++ {
-			eventlogInput, err := c.Event(source[i], context)
+			eventrecordingInput, err := c.Event(source[i], context)
 			if err != nil {
 				return nil, err
 			}
-			eventlogInputList[i] = eventlogInput
+			eventrecordingInputList[i] = eventrecordingInput
 		}
 	}
-	return eventlogInputList, nil
+	return eventrecordingInputList, nil
 }
 func (c *InputsImpl) IntegrationCreate(source *external.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput

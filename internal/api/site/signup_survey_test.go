@@ -182,7 +182,7 @@ func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 
 func TestTheFirstOwnerMadeByTheOperatorIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
-	_, err := env.WorkspaceCreation.CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
+	_, err := env.SignUp.CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
 	require.NoError(t, err)
 
 	due := surveyDue(t, env.SiteActor(t, surveyEmail))

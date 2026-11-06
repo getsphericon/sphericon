@@ -388,7 +388,7 @@ linters:
       # G710: a click redirects to the destination of a signed token (tracker.DecodeClick) and
       # the OAuth authorize endpoint redirects to a redirect_uri registered by the client (checked
       # by oauthclients.Module.Client) or to the Instance's own consent page.
-      - path: ^(internal/server/tracking|internal/usecase/oauthauthorization/http)\.go$
+      - path: ^(internal/server/tracking|internal/api/oauth/oauth)\.go$
         linters:
           - gosec
         text: G710

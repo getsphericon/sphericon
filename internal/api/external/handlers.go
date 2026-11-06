@@ -31,10 +31,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
-	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
+	"github.com/getsphericon/sphericon/internal/usecase/eventrecording"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -49,7 +49,7 @@ var inputs = &resources.InputsImpl{}
 type Handlers struct {
 	workspaces      *workspaces.Module
 	bus             *events.Bus
-	eventlog        *eventlog.UseCase
+	eventrecording  *eventrecording.UseCase
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
 	webhooks        *webhookendpoints.Module
@@ -63,20 +63,20 @@ type Handlers struct {
 	erasure         *contacterasure.UseCase
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
-	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
+	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one.
-	integrationDeletion   *integrationdeletion.UseCase
-	sendingDomainDeletion *sendingdomaindeletion.UseCase
-	domainVerification    *domainverification.UseCase
-	bindings              *bindings.Module
-	templates             *emailtemplates.Module
-	transactional         *transactionalsend.UseCase
-	brandKit              *brandkits.Module
-	automations           *automations.Module
-	rules                 *rules.Module
-	bootstrapToken        string
-	audit                 AuditLog
-	export                ExportStreams
+	integrationDeletion       *integrationdeletion.UseCase
+	sendingDomainDeletion     *sendingdomaindeletion.UseCase
+	sendingDomainVerification *sendingdomainverification.UseCase
+	bindings                  *bindings.Module
+	templates                 *emailtemplates.Module
+	transactional             *transactionalsend.UseCase
+	brandKit                  *brandkits.Module
+	automations               *automations.Module
+	rules                     *rules.Module
+	bootstrapToken            string
+	audit                     AuditLog
+	export                    ExportStreams
 	// intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
 	intake *contactintake.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
@@ -116,27 +116,27 @@ type Deps struct {
 	TrackingDomains  *trackingdomains.Module
 	Outbound         *outboundmessages.Module
 	Segments         *segments.Module
-	EventLog         *eventlog.UseCase
+	EventRecording   *eventrecording.UseCase
 	Contacts         *contacts.Module
 	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module
 	TagDeletion      *tagdeletion.UseCase
-	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind
+	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
-	IntegrationDeletion   *integrationdeletion.UseCase
-	SendingDomainDeletion *sendingdomaindeletion.UseCase
-	DomainVerification    *domainverification.UseCase
-	Bindings              *bindings.Module
-	Templates             *emailtemplates.Module
-	Transactional         *transactionalsend.UseCase
-	BrandKit              *brandkits.Module
-	Automations           *automations.Module
-	Rules                 *rules.Module
-	Broadcasts            *broadcasts.Module
-	Reputation            *reputation.Module
-	BootstrapToken        string
-	Audit                 AuditLog
-	Export                ExportStreams
+	IntegrationDeletion       *integrationdeletion.UseCase
+	SendingDomainDeletion     *sendingdomaindeletion.UseCase
+	SendingDomainVerification *sendingdomainverification.UseCase
+	Bindings                  *bindings.Module
+	Templates                 *emailtemplates.Module
+	Transactional             *transactionalsend.UseCase
+	BrandKit                  *brandkits.Module
+	Automations               *automations.Module
+	Rules                     *rules.Module
+	Broadcasts                *broadcasts.Module
+	Reputation                *reputation.Module
+	BootstrapToken            string
+	Audit                     AuditLog
+	Export                    ExportStreams
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now); the security handler reads it.
 	Clock func() time.Time
@@ -148,8 +148,8 @@ type Deps struct {
 
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
-		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
-		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
+		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
+		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
 		intake: d.Intake, unsubscribe: d.Unsubscribe,

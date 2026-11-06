@@ -7,6 +7,10 @@ status: accepted
 > Amends [[0016-mcp-surface-projection-of-external-api]]: its "Use-case modules" item called every domain
 > package a use-case module. A use case is now only an operation that spans several domain modules; a
 > package that owns one domain's rows is a domain module.
+>
+> Amended by #1159: a use case is named after its operation's glossary term, a read-only one after
+> its report; a protocol's or a console's endpoints are not a use case. See "Names follow one rule"
+> and "A use case is an operation that spans several domain modules".
 
 ## Context
 
@@ -66,7 +70,17 @@ Other parts of the core are misplaced too:
   - It calls the domain modules, opens the transaction and, where ADR 0099 requires it, takes the Workspace
     lock.
   - Use cases do not import each other (easement `isolated`). A piece two of them need moves down into the
-    domain module that owns it.
+    domain module that owns it. A piece that writes the rows of two modules has no single owner: each
+    use case composes those modules itself, as the Workspace creation and the Sign-up both create a
+    Workspace with its Owner Membership.
+  - A package that serves a protocol's or a console's endpoints is not a use case because it reaches
+    many modules. Its endpoints are a driver, and only an operation across modules behind them is a
+    use case: the OAuth server is the driver `internal/api/oauth`, and the exchange of a code or a
+    refresh token for a Connection is the use case `connectionissuance`. A package whose every
+    operation calls one module, and which owns rules of its own, is a domain module: the Workspace
+    oversight (`ee/domain/insights/workspaceoversight`) gates the Staff's look across Workspaces and
+    makes each change through the one module that owns its rows, since a handler may not build the
+    Workspace scope it needs.
 - **No base module knows its users.** A dependency against the order is removed by one of three moves:
   - move the code to where it belongs;
   - move a shared piece into a package below both;
@@ -93,8 +107,17 @@ Other parts of the core are misplaced too:
     plural. OAuth codes and refresh tokens belong to an OAuth client, so the module is `oauthclients`.
   - A domain module without a table is named after its glossary term in the singular (`condition`,
     `eligibility`).
-  - A use case is `<subject><action>` in glossary words (`contacterasure`, `tagdeletion`,
-    `workspacecreation`, `signup`).
+  - A use case that changes rows is named after its operation, `<subject><action>` in glossary words
+    (`contacterasure`, `tagdeletion`, `sendingdomainverification`, `eventrecording`). When the
+    glossary names the operation, its term is the name, and the term may cover the few steps of one
+    operation: `signup` (Sign-up), `secondfactorcheck` (Second factor check: enrol, verify, regenerate,
+    disable, reset), `releasecheck` (Release check: the lookup and the notice), `transactionalsend`
+    (Transactional send), `auditlogretention` (the Retention of the Audit log).
+  - A use case that only reads is named after the glossary report it builds (`analyticsreport`,
+    `needsattentionreport`). `telemetryreport` also sends the report, which the glossary's Telemetry
+    report includes.
+  - A name is the glossary's words joined in lower case, with spaces and hyphens dropped: `signup` is
+    the package of the Sign-up, although the glossary avoids "signup" in prose.
   - Only glossary words are used. When a name needs a word the glossary lacks, the glossary changes first.
 - **`accounts` is split by domain:**
   - Low in identity: the Workspace with its settings, Memberships, Permissions and the Owners with their

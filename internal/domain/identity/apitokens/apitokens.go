@@ -6,7 +6,7 @@
 // the caller (scope, role), call, map errors.
 //
 // OAuth issuing keeps its own rules: its scopes are fixed by the consent screen, and the
-// exchange of a code (internal/usecase/oauthauthorization) issues, rotates and revokes through
+// exchange of a code (internal/usecase/connectionissuance) issues, rotates and revokes through
 // IssueConnection, RotateConnection and RevokeGrant. What it issues is a Connection, an API token
 // tied to the approving User's Membership and naming the client approved (ADR 0061). A Personal token
 // is a User's own token that names no client, minted by hand (MintPersonal). The

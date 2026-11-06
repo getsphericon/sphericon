@@ -44,10 +44,10 @@ x-unchecked-removals: &unchecked-removals
     because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which checks the domain's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &sendingdomains-record-dkim
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDKIM
-    because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
+    because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
   - &sendingdomains-record-dmarc
     name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDMARC
-    because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
+    because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/sendingdomainverification runs before it stores the outcome; call the use case
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
@@ -74,13 +74,13 @@ x-unchecked-removals: &unchecked-removals
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorcheck checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
   - &apitokens-issue-connection
     name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
-    because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
+    because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
   - &apitokens-rotate-connection
     name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.RotateConnection
-    because: a Connection rotates only for a refresh token the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0102); call the use case
+    because: a Connection rotates only for a refresh token the use case internal/usecase/connectionissuance has checked and claimed (ADR 0016, ADR 0102); call the use case
   - &oauthclients-new-refresh-token-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.NewRefreshTokenIn
-    because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/oauthauthorization (ADR 0016, ADR 0102); call the use case
+    because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/connectionissuance (ADR 0016, ADR 0102); call the use case
   - &workspaces-discard-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
     because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
@@ -92,10 +92,10 @@ x-unchecked-removals: &unchecked-removals
     because: a Workspace is erased only by the use case internal/usecase/workspacedeletion, after it has removed every row the Workspace owned and the OAuth codes that name it (ADR 0043, ADR 0102); call the use case
   - &workspaces-create-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.CreateIn
-    because: a Workspace is created only by the use case internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call the use case
+    because: a Workspace is created only by the use cases internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), and internal/usecase/signup, which creates a User's first one as it makes the User Verified; each writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call a use case
   - &memberships-add-creator-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
-    because: the creator's Owner Membership is written only with its Workspace, by the use case internal/usecase/workspacecreation (ADR 0043, ADR 0102); call the use case
+    because: the creator's Owner Membership is written only with its Workspace, by the use cases internal/usecase/workspacecreation and internal/usecase/signup (ADR 0043, ADR 0102); call a use case
   - &events-erase-events-in
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseEventsIn
     because: &workspace-erase-because a deleted Workspace is erased only by the use case internal/usecase/workspacedeletion, once its deletion window has passed, one batch of listed ids at a time and in the order of the foreign keys (ADR 0043, ADR 0102); call the use case
@@ -701,6 +701,9 @@ components:
   api-external: { in: internal/api/external }
   api-collect: { in: internal/api/collect }
   api-staff: { in: internal/api/staff }
+  # The OAuth 2.1 server for MCP connectors (ADR 0016): its protocol endpoints, a driver beside the
+  # surfaces, with no TypeSpec contract of its own (the protocol's RFCs are its contract).
+  api-oauth: { in: internal/api/oauth }
   # The security handlers every surface shares.
   api-auth: { in: internal/api/auth }
   # The answer of every refusal on every surface (ADR 0103): shared surface code like the security
@@ -729,7 +732,7 @@ components:
   # each ee component names its importers), and only the wiring assembles it.
   #
   # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
-  # endpoints), over the use case ee/usecase/workspaceoversight and the module ee/domain/identity/servicecredentials.
+  # endpoints), over the modules ee/domain/insights/workspaceoversight and ee/domain/identity/servicecredentials.
   # The Edition (ee/ee.go) builds them.
   ee-api:
     in: 'ee/api/**'
@@ -758,8 +761,7 @@ components:
       ]
     because: the core never imports the Enterprise Edition; the wiring reads the License key, and every Enterprise package asks it what the License switches on
   # The Enterprise use cases (ADR 0102): an operation across domain modules, core or Enterprise,
-  # such as the Abuse detector's pass, the advanced-retention prune or the console's Enterprise
-  # sections. Each directory under ee/usecase is one use case; none imports another, and only an
+  # such as the Abuse detector's pass or the advanced-retention prune. Each directory under ee/usecase is one use case; none imports another, and only an
   # Enterprise surface, the Edition or the wiring imports one. Each holds the raw client today, so
   # each is named in `ee-usecase-raw` (one pattern each, so each is an instance); a new one that
   # holds no raw client lands in `ee-usecase`.
@@ -770,7 +772,7 @@ components:
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
   ee-usecase-raw:
-    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/workspaceoversight*']
+    in: ['ee/usecase/abusedetection*', 'ee/usecase/auditlogretention*']
     isolated: true
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
@@ -808,10 +810,19 @@ components:
       ]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
   # Insights: the Audit entries (auditentries), the Erasures of the Export streams (erasures) and
-  # the Usage figures (usages), which own their tables and hold the raw client, and the Abuse
-  # detector (abusedetector), its limits and its reading of a Workspace's standing.
+  # the Usage figures (usages), which own their tables and hold the raw client, the Abuse detector
+  # (abusedetector), its limits and its reading of a Workspace's standing, and the Workspace
+  # oversight (workspaceoversight), the Staff's and the services' look across Workspaces, which
+  # holds the raw client and sits at the top of the context: it calls the identity and sending
+  # modules and the other insights modules, of the core and of the Edition.
   ee-domain-insights-raw:
-    in: [ee/domain/insights/auditentries, ee/domain/insights/erasures, ee/domain/insights/usages]
+    in:
+      [
+        ee/domain/insights/auditentries,
+        ee/domain/insights/erasures,
+        ee/domain/insights/usages,
+        ee/domain/insights/workspaceoversight,
+      ]
     allow_importers: [ee-domain-insights, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
   ee-domain-insights:
@@ -856,25 +867,26 @@ components:
   usecase:
     in: internal/usecase/*
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
+    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the Second factor of a User, the exchange of an OAuth code or refresh
   # token, a secret that names its grant, the deletion cycle of a Workspace, which lists the
-  # Workspaces that have no scope yet, and the creation of a Workspace, with the steps that make a
-  # User Verified with its first one. They hold the raw client (the closed list of
+  # Workspaces that have no scope yet, the creation of a Workspace, and the Sign-up with the steps
+  # that make a User Verified with its first one. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
     in:
       [
         'internal/usecase/secondfactorcheck*',
-        'internal/usecase/oauthauthorization*',
+        'internal/usecase/connectionissuance*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
+        'internal/usecase/signup*',
       ]
     isolated: true
-    allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
+    allow_importers: [api-site, api-external, api-collect, api-staff, api-oauth, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
   # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
@@ -1125,6 +1137,11 @@ rules:
       ]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
+  api-oauth:
+    forbid_symbol: *core-forbids
+    may_depend_on: [domain-identity-raw, usecase-raw]
+    forbid_external: *no-container
+    because: the OAuth server reads and registers OAuth clients through their module and exchanges a grant through its use case, never through another surface
   mcp:
     forbid_symbol: *core-forbids
     may_depend_on: [api-auth, api-problem, domain-identity, gen-surfaces]
@@ -1343,7 +1360,6 @@ rules:
         ee-domain-identity-raw,
         ee-domain-insights,
         ee-domain-insights-raw,
-        ee-usecase-raw,
         gen-surfaces,
       ]
     forbid_external: *no-container
@@ -1382,9 +1398,7 @@ rules:
       [
         domain-identity-raw,
         domain-identity-base,
-        domain-sending,
         ee-licensekey,
-        ee-domain-identity-raw,
         ee-domain-insights,
         ee-domain-insights-raw,
       ]
@@ -1405,7 +1419,16 @@ rules:
     forbid_symbol: *core-forbids
     because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
   ee-domain-insights-raw:
-    may_depend_on: [domain-identity-base, domain-insights, ee-licensekey]
+    may_depend_on:
+      [
+        domain-identity-raw,
+        domain-identity-base,
+        domain-sending,
+        domain-insights,
+        ee-licensekey,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+      ]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
@@ -1443,6 +1466,7 @@ rules:
         api-external,
         api-collect,
         api-staff,
+        api-oauth,
         api-auth,
         api-problem,
         mcp,

@@ -261,11 +261,21 @@ func setDefaultSendCap(ctx context.Context, tx *ent.Client, by *ent.StaffMember,
 	return true, instanceauditentries.Record(ctx, tx, by.ID, instanceauditentries.ActionDefaultSendCapChange, diff)
 }
 
-// DefaultSendCapIn is the Send cap a Workspace created now starts with, read on tx, the
-// transaction that creates it: the stored default, nil when none is set or the Instance state row
-// does not exist yet. It does not ask whether the Instance has Send caps: only an Instance that
-// has them calls it (internal/usecase/workspacecreation, WithSendCaps).
-func DefaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
+// StartingSendCapIn is the Send cap a Workspace created now starts with (ADR 0067), read on tx, the
+// transaction that creates it: on an Instance with Send caps the stored default, nil when none is
+// set or the Instance state row does not exist yet; on one without them, none, whatever default is
+// stored. The Workspace creation and the Sign-up, which creates a User's first Workspace, both ask
+// it.
+func (m *Module) StartingSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
+	if !m.sendCaps {
+		return nil, nil
+	}
+	return defaultSendCapIn(ctx, tx)
+}
+
+// defaultSendCapIn is the stored default Send cap read on tx, nil when none is set or the Instance
+// state row does not exist yet.
+func defaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
 	row, err := tx.InstanceState.Query().Where(instancestate.ID(stateID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil

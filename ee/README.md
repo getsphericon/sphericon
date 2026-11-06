@@ -22,7 +22,7 @@ subscription (the Cal.com / GitLab model). There is no separate "enterprise buil
 
 Implemented so far: the **Audit log** (`ee/domain/insights/auditentries`, ADR 0022), unlocked by the `audit`
 feature of the license key (`ee/licensekey`, set through `SPHERICON_LICENSE_KEY`), and the
-advanced-retention control (`ee/usecase/retention`, `retention` feature): a Workspace's
+advanced-retention control (`ee/usecase/auditlogretention`, `retention` feature): a Workspace's
 `retention_days` window, applied to the Audit log by one periodic job.
 
 ## Layout

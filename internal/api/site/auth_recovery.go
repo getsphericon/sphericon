@@ -53,7 +53,7 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 // SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
 // workspacecreation, which completes the Sign-up of an Unverified User).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
-	u, completedSignUp, err := h.workspaceCreation.ResetPasswordLink(ctx, req.Token, req.Password)
+	u, completedSignUp, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 // the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
-	verified, landing, err := h.workspaceCreation.VerifyEmailLink(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
+	verified, landing, err := h.signUp.VerifyEmailLink(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
 	if err != nil {
 		return nil, err
 	}

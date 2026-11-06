@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
@@ -135,7 +135,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(env.DB, domainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomainverification.New(sendingdomains.New(env.Bus, nil), gone, memberships.OwnerNotifier(env.DB, env.SystemMail)))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

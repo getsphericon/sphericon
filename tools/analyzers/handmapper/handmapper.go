@@ -253,7 +253,7 @@ func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
 
 // isModuleInput is a module's input: a struct type named ...Input declared in a package under
 // internal/ other than the one checked. The name is the modules' own convention for what an
-// operation takes (automations.CreateInput, apitokens.Input, eventlog.Input), so a new module is
+// operation takes (automations.CreateInput, apitokens.Input, eventrecording.Input), so a new module is
 // covered the day it is written, where a list of types would go stale. A type of a generated API
 // package (siteapi.SiteCreateAutomationInput) is the request itself, and a type the handler package
 // declares is its own.

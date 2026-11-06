@@ -5,7 +5,7 @@
 // decision on the Sign-up item that stands for consent to the operator's mailings, or that
 // item's mark is set or cleared. A deleted User leaves a tombstone (UserTombstone) that takes
 // the next position, because the User row is gone. The service endpoint reads Users and
-// tombstones in the order of that position (ee/usecase/workspaceoversight), so what a caller saved as its cursor
+// tombstones in the order of that position (ee/domain/insights/workspaceoversight), so what a caller saved as its cursor
 // always names a place in the order of changes.
 //
 // Two ent hooks keep it so no write path can forget it, the same pair as internal/domain/identity/workspacefeed.

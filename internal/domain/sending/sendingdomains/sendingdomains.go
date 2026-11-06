@@ -7,7 +7,7 @@
 // 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
-// Verification stays a live DKIM check, done by the use case internal/usecase/domainverification,
+// Verification stays a live DKIM check, done by the use case internal/usecase/sendingdomainverification,
 // which stores its outcome through RecordDKIM and RecordDMARC; easement lets no other package call
 // them, so nothing in either API can set a domain verified. Deleting one is the use case internal/usecase/sendingdomaindeletion, which
 // checks its Live use first (ADR 0102).

@@ -55,13 +55,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
-	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/sendingdomainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
@@ -96,37 +96,37 @@ type Handlers struct {
 	appURL          string
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
-	eventlog        *eventlog.UseCase
 	contacts        *contacts.Module
 	erasure         *contacterasure.UseCase
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
-	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
+	// integrationDeletion, sendingDomainDeletion and sendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one.
-	integrationDeletion   *integrationdeletion.UseCase
-	sendingDomainDeletion *sendingdomaindeletion.UseCase
-	domainVerification    *domainverification.UseCase
-	bindings              *bindings.Module
-	templates             *emailtemplates.Module
-	brandKit              *brandkits.Module
-	automations           *automations.Module
-	rules                 *rules.Module
-	oauth                 *oauthclients.Module
-	audit                 AuditLog
-	attention             *needsattentionreport.UseCase
-	setupChecklist        *setupchecklist.Module
-	supportEmail          string
-	analytics             *analyticsreport.UseCase
-	sessions              *auth.Sessions
-	secondFactor          *secondfactorcheck.UseCase
-	workspaceCreation     *workspacecreation.UseCase
-	passkeys              *passkeys.Module
-	now                   func() time.Time
-	accountLink           *accountlink.Link
-	migrations            Migrations
-	release               *releasecheck.UseCase
-	holds                 *holds.Holds
-	origins               Origins
+	integrationDeletion       *integrationdeletion.UseCase
+	sendingDomainDeletion     *sendingdomaindeletion.UseCase
+	sendingDomainVerification *sendingdomainverification.UseCase
+	bindings                  *bindings.Module
+	templates                 *emailtemplates.Module
+	brandKit                  *brandkits.Module
+	automations               *automations.Module
+	rules                     *rules.Module
+	oauth                     *oauthclients.Module
+	audit                     AuditLog
+	attention                 *needsattentionreport.UseCase
+	setupChecklist            *setupchecklist.Module
+	supportEmail              string
+	analytics                 *analyticsreport.UseCase
+	sessions                  *auth.Sessions
+	secondFactor              *secondfactorcheck.UseCase
+	workspaceCreation         *workspacecreation.UseCase
+	signUp                    *signup.UseCase
+	passkeys                  *passkeys.Module
+	now                       func() time.Time
+	accountLink               *accountlink.Link
+	migrations                Migrations
+	release                   *releasecheck.UseCase
+	holds                     *holds.Holds
+	origins                   Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
@@ -197,7 +197,6 @@ type Deps struct {
 	Webhooks    *webhookendpoints.Module
 	Outbound    *outboundmessages.Module
 	Segments    *segments.Module
-	EventLog    *eventlog.UseCase
 	Contacts    *contacts.Module
 	Erasure     *contacterasure.UseCase
 	Tags        *tags.Module
@@ -215,11 +214,11 @@ type Deps struct {
 	TrackingDomains *trackingdomains.Module
 	JoinDomains     *joindomains.Module
 	Integrations    *integrations.Module
-	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind
+	// IntegrationDeletion, SendingDomainDeletion and SendingDomainVerification are the use cases behind
 	// deleting an Integration or a Sending domain and verifying one (ADR 0102).
-	IntegrationDeletion   *integrationdeletion.UseCase
-	SendingDomainDeletion *sendingdomaindeletion.UseCase
-	DomainVerification    *domainverification.UseCase
+	IntegrationDeletion       *integrationdeletion.UseCase
+	SendingDomainDeletion     *sendingdomaindeletion.UseCase
+	SendingDomainVerification *sendingdomainverification.UseCase
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
@@ -240,10 +239,12 @@ type Deps struct {
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactorcheck.UseCase
-	// WorkspaceCreation creates a Workspace, and makes a User Verified with its first one (a use
-	// case, ADR 0102): the verification and reset links, a Sign-up without verification and the
-	// provider sign-in.
+	// WorkspaceCreation creates a Verified User's Workspace (a use case, ADR 0102).
 	WorkspaceCreation *workspacecreation.UseCase
+	// SignUp is the Sign-up and every step that makes a User Verified with its first Workspace (a
+	// use case, ADR 0102): the verification and reset links, a Sign-up without verification and
+	// the provider sign-in.
+	SignUp *signup.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
 	Passkeys *passkeys.Module
 	// Clock is the time the site session's expiry and a Two-factor requirement's
@@ -289,10 +290,10 @@ func NewHandlers(d *Deps) *Handlers {
 	}
 	h := &Handlers{
 		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
+		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, sendingDomainVerification: d.SendingDomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, signUp: d.SignUp, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),

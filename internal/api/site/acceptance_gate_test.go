@@ -188,7 +188,7 @@ func TestARequiredItemAddedAfterUsersExistGatesThem(t *testing.T) {
 func TestAnOwnerMadeByTheOperatorIsGated(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	_, err := env.WorkspaceCreation.CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
+	_, err := env.SignUp.CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	refused := send(t, env, "operator@example.com", http.MethodGet, "/site/workspaces", "")

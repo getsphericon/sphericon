@@ -97,7 +97,7 @@ A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
 exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
 its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use refusal under the
 Workspace lock, `internal/usecase/integrationdeletion` the Integration's,
-`internal/usecase/domainverification` the Sending domain checks, `internal/usecase/stepexecution` the
+`internal/usecase/sendingdomainverification` the Sending domain checks, `internal/usecase/stepexecution` the
 steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
 `internal/usecase/contactintake` an import's rows and `internal/usecase/visitoridentification` what Identify
@@ -110,12 +110,14 @@ module instead (`instancestates.New(env.DB, …)`); the server's own are `env.Re
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
-(`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
-a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
+(`internal/usecase/workspacecreation`; a test of its id retry builds it with `New` and
+`WithWorkspaceIDs`), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
+Verified with its first Workspace and an Owner from a shell), the Workspace deletion cycle
 (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`
-(the removals of the Enterprise Edition's tables the wiring hands in), and the OAuth token
-endpoint (`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
-The Sign-up (`workspacecreation.UseCase.SignUp`) is built with `New` and `WithSignUp`; its test of a
+(the removals of the Enterprise Edition's tables the wiring hands in), and the exchange of an OAuth
+grant (`internal/usecase/connectionissuance`) is driven through the server's `/oauth` routes, which
+its driver `internal/api/oauth` serves and tests.
+The Sign-up (`signup.UseCase.SignUp`) is built with `New` and `WithSignUp`; its test of a
 race on a new address gives it a `Lookup` whose first lookup misses.
 
 ## Fixture catalog

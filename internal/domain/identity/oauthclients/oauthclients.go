@@ -4,8 +4,8 @@
 // User's consent records, and the refresh tokens of a grant. The consent screen is a SPA route;
 // the signed-in user's decision arrives through the site API and is handled by [Module.Decide].
 // Exchanging a code or a refresh token for a Connection (ADR 0061), the API token the grant
-// issues, is the use case internal/usecase/oauthauthorization, which also serves the protocol's
-// endpoints.
+// issues, is the use case internal/usecase/connectionissuance; the protocol's endpoints are the
+// driver internal/api/oauth.
 //
 // A client and its codes and refresh tokens belong to no Workspace before a code is exchanged
 // (a code names the Workspace its consent chose), so the package works on the raw *ent.Client.
@@ -303,7 +303,7 @@ func PruneRefreshTokensIn(ctx context.Context, tx *ent.Client, apiTokenID int64,
 
 // NewRefreshTokenIn stores a fresh refresh token of the client clientRowID for the grant of the
 // API token apiTokenID on the transaction tx, valid from now, and returns its plaintext. Only
-// the exchange of a code or a refresh token calls it (internal/usecase/oauthauthorization),
+// the exchange of a code or a refresh token calls it (internal/usecase/connectionissuance),
 // after it has checked and claimed what was presented.
 func NewRefreshTokenIn(ctx context.Context, tx *ent.Client, clientRowID, apiTokenID int64, now time.Time) (string, error) {
 	plain := rand.Text()
