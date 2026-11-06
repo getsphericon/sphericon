@@ -8,9 +8,9 @@ import (
 	"github.com/descope/virtualwebauthn"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/passkeys"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // Authenticator is a virtual WebAuthn authenticator and the browser in front of it (ADR 0051):

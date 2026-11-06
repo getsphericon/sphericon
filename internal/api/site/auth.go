@@ -6,13 +6,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteAuthSignUp is the Sign-up (ADR 0030): the signup module decides, and the answer

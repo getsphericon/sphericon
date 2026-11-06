@@ -3,8 +3,8 @@
 // documents (RFC 9728, RFC 8414), dynamic client registration (RFC 7591), the authorize step
 // that hands the browser to the SPA consent screen and the token endpoint, and issues the token
 // of a grant. The token endpoint is the operation across modules: it claims an authorization
-// code or a refresh token of internal/oauthclients and issues, rotates or revokes the Connection
-// (ADR 0061) through internal/apitokens, an API token tied to the approving User's Membership,
+// code or a refresh token of internal/domain/identity/oauthclients and issues, rotates or revokes the Connection
+// (ADR 0061) through internal/domain/identity/apitokens, an API token tied to the approving User's Membership,
 // which /mcp and /api authenticate like a hand-made token and then bound by that User's current
 // Role.
 //
@@ -26,8 +26,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 )
 
 const (

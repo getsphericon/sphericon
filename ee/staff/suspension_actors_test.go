@@ -11,11 +11,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/memberships"
-	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // The stored Audit row keeps the real Staff member id (the platform's own trail); only the

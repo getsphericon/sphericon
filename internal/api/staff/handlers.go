@@ -14,12 +14,12 @@ import (
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/staff/resources"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
-	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 

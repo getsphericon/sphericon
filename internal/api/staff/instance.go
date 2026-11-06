@@ -6,7 +6,7 @@ import (
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/auditapi"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 // StaffInstanceSetDefaultSendCap sets the Send cap of new Workspaces as the signed-in Staff member

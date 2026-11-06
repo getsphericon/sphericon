@@ -18,9 +18,9 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // tokenScopes are everything the scenario steps need; a test's token carries them all.
@@ -90,7 +90,7 @@ func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (colle
 }
 
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
-// with internal/users, internal/usecase/workspacecreation and internal/apitokens (the bootstrap token is not used, it
+// with internal/domain/identity/users, internal/usecase/workspacecreation and internal/domain/identity/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
 func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	tb.Helper()

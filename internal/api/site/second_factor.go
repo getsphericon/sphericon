@@ -6,8 +6,8 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteSecondFactorGetStatus answers whether the User has a Second factor, a pending

@@ -38,6 +38,8 @@ or `AGENTS.md`.
    event subscribers) only receive input, call a domain module or a use case and return the result;
    they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
    other package, a use case included, reads it and changes it only through a function of its owner.
+   A domain module calls only the modules of its own context and of the contexts below it
+   (`internal/domain/<context>`, ADR 0102); an operation that needs a module above is a use case.
 6. **Knowledge has one place.** A rule or a shape is stated once; no second copy of it elsewhere. For
    the API that place is TypeSpec, and none of the following is declared anywhere else: operations
    (path, method, name), request and response shapes, value constraints (length, range, format,

@@ -31,7 +31,7 @@ var SitePermissions = Table{
 	Package: "site",
 	Imports: []string{
 		`siteapi "github.com/getsphericon/sphericon/gen/site"`,
-		`"github.com/getsphericon/sphericon/internal/memberships"`,
+		`"github.com/getsphericon/sphericon/internal/domain/identity/memberships"`,
 	},
 	Doc: []string{
 		"operationAccess is what each operation of /site declares in the contract: whether it",

@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 func TestAResetTOTPForcesReenrolmentAtNextLogin(t *testing.T) {

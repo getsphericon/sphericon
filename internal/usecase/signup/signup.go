@@ -33,12 +33,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // ErrEmailTaken refuses a Sign-up of an address that belongs to a User, on an Instance that does

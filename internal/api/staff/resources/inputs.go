@@ -3,8 +3,8 @@ package resources
 import (
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
-	"github.com/getsphericon/sphericon/internal/signupitems"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a

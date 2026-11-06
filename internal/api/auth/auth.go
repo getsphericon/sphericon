@@ -20,13 +20,13 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	"github.com/getsphericon/sphericon/internal/memberships"
-	"github.com/getsphericon/sphericon/internal/users"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // ErrUnauthorized is returned by security handlers when a request is not authorized.

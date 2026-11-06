@@ -8,7 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 )
 
 // passkeyChallengesHourUTC is the off-peak hour the spent-challenge prune runs at.

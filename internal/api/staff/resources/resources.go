@@ -9,10 +9,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
-	"github.com/getsphericon/sphericon/internal/signupitems"
 )
 
 // Converter maps ent rows and module values to the core Staff API resources.

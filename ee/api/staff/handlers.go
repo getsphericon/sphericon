@@ -1,6 +1,6 @@
 // Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
 // console's Enterprise sections under /staff, with the core Staff member's session check
-// (internal/staffmembers), and the service endpoints under /service, with the Service credential's.
+// (internal/domain/identity/staffmembers), and the service endpoints under /service, with the Service credential's.
 // A handler receives the request, calls the domain module ee/staff and maps what it returns; the
 // Edition (ee) builds the surfaces and the composition root mounts them.
 //
@@ -17,15 +17,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 // Surface is the Enterprise part of the /staff API: the handlers and the security handler
 // over one Module, for the composition root to mount behind the core /staff surface. The
-// session is the core Staff member's (internal/staffmembers).
+// session is the core Staff member's (internal/domain/identity/staffmembers).
 type Surface struct {
 	handlers *Handlers
 	security *SecurityHandler

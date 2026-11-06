@@ -4,7 +4,7 @@ package site
 
 import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 )
 
 // operationAccess is what each operation of /site declares in the contract: whether it

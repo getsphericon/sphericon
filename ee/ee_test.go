@@ -13,8 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
-	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {

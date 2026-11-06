@@ -10,10 +10,10 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/userfeed"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
 	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
-	"github.com/getsphericon/sphericon/internal/userfeed"
-	"github.com/getsphericon/sphericon/internal/workspacefeed"
 )
 
 // New is the plain client: it refuses a change to the Workspace and User feeds, which

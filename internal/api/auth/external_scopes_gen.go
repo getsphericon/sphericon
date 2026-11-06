@@ -4,7 +4,7 @@ package auth
 
 import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 // ExternalOperationScopes names the scopes each operation of the external API needs, as the

@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
 // Contacts is the peak number of identified Contacts reached during the Usage period:

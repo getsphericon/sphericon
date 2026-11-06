@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 // RequireSession serves next only to a request that carries a valid Staff member session

@@ -16,10 +16,10 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 const (

@@ -1,15 +1,15 @@
 id: access-is-a-permission-go
 language: Go
 severity: error
-message: 'rule 15: every access decision is a Permission (ADR 0061), and no code compares a Role; fix: ask memberships.Allows/memberships.Require (memberships.HoldersOf in a query) for a Permission, or, for a fact that is not access (the last owner, whom to mail), call a Role function of internal/memberships (role.go)'
+message: 'rule 15: every access decision is a Permission (ADR 0061), and no code compares a Role; fix: ask memberships.Allows/memberships.Require (memberships.HoldersOf in a query) for a Permission, or, for a fact that is not access (the last owner, whom to mail), call a Role function of internal/domain/identity/memberships (role.go)'
 note: >-
   A Role is a named set of Permissions, and the table from Role to Permissions lives in
-  internal/memberships/permissions.go alone. Code that compares a Role with membership.RoleOwner,
+  internal/domain/identity/memberships/permissions.go alone. Code that compares a Role with membership.RoleOwner,
   RoleAdmin or RoleMember (`==`, `!=`, a `case`, or `membership.RoleEQ` and its kin in a query)
   keeps a second copy of that table, which drifts when a Role changes (the package may be imported
   under another name, `entmembership`, and an Invitation's Role is a Role too). Access asks a
   Permission; a fact about a Role that is not access (the owner invariants, whom to mail) asks
-  memberships.IsOwner/IsAdmin/IsMember or memberships.OwnerRole() (internal/memberships/role.go),
+  memberships.IsOwner/IsAdmin/IsMember or memberships.OwnerRole() (internal/domain/identity/memberships/role.go),
   the one other place that compares. Setting a Role (`SetRole(membership.RoleOwner)`) is not a
   comparison.
 rule:
@@ -36,8 +36,8 @@ files:
   - '**/*.go'
 ignores:
   # The Permission table and the named Role facts: the two places that compare a Role.
-  - internal/memberships/permissions.go
-  - internal/memberships/role.go
+  - internal/domain/identity/memberships/permissions.go
+  - internal/domain/identity/memberships/role.go
   - '**/*_test.go'
   - '**/*_gen.go'
   - ent/**

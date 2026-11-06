@@ -8,9 +8,9 @@ import (
 	"net/mail"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // provenNow and noJoin say whether a step that makes a User Verified also proved the address

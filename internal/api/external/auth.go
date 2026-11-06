@@ -6,7 +6,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 func (h *Handlers) AuthMeGet(ctx context.Context) (*externalapi.ApiTokenInfo, error) {

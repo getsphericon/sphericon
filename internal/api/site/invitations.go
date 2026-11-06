@@ -7,10 +7,10 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.

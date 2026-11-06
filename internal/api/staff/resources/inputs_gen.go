@@ -7,7 +7,7 @@ import (
 	"fmt"
 	signupitem "github.com/getsphericon/sphericon/ent/signupitem"
 	staff "github.com/getsphericon/sphericon/gen/staff"
-	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	signupitems "github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 )
 
 type InputsImpl struct{}

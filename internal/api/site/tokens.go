@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 // SiteTokensList returns the workspace's API tokens (Connections are listed apart, ADR 0061); a

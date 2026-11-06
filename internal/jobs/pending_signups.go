@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // pendingSignupsInterval is how often expired pending sign-ups are pruned: a pending sign-up lives

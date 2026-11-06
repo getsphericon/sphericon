@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.

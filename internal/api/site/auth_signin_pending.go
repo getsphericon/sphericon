@@ -9,9 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // signinPendingPath is the SPA's screen that asks the Sign-up items of a pending sign-up.

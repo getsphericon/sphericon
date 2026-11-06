@@ -10,10 +10,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
-	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteAuthLogin is the one route that starts a session (ADR 0020). It consults the

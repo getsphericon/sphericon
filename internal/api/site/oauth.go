@@ -7,9 +7,9 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/oauthclients"
-	"github.com/getsphericon/sphericon/internal/users"
-	"github.com/getsphericon/sphericon/internal/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
 // SiteOAuthDescribe validates an OAuth authorization request for the consent

@@ -29,8 +29,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Interval is how often the job closes elapsed periods and refreshes Live usage.

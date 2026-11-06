@@ -145,8 +145,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   Membership or an Invitation in a query; in TypeScript, a `role` or `.role`
   compared with `'owner'`/`'admin'`/`'member'`. Access asks `memberships.Allows`/`Require`/`HoldersOf`
   or `can(workspace, …)`; a Role fact that is not access calls the Role functions of
-  `internal/memberships/role.go`. Only that file and the Permission table
-  (`internal/memberships/permissions.go`) are not read, with tests and
+  `internal/domain/identity/memberships/role.go`. Only that file and the Permission table
+  (`internal/domain/identity/memberships/permissions.go`) are not read, with tests and
   generated code. Setting a Role is not a comparison.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
@@ -165,7 +165,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   version are written once, in `internal/infra/postgres` (`LockTx`, `ServerMajor`); call those.
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
-  counter, a derived row) lives in Go: an ent hook (like `internal/workspacefeed` or
+  counter, a derived row) lives in Go: an ent hook (like `internal/domain/identity/workspacefeed` or
   `internal/trackinghostlog`) or the domain module, inside the same transaction.
 
 ## Go tests

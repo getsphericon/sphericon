@@ -1,8 +1,8 @@
 // Package secondfactorenrolment is the use case of a User's TOTP Second factor and Recovery
 // codes (ADR 0020, ADR 0102): enrolling, verifying a code, regenerating the codes, disabling and
-// resetting, each an operation across the User (internal/users, which owns the factor's columns
-// and the session epoch), the Recovery codes (internal/recoverycodes) and, for a reset, the
-// Passkeys (internal/passkeys). It checks the code or the state first and writes each row through
+// resetting, each an operation across the User (internal/domain/identity/users, which owns the factor's columns
+// and the session epoch), the Recovery codes (internal/domain/identity/recoverycodes) and, for a reset, the
+// Passkeys (internal/domain/identity/passkeys). It checks the code or the state first and writes each row through
 // its owner, in one transaction.
 //
 // A User enrolls in two phases: a pending secret is created, then confirmed with a valid code
@@ -25,14 +25,14 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/otpcode"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/passkeys"
-	"github.com/getsphericon/sphericon/internal/recoverycodes"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 var (

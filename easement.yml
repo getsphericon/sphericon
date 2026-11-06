@@ -7,11 +7,13 @@ version: 1
 # A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
-# that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
-# `raw-holder-forbids` (the runner, core-raw), `core`, `consent`; api-auth, ee, ee-edition and wiring take this
-# list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
-# serves User deletion in `internal/users` (core-raw): core-raw alone may call it, so
-# it is not in `raw-holder-forbids` but in `raw-driver-forbids` (the runner, identity-base). Its definition is not a use; a call even inside its own module fails, and tests are
+# that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api), `x-core-forbids`
+# (`core` and each context's `domain-<context>`), `x-raw-holder-forbids` (the runner, `core-raw`
+# and each context's raw-client components), `consent`; api-auth, ee, ee-edition and wiring take
+# this list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
+# serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which alone
+# may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it, and
+# `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even inside its own module fails, and tests are
 # excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So does contacts.DeleteIn, the Contact row without the rest of its Erasure.
@@ -24,7 +26,7 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
     because: deleting a Tag is the use case internal/usecase/tagdeletion, which checks the Tag's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &leave-doomed-workspace-in
-    name: github.com/getsphericon/sphericon/internal/memberships.LeaveDoomedWorkspaceIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
     because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call memberships.Module.Leave or LeaveIn
   - &contacts-update-custom-field-in
     name: github.com/getsphericon/sphericon/internal/contacts.UpdateCustomFieldIn
@@ -45,49 +47,49 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
   - &users-set-pending-second-factor
-    name: github.com/getsphericon/sphericon/internal/users.SetPendingSecondFactor
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.SetPendingSecondFactor
     because: enrolling a Second factor is the use case internal/usecase/secondfactorenrolment, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
   - &users-accept-second-factor-step-in
-    name: github.com/getsphericon/sphericon/internal/users.AcceptSecondFactorStepIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.AcceptSecondFactorStepIn
     because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactorenrolment has matched against the User's secret (ADR 0020, ADR 0102); call the use case
   - &users-confirm-second-factor-in
-    name: github.com/getsphericon/sphericon/internal/users.ConfirmSecondFactorIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.ConfirmSecondFactorIn
     because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
   - &users-clear-second-factor-in
-    name: github.com/getsphericon/sphericon/internal/users.ClearSecondFactorIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/users.ClearSecondFactorIn
     because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactorenrolment checks first and records (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-replace-in
-    name: github.com/getsphericon/sphericon/internal/recoverycodes.ReplaceIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.ReplaceIn
     because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-delete-in
-    name: github.com/getsphericon/sphericon/internal/recoverycodes.DeleteIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.DeleteIn
     because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactorenrolment (ADR 0020, ADR 0102); call the use case
   - &passkeys-delete-all-in
-    name: github.com/getsphericon/sphericon/internal/passkeys.DeleteAllIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
     because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorenrolment checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
   - &apitokens-issue-connection
-    name: github.com/getsphericon/sphericon/internal/apitokens.IssueConnection
+    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
     because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
   - &apitokens-rotate-connection
-    name: github.com/getsphericon/sphericon/internal/apitokens.RotateConnection
+    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.RotateConnection
     because: a Connection rotates only for a refresh token the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0102); call the use case
   - &oauthclients-new-refresh-token-in
-    name: github.com/getsphericon/sphericon/internal/oauthclients.NewRefreshTokenIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.NewRefreshTokenIn
     because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/oauthauthorization (ADR 0016, ADR 0102); call the use case
   - &workspaces-discard-in
-    name: github.com/getsphericon/sphericon/internal/workspaces.DiscardIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.DiscardIn
     because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
   - &workspaces-restore-in
-    name: github.com/getsphericon/sphericon/internal/workspaces.RestoreIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.RestoreIn
     because: a deleted Workspace is restored only by the use case internal/usecase/workspacedeletion, for a User whose Role holds workspace:delete there (ADR 0043, ADR 0061, ADR 0102); call the use case
   - &workspaces-tombstone-in
-    name: github.com/getsphericon/sphericon/internal/workspaces.TombstoneIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.TombstoneIn
     because: a Workspace is erased only by the use case internal/usecase/workspacedeletion, after it has removed every row the Workspace owned and the OAuth codes that name it (ADR 0043, ADR 0102); call the use case
   - &workspaces-create-in
-    name: github.com/getsphericon/sphericon/internal/workspaces.CreateIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspaces.CreateIn
     because: a Workspace is created only by the use case internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call the use case
   - &memberships-add-creator-in
-    name: github.com/getsphericon/sphericon/internal/memberships.AddCreatorIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.AddCreatorIn
     because: the creator's Owner Membership is written only with its Workspace, by the use case internal/usecase/workspacecreation (ADR 0043, ADR 0102); call the use case
   - &events-erase-events-in
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseEventsIn
@@ -156,10 +158,10 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/webhooks.EraseWebhookEndpointsIn
     because: *workspace-erase-because
   - &invitations-erase-invitations-in
-    name: github.com/getsphericon/sphericon/internal/invitations.EraseInvitationsIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/invitations.EraseInvitationsIn
     because: *workspace-erase-because
   - &apitokens-erase-api-tokens-in
-    name: github.com/getsphericon/sphericon/internal/apitokens.EraseAPITokensIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.EraseAPITokensIn
     because: *workspace-erase-because
   - &broadcasts-erase-broadcasts-in
     name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastsIn
@@ -195,10 +197,10 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/integrations.EraseIntegrationsIn
     because: *workspace-erase-because
   - &joindomains-erase-join-domains-in
-    name: github.com/getsphericon/sphericon/internal/joindomains.EraseJoinDomainsIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/joindomains.EraseJoinDomainsIn
     because: *workspace-erase-because
   - &memberships-erase-memberships-in
-    name: github.com/getsphericon/sphericon/internal/memberships.EraseMembershipsIn
+    name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.EraseMembershipsIn
     because: *workspace-erase-because
 x-no-raw-client: &no-raw-client
   forbid_symbol:
@@ -264,6 +266,233 @@ x-no-raw-client: &no-raw-client
     - *integrations-erase-integrations-in
     - *joindomains-erase-join-domains-in
     - *memberships-erase-memberships-in
+# The forbid list of a component that holds no raw client (the flat `core`, the non-raw component
+# of each context, `domain-<context>`): the raw client and every unchecked removal.
+x-core-forbids: &core-forbids
+  - name: github.com/getsphericon/sphericon/ent.Client
+    because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`, or `core-raw` for a module not yet in a context) here, never a field of a module
+  - *tags-delete-in
+  - *leave-doomed-workspace-in
+  - *contacts-update-custom-field-in
+  - *integrations-delete-in
+  - *sendingdomains-delete-in
+  - *sendingdomains-record-dkim
+  - *sendingdomains-record-dmarc
+  - *contacts-delete-in
+  - *users-set-pending-second-factor
+  - *users-accept-second-factor-step-in
+  - *users-confirm-second-factor-in
+  - *users-clear-second-factor-in
+  - *recoverycodes-replace-in
+  - *recoverycodes-delete-in
+  - *passkeys-delete-all-in
+  - *apitokens-issue-connection
+  - *apitokens-rotate-connection
+  - *oauthclients-new-refresh-token-in
+  - *workspaces-discard-in
+  - *workspaces-restore-in
+  - *workspaces-tombstone-in
+  - *workspaces-create-in
+  - *memberships-add-creator-in
+  - *events-erase-events-in
+  - *orders-erase-held-order-events-in
+  - *orders-erase-order-movements-in
+  - *orders-erase-orders-in
+  - *capturedmessages-erase-captured-messages-in
+  - *outbound-erase-tracked-links-in
+  - *outbound-erase-outbound-messages-in
+  - *broadcasts-erase-broadcast-recipients-in
+  - *rules-erase-rule-firings-in
+  - *rules-erase-rule-version-triggers-in
+  - *rules-erase-rule-versions-in
+  - *rules-erase-rules-in
+  - *automations-erase-automation-runs-in
+  - *automations-erase-automation-versions-in
+  - *visitors-erase-visitors-in
+  - *confirmations-erase-confirmations-in
+  - *unsubscribes-erase-unsubscribes-in
+  - *suppression-erase-suppressions-in
+  - *holds-erase-holds-in
+  - *providerlimit-erase-provider-limiters-in
+  - *providerlimit-erase-send-cap-limiters-in
+  - *webhooks-erase-webhook-endpoints-in
+  - *invitations-erase-invitations-in
+  - *apitokens-erase-api-tokens-in
+  - *broadcasts-erase-broadcasts-in
+  - *automations-erase-automations-in
+  - *segments-erase-segments-in
+  - *templates-erase-email-templates-in
+  - *brandkit-erase-brand-kits-in
+  - *contacts-erase-contacts-in
+  - *tags-erase-tags-in
+  - *contacts-erase-custom-fields-in
+  - *trackingdomains-erase-tracking-domains-in
+  - *sendingdomains-erase-sending-domains-in
+  - *integrations-erase-integrations-in
+  - *joindomains-erase-join-domains-in
+  - *memberships-erase-memberships-in
+# The forbid list of a raw-client holder (`core-raw`, the runner, `domain-<context>-raw` and the
+# bottom of identity, `domain-identity-base`): the ent client's hooks and the upgrade types, which
+# only the wiring installs and reads, and every unchecked removal.
+x-raw-holder-forbids: &raw-holder-forbids
+  - &emailcase-hook
+    name: github.com/getsphericon/sphericon/internal/emailcase.Hook
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &workspacefeed-hook
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &workspacefeed-guard
+    name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Guard
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &userfeed-hook
+    name: github.com/getsphericon/sphericon/internal/domain/identity/userfeed.Hook
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &userfeed-guard
+    name: github.com/getsphericon/sphericon/internal/domain/identity/userfeed.Guard
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &trackinghostlog-hook
+    name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &trackinghostlog-guard
+    name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
+    because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
+  - &upgrade-boundaries
+    name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
+    because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
+  - &upgrade-major-floor
+    name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
+    because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
+  - *tags-delete-in
+  - *leave-doomed-workspace-in
+  - *contacts-update-custom-field-in
+  - *integrations-delete-in
+  - *sendingdomains-delete-in
+  - *sendingdomains-record-dkim
+  - *sendingdomains-record-dmarc
+  - *contacts-delete-in
+  - *users-set-pending-second-factor
+  - *users-accept-second-factor-step-in
+  - *users-confirm-second-factor-in
+  - *users-clear-second-factor-in
+  - *recoverycodes-replace-in
+  - *recoverycodes-delete-in
+  - *passkeys-delete-all-in
+  - *apitokens-issue-connection
+  - *apitokens-rotate-connection
+  - *oauthclients-new-refresh-token-in
+  - *workspaces-discard-in
+  - *workspaces-restore-in
+  - *workspaces-tombstone-in
+  - *workspaces-create-in
+  - *memberships-add-creator-in
+  - *events-erase-events-in
+  - *orders-erase-held-order-events-in
+  - *orders-erase-order-movements-in
+  - *orders-erase-orders-in
+  - *capturedmessages-erase-captured-messages-in
+  - *outbound-erase-tracked-links-in
+  - *outbound-erase-outbound-messages-in
+  - *broadcasts-erase-broadcast-recipients-in
+  - *rules-erase-rule-firings-in
+  - *rules-erase-rule-version-triggers-in
+  - *rules-erase-rule-versions-in
+  - *rules-erase-rules-in
+  - *automations-erase-automation-runs-in
+  - *automations-erase-automation-versions-in
+  - *visitors-erase-visitors-in
+  - *confirmations-erase-confirmations-in
+  - *unsubscribes-erase-unsubscribes-in
+  - *suppression-erase-suppressions-in
+  - *holds-erase-holds-in
+  - *providerlimit-erase-provider-limiters-in
+  - *providerlimit-erase-send-cap-limiters-in
+  - *webhooks-erase-webhook-endpoints-in
+  - *invitations-erase-invitations-in
+  - *apitokens-erase-api-tokens-in
+  - *broadcasts-erase-broadcasts-in
+  - *automations-erase-automations-in
+  - *segments-erase-segments-in
+  - *templates-erase-email-templates-in
+  - *brandkit-erase-brand-kits-in
+  - *contacts-erase-contacts-in
+  - *tags-erase-tags-in
+  - *contacts-erase-custom-fields-in
+  - *trackingdomains-erase-tracking-domains-in
+  - *sendingdomains-erase-sending-domains-in
+  - *integrations-erase-integrations-in
+  - *joindomains-erase-join-domains-in
+  - *memberships-erase-memberships-in
+# The same list less memberships.LeaveDoomedWorkspaceIn, for its one caller: User deletion, in
+# `internal/domain/identity/users` (component `domain-identity-users`).
+x-user-deletion-forbids: &user-deletion-forbids
+  - *emailcase-hook
+  - *workspacefeed-hook
+  - *workspacefeed-guard
+  - *userfeed-hook
+  - *userfeed-guard
+  - *trackinghostlog-hook
+  - *trackinghostlog-guard
+  - *upgrade-boundaries
+  - *upgrade-major-floor
+  - *tags-delete-in
+  - *contacts-update-custom-field-in
+  - *integrations-delete-in
+  - *sendingdomains-delete-in
+  - *sendingdomains-record-dkim
+  - *sendingdomains-record-dmarc
+  - *contacts-delete-in
+  - *users-set-pending-second-factor
+  - *users-accept-second-factor-step-in
+  - *users-confirm-second-factor-in
+  - *users-clear-second-factor-in
+  - *recoverycodes-replace-in
+  - *recoverycodes-delete-in
+  - *passkeys-delete-all-in
+  - *apitokens-issue-connection
+  - *apitokens-rotate-connection
+  - *oauthclients-new-refresh-token-in
+  - *workspaces-discard-in
+  - *workspaces-restore-in
+  - *workspaces-tombstone-in
+  - *workspaces-create-in
+  - *memberships-add-creator-in
+  - *events-erase-events-in
+  - *orders-erase-held-order-events-in
+  - *orders-erase-order-movements-in
+  - *orders-erase-orders-in
+  - *capturedmessages-erase-captured-messages-in
+  - *outbound-erase-tracked-links-in
+  - *outbound-erase-outbound-messages-in
+  - *broadcasts-erase-broadcast-recipients-in
+  - *rules-erase-rule-firings-in
+  - *rules-erase-rule-version-triggers-in
+  - *rules-erase-rule-versions-in
+  - *rules-erase-rules-in
+  - *automations-erase-automation-runs-in
+  - *automations-erase-automation-versions-in
+  - *visitors-erase-visitors-in
+  - *confirmations-erase-confirmations-in
+  - *unsubscribes-erase-unsubscribes-in
+  - *suppression-erase-suppressions-in
+  - *holds-erase-holds-in
+  - *providerlimit-erase-provider-limiters-in
+  - *providerlimit-erase-send-cap-limiters-in
+  - *webhooks-erase-webhook-endpoints-in
+  - *invitations-erase-invitations-in
+  - *apitokens-erase-api-tokens-in
+  - *broadcasts-erase-broadcasts-in
+  - *automations-erase-automations-in
+  - *segments-erase-segments-in
+  - *templates-erase-email-templates-in
+  - *brandkit-erase-brand-kits-in
+  - *contacts-erase-contacts-in
+  - *tags-erase-tags-in
+  - *contacts-erase-custom-fields-in
+  - *trackingdomains-erase-tracking-domains-in
+  - *sendingdomains-erase-sending-domains-in
+  - *integrations-erase-integrations-in
+  - *joindomains-erase-join-domains-in
+  - *memberships-erase-memberships-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -386,41 +615,71 @@ components:
   # `integrations`, `webhooks`, `rules`, `automations`, `users` and `staffmembers` only their
   # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth` and the job
   # runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`, which do not forbid the client.
+  # A module that has moved into its context (internal/domain/<context>) holds the client in that
+  # context's `domain-<context>-raw` component instead, and leaves this list.
   core-raw:
     in:
       [
         internal/automations,
         internal/bindings,
         internal/capturedmessages,
-        internal/consentrecords,
         internal/integrations,
         internal/instancestates,
         internal/instanceaudit,
-        internal/invitations,
-        internal/joindomains,
         internal/machine,
-        internal/oauthclients,
-        internal/passkeys,
-        internal/recoverycodes,
         internal/rules,
         internal/sendingdomains,
-        internal/signupitems,
-        internal/signupsurvey,
-        internal/staffmembers,
-        internal/suspension,
         internal/trackingdomains,
         internal/trackinghostlog,
-        internal/userfeed,
-        internal/users,
         internal/webhooks,
-        internal/workspacefeed,
       ]
 
-  # The bottom of identity (ADR 0102): the Workspace with its settings and its deletion window, and
-  # the Memberships with the Permissions, the Owners and the notices to them. Every module may read
-  # a Workspace, ask a Permission or tell the Owners something, so these two import no domain
-  # module; both hold the raw client (the closed list of docs/architecture.md, Workspace scoping).
-  identity-base: { in: [internal/workspaces, internal/memberships] }
+  # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
+  # the bottom: identity -> contacts -> content -> sending -> orchestration -> insights -> instance.
+  # Each context is a few components, one per privilege, named `domain-<context>[-<part>]`:
+  # `domain-<context>` (the glob of the context's directory: the modules that hold no raw client),
+  # `domain-<context>-raw` (the closed list of its raw-client holders, docs/architecture.md,
+  # Workspace scoping), and a component of its own where a rule binds part of a context only. A
+  # context's modules may import each other (a context only orders packages, it is no box with a
+  # facade), so its components name each other in `may_depend_on`, with every component of the
+  # contexts below and nothing above: the kernel, the infrastructure and ent are open to all
+  # (common). The modules not moved yet stay in `core` and `core-raw`, which may reach every
+  # context.
+  #
+  # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
+  # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
+  # in (Passkeys, Recovery codes), sign-in and sign-up (login, signin, Consent records, Sign-up
+  # items, the Sign-up survey), suspension, the Account link and the service feeds of Users and
+  # Workspaces.
+  # Its bottom: the Workspace with its settings and its deletion window, and the Memberships with the
+  # Permissions, the Owners and the notices to them. Every module may read a Workspace, ask a
+  # Permission or tell the Owners something, so these two import no domain module; both hold the
+  # raw client (the closed list of docs/architecture.md, Workspace scoping).
+  domain-identity-base:
+    { in: [internal/domain/identity/workspaces, internal/domain/identity/memberships] }
+  # User deletion's module: the one caller of memberships.LeaveDoomedWorkspaceIn (the only Owner
+  # leaving a Workspace in its deletion window), which every other component is forbidden.
+  domain-identity-users: { in: internal/domain/identity/users }
+  # The raw-client holders of identity (docs/architecture.md, Workspace scoping).
+  domain-identity-raw:
+    in:
+      [
+        internal/domain/identity/consentrecords,
+        internal/domain/identity/invitations,
+        internal/domain/identity/joindomains,
+        internal/domain/identity/oauthclients,
+        internal/domain/identity/passkeys,
+        internal/domain/identity/recoverycodes,
+        internal/domain/identity/signupitems,
+        internal/domain/identity/signupsurvey,
+        internal/domain/identity/staffmembers,
+        internal/domain/identity/suspension,
+        internal/domain/identity/userfeed,
+        internal/domain/identity/workspacefeed,
+      ]
+  # The rest of identity, which holds no raw client; a new module under internal/domain/identity
+  # lands here.
+  domain-identity: { in: 'internal/domain/identity/**' }
 
   # The consent of a Destination (ADR 0102): the Confirmation and Unsubscribe owners and the stops
   # read in the Channel itself. They sit in the contacts context, below the Broadcasts and
@@ -474,7 +733,10 @@ rules:
         api-problem,
         core,
         core-raw,
-        identity-base,
+        domain-identity,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-identity-base,
         consent,
         gen-surfaces,
         usecase,
@@ -485,7 +747,18 @@ rules:
   api-external:
     <<: *no-raw-client
     may_depend_on:
-      [api-auth, api-problem, core, core-raw, identity-base, consent, gen-surfaces, usecase]
+      [
+        api-auth,
+        api-problem,
+        core,
+        core-raw,
+        domain-identity,
+        domain-identity-users,
+        domain-identity-base,
+        consent,
+        gen-surfaces,
+        usecase,
+      ]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
@@ -495,178 +768,31 @@ rules:
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, core-raw, gen-surfaces, usecase]
+    may_depend_on:
+      [api-problem, core, core-raw, domain-identity, domain-identity-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
-    may_depend_on: [core, core-raw, identity-base, gen-surfaces]
+    may_depend_on: [domain-identity, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
   api-problem:
     <<: *no-raw-client
-    may_depend_on: [core, core-raw, identity-base, gen-surfaces]
+    may_depend_on: [core, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
-    may_depend_on: [core-raw, identity-base, consent]
+    may_depend_on: [core-raw, domain-identity-raw, domain-identity-base, consent]
     must_not_depend_on: [*no-surface-gen]
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in `core-raw` here, never a field of a module
-      - *tags-delete-in
-      - *leave-doomed-workspace-in
-      - *contacts-update-custom-field-in
-      - *integrations-delete-in
-      - *sendingdomains-delete-in
-      - *sendingdomains-record-dkim
-      - *sendingdomains-record-dmarc
-      - *contacts-delete-in
-      - *users-set-pending-second-factor
-      - *users-accept-second-factor-step-in
-      - *users-confirm-second-factor-in
-      - *users-clear-second-factor-in
-      - *recoverycodes-replace-in
-      - *recoverycodes-delete-in
-      - *passkeys-delete-all-in
-      - *apitokens-issue-connection
-      - *apitokens-rotate-connection
-      - *oauthclients-new-refresh-token-in
-      - *workspaces-discard-in
-      - *workspaces-restore-in
-      - *workspaces-tombstone-in
-      - *workspaces-create-in
-      - *memberships-add-creator-in
-      - *events-erase-events-in
-      - *orders-erase-held-order-events-in
-      - *orders-erase-order-movements-in
-      - *orders-erase-orders-in
-      - *capturedmessages-erase-captured-messages-in
-      - *outbound-erase-tracked-links-in
-      - *outbound-erase-outbound-messages-in
-      - *broadcasts-erase-broadcast-recipients-in
-      - *rules-erase-rule-firings-in
-      - *rules-erase-rule-version-triggers-in
-      - *rules-erase-rule-versions-in
-      - *rules-erase-rules-in
-      - *automations-erase-automation-runs-in
-      - *automations-erase-automation-versions-in
-      - *visitors-erase-visitors-in
-      - *confirmations-erase-confirmations-in
-      - *unsubscribes-erase-unsubscribes-in
-      - *suppression-erase-suppressions-in
-      - *holds-erase-holds-in
-      - *providerlimit-erase-provider-limiters-in
-      - *providerlimit-erase-send-cap-limiters-in
-      - *webhooks-erase-webhook-endpoints-in
-      - *invitations-erase-invitations-in
-      - *apitokens-erase-api-tokens-in
-      - *broadcasts-erase-broadcasts-in
-      - *automations-erase-automations-in
-      - *segments-erase-segments-in
-      - *templates-erase-email-templates-in
-      - *brandkit-erase-brand-kits-in
-      - *contacts-erase-contacts-in
-      - *tags-erase-tags-in
-      - *contacts-erase-custom-fields-in
-      - *trackingdomains-erase-tracking-domains-in
-      - *sendingdomains-erase-sending-domains-in
-      - *integrations-erase-integrations-in
-      - *joindomains-erase-join-domains-in
-      - *memberships-erase-memberships-in
+    forbid_symbol: *core-forbids
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
-    may_depend_on: [core, identity-base]
+    may_depend_on: [core, domain-identity-raw, domain-identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: &raw-holder-forbids
-      - &emailcase-hook
-        name: github.com/getsphericon/sphericon/internal/emailcase.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &workspacefeed-hook
-        name: github.com/getsphericon/sphericon/internal/workspacefeed.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &workspacefeed-guard
-        name: github.com/getsphericon/sphericon/internal/workspacefeed.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &userfeed-hook
-        name: github.com/getsphericon/sphericon/internal/userfeed.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &userfeed-guard
-        name: github.com/getsphericon/sphericon/internal/userfeed.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &trackinghostlog-hook
-        name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &trackinghostlog-guard
-        name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
-        because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-      - &upgrade-boundaries
-        name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
-        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
-      - &upgrade-major-floor
-        name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
-        because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
-      - *tags-delete-in
-      - *contacts-update-custom-field-in
-      - *integrations-delete-in
-      - *sendingdomains-delete-in
-      - *sendingdomains-record-dkim
-      - *sendingdomains-record-dmarc
-      - *contacts-delete-in
-      - *users-set-pending-second-factor
-      - *users-accept-second-factor-step-in
-      - *users-confirm-second-factor-in
-      - *users-clear-second-factor-in
-      - *recoverycodes-replace-in
-      - *recoverycodes-delete-in
-      - *passkeys-delete-all-in
-      - *apitokens-issue-connection
-      - *apitokens-rotate-connection
-      - *oauthclients-new-refresh-token-in
-      - *workspaces-discard-in
-      - *workspaces-restore-in
-      - *workspaces-tombstone-in
-      - *workspaces-create-in
-      - *memberships-add-creator-in
-      - *events-erase-events-in
-      - *orders-erase-held-order-events-in
-      - *orders-erase-order-movements-in
-      - *orders-erase-orders-in
-      - *capturedmessages-erase-captured-messages-in
-      - *outbound-erase-tracked-links-in
-      - *outbound-erase-outbound-messages-in
-      - *broadcasts-erase-broadcast-recipients-in
-      - *rules-erase-rule-firings-in
-      - *rules-erase-rule-version-triggers-in
-      - *rules-erase-rule-versions-in
-      - *rules-erase-rules-in
-      - *automations-erase-automation-runs-in
-      - *automations-erase-automation-versions-in
-      - *visitors-erase-visitors-in
-      - *confirmations-erase-confirmations-in
-      - *unsubscribes-erase-unsubscribes-in
-      - *suppression-erase-suppressions-in
-      - *holds-erase-holds-in
-      - *providerlimit-erase-provider-limiters-in
-      - *providerlimit-erase-send-cap-limiters-in
-      - *webhooks-erase-webhook-endpoints-in
-      - *invitations-erase-invitations-in
-      - *apitokens-erase-api-tokens-in
-      - *broadcasts-erase-broadcasts-in
-      - *automations-erase-automations-in
-      - *segments-erase-segments-in
-      - *templates-erase-email-templates-in
-      - *brandkit-erase-brand-kits-in
-      - *contacts-erase-contacts-in
-      - *tags-erase-tags-in
-      - *contacts-erase-custom-fields-in
-      - *trackingdomains-erase-tracking-domains-in
-      - *sendingdomains-erase-sending-domains-in
-      - *integrations-erase-integrations-in
-      - *joindomains-erase-join-domains-in
-      - *memberships-erase-memberships-in
+    forbid_symbol: *raw-holder-forbids
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   consent:
     may_depend_on: [core]
@@ -740,15 +866,34 @@ rules:
     because: the consent of a Destination sits in the contacts context (ADR 0102), below the Automations it may not import; an operation that also counts on a Broadcast or ends an Enrollment is a use case above it
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
-    may_depend_on: [core, core-raw, identity-base, consent, gen-telemetry]
+    may_depend_on:
+      [
+        core,
+        core-raw,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-identity-base,
+        consent,
+        gen-telemetry,
+      ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
+      - *leave-doomed-workspace-in
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
-    may_depend_on: [core, core-raw, identity-base, consent]
+    may_depend_on:
+      [
+        core,
+        core-raw,
+        domain-identity,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-identity-base,
+        consent,
+      ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - *emailcase-hook
@@ -763,85 +908,43 @@ rules:
       - *leave-doomed-workspace-in
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); these hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
-  identity-base:
+  domain-identity-base:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: &raw-driver-forbids
-      - *emailcase-hook
-      - *workspacefeed-hook
-      - *workspacefeed-guard
-      - *userfeed-hook
-      - *userfeed-guard
-      - *trackinghostlog-hook
-      - *trackinghostlog-guard
-      - *upgrade-boundaries
-      - *upgrade-major-floor
-      - *tags-delete-in
-      - *leave-doomed-workspace-in
-      - *contacts-update-custom-field-in
-      - *integrations-delete-in
-      - *sendingdomains-delete-in
-      - *sendingdomains-record-dkim
-      - *sendingdomains-record-dmarc
-      - *contacts-delete-in
-      - *users-set-pending-second-factor
-      - *users-accept-second-factor-step-in
-      - *users-confirm-second-factor-in
-      - *users-clear-second-factor-in
-      - *recoverycodes-replace-in
-      - *recoverycodes-delete-in
-      - *passkeys-delete-all-in
-      - *apitokens-issue-connection
-      - *apitokens-rotate-connection
-      - *oauthclients-new-refresh-token-in
-      - *workspaces-discard-in
-      - *workspaces-restore-in
-      - *workspaces-tombstone-in
-      - *workspaces-create-in
-      - *memberships-add-creator-in
-      - *events-erase-events-in
-      - *orders-erase-held-order-events-in
-      - *orders-erase-order-movements-in
-      - *orders-erase-orders-in
-      - *capturedmessages-erase-captured-messages-in
-      - *outbound-erase-tracked-links-in
-      - *outbound-erase-outbound-messages-in
-      - *broadcasts-erase-broadcast-recipients-in
-      - *rules-erase-rule-firings-in
-      - *rules-erase-rule-version-triggers-in
-      - *rules-erase-rule-versions-in
-      - *rules-erase-rules-in
-      - *automations-erase-automation-runs-in
-      - *automations-erase-automation-versions-in
-      - *visitors-erase-visitors-in
-      - *confirmations-erase-confirmations-in
-      - *unsubscribes-erase-unsubscribes-in
-      - *suppression-erase-suppressions-in
-      - *holds-erase-holds-in
-      - *providerlimit-erase-provider-limiters-in
-      - *providerlimit-erase-send-cap-limiters-in
-      - *webhooks-erase-webhook-endpoints-in
-      - *invitations-erase-invitations-in
-      - *apitokens-erase-api-tokens-in
-      - *broadcasts-erase-broadcasts-in
-      - *automations-erase-automations-in
-      - *segments-erase-segments-in
-      - *templates-erase-email-templates-in
-      - *brandkit-erase-brand-kits-in
-      - *contacts-erase-contacts-in
-      - *tags-erase-tags-in
-      - *contacts-erase-custom-fields-in
-      - *trackingdomains-erase-tracking-domains-in
-      - *sendingdomains-erase-sending-domains-in
-      - *integrations-erase-integrations-in
-      - *joindomains-erase-join-domains-in
-      - *memberships-erase-memberships-in
+    forbid_symbol: *raw-holder-forbids
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
-  runner:
-    may_depend_on: [core, core-raw, identity-base, usecase, usecase-raw]
+  domain-identity-users:
+    may_depend_on: [domain-identity, domain-identity-raw, domain-identity-base]
+    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    forbid_symbol: *raw-driver-forbids
+    forbid_symbol: *user-deletion-forbids
+    because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
+  domain-identity-raw:
+    may_depend_on: [domain-identity, domain-identity-users, domain-identity-base]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
+  domain-identity:
+    may_depend_on: [domain-identity-users, domain-identity-base]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: identity is the bottom context of the domain tier (ADR 0102), so an identity module imports the kernel, the infrastructure, ent and the other identity modules, never a module of a context above (a Contact, a send cap, a Broadcast) nor a use case; an operation that needs one is a use case above both
+  runner:
+    may_depend_on:
+      [
+        core,
+        core-raw,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-identity-base,
+        usecase,
+        usecase-raw,
+      ]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
     because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   infra:
     may_depend_on: []
@@ -874,19 +977,19 @@ rules:
     because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, core-raw, ee, gen-surfaces]
+    may_depend_on: [api-problem, core, domain-identity-raw, ee, gen-surfaces]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
-    may_depend_on: [core, core-raw, identity-base, ee, ee-api, gen-surfaces]
+    may_depend_on: [core, domain-identity-raw, domain-identity-base, ee, ee-api, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
   ee:
     may_depend_on:
       - core
-      - core-raw
-      - identity-base
+      - domain-identity-raw
+      - domain-identity-base
       - name: gen-surfaces
         because: the ban on a surface's generated package binds the core tiers; the Enterprise Edition's boundary with the core is unchanged (spec #1120), and ee/staff reads its service surface's ServiceScope until the Edition takes the same tiers
     forbid_symbol: *unchecked-removals
@@ -897,7 +1000,10 @@ rules:
       [
         core,
         core-raw,
-        identity-base,
+        domain-identity,
+        domain-identity-raw,
+        domain-identity-users,
+        domain-identity-base,
         ee,
         ee-edition,
         api-site,

@@ -19,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 )
 
 // Interval is how often the prune job runs; the window is in days, so hourly is ample.

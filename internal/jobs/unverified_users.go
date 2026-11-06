@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // unverifiedUsersBatch bounds the rows one DELETE removes so a large backlog never

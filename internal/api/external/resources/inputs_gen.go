@@ -6,12 +6,12 @@ package resources
 import (
 	"fmt"
 	external "github.com/getsphericon/sphericon/gen/external"
-	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	confirmations "github.com/getsphericon/sphericon/internal/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
+	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"

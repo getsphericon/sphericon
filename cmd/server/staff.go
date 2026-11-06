@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 )
 
 // staffOps is what the `staff` commands need from the app. The app implements

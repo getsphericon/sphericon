@@ -18,11 +18,11 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
 // PeriodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.

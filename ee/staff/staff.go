@@ -2,7 +2,7 @@
 // 0063), under the `staff` license feature: the cross-Workspace views and actions of a Staff member,
 // and what the service endpoints a Service credential calls read and write. Their handlers are
 // ee/api/staff, which call this module and hold no logic of their own. The Staff member itself, its
-// sign-in and its sessions are core (internal/staffmembers) and run on every Instance.
+// sign-in and its sessions are core (internal/domain/identity/staffmembers) and run on every Instance.
 //
 // The console's Workspace metadata belongs to no Workspace, so this package works on the raw
 // *ent.Client (it is in the closed list of docs/architecture.md): the Workspace rows, the
@@ -23,11 +23,11 @@ import (
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
-	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 // SitePersonalTokensList returns the Workspace's active Personal tokens the caller may see: their

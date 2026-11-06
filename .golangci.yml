@@ -361,7 +361,7 @@ linters:
       #
       # G124: the Secure attribute follows the instance's URL scheme (config.SecureCookies): a
       # plain-http instance would never get a Secure cookie back. The rule wants a constant true.
-      - path: ^(internal/staffmembers/session\.go|internal/api/auth/(session|passkey_ceremony|sign_up_browser|signin_flow)\.go)$
+      - path: ^(internal/domain/identity/staffmembers/session\.go|internal/api/auth/(session|passkey_ceremony|sign_up_browser|signin_flow)\.go)$
         linters:
           - gosec
         text: G124
@@ -374,7 +374,7 @@ linters:
       # G704: the health check calls 127.0.0.1 and only the port comes from PORT; the OAuth client
       # metadata fetch runs through an SSRF-hardened client (webhook.NewClientAllowing: private
       # and loopback addresses refused at dial time, no redirects) after validMetadataURL.
-      - path: ^(internal/healthcheck/healthcheck|internal/oauthclients/metadata)\.go$
+      - path: ^(internal/healthcheck/healthcheck|internal/domain/identity/oauthclients/metadata)\.go$
         linters:
           - gosec
         text: G704

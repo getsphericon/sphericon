@@ -8,8 +8,8 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/passkeys"
 )
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).

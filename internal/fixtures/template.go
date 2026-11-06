@@ -8,7 +8,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )

@@ -14,10 +14,10 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
-	"github.com/getsphericon/sphericon/internal/memberships"
 )
 
 // releaseLookupTimeout bounds one ask: the source's own client waits much longer.

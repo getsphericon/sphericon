@@ -57,13 +57,25 @@ The `testwrites` analyzer reads the harness as it reads tests: a helper that cre
 why no fixture can hold it, with the same `// test writes:` comment.
 
 **`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
-carries the Guards of `internal/workspacefeed`, `internal/userfeed` and `internal/trackinghostlog`
+carries the Guards of `internal/domain/identity/workspacefeed`, `internal/domain/identity/userfeed` and `internal/trackinghostlog`
 (`entclient.New`), and only the bus's transaction client runs their Hooks, so a module that
 writes a Workspace's deletion, an owner change, a User, a Consent record, the mailings mark or a
 Tracking host outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup
 that marks a Workspace deleted or changes a User's address, or the write a test of a feed's Hook
 makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A module
 under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
+
+## Domain contexts
+
+A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the order of the contexts
+and their easement components are "Domain contexts" in `docs/architecture.md`). Identity is there
+(`internal/domain/identity/{workspaces,memberships,users,...}`); the other modules are still flat
+under `internal/` until their context moves. A module imports only modules of its own context and
+of the contexts below; its tests are not checked, so a test may build what it needs from the harness
+as before. A module moves with its tests, in the same `_test` package and with the same assertions.
+Only paths change: a relative path a test reads (`signin`'s `../../../../openapi`) gets the new
+depth, and the list of `RecordAudit` call sites in `internal/api/site/audit_explicit_test.go` names
+the moved files. The move recipe is at the end of that section of `docs/architecture.md`.
 
 ## Use cases
 

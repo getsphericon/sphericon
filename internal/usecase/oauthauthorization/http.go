@@ -13,7 +13,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 )
 
 // Paths served by the Go binary. The consent screen is the SPA route ConsentPath.

@@ -7,8 +7,8 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // userOps is what the `user` staff member commands need from the app. The app

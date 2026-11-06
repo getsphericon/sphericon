@@ -53,7 +53,7 @@ func (e Enum) Decls(doc Document) (string, error) {
 // every generated access table name, from the contract's Permission enum.
 var Permissions = Table{
 	Spec:    "openapi/site.openapi.json",
-	Out:     "internal/memberships/permissions_gen.go",
+	Out:     "internal/domain/identity/memberships/permissions_gen.go",
 	Package: "memberships",
 	Decls: Enum{
 		Schema: "Permission",
@@ -70,7 +70,7 @@ var Permissions = Table{
 // the type the external API's scope table names, from the contract's ApiTokenScope enum.
 var TokenScopes = Table{
 	Spec:    "openapi/external.openapi.json",
-	Out:     "internal/apitokens/scopes_gen.go",
+	Out:     "internal/domain/identity/apitokens/scopes_gen.go",
 	Package: "apitokens",
 	Decls: Enum{
 		Schema: "ApiTokenScope",

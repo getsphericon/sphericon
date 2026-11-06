@@ -5,10 +5,10 @@ import (
 	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050), after

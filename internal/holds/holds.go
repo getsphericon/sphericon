@@ -15,8 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // The Workspace-level reasons a send is Held. They describe the Workspace, not one send, so

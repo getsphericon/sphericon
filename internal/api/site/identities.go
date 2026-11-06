@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // signinSettingsPath is the account page that lists the Linked identities: where a link flow

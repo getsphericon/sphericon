@@ -11,11 +11,11 @@ import (
 
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // feedPage reads one page of the Workspace feed from cursor.

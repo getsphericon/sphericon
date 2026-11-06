@@ -16,7 +16,7 @@ var ExternalScopes = Table{
 	Package: "auth",
 	Imports: []string{
 		`externalapi "github.com/getsphericon/sphericon/gen/external"`,
-		`"github.com/getsphericon/sphericon/internal/apitokens"`,
+		`"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"`,
 	},
 	Doc: []string{
 		"ExternalOperationScopes names the scopes each operation of the external API needs, as the",
@@ -66,7 +66,7 @@ var ExternalPermissions = Table{
 	Package: "auth",
 	Imports: []string{
 		`externalapi "github.com/getsphericon/sphericon/gen/external"`,
-		`"github.com/getsphericon/sphericon/internal/memberships"`,
+		`"github.com/getsphericon/sphericon/internal/domain/identity/memberships"`,
 	},
 	Doc: []string{
 		"ExternalOperationPermissions names the Permissions a Connection's User must hold in their",

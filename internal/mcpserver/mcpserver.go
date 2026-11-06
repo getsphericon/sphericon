@@ -25,7 +25,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/server"
 )
 

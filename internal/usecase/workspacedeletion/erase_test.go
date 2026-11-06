@@ -14,10 +14,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // deleteUmbrella puts Umbrella into its deletion window, deleted ago before now.

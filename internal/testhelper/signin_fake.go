@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
 )
 
 // SigninIdentity is who the fake provider says the person is: the subject, the email and

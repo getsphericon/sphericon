@@ -10,9 +10,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/invitations"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
 // The pages the callback sends the browser to. The SPA owns both routes.

@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/usertombstone"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -45,7 +45,7 @@ func (e UserFeedEntry) position() int64 {
 // from the beginning. Like the Workspace feed, the module keeps no position: reading is
 // idempotent, the caller advances by saving NextCursor, and delivery is at-least-once; a User
 // changed again after it was read is listed again, as they are by then. It reads the Users and
-// their tombstones through the raw client, and the consents through internal/consentrecords.
+// their tombstones through the raw client, and the consents through internal/domain/identity/consentrecords.
 func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[UserFeedEntry], error) {
 	if err := m.licensed(); err != nil {
 		return pagination.CursorPage[UserFeedEntry]{}, err

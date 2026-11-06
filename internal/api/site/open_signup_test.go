@@ -10,8 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // selfHosted is an Instance in the selfhosted Mode, which already has its Owners (the fixtures).

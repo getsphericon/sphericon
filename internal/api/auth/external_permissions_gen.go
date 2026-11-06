@@ -4,7 +4,7 @@ package auth
 
 import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 )
 
 // ExternalOperationPermissions names the Permissions a Connection's User must hold in their

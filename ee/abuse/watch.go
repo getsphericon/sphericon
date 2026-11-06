@@ -8,9 +8,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/suspension"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the

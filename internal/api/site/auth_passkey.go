@@ -7,10 +7,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/passkeys"
-	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SitePasskeyLoginBegin answers the request options for a usernameless Passkey login and sets
