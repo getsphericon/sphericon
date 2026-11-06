@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )

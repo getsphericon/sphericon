@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // A Test send (GLOSSARY) goes to an address the author names, through the Channel's renderer and

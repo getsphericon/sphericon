@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/event"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
-	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"

@@ -17,12 +17,12 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/templates"
 )
 

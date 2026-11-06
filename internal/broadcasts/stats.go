@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/aggregates"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/orders"
 )
 
 // Stats is a Broadcast's delivery figures. They are never stored: the audience is its

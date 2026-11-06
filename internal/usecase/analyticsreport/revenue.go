@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 )
 
 // Revenue reads the revenue of the Orders the Workspace behind s sent to Sphericon (ADR 0064)

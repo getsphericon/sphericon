@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/orders"
 )
 
 // UseCase records a customer's Events and reads the Event log.

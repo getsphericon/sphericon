@@ -6,7 +6,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )

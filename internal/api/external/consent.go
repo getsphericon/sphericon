@@ -5,8 +5,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/confirmations"
-	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 )
 
 // Consent narrows through /api (ADR 0016): these operations add a Suppression or record an

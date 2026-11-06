@@ -10,9 +10,9 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/emailcase"
 	"github.com/getsphericon/sphericon/internal/domain/identity/userfeed"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
-	"github.com/getsphericon/sphericon/internal/emailcase"
 	"github.com/getsphericon/sphericon/internal/trackinghostlog"
 )
 

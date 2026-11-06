@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/internal/api/problem"
-	"github.com/getsphericon/sphericon/internal/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"

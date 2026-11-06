@@ -387,7 +387,7 @@ description = "Mutation testing of the packages whose logic decides what is sent
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", SPHERICON_DATABASE_URL = "{{env.SPHERICON_TEST_DATABASE_URL}}" }
 usage = 'arg "[packages]" var=#true help="packages to mutate (default: eligibility and providerlimit)"'
-run = 'eval "set -- $usage_packages"; [ $# -gt 0 ] || set -- ./internal/eligibility/... ./internal/providerlimit/...; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 75 "$@"'
+run = 'eval "set -- $usage_packages"; [ $# -gt 0 ] || set -- ./internal/domain/contacts/eligibility/... ./internal/providerlimit/...; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 75 "$@"'
 
 ["test:fuzz"]
 description = "Go native fuzzing of the parsers that take outside input: every Fuzz target of cmd/, internal/ and ee/ (test:fuzz:targets), or the ones passed after `--` as <dir>:<Fuzz func> (SPHERICON_FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"

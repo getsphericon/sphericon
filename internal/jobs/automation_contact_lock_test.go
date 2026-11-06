@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"

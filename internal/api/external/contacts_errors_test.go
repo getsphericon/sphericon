@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/hook"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )

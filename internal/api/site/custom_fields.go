@@ -4,7 +4,7 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 

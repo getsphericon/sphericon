@@ -121,7 +121,8 @@ coding standards in `CODING_STANDARDS.md`.
   The check is strict: a new Go package under `internal/kernel/` is covered by the `kernel`
   component, one under `internal/infra/` by `infra`, one under `internal/usecase/` by `usecase`,
   one under `internal/domain/identity/` by `domain-identity` (the raw-client holders by name in
-  `domain-identity-raw`, see "Domain contexts" below), any other under `internal/` by the `core`
+  `domain-identity-raw`, see "Domain contexts" below), one under `internal/domain/contacts/` by
+  `domain-contacts`, any other under `internal/` by the `core`
   component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
@@ -147,6 +148,14 @@ coding standards in `CODING_STANDARDS.md`.
   `signupsurvey`, `staffmembers`, `suspension`, `userfeed` and `workspacefeed`
   (`domain-identity-raw`), and `apitokens`, `login`, `signin` and `accountlink` (`domain-identity`).
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
+  Contacts, above it, is moved too, as one component (`domain-contacts`, the glob of
+  `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
+  `unsubscribes`, `optout`, `suppression`, `eligibility`, `visitors` and `orders`, with the Contact
+  row lock (`contactlock`) and the hook that keeps stored addresses lower-cased (`emailcase`, which
+  targets the Contacts as well as identity's Users and Invitations). None of them holds the raw
+  client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
+  context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `bindings` or
+  `templates`, and no use case.
   To move a module into its context: `git mv` its directory, rewrite the import paths
   (`github.com/getsphericon/sphericon/internal/<module>` to
   `.../internal/domain/<context>/<module>`) and the module-relative paths that name it (the
@@ -218,7 +227,7 @@ coding standards in `CODING_STANDARDS.md`.
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core (`x-no-raw-client`,
   `x-core-forbids` for `core` and each context's `domain-<context>`, `x-raw-holder-forbids` for
-  the runner, `core-raw` and each context's raw-client components, `consent`, and the whole list
+  the runner, `core-raw` and each context's raw-client components, and the whole list
   in `api-auth`, `ee`, `ee-edition` and `wiring`), so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
@@ -253,13 +262,12 @@ coding standards in `CODING_STANDARDS.md`.
   (`transactionalsend`) hands its request to the Outbound send module; the Event log (`eventlog`)
   publishes a customer's Events on the bus and reads them back; the Analytics reports (`analyticsreport`) and what Needs
   attention (`needsattention`) only read.
-  The consent of a Destination (easement component `consent`: `internal/confirmations`,
-  `internal/unsubscribes` and `internal/optout`, the stops read in the Channel) sits below the
-  Broadcasts and Automations an unsubscribe touches: it may import neither the raw-client holders
-  (`automations` among them) nor a use case, and `automations.Exit` is forbidden to it by name; only
-  `unsubscriberecording` calls `broadcasts.RecordUnsubscribe` and ends the Enrollment. easement
-  does not check the Broadcast half (it resolves no symbol of `internal/broadcasts`, and `broadcasts`
-  shares the `core` component), so review does. A Telegram stop (`optout.StopTelegram`, from the
+  The consent of a Destination (`internal/domain/contacts/confirmations`,
+  `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/optout`, the stops read in
+  the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
+  touches: easement fails its import of `broadcasts`, `automations` or a use case as an import
+  against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` calls
+  `broadcasts.RecordUnsubscribe` and ends the Enrollment. A Telegram stop (`optout.StopTelegram`, from the
   Ingest hook's button press or a send that finds the bot blocked) writes no Broadcast row: the
   recipient row is the `broadcasts` module's (ADR 0102), and neither `optout` nor `outbound`, where a
   blocked send records the stop in its own transaction, may reach it. Its `telegram.unsubscribed`
@@ -463,7 +471,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   `internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component. It fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
   both lists.
-  `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
+  `internal/domain/contacts/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
   `s.WorkspaceID()` as a bound SQL argument inside one raw expression (the correlated
   contact check reads the outer row's `workspace_id` column), not as a hand-written
   `WorkspaceID(ws)` predicate.

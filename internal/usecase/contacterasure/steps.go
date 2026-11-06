@@ -10,14 +10,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/confirmations"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/unsubscribes"
-	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
 // cancelBroadcastWork has the Broadcast delivery module cancel the Contact's unsent

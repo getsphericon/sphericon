@@ -9,7 +9,7 @@ version: 1
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
 # that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api), `x-core-forbids`
 # (`core` and each context's `domain-<context>`), `x-raw-holder-forbids` (the runner, `core-raw`
-# and each context's raw-client components), `consent`; api-auth, ee, ee-edition and wiring take
+# and each context's raw-client components); api-auth, ee, ee-edition and wiring take
 # this list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which alone
 # may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it, and
@@ -23,13 +23,13 @@ version: 1
 # Membership.
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
-    name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
     because: deleting a Tag is the use case internal/usecase/tagdeletion, which checks the Tag's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &leave-doomed-workspace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.LeaveDoomedWorkspaceIn
     because: it lets the only Owner leave, which only User deletion may do, after it has refused a User who solely owns a live Workspace (ADR 0050); call memberships.Module.Leave or LeaveIn
   - &contacts-update-custom-field-in
-    name: github.com/getsphericon/sphericon/internal/contacts.UpdateCustomFieldIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
     because: editing a Custom field is the use case internal/usecase/customfieldretyping, which refuses a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065); call the use case
   - &integrations-delete-in
     name: github.com/getsphericon/sphericon/internal/integrations.DeleteIn
@@ -44,7 +44,7 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDMARC
     because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
   - &contacts-delete-in
-    name: github.com/getsphericon/sphericon/internal/contacts.DeleteIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
   - &users-set-pending-second-factor
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.SetPendingSecondFactor
@@ -95,13 +95,13 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/infra/events.EraseEventsIn
     because: &workspace-erase-because a deleted Workspace is erased only by the use case internal/usecase/workspacedeletion, once its deletion window has passed, one batch of listed ids at a time and in the order of the foreign keys (ADR 0043, ADR 0102); call the use case
   - &orders-erase-held-order-events-in
-    name: github.com/getsphericon/sphericon/internal/orders.EraseHeldOrderEventsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseHeldOrderEventsIn
     because: *workspace-erase-because
   - &orders-erase-order-movements-in
-    name: github.com/getsphericon/sphericon/internal/orders.EraseOrderMovementsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseOrderMovementsIn
     because: *workspace-erase-because
   - &orders-erase-orders-in
-    name: github.com/getsphericon/sphericon/internal/orders.EraseOrdersIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseOrdersIn
     because: *workspace-erase-because
   - &capturedmessages-erase-captured-messages-in
     name: github.com/getsphericon/sphericon/internal/capturedmessages.EraseCapturedMessagesIn
@@ -134,16 +134,16 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationVersionsIn
     because: *workspace-erase-because
   - &visitors-erase-visitors-in
-    name: github.com/getsphericon/sphericon/internal/visitors.EraseVisitorsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseVisitorsIn
     because: *workspace-erase-because
   - &confirmations-erase-confirmations-in
-    name: github.com/getsphericon/sphericon/internal/confirmations.EraseConfirmationsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseConfirmationsIn
     because: *workspace-erase-because
   - &unsubscribes-erase-unsubscribes-in
-    name: github.com/getsphericon/sphericon/internal/unsubscribes.EraseUnsubscribesIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseUnsubscribesIn
     because: *workspace-erase-because
   - &suppression-erase-suppressions-in
-    name: github.com/getsphericon/sphericon/internal/suppression.EraseSuppressionsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppression.EraseSuppressionsIn
     because: *workspace-erase-because
   - &holds-erase-holds-in
     name: github.com/getsphericon/sphericon/internal/holds.EraseHoldsIn
@@ -170,7 +170,7 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationsIn
     because: *workspace-erase-because
   - &segments-erase-segments-in
-    name: github.com/getsphericon/sphericon/internal/segments.EraseSegmentsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/segments.EraseSegmentsIn
     because: *workspace-erase-because
   - &templates-erase-email-templates-in
     name: github.com/getsphericon/sphericon/internal/templates.EraseEmailTemplatesIn
@@ -179,13 +179,13 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/brandkit.EraseBrandKitsIn
     because: *workspace-erase-because
   - &contacts-erase-contacts-in
-    name: github.com/getsphericon/sphericon/internal/contacts.EraseContactsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseContactsIn
     because: *workspace-erase-because
   - &tags-erase-tags-in
-    name: github.com/getsphericon/sphericon/internal/tags.EraseTagsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.EraseTagsIn
     because: *workspace-erase-because
   - &contacts-erase-custom-fields-in
-    name: github.com/getsphericon/sphericon/internal/contacts.EraseCustomFieldsIn
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseCustomFieldsIn
     because: *workspace-erase-because
   - &trackingdomains-erase-tracking-domains-in
     name: github.com/getsphericon/sphericon/internal/trackingdomains.EraseTrackingDomainsIn
@@ -336,7 +336,7 @@ x-core-forbids: &core-forbids
 # only the wiring installs and reads, and every unchecked removal.
 x-raw-holder-forbids: &raw-holder-forbids
   - &emailcase-hook
-    name: github.com/getsphericon/sphericon/internal/emailcase.Hook
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/emailcase.Hook
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &workspacefeed-hook
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Hook
@@ -681,11 +681,16 @@ components:
   # lands here.
   domain-identity: { in: 'internal/domain/identity/**' }
 
-  # The consent of a Destination (ADR 0102): the Confirmation and Unsubscribe owners and the stops
-  # read in the Channel itself. They sit in the contacts context, below the Broadcasts and
-  # Automations an unsubscribe also touches; counting it on the Broadcast and ending the Enrollment
-  # is the unsubscribe use case's (internal/usecase/unsubscriberecording).
-  consent: { in: [internal/confirmations, internal/unsubscribes, internal/optout] }
+  # Contacts, above identity: the Contacts with their Custom fields and Tags, the Segments and the
+  # Conditions they hold, the consent of a Destination (the Confirmations, the Unsubscribes and the
+  # stops read in the Channel, optout), the Suppressions, eligibility, the Visitors and the Orders,
+  # with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
+  # (emailcase: it targets the Contacts as well as identity's Users and Invitations). None holds the
+  # raw client, so the context is one component; a raw-client holder would get
+  # `domain-contacts-raw`. Counting an unsubscribe on a Broadcast and ending an Enrollment is the
+  # unsubscribe use case's (internal/usecase/unsubscriberecording): the orchestration modules are
+  # above contacts, so a contacts module cannot import them.
+  domain-contacts: { in: 'internal/domain/contacts/**' }
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
@@ -737,7 +742,7 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
-        consent,
+        domain-contacts,
         gen-surfaces,
         usecase,
         usecase-raw,
@@ -755,7 +760,7 @@ rules:
         domain-identity,
         domain-identity-users,
         domain-identity-base,
-        consent,
+        domain-contacts,
         gen-surfaces,
         usecase,
       ]
@@ -763,7 +768,7 @@ rules:
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces, usecase]
+    may_depend_on: [api-auth, api-problem, core-raw, domain-contacts, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
@@ -783,87 +788,23 @@ rules:
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
-    may_depend_on: [core-raw, domain-identity-raw, domain-identity-base, consent]
+    may_depend_on: [core-raw, domain-identity-raw, domain-identity-base, domain-contacts]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol: *core-forbids
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
-    may_depend_on: [core, domain-identity-raw, domain-identity-base]
+    may_depend_on: [core, domain-identity-raw, domain-identity-base, domain-contacts]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
-  consent:
-    may_depend_on: [core]
+  domain-contacts:
+    may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
-    forbid_symbol:
-      - name: github.com/getsphericon/sphericon/ent.Client
-        because: a domain module takes a *ent.Scoped; a signed link's scope comes from workspaces.Module.LinkScope (docs/architecture.md, Workspace scoping)
-      - name: github.com/getsphericon/sphericon/internal/automations.Exit
-        because: ending the Enrollment an unsubscribe names is the unsubscribe use case's (internal/usecase/unsubscriberecording), in the transaction of the opt-out; the consent modules sit below the Automations (ADR 0102)
-      - *tags-delete-in
-      - *leave-doomed-workspace-in
-      - *contacts-update-custom-field-in
-      - *integrations-delete-in
-      - *sendingdomains-delete-in
-      - *sendingdomains-record-dkim
-      - *sendingdomains-record-dmarc
-      - *contacts-delete-in
-      - *users-set-pending-second-factor
-      - *users-accept-second-factor-step-in
-      - *users-confirm-second-factor-in
-      - *users-clear-second-factor-in
-      - *recoverycodes-replace-in
-      - *recoverycodes-delete-in
-      - *passkeys-delete-all-in
-      - *apitokens-issue-connection
-      - *apitokens-rotate-connection
-      - *oauthclients-new-refresh-token-in
-      - *workspaces-discard-in
-      - *workspaces-restore-in
-      - *workspaces-tombstone-in
-      - *workspaces-create-in
-      - *memberships-add-creator-in
-      - *events-erase-events-in
-      - *orders-erase-held-order-events-in
-      - *orders-erase-order-movements-in
-      - *orders-erase-orders-in
-      - *capturedmessages-erase-captured-messages-in
-      - *outbound-erase-tracked-links-in
-      - *outbound-erase-outbound-messages-in
-      - *broadcasts-erase-broadcast-recipients-in
-      - *rules-erase-rule-firings-in
-      - *rules-erase-rule-version-triggers-in
-      - *rules-erase-rule-versions-in
-      - *rules-erase-rules-in
-      - *automations-erase-automation-runs-in
-      - *automations-erase-automation-versions-in
-      - *visitors-erase-visitors-in
-      - *confirmations-erase-confirmations-in
-      - *unsubscribes-erase-unsubscribes-in
-      - *suppression-erase-suppressions-in
-      - *holds-erase-holds-in
-      - *providerlimit-erase-provider-limiters-in
-      - *providerlimit-erase-send-cap-limiters-in
-      - *webhooks-erase-webhook-endpoints-in
-      - *invitations-erase-invitations-in
-      - *apitokens-erase-api-tokens-in
-      - *broadcasts-erase-broadcasts-in
-      - *automations-erase-automations-in
-      - *segments-erase-segments-in
-      - *templates-erase-email-templates-in
-      - *brandkit-erase-brand-kits-in
-      - *contacts-erase-contacts-in
-      - *tags-erase-tags-in
-      - *contacts-erase-custom-fields-in
-      - *trackingdomains-erase-tracking-domains-in
-      - *sendingdomains-erase-sending-domains-in
-      - *integrations-erase-integrations-in
-      - *joindomains-erase-join-domains-in
-      - *memberships-erase-memberships-in
     forbid_external: *no-container
-    because: the consent of a Destination sits in the contacts context (ADR 0102), below the Automations it may not import; an operation that also counts on a Broadcast or ends an Enrollment is a use case above it
+    forbid_symbol: *core-forbids
+    because: contacts sits above identity in the domain tier (ADR 0102), so a contacts module imports the kernel, the infrastructure, ent, the other contacts modules and identity's (an allowance added with its first import), never a module of a context above (a Template, an Integration, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
@@ -873,7 +814,7 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
-        consent,
+        domain-contacts,
         gen-telemetry,
       ]
     must_not_depend_on: [*no-surface-gen]
@@ -892,7 +833,7 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
-        consent,
+        domain-contacts,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
@@ -940,6 +881,7 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
+        domain-contacts,
         usecase,
         usecase-raw,
       ]
@@ -1004,6 +946,7 @@ rules:
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
+        domain-contacts,
         ee,
         ee-edition,
         api-site,

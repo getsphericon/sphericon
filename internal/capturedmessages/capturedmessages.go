@@ -16,11 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/schema"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // Module holds the one setting a capture needs: how many Captured messages a Workspace keeps. The

@@ -30,7 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
-	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"

@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 )
 
 // UnfitForCustomFieldType returns the armed Broadcasts (scheduled, or sending and so still to be

@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )

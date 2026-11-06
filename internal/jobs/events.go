@@ -10,9 +10,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // The consumers of the domain events that core owns (ADR 0101). Each is a job kind with its args
@@ -288,10 +288,10 @@ func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
 }
 
 // BroadcastUnsubscribeEventWorker counts a Telegram opt-out on the Broadcast whose message it was
-// made from (broadcasts.RecordUnsubscribe). The opt-out is written by internal/optout, below the
-// Broadcasts, and the recipient row is the broadcasts module's (ADR 0102: only the owner writes a
-// table), so the count follows the event: its job commits with the opt-out, and a repeat counts
-// nothing, the mark being set once.
+// made from (broadcasts.RecordUnsubscribe). The opt-out is written by
+// internal/domain/contacts/optout, below the Broadcasts, and the recipient row is the broadcasts
+// module's (ADR 0102: only the owner writes a table), so the count follows the event: its job
+// commits with the opt-out, and a repeat counts nothing, the mark being set once.
 type BroadcastUnsubscribeEventWorker struct {
 	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
 

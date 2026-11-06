@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 )
 
 // OneClickUnsubscribe performs the RFC 8058 one-click request exactly as a mailbox

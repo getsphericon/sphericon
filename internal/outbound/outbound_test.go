@@ -11,7 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"

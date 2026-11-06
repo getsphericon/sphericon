@@ -68,9 +68,10 @@ under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 ## Domain contexts
 
 A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the order of the contexts
-and their easement components are "Domain contexts" in `docs/architecture.md`). Identity is there
-(`internal/domain/identity/{workspaces,memberships,users,...}`); the other modules are still flat
-under `internal/` until their context moves. A module imports only modules of its own context and
+and their easement components are "Domain contexts" in `docs/architecture.md`). Identity and
+contacts are there (`internal/domain/identity/{workspaces,memberships,users,...}`,
+`internal/domain/contacts/{contacts,segments,tags,...}`); the other modules are still flat under
+`internal/` until their context moves. A module imports only modules of its own context and
 of the contexts below; its tests are not checked, so a test may build what it needs from the harness
 as before. A module moves with its tests, in the same `_test` package and with the same assertions.
 Only paths change: a relative path a test reads (`signin`'s `../../../../openapi`) gets the new

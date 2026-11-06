@@ -27,7 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 

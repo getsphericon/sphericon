@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"

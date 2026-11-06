@@ -14,13 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
-	"github.com/getsphericon/sphericon/internal/optout"
 )
 
 // ReasonContentTooLong fails one Telegram message whose rendered text is over the limit (ADR 0078).

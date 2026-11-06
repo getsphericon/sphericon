@@ -4,8 +4,8 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.SiteSuppressionsListParams) (*siteapi.SiteSuppressionsListOK, error) {

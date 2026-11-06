@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"

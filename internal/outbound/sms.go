@@ -9,15 +9,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
-	"github.com/getsphericon/sphericon/internal/optout"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // SMSContent is SMS's Message content (ADR 0078): one plain text with Liquid merge tags, no media,

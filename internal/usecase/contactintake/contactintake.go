@@ -13,8 +13,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/confirmations"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 

@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
 // Input is an Identify call: the device and what it asserts about its Contact.

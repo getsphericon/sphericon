@@ -6,7 +6,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )

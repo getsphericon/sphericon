@@ -18,14 +18,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/confirmations"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
-	"github.com/getsphericon/sphericon/internal/optout"
-	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/unsubscribes"
 )
 
 // UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built

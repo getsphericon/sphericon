@@ -11,17 +11,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // sms reads the texts people send an SMS Integration's sender (ADR 0076, ADR 0077). The sender's

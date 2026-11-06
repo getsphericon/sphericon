@@ -35,7 +35,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -47,7 +48,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
-	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 

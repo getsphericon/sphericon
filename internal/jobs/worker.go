@@ -16,6 +16,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -25,7 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"

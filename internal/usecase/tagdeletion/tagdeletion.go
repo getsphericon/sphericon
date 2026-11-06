@@ -13,11 +13,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/segments"
-	"github.com/getsphericon/sphericon/internal/tags"
 )
 
 // UseCase deletes a Tag. Every call receives the Workspace-scoped client (ADR 0017) built by the

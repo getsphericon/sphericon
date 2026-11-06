@@ -4,8 +4,8 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/confirmations"
-	"github.com/getsphericon/sphericon/internal/optout"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 )
 
 // SiteSmsConsentsGet reads the SMS Confirmation and opt-out of the Contact's phone.

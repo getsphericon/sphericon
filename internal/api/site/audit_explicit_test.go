@@ -306,7 +306,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"ee/audit/export.go", "internal/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/workspaces.go", "internal/usecase/workspacecreation/workspacecreation.go", "internal/usecase/workspacedeletion/workspacedeletion.go", "internal/webhooks/webhooks.go"},
+	assert.Equal(t, []string{"ee/audit/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/workspaces.go", "internal/usecase/workspacecreation/workspacecreation.go", "internal/usecase/workspacedeletion/workspacedeletion.go", "internal/webhooks/webhooks.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

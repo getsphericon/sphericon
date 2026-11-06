@@ -23,13 +23,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/visitor"
-	"github.com/getsphericon/sphericon/internal/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
 // TokenTTL is how long a start link works: a link waits in an inbox for weeks (ADR 0076).

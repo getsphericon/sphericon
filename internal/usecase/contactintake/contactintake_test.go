@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"

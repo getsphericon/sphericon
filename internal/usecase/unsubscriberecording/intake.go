@@ -8,14 +8,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/optout"
-	"github.com/getsphericon/sphericon/internal/suppression"
-	"github.com/getsphericon/sphericon/internal/unsubscribes"
 )
 
 // Intake: opt-outs recorded by an authenticated caller (an API token, an agent over MCP) rather

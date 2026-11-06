@@ -9,8 +9,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
-	"github.com/getsphericon/sphericon/internal/orders"
 )
 
 // ReportPeriod is the length of the period an Automation's results are read over, in Report days
