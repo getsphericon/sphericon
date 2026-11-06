@@ -536,7 +536,9 @@ var jobsPackage = do.Package(
 			OutboundAllow:      cfg.OutboundAllow,
 			Retention:          jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			Webhooks:           edition.Webhooks,
-		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention), do.MustInvoke[*releasecheck.UseCase](i).Jobs(), do.MustInvoke[*telemetryreport.UseCase](i).Jobs())
+			ReleaseCheck:       do.MustInvoke[*releasecheck.UseCase](i),
+			TelemetryReport:    do.MustInvoke[*telemetryreport.UseCase](i),
+		}, edition.Jobs(), edition.ExportJobs(cfg.EventsRetention))
 		if err != nil {
 			return nil, err
 		}

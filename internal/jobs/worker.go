@@ -30,7 +30,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -95,6 +97,10 @@ type Deps struct {
 	// Webhooks, when set, wraps the dispatcher the webhooks consumer fans an event out with (the
 	// Edition's license gate on Audit entries, ADR 0022).
 	Webhooks func(next events.WebhookDispatcher) events.WebhookDispatcher
+	// ReleaseCheck and TelemetryReport are the use cases of the Instance's own ticks (instance.go);
+	// a nil one schedules nothing.
+	ReleaseCheck    *releasecheck.UseCase
+	TelemetryReport *telemetryreport.UseCase
 }
 
 // NewClient builds the river client with every worker registered over deps. ext plugs in the
@@ -154,7 +160,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 		dispatcher = deps.Webhooks(dispatcher)
 	}
 
-	var extraPeriodic []*river.PeriodicJob
+	extraPeriodic := instanceJobs(workers, deps)
 	for _, e := range ext {
 		if e.Workers != nil {
 			e.Workers(workers)

@@ -1,7 +1,7 @@
 // Package usages materializes what each Workspace did per Usage period (ADR 0009): the
 // Usage snapshot of a closed period and the Live usage of the open one, one row per
-// (Workspace, period, metric) in the usages table. One periodic river job, registered
-// through Edition.Jobs() like the retention prune, closes the elapsed periods and
+// (Workspace, period, metric) in the usages table. A periodic job of the Edition
+// (ee/jobs.go), like the retention prune, closes the elapsed periods and
 // refreshes the open one; a read never recounts. Unlicensed (no `staff` feature),
 // the job does nothing and no row is ever written.
 //
@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/riverqueue/river"
-
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -33,7 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// Interval is how often the job closes elapsed periods and refreshes Live usage.
+// Interval is how often the Edition's job closes elapsed periods and refreshes Live usage (Refresh).
 const Interval = 5 * time.Minute
 
 // Metric names one measured figure.
@@ -250,36 +248,4 @@ func Get(ctx context.Context, s *ent.Scoped, period time.Time) (WorkspaceUsage, 
 		out.Figures = append(out.Figures, figureOf(r))
 	}
 	return out, nil
-}
-
-// Args is the periodic usage job.
-type Args struct{}
-
-func (Args) Kind() string { return "ee_usage_refresh" }
-
-// Worker runs Refresh on the periodic tick.
-type Worker struct {
-	river.WorkerDefaults[Args]
-
-	client *ent.Client
-	lic    *licensekey.License
-}
-
-// NewWorker builds the usage worker. It is a raw-client entry like the retention job:
-// it lists Workspaces, then scopes to each one.
-func NewWorker(client *ent.Client, lic *licensekey.License) *Worker {
-	return &Worker{client: client, lic: lic}
-}
-
-func (w *Worker) Work(ctx context.Context, _ *river.Job[Args]) error {
-	return Refresh(ctx, w.client, w.lic, time.Now())
-}
-
-// Periodic is the river schedule of the usage job.
-func Periodic() *river.PeriodicJob {
-	return river.NewPeriodicJob(
-		river.PeriodicInterval(Interval),
-		func() (river.JobArgs, *river.InsertOpts) { return Args{}, nil },
-		&river.PeriodicJobOpts{RunOnStart: true},
-	)
 }

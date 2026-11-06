@@ -261,6 +261,20 @@ x-unchecked-removals: &unchecked-removals
   - &capturedmessages-erase-to
     name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
     because: *contact-erase-because
+# The job runner and the Edition schedule work (ADR 0102): a domain module or a use case does the
+# work as a function and may queue a job (its args, river's insert), but it declares no worker and
+# no periodic job; those live in internal/jobs and in the Edition's ee/jobs.go, which call the
+# function. Every forbid list of a domain module or a use case takes these.
+x-river-scheduling: &river-scheduling
+  - &river-worker-defaults
+    name: github.com/riverqueue/river.WorkerDefaults
+    because: &river-scheduling-because a domain module or a use case does the work as a function and may queue a job, but its worker and its periodic job belong to a driver (ADR 0102), internal/jobs or the Edition's ee/jobs.go, which call the function
+  - &river-add-worker
+    name: github.com/riverqueue/river.AddWorker
+    because: *river-scheduling-because
+  - &river-new-periodic-job
+    name: github.com/riverqueue/river.NewPeriodicJob
+    because: *river-scheduling-because
 # The forbid list of every component that may reach the core and holds no raw client (the API
 # surfaces, MCP, the Problem mapping, the non-raw component of each context, `domain-<context>`,
 # and the Enterprise surfaces, use cases and modules that hold none): the raw client, every
@@ -356,6 +370,9 @@ x-core-forbids: &core-forbids
   - &usages-erase-usage-in
     name: github.com/getsphericon/sphericon/ee/domain/insights/usages.EraseUsageIn
     because: *workspace-erase-because
+  - *river-worker-defaults
+  - *river-add-worker
+  - *river-new-periodic-job
 # The forbid list of a raw-client holder (the runner, `domain-<context>-raw` and the
 # bottom of identity, `domain-identity-base`): the ent client's hooks and the upgrade types, which
 # only the wiring installs and reads, and every unchecked removal.
@@ -387,6 +404,101 @@ x-raw-holder-forbids: &raw-holder-forbids
   - &upgrade-major-floor
     name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.MajorFloor
     because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
+  - *tags-delete-in
+  - *leave-doomed-workspace-in
+  - *contacts-update-custom-field-in
+  - *integrations-delete-in
+  - *sendingdomains-delete-in
+  - *sendingdomains-record-dkim
+  - *sendingdomains-record-dmarc
+  - *contacts-delete-in
+  - *users-set-pending-second-factor
+  - *users-accept-second-factor-step-in
+  - *users-confirm-second-factor-in
+  - *users-clear-second-factor-in
+  - *recoverycodes-replace-in
+  - *recoverycodes-delete-in
+  - *passkeys-delete-all-in
+  - *apitokens-issue-connection
+  - *apitokens-rotate-connection
+  - *oauthclients-new-refresh-token-in
+  - *workspaces-discard-in
+  - *workspaces-restore-in
+  - *workspaces-tombstone-in
+  - *workspaces-create-in
+  - *memberships-add-creator-in
+  - *events-erase-events-in
+  - *orders-erase-held-order-events-in
+  - *orders-erase-order-movements-in
+  - *orders-erase-orders-in
+  - *capturedmessages-erase-captured-messages-in
+  - *outboundmessages-erase-tracked-links-in
+  - *outboundmessages-erase-outbound-messages-in
+  - *broadcasts-erase-broadcast-recipients-in
+  - *rules-erase-rule-firings-in
+  - *rules-erase-rule-version-triggers-in
+  - *rules-erase-rule-versions-in
+  - *rules-erase-rules-in
+  - *automations-erase-automation-runs-in
+  - *automations-erase-automation-versions-in
+  - *visitors-erase-visitors-in
+  - *confirmations-erase-confirmations-in
+  - *unsubscribes-erase-unsubscribes-in
+  - *suppressions-erase-suppressions-in
+  - *holds-erase-holds-in
+  - *providerlimit-erase-provider-limiters-in
+  - *providerlimit-erase-send-cap-limiters-in
+  - *webhookendpoints-erase-webhook-endpoints-in
+  - *invitations-erase-invitations-in
+  - *apitokens-erase-api-tokens-in
+  - *broadcasts-erase-broadcasts-in
+  - *automations-erase-automations-in
+  - *segments-erase-segments-in
+  - *emailtemplates-erase-email-templates-in
+  - *brandkits-erase-brand-kits-in
+  - *contacts-erase-contacts-in
+  - *tags-erase-tags-in
+  - *contacts-erase-custom-fields-in
+  - *trackingdomains-erase-tracking-domains-in
+  - *sendingdomains-erase-sending-domains-in
+  - *integrations-erase-integrations-in
+  - *joindomains-erase-join-domains-in
+  - *memberships-erase-memberships-in
+  - *oauthclients-delete-codes-in
+  - *broadcasts-cancel-pending
+  - *automations-cancel-pending
+  - *rules-cancel-pending
+  - *outboundmessages-erase-short-links
+  - *bindings-erase-subject
+  - *events-erase-subject
+  - *visitors-erase-subject
+  - *confirmations-erase-contact
+  - *automations-erase-runs
+  - *rules-erase-firings
+  - *unsubscribes-erase-sms
+  - *unsubscribes-detach-contact
+  - *suppressions-erase-contact
+  - *outboundmessages-anonymize-contact
+  - *broadcasts-detach-recipients
+  - *outboundmessages-anonymize-destinations
+  - *capturedmessages-erase-to
+  - *auditentries-erase-audit-entries-in
+  - *erasures-erase-erasures-in
+  - *usages-erase-usage-in
+  - *river-worker-defaults
+  - *river-add-worker
+  - *river-new-periodic-job
+# The job runner's list: the raw-holder list without the river scheduling, which is its own.
+x-runner-forbids: &runner-forbids
+  - *emailcase-hook
+  - *workspacefeed-hook
+  - *workspacefeed-guard
+  - *usertombstones-hook
+  - *usertombstones-guard
+  - *trackinghostchanges-hook
+  - *trackinghostchanges-guard
+  - *upgrade-boundaries
+  - *upgrade-major-floor
   - *tags-delete-in
   - *leave-doomed-workspace-in
   - *contacts-update-custom-field-in
@@ -560,6 +672,9 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *auditentries-erase-audit-entries-in
   - *erasures-erase-erasures-in
   - *usages-erase-usage-in
+  - *river-worker-defaults
+  - *river-add-worker
+  - *river-new-periodic-job
 # No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
 # surface's generated package: what the core shares with a contract is generated into the kernel
 # (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
@@ -1110,6 +1225,9 @@ rules:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
       - *leave-doomed-workspace-in
+      - *river-worker-defaults
+      - *river-add-worker
+      - *river-new-periodic-job
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
@@ -1139,6 +1257,9 @@ rules:
       - *upgrade-boundaries
       - *upgrade-major-floor
       - *leave-doomed-workspace-in
+      - *river-worker-defaults
+      - *river-add-worker
+      - *river-new-periodic-job
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); these hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
   domain-identity-base:
@@ -1180,7 +1301,7 @@ rules:
         usecase-raw,
       ]
     forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
+    forbid_symbol: *runner-forbids
     because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring
   infra:
     may_depend_on: []

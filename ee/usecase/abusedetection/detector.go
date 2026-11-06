@@ -15,8 +15,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/riverqueue/river"
-
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
@@ -27,7 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
-// Interval is how often the detector runs.
+// Interval is how often the Edition runs the detector (Run).
 const Interval = time.Hour
 
 // Config is what a Detector is built from.
@@ -157,33 +155,4 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b abusedetector.
 		return false, fmt.Errorf("record the warning of workspace %d: %w", ws.ID, err)
 	}
 	return true, nil
-}
-
-// PassArgs is the hourly detector job.
-type PassArgs struct{}
-
-func (PassArgs) Kind() string { return "ee_abuse_detector" }
-
-// Worker runs Run on the periodic tick.
-type Worker struct {
-	river.WorkerDefaults[PassArgs]
-
-	detector *Detector
-}
-
-// NewWorker builds the detector worker.
-func NewWorker(d *Detector) *Worker { return &Worker{detector: d} }
-
-func (w *Worker) Work(ctx context.Context, _ *river.Job[PassArgs]) error {
-	_, err := w.detector.Run(ctx, time.Now())
-	return err
-}
-
-// Periodic is the river schedule of the detector.
-func Periodic() *river.PeriodicJob {
-	return river.NewPeriodicJob(
-		river.PeriodicInterval(Interval),
-		func() (river.JobArgs, *river.InsertOpts) { return PassArgs{}, nil },
-		&river.PeriodicJobOpts{RunOnStart: true},
-	)
 }

@@ -11,13 +11,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
-	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // releaseLookupTimeout bounds one ask: the source's own client waits much longer.
@@ -122,33 +120,4 @@ func (u *UseCase) AnnounceRelease(ctx context.Context) error {
 func (u *UseCase) announce(ctx context.Context, latest string) {
 	u.log.InfoContext(ctx, "a newer release is available; run `sphericon upgrade --check` for details",
 		"latest", latest, "running", buildinfo.Bare(u.states.Environment().Version))
-}
-
-// ReleaseCheckArgs is the daily tick of the Release check.
-type ReleaseCheckArgs struct{}
-
-func (ReleaseCheckArgs) Kind() string { return "release_check" }
-
-// releaseCheckWorker runs the Release check.
-type releaseCheckWorker struct {
-	river.WorkerDefaults[ReleaseCheckArgs]
-
-	u *UseCase
-}
-
-func (w *releaseCheckWorker) Work(ctx context.Context, _ *river.Job[ReleaseCheckArgs]) error {
-	return w.u.CheckRelease(ctx)
-}
-
-// Jobs is the daily Release check, handed to the job client as an extension. A restart
-// checks again at once, which is harmless: the check sends nothing.
-func (u *UseCase) Jobs() jobextension.Extension {
-	return jobextension.Extension{
-		Workers: func(w *river.Workers) { river.AddWorker(w, &releaseCheckWorker{u: u}) },
-		PeriodicJobs: []*river.PeriodicJob{
-			river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour),
-				func() (river.JobArgs, *river.InsertOpts) { return ReleaseCheckArgs{}, nil },
-				&river.PeriodicJobOpts{RunOnStart: true}),
-		},
-	}
 }

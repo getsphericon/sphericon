@@ -94,8 +94,11 @@ coding standards in `CODING_STANDARDS.md`.
   handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP (`internal/mcpserver`,
   component `mcp`, with the surfaces' rules) and the job runner (`internal/jobs`, component `runner`):
   each receives input, calls a domain module or a use case and returns or records the result (review
-  rule 5), and no core tier imports one. Only the wiring imports MCP and the runner, and a package with jobs of its own (the Edition, the Release check and the Telemetry
-  report) hands them in as a `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
+  rule 5), and no core tier imports one. Only the wiring imports MCP and the runner, and the Edition hands its jobs in as a
+  `jobextension.Extension` (`ee/jobs.go`). A domain module or a use case does the work as a function
+  and may queue a job (its args, river's insert), but declares no worker and no periodic job: the
+  runner or the Edition calls the function, and easement forbids river's `WorkerDefaults`,
+  `AddWorker` and `NewPeriodicJob` below them. A new wiring package is added to the `wiring` component, never to a
   baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
   packages that import none of ours, such as the vocabulary every tier shares (`channels`,
   `providers`, `holdreason`, `tokenscope`, `jobkind`) and the helpers that know no domain module

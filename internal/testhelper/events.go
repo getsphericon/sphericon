@@ -16,8 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
-	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
@@ -201,7 +199,7 @@ func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
 
 // EditionJobs are the jobs of the Enterprise Edition's consumers, the Audit log's and the Erasures
 // stream's, for PerformEnqueuedJobs.
-var EditionJobs = []river.JobArgs{auditentries.EntryEventArgs{}, erasures.ErasureEventArgs{}}
+var EditionJobs = []river.JobArgs{ee.EntryEventArgs{}, ee.ErasureEventArgs{}}
 
 // QueuedDeliveries are the queued webhook deliveries, oldest first.
 func (env *TestEnv) QueuedDeliveries(t *testing.T) []jobs.DeliverWebhookArgs {
