@@ -1,4 +1,4 @@
-package erasure
+package contacterasure
 
 import (
 	"crypto/sha256"

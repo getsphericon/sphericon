@@ -9,10 +9,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // A send queued before its Contact was erased must not leave (ADR 0021): the Request
@@ -24,8 +24,8 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
-	require.NoError(t, erasure.New(env.Bus).Erase(ctx, s, erasure.ByContactID(fixtures.ContactAliceID),
-		erasure.Requester{Kind: erasure.RequesterAPIToken}))
+	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.ByContactID(fixtures.ContactAliceID),
+		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
 	res, err := newModule(env).Send(ctx, s, req)
@@ -46,8 +46,8 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, erasure.New(env.Bus).Erase(ctx, s, erasure.ByContactID(fixtures.ContactAliceID),
-		erasure.Requester{Kind: erasure.RequesterAPIToken}))
+	require.NoError(t, contacterasure.New(env.Bus).Erase(ctx, s, contacterasure.ByContactID(fixtures.ContactAliceID),
+		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
 	req := transactional("tx:erased-id", "alice@example.com")

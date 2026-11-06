@@ -7,8 +7,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (*siteapi.SiteContactsListOK, error) {
@@ -65,8 +65,8 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
-		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
+	err := h.erasure.Erase(ctx, scoped, contacterasure.ByContactID(id),
+		contacterasure.Requester{Kind: contacterasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if err != nil {
 		return err
 	}

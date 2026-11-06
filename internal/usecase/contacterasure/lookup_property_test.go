@@ -1,4 +1,4 @@
-package erasure_test
+package contacterasure_test
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/getsphericon/sphericon/internal/erasure"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // A Privacy request address is trimmed and lowercased like ByEmail does, so any padding or
@@ -19,7 +19,7 @@ func TestNormalizeEmailIgnoresPaddingAndCase(t *testing.T) {
 		pad := rapid.StringMatching(`[ \t]{0,3}`).Draw(t, "pad")
 		plain := local + "@" + domain
 
-		got, err := erasure.NormalizeEmail(pad + strings.ToUpper(plain) + pad)
+		got, err := contacterasure.NormalizeEmail(pad + strings.ToUpper(plain) + pad)
 
 		if err != nil || got != plain {
 			t.Fatalf("got %q, %v, want %q", got, err, plain)
@@ -33,14 +33,14 @@ func TestNormalizeEmailIsIdempotentOrRejected(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		raw := rapid.String().Draw(t, "raw")
 
-		once, err := erasure.NormalizeEmail(raw)
+		once, err := contacterasure.NormalizeEmail(raw)
 		if err != nil {
-			if !errors.Is(err, erasure.ErrInvalidEmail) {
+			if !errors.Is(err, contacterasure.ErrInvalidEmail) {
 				t.Fatalf("%q: unexpected error %v", raw, err)
 			}
 			return
 		}
-		twice, err := erasure.NormalizeEmail(once)
+		twice, err := contacterasure.NormalizeEmail(once)
 
 		if err != nil || once != twice {
 			t.Fatalf("%q normalizes to %q, then to %q, %v", raw, once, twice, err)

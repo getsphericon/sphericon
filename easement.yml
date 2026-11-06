@@ -14,6 +14,7 @@ version: 1
 # it is not in `raw-holder-forbids` but in `raw-driver-forbids` (the runner, identity-base). Its definition is not a use; a call even inside its own module fails, and tests are
 # excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
+# So does contacts.DeleteIn, the Contact row without the rest of its Erasure.
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
@@ -36,6 +37,9 @@ x-unchecked-removals: &unchecked-removals
   - &sendingdomains-record-dmarc
     name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDMARC
     because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
+  - &contacts-delete-in
+    name: github.com/getsphericon/sphericon/internal/contacts.DeleteIn
+    because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
@@ -47,6 +51,7 @@ x-no-raw-client: &no-raw-client
     - *sendingdomains-delete-in
     - *sendingdomains-record-dkim
     - *sendingdomains-record-dmarc
+    - *contacts-delete-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -265,6 +270,7 @@ rules:
       - *sendingdomains-delete-in
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
+      - *contacts-delete-in
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
@@ -305,6 +311,7 @@ rules:
       - *sendingdomains-delete-in
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
+      - *contacts-delete-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
@@ -336,6 +343,7 @@ rules:
       - *sendingdomains-delete-in
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
+      - *contacts-delete-in
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   runner:
     may_depend_on: [core, core-raw, identity-base, usecase]

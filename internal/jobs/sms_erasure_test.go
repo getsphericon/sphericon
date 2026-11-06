@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/eligibility"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
@@ -29,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // Erasing a Contact leaves nothing of its SMS life but its phone's hash (ADR 0021, #1032): the
@@ -135,7 +135,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	erased := env.QueuedEvents(t, events.NameContactErased)
 	require.Len(t, erased, 1)
 	hash := erased[0].(*events.ContactErased).PhoneHash
-	assert.Equal(t, erasure.Hash(number), hash, "the Erasure record holds the phone's hash")
+	assert.Equal(t, contacterasure.Hash(number), hash, "the Erasure record holds the phone's hash")
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Destination(hash)).OnlyX(ctx)
 	assert.Nil(t, optOut.ContactID, "the opt-out stays, by the hash, detached")
 	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(channels.SMS), entsuppression.Destination(hash)).OnlyX(ctx)

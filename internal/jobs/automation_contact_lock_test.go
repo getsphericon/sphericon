@@ -15,11 +15,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/contactlock"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // writer is one side of a race over a Contact: a transaction the test starts and names.
@@ -144,9 +144,9 @@ func TestAnErasureAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			e := newRealEnv(t)
 			ctx := context.Background()
 			runID, exit := enrolledForTheExit(t, e)
-			erasing := erasure.New(e.bus(t))
+			erasing := contacterasure.New(e.bus(t))
 			erase := writer{name: "erase", run: func() error {
-				return erasing.Erase(ctx, e.scoped, erasure.ByContactID(fixtures.ContactAliceID), erasure.Requester{Kind: erasure.RequesterAPIToken})
+				return erasing.Erase(ctx, e.scoped, contacterasure.ByContactID(fixtures.ContactAliceID), contacterasure.Requester{Kind: contacterasure.RequesterAPIToken})
 			}}
 
 			errs := queuedOnTheContact(t, e, fixtures.ContactAliceID, tc.queue(erase, exit)...)

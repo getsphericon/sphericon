@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -29,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -59,7 +59,7 @@ type Handlers struct {
 	broadcasts      *broadcasts.Module
 	reputation      *reputation.Module
 	contacts        *contacts.Module
-	erasure         *erasure.Module
+	erasure         *contacterasure.UseCase
 	tags            *tags.Module
 	tagDeletion     *tagdeletion.UseCase
 	// integrationDeletion, sendingDomainDeletion and domainVerification are the use cases behind
@@ -115,7 +115,7 @@ type Deps struct {
 	Segments         *segments.Module
 	EventLog         *eventlog.Module
 	Contacts         *contacts.Module
-	Erasure          *erasure.Module
+	Erasure          *contacterasure.UseCase
 	Tags             *tags.Module
 	TagDeletion      *tagdeletion.UseCase
 	// IntegrationDeletion, SendingDomainDeletion and DomainVerification are the use cases behind

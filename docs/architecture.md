@@ -131,14 +131,14 @@ coding standards in `CODING_STANDARDS.md`.
   included: the Sending domain re-check jobs call `domainverification`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a Live use check opens it with
-  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was), reads them, and changes their rows only through their functions
-  (`domainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`).
+  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`), reads them, and changes their rows only through their functions
+  (`domainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outbound.AnonymizeContact` and the rest, then `contacts.DeleteIn`).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
   the row's Workspace and build the scope the use case takes. easement
   isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
   the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. A removal (or a change) that a use case guards with a check is the domain module's
-  unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`),
+  unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` that may reach the core (`x-no-raw-client`,
@@ -146,7 +146,7 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The tests of the operation live in the use case's own `_test` package
-  (`internal/usecase/tagdeletion`; a retype's refusal is tested through the API's Custom field update), through its exports; the domain module keeps the tests of its own
+  (`internal/usecase/tagdeletion`; a retype's refusal is tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
   rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
   the Instance state module (`internal/instancestates`), whose functions make the Instance-wide

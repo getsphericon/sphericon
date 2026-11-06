@@ -39,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -90,6 +89,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -665,8 +665,8 @@ var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*erasure.Module, error) {
-		return erasure.New(do.MustInvoke[*events.Bus](i)), nil
+	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
+		return contacterasure.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -880,7 +880,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Segments:              do.MustInvoke[*segments.Module](i),
 		EventLog:              do.MustInvoke[*eventlog.Module](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),
-		Erasure:               do.MustInvoke[*erasure.Module](i),
+		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                  do.MustInvoke[*tags.Module](i),
 		TagDeletion:           do.MustInvoke[*tagdeletion.UseCase](i),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
@@ -943,7 +943,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Segments:                 do.MustInvoke[*segments.Module](i),
 		EventLog:                 do.MustInvoke[*eventlog.Module](i),
 		Contacts:                 do.MustInvoke[*contacts.Module](i),
-		Erasure:                  do.MustInvoke[*erasure.Module](i),
+		Erasure:                  do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
 		TagDeletion:              do.MustInvoke[*tagdeletion.UseCase](i),
 		CustomFieldRetyping:      do.MustInvoke[*customfieldretyping.UseCase](i),

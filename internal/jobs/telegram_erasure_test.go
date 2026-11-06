@@ -14,11 +14,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // Erasing a Contact removes its Telegram data and keeps its refusal (ADR 0021, #962).
@@ -31,8 +31,8 @@ func sayTG(updateID, from int64, text string) string {
 
 func eraseContact(t *testing.T, env *testhelper.TestEnv, contactID int64) {
 	t.Helper()
-	require.NoError(t, erasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
-		erasure.ByContactID(contactID), erasure.Requester{Kind: erasure.RequesterAPIToken}))
+	require.NoError(t, contacterasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+		contacterasure.ByContactID(contactID), contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 }
 
 func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.T) {

@@ -45,3 +45,13 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 	}
 	return nil
 }
+
+// DetachRecipients is the delivery record part of a Contact's Erasure (ADR 0021): the Contact's
+// recipients that CancelPending left (their send ended) stay as anonymous records, keeping their
+// status and timing, and lose only their Contact reference. Run it inside the Erasure's
+// transaction.
+func DetachRecipients(ctx context.Context, s *ent.Scoped, contactID int64) error {
+	_, err := s.BroadcastRecipient().Update().Where(broadcastrecipient.ContactID(contactID)).
+		ClearContactID().Save(ctx)
+	return err
+}

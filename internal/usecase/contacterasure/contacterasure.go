@@ -1,16 +1,20 @@
-// Package erasure is the one place a Contact's personal data is erased (GDPR Art. 17,
-// ADR 0021). Deleting a Contact is Erasure: there is no softer variant. Every surface
+// Package contacterasure is the use case that erases a Contact's personal data (GDPR Art. 17,
+// ADR 0021, ADR 0102). Deleting a Contact is Erasure: there is no softer variant. Every surface
 // (the /site SPA API, the external /api and so MCP) hands it a Workspace-scoped client
 // and an Identifier and gets back nil or a domain error; none re-implements what is
 // removed, anonymized or kept.
 //
 // The whole erasure is one transaction, opened through events.Bus.WithinScopedPurgeTx so
 // the Contact change, its events and the purge of its queued jobs commit together. Inside it the work
-// is an ordered list of steps (see Module.steps), each a small function over the
-// resolved Target; extending Erasure (another identifier kind, another dependent
-// table, another signal published in the same transaction) means resolving the new
-// identifier into a Target or adding one step, not a second code path.
-package erasure
+// is an ordered list of steps (see UseCase.steps), each a call to the module that owns the rows over
+// the resolved Target: the use case reads the tables, and changes each only through its owner's
+// erase function. Extending Erasure (another identifier kind, another dependent table, another
+// signal published in the same transaction) means resolving the new identifier into a Target or
+// adding one step, not a second code path. The Contact row goes last, through the contacts module's
+// unchecked removal contacts.DeleteIn, which easement forbids every other package to call. The
+// record of an Erasure (the Erasures stream, ADR 0045) is written from the contact.erased Event by
+// its own consumer, not here.
+package contacterasure
 
 import (
 	"context"
@@ -134,28 +138,29 @@ func (t *Target) destinations() []string {
 // step is one part of the erasure, run inside the transaction.
 type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error
 
-// Module erases data subjects.
-type Module struct {
+// UseCase erases data subjects. Every call receives the Workspace-scoped client (ADR 0017) built by
+// the entry point; the use case opens the transaction the modules it calls join.
+type UseCase struct {
 	bus *events.Bus
 }
 
-// New builds the module over the bus whose transaction every erasure runs in.
-func New(bus *events.Bus) *Module {
-	return &Module{bus: bus}
+// New builds the Contact erasure use case over the bus whose transaction every erasure runs in.
+func New(bus *events.Bus) *UseCase {
+	return &UseCase{bus: bus}
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
 // happens or none. ErrContactNotFound (a Contact id) or ErrNothingFound (an address or a
 // visitor id) means the identifier resolves to nothing in the Workspace (including a row of
 // another Workspace).
-func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
-	return m.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
+func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
+	return u.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		target, err := resolve(ctx, ts, id)
 		if err != nil {
 			return err
 		}
 		target.Requester = by
-		for _, run := range m.steps() {
+		for _, run := range u.steps() {
 			if err := run(ctx, ts, target, pub); err != nil {
 				return err
 			}
@@ -165,8 +170,8 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Req
 }
 
 // steps is the ordered erasure: first the cancellation of work still queued for the
-// subject, then Erasure's own deletions, then the signal. Each owner of pending work
-// cancels it itself; Erasure only sequences them. A send a worker already handed to the
+// subject, then the deletions, then the signal. Each owner of pending work cancels it itself, and
+// each owner of the subject's rows erases them itself; Erasure only sequences them. A send a worker already handed to the
 // provider is not recalled; one queued but not started finds its row gone and, at the
 // send chokepoint, its Contact gone (ADR 0021).
 //
@@ -174,7 +179,7 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Req
 // (the Contact's runs, recipients and the Contact itself) and before the signal, which
 // names no Contact. The Contact row goes last of the deletions: the other steps find the
 // Contact's rows through ids already resolved into the Target.
-func (m *Module) steps() []step {
+func (u *UseCase) steps() []step {
 	return []step{
 		cancelBroadcastWork,
 		cancelAutomationWork,
