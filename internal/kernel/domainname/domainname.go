@@ -1,7 +1,7 @@
 // Package domainname reads a domain name as the Sending, Tracking and Join domains store it, and
 // names the resolver their TXT records are read with. It is a leaf, so a module that takes a
 // domain from a person (a Join domain, the domain of an email address) does not import the
-// Sending domain's DKIM primitives (internal/sending).
+// Sending domain's DKIM primitives (internal/domain/sending/sending).
 package domainname
 
 import (

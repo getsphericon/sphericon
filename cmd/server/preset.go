@@ -10,7 +10,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 )
 
 // presetCommand groups the commands on Presets (ADR 0037).

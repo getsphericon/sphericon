@@ -15,12 +15,12 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
 )
 
 const edgeHeader = "X-Edge-Host"

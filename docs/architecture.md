@@ -122,7 +122,9 @@ coding standards in `CODING_STANDARDS.md`.
   component, one under `internal/infra/` by `infra`, one under `internal/usecase/` by `usecase`,
   one under `internal/domain/identity/` by `domain-identity` (the raw-client holders by name in
   `domain-identity-raw`, see "Domain contexts" below), one under `internal/domain/contacts/` by
-  `domain-contacts`, any other under `internal/` by the `core`
+  `domain-contacts`, one under `internal/domain/content/` by `domain-content`, one under
+  `internal/domain/sending/` by `domain-sending` (the raw-client holders by name in
+  `domain-sending-raw`), any other under `internal/` by the `core`
   component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
@@ -156,12 +158,24 @@ coding standards in `CODING_STANDARDS.md`.
   client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
   context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `bindings` or
   `templates`, and no use case.
+  Content, above contacts, is one component too (`domain-content`, the glob of
+  `internal/domain/content`): `templates`, `brandkit` and `drafts`, the lifecycle every Versioned
+  definition shares. Sending, above content, is `outbound`, `holds`, `providerlimit`,
+  `integrations`, `sendingdomains`, `bindings`, `trackingdomains`, `trackinghostlog`, `tracking`,
+  `linkclicks`, `reputation`, `capturedmessages` and `machine` (the spec's list), with two packages
+  placed by the same rule: `preset`, the engine that reads an Integration's callbacks
+  (`integrations` uses it), and `sending`, the DKIM and DMARC primitives of a Sending domain
+  (`sendingdomains` uses them). Its raw-client holders `bindings`, `capturedmessages`,
+  `integrations`, `machine`, `sendingdomains`, `trackingdomains` and `trackinghostlog` are
+  `domain-sending-raw`, the rest `domain-sending`. A content module imports no Integration,
+  Outbound send or other sending module, and neither context imports `broadcasts`,
+  `automations`, `rules`, `webhooks` or a use case.
   To move a module into its context: `git mv` its directory, rewrite the import paths
   (`github.com/getsphericon/sphericon/internal/<module>` to
   `.../internal/domain/<context>/<module>`) and the module-relative paths that name it (the
   `forbid_symbol` names in `easement.yml`, the ownership map of `entrywrite`, `.golangci.yml`,
   the ast-grep rules, scopegen's outputs, the docs), take it out of `core-raw`, put it in the
-  context's component, regenerate (`mise run generate:scopes`, goverter) and let
+  context's component, regenerate (`mise run generate:scopes`, goverter, `generate:mocks`) and let
   `easement suggest --check` trim the `may_depend_on` lists.
 - **Only the owner writes a table (ADR 0102, analyzer `entrywrite`).** Each ent entity names the
   package that owns its table in the ownership map (`owners` in `tools/analyzers/entrywrite`, which a
@@ -310,7 +324,7 @@ like any other, and the isolation test lists it in `singletonEntities`. `Scoped.
 tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
-live and draft pointers and its status; `internal/drafts` is the one lifecycle over them and the
+live and draft pointers and its status; `internal/domain/content/drafts` is the one lifecycle over them and the
 only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
 `QueryArchived`, `QueryWithArchived` and `Purge` in place of `Delete`, one with `DiscardMixin`
 `Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
@@ -406,7 +420,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
      of `ee/usage` (`raise`, run by its ent hook), which scopes over each
      Workspace id it is given only after loading that Workspace's row and finding it live.
-- **The raw `*ent.Client` is allowed only in:** `internal/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
+- **The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
   ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
   or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
   transaction, which the use case `workspacecreation` opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its
@@ -429,7 +443,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   Workspaces whose window has passed and the Owners' deleted ones, which have no scope yet, opens a
   transaction per erase step (one per Workspace-owned table, the Send cap's bucket
   `send_cap_limiters` among them), scopes to the one Workspace being erased inside it, and moves the
-  Workspace row through `workspaces`), `internal/domain/identity/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/domain/identity/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/domain/identity/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/domain/identity/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/integrations`, `internal/webhooks` and `internal/rules` (only `Secrets`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has `Secrets` of `users`, `staffmembers`, `sendingdomains` and `automations`, and the Rules' `PruneFirings`, the Instance-wide age prune of Rule Firings the Event retention job calls; every other function of these three takes a `*ent.Scoped`), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
+  Workspace row through `workspaces`), `internal/domain/identity/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/domain/identity/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/domain/identity/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/domain/identity/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/domain/sending/integrations`, `internal/webhooks` and `internal/rules` (only `Secrets`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has `Secrets` of `users`, `staffmembers`, `sendingdomains` and `automations`, and the Rules' `PruneFirings`, the Instance-wide age prune of Rule Firings the Event retention job calls; every other function of these three takes a `*ent.Scoped`), `internal/domain/sending/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
   that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; `HoldsReleaseRead` reads the Memberships of every live Workspace for the Release check to tell an owner of any of them of a newer release, and `Figures` reads the Instance-wide counts the Telemetry report rounds; `DefaultSendCapIn` reads the default Send cap on the transaction of the use case `workspacecreation` that creates a Workspace, ADR 0067), `internal/instanceaudit` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/domain/identity/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
@@ -437,10 +451,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   re-check of verified domains, a river job in `internal/jobs`, lists the due domains of every Workspace with
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
   loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits; `Tokens` reads every Workspace's claim of a domain for the end-to-end
-  suite's resolver), `internal/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
+  suite's resolver), `internal/domain/sending/sendingdomains` (only `Due`, the Sending domains of every Workspace due a DKIM re-check, ADR 0010,
   listed by a river job that then reads each domain by id to learn its Workspace and hands the use case
   `internal/usecase/domainverification` that Workspace's scope; `DevTXTLookup`, the end-to-end suite's resolver; and `Secrets`, the DKIM private keys the re-encryption rewrites; every other
-  function takes a `*ent.Scoped`), `internal/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
+  function takes a `*ent.Scoped`), `internal/domain/sending/trackingdomains` (the Workspaces' Tracking domains, ADR 0071: the recheck job lists the verified hosts of every
   Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
   Workspace's scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `Secrets`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
   suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067; it opens the transaction and writes the row through `workspaces`), `internal/infra/events`
@@ -460,13 +474,13 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   through the scopes of list item 7), `internal/domain/identity/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/domain/identity/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/trackinghostlog` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
+  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/domain/identity/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/domain/sending/trackinghostlog` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
   (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   packages of the list as the `core-raw` component of `easement.yml`, or, once a module has moved
   into its context, as that context's raw-client components (the identity modules of the list as
-  `domain-identity-base`, `domain-identity-users` and `domain-identity-raw`, see "Domain
-  contexts"); the job runner as its own `runner` component, which does not forbid the client
+  `domain-identity-base`, `domain-identity-users` and `domain-identity-raw`, the sending modules as
+  `domain-sending-raw`, see "Domain contexts"); the job runner as its own `runner` component, which does not forbid the client
   either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
   `internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component. It fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into

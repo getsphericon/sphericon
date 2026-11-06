@@ -11,15 +11,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 

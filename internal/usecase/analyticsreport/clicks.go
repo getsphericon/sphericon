@@ -6,7 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/linkclicks"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
 )
 
 // OwnerKind is what carried a clicked link, so the page can link to that report.

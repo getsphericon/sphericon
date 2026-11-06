@@ -14,8 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/inuse"
 )
 

@@ -32,16 +32,16 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.UpdateCustomFieldIn
     because: editing a Custom field is the use case internal/usecase/customfieldretyping, which refuses a retype while a Segment, a Rule or an armed Broadcast tests the field with a leaf the new type does not take (ADR 0102, ADR 0065); call the use case
   - &integrations-delete-in
-    name: github.com/getsphericon/sphericon/internal/integrations.DeleteIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.DeleteIn
     because: deleting an Integration is the use case internal/usecase/integrationdeletion, which checks the Integration's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &sendingdomains-delete-in
-    name: github.com/getsphericon/sphericon/internal/sendingdomains.DeleteIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.DeleteIn
     because: deleting a Sending domain is the use case internal/usecase/sendingdomaindeletion, which checks the domain's Live use under the Workspace lock first (ADR 0102, ADR 0049, ADR 0099); call the use case
   - &sendingdomains-record-dkim
-    name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDKIM
+    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDKIM
     because: a Sending domain becomes verified only by a live DKIM lookup (ADR 0010), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
   - &sendingdomains-record-dmarc
-    name: github.com/getsphericon/sphericon/internal/sendingdomains.RecordDMARC
+    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.RecordDMARC
     because: a Sending domain becomes bulk-ready only by a live DMARC lookup (ADR 0012), which the use case internal/usecase/domainverification runs before it stores the outcome; call the use case
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.DeleteIn
@@ -104,13 +104,13 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/contacts/orders.EraseOrdersIn
     because: *workspace-erase-because
   - &capturedmessages-erase-captured-messages-in
-    name: github.com/getsphericon/sphericon/internal/capturedmessages.EraseCapturedMessagesIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseCapturedMessagesIn
     because: *workspace-erase-because
   - &outbound-erase-tracked-links-in
-    name: github.com/getsphericon/sphericon/internal/outbound.EraseTrackedLinksIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outbound.EraseTrackedLinksIn
     because: *workspace-erase-because
   - &outbound-erase-outbound-messages-in
-    name: github.com/getsphericon/sphericon/internal/outbound.EraseOutboundMessagesIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outbound.EraseOutboundMessagesIn
     because: *workspace-erase-because
   - &broadcasts-erase-broadcast-recipients-in
     name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastRecipientsIn
@@ -146,13 +146,13 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/contacts/suppression.EraseSuppressionsIn
     because: *workspace-erase-because
   - &holds-erase-holds-in
-    name: github.com/getsphericon/sphericon/internal/holds.EraseHoldsIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/holds.EraseHoldsIn
     because: *workspace-erase-because
   - &providerlimit-erase-provider-limiters-in
-    name: github.com/getsphericon/sphericon/internal/providerlimit.EraseProviderLimitersIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseProviderLimitersIn
     because: *workspace-erase-because
   - &providerlimit-erase-send-cap-limiters-in
-    name: github.com/getsphericon/sphericon/internal/providerlimit.EraseSendCapLimitersIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseSendCapLimitersIn
     because: *workspace-erase-because
   - &webhooks-erase-webhook-endpoints-in
     name: github.com/getsphericon/sphericon/internal/webhooks.EraseWebhookEndpointsIn
@@ -173,10 +173,10 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/contacts/segments.EraseSegmentsIn
     because: *workspace-erase-because
   - &templates-erase-email-templates-in
-    name: github.com/getsphericon/sphericon/internal/templates.EraseEmailTemplatesIn
+    name: github.com/getsphericon/sphericon/internal/domain/content/templates.EraseEmailTemplatesIn
     because: *workspace-erase-because
   - &brandkit-erase-brand-kits-in
-    name: github.com/getsphericon/sphericon/internal/brandkit.EraseBrandKitsIn
+    name: github.com/getsphericon/sphericon/internal/domain/content/brandkit.EraseBrandKitsIn
     because: *workspace-erase-because
   - &contacts-erase-contacts-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseContactsIn
@@ -188,13 +188,13 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseCustomFieldsIn
     because: *workspace-erase-because
   - &trackingdomains-erase-tracking-domains-in
-    name: github.com/getsphericon/sphericon/internal/trackingdomains.EraseTrackingDomainsIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains.EraseTrackingDomainsIn
     because: *workspace-erase-because
   - &sendingdomains-erase-sending-domains-in
-    name: github.com/getsphericon/sphericon/internal/sendingdomains.EraseSendingDomainsIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains.EraseSendingDomainsIn
     because: *workspace-erase-because
   - &integrations-erase-integrations-in
-    name: github.com/getsphericon/sphericon/internal/integrations.EraseIntegrationsIn
+    name: github.com/getsphericon/sphericon/internal/domain/sending/integrations.EraseIntegrationsIn
     because: *workspace-erase-because
   - &joindomains-erase-join-domains-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/joindomains.EraseJoinDomainsIn
@@ -351,10 +351,10 @@ x-raw-holder-forbids: &raw-holder-forbids
     name: github.com/getsphericon/sphericon/internal/domain/identity/userfeed.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &trackinghostlog-hook
-    name: github.com/getsphericon/sphericon/internal/trackinghostlog.Hook
+    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog.Hook
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &trackinghostlog-guard
-    name: github.com/getsphericon/sphericon/internal/trackinghostlog.Guard
+    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &upgrade-boundaries
     name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
@@ -621,16 +621,9 @@ components:
     in:
       [
         internal/automations,
-        internal/bindings,
-        internal/capturedmessages,
-        internal/integrations,
         internal/instancestates,
         internal/instanceaudit,
-        internal/machine,
         internal/rules,
-        internal/sendingdomains,
-        internal/trackingdomains,
-        internal/trackinghostlog,
         internal/webhooks,
       ]
 
@@ -692,6 +685,31 @@ components:
   # above contacts, so a contacts module cannot import them.
   domain-contacts: { in: 'internal/domain/contacts/**' }
 
+  # Content, above contacts: the email Templates, the Brand kit and the lifecycle every Versioned
+  # definition shares (drafts). None holds the raw client, so the context is one component.
+  domain-content: { in: 'internal/domain/content/**' }
+
+  # Sending, above content: the Outbound send with its Holds and send limits (providerlimit), the
+  # Integrations and the Presets that read their callbacks, the Sending domains with their DKIM and
+  # DMARC primitives (sending), the Tracking domains and their host log, the Bindings of Telegram
+  # chats, the tracking tokens, link clicks, reputation, machine engagement and the Captured
+  # messages. Its raw-client holders (docs/architecture.md, Workspace scoping) are
+  # `domain-sending-raw`.
+  domain-sending-raw:
+    in:
+      [
+        internal/domain/sending/bindings,
+        internal/domain/sending/capturedmessages,
+        internal/domain/sending/integrations,
+        internal/domain/sending/machine,
+        internal/domain/sending/sendingdomains,
+        internal/domain/sending/trackingdomains,
+        internal/domain/sending/trackinghostlog,
+      ]
+  # The rest of sending, which holds no raw client; a new module under internal/domain/sending
+  # lands here.
+  domain-sending: { in: 'internal/domain/sending/**' }
+
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
   # configuration (`config`, read by them). It imports only the kernel and never a domain module.
@@ -743,6 +761,9 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-content,
+        domain-sending-raw,
+        domain-sending,
         gen-surfaces,
         usecase,
         usecase-raw,
@@ -761,6 +782,9 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-content,
+        domain-sending-raw,
+        domain-sending,
         gen-surfaces,
         usecase,
       ]
@@ -768,7 +792,8 @@ rules:
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core-raw, domain-contacts, gen-surfaces, usecase]
+    may_depend_on:
+      [api-auth, api-problem, domain-contacts, domain-sending-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
@@ -788,13 +813,13 @@ rules:
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
-    may_depend_on: [core-raw, domain-identity-raw, domain-identity-base, domain-contacts]
+    may_depend_on: [domain-identity-raw, domain-contacts, domain-sending]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol: *core-forbids
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
-    may_depend_on: [core, domain-identity-raw, domain-identity-base, domain-contacts]
+    may_depend_on: [core, domain-identity-base, domain-contacts, domain-content, domain-sending]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: *raw-holder-forbids
@@ -805,6 +830,24 @@ rules:
     forbid_external: *no-container
     forbid_symbol: *core-forbids
     because: contacts sits above identity in the domain tier (ADR 0102), so a contacts module imports the kernel, the infrastructure, ent, the other contacts modules and identity's (an allowance added with its first import), never a module of a context above (a Template, an Integration, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
+  domain-content:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: content sits above contacts in the domain tier (ADR 0102), so a content module imports the kernel, the infrastructure, ent, the other content modules and those of identity and contacts (an allowance added with its first import), never a module of a context above (an Integration, an Outbound message, a Broadcast, an Automation, a Rule) nor a use case; an operation that needs one is a use case above both
+  domain-sending-raw:
+    may_depend_on: [domain-sending, domain-contacts, domain-identity-raw, domain-identity-base]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
+  domain-sending:
+    may_depend_on: [domain-sending-raw, domain-contacts, domain-identity-base]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
@@ -815,6 +858,9 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-content,
+        domain-sending-raw,
+        domain-sending,
         gen-telemetry,
       ]
     must_not_depend_on: [*no-surface-gen]
@@ -834,6 +880,9 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-content,
+        domain-sending-raw,
+        domain-sending,
       ]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
@@ -882,6 +931,8 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-sending-raw,
+        domain-sending,
         usecase,
         usecase-raw,
       ]
@@ -919,11 +970,12 @@ rules:
     because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, domain-identity-raw, ee, gen-surfaces]
+    may_depend_on: [api-problem, core, domain-identity-raw, domain-sending, ee, gen-surfaces]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
-    may_depend_on: [core, domain-identity-raw, domain-identity-base, ee, ee-api, gen-surfaces]
+    may_depend_on:
+      [core, domain-identity-raw, domain-identity-base, domain-sending, ee, ee-api, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
@@ -932,6 +984,7 @@ rules:
       - core
       - domain-identity-raw
       - domain-identity-base
+      - domain-sending
       - name: gen-surfaces
         because: the ban on a surface's generated package binds the core tiers; the Enterprise Edition's boundary with the core is unchanged (spec #1120), and ee/staff reads its service surface's ServiceScope until the Edition takes the same tiers
     forbid_symbol: *unchecked-removals
@@ -947,6 +1000,9 @@ rules:
         domain-identity-users,
         domain-identity-base,
         domain-contacts,
+        domain-content,
+        domain-sending-raw,
+        domain-sending,
         ee,
         ee-edition,
         api-site,

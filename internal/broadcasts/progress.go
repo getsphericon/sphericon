@@ -6,7 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 )
 
 // Progress is how far a sending Broadcast has got (ADR 0023). A Broadcast stays

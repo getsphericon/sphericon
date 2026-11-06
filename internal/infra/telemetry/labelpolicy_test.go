@@ -23,15 +23,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // forbiddenLabel matches label names that identify a tenant or a person (ADR 0018):

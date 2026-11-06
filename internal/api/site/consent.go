@@ -9,8 +9,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // SitePublicConfirmationsPerform is the double opt-in confirmation page's button

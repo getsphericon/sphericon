@@ -8,8 +8,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 

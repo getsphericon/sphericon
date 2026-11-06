@@ -156,14 +156,15 @@ linters:
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: entity-level Update() bypasses the workspace scope; use the scoped client's UpdateOneID (ADR 0017)
         # ADR 0065: the pointers of a Versioned definition (an Automation's or a Rule's live and
-        # draft versions) and its state move only through the lifecycle in internal/drafts, which
-        # calls the generated <N>Pointers through ent.VersionedStore. Reading the edges stays open.
+        # draft versions) and its state move only through the lifecycle in
+        # internal/domain/content/drafts, which calls the generated <N>Pointers through
+        # ent.VersionedStore. Reading the edges stays open.
         - pattern: ^ent\.\w+\.(SetLiveVersionID|SetDraftVersionID|ClearDraftVersionID)$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
-          msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
+          msg: a Versioned definition's pointers move only through internal/domain/content/drafts (ADR 0065); call the module's Update, Publish or Revert
         - pattern: ^ent\.(\w+Pointers|VersionedStore(\[.*\])?)\.(SetDraft|ClearDraft|Promote|Activate|Deactivate|DeleteVersion|Archive|Unarchive|Discard)$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
-          msg: a Versioned definition's pointers move only through internal/drafts (ADR 0065); call the module's Update, Publish or Revert
+          msg: a Versioned definition's pointers move only through internal/domain/content/drafts (ADR 0065); call the module's Update, Publish or Revert
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: sql\.DB\)?\.(Exec|Query|QueryRow)(Context)?$
@@ -186,8 +187,8 @@ linters:
         - experimental
       disabled-checks:
         # %q escapes what an email body and an HTML attribute must not escape: both findings
-        # (internal/jobs/memberinvite.go, internal/tracking/tracking.go) are a plain-text mail body
-        # and an <img src="..."> attribute.
+        # (internal/jobs/memberinvite.go, internal/domain/sending/tracking/tracking.go) are a plain-text
+        # mail body and an <img src="..."> attribute.
         - sprintfQuotedString
       settings:
         hugeParam:
@@ -350,11 +351,12 @@ linters:
         linters:
           - forbidigo
         text: no direct SQL in tests
-      # internal/drafts is the one place the pointers of a Versioned definition move (ADR 0065).
-      - path: ^internal/drafts/
+      # internal/domain/content/drafts is the one place the pointers of a Versioned definition move
+      # (ADR 0065).
+      - path: ^internal/domain/content/drafts/
         linters:
           - forbidigo
-        text: pointers move only through internal/drafts
+        text: pointers move only through internal/domain/content/drafts
       # gosec's taint rules (G702-G705, G710) and the cookie rule (G124) cannot see a check that
       # is made before the sink. Each exclusion below names the files and the reason; every
       # finding was read, and the ones that were defects are fixed in code.
@@ -391,7 +393,7 @@ linters:
           - gosec
         text: G710
       # G404: the jitter spreads retries; an attacker who predicts it gains nothing.
-      - path: ^internal/outbound/retry\.go$
+      - path: ^internal/domain/sending/outbound/retry\.go$
         linters:
           - gosec
         text: G404

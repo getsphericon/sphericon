@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/preset"
 )
 
 // Interpreter reads the facts of one Channel for what they mean there: a Delivery notice

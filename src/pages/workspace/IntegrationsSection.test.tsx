@@ -702,7 +702,7 @@ test('a member who reads the Audit log but cannot manage providers gets only the
   expect(screen.getByRole('menuitem', { name: 'Delete' }).elements()).toHaveLength(0)
 })
 
-// The built-in Presets as the server lists them (internal/preset/builtin), and a custom one with
+// The built-in Presets as the server lists them (internal/domain/sending/preset/builtin), and a custom one with
 // params that are not strings.
 const generic = {
   name: 'generic',

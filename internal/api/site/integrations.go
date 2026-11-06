@@ -6,8 +6,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 )
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations

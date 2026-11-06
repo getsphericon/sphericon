@@ -9,11 +9,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // Limits of an HTTP step (ADR 0039): they keep one step from exhausting the queue.

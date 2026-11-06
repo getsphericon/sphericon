@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/preset"
 )
 
 // telegram reads what happens at a bot (ADR 0076, ADR 0077): the messages people send it, the

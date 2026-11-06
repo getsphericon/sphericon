@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 )
 
 // OverviewDeliverabilityWindow is the trailing window of the overview's deliverability: it does
@@ -28,8 +28,9 @@ type Deliverability struct {
 }
 
 // Deliverability reports the rates of the Sending domains that had sends or deliveries in the
-// window, archived ones included (ADR 0049). The rates are those of internal/reputation, the one
-// place that counts; the core shows them as they are, with no display floor and no limit.
+// window, archived ones included (ADR 0049). The rates are those of
+// internal/domain/sending/reputation, the one place that counts; the core shows them as they are,
+// with no display floor and no limit.
 func (m *UseCase) Deliverability(ctx context.Context, s *ent.Scoped, w Window) (*Deliverability, error) {
 	days, err := m.days(ctx, s, w)
 	if err != nil {

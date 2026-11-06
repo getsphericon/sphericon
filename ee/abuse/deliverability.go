@@ -3,7 +3,7 @@ package abuse
 import (
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 )
 
 // DomainRates are the Complaint and Bounce rates of one Sending domain, as the detector reads

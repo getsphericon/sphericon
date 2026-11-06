@@ -10,8 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 

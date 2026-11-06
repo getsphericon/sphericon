@@ -7,8 +7,8 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
-	"github.com/getsphericon/sphericon/internal/preset"
 )
 
 // A Delivery notice can reach the hook before the message it is about is committed: Twilio posts a

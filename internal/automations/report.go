@@ -9,8 +9,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/aggregates"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/linkclicks"
 )
 
 // Report is an Automation's engagement figures and its Results over a period. Every open and

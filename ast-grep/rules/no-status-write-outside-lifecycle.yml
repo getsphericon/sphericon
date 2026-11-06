@@ -8,7 +8,7 @@ note: >-
   the owning module, built with `lifecycle.New`); the compare-and-swap `Write` inside
   `lifecycle.Storage{...}` is the one place the column is set. Creating a row in its first state
   is not an update. The status of a Versioned definition (an Automation, a Rule) moves only through
-  internal/drafts, which calls the generated pointer operations (ADR 0065).
+  internal/domain/content/drafts, which calls the generated pointer operations (ADR 0065).
 # A Go pattern such as `x.SetStatus($$$A)` parses as a type conversion, so each call pattern
 # names its statement context and selects the call_expression.
 rule:

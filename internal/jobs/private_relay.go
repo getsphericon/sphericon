@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/machine"
+	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
 )
 
 // privateRelayRefreshInterval is how often the published iCloud Private Relay egress ranges

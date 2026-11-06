@@ -100,7 +100,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
   transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
   builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
-  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/drafts`. Not
+  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/drafts`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
   function of the owner that makes the write, which the writer calls. An entry point does not write through
   ent at all: there every write is a finding worded for the entry point. The handlers
@@ -166,7 +166,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
   counter, a derived row) lives in Go: an ent hook (like `internal/domain/identity/workspacefeed` or
-  `internal/trackinghostlog`) or the domain module, inside the same transaction.
+  `internal/domain/sending/trackinghostlog`) or the domain module, inside the same transaction.
 
 ## Go tests
 

@@ -17,10 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/sending"
 )
 
 const upgradeGuide = "https://getsphericon.com/docs/operations/upgrading"

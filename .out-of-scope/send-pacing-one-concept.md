@@ -1,7 +1,7 @@
 # Consolidating send pacing into one concept
 
 This project does not fold the pieces of Broadcast send pacing into a single module. The bucket
-core stays in `internal/providerlimit`, and the planner and the progress estimate in
+core stays in `internal/domain/sending/providerlimit`, and the planner and the progress estimate in
 `internal/broadcasts` keep calling it.
 
 ## Why this is out of scope

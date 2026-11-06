@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/emailcase"
 	"github.com/getsphericon/sphericon/internal/domain/identity/userfeed"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
-	"github.com/getsphericon/sphericon/internal/trackinghostlog"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog"
 )
 
 // New is the plain client: it refuses a change to the Workspace and User feeds, which

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 

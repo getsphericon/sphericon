@@ -22,13 +22,13 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/templates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 

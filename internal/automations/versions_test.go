@@ -63,8 +63,8 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 }
 
 // The lifecycle the Automation shares with the Rule (edit, Publish, Revert, Archive) is tested once,
-// for both, in internal/drafts. These are what only an Automation has: Enrollments on a version,
-// steps, and the Integration.
+// for both, in internal/domain/content/drafts. These are what only an Automation has: Enrollments
+// on a version, steps, and the Integration.
 
 // Editing a live Automation writes a draft above the live version and never rewrites the live
 // one: the next Enrollment still begins on what was published (#748). Later edits rewrite the

@@ -11,6 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
@@ -18,9 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // A client that LISTENs works a job another process inserted as soon as the insert commits: it

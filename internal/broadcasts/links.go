@@ -5,7 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/linkclicks"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
 )
 
 // LinkClicksOf counts a Broadcast's click Events (`email.clicked`, `telegram.clicked`, `sms.clicked`) by link, most clicked first. Every

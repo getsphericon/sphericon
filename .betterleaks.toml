@@ -21,7 +21,7 @@ paths = [
   '''^\.mise\.toml$''',
   '''^\.env\.docker\.sample$''',
   # The built-in Presets' own tests carry throwaway secrets and their signatures.
-  '''^internal/preset/builtin/(generic|postmark|mailgun|telegram)\.yaml$''',
+  '''^internal/(domain/sending/)?preset/builtin/(generic|postmark|mailgun|telegram)\.yaml$''',
 ]
 
 [[allowlists]]
@@ -60,7 +60,7 @@ paths = [
   '''^config/config\.go$''',
   '''^docs/(configuration|self-hosting|guide/(quickstart|deliverability))\.md$''',
   '''^README\.md$''',
-  '''^internal/preset/builtin/postmark\.yaml$''',
+  '''^internal/(domain/sending/)?preset/builtin/postmark\.yaml$''',
 ]
 regexTarget = "match"
 regexes = ['''(postgres|https?)://user:(pass|password|secret)@(host|db)([:/]|$)''']

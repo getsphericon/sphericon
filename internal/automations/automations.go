@@ -21,7 +21,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
-	"github.com/getsphericon/sphericon/internal/drafts"
+	"github.com/getsphericon/sphericon/internal/domain/content/drafts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
@@ -35,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 )
 
@@ -229,9 +229,9 @@ type Module struct {
 
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
-// opens the transaction of each move of the definition (internal/drafts); the renderer builds an
-// email step's body from its document; out is Outbound send, whose Send route Publish asks
-// whether the Automation's email steps can send.
+// opens the transaction of each move of the definition (internal/domain/content/drafts); the
+// renderer builds an email step's body from its document; out is Outbound send, whose Send route
+// Publish asks whether the Automation's email steps can send.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outbound.Module) *Module {
 	m := &Module{cipher: cipher, renderer: renderer, out: out, now: time.Now}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
@@ -484,13 +484,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	return m.life.Create(ctx, s, owner, e)
 }
 
-// Update renames the Automation and writes its definition to the draft (ADR 0065, internal/drafts):
-// the fields left out keep the draft's, or the live version's when there is no draft. The live
-// version is never rewritten: the first edit above it creates the draft, the next ones rewrite the
-// draft in place. A definition equal to the draft's (or, with no draft, the live version's) stores
-// nothing. An edit of the Trigger, exit or goal events checks the three together (validateEvents),
-// so a new Trigger equal to a stored exit or goal event is refused too. The status is untouched.
-// An archived Automation is read-only: ErrArchived.
+// Update renames the Automation and writes its definition to the draft (ADR 0065,
+// internal/domain/content/drafts): the fields left out keep the draft's, or the live version's when
+// there is no draft. The live version is never rewritten: the first edit above it creates the
+// draft, the next ones rewrite the draft in place. A definition equal to the draft's (or, with no
+// draft, the live version's) stores nothing. An edit of the Trigger, exit or goal events checks the
+// three together (validateEvents), so a new Trigger equal to a stored exit or goal event is refused
+// too. The status is untouched. An archived Automation is read-only: ErrArchived.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
 	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent}
 	if in.Steps != nil {
@@ -761,12 +761,12 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// Archive puts an Automation aside (ADR 0100, internal/drafts): it leaves the lists and enrolls
-// nobody, and its Enrollments stay. An Automation is archived, never deleted, a never-published
-// one too. Archive also makes the Automation inactive, so Unarchive never re-arms it without a
-// Publish. An Automation with active Enrollments, or one an active Rule enrolls Contacts in, is
-// refused with an *inuse.Error naming them. Archiving an archived Automation changes nothing. It
-// returns the Automation.
+// Archive puts an Automation aside (ADR 0100, internal/domain/content/drafts): it leaves the lists
+// and enrolls nobody, and its Enrollments stay. An Automation is archived, never deleted, a
+// never-published one too. Archive also makes the Automation inactive, so Unarchive never re-arms
+// it without a Publish. An Automation with active Enrollments, or one an active Rule enrolls
+// Contacts in, is refused with an *inuse.Error naming them. Archiving an archived Automation
+// changes nothing. It returns the Automation.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Archive(ctx, s, id)
 }
@@ -777,13 +777,14 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 	return m.life.Unarchive(ctx, s, id)
 }
 
-// Publish makes the draft live and the Automation active (internal/drafts): new Enrollments begin
-// on the draft's definition, and the old live version stays as history; the Enrollments already on
-// it finish there. With no draft it makes an inactive live version active again and leaves an
-// active one as it is; with neither it is refused. The Trigger, exit and goal events of the version
-// going live are checked again, and the Integration of each send step must still be kept and its
-// Send route able to send (outbound.ErrRouteHeld). Publish is send-class (ADR 0065): the surfaces gate it by the
-// publish scope. An archived Automation is unarchived before it is published: ErrArchived.
+// Publish makes the draft live and the Automation active (internal/domain/content/drafts): new
+// Enrollments begin on the draft's definition, and the old live version stays as history; the
+// Enrollments already on it finish there. With no draft it makes an inactive live version active
+// again and leaves an active one as it is; with neither it is refused. The Trigger, exit and goal
+// events of the version going live are checked again, and the Integration of each send step must
+// still be kept and its Send route able to send (outbound.ErrRouteHeld). Publish is send-class (ADR
+// 0065): the surfaces gate it by the publish scope. An archived Automation is unarchived before it
+// is published: ErrArchived.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Publish(ctx, s, id)
 }

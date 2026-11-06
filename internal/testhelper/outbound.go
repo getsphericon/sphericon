@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 )
 
 // OutboundModule is the Outbound module the harness's own sends run through, for a test that

@@ -9,11 +9,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/preset"
 )
 
 // email reads Delivery notices; email has no Inbound messages or Reachability changes.

@@ -19,11 +19,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/templates"
 )
 
 // Domain errors of a request that cannot be sent as asked. A send Outbound holds is

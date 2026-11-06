@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // Opens and clicks on an archived broadcast keep being recorded (ADR 0049): engagement is

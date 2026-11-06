@@ -1,9 +1,9 @@
 // Package abuse is the Enterprise abuse detector (ADR 0026): every hour it reads each
 // Workspace's Complaint rate and Bounce rate per Sending domain over the trailing 24
-// hours (the rates of internal/reputation, no new math) and acts on two tiers. The lower
-// one only warns the owners by email; the higher one freezes the Workspace through the
-// core suspension (actor `system`) and tells them. It never lifts a suspension: only an
-// Staff member does, and unsuspending stamps cleared_at, after which only newer Events count.
+// hours (the rates of internal/domain/sending/reputation, no new math) and acts on two tiers. The
+// lower one only warns the owners by email; the higher one freezes the Workspace through the core
+// suspension (actor `system`) and tells them. It never lifts a suspension: only an Staff member
+// does, and unsuspending stamps cleared_at, after which only newer Events count.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package abuse
@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/abusewatch"
-	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 )
 
 // Window is the trailing span the detector judges (ADR 0026).

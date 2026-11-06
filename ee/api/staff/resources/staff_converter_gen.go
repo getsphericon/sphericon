@@ -13,8 +13,8 @@ import (
 	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	signupsurvey "github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
-	reputation "github.com/getsphericon/sphericon/internal/reputation"
 )
 
 type StaffConverterImpl struct{}

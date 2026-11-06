@@ -11,9 +11,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
-	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // recipientInsertChunk bounds a single InsertMany so a very large audience is enqueued in

@@ -23,10 +23,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
-	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // QueueHTTPSteps isolates the HTTP steps of Automations (ADR 0039): an outbound call to a

@@ -33,7 +33,8 @@ func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, 
 }
 
 // EnsureIn returns the Visitor visitorID, creating it when it has not been seen; a Visitor that
-// exists is left as it is. A chat started on its behalf binds to it (internal/bindings).
+// exists is left as it is. A chat started on its behalf binds to it
+// (internal/domain/sending/bindings).
 func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
 	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
 	if err == nil {

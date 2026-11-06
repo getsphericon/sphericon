@@ -6,7 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 )
 
 // SendCaps is whether the Instance has Send caps, so the console shows a Workspace's.

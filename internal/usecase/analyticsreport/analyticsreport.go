@@ -9,7 +9,7 @@
 // Engagement rates are a send cohort: the denominator is the Broadcast recipients
 // sent in the window, and opens and clicks are counted among that same cohort, so
 // opened never exceeds sent and every rate is within [0, 1]. They are not the
-// Sending-domain Complaint and Bounce rates of internal/reputation.
+// Sending-domain Complaint and Bounce rates of internal/domain/sending/reputation.
 //
 // Sending counts every message sent in the window, through every surface, from the Outbound
 // messages themselves (ADR 0053): what went out and what the provider said became of it.

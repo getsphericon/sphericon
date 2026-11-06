@@ -7,7 +7,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 )
 

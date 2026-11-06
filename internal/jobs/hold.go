@@ -7,7 +7,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 )
 
 // inProgressRetryDelay is how soon to look again at a send whose claim another attempt

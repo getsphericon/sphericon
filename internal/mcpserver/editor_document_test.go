@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/templates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 

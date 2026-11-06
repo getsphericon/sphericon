@@ -31,7 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
-	"github.com/getsphericon/sphericon/internal/drafts"
+	"github.com/getsphericon/sphericon/internal/domain/content/drafts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -168,7 +168,7 @@ type Module struct {
 
 // New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
 // and the job that executes it in one transaction, and each move of a Rule's definition
-// (internal/drafts).
+// (internal/domain/content/drafts).
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
 	m := &Module{cipher: cipher, bus: bus}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
@@ -242,10 +242,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 }
 
 // Update changes a Rule's name, and writes its Trigger events, Condition and Actions to the draft
-// (ADR 0065, internal/drafts), validated as Create validates: the live version is never rewritten,
-// so an edit changes what the Rule does only once it is published. The draft is rewritten in
-// place; a Rule with none gets one, the version above the newest. A definition equal to the one it
-// starts from stores nothing. The status is untouched.
+// (ADR 0065, internal/domain/content/drafts), validated as Create validates: the live version is
+// never rewritten, so an edit changes what the Rule does only once it is published. The draft is
+// rewritten in place; a Rule with none gets one, the version above the newest. A definition equal
+// to the one it starts from stores nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Rule, error) {
 	rename := func(ctx context.Context, ts *ent.Scoped, r *ent.Rule) error {
 		if in.Name == nil || *in.Name == r.Name {
@@ -406,9 +406,9 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 }
 
 // Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
-// internal/drafts' Discard: it is deactivated under the lock Publish takes, so it never fires
-// again, and it leaves the lists for good with its versions and Firings kept; Get still reads it.
-// Deleting a deleted Rule changes nothing.
+// internal/domain/content/drafts' Discard: it is deactivated under the lock Publish takes, so it
+// never fires again, and it leaves the lists for good with its versions and Firings kept; Get still
+// reads it. Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	_, err := m.life.Discard(ctx, s, id)
 	return err

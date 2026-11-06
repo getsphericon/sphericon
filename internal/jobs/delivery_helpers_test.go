@@ -5,7 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 )
 
 // planAudience plans a Broadcast through the module and returns its recipient ids, as the

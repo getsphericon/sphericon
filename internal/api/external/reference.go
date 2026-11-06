@@ -7,8 +7,8 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.

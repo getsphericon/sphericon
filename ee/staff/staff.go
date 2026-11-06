@@ -25,9 +25,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
-	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
 // ErrNotLicensed is the refusal on an instance without the `staff` license: the Enterprise

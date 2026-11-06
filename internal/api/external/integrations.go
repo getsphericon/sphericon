@@ -7,15 +7,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
-// The Integration operations are thin adapters over internal/integrations, the module
-// /site shares: validation, credential sealing and the default-per-channel rule live
-// there. Credentials are write-only; every response carries the config with secrets
-// redacted.
+// The Integration operations are thin adapters over internal/domain/sending/integrations, the
+// module /site shares: validation, credential sealing and the default-per-channel rule live there.
+// Credentials are write-only; every response carries the config with secrets redacted.
 
 // IntegrationsList returns the Workspace's sending-provider Integrations with the Send
 // rate limit as enforced and the last 24 hours of usage.

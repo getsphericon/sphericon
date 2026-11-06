@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 )
 
 // Watch reads a Workspace's standing with the detector, without acting on it: the

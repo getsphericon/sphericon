@@ -30,10 +30,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
-	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
 // Edition is the Enterprise surface of one running instance.

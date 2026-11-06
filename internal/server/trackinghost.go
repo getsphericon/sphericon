@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/trackinghostlog"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog"
 )
 
 type trackingHostKey struct{}

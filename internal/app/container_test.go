@@ -11,10 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // What queues work never reaches the job client: Integrations and bindings, then Outbound send,

@@ -12,10 +12,10 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// The Sending domain operations are thin adapters over internal/sendingdomains, the
+// The Sending domain operations are thin adapters over internal/domain/sending/sendingdomains, the
 // module /site shares: validation, DKIM keypair minting and sealing, and the verify
 // trigger live there. The private key is never part of a response, and no operation
 // can set `verified`: only the live DKIM check does.
