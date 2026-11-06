@@ -32,7 +32,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	sqlDB.SetMaxOpenConns(8)
 	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
 	bus := events.New(sqlDB, entclient.NewTx)
-	segs, catalogue, deletion := segments.New(bus), tags.New(bus), tagdeletion.New(bus)
+	segs, catalogue, deletion := segments.New(bus), tags.New(), tagdeletion.New(bus)
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {

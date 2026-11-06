@@ -16,10 +16,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
-	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // ErrNotDue is the refusal of a submit by a User who does not owe the survey: it was answered
@@ -87,10 +87,7 @@ func (m *Module) Submit(ctx context.Context, userID int64, a Answers) error {
 		return err
 	}
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		cleared, err := tx.User.Update().
-			Where(user.ID(userID), user.SignupSurveyDueAtNotNil()).
-			ClearSignupSurveyDueAt().
-			Save(ctx)
+		cleared, err := users.ClearSurveyDueIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}

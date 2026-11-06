@@ -67,10 +67,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 	// detector's reach: end its episode, so a stale marker neither lists it as warned nor
 	// mutes the warning it earns after being cleared.
 	var errs []error
-	if err := d.client.Workspace.Update().
-		Where(workspace.AbuseWarningNotifiedAtNotNil(), workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))).
-		ClearAbuseWarningNotifiedAt().
-		Exec(ctx); err != nil {
+	if err := workspaces.ClearAbuseWarnings(ctx, d.client, workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))); err != nil {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
@@ -104,7 +101,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 			}
 		default:
 			if ws.AbuseWarningNotifiedAt != nil {
-				if err := d.client.Workspace.UpdateOneID(ws.ID).ClearAbuseWarningNotifiedAt().Exec(ctx); err != nil {
+				if err := workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
 					errs = append(errs, fmt.Errorf("end the warning episode of workspace %d: %w", ws.ID, err))
 				}
 			}
@@ -124,7 +121,7 @@ func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (boo
 	} else if err != nil || !changed {
 		return false, err
 	}
-	if err := d.client.Workspace.UpdateOneID(ws.ID).ClearAbuseWarningNotifiedAt().Exec(ctx); err != nil {
+	if err := workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
 		slog.ErrorContext(ctx, "workspace frozen, but its warning episode could not be ended", "workspace_id", ws.ID, "error", err)
 	}
 	return true, nil
@@ -147,7 +144,7 @@ func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now ti
 	if err := d.notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)
 	}
-	if err := d.client.Workspace.UpdateOneID(ws.ID).SetAbuseWarningNotifiedAt(now).Exec(ctx); err != nil {
+	if err := workspaces.MarkAbuseWarned(ctx, d.client, ws.ID, now); err != nil {
 		return false, fmt.Errorf("record the warning of workspace %d: %w", ws.ID, err)
 	}
 	return true, nil

@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/rules"
 )
 
 // eventsRetentionBatch bounds the rows one DELETE removes so a large backlog
@@ -61,7 +62,7 @@ func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsAr
 	if deleted > 0 {
 		slog.InfoContext(ctx, "expired events pruned", "deleted", deleted)
 	}
-	firings, err := events.PruneRuleFirings(ctx, w.ent, w.retention, eventsRetentionBatch)
+	firings, err := rules.PruneFirings(ctx, w.ent, w.retention, eventsRetentionBatch)
 	if err != nil {
 		return err
 	}

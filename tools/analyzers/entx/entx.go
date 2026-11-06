@@ -30,12 +30,13 @@ func Method(info *types.Info, sel *ast.SelectorExpr) (*types.Func, *types.Named,
 	return fn, named, true
 }
 
-// typeSuffixes are what ent appends to an entity's name for its client, builders and scoped wrappers,
-// longest first, so that one cut leaves the entity (OAuthClientClient is OAuthClient, not OAuth).
+// typeSuffixes are what ent appends to an entity's name for its client, builders, scoped wrappers and
+// the pointers of a Versioned definition, longest first, so that one cut leaves the entity
+// (OAuthClientClient is OAuthClient, not OAuth).
 var typeSuffixes = []string{
 	"ScopedCreateBulk", "ScopedUpdateOne", "ScopedDeleteOne", "ScopedUpsertBulk", "ScopedUpsertOne",
 	"ScopedCreate", "ScopedUpdate", "ScopedDelete", "ScopedUpsert",
-	"CreateBulk", "UpdateOne", "DeleteOne", "UpsertBulk", "UpsertOne",
+	"CreateBulk", "UpdateOne", "DeleteOne", "UpsertBulk", "UpsertOne", "Pointers",
 	"Create", "Update", "Delete", "Upsert", "Scoped", "Client",
 }
 

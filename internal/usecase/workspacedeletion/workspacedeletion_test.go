@@ -26,7 +26,7 @@ var actor = events.Actor{Kind: events.ActorUser}
 func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.UseCase) {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return env, workspacedeletion.New(env.DB, env.Bus)
+	return env, workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables())
 }
 
 // deletedAgo puts Initech into deletion, deleted ago before now.

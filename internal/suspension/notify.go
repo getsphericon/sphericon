@@ -2,13 +2,13 @@ package suspension
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Is is the one meaning of "suspended": a Workspace whose suspended_at is set (ADR 0007).
@@ -55,5 +55,5 @@ func NotifyOwners(ctx context.Context, client *ent.Client, notify memberships.No
 	if err := notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailWorkspaceSuspendedSubject, Body: i18n.EmailWorkspaceSuspendedBody}, data); err != nil {
 		return err
 	}
-	return client.Workspace.UpdateOneID(ws.ID).SetAbuseFreezeNotifiedAt(time.Now()).Exec(ctx)
+	return workspaces.MarkAbuseFreezeNotified(ctx, client, ws.ID)
 }

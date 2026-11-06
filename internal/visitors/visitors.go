@@ -4,30 +4,17 @@ package visitors
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
-	"github.com/getsphericon/sphericon/internal/bindings"
-	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/samber/lo"
 )
-
-type IdentifyInput struct {
-	VisitorID string
-	Email     *string
-	Phone     *string
-	SubjectID *string
-	Traits    map[string]any
-	// The browser's time zone and language, guesses that only fill the Contact's (ADR 0072).
-	TimeZone, Locale *string
-}
 
 type CollectEventInput struct {
 	VisitorID  string
@@ -39,65 +26,36 @@ type CollectEventInput struct {
 	ClientEventID string
 }
 
-// Identify binds a Visitor to a Contact and asserts that Contact's alias keys
-// (subject_id / email / phone) and the core attributes its traits name (ADR 0072). It
-// upserts the Contact by any present alias key, auto-creates typed Custom fields from the
-// other traits, binds the device, and stitches the device's earlier anonymous Events onto
-// the Contact so pre-identify behavior becomes visible to segmentation. A newly created
-// Contact emits contact.created.
-func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input IdentifyInput) error {
-	visitorID := strings.TrimSpace(input.VisitorID)
-	if visitorID == "" {
-		return errors.New("visitorId is required")
+// SeeIn returns the Visitor visitorID, marked seen now, and creates it when it has not been seen,
+// inside the transaction s is bound to: the device Identify resolves.
+func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+	return findOrCreateVisitor(ctx, s, visitorID)
+}
+
+// EnsureIn returns the Visitor visitorID, creating it when it has not been seen; a Visitor that
+// exists is left as it is. A chat started on its behalf binds to it (internal/bindings).
+func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
+	if err == nil {
+		return vis, nil
 	}
+	if !ent.IsNotFound(err) {
+		return nil, fmt.Errorf("find visitor: %w", err)
+	}
+	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(time.Now()).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create visitor: %w", err)
+	}
+	return vis, nil
+}
 
-	return bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		core, fields := contacts.FromTraits(input.Traits)
-		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.UpsertInput{
-			SubjectID:       input.SubjectID,
-			Email:           input.Email,
-			Phone:           input.Phone,
-			Core:            core,
-			GuessedTimeZone: input.TimeZone,
-			GuessedLocale:   input.Locale,
-			CustomFields:    fields,
-		})
-		if errors.Is(err, contacts.ErrIdentityRequired) {
-			return errors.New("identify requires subjectId, email, or phone")
-		}
-		if err != nil {
-			return err
-		}
-		c := res.Contact
-
-		vis, err := findOrCreateVisitor(ctx, ts, visitorID)
-		if err != nil {
-			return err
-		}
-		if err := ts.Visitor().UpdateOneID(vis.ID).
-			SetContactID(c.ID).
-			SetLastSeenAt(time.Now()).
-			Exec(ctx); err != nil {
-			return err
-		}
-		// The chats the Visitor started a bot with now reach the Contact: announce them.
-		if err := bindings.AnnounceVisitor(ctx, ts, pub, vis, c); err != nil {
-			return err
-		}
-
-		// Stitch: attach the device's earlier anonymous events onto the Contact.
-		if _, err := ts.Event().Update().
-			Where(
-				event.VisitorID(visitorID),
-				event.ContactIDIsNil(),
-			).
-			SetContactID(c.ID).
-			Save(ctx); err != nil {
-			return err
-		}
-
-		return nil
-	})
+// BindIn binds the Visitor id to the Contact contactID and marks it seen now, inside the
+// transaction s is bound to: the device Identify resolved.
+func BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64) error {
+	return s.Visitor().UpdateOneID(id).
+		SetContactID(contactID).
+		SetLastSeenAt(time.Now()).
+		Exec(ctx)
 }
 
 // Collect refuses the whole batch with events.ErrRejected when an event claims a

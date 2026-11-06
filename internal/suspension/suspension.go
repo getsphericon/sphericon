@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
@@ -75,13 +75,7 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.Workspace.Update().
-			Where(workspace.ID(workspaceID), workspace.SuspendedAtIsNil()).
-			SetSuspendedAt(time.Now()).
-			SetSuspendedByKind(by.Kind).
-			SetNillableSuspendedByID(nilIfEmpty(by.ID)).
-			SetSuspensionReason(reason).
-			Save(ctx)
+		n, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -106,14 +100,7 @@ func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64,
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.Workspace.Update().
-			Where(workspace.ID(workspaceID), workspace.SuspendedAtNotNil()).
-			ClearSuspendedAt().
-			ClearSuspendedByKind().
-			ClearSuspendedByID().
-			ClearSuspensionReason().
-			SetClearedAt(time.Now()).
-			Save(ctx)
+		n, err := workspaces.UnsuspendIn(ctx, tx, workspaceID)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -140,10 +127,7 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 	}
 	changed := false
 	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.Workspace.Update().
-			Where(workspace.ID(workspaceID), workspace.AbuseExempt(!exempt)).
-			SetAbuseExempt(exempt).
-			Save(ctx)
+		n, err := workspaces.SetAbuseExemptIn(ctx, tx, workspaceID, exempt)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -177,13 +161,7 @@ func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Acto
 		if !differs {
 			return nil
 		}
-		upd := tx.Workspace.UpdateOneID(workspaceID)
-		if sendCap == nil {
-			upd.ClearSendCap()
-		} else {
-			upd.SetSendCap(*sendCap)
-		}
-		if err := upd.Exec(ctx); err != nil {
+		if err := workspaces.SetSendCapIn(ctx, tx, workspaceID, sendCap); err != nil {
 			return err
 		}
 		changed = true

@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -661,7 +662,7 @@ func (m *Module) refuse(ctx context.Context, s *ent.Scoped, integ *ent.Integrati
 	if integ == nil {
 		return nil
 	}
-	if err := s.Integration().UpdateOneID(integ.ID).SetProviderRefusedAt(m.now()).Exec(ctx); err != nil {
+	if err := integrations.RecordRefused(ctx, s, integ.ID, m.now()); err != nil {
 		return fmt.Errorf("outbound: hold the refused integration: %w", err)
 	}
 	return nil

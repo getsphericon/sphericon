@@ -89,6 +89,117 @@ x-unchecked-removals: &unchecked-removals
   - &memberships-add-creator-in
     name: github.com/getsphericon/sphericon/internal/memberships.AddCreatorIn
     because: the creator's Owner Membership is written only with its Workspace, by the use case internal/usecase/workspacecreation (ADR 0043, ADR 0102); call the use case
+  - &events-erase-events-in
+    name: github.com/getsphericon/sphericon/internal/infra/events.EraseEventsIn
+    because: &workspace-erase-because a deleted Workspace is erased only by the use case internal/usecase/workspacedeletion, once its deletion window has passed, one batch of listed ids at a time and in the order of the foreign keys (ADR 0043, ADR 0102); call the use case
+  - &orders-erase-held-order-events-in
+    name: github.com/getsphericon/sphericon/internal/orders.EraseHeldOrderEventsIn
+    because: *workspace-erase-because
+  - &orders-erase-order-movements-in
+    name: github.com/getsphericon/sphericon/internal/orders.EraseOrderMovementsIn
+    because: *workspace-erase-because
+  - &orders-erase-orders-in
+    name: github.com/getsphericon/sphericon/internal/orders.EraseOrdersIn
+    because: *workspace-erase-because
+  - &capturedmessages-erase-captured-messages-in
+    name: github.com/getsphericon/sphericon/internal/capturedmessages.EraseCapturedMessagesIn
+    because: *workspace-erase-because
+  - &outbound-erase-tracked-links-in
+    name: github.com/getsphericon/sphericon/internal/outbound.EraseTrackedLinksIn
+    because: *workspace-erase-because
+  - &outbound-erase-outbound-messages-in
+    name: github.com/getsphericon/sphericon/internal/outbound.EraseOutboundMessagesIn
+    because: *workspace-erase-because
+  - &broadcasts-erase-broadcast-recipients-in
+    name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastRecipientsIn
+    because: *workspace-erase-because
+  - &rules-erase-rule-firings-in
+    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleFiringsIn
+    because: *workspace-erase-because
+  - &rules-erase-rule-version-triggers-in
+    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleVersionTriggersIn
+    because: *workspace-erase-because
+  - &rules-erase-rule-versions-in
+    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleVersionsIn
+    because: *workspace-erase-because
+  - &rules-erase-rules-in
+    name: github.com/getsphericon/sphericon/internal/rules.EraseRulesIn
+    because: *workspace-erase-because
+  - &automations-erase-automation-runs-in
+    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationRunsIn
+    because: *workspace-erase-because
+  - &automations-erase-automation-versions-in
+    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationVersionsIn
+    because: *workspace-erase-because
+  - &visitors-erase-visitors-in
+    name: github.com/getsphericon/sphericon/internal/visitors.EraseVisitorsIn
+    because: *workspace-erase-because
+  - &confirmations-erase-confirmations-in
+    name: github.com/getsphericon/sphericon/internal/confirmations.EraseConfirmationsIn
+    because: *workspace-erase-because
+  - &unsubscribes-erase-unsubscribes-in
+    name: github.com/getsphericon/sphericon/internal/unsubscribes.EraseUnsubscribesIn
+    because: *workspace-erase-because
+  - &suppression-erase-suppressions-in
+    name: github.com/getsphericon/sphericon/internal/suppression.EraseSuppressionsIn
+    because: *workspace-erase-because
+  - &holds-erase-holds-in
+    name: github.com/getsphericon/sphericon/internal/holds.EraseHoldsIn
+    because: *workspace-erase-because
+  - &providerlimit-erase-provider-limiters-in
+    name: github.com/getsphericon/sphericon/internal/providerlimit.EraseProviderLimitersIn
+    because: *workspace-erase-because
+  - &providerlimit-erase-send-cap-limiters-in
+    name: github.com/getsphericon/sphericon/internal/providerlimit.EraseSendCapLimitersIn
+    because: *workspace-erase-because
+  - &webhooks-erase-webhook-endpoints-in
+    name: github.com/getsphericon/sphericon/internal/webhooks.EraseWebhookEndpointsIn
+    because: *workspace-erase-because
+  - &invitations-erase-invitations-in
+    name: github.com/getsphericon/sphericon/internal/invitations.EraseInvitationsIn
+    because: *workspace-erase-because
+  - &apitokens-erase-api-tokens-in
+    name: github.com/getsphericon/sphericon/internal/apitokens.EraseAPITokensIn
+    because: *workspace-erase-because
+  - &broadcasts-erase-broadcasts-in
+    name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastsIn
+    because: *workspace-erase-because
+  - &automations-erase-automations-in
+    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationsIn
+    because: *workspace-erase-because
+  - &segments-erase-segments-in
+    name: github.com/getsphericon/sphericon/internal/segments.EraseSegmentsIn
+    because: *workspace-erase-because
+  - &templates-erase-email-templates-in
+    name: github.com/getsphericon/sphericon/internal/templates.EraseEmailTemplatesIn
+    because: *workspace-erase-because
+  - &brandkit-erase-brand-kits-in
+    name: github.com/getsphericon/sphericon/internal/brandkit.EraseBrandKitsIn
+    because: *workspace-erase-because
+  - &contacts-erase-contacts-in
+    name: github.com/getsphericon/sphericon/internal/contacts.EraseContactsIn
+    because: *workspace-erase-because
+  - &tags-erase-tags-in
+    name: github.com/getsphericon/sphericon/internal/tags.EraseTagsIn
+    because: *workspace-erase-because
+  - &contacts-erase-custom-fields-in
+    name: github.com/getsphericon/sphericon/internal/contacts.EraseCustomFieldsIn
+    because: *workspace-erase-because
+  - &trackingdomains-erase-tracking-domains-in
+    name: github.com/getsphericon/sphericon/internal/trackingdomains.EraseTrackingDomainsIn
+    because: *workspace-erase-because
+  - &sendingdomains-erase-sending-domains-in
+    name: github.com/getsphericon/sphericon/internal/sendingdomains.EraseSendingDomainsIn
+    because: *workspace-erase-because
+  - &integrations-erase-integrations-in
+    name: github.com/getsphericon/sphericon/internal/integrations.EraseIntegrationsIn
+    because: *workspace-erase-because
+  - &joindomains-erase-join-domains-in
+    name: github.com/getsphericon/sphericon/internal/joindomains.EraseJoinDomainsIn
+    because: *workspace-erase-because
+  - &memberships-erase-memberships-in
+    name: github.com/getsphericon/sphericon/internal/memberships.EraseMembershipsIn
+    because: *workspace-erase-because
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
@@ -116,6 +227,43 @@ x-no-raw-client: &no-raw-client
     - *workspaces-tombstone-in
     - *workspaces-create-in
     - *memberships-add-creator-in
+    - *events-erase-events-in
+    - *orders-erase-held-order-events-in
+    - *orders-erase-order-movements-in
+    - *orders-erase-orders-in
+    - *capturedmessages-erase-captured-messages-in
+    - *outbound-erase-tracked-links-in
+    - *outbound-erase-outbound-messages-in
+    - *broadcasts-erase-broadcast-recipients-in
+    - *rules-erase-rule-firings-in
+    - *rules-erase-rule-version-triggers-in
+    - *rules-erase-rule-versions-in
+    - *rules-erase-rules-in
+    - *automations-erase-automation-runs-in
+    - *automations-erase-automation-versions-in
+    - *visitors-erase-visitors-in
+    - *confirmations-erase-confirmations-in
+    - *unsubscribes-erase-unsubscribes-in
+    - *suppression-erase-suppressions-in
+    - *holds-erase-holds-in
+    - *providerlimit-erase-provider-limiters-in
+    - *providerlimit-erase-send-cap-limiters-in
+    - *webhooks-erase-webhook-endpoints-in
+    - *invitations-erase-invitations-in
+    - *apitokens-erase-api-tokens-in
+    - *broadcasts-erase-broadcasts-in
+    - *automations-erase-automations-in
+    - *segments-erase-segments-in
+    - *templates-erase-email-templates-in
+    - *brandkit-erase-brand-kits-in
+    - *contacts-erase-contacts-in
+    - *tags-erase-tags-in
+    - *contacts-erase-custom-fields-in
+    - *trackingdomains-erase-tracking-domains-in
+    - *sendingdomains-erase-sending-domains-in
+    - *integrations-erase-integrations-in
+    - *joindomains-erase-join-domains-in
+    - *memberships-erase-memberships-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -342,7 +490,7 @@ rules:
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces]
+    may_depend_on: [api-auth, api-problem, core, core-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
@@ -389,6 +537,43 @@ rules:
       - *workspaces-tombstone-in
       - *workspaces-create-in
       - *memberships-add-creator-in
+      - *events-erase-events-in
+      - *orders-erase-held-order-events-in
+      - *orders-erase-order-movements-in
+      - *orders-erase-orders-in
+      - *capturedmessages-erase-captured-messages-in
+      - *outbound-erase-tracked-links-in
+      - *outbound-erase-outbound-messages-in
+      - *broadcasts-erase-broadcast-recipients-in
+      - *rules-erase-rule-firings-in
+      - *rules-erase-rule-version-triggers-in
+      - *rules-erase-rule-versions-in
+      - *rules-erase-rules-in
+      - *automations-erase-automation-runs-in
+      - *automations-erase-automation-versions-in
+      - *visitors-erase-visitors-in
+      - *confirmations-erase-confirmations-in
+      - *unsubscribes-erase-unsubscribes-in
+      - *suppression-erase-suppressions-in
+      - *holds-erase-holds-in
+      - *providerlimit-erase-provider-limiters-in
+      - *providerlimit-erase-send-cap-limiters-in
+      - *webhooks-erase-webhook-endpoints-in
+      - *invitations-erase-invitations-in
+      - *apitokens-erase-api-tokens-in
+      - *broadcasts-erase-broadcasts-in
+      - *automations-erase-automations-in
+      - *segments-erase-segments-in
+      - *templates-erase-email-templates-in
+      - *brandkit-erase-brand-kits-in
+      - *contacts-erase-contacts-in
+      - *tags-erase-tags-in
+      - *contacts-erase-custom-fields-in
+      - *trackingdomains-erase-tracking-domains-in
+      - *sendingdomains-erase-sending-domains-in
+      - *integrations-erase-integrations-in
+      - *joindomains-erase-join-domains-in
+      - *memberships-erase-memberships-in
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
@@ -445,6 +630,43 @@ rules:
       - *workspaces-tombstone-in
       - *workspaces-create-in
       - *memberships-add-creator-in
+      - *events-erase-events-in
+      - *orders-erase-held-order-events-in
+      - *orders-erase-order-movements-in
+      - *orders-erase-orders-in
+      - *capturedmessages-erase-captured-messages-in
+      - *outbound-erase-tracked-links-in
+      - *outbound-erase-outbound-messages-in
+      - *broadcasts-erase-broadcast-recipients-in
+      - *rules-erase-rule-firings-in
+      - *rules-erase-rule-version-triggers-in
+      - *rules-erase-rule-versions-in
+      - *rules-erase-rules-in
+      - *automations-erase-automation-runs-in
+      - *automations-erase-automation-versions-in
+      - *visitors-erase-visitors-in
+      - *confirmations-erase-confirmations-in
+      - *unsubscribes-erase-unsubscribes-in
+      - *suppression-erase-suppressions-in
+      - *holds-erase-holds-in
+      - *providerlimit-erase-provider-limiters-in
+      - *providerlimit-erase-send-cap-limiters-in
+      - *webhooks-erase-webhook-endpoints-in
+      - *invitations-erase-invitations-in
+      - *apitokens-erase-api-tokens-in
+      - *broadcasts-erase-broadcasts-in
+      - *automations-erase-automations-in
+      - *segments-erase-segments-in
+      - *templates-erase-email-templates-in
+      - *brandkit-erase-brand-kits-in
+      - *contacts-erase-contacts-in
+      - *tags-erase-tags-in
+      - *contacts-erase-custom-fields-in
+      - *trackingdomains-erase-tracking-domains-in
+      - *sendingdomains-erase-sending-domains-in
+      - *integrations-erase-integrations-in
+      - *joindomains-erase-join-domains-in
+      - *memberships-erase-memberships-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   consent:
     may_depend_on: [core]
@@ -477,6 +699,43 @@ rules:
       - *workspaces-tombstone-in
       - *workspaces-create-in
       - *memberships-add-creator-in
+      - *events-erase-events-in
+      - *orders-erase-held-order-events-in
+      - *orders-erase-order-movements-in
+      - *orders-erase-orders-in
+      - *capturedmessages-erase-captured-messages-in
+      - *outbound-erase-tracked-links-in
+      - *outbound-erase-outbound-messages-in
+      - *broadcasts-erase-broadcast-recipients-in
+      - *rules-erase-rule-firings-in
+      - *rules-erase-rule-version-triggers-in
+      - *rules-erase-rule-versions-in
+      - *rules-erase-rules-in
+      - *automations-erase-automation-runs-in
+      - *automations-erase-automation-versions-in
+      - *visitors-erase-visitors-in
+      - *confirmations-erase-confirmations-in
+      - *unsubscribes-erase-unsubscribes-in
+      - *suppression-erase-suppressions-in
+      - *holds-erase-holds-in
+      - *providerlimit-erase-provider-limiters-in
+      - *providerlimit-erase-send-cap-limiters-in
+      - *webhooks-erase-webhook-endpoints-in
+      - *invitations-erase-invitations-in
+      - *apitokens-erase-api-tokens-in
+      - *broadcasts-erase-broadcasts-in
+      - *automations-erase-automations-in
+      - *segments-erase-segments-in
+      - *templates-erase-email-templates-in
+      - *brandkit-erase-brand-kits-in
+      - *contacts-erase-contacts-in
+      - *tags-erase-tags-in
+      - *contacts-erase-custom-fields-in
+      - *trackingdomains-erase-tracking-domains-in
+      - *sendingdomains-erase-sending-domains-in
+      - *integrations-erase-integrations-in
+      - *joindomains-erase-join-domains-in
+      - *memberships-erase-memberships-in
     forbid_external: *no-container
     because: the consent of a Destination sits in the contacts context (ADR 0102), below the Automations it may not import; an operation that also counts on a Broadcast or ends an Enrollment is a use case above it
   usecase:
@@ -489,7 +748,7 @@ rules:
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
-    may_depend_on: [core, core-raw, identity-base]
+    may_depend_on: [core, core-raw, identity-base, consent]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - *emailcase-hook
@@ -541,6 +800,43 @@ rules:
       - *workspaces-tombstone-in
       - *workspaces-create-in
       - *memberships-add-creator-in
+      - *events-erase-events-in
+      - *orders-erase-held-order-events-in
+      - *orders-erase-order-movements-in
+      - *orders-erase-orders-in
+      - *capturedmessages-erase-captured-messages-in
+      - *outbound-erase-tracked-links-in
+      - *outbound-erase-outbound-messages-in
+      - *broadcasts-erase-broadcast-recipients-in
+      - *rules-erase-rule-firings-in
+      - *rules-erase-rule-version-triggers-in
+      - *rules-erase-rule-versions-in
+      - *rules-erase-rules-in
+      - *automations-erase-automation-runs-in
+      - *automations-erase-automation-versions-in
+      - *visitors-erase-visitors-in
+      - *confirmations-erase-confirmations-in
+      - *unsubscribes-erase-unsubscribes-in
+      - *suppression-erase-suppressions-in
+      - *holds-erase-holds-in
+      - *providerlimit-erase-provider-limiters-in
+      - *providerlimit-erase-send-cap-limiters-in
+      - *webhooks-erase-webhook-endpoints-in
+      - *invitations-erase-invitations-in
+      - *apitokens-erase-api-tokens-in
+      - *broadcasts-erase-broadcasts-in
+      - *automations-erase-automations-in
+      - *segments-erase-segments-in
+      - *templates-erase-email-templates-in
+      - *brandkit-erase-brand-kits-in
+      - *contacts-erase-contacts-in
+      - *tags-erase-tags-in
+      - *contacts-erase-custom-fields-in
+      - *trackingdomains-erase-tracking-domains-in
+      - *sendingdomains-erase-sending-domains-in
+      - *integrations-erase-integrations-in
+      - *joindomains-erase-join-domains-in
+      - *memberships-erase-memberships-in
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   runner:
     may_depend_on: [core, core-raw, identity-base, usecase, usecase-raw]

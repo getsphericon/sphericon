@@ -11,13 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/confirmations"
+	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,7 +51,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := tags.New(env.Bus).Apply(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
+	_, err := contacts.New(env.Bus).ApplyTag(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
 	env.WorkAutomationJobOf(t, tagged)

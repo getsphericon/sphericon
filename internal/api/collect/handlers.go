@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/usecase/identify"
 	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -22,12 +23,13 @@ import (
 type Handlers struct {
 	bus      *events.Bus
 	bindings *bindings.Module
+	identify *identify.UseCase
 }
 
 // NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
 // enforced before decoding, in internal/server.
-func NewHandlers(bus *events.Bus, telegram *bindings.Module) *Handlers {
-	return &Handlers{bus: bus, bindings: telegram}
+func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *identify.UseCase) *Handlers {
+	return &Handlers{bus: bus, bindings: telegram, identify: identification}
 }
 
 // rawMap decodes an ogen map[string]jx.Raw into map[string]any using
@@ -91,7 +93,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 }
 
 func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (*collectapi.CollectOkResponse, error) {
-	input := visitors.IdentifyInput{
+	input := identify.Input{
 		VisitorID: req.VisitorId,
 	}
 	if v, ok := req.Email.Get(); ok {
@@ -114,7 +116,7 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 		input.Locale = convert.Ptr(browser.Locale)
 	}
 
-	if err := visitors.Identify(ctx, h.bus, auth.CollectScoped(ctx), input); err != nil {
+	if err := h.identify.Identify(ctx, auth.CollectScoped(ctx), input); err != nil {
 		return nil, err
 	}
 	return &collectapi.CollectOkResponse{Ok: collectapi.CollectOkResponseOkTrue}, nil

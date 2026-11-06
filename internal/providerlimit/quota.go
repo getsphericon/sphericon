@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
@@ -49,50 +48,10 @@ func RefreshQuota(ctx context.Context, s *ent.Scoped, cipher *secrets.Cipher, ca
 	defer cancel()
 	quota, lookupErr := reader.SendQuota(lookupCtx)
 
-	upd := s.Integration().UpdateOneID(integ.ID).SetProviderQuotaCheckedAt(time.Now())
 	if lookupErr != nil {
 		slog.WarnContext(ctx, "provider send quota unavailable",
 			"integration_id", integ.ID, "workspace_id", integ.WorkspaceID, "err", lookupErr)
-		if err := upd.Exec(ctx); err != nil {
-			return err
-		}
-		return markQuotaFailed(ctx, s, integ.ID)
+		return integrations.RecordQuotaUnavailable(ctx, s, integ.ID)
 	}
-	upd.SetNillableProviderMaxPerSecond(quota.PerSecond).
-		SetNillableProviderMaxPerDay(quota.PerDay)
-	if quota.PerSecond == nil {
-		upd.ClearProviderMaxPerSecond()
-	}
-	if quota.PerDay == nil {
-		upd.ClearProviderMaxPerDay()
-	}
-	if quota.Enforcement == providers.EnforcementNone {
-		upd.ClearProviderEnforcement()
-	} else {
-		upd.SetProviderEnforcement(quota.Enforcement)
-	}
-	upd.SetProviderSandbox(quota.Sandbox)
-	if err := upd.Exec(ctx); err != nil {
-		return err
-	}
-	return clearQuotaFailed(ctx, s, integ.ID)
-}
-
-// markQuotaFailed records the moment the lookup first failed: it writes only while no failure is
-// recorded, so a second failed lookup keeps the first moment.
-func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
-	_, err := s.Integration().Update().
-		Where(integration.ID(id), integration.ProviderQuotaFailedAtIsNil()).
-		SetProviderQuotaFailedAt(time.Now()).
-		Save(ctx)
-	return err
-}
-
-// clearQuotaFailed ends a failure after a successful lookup; it writes only while one is recorded.
-func clearQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
-	_, err := s.Integration().Update().
-		Where(integration.ID(id), integration.ProviderQuotaFailedAtNotNil()).
-		ClearProviderQuotaFailedAt().
-		Save(ctx)
-	return err
+	return integrations.RecordQuota(ctx, s, integ.ID, quota)
 }

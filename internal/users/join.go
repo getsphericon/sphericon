@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
+	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -62,11 +63,7 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		return nil, nil
 	}
 
-	joined, err := ts.Membership().Create().
-		SetUserID(u.ID).
-		SetRole(membership.RoleMember).
-		SetSource(membership.SourceDomain).
-		Save(ctx)
+	joined, err := memberships.AddByDomainIn(ctx, ts, u.ID)
 	if err != nil {
 		return nil, err
 	}

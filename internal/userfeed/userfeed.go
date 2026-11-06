@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
 )
 
@@ -187,7 +188,7 @@ func touch(ctx context.Context, c *entclient.Client, which predicate.User) error
 	if err != nil {
 		return err
 	}
-	if err := c.User.Update().Where(which).SetFeedPosition(position).Exec(ctx); err != nil {
+	if err := users.SetFeedPosition(ctx, c, position, which); err != nil {
 		return fmt.Errorf("user feed position: %w", err)
 	}
 	return nil
@@ -218,7 +219,7 @@ func nextPosition(ctx context.Context, c *entclient.Client) (int64, error) {
 	if err := postgres.LockTx(ctx, c, workspacefeed.LockKey); err != nil {
 		return 0, fmt.Errorf("user feed lock: %w", err)
 	}
-	users, err := c.User.Query().
+	live, err := c.User.Query().
 		Order(entclient.Desc(user.FieldFeedPosition)).Limit(1).
 		Select(user.FieldFeedPosition).Ints(ctx)
 	if err != nil {
@@ -230,6 +231,6 @@ func nextPosition(ctx context.Context, c *entclient.Client) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("user feed position: %w", err)
 	}
-	top := max(lo.Max(users), lo.Max(tombstones))
+	top := max(lo.Max(live), lo.Max(tombstones))
 	return int64(top) + 1, nil
 }

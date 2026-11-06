@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/confirmations"
+	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/optout"
-	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -171,7 +171,7 @@ func TestTagConditions(t *testing.T) {
 	}))
 
 	// Live: tagging contact 2 adds it to the audience.
-	_, err := tags.New(env.Bus).Apply(ctx, env.DB.Scoped(fixtures.AcmeID), 2, "vip")
+	_, err := contacts.New(env.Bus).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), 2, "vip")
 	require.NoError(t, err)
 	assert.Equal(t, 3, count(has("vip")))
 

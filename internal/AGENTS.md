@@ -74,8 +74,9 @@ its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use
 Workspace lock, `internal/usecase/integrationdeletion` the Integration's,
 `internal/usecase/domainverification` the Sending domain checks, `internal/usecase/stepexecution` the
 steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
-secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
-`internal/usecase/contactintake` an import's rows). The use case is built from the container like a
+secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
+`internal/usecase/contactintake` an import's rows and `internal/usecase/identify` what Identify
+binds and stitches). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
 case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
@@ -86,7 +87,8 @@ owns holds the raw client: the Second factor's is `env.SecondFactor`
 (`internal/usecase/secondfactorenrolment`), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
 a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
-(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus)`, and the OAuth token
+(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`
+(the removals of the Enterprise Edition's tables the wiring hands in), and the OAuth token
 endpoint (`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
 The Sign-up (`internal/usecase/signup`) holds no client: its tests build it over a `Store` of
 their own on `users` and the Workspace creation.

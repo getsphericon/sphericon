@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // LockKey is the advisory lock that makes positions commit in the order they are taken:
@@ -225,7 +226,7 @@ func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) erro
 	if err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
-	if err := c.Workspace.Update().Where(workspace.IDIn(workspaceIDs...)).SetFeedPosition(int64(top) + 1).Exec(ctx); err != nil {
+	if err := workspaces.SetFeedPosition(ctx, c, int64(top)+1, workspaceIDs...); err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
 	return nil

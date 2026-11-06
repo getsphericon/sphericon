@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -33,8 +32,8 @@ type TelegramStop struct {
 	// Via is how the person stopped: one of events.UnsubscribedBy*.
 	Via string
 	// Message is the Outbound message a button was pressed on, nil when there is none or it did
-	// not resolve. Its Broadcast counts the opt-out, and its Broadcast or Automation is named on
-	// its Contact's event.
+	// not resolve. Its Broadcast or Automation is named on its Contact's event, from which the
+	// Broadcast counts the opt-out (the broadcasts consumer, internal/jobs).
 	Message *ent.OutboundMessage
 	// Now is the clock of the fact.
 	Now time.Time
@@ -86,12 +85,9 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 			IntegrationID: st.IntegrationID, Via: st.Via, DedupID: fmt.Sprintf("%s/unsubscribed/%d", st.DedupKey, c.ID),
 		}
 		if m := st.Message; m != nil && m.ContactID != nil && *m.ContactID == c.ID {
+			// The Broadcast counts the opt-out when its consumer works this event (broadcasts owns
+			// the recipient row, ADR 0102): the job commits with the opt-out.
 			e.BroadcastID, e.AutomationID = lo.FromPtr(m.BroadcastID), lo.FromPtr(m.AutomationID)
-			if e.BroadcastID != 0 {
-				if err := countForBroadcast(ctx, s, e.BroadcastID, c.ID, st.Now); err != nil {
-					return err
-				}
-			}
 		}
 		if err := pub.Publish(ctx, e); err != nil {
 			return err
@@ -122,18 +118,6 @@ func contactsOf(ctx context.Context, s *ent.Scoped, destination string) ([]int64
 		}
 	}
 	return ids, nil
-}
-
-// countForBroadcast marks the Contact's recipient row of the Broadcast as unsubscribed, once.
-func countForBroadcast(ctx context.Context, s *ent.Scoped, broadcastID, contactID int64, now time.Time) error {
-	_, err := s.BroadcastRecipient().Update().
-		Where(broadcastrecipient.BroadcastID(broadcastID), broadcastrecipient.ContactID(contactID), broadcastrecipient.UnsubscribedAtIsNil()).
-		SetUnsubscribedAt(now).
-		Save(ctx)
-	if err != nil {
-		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
-	}
-	return nil
 }
 
 // ErrTelegramSource refuses a hand-recorded Telegram opt-out of a narrower source: it is

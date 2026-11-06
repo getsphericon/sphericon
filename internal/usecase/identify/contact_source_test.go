@@ -1,4 +1,4 @@
-package visitors_test
+package identify_test
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/visitors"
+	"github.com/getsphericon/sphericon/internal/usecase/identify"
 )
 
 func TestAContactCreatedByIdentifyCarriesTheTrackerSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-source", Email: new("source-tracker@example.com")})
+	err := identify.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), identify.Input{VisitorID: "dev-source", Email: new("source-tracker@example.com")})
 	require.NoError(t, err)
 
 	created, err := env.DB.Contact.Query().Where(contact.Email("source-tracker@example.com")).Only(ctx)
@@ -30,7 +30,7 @@ func TestIdentifyOfAnExistingContactLeavesItsSource(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-alice", Email: new(fixtures.ContactAliceEmail)})
+	err := identify.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), identify.Input{VisitorID: "dev-alice", Email: new(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)

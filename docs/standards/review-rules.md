@@ -36,7 +36,8 @@ or `AGENTS.md`.
 
 5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs and
    event subscribers) only receive input, call a domain module or a use case and return the result;
-   they hold no logic.
+   they hold no logic. A table is written only by the domain module that owns it (ADR 0102): any
+   other package, a use case included, reads it and changes it only through a function of its owner.
 6. **Knowledge has one place.** A rule or a shape is stated once; no second copy of it elsewhere. For
    the API that place is TypeSpec, and none of the following is declared anywhere else: operations
    (path, method, name), request and response shapes, value constraints (length, range, format,

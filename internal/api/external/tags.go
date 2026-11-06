@@ -33,7 +33,7 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
+	t, err := h.contacts.ApplyTag(ctx, scoped, id, req.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemove
 	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	err := h.tags.Remove(ctx, scoped, id, params.Name)
+	err := h.contacts.RemoveTag(ctx, scoped, id, params.Name)
 	if err != nil {
 		return err
 	}

@@ -238,7 +238,7 @@ func TestAMalformedCursorIsRefused(t *testing.T) {
 func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	deletion := workspacedeletion.New(h.env.DB, h.env.Bus)
+	deletion := workspacedeletion.New(h.env.DB, h.env.Bus, testhelper.EditionTables())
 	actor := events.Actor{Kind: events.ActorUser}
 	initech := h.env.DB.Scoped(fixtures.InitechID)
 	ws, err := initech.Workspace(t.Context())

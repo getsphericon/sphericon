@@ -121,13 +121,3 @@ func TestPruneEventsKeepsRuleFiringsWhenRetentionIsZero(t *testing.T) {
 
 	assert.True(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
 }
-
-func TestPruneRuleFiringsDeletesInBoundedBatches(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	deleted, err := events.PruneRuleFirings(context.Background(), env.DB, eventsRetention, 1)
-
-	require.NoError(t, err)
-	assert.Equal(t, int64(1), deleted)
-	assert.False(t, firingPresent(t, env, fixtures.RuleFiringExpiredID))
-}

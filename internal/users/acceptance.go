@@ -232,13 +232,7 @@ func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role mem
 	// DO NOTHING rather than catching a unique violation, which would abort the
 	// transaction. A concurrent accept that inserted first leaves nothing to write
 	// (sql.ErrNoRows); its Membership is read back, so the rules below still apply.
-	err = ts.Membership().Create().
-		SetUserID(u.ID).
-		SetRole(role).
-		SetSource(membership.SourceInvitation).
-		OnConflictColumns(membership.FieldUserID, membership.FieldWorkspaceID).
-		DoNothing().
-		Exec(ctx)
+	err = memberships.AddInvitedIn(ctx, ts, u.ID, role)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
@@ -251,7 +245,7 @@ func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role mem
 
 // raiseToAdmin makes a member an admin and audits the change.
 func raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
-	if err := ts.Membership().UpdateOneID(existing.ID).SetRole(membership.RoleAdmin).Exec(ctx); err != nil {
+	if err := memberships.SetRoleIn(ctx, ts, existing.ID, membership.RoleAdmin); err != nil {
 		return err
 	}
 	return events.RecordAudit(ctx, pub, &events.AuditEntry{

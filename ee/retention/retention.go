@@ -15,9 +15,9 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
@@ -75,9 +75,7 @@ func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, now
 	var total int
 	for _, ws := range live {
 		cutoff := now.AddDate(0, 0, -*ws.RetentionDays)
-		n, err := client.Scoped(ws.ID).AuditEntry().Delete().
-			Where(auditentry.OccurredAtLT(cutoff)).
-			Exec(ctx)
+		n, err := audit.PruneBefore(ctx, client.Scoped(ws.ID), cutoff)
 		if err != nil {
 			return total, fmt.Errorf("prune audit entries of workspace %d: %w", ws.ID, err)
 		}

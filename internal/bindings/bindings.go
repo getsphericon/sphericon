@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
 // TokenTTL is how long a start link works: a link waits in an inbox for weeks (ADR 0076).
@@ -86,26 +87,11 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 // The chat that starts with it binds to the Visitor and reaches its Contact once Identify resolves
 // it (ADR 0076). ErrNoIntegration and ErrBotOff when there is no bot to link to.
 func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visitorID string) (StartLink, error) {
-	vis, err := findOrCreateVisitor(ctx, s, visitorID)
+	vis, err := visitors.EnsureIn(ctx, s, visitorID)
 	if err != nil {
 		return StartLink{}, err
 	}
 	return m.issue(ctx, s, nil, func(c *ent.StartTokenScopedCreate) { c.SetVisitorID(vis.ID) })
-}
-
-func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
-	vis, err := s.Visitor().Query().Where(visitor.VisitorID(visitorID)).First(ctx)
-	if err == nil {
-		return vis, nil
-	}
-	if !ent.IsNotFound(err) {
-		return nil, fmt.Errorf("find visitor: %w", err)
-	}
-	vis, err = s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(time.Now()).Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("create visitor: %w", err)
-	}
-	return vis, nil
 }
 
 // issue stores a Start token whose owner own sets and returns the link that carries it.

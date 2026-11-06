@@ -35,7 +35,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/tags"
 )
 
 // Alias key fields, as the conflict of each names it.
@@ -188,7 +187,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if len(in.Tags) == 0 {
 			return nil
 		}
-		return tags.SetIn(ctx, ts, pub, c.ID, in.Tags)
+		return SetTagsIn(ctx, ts, pub, c.ID, in.Tags)
 	})
 	if err != nil {
 		return nil, domainError(err)
@@ -237,7 +236,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if !ok {
 			return nil
 		}
-		return tags.SetIn(ctx, ts, pub, id, names)
+		return SetTagsIn(ctx, ts, pub, id, names)
 	})
 	if err != nil {
 		return nil, domainError(err)

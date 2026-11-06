@@ -7,8 +7,9 @@
 //
 // The use case takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed) and opens a transaction per erase step.
-// It imports neither the holds package nor the outbound package (ent's outboundmessage entity
-// is only a row the erase removes).
+// Each erase step lists a batch of the Workspace's rows of one entity and removes them through the
+// module that owns the table (ADR 0102); the Enterprise Edition's tables through the removals the
+// wiring hands in (EditionTables).
 package workspacedeletion
 
 import (
@@ -43,11 +44,12 @@ type UseCase struct {
 	client *ent.Client
 	bus    *events.Bus
 	batch  int
+	steps  []eraseStep
 }
 
-// New returns the use case.
-func New(client *ent.Client, bus *events.Bus) *UseCase {
-	return &UseCase{client: client, bus: bus, batch: eraseBatch}
+// New returns the use case; edition are the removals of the Enterprise Edition's own tables.
+func New(client *ent.Client, bus *events.Bus, edition EditionTables) *UseCase {
+	return &UseCase{client: client, bus: bus, batch: eraseBatch, steps: eraseSteps(edition)}
 }
 
 // Due lists the Workspaces whose window has passed at now and that are not erased yet.

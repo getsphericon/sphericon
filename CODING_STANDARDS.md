@@ -89,18 +89,28 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
   (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
   (`internal/testhelper`) is the fixture tooling and is not read.
-- **Rule 5, `entrywrite`.** An entry point does not write through ent: a call that starts a mutation
-  (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
-  upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
-  client, a transaction, the scoped client and its wrappers) is a finding; test files are not read. The handlers
+- **Rule 5, `entrywrite`.** Only the owner writes a table (ADR 0102): `owners` in
+  `tools/analyzers/entrywrite` names, for every ent entity, the package that owns its table, and a write
+  to the entity from any other package is a finding, as is a write to an entity the map does not name (a
+  new entity names its owner in the change that adds it; a test of the analyzer fails when the map and
+  `ent/schema` differ or an owner's directory is gone, so a moved package updates the map). A write is a
+  call that starts a mutation (`Create`, `CreateBulk`, `MapCreateBulk`, `Update`, `UpdateOne`,
+  `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`), an upsert (`OnConflict`, `OnConflictColumns`,
+  `OnConflictColumnsWhere`), a soft-delete move (`Archive`, `Unarchive`, `Discard`, `Purge`, `PurgeOneID`)
+  or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
+  transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
+  builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
+  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/drafts`. Not
+  read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
+  function of the owner that makes the write, which the writer calls. An entry point does not write through
+  ent at all: there every write is a finding worded for the entry point. The handlers
   of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect`, `staff` and `ee/api/staff`) do not read through ent either:
   a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
   is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, the Enterprise
-  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The write
-  goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
-  point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
+  handlers in `ee/api/staff`, `internal/mcpserver`, `internal/jobs` and `internal/server`. The helpers the
+  analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns

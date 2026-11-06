@@ -3,7 +3,7 @@
 // the next step in the same transaction. It spans several domain modules and changes their rows
 // only through their functions: the Enrollment's state and lifecycle are the Automations
 // module's (ADR 0046; automations.Advance, Complete, Fail, ExitRun, the Enroll functions), a tag
-// step's change of the Contact's Tags is the Tags module's (tags.ApplyIn, RemoveIn) and a send
+// step's change of the Contact's Tags is the Contacts module's (contacts.ApplyTagIn, RemoveTagIn) and a send
 // step is one Outbound send. It holds no raw database client: a job adapter loads the
 // Enrollment's row, builds the Workspace scope from it (the job entry point of ADR 0017) and
 // passes the scope in.
@@ -21,12 +21,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/tags"
 )
 
 // QueueHTTPSteps isolates the HTTP steps of Automations (ADR 0039): an outbound call to a
@@ -230,10 +230,10 @@ func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int
 		return m.advance(ctx, s, run.ID, step, move{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automationsteps.ApplyTag {
-				_, err := tags.ApplyIn(ctx, sys, pub, run.ContactID, st.Tag)
+				_, err := contacts.ApplyTagIn(ctx, sys, pub, run.ContactID, st.Tag)
 				return err
 			}
-			return tags.RemoveIn(ctx, sys, pub, run.ContactID, st.Tag)
+			return contacts.RemoveTagIn(ctx, sys, pub, run.ContactID, st.Tag)
 		}})
 
 	case automationsteps.HTTP:

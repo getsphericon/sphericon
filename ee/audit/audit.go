@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/samber/lo"
@@ -129,6 +130,13 @@ func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *ev
 		return fmt.Errorf("persist audit entry %q: %w", env.ID, err)
 	}
 	return nil
+}
+
+// PruneBefore deletes the scoped Workspace's Audit entries that occurred before cutoff and returns
+// how many it removed: the advanced-retention control's prune (ee/retention), the one remover of
+// entries besides the erasure of a deleted Workspace.
+func PruneBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
+	return s.AuditEntry().Delete().Where(auditentry.OccurredAtLT(cutoff)).Exec(ctx)
 }
 
 // Log is the read side of the Audit log, and the export, which records itself through the bus.

@@ -29,7 +29,7 @@ func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 // runErase is one erase at now.
 func runErase(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	m := workspacedeletion.New(env.DB, env.Bus)
+	m := workspacedeletion.New(env.DB, env.Bus, testhelper.EditionTables())
 	_, err := m.EraseDue(context.Background(), now)
 	require.NoError(t, err)
 }

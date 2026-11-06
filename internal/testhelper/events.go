@@ -188,6 +188,13 @@ func (env *TestEnv) WorkOrderJobs(t *testing.T) {
 	WorkEventJobs(t, env, jobs.NewOrderEventWorker(env.DB, env.Orders))
 }
 
+// WorkBroadcastUnsubscribeJobs works every queued broadcasts job (WorkEventJobs): each counts a
+// Telegram opt-out on the Broadcast whose message it was made from.
+func (env *TestEnv) WorkBroadcastUnsubscribeJobs(t *testing.T) {
+	t.Helper()
+	WorkEventJobs(t, env, jobs.NewBroadcastUnsubscribeEventWorker(env.DB))
+}
+
 // WorkEventJobOf works the queued job of the kind worker works that the publish of published
 // inserted, and nothing when the consumer's filter left it out.
 func WorkEventJobOf[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T], published events.Envelope) {

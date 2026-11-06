@@ -22,8 +22,11 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/abuse"
+	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/export"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
@@ -640,9 +643,12 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client.
+	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; the
+	// Enterprise Edition's tables go through their owners' removals.
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
-		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspacedeletion.EditionTables{
+			AuditEntries: audit.EraseAuditEntriesIn, Erasures: export.EraseErasuresIn, Usage: usage.EraseUsageIn,
+		}), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client.
@@ -720,8 +726,8 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*brandkit.Module, error) {
 		return brandkit.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*templates.Module](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*tags.Module, error) {
-		return tags.New(do.MustInvoke[*events.Bus](i)), nil
+	do.Lazy(func(do.Injector) (*tags.Module, error) {
+		return tags.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i)), nil
