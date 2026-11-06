@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/phone"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -282,4 +284,67 @@ func TestSMSReasons(t *testing.T) {
 
 	assert.Equal(t, eligibility.ReasonUnconfirmed, unconfirmed.Reason)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, optedOut.Reason)
+}
+
+// bindingAudience returns the Contacts of Lacuna that the batch Predicate keeps on a Channel of
+// Bindings, reached through the Integration's Bindings, for one source.
+func bindingAudience(t *testing.T, env *testhelper.TestEnv, integrationID int64, source string) []int64 {
+	t.Helper()
+	ids, err := env.DB.Scoped(fixtures.LacunaID).Contact().Query().
+		Where(eligibility.Audience(eligibility.BindingDestination(eligibility.ChannelTelegram, integrationID), source)).
+		IDs(context.Background())
+	require.NoError(t, err)
+	return ids
+}
+
+// On a Channel of Bindings a Contact is reached at each Binding on the Integration, its own and its
+// Visitors', each one checked on its own (ADR 0075): Lacuna's bot reaches Tia (two chats), Ben, Fay
+// and Eve (through her Visitor's chat), not Sid, whose one chat stopped Broadcasts, nor Cal, who is
+// on the other bot only, nor the texters, who have no Binding at all. A transactional send ignores
+// Sid's opt-out, and an Integration of 0 reaches nobody.
+func TestBindingAudienceReachesTheContactsBoundOnTheIntegration(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	for name, tc := range map[string]struct {
+		integration int64
+		source      string
+		want        []int64
+	}{
+		"broadcasts on the bot": {fixtures.IntegrationLacunaTelegramID, eligibility.SourceBroadcasts, []int64{
+			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaByVisitorID,
+		}},
+		"transactional on the bot": {fixtures.IntegrationLacunaTelegramID, "", []int64{
+			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaByVisitorID,
+			fixtures.ContactLacunaStoppedID,
+		}},
+		"broadcasts on the other bot": {fixtures.IntegrationLacunaOtherTelegramID, eligibility.SourceBroadcasts, []int64{fixtures.ContactLacunaOtherBotID}},
+		"no Integration":              {0, eligibility.SourceBroadcasts, nil},
+	} {
+		got := bindingAudience(t, env, tc.integration, tc.source)
+
+		assert.ElementsMatch(t, tc.want, got, name)
+	}
+}
+
+// An erased Contact's opt-out on sms is kept under the hash of the number (ADR 0021), so it still
+// refuses the number when it comes back, in the point Check and in the audience alike.
+func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.TyrellID)
+	hashed, err := s.Unsubscribe().Update().
+		Where(unsubscribe.ChannelEQ(eligibility.ChannelSMS), unsubscribe.DestinationEQ(fixtures.TyrellMatrixUnsubEverythingPhone)).
+		SetDestination(phone.Hash(fixtures.TyrellMatrixUnsubEverythingPhone)).
+		Save(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, hashed)
+
+	d, err := eligibility.Check(ctx, s, eligibility.ChannelSMS, fixtures.TyrellMatrixUnsubEverythingPhone, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	byCheck, byPredicate := smsMatrix(t, env, fixtures.TyrellID,
+		[]string{fixtures.TyrellMatrixUnsubEverythingPhone, fixtures.TyrellMatrixConfirmedPhone}, eligibility.SourceBroadcasts)
+
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, d.Reason)
+	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byCheck)
+	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byPredicate)
 }

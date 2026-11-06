@@ -390,17 +390,25 @@ usage = 'arg "[packages]" var=#true help="packages to mutate (default: eligibili
 run = 'eval "set -- $usage_packages"; [ $# -gt 0 ] || set -- ./internal/eligibility/... ./internal/providerlimit/...; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 75 "$@"'
 
 ["test:fuzz"]
-description = "Go native fuzzing of the parsers that take outside input: every Fuzz target of cmd/, internal/ and ee/, found by name (SPHERICON_FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
-# Go fuzzes one target per run, so each `func Fuzz...` is run on its own. The targets are found,
-# not listed: a new one is fuzzed without a change here. SPHERICON_FUZZTIME is read from the caller's
-# environment (the nightly sets it); a task `env` would override the caller's value.
+description = "Go native fuzzing of the parsers that take outside input: every Fuzz target of cmd/, internal/ and ee/ (test:fuzz:targets), or the ones passed after `--` as <dir>:<Fuzz func> (SPHERICON_FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
+# Go fuzzes one target per run, so each target is run on its own. SPHERICON_FUZZTIME is read from the
+# caller's environment (the nightly sets it); a task `env` would override the caller's value.
+usage = 'arg "[targets]" var=#true help="targets to fuzz as <dir>:<Fuzz func> (default: every one test:fuzz:targets lists)"'
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
-grep -rEo --include='*_test.go' '^func Fuzz[A-Za-z0-9_]+' cmd internal ee | sort -u | while IFS=: read -r file decl; do
-  go test "./$(dirname "$file")" -run '^$' -fuzz "^${decl#func }\$" -fuzztime "${SPHERICON_FUZZTIME:-30s}"
+eval "set -- $usage_targets"
+[ $# -gt 0 ] || set -- $(mise run --quiet test:fuzz:targets)
+for target in "$@"; do
+  go test "./${target%%:*}" -run '^$' -fuzz "^${target#*:}\$" -fuzztime "${SPHERICON_FUZZTIME:-30s}"
 done
 '''
+
+["test:fuzz:targets"]
+description = "Every Fuzz target of cmd/, internal/ and ee/ as <dir>:<Fuzz func>, one per line: what test:fuzz runs and the nightly fans out, one job each"
+# The targets are found by name, not listed: a new `func Fuzz...` is fuzzed without a change here
+# or in the nightly.
+run = '''grep -rEo --include='*_test.go' '^func Fuzz[A-Za-z0-9_]+' cmd internal ee | sed -E 's|/[^/]+_test\.go:func |:|' | sort -u'''
 
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"

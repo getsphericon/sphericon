@@ -64,7 +64,8 @@ jobs:
   # tests do not notice.
   mutation:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 273 mutants took 44 minutes on 2026-11-05, and the count grows with the logic it mutates.
+    timeout-minutes: 75
 
     steps:
       - name: Checkout repository
@@ -99,10 +100,13 @@ jobs:
         run: mise run check:contract
 
   # Native fuzzing of the parsers that take outside input; a crash is saved under testdata/fuzz.
-  fuzz:
+  # The Fuzz targets, found by name (test:fuzz:targets): the fuzz job runs one job per target, so a
+  # new target adds a job rather than minutes to one job's timeout.
+  fuzz-targets:
     runs-on: ubuntu-latest
-    # Every Fuzz target runs SPHERICON_FUZZTIME in turn: twelve targets of three minutes, with their builds.
-    timeout-minutes: 50
+    timeout-minutes: 10
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
 
     steps:
       - name: Checkout repository
@@ -113,9 +117,33 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
-      - name: Fuzz the parsers
-        run: mise run test:fuzz
+      - name: List the Fuzz targets
+        id: targets
+        run: echo "targets=$(mise run --quiet test:fuzz:targets | jq --raw-input . | jq --slurp --compact-output .)" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    needs: fuzz-targets
+    runs-on: ubuntu-latest
+    # One target for SPHERICON_FUZZTIME, with its build.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.fuzz-targets.outputs.targets) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+
+      - name: Fuzz the target
+        run: mise run test:fuzz -- "$TARGET"
         env:
+          TARGET: ${{ matrix.target }}
           SPHERICON_FUZZTIME: 3m
 
   # govulncheck. A new advisory can fail this with no change on our side, which

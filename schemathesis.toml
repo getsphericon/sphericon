@@ -24,3 +24,11 @@ positive_data_acceptance.expected-statuses = [
 [[operations]]
 include-name = "DELETE /auth/tokens/{id}"
 enabled = false
+
+# Delete discards an Integration, a Rule and a Sending domain (ADR 0100): the row is still read by id,
+# with its `discardedAt` set, so what refers to it shows its name. A read after the delete answering
+# 200 is the contract, not a use after free; the check stays on for every kind deleted outright.
+[[operations]]
+# One filter: two include keys in a block match either of them, not both.
+include-name-regex = '^GET /(integrations|rules|sending-domains)/\{'
+checks.use_after_free.enabled = false

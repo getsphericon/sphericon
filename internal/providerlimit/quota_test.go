@@ -1,7 +1,10 @@
 package providerlimit_test
 
 import (
+	"bytes"
+	"context"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/channels"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
@@ -61,9 +65,13 @@ func TestRefreshQuotaFailureKeepsManualOrUnlimitedAndRecordsAWarning(t *testing.
 	ses := &testhelper.FakeSES{}
 	ses.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 	require.NoError(t, s.Integration().UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerDay(1000).Exec(t.Context()))
+	logs := captureLogs(t)
 
 	err := providerlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), reload(t, s, fixtures.IntegrationAcmeSesID))
 	require.NoError(t, err, "a failed lookup is recorded, never returned: it must not fail a save or a job")
+	logged := logs.String()
+	assert.Contains(t, logged, "provider send quota unavailable", "the operator sees why the warning is up")
+	assert.Contains(t, logged, "AccessDenied: ses:GetSendQuota")
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.NotNil(t, row.ProviderQuotaFailedAt)
@@ -170,6 +178,7 @@ func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T)
 	err := providerlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), integ)
 
 	require.ErrorContains(t, err, "decrypt integration")
+	require.ErrorIs(t, err, secrets.ErrCiphertext)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 	assert.Nil(t, row.ProviderMaxPerSecond, "no provider value is stored from a config that could not be read")
 	assert.Nil(t, row.ProviderQuotaCheckedAt)
@@ -224,4 +233,73 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
 	assert.Equal(t, providers.EnforcementShutdown, *row.ProviderEnforcement)
 	assert.True(t, row.ProviderSandbox)
+}
+
+// captureLogs routes the default logger to a buffer for the test.
+func captureLogs(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	var buf bytes.Buffer
+	prev := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+	return &buf
+}
+
+// failIntegrationWrites makes every write of op to an Integration fail with err.
+func failIntegrationWrites(env *testhelper.TestEnv, op ent.Op, err error) {
+	env.DB.Integration.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if m.Op().Is(op) {
+				return nil, err
+			}
+			return next.Mutate(ctx, m)
+		})
+	})
+}
+
+// A write RefreshQuota cannot make is returned, whichever it is: the stored answer of a lookup
+// (UpdateOne), or the mark or the clearing of a failure (an Update guarded by its state).
+func TestRefreshQuotaReturnsAWriteItCannotMake(t *testing.T) {
+	injected := errors.New("injected failure")
+	for name, tc := range map[string]struct {
+		op        ent.Op
+		lookupErr error
+	}{
+		"the provider values":          {ent.OpUpdateOne, nil},
+		"the check of a failed lookup": {ent.OpUpdateOne, errors.New("timeout")},
+		"the clearing of a failure":    {ent.OpUpdate, nil},
+		"the mark of a failure":        {ent.OpUpdate, errors.New("timeout")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			s := env.DB.Scoped(fixtures.AcmeID)
+			ses := &testhelper.FakeSES{}
+			ses.SetQuota(messaging.Quota{PerSecond: new(14)})
+			ses.SetQuotaErr(tc.lookupErr)
+			integ := reload(t, s, fixtures.IntegrationAcmeSesID)
+			failIntegrationWrites(env, tc.op, injected)
+
+			err := providerlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), integ)
+
+			require.ErrorIs(t, err, injected)
+		})
+	}
+}
+
+// A stored config the provider cannot build a sender from is an error, not a provider without a
+// quota: nothing is written.
+func TestRefreshQuotaReturnsAConfigTheProviderCannotBuildFrom(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	unbuildable := errors.New("unreadable config")
+	catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
+		Channel: channels.Email, Provider: providers.SES,
+		Build: func([]byte, messaging.Deps) (any, error) { return nil, unbuildable },
+	})
+
+	err := providerlimit.RefreshQuota(t.Context(), s, envCipher(t), catalog, reload(t, s, fixtures.IntegrationAcmeSesID))
+
+	require.ErrorIs(t, err, unbuildable)
+	row := reload(t, s, fixtures.IntegrationAcmeSesID)
+	assert.Nil(t, row.ProviderQuotaCheckedAt)
 }
