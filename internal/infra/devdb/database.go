@@ -1,6 +1,5 @@
 // Package devdb holds the database tasks of the development workflow that `cmd/db` runs: it
-// creates and drops a checkout's database, writes the next goose migration from the ent schema and
-// writes the migration for river's schema.
+// creates and drops a checkout's database and writes the next goose migration from the ent schema.
 package devdb
 
 import (

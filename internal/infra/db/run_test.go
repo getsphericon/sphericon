@@ -54,6 +54,32 @@ func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
 	require.True(t, res.OK, "river migrations pending: %v", res.Messages)
 }
 
+// A RiverMigration runs river's own migrator: its down step takes river's tables back a version
+// and its up step brings them to the version it names again, so rivermigrate.Validate sees each.
+func TestRiverMigrationMovesRiverToItsVersionAndBack(t *testing.T) {
+	cfg := emptyConfig(t, false)
+	_, err := db.ApplyMigrations(t.Context(), cfg.DatabaseURL)
+	require.NoError(t, err)
+	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(pool, "pool") })
+	migrator, err := rivermigrate.New(riverdatabasesql.New(pool), nil)
+	require.NoError(t, err)
+	all := migrator.AllVersions()
+	latest := all[len(all)-1].Version
+	migration := db.RiverMigration(1, latest)
+
+	require.NoError(t, migration.DownFnNoTxContext(t.Context(), pool))
+	down, err := migrator.Validate(t.Context(), nil)
+	require.NoError(t, err)
+	require.NoError(t, migration.UpFnNoTxContext(t.Context(), pool))
+	up, err := migrator.Validate(t.Context(), nil)
+	require.NoError(t, err)
+
+	assert.False(t, down.OK, "the down step leaves version %d pending", latest)
+	assert.True(t, up.OK, "river migrations pending: %v", up.Messages)
+}
+
 // Without auto-migrate the start refuses a database that has not run the binary's migrations;
 // with it, the start migrates, and the next start without it goes ahead.
 func TestPrepareStartMigratesOnlyWhenAutoMigrateIsOn(t *testing.T) {

@@ -1,6 +1,5 @@
 // Command db runs the development database tasks of internal/infra/devdb: it creates and drops this
-// checkout's database, writes the next goose migration from the ent schema and writes the
-// migration for river's schema.
+// checkout's database and writes the next goose migration from the ent schema.
 package main
 
 import (
@@ -45,13 +44,6 @@ func newRoot() *cli.Command {
 				Usage: "drop this checkout's database",
 				Action: func(ctx context.Context, _ *cli.Command) error {
 					return onDatabase(ctx, devdb.Drop)
-				},
-			},
-			{
-				Name:  "river-migration",
-				Usage: "write the goose migration for river's schema",
-				Action: func(context.Context, *cli.Command) error {
-					return devdb.GenerateRiverMigration("migrations", os.Stdout)
 				},
 			},
 			{

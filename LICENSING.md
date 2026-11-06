@@ -24,7 +24,7 @@ artifact for everyone — there is no separate enterprise build.
 ## Third-party code in the repository
 
 The `migrations/*_river_*.sql` files carry the SQL of [river](https://github.com/riverqueue/river)
-verbatim, written by `mise run db:river-migration`. river is licensed under the Mozilla Public
+verbatim (river's versions 1 to 8; later versions run river's own migrator). river is licensed under the Mozilla Public
 License 2.0, which applies to those files; the rest of the repository keeps its own license.
 
 ## Questions
