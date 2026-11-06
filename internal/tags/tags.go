@@ -2,7 +2,9 @@
 // (ADR 0016). A Tag is a presence-only, workspace-scoped label (GLOSSARY); it is
 // auto-created the first time it is applied, like a Custom field. Handlers on /site
 // and /api stay thin adapters: scope check, call, map. Tag-based targeting is not
-// here — it is the has-Tag rule of the segments engine.
+// here — it is the has-Tag rule of the segments engine. Deleting a Tag from the
+// catalogue is the use case internal/usecase/tagdeletion (ADR 0102): the modules
+// that name a Tag sit above this one, so the check of their Live use is not here.
 package tags
 
 import (
@@ -16,15 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 // Domain errors. Callers match with errors.Is.
@@ -201,61 +198,27 @@ func publishChange(ctx context.Context, s *ent.Scoped, pub events.Publisher, act
 	})
 }
 
-// Delete removes a Tag from the catalogue, and from every Contact that has it, unless a Segment
-// rule or a step of a kept Automation's live version or draft names it: then it returns an
-// *inuse.Error naming those Segments and Automations (ADR 0049, ADR 0065), because both name the
-// Tag and would silently stop matching or applying.
-// The Condition an armed Broadcast copied from its Segment counts too (ADR 0065). A missing Tag is
-// ErrNotFound. The check and the delete run in one transaction under the Workspace's lock (ADR
-// 0099), which saving a Segment, a Rule or an Automation takes too, so none of them names the Tag
-// between the check and the delete.
-func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinWorkspaceLockTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		t, err := ts.Tag().Get(ctx, id)
-		if ent.IsNotFound(err) {
-			return ErrNotFound
-		}
-		if err != nil {
-			return err
-		}
-		users, err := tagUsers(ctx, ts, t.Name)
-		if err != nil {
-			return err
-		}
-		if len(users) > 0 {
-			return &inuse.Error{What: inuse.SubjectTag, Users: users}
-		}
-		return ts.Tag().DeleteOneID(id).Exec(ctx)
-	})
+// Get returns the Tag with the given id, ErrNotFound when the Workspace has none.
+func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Tag, error) {
+	t, err := s.Tag().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	return t, err
 }
 
-// tagUsers is what names the Tag: Segments, kept Automations, kept Rules and armed Broadcasts.
-func tagUsers(ctx context.Context, s *ent.Scoped, name string) ([]inuse.User, error) {
-	var users []inuse.User
-	segs, err := segments.UsingTag(ctx, s, name)
-	if err != nil {
-		return nil, err
+// DeleteIn removes the Tag from the catalogue, and from every Contact that has it, inside the
+// transaction s is bound to. It is the unchecked removal (ADR 0102): it does not ask whether a
+// Segment, an Automation, a Rule or a Broadcast names the Tag. Deleting a Tag is the use case
+// internal/usecase/tagdeletion, which runs that Live use check and this removal in one transaction
+// under the Workspace's lock; easement forbids every other package to call DeleteIn. A missing Tag is
+// ErrNotFound.
+func DeleteIn(ctx context.Context, s *ent.Scoped, id int64) error {
+	err := s.Tag().DeleteOneID(id).Exec(ctx)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
 	}
-	for _, seg := range segs {
-		users = append(users, inuse.User{Kind: inuse.Segment, ID: seg.ID, Name: seg.Name})
-	}
-	autos, err := automations.UsingTag(ctx, s, name)
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range autos {
-		users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
-	}
-	live, err := rules.UsingTag(ctx, s, name)
-	if err != nil {
-		return nil, err
-	}
-	users = append(users, inuse.Rules(live)...)
-	armed, err := broadcasts.UsingTag(ctx, s, name)
-	if err != nil {
-		return nil, err
-	}
-	return append(users, inuse.Broadcasts(armed)...), nil
+	return err
 }
 
 func requireContact(ctx context.Context, s *ent.Scoped, contactID int64) error {

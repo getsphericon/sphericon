@@ -89,8 +89,8 @@ coding standards in `CODING_STANDARDS.md`.
   container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no Enterprise
   module imports a handler. The drivers (ADR 0102) are the API surfaces, their shared security
   handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP and the job runner
-  (`internal/jobs`, component `runner`): each receives input, calls a domain module and returns or
-  records the result (review rule 5), and no core tier imports one. Only the wiring imports the
+  (`internal/jobs`, component `runner`): each receives input, calls a domain module or a use case and
+  returns or records the result (review rule 5), and no core tier imports one. Only the wiring imports the
   runner, and a package with jobs of its own (the Edition, the Instance) hands them in as a
   `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
   baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
@@ -117,11 +117,32 @@ coding standards in `CODING_STANDARDS.md`.
   wiring and the Enterprise Edition may import the surfaces' packages; the ban leaves the Enterprise
   Edition's boundary with the core as it is (`ee/staff` reads its service surface's `ServiceScope`).
   The check is strict: a new Go package under `internal/kernel/` is covered by the `kernel`
-  component, one under `internal/infra/` by `infra`, any other under `internal/` by the `core`
-  component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
+  component, one under `internal/infra/` by `infra`, one under `internal/usecase/` by `usecase`, any
+  other under `internal/` by the `core` component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
   `*ent.Client` list (`core-raw` and `infra-raw`, see "Workspace scoping") and the `samber/do` ban.
+- **Use cases (ADR 0102, component `usecase`).** An operation that spans several domain modules is a
+  use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
+  one domain module into the modules above it: a base module knows no module that uses it. The use
+  case is a `UseCase` type built by `New` from what it needs (the bus), registered in
+  `internal/app/container.go` and handed to the drivers through their `Deps`. It takes the
+  `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
+  Workspace lock where ADR 0099 requires it, so a Live use check opens it with
+  `WithinWorkspaceLockTx`), reads them, and changes their rows only through their functions. easement
+  isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
+  the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
+  and forbids it the raw client. A removal that a use case guards with a check is the domain module's
+  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`),
+  never a method of the module, since easement matches a method only as a use of its type. Its
+  `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
+  the `forbid_symbol` list of every component but `usecase` that may reach the core (`x-no-raw-client`,
+  `raw-holder-forbids`, `core`, and the whole list in `api-auth`, `ee`, `ee-edition` and `wiring`), so
+  only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
+  the owning module itself (easement counts a call there too; the definition and tests are not
+  checked). The tests of the operation live in the use case's own `_test` package
+  (`internal/usecase/tagdeletion`), through its exports; the domain module keeps the tests of its own
+  rows.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
   `Converter` (`internal/api/{site,external,staff}/resources`, `ee/api/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
@@ -340,8 +361,10 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   Owners, anywhere else.
 - **Refused removals (ADR 0049)**: a row that live work still uses is not removed. `internal/inuse`
   is the one shape of that refusal (`*inuse.Error`: the removed `Subject` and the `Users` that hold it,
-  with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); each domain module returns it from
-  its delete and every API surface answers it with the contract's `Problem` (409, `usedBy`).
+  with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); the delete that checks Live use
+  returns it, and every API surface answers it with the contract's `Problem` (409, `usedBy`). When the
+  users are modules above the removed row's module, the check is a use case (`tagdeletion` asks
+  Segments, Automations, Rules and Broadcasts before `tags.DeleteIn`; see "Use cases").
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.

@@ -65,6 +65,16 @@ that marks a Workspace deleted or changes a User's address, or the write a test 
 makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A module
 under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 
+## Use cases
+
+A use case (`internal/usecase/<name>`, ADR 0102; the recipe is "Use cases" in
+`docs/architecture.md`) owns the tests of its operation, in its own `_test` package through its
+exports: when a check moves out of a domain module into a use case, its test moves with it and keeps
+its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's Live use refusal under the
+Workspace lock). The use case is built from the container like a module, so the API tests reach it
+through the actors; a direct test builds it with `New` over `env.Bus`, or over a bus on
+`testhelper.RealDB` when it races the Workspace lock.
+
 ## Fixture catalog
 
 Anchor fixture rows have **named constants** in `internal/fixtures/catalog_gen.go`

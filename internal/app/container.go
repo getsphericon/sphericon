@@ -90,6 +90,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 
@@ -675,6 +676,9 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*tags.Module, error) {
 		return tags.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
+	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
+		return tagdeletion.New(do.MustInvoke[*events.Bus](i)), nil
+	}),
 	// The transactional send surface of /api: a Template sent through Outbound send.
 	do.Lazy(func(i do.Injector) (*transactional.Module, error) {
 		return transactional.New(do.MustInvoke[*templates.Module](i), do.MustInvoke[*outbound.Module](i)), nil
@@ -839,6 +843,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Contacts:         do.MustInvoke[*contacts.Module](i),
 		Erasure:          do.MustInvoke[*erasure.Module](i),
 		Tags:             do.MustInvoke[*tags.Module](i),
+		TagDeletion:      do.MustInvoke[*tagdeletion.UseCase](i),
 		Bindings:         do.MustInvoke[*bindings.Module](i),
 		Templates:        do.MustInvoke[*templates.Module](i),
 		Transactional:    do.MustInvoke[*transactional.Module](i),
@@ -893,6 +898,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Contacts:                 do.MustInvoke[*contacts.Module](i),
 		Erasure:                  do.MustInvoke[*erasure.Module](i),
 		Tags:                     do.MustInvoke[*tags.Module](i),
+		TagDeletion:              do.MustInvoke[*tagdeletion.UseCase](i),
 		Bindings:                 do.MustInvoke[*bindings.Module](i),
 		Templates:                do.MustInvoke[*templates.Module](i),
 		BrandKit:                 do.MustInvoke[*brandkit.Module](i),

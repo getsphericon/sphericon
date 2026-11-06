@@ -28,9 +28,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
 
 // anySender resolves every Integration to a sender that accepts every message.
@@ -135,7 +135,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	integs := integrations.New(bus, cipher, nil, nil, nil, "")
 	domains := sendingdomains.New(bus, cipher, nil, messaging.NewResolver(cipher, registry.New(cfg.SMTPAllowPrivateHosts, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL)))
 	segs := segments.New(bus)
-	catalogue := tags.New(bus)
+	tagDeletion := tagdeletion.New(bus)
 	ruleset := rules.New(cipher, bus)
 	autos := automations.New(cipher, bus, testhelper.Renderer(), out)
 	renamed := new("Renamed")
@@ -146,7 +146,7 @@ func TestEveryCheckedRemovalAndEveryWriteThatCreatesLiveUseWaitsForTheWorkspaceL
 	}{
 		{"delete an Integration", func() error { return integs.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID) }},
 		{"delete a Sending domain", func() error { return domains.Delete(ctx, s, fixtures.SendingDomainUnverifiedID) }},
-		{"delete a Tag", func() error { return catalogue.Delete(ctx, s, fixtures.TagUnusedID) }},
+		{"delete a Tag", func() error { return tagDeletion.Delete(ctx, s, fixtures.TagUnusedID) }},
 		{"archive a Segment", func() error { _, err := segs.Archive(ctx, s, fixtures.SegmentRetiredID); return err }},
 		{"create a Segment", func() error { _, err := segs.Create(ctx, s, segments.CreateInput{Name: "New"}); return err }},
 		{"update a Segment", func() error {

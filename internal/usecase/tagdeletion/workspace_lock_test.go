@@ -1,12 +1,14 @@
-package tags_test
+package tagdeletion_test
 
 import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -14,7 +16,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
+
+func names(ts []*ent.Tag) []string {
+	return lo.Map(ts, func(t *ent.Tag, _ int) string { return t.Name })
+}
 
 // Deleting a Tag runs its check and the delete in one transaction under the Workspace's lock, and
 // saving a Segment takes the same lock (ADR 0099): a Segment saved first, naming the Tag, is what
@@ -25,7 +32,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	sqlDB.SetMaxOpenConns(8)
 	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
 	bus := events.New(sqlDB, entclient.NewTx)
-	segs, catalogue := segments.New(bus), tags.New(bus)
+	segs, catalogue, deletion := segments.New(bus), tags.New(bus), tagdeletion.New(bus)
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {
@@ -36,7 +43,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 		}
 		return err
 	}}
-	remove := testhelper.Writer{Name: "delete", Run: func() error { return catalogue.Delete(ctx, s, fixtures.TagUnusedID) }}
+	remove := testhelper.Writer{Name: "delete", Run: func() error { return deletion.Delete(ctx, s, fixtures.TagUnusedID) }}
 
 	errs := testhelper.QueuedBehind(t, sqlDB, testhelper.HoldWorkspaceLock(t, bus, s), save, remove)
 

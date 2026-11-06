@@ -52,12 +52,12 @@ func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRe
 	return nil
 }
 
-// SiteTagsDelete deletes a Tag from the catalogue unless a Segment rule or an Automation step
-// names it (ADR 0049).
+// SiteTagsDelete deletes a Tag from the catalogue through the Tag deletion use case, which refuses
+// while a Segment, an Automation, a Rule or an armed Broadcast names it (ADR 0049).
 func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDeleteParams) error {
 	scoped := workspaceScope(ctx)
 
-	err := h.tags.Delete(ctx, scoped, int64(params.ID))
+	err := h.tagDeletion.Delete(ctx, scoped, int64(params.ID))
 	if err != nil {
 		return err
 	}

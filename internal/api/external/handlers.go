@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -55,6 +56,7 @@ type Handlers struct {
 	contacts        *contacts.Module
 	erasure         *erasure.Module
 	tags            *tags.Module
+	tagDeletion     *tagdeletion.UseCase
 	bindings        *bindings.Module
 	templates       *templates.Module
 	transactional   *transactional.Module
@@ -101,6 +103,7 @@ type Deps struct {
 	Contacts         *contacts.Module
 	Erasure          *erasure.Module
 	Tags             *tags.Module
+	TagDeletion      *tagdeletion.UseCase
 	Bindings         *bindings.Module
 	Templates        *templates.Module
 	Transactional    *transactional.Module
@@ -120,7 +123,7 @@ type Deps struct {
 func NewHandlers(d Deps) *Handlers {
 	return &Handlers{
 		accounts: d.Accounts, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
-		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
+		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export,
 	}
