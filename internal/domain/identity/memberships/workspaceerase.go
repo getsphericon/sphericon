@@ -7,9 +7,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 )
 
-// EraseMembershipsIn removes the scoped Workspace's Memberships with the ids, inside the
-// transaction s is bound to: one batch of the erase of a deleted Workspace
-// (internal/usecase/workspacedeletion, ADR 0043), which lists the ids and checks nothing else.
+// Batches of a deleted Workspace's erase (workspacedeletion): the rows with the ids, unchecked.
+
 func EraseMembershipsIn(ctx context.Context, s *ent.Scoped, ids []int64) error {
 	_, err := s.Membership().Delete().Where(membership.IDIn(ids...)).Exec(ctx)
 	return err

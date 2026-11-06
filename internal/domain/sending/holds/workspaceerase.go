@@ -7,9 +7,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 )
 
-// EraseHoldsIn removes the scoped Workspace's Holds with the ids, inside the transaction s is bound
-// to: one batch of the erase of a deleted Workspace (internal/usecase/workspacedeletion, ADR 0043),
-// which lists the ids and checks nothing else.
+// Batches of a deleted Workspace's erase (workspacedeletion): the rows with the ids, unchecked.
+
 func EraseHoldsIn(ctx context.Context, s *ent.Scoped, ids []int64) error {
 	_, err := s.Hold().Delete().Where(hold.IDIn(ids...)).Exec(ctx)
 	return err
