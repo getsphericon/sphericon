@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
@@ -107,7 +107,7 @@ func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) e
 	case optout.IsStopKeyword(m.Text):
 		return optout.StopSMS(ctx, tx.Scoped, number, unsubscribe.ViaKeyword)
 	case optout.IsStartKeyword(m.Text):
-		return consent.StartSMSIn(ctx, tx.Scoped, tx.Pub, number)
+		return confirmations.StartSMSIn(ctx, tx.Scoped, tx.Pub, number)
 	}
 	c, err := tx.Scoped.Contact().Query().Where(contact.Phone(number)).Only(ctx)
 	if ent.IsNotFound(err) {

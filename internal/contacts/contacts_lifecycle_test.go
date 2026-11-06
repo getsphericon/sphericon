@@ -107,30 +107,6 @@ func tagNames(c *ent.Contact) []string {
 	return lo.Map(c.Edges.Tags, func(t *ent.Tag, _ int) string { return t.Name })
 }
 
-func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
-
-	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.UpsertInput{
-		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
-		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
-		{FirstName: patch.Set("No identity")},
-	})
-	require.Len(t, out, 3)
-
-	require.NoError(t, out[0].Err)
-	assert.True(t, out[0].Result.Created)
-	assert.Equal(t, "import", out[0].Result.Contact.CustomFields["source"])
-	assert.Equal(t, 1, createdEvents(t, env, out[0].Result.Contact.ID))
-
-	require.NoError(t, out[1].Err)
-	assert.False(t, out[1].Result.Created)
-	assert.EqualValues(t, fixtures.ContactAliceID, out[1].Result.Contact.ID)
-	assert.Equal(t, "Alicia", lo.FromPtr(out[1].Result.Contact.FirstName), "an asserted attribute overwrites")
-
-	require.ErrorIs(t, out[2].Err, contacts.ErrIdentityRequired, "a failing item does not stop the batch")
-}
-
 func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)

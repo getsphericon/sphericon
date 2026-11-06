@@ -86,6 +86,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
+	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
@@ -101,6 +102,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -718,6 +720,12 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i)), nil
 	}),
+	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
+		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*contactintake.UseCase, error) {
+		return contactintake.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i)), nil
+	}),
 	do.Lazy(func(_ do.Injector) (*customfieldretyping.UseCase, error) {
 		return customfieldretyping.New(), nil
 	}),
@@ -881,7 +889,7 @@ var surfacesPackage = do.Package(
 	// The handler every public surface is mounted on.
 	do.Lazy(func(i do.Injector) (Handler, error) {
 		h, err := server.New(do.MustInvoke[*config.Config](i), do.MustInvoke[Database](i).DB, do.MustInvoke[*db.SchemaWatch](i), do.MustInvoke[*ent.Client](i),
-			do.MustInvoke[apisite.Deps](i), do.MustInvoke[*machine.Detector](i), do.MustInvoke[*ratelimit.Limiter](i),
+			new(do.MustInvoke[apisite.Deps](i)), do.MustInvoke[*machine.Detector](i), do.MustInvoke[*ratelimit.Limiter](i),
 			do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*mcpHandler](i).Handler, do.MustInvoke[*staffHandler](i).Handler)
 		if err != nil {
 			return Handler{}, err
@@ -926,6 +934,8 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Export:                edition.Export,
 
 		CustomFieldRetyping: do.MustInvoke[*customfieldretyping.UseCase](i),
+		Intake:              do.MustInvoke[*contactintake.UseCase](i),
+		Unsubscribe:         do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
 }
 
@@ -970,6 +980,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Tags:                     do.MustInvoke[*tags.Module](i),
 		TagDeletion:              do.MustInvoke[*tagdeletion.UseCase](i),
 		CustomFieldRetyping:      do.MustInvoke[*customfieldretyping.UseCase](i),
+		Unsubscribe:              do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Bindings:                 do.MustInvoke[*bindings.Module](i),
 		Templates:                do.MustInvoke[*templates.Module](i),
 		BrandKit:                 do.MustInvoke[*brandkit.Module](i),

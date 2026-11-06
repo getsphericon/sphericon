@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
+	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
@@ -34,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -78,6 +80,10 @@ type Handlers struct {
 	export                ExportStreams
 	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
 	customFieldRetyping *customfieldretyping.UseCase
+	// intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
+	intake *contactintake.UseCase
+	// unsubscribe records an opt-out (a use case, ADR 0102).
+	unsubscribe *unsubscriberecording.UseCase
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
@@ -139,6 +145,10 @@ type Deps struct {
 	Clock func() time.Time
 	// CustomFieldRetyping edits a Custom field (a use case, ADR 0102).
 	CustomFieldRetyping *customfieldretyping.UseCase
+	// Intake takes Contacts in from an import, with their SMS consent (a use case, ADR 0102).
+	Intake *contactintake.UseCase
+	// Unsubscribe records an opt-out (a use case, ADR 0102).
+	Unsubscribe *unsubscriberecording.UseCase
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -147,6 +157,7 @@ func NewHandlers(d Deps) *Handlers {
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
 		audit: d.Audit, export: d.Export, customFieldRetyping: d.CustomFieldRetyping,
+		intake: d.Intake, unsubscribe: d.Unsubscribe,
 	}
 }
 

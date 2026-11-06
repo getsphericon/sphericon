@@ -132,12 +132,14 @@ coding standards in `CODING_STANDARDS.md`.
   Enrollment `stepexecution`). It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a Live use check opens it with
-  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`), reads them, and changes their rows only through their functions
-  (`domainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outbound.AnonymizeContact` and the rest, then `contacts.DeleteIn`).
+  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Broadcast's count and the Enrollment's exit, and `contactintake` one per imported row for the Contact and its SMS Confirmation), reads them, and changes their rows only through their functions
+  (`domainverification` stores a check's outcome with `sendingdomains.RecordDKIM` and `RecordDMARC`; Erasure calls an erase function of each owner: `events.EraseSubject`, `visitors.EraseSubject`, `bindings.EraseSubject`, `outbound.AnonymizeContact`, `confirmations.EraseContact`, `unsubscribes.EraseSMS` and `DetachContact` and the rest, then `contacts.DeleteIn`; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, then calls `broadcasts.RecordUnsubscribe` and `automations.Exit`; an imported row upserts through `contacts.ImportIn` and confirms through `confirmations.ConfirmSMSIn`).
   Work that starts before any scope exists, such as a job given only a row's id, has its driver read
-  the row's Workspace and build the scope the use case takes. easement
+  the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
+  `workspaces.Module.LinkScope`). easement
   isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
-  the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
+  the domain module that owns it, as the SMS opt-in a START records is `confirmations.StartSMSIn`
+  for the Ingest hook), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
   when it starts, so there is no `*ent.Scoped` to take: the Second factor of a User
   (`internal/usecase/secondfactorenrolment`) and the exchange of an OAuth code or refresh token, a
@@ -150,7 +152,7 @@ coding standards in `CODING_STANDARDS.md`.
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core (`x-no-raw-client`,
-  `raw-holder-forbids`, `core`, and the whole list in `api-auth`, `ee`, `ee-edition` and `wiring`), so
+  `raw-holder-forbids`, `core`, `consent`, and the whole list in `api-auth`, `ee`, `ee-edition` and `wiring`), so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The Second factor's writes that skip its checks (the User's
@@ -158,7 +160,7 @@ coding standards in `CODING_STANDARDS.md`.
   `ClearSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
   issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
   `oauthclients.NewRefreshTokenIn`) are such items too. The tests of the operation live in the use case's own `_test` package
-  (`internal/usecase/tagdeletion`; a retype's refusal is tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
+  (`internal/usecase/tagdeletion`, `internal/usecase/unsubscriberecording`, `internal/usecase/contactintake`; a retype's refusal is tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
   rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
   the Instance state module (`internal/instancestates`), whose functions make the Instance-wide
@@ -177,6 +179,16 @@ coding standards in `CODING_STANDARDS.md`.
   (`transactionalsend`) hands its request to the Outbound send module; the Event log (`eventlog`)
   publishes a customer's Events on the bus and reads them back; the Analytics reports (`analyticsreport`) and what Needs
   attention (`needsattention`) only read.
+  The consent of a Destination (easement component `consent`: `internal/confirmations`,
+  `internal/unsubscribes` and `internal/optout`, the stops read in the Channel) sits below the
+  Broadcasts and Automations an unsubscribe touches: it may import neither the raw-client holders
+  (`automations` among them) nor a use case, and `automations.Exit` is forbidden to it by name; only
+  `unsubscriberecording` calls `broadcasts.RecordUnsubscribe` and ends the Enrollment. easement
+  does not check the Broadcast half (it resolves no symbol of `internal/broadcasts`, and `broadcasts`
+  shares the `core` component), so review does; a Telegram stop still marks its Broadcast recipient
+  row itself, in `optout.StopTelegram`.
+  `unsubscribes` is the lowest of the three: `confirmations` imports it (a START lifts the opt-out),
+  and `optout` composes both (a stop drops the Confirmation).
   One unchecked removal is called from a domain module until its use case exists:
   `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
   leave, serves User deletion in `internal/users` (core-raw). It is forbidden like the others everywhere
@@ -282,7 +294,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      with the raw client and scoped to its Workspace, and the short link `GET /c/{token}` there,
      whose token names a `tracked_links` row that is read with the raw client for the message and
      the Workspace it belongs to; signed unsubscribe/confirm tokens
-     (`internal/consent`), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
+     (`workspaces.Module.LinkScope`, which the unsubscribe page and the confirmation page build
+     the scope with; the one-click POST in `internal/server/tracking.go` scopes with the raw
+     client), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
      endpoint of the OAuth server (`internal/usecase/oauthauthorization`), where an authorization
      code or a refresh token names its grant: the use case loads the row through
      `internal/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
@@ -314,8 +328,6 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   scope names, and the command line resolves a Workspace id), `internal/memberships` (the Memberships, ADR 0061, ADR 0102:
   the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
   several Workspaces, and the notice to the Owners of a Workspace it is given by id), `internal/api/auth` (credentials, token and key lookup),
-  `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
-  so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
   ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
   looked up by its secret before any scope exists), `internal/passkeys` and `internal/recoverycodes`

@@ -27,7 +27,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	consent "github.com/getsphericon/sphericon/internal/consent"
+	confirmations "github.com/getsphericon/sphericon/internal/confirmations"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
@@ -1387,7 +1387,7 @@ func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) exte
 	}
 	return externalapiSmsConfirmation
 }
-func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) external.SmsConsent {
+func (c *ConverterImpl) SmsConsentToResource(source confirmations.ContactSMS) external.SmsConsent {
 	var externalapiSmsConsent external.SmsConsent
 	externalapiSmsConsent.Phone = optNilString(source.Phone)
 	externalapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
@@ -1408,7 +1408,7 @@ func (c *ConverterImpl) SmsFromKindToResource(source messaging.SMSFromKind) exte
 	}
 	return externalapiSmsFromKind
 }
-func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) external.SmsOptOut {
+func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) external.SmsOptOut {
 	var externalapiSmsOptOut external.SmsOptOut
 	if source != nil {
 		externalapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)

@@ -129,6 +129,12 @@ time they really happened. To segmentation a backfilled Event is an ordinary Eve
 and webhooks it is history and never a trigger.
 _Avoid_: Historical import, replay, silent event
 
+**Contact intake**:
+The **Import** of Contacts: each row upserts its Contact in a transaction of its own and, when it
+carries the evidence of SMS consent the phone gave outside sphericon, records the phone's imported
+**Confirmation** in that same transaction. The whole batch is one `contact.import` Audit entry.
+_Avoid_: Sync, bulk create
+
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,
@@ -321,6 +327,13 @@ reaches the `everything` scope. The endpoint is **method-split for safety**: `GE
 confirmation page and changes nothing, `POST` performs the opt-out — so link scanners and security
 proxies that GET every email link cannot silently unsubscribe a live subscriber.
 _Avoid_: Opt-out flag, status
+
+**Unsubscribe recording**:
+Writing an **Unsubscribe** with everything it sets off, in one transaction: from the link in a
+message or from an API call, the opt-out, the **Confirmation** an opt-out of everything drops, the
+count on the Broadcast that provoked it and the end of the Enrollment of the Automation it names.
+A stop read in the Channel itself (a STOP keyword, a blocked bot) is recorded where it is read.
+_Avoid_: Unsubscription, opt-out flow
 
 The **scope** of an unsubscribe (what the contact is opted out of) is distinct from its
 **attribution** (which sent message provoked it). A broadcast unsubscribe has scope

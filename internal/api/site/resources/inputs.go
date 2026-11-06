@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -108,7 +108,7 @@ type Inputs interface {
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
-	ConsentEvidence(source *siteapi.ConsentEvidence) consent.Evidence
+	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
 	TestAddress(source *siteapi.TestSendBroadcastInput) outbound.TestAddress
 

@@ -1,7 +1,11 @@
-// Package consent holds the use-case modules that change a destination's consent
-// state. It is shared by the public unsubscribe link and the external API so both
-// produce identical effects.
-package consent
+// Package unsubscriberecording is the use case that records an Unsubscribe (ADR 0001, ADR 0102):
+// from a signed unsubscribe link, or by an authenticated caller (the external API, an agent over
+// MCP) for an opt-out that reached the Workspace by another route. Beside the row (unsubscribes)
+// an unsubscribe counts on the Broadcast that provoked it (broadcasts) and ends the Enrollment of
+// the Automation it names (automations), in one transaction: the modules that own those rows sit
+// above the opt-out's, so the operation across them lives here. The link and the API produce
+// identical effects.
+package unsubscriberecording
 
 import (
 	"context"
@@ -11,27 +15,39 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/unsubscribes"
 )
 
-// RecordUnsubscribe writes a per-(channel, destination, sending source) opt-out
+// UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built
+// by the entry point; the use case opens the transaction the modules it calls join.
+type UseCase struct {
+	bus *events.Bus
+}
+
+// New builds the unsubscribe use case.
+func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
+
+// RecordLink writes a per-(channel, destination, sending source) opt-out
 // (ADR 0001) from a signed token — no contact-row lookup, so the opt-out records
 // even if the contact was deleted between send and click (the point of
 // destination-keying). The default in-email link is scoped to its sending source;
 // "everything" is the deliberate escalation. All effects (the row, the broadcast
 // counter, the automation enrollment exit, and the engagement event) live in one
 // transaction gated on the existence check, so a repeated POST (mailbox retry or a
-// double click) is a complete no-op and concurrent POSTs are counted exactly once.
-func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target linktarget.Unsubscribe) error {
+// double click) is a complete no-op and concurrent POSTs are counted exactly once. s is the scope
+// of the token's Workspace, which the entry point builds from it; the writes go through it as the
+// ingest actor (never audited), since no membership or API token stands behind them.
+func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarget.Unsubscribe) error {
 	dest := suppression.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
@@ -39,33 +55,22 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target linktarget.U
 	channel := target.Channel
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
 
-	return settled(bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		// The Workspace comes from the signed unsubscribe token (no membership or api
-		// token here), so this is a scope source outside the site/external/job list.
-		sc := events.Ingest(tx.Scoped(target.WorkspaceID))
+	// The Workspace comes from the signed unsubscribe token (no membership or api
+	// token here), so this is a scope source outside the site/external/job list.
+	return settled(u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
 		if target.Channel == channels.SMS {
 			return recordSMSLink(ctx, sc, target, dest)
 		}
-		exists, err := sc.Unsubscribe().Query().Where(
-			unsubscribe.ChannelEQ(channel),
-			unsubscribe.DestinationEQ(dest),
-			unsubscribe.SendingSourceEQ(target.Source),
-		).Exist(ctx)
+		exists, err := unsubscribes.Exists(ctx, sc, channel, dest, target.Source)
 		if err != nil || exists {
 			return err
 		}
-		create := sc.Unsubscribe().Create().
-			SetChannel(channel).
-			SetDestination(dest).
-			SetSendingSource(target.Source)
-		if target.ContactID != 0 {
-			create.SetContactID(target.ContactID)
-		}
+		o := unsubscribes.OptOut{Channel: channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
 		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
-			create.SetVia(unsubscribe.ViaLink)
+			o.Via = unsubscribe.ViaLink
 		}
-		if _, err := create.Save(ctx); err != nil {
+		if err := unsubscribes.Add(ctx, sc, o); err != nil {
 			return err
 		}
 
@@ -75,10 +80,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target linktarget.U
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
 		if target.Source == eligibility.SourceEverything && target.Channel == channels.Email {
-			if _, err := sc.Confirmation().Delete().Where(
-				confirmation.ChannelEQ(channels.Email),
-				confirmation.DestinationEQ(dest),
-			).Exec(ctx); err != nil {
+			if err := confirmations.Withdraw(ctx, sc, channels.Email, dest); err != nil {
 				return err
 			}
 		}
@@ -116,7 +118,7 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target linktarget.U
 // STOP (optout.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
 // goes on: its next text is Skipped like any other, and a step on another Channel still runs.
 func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string) error {
-	before, err := optout.SMSOptOut(ctx, sc, number)
+	before, err := unsubscribes.SMSOptOut(ctx, sc, number)
 	if err != nil || before != nil {
 		return err
 	}

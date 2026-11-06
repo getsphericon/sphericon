@@ -6,14 +6,16 @@ import (
 	"math"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/tags"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/confirmations"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/optout"
+	"github.com/getsphericon/sphericon/internal/tags"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // validate compiles a condition for the Acme Workspace.
@@ -275,10 +277,10 @@ func TestSMSConditions(t *testing.T) {
 
 	// Live: confirming the clean phone moves it in, opting the confirmed one out moves it out.
 	tyrell := env.DB.Scoped(fixtures.TyrellID)
-	_, err := consent.ConfirmContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixCleanID,
-		consent.Evidence{Wording: "Text me offers.", Source: "test", Brand: "Tyrell"})
+	_, err := confirmations.ConfirmContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixCleanID,
+		confirmations.Evidence{Wording: "Text me offers.", Source: "test", Brand: "Tyrell"})
 	require.NoError(t, err)
-	_, err = consent.OptOutContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixConfirmedID)
+	_, err = optout.OptOutContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixConfirmedID)
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.TyrellMatrixCleanID}, matching(fixtures.TyrellID, "has"))
 	assert.Contains(t, matching(fixtures.TyrellID, "doesNotHave"), int64(fixtures.TyrellMatrixConfirmedID))

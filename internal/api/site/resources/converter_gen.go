@@ -31,7 +31,7 @@ import (
 	bindings "github.com/getsphericon/sphericon/internal/bindings"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	consent "github.com/getsphericon/sphericon/internal/consent"
+	confirmations "github.com/getsphericon/sphericon/internal/confirmations"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -2225,7 +2225,7 @@ func (c *ConverterImpl) SmsConfirmationToResource(source *ent.Confirmation) site
 	}
 	return siteapiSmsConfirmation
 }
-func (c *ConverterImpl) SmsConsentToResource(source consent.ContactSMS) site.SmsConsent {
+func (c *ConverterImpl) SmsConsentToResource(source confirmations.ContactSMS) site.SmsConsent {
 	var siteapiSmsConsent site.SmsConsent
 	siteapiSmsConsent.Phone = optNilString(source.Phone)
 	siteapiSmsConsent.Confirmation = optNilSmsConfirmation(c, source.Confirmation)
@@ -2252,7 +2252,7 @@ func (c *ConverterImpl) SmsLengthLimitToResource(source smsrender.Limit) site.Si
 	siteapiSiteSmsLengthLimit.Ucs2 = count(source.UCS2)
 	return siteapiSiteSmsLengthLimit
 }
-func (c *ConverterImpl) SmsOptOutToResource(source *consent.SMSOptOut) site.SmsOptOut {
+func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) site.SmsOptOut {
 	var siteapiSmsOptOut site.SmsOptOut
 	if source != nil {
 		siteapiSmsOptOut.Via = c.OptOutViaToResource((*source).Via)

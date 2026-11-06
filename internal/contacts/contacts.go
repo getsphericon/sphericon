@@ -18,7 +18,6 @@ package contacts
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
-	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/contactlock"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -125,10 +123,6 @@ type UpsertInput struct {
 	SubjectID, Email, Phone        *string
 	GuessedTimeZone, GuessedLocale *string
 	CustomFields                   map[string]any
-	// SMSConsent is the evidence of SMS consent the Contact's phone gave outside sphericon (an
-	// import's consent columns): the upsert records an imported SMS Confirmation for the phone in
-	// the same transaction (ADR 0077). nil records none.
-	SMSConsent *consent.Evidence
 }
 
 // Result is the outcome of an Upsert.
@@ -136,6 +130,10 @@ type Result struct {
 	Contact *ent.Contact
 	// Created is true when no Contact matched and a new one was made.
 	Created bool
+	// Phone is the phone the upsert asserted, in E.164 (read with a country as upsertedPhone
+	// reads it), nil when it asserted none. It is not the Contact's when the Contact had one
+	// already: an upsert fills an alias key, never overwrites it.
+	Phone *string
 }
 
 // Module is the contacts module.
@@ -253,23 +251,10 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // Custom fields merge, and its Contact source stays what it was: src only names the door
 // of a Contact this call creates. ErrIdentityRequired when no alias key is given.
 func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
-	return m.upsert(ctx, s, src, in, recordChanges)
-}
-
-// changes says whether an upsert records the changes of the Custom fields it writes: every
-// upsert does but an import's.
-type changes bool
-
-const (
-	recordChanges changes = true
-	importChanges changes = false
-)
-
-func (m *Module) upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput, ch changes) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
-		res, err = upsertIn(ctx, ts, pub, src, in, ch)
+		res, err = upsertIn(ctx, ts, pub, src, in, recordChanges)
 		return err
 	})
 	if err != nil {
@@ -278,44 +263,14 @@ func (m *Module) upsert(ctx context.Context, s *ent.Scoped, src contact.Source, 
 	return res, nil
 }
 
-// BatchOutcome is the result of one item of UpsertBatch: Result on success, Err (a
-// domain error, or a storage error) otherwise.
-type BatchOutcome struct {
-	Result Result
-	Err    error
-}
+// changes says whether an upsert records the changes of the Custom fields it writes: every
+// upsert does but an import's (ImportIn).
+type changes bool
 
-// UpsertBatch upserts each item in its own transaction, in order, so a failing item
-// neither rolls back nor blocks the others; each new Contact publishes contact.created
-// with its own commit. The outcomes are parallel to items.
-//
-// A batch is an import (ADR 0022): its rows are written through an unaudited scope and
-// the whole batch is recorded as ONE contact.import entry (counts only), not one entry
-// per row. It brings earlier state rather than something happening now, so it records no
-// contact.field_changed (#897). The rows commit one by one (a failing row must not poison the others), so
-// the entry cannot share their transaction: if recording it fails the failure is
-// logged and the committed outcomes are still returned, never a 500 for an import
-// that happened.
-func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []UpsertInput) []BatchOutcome {
-	rows := events.Unaudited(s)
-	out := make([]BatchOutcome, len(items))
-	var sum ImportSummary
-	for i := range items {
-		out[i].Result, out[i].Err = m.upsert(ctx, rows, src, items[i], importChanges)
-		switch {
-		case out[i].Err != nil:
-			sum.Failed++
-		case out[i].Result.Created:
-			sum.Created++
-		default:
-			sum.Updated++
-		}
-	}
-	if err := m.RecordImport(ctx, s, sum); err != nil {
-		slog.ErrorContext(ctx, "record contact.import audit entry", "workspace_id", s.WorkspaceID(), "error", err)
-	}
-	return out
-}
+const (
+	recordChanges changes = true
+	importChanges changes = false
+)
 
 // ImportSummary counts the rows of one import.
 type ImportSummary struct {
@@ -357,6 +312,18 @@ func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	return upsertIn(ctx, s, pub, src, in, recordChanges)
 }
 
+// ImportIn is UpsertIn for one row of an import (ADR 0022), inside a transaction the caller
+// already owns: it brings earlier state rather than something happening now, so it records no
+// contact.field_changed (#897). Its refusals are the domain errors Upsert returns (ErrEmailTaken
+// and its kin, ErrNotFound).
+func ImportIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
+	res, err := upsertIn(ctx, s, pub, src, in, importChanges)
+	if err != nil {
+		return Result{}, domainError(err)
+	}
+	return res, nil
+}
+
 func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput, ch changes) (Result, error) {
 	in = in.normalized()
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
@@ -381,10 +348,7 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 		if err != nil {
 			return Result{}, err
 		}
-		if err := confirmSMS(ctx, s, pub, c, in); err != nil {
-			return Result{}, err
-		}
-		return Result{Contact: c}, nil
+		return Result{Contact: c, Phone: in.Phone}, nil
 	}
 
 	q := s.Contact().Create().
@@ -408,25 +372,7 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 			return Result{}, err
 		}
 	}
-	if err := confirmSMS(ctx, s, pub, c, in); err != nil {
-		return Result{}, err
-	}
-	return Result{Contact: c, Created: true}, nil
-}
-
-// confirmSMS records the SMS consent an upsert carries for the phone it names, or the Contact's
-// own when it names none: the evidence was collected for that number. Consent without a phone is
-// refused, so an import row never drops it silently.
-func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, c *ent.Contact, in UpsertInput) error {
-	if in.SMSConsent == nil {
-		return nil
-	}
-	number := lo.CoalesceOrEmpty(lo.FromPtr(in.Phone), lo.FromPtr(c.Phone))
-	if number == "" {
-		return consent.ErrNoPhone
-	}
-	_, err := consent.ConfirmSMSIn(ctx, s, pub, number, *in.SMSConsent)
-	return err
+	return Result{Contact: c, Created: true, Phone: in.Phone}, nil
 }
 
 // withGuesses is the Core with the browser's guesses taking a time zone or locale the Core leaves

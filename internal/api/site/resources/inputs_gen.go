@@ -15,7 +15,7 @@ import (
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	consent "github.com/getsphericon/sphericon/internal/consent"
+	confirmations "github.com/getsphericon/sphericon/internal/confirmations"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -316,14 +316,14 @@ func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts
 	}
 	return broadcastsOrder
 }
-func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) consent.Evidence {
-	var consentEvidence consent.Evidence
+func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
 	if source != nil {
-		consentEvidence.Wording = (*source).Wording
-		consentEvidence.Source = (*source).Source
-		consentEvidence.Brand = (*source).Brand
+		confirmationsEvidence.Wording = (*source).Wording
+		confirmationsEvidence.Source = (*source).Source
+		confirmationsEvidence.Brand = (*source).Brand
 	}
-	return consentEvidence
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes

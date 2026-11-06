@@ -1,7 +1,9 @@
 // Package optout is where a person's stop is read and recorded in the Channel itself (ADR 0077):
 // the STOP and START keywords every text Channel shares, and the Telegram and SMS opt-outs that
 // every way of stopping there (a keyword, the unsubscribe button or link, blocking the bot, a send
-// the provider refuses) ends in.
+// the provider refuses, one recorded by hand) ends in. It records each through the owners of the
+// rows: the Unsubscribe through unsubscribes, and the SMS Confirmation a stop drops through
+// confirmations.
 package optout
 
 import "strings"

@@ -5,53 +5,18 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/unsubscribes"
 )
 
-// EraseSMS is the SMS opt-out part of a Contact's Erasure (ADR 0021): the opt-outs of the Contact
-// on sms and those of its number keep refusing the number, but keyed by its hash (phone.Hash)
-// instead of the number. A hashed opt-out of the same scope that already stands (a person erased
-// before with the number) makes the number's own redundant, so that one goes. number is "" for a
-// Contact with no phone. Run it inside the Erasure's transaction, before the Contact reference is
-// cleared.
-func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
-	match := []predicate.Unsubscribe{unsubscribe.ContactID(contactID)}
-	if number != "" {
-		match = append(match, unsubscribe.DestinationEQ(number))
-	}
-	rows, err := s.Unsubscribe().Query().
-		Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Or(match...)).
-		All(ctx)
-	if err != nil {
-		return fmt.Errorf("find sms opt-outs: %w", err)
-	}
-	for _, u := range rows {
-		hashed := phone.Hash(u.Destination)
-		twin, err := s.Unsubscribe().Query().Where(
-			unsubscribe.ChannelEQ(channels.SMS),
-			unsubscribe.DestinationEQ(hashed),
-			unsubscribe.SendingSourceEQ(u.SendingSource),
-		).Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("find hashed opt-out: %w", err)
-		}
-		if twin {
-			err = s.Unsubscribe().DeleteOneID(u.ID).Exec(ctx)
-		} else {
-			err = s.Unsubscribe().UpdateOneID(u.ID).SetDestination(hashed).Exec(ctx)
-		}
-		if err != nil {
-			return fmt.Errorf("hash sms opt-out: %w", err)
-		}
-	}
-	return nil
-}
+// ErrSMSSource refuses a hand-recorded SMS opt-out of a narrower source: it is Channel-wide.
+var ErrSMSSource = validation.RefuseField("sendingSource", "consent: an sms opt-out is for everything", i18n.ErrorsSendingSourceSms)
 
 // StopSMS records the Channel-wide opt-out of a phone number (scope `everything`, Channel `sms`,
 // the number in E.164): no text of the Workspace goes to it, whichever sender, Broadcast or
@@ -62,65 +27,54 @@ func EraseSMS(ctx context.Context, s *ent.Scoped, contactID int64, number string
 // via is how the person stopped, which the Contact card shows. Run it inside the transaction s is
 // bound to.
 func StopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) error {
-	exists, err := s.Unsubscribe().Query().Where(smsEverything(number)...).Exist(ctx)
-	if err != nil {
-		return fmt.Errorf("find opt-out: %w", err)
+	added, err := unsubscribes.AddSMS(ctx, s, number, via)
+	if err != nil || !added {
+		return err
 	}
-	if exists {
-		return nil
-	}
-	create := s.Unsubscribe().Create().
-		SetChannel(channels.SMS).
-		SetDestination(number).
-		SetSendingSource(eligibility.SourceEverything).
-		SetVia(via)
-	holder, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
-	switch {
-	case err == nil:
-		create.SetContactID(holder)
-	case !ent.IsNotFound(err):
-		return fmt.Errorf("find the number's contact: %w", err)
-	}
-	if err := create.Exec(ctx); err != nil {
-		return fmt.Errorf("record opt-out: %w", err)
-	}
-	if _, err := s.Confirmation().Delete().Where(
-		confirmation.ChannelEQ(channels.SMS),
-		confirmation.DestinationEQ(number),
-	).Exec(ctx); err != nil {
+	if err := confirmations.Withdraw(ctx, s, channels.SMS, number); err != nil {
 		return fmt.Errorf("drop confirmation: %w", err)
 	}
 	return nil
 }
 
-// LiftSMS lifts the Channel-wide opt-out of a phone number: the person texted START. Nothing to
-// lift is a no-op. It records no consent: the START's Confirmation is the caller's to record.
-func LiftSMS(ctx context.Context, s *ent.Scoped, number string) error {
-	if _, err := s.Unsubscribe().Delete().Where(smsEverything(number)...).Exec(ctx); err != nil {
-		return fmt.Errorf("lift opt-out: %w", err)
-	}
-	return nil
-}
-
-// SMSOptOut is the Channel-wide opt-out of a phone number, nil when it has none.
-func SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscribe, error) {
-	u, err := s.Unsubscribe().Query().Where(smsEverything(number)...).Order(ent.Asc(unsubscribe.FieldID)).First(ctx)
-	if ent.IsNotFound(err) {
-		return nil, nil
-	}
+// SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
+// call): the number gets no more texts, whichever sender (StopSMS). A manual opt-out is
+// Channel-wide, so only the `everything` source is accepted. Idempotent.
+func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
+	number, err := unsubscribes.SMSNumber(destination)
 	if err != nil {
-		return nil, fmt.Errorf("find opt-out: %w", err)
+		return nil, err
 	}
-	return u, nil
+	if source != eligibility.SourceEverything {
+		return nil, ErrSMSSource
+	}
+	if err := settled(bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return StopSMS(ctx, ts, number, unsubscribe.ViaManual)
+	})); err != nil {
+		return nil, err
+	}
+	return unsubscribes.SMSOptOut(ctx, s, number)
 }
 
-// smsEverything is the Channel-wide opt-out of the number: kept by the number, or by its hash once
-// the Contact whose phone it was is erased (EraseSMS), so a STOP, a START and the Contact card find
-// an erased person's opt-out when the number comes back.
-func smsEverything(number string) []predicate.Unsubscribe {
-	return []predicate.Unsubscribe{
-		unsubscribe.ChannelEQ(channels.SMS),
-		unsubscribe.DestinationIn(number, phone.Hash(number)),
-		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
+// OptOutContactSMS records an SMS opt-out of a Contact's phone that reached the Workspace by
+// another route (SMSUnsubscribe) and returns the phone's SMS consent after it.
+func OptOutContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64) (confirmations.ContactSMS, error) {
+	number, err := confirmations.ContactPhone(ctx, s, contactID)
+	if err != nil {
+		return confirmations.ContactSMS{}, err
 	}
+	if _, err := SMSUnsubscribe(ctx, bus, s, number, eligibility.SourceEverything); err != nil {
+		return confirmations.ContactSMS{}, err
+	}
+	return confirmations.ReadContactSMS(ctx, s, contactID)
+}
+
+// settled reports a write that lost to a database constraint as done: the Workspace
+// is gone (nothing is left to record) or a concurrent request recorded the same row
+// first. Any other failure is a real one and is returned.
+func settled(err error) error {
+	if ent.IsConstraintError(err) {
+		return nil
+	}
+	return err
 }

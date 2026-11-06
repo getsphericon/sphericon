@@ -8,7 +8,7 @@ version: 1
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
 # that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
-# `raw-holder-forbids` (the runner, core-raw), `core`; api-auth, ee, ee-edition and wiring take this
+# `raw-holder-forbids` (the runner, core-raw), `core`, `consent`; api-auth, ee, ee-edition and wiring take this
 # list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion in `internal/users` (core-raw): core-raw alone may call it, so
 # it is not in `raw-holder-forbids` but in `raw-driver-forbids` (the runner, identity-base). Its definition is not a use; a call even inside its own module fails, and tests are
@@ -214,7 +214,6 @@ components:
         internal/automations,
         internal/bindings,
         internal/capturedmessages,
-        internal/consent,
         internal/consentrecords,
         internal/integrations,
         internal/instancestates,
@@ -245,6 +244,12 @@ components:
   # a Workspace, ask a Permission or tell the Owners something, so these two import no domain
   # module; both hold the raw client (the closed list of docs/architecture.md, Workspace scoping).
   identity-base: { in: [internal/workspaces, internal/memberships] }
+
+  # The consent of a Destination (ADR 0102): the Confirmation and Unsubscribe owners and the stops
+  # read in the Channel itself. They sit in the contacts context, below the Broadcasts and
+  # Automations an unsubscribe also touches; counting it on the Broadcast and ending the Enrollment
+  # is the unsubscribe use case's (internal/usecase/unsubscriberecording).
+  consent: { in: [internal/confirmations, internal/unsubscribes, internal/optout] }
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
@@ -287,12 +292,13 @@ rules:
   api-site:
     <<: *no-raw-client
     may_depend_on:
-      [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase, usecase-raw]
+      [api-auth, api-problem, core, core-raw, identity-base, consent, gen-surfaces, usecase, usecase-raw]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase]
+    may_depend_on:
+      [api-auth, api-problem, core, core-raw, identity-base, consent, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
@@ -316,7 +322,7 @@ rules:
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
   core:
-    may_depend_on: [core-raw, identity-base]
+    may_depend_on: [core-raw, identity-base, consent]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
@@ -391,9 +397,37 @@ rules:
       - *apitokens-rotate-connection
       - *oauthclients-new-refresh-token-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
+  consent:
+    may_depend_on: [core]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a domain module takes a *ent.Scoped; a signed link's scope comes from workspaces.Module.LinkScope (docs/architecture.md, Workspace scoping)
+      - name: github.com/getsphericon/sphericon/internal/automations.Exit
+        because: ending the Enrollment an unsubscribe names is the unsubscribe use case's (internal/usecase/unsubscriberecording), in the transaction of the opt-out; the consent modules sit below the Automations (ADR 0102)
+      - *tags-delete-in
+      - *leave-doomed-workspace-in
+      - *contacts-update-custom-field-in
+      - *integrations-delete-in
+      - *sendingdomains-delete-in
+      - *sendingdomains-record-dkim
+      - *sendingdomains-record-dmarc
+      - *contacts-delete-in
+      - *users-set-pending-second-factor
+      - *users-accept-second-factor-step-in
+      - *users-confirm-second-factor-in
+      - *users-clear-second-factor-in
+      - *recoverycodes-replace-in
+      - *recoverycodes-delete-in
+      - *passkeys-delete-all-in
+      - *apitokens-issue-connection
+      - *apitokens-rotate-connection
+      - *oauthclients-new-refresh-token-in
+    forbid_external: *no-container
+    because: the consent of a Destination sits in the contacts context (ADR 0102), below the Automations it may not import; an operation that also counts on a Broadcast or ends an Enrollment is a use case above it
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
-    may_depend_on: [core, core-raw, identity-base, gen-telemetry]
+    may_depend_on: [core, core-raw, identity-base, consent, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client

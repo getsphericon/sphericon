@@ -1,6 +1,7 @@
 // Package linktarget names what an unsubscribe link and a confirmation link carry: the opt-out
 // or the Confirmation they record, signed into the link's token by internal/tracking and recorded
-// by internal/consent. It sits below both, so recording one does not import the tokens.
+// by internal/usecase/unsubscriberecording and internal/confirmations. It sits below both, so
+// recording one does not import the tokens.
 package linktarget
 
 import "github.com/getsphericon/sphericon/internal/kernel/channels"

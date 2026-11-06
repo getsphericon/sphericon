@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automationsteps"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -131,7 +132,10 @@ type Inputs interface {
 	// goverter:map . Core
 	// goverter:ignore GuessedTimeZone GuessedLocale
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
-	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.UpsertInput
+	// An import row: the Contact it asserts and the SMS consent it carries.
+	// goverter:map . UpsertInput
+	ContactIntake(source externalapi.UpsertContactInput) contactintake.Input
+	ContactIntakes(source []externalapi.UpsertContactInput) []contactintake.Input
 
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *externalapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
@@ -185,14 +189,14 @@ type Inputs interface {
 	ConsentChannel(source externalapi.ConsentChannel) channels.Channel
 
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
-	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) consent.Evidence
-	ConsentEvidence(source externalapi.ConsentEvidence) consent.Evidence
+	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
+	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
 	TestAddress(source *externalapi.TestSendBroadcastInput) outbound.TestAddress
 }
 
 // smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
-func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *consent.Evidence {
+func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evidence {
 	v, ok := o.Get()
 	if !ok {
 		return nil

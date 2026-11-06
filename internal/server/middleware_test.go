@@ -271,7 +271,7 @@ func TestTheCrossOriginGuardTrustsTheAppAndAllowlistedOrigins(t *testing.T) {
 }
 
 func TestAnAppURLThatIsNoOriginFailsTheServer(t *testing.T) {
-	_, err := server.New(&config.Config{AppURL: "not a url"}, nil, nil, nil, apisite.Deps{}, nil, ratelimit.New(config.RateLimits{}), http.NotFoundHandler(), http.NotFoundHandler(), nil)
+	_, err := server.New(&config.Config{AppURL: "not a url"}, nil, nil, nil, &apisite.Deps{}, nil, ratelimit.New(config.RateLimits{}), http.NotFoundHandler(), http.NotFoundHandler(), nil)
 
 	assert.ErrorContains(t, err, "trusted origin")
 }

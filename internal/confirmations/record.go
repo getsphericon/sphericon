@@ -1,4 +1,10 @@
-package consent
+// Package confirmations is the one place a Confirmation (confirmed opt-in) is written (ADR 0013,
+// ADR 0077, ADR 0102): the derived destination-keyed row with the immutable confirmed Event of its
+// Channel. It records the consent a double opt-in link, a START texted to the Workspace or the
+// evidence an API client collected gives, reads the SMS consent of a Contact's phone, and drops a
+// Confirmation an opt-out of everything ends. On SMS the opt-in and the opt-out are one number's:
+// a START lifts the opt-out (unsubscribes) as it records the Confirmation.
+package confirmations
 
 import (
 	"context"
@@ -115,4 +121,26 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	default:
 		return nil, fmt.Errorf("record confirmation: no consent Event on channel %q", g.channel)
 	}
+}
+
+// Withdraw deletes the Confirmation of destination on channel: an opt-out of everything
+// invalidates it (ADR 0013, ADR 0077), so stale consent never silently reactivates and only a new
+// Confirmation makes the destination reachable again. The immutable confirmed Event stays as proof
+// ("confirmed at T1, left at T2"). Run it inside the transaction s is bound to.
+func Withdraw(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
+	_, err := s.Confirmation().Delete().Where(
+		confirmation.ChannelEQ(channel),
+		confirmation.DestinationEQ(destination),
+	).Exec(ctx)
+	return err
+}
+
+// settled reports a write that lost to a database constraint as done: the Workspace
+// is gone (nothing is left to record) or a concurrent request recorded the same row
+// first. Any other failure is a real one and is returned.
+func settled(err error) error {
+	if ent.IsConstraintError(err) {
+		return nil
+	}
+	return err
 }

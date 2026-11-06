@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -21,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
 
 // pixelGIF is a 1x1 transparent GIF served by the open-tracking endpoint.
@@ -56,7 +56,7 @@ var pixelGIF = []byte{
 //
 // The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter, detector *machine.Detector, appURL string) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *machine.Detector, appURL string) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
@@ -142,7 +142,7 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 		// Performs the opt-out — the target of the mailbox provider's one-click POST
 		// (List-Unsubscribe=One-Click body) and the confirm page's button. No page is
 		// returned; the SPA transitions its UI client-side on 204.
-		if err := consent.RecordUnsubscribe(r.Context(), bus, target); err != nil {
+		if err := unsubscribe.RecordLink(r.Context(), client.Scoped(target.WorkspaceID), target); err != nil {
 			logging.FromContext(r.Context()).Error("tracking: unsubscribe failed", "workspace_id", target.WorkspaceID, "contact_id", target.ContactID, "source", target.Source, "err", err)
 			// Not a 204: a mailbox provider must see the failure and retry, and a
 			// person must not be told they are unsubscribed when nothing was recorded.

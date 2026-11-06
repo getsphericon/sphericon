@@ -10,13 +10,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/visitors"
 )
 
@@ -83,7 +83,7 @@ func eraseVisitors(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // eraseConfirmations deletes the Confirmation and its evidence; losing it fails safe
 // (re-confirmation).
 func eraseConfirmations(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	return consent.EraseConfirmations(ctx, s, t.ContactID, t.Phone)
+	return confirmations.EraseContact(ctx, s, t.ContactID, t.Phone)
 }
 
 func eraseRuns(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
@@ -95,10 +95,10 @@ func eraseRuns(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPu
 // lifted Suppression honors nothing, so it goes with the Contact. On sms the rows keep refusing
 // the number by its hash, never by the number itself (ADR 0021): the phone leaves only its hash.
 func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := optout.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
+	if err := unsubscribes.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	if err := consent.DetachUnsubscribes(ctx, s, t.ContactID); err != nil {
+	if err := unsubscribes.DetachContact(ctx, s, t.ContactID); err != nil {
 		return err
 	}
 	return suppression.EraseContact(ctx, s, t.ContactID, t.Phone)

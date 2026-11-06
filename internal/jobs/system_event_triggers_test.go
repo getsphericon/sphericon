@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -150,7 +150,7 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 
 	onSMS := router.deliver(t)
 	afterSMS := runs()
-	require.NoError(t, consent.RecordConfirmation(ctx, env.Bus, linktarget.Confirmation{
+	require.NoError(t, confirmations.RecordConfirmation(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
 		Destination: fixtures.ContactTexterEmail, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactTexterID,
 	}, "203.0.113.10"))
 	onEmail := router.deliver(t)

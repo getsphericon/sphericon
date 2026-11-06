@@ -60,6 +60,13 @@ func (m *Module) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 	return events.Ingest(m.client.Scoped(id)), nil
 }
 
+// LinkScope is the scoped client of the Workspace a signed unsubscribe or confirmation link
+// names: the Workspace comes from the token (no membership or API token stands behind it), so its writes
+// are the ingest actor's, never audited.
+func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
+	return events.Ingest(m.client.Scoped(workspaceID))
+}
+
 // Update renames the scoped Workspace and, when postalAddress is non-nil,
 // sets (or clears, with "") its postal address. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is

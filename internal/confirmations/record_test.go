@@ -1,4 +1,4 @@
-package consent_test
+package confirmations_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 )
 
 var provenances = []confirmation.Provenance{
@@ -18,9 +18,9 @@ var provenances = []confirmation.Provenance{
 // The order of evidence (ADR 0077): the person's own act first, then consent collected elsewhere
 // with its evidence, then a prior basis an admin asserted.
 func TestTheStrongestProvenanceIsThePersonsOwnAct(t *testing.T) {
-	assert.True(t, consent.Stronger(confirmation.ProvenanceDoubleOptIn, confirmation.ProvenanceKeyword))
-	assert.True(t, consent.Stronger(confirmation.ProvenanceKeyword, confirmation.ProvenanceImported))
-	assert.True(t, consent.Stronger(confirmation.ProvenanceImported, confirmation.ProvenanceGrandfathered))
+	assert.True(t, confirmations.Stronger(confirmation.ProvenanceDoubleOptIn, confirmation.ProvenanceKeyword))
+	assert.True(t, confirmations.Stronger(confirmation.ProvenanceKeyword, confirmation.ProvenanceImported))
+	assert.True(t, confirmations.Stronger(confirmation.ProvenanceImported, confirmation.ProvenanceGrandfathered))
 }
 
 // Stronger is a strict total order over the provenances: of two different ones exactly one is
@@ -31,9 +31,9 @@ func TestStrongerIsAStrictTotalOrder(t *testing.T) {
 		pick := rapid.SampledFrom(provenances)
 		a, b, c := pick.Draw(t, "a"), pick.Draw(t, "b"), pick.Draw(t, "c")
 
-		aOverB, bOverA := consent.Stronger(a, b), consent.Stronger(b, a)
-		chain := aOverB && consent.Stronger(b, c)
-		ac := consent.Stronger(a, c)
+		aOverB, bOverA := confirmations.Stronger(a, b), confirmations.Stronger(b, a)
+		chain := aOverB && confirmations.Stronger(b, c)
+		ac := confirmations.Stronger(a, c)
 
 		assert.Equal(t, a != b, aOverB != bOverA, "of two different provenances exactly one is stronger, of one none")
 		assert.False(t, chain && !ac, "%s > %s > %s implies %s > %s", a, b, c, a, c)

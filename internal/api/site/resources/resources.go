@@ -35,7 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/bindings"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/confirmations"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -425,10 +425,10 @@ type Converter interface {
 	BindingToResource(source bindings.Chat) siteapi.SiteBindingResource
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
-	SmsConsentToResource(source consent.ContactSMS) siteapi.SmsConsent
+	SmsConsentToResource(source confirmations.ContactSMS) siteapi.SmsConsent
 	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
-	SmsOptOutToResource(source *consent.SMSOptOut) siteapi.SmsOptOut
+	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
 	OptOutViaToResource(source unsubscribe.Via) siteapi.OptOutVia
 	// goverter:map CreatedAt ConfirmedAt
@@ -820,7 +820,7 @@ func optNilSmsConfirmation(c Converter, v *ent.Confirmation) siteapi.OptNilSmsCo
 }
 
 // optNilSmsOptOut is absent exactly when the phone has no SMS opt-out.
-func optNilSmsOptOut(c Converter, v *consent.SMSOptOut) siteapi.OptNilSmsOptOut {
+func optNilSmsOptOut(c Converter, v *confirmations.SMSOptOut) siteapi.OptNilSmsOptOut {
 	if v == nil {
 		return siteapi.OptNilSmsOptOut{}
 	}

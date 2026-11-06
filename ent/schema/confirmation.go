@@ -21,7 +21,7 @@ import (
 // On email it is consulted only when the workspace opts into confirmed opt-in; single-opt-in
 // workspaces never read it. On sms it is always required (ADR 0077). A deliberate "everything"
 // unsubscribe deletes the row (stale consent never silently reactivates); the Event log is
-// preserved. A Confirmation is replaced only by a stronger one (consent.Stronger).
+// preserved. A Confirmation is replaced only by a stronger one (confirmations.Stronger).
 type Confirmation struct {
 	ent.Schema
 }

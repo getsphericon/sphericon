@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 )
 
 func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
@@ -24,7 +25,7 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	require.NoError(t, err)
 	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.UpsertInput{Email: new("door-api@example.com")})
 	require.NoError(t, err)
-	batch := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.UpsertInput{{Email: new("door-batch@example.com")}})
+	batch := contactintake.New(env.Bus, m).UpsertBatch(context.Background(), acme, contact.SourceAPI, []contactintake.Input{{Email: new("door-batch@example.com")}})
 	require.NoError(t, batch[0].Err)
 
 	assert.Equal(t, contact.SourceManual, lo.FromPtr(byHand.Source))

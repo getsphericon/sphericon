@@ -53,7 +53,7 @@ import (
 // the site, external and collect handlers get none (ADR 0017). schema answers the development
 // schema guard (SchemaGuard). limiter is the process's request budgets, shared with the
 // internal listener.
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site apisite.Deps, detector *machine.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *machine.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
@@ -131,7 +131,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public engagement endpoints (open pixel, click redirect, unsubscribe, a short tracked link).
-	trackingH := trackingHandler(client, bus, site.Tracker, limiter, detector, cfg.AppURL)
+	trackingH := trackingHandler(client, bus, site.Tracker, site.Unsubscribe, limiter, detector, cfg.AppURL)
 	mux.Handle("/e/", trackingH)
 	mux.Handle("/c/", trackingH)
 

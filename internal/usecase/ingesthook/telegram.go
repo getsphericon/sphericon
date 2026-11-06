@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/optout"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/unsubscribes"
 )
 
 // telegram reads what happens at a bot (ADR 0076, ADR 0077): the messages people send it, the
@@ -38,7 +39,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 	}
 	switch command(m.Text) {
 	case "/start":
-		return optout.LiftTelegram(ctx, tx.Scoped, m.Destination)
+		return unsubscribes.LiftTelegram(ctx, tx.Scoped, m.Destination)
 	case "/stop":
 		return t.stop(ctx, tx, m, events.UnsubscribedByKeyword, nil)
 	}
@@ -96,7 +97,7 @@ func (telegram) stop(ctx context.Context, tx Tx, m preset.InboundMessage, via st
 func (telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.ReachabilityChange) error {
 	switch {
 	case c.Reachable:
-		return optout.LiftTelegram(ctx, tx.Scoped, c.Destination)
+		return unsubscribes.LiftTelegram(ctx, tx.Scoped, c.Destination)
 	case c.Reason == preset.Deactivated:
 		return bindings.Remove(ctx, tx.Scoped, tx.Pub, tx.Integration, c.Destination, tx.DedupKey(c.ID))
 	default:

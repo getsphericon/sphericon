@@ -10,7 +10,7 @@ import (
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
-	consent "github.com/getsphericon/sphericon/internal/consent"
+	confirmations "github.com/getsphericon/sphericon/internal/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
@@ -21,6 +21,7 @@ import (
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	templates "github.com/getsphericon/sphericon/internal/templates"
+	contactintake "github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	eventlog "github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -199,14 +200,14 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
 	return broadcastsListFilter
 }
-func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) consent.Evidence {
-	var consentEvidence consent.Evidence
+func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
 	if source != nil {
-		consentEvidence.Wording = (*source).Wording
-		consentEvidence.Source = (*source).Source
-		consentEvidence.Brand = (*source).Brand
+		confirmationsEvidence.Wording = (*source).Wording
+		confirmationsEvidence.Source = (*source).Source
+		confirmationsEvidence.Brand = (*source).Brand
 	}
-	return consentEvidence
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Channel {
 	var channelsChannel channels.Channel
@@ -222,12 +223,12 @@ func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Cha
 	}
 	return channelsChannel
 }
-func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) consent.Evidence {
-	var consentEvidence consent.Evidence
-	consentEvidence.Wording = source.Wording
-	consentEvidence.Source = source.Source
-	consentEvidence.Brand = source.Brand
-	return consentEvidence
+func (c *InputsImpl) ConsentEvidence(source external.ConsentEvidence) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
+	confirmationsEvidence.Wording = source.Wording
+	confirmationsEvidence.Source = source.Source
+	confirmationsEvidence.Brand = source.Brand
+	return confirmationsEvidence
 }
 func (c *InputsImpl) ContactAttributes(source external.CreateContactInput) contacts.Attributes {
 	var contactsAttributes contacts.Attributes
@@ -253,6 +254,22 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
+func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contactintake.Input {
+	var contactintakeInput contactintake.Input
+	contactintakeInput.UpsertInput = c.ContactUpsert(source)
+	contactintakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
+	return contactintakeInput
+}
+func (c *InputsImpl) ContactIntakes(source []external.UpsertContactInput) []contactintake.Input {
+	var contactintakeInputList []contactintake.Input
+	if source != nil {
+		contactintakeInputList = make([]contactintake.Input, len(source))
+		for i := 0; i < len(source); i++ {
+			contactintakeInputList[i] = c.ContactIntake(source[i])
+		}
+	}
+	return contactintakeInputList
+}
 func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
@@ -274,18 +291,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
-	contactsUpsertInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
 	return contactsUpsertInput
-}
-func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.UpsertInput {
-	var contactsUpsertInputList []contacts.UpsertInput
-	if source != nil {
-		contactsUpsertInputList = make([]contacts.UpsertInput, len(source))
-		for i := 0; i < len(source); i++ {
-			contactsUpsertInputList[i] = c.ContactUpsert(source[i])
-		}
-	}
-	return contactsUpsertInputList
 }
 func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
