@@ -18,7 +18,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entstaffmember "github.com/getsphericon/sphericon/ent/staffmember"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -62,7 +62,7 @@ type Config struct {
 	// Attempts counts failed logins per address (ADR 0025), under the Staff member's own
 	// kind so a User of the same address never shares a counter. It is required with a
 	// secret (Validate): a missing counter would leave the login unthrottled.
-	Attempts *accounts.Attempts
+	Attempts *throttle.Attempts
 }
 
 // SignIn reports whether the Staff sign-in is on: the Instance has a Staff member secret.
@@ -131,7 +131,7 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 	if m.sessions == nil {
 		return "", ErrSignInOff
 	}
-	email = accounts.NormalizeEmail(email)
+	email = throttle.NormalizeEmail(email)
 	if email == "" {
 		return "", errors.New("staff: email is required")
 	}
@@ -166,7 +166,7 @@ func (m *Module) EndSessions(ctx context.Context, id int64) error {
 // re-enrol at next login. ErrNotFound for an unknown email.
 func (m *Module) ResetTOTP(ctx context.Context, email string) error {
 	n, err := m.ent.StaffMember.Update().
-		Where(entstaffmember.Email(accounts.NormalizeEmail(email))).
+		Where(entstaffmember.Email(throttle.NormalizeEmail(email))).
 		SetTotpSecretEncrypted("").
 		ClearTotpConfirmedAt().
 		SetTotpLastStep(0).

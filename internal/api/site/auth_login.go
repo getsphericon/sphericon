@@ -9,10 +9,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/login"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteAuthLogin is the one route that starts a session (ADR 0020). It consults the
@@ -42,7 +43,7 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			Challenge: siteapi.NewOptString(res.Challenge),
 		}}, nil
 	case login.Authenticated:
-		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPassword, auth.Session{Method: auth.MethodPassword})
+		cookie, err := h.issueSession(ctx, res.Principal, users.LoginPassword, auth.Session{Method: auth.MethodPassword})
 		if err != nil {
 			return nil, err
 		}
@@ -55,27 +56,27 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 }
 
 // loginStore is the site's side of the login module's seam: Users by address.
-type loginStore struct{ accounts *accounts.Accounts }
+type loginStore struct{ users *users.Module }
 
 func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*ent.User], bool, error) {
-	u, err := s.accounts.UserByLoginAddress(ctx, address)
+	u, err := s.users.UserByLoginAddress(ctx, address)
 	if ent.IsNotFound(err) {
 		return login.Account[*ent.User]{}, false, nil
 	}
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: accounts.HasSecondFactor(u)}, true, nil
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: users.HasSecondFactor(u)}, true, nil
 }
 
 // newLogin builds the login module over the site's adapter (ADR 0020, 0030).
 func (h *Handlers) newLogin() *login.Module[*ent.User] {
 	cfg := login.Config[*ent.User]{
-		Throttle:  h.attempts.For(accounts.KindLogin),
-		Store:     loginStore{h.accounts},
+		Throttle:  h.attempts.For(throttle.KindLogin),
+		Store:     loginStore{h.users},
 		Passwords: h.passwords,
 		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
-			return h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
+			return h.mintLoginChallenge(ctx, u, users.LoginPassword, time.Time{})
 		},
 		Parse:         h.parseLoginChallenge,
 		Verify:        h.verifyLoginCode,
@@ -96,7 +97,7 @@ func (h *Handlers) issueSession(ctx context.Context, u *ent.User, method string,
 	if err != nil {
 		return nil, err
 	}
-	if err := h.accounts.RecordLogin(ctx, u, method); err != nil {
+	if err := h.users.RecordLogin(ctx, u, method); err != nil {
 		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
 	}
 	return cookie, nil

@@ -1,7 +1,7 @@
 // Package signin is the Sign-in provider registry and the OAuth/OIDC round trip of a
 // provider sign-in (ADR 0048). It knows nothing of Users: it starts a flow, turns the
 // provider's answer into a Profile and says whether the provider's proof of the email
-// address is accepted. The sign-in decision itself lives in internal/accounts.
+// address is accepted. The sign-in decision itself lives in internal/users.
 //
 // A provider is one entry of the catalog (name, endpoints, scopes, how its Profile is read
 // and how far its email is trusted), so adding a provider is adding an entry. An entry is

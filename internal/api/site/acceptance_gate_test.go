@@ -10,10 +10,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // The acceptance gate on /site (ADR 0062). With the fixture terms in effect, every fixture User
@@ -189,7 +189,7 @@ func TestARequiredItemAddedAfterUsersExistGatesThem(t *testing.T) {
 func TestAnOwnerMadeByTheOperatorIsGated(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	_, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
+	_, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	refused := send(t, env, "operator@example.com", http.MethodGet, "/site/workspaces", "")

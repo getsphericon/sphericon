@@ -1,5 +1,5 @@
 # Pending invitations on workspace 1 (Acme). The raw tokens are documented here;
-# only their SHA-256 hash is stored (see internal/accounts.HashInviteToken).
+# only their SHA-256 hash is stored (see internal/invitations.HashInviteToken).
 #
 # id 1: valid pending invite. raw token = "inv_fixture_token_acme"
 - id: 1 # fixture: InvitationAcmePending

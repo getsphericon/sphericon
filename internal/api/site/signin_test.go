@@ -16,10 +16,10 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 const (
@@ -314,7 +314,7 @@ func TestSigninANewPersonGetsAnAccountOnASelfHostedInstance(t *testing.T) {
 	spaces, err := env.SiteActor(t, newcomer.Email).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
+	assert.Equal(t, users.FirstWorkspaceName, spaces[0].Name)
 }
 
 // samIdentity is Sam, whose account has a Linked identity and an enrolled Second factor.

@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -22,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -173,7 +173,7 @@ type Inputs interface {
 
 	// The inviting User is the session's, not the request's: the handler sets it.
 	// goverter:ignore InvitedBy
-	InvitationCreate(source *siteapi.SiteCreateInvitationInput) accounts.InviteInput
+	InvitationCreate(source *siteapi.SiteCreateInvitationInput) invitations.InviteInput
 
 	// Every answer was checked against the contract's enums when the request was decoded.
 	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurvey.Answers

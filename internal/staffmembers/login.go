@@ -6,15 +6,16 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	entstaffmember "github.com/getsphericon/sphericon/ent/staffmember"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/otpcode"
 	"github.com/getsphericon/sphericon/internal/login"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // loginKind is the Kind under which a Staff member's failed logins are counted: its own,
 // so a User of the same address never shares a counter.
-const loginKind = accounts.KindStaffLogin
+const loginKind = throttle.KindStaffLogin
 
 // staffStore is the Staff member's side of the login module's seam.
 type staffStore struct{ m *Module }
@@ -33,9 +34,9 @@ func (s staffStore) Lookup(ctx context.Context, address string) (login.Account[*
 }
 
 // newLogin builds the login module over the Staff member's adapter (ADR 0020, 0026).
-func (m *Module) newLogin(throttle login.Throttle) *login.Module[*ent.StaffMember] {
+func (m *Module) newLogin(counter login.Throttle) *login.Module[*ent.StaffMember] {
 	return login.New(login.Config[*ent.StaffMember]{
-		Throttle:  throttle,
+		Throttle:  counter,
 		Passwords: m.passwords,
 		Store:     staffStore{m},
 		Challenge: m.mintChallenge,
@@ -157,7 +158,7 @@ func (m *Module) parseChallenge(ctx context.Context, challenge string) (login.Pe
 	if err != nil {
 		return login.Pending[*ent.StaffMember]{}, login.ErrChallengeInvalid
 	}
-	return login.Pending[*ent.StaffMember]{Principal: op, Address: op.Email, Method: accounts.LoginPassword, Binding: held}, nil
+	return login.Pending[*ent.StaffMember]{Principal: op, Address: op.Email, Method: users.LoginPassword, Binding: held}, nil
 }
 
 // verifyCode is the login module's Verify: the code check in a transaction with the

@@ -11,12 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -62,7 +62,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, memberships.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
-	if end, ok := accounts.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
+	if end, ok := users.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
 	standing, err := h.holds.Standing(ctx, s)
@@ -91,7 +91,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, req.Name)
+	ws, err := h.users.CreateWorkspace(ctx, a.UserID, req.Name)
 	if err != nil {
 		return nil, err
 	}

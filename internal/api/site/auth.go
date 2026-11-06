@@ -6,11 +6,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteAuthSignUp is the Sign-up (ADR 0030): the signup module decides, and the answer
@@ -24,16 +25,16 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 	}
 	accepted := &siteapi.SiteAuthSignUpAccepted{}
 	if res.Browser != "" {
-		accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, accounts.VerificationLinkTTL).String())
+		accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, users.VerificationLinkTTL).String())
 	}
 	return accepted, nil
 }
 
-// signUpStore is the site's side of the signup module's seam: Users through accounts.
-type signUpStore struct{ accounts *accounts.Accounts }
+// signUpStore is the site's side of the signup module's seam: Users through the users module.
+type signUpStore struct{ users *users.Module }
 
 func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
-	u, err := s.accounts.UserByEmail(ctx, email)
+	u, err := s.users.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
 		return nil, false, nil
 	}
@@ -41,7 +42,7 @@ func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool,
 }
 
 func (s signUpStore) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
-	u, err := s.accounts.CreateUnverified(ctx, n)
+	u, err := s.users.CreateUnverified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
@@ -49,11 +50,11 @@ func (s signUpStore) CreateUnverified(ctx context.Context, n signup.NewUser) (*e
 }
 
 func (s signUpStore) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error) {
-	return s.accounts.ReplaceUnverifiedPassword(ctx, id, passwordHash, consents)
+	return s.users.ReplaceUnverifiedPassword(ctx, id, passwordHash, consents)
 }
 
 func (s signUpStore) CreateVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
-	u, err := s.accounts.SignUpVerified(ctx, n)
+	u, err := s.users.SignUpVerified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
@@ -63,9 +64,9 @@ func (s signUpStore) CreateVerified(ctx context.Context, n signup.NewUser) (*ent
 // newSignUp builds the signup module over the site's adapter (ADR 0030, 0031).
 func (h *Handlers) newSignUp() *signup.Module {
 	return signup.New(signup.Config{
-		Store:               signUpStore{h.accounts},
+		Store:               signUpStore{h.users},
 		Consents:            h.consentRecords,
-		Budget:              h.attempts.For(accounts.KindSignUp),
+		Budget:              h.attempts.For(throttle.KindSignUp),
 		Passwords:           h.passwords,
 		Mail:                h.mail,
 		Mint:                h.links.VerificationLink,
@@ -85,7 +86,7 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if email == "" {
 		return nil
 	}
-	u, err := h.accounts.UserByEmail(ctx, email)
+	u, err := h.users.UserByEmail(ctx, email)
 	if err != nil && !ent.IsNotFound(err) {
 		return err
 	}

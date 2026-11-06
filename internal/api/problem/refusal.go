@@ -7,11 +7,11 @@ import (
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -36,7 +36,7 @@ func refusal(err error) (int, *siteapi.ProblemDetails, bool) {
 		return http.StatusConflict, inUseBody(used), true
 	}
 	// A refused User deletion: its answer always lists the Workspaces the User solely owns.
-	if refused, ok := errors.AsType[*accounts.DeletionRefusedError](err); ok {
+	if refused, ok := errors.AsType[*users.DeletionRefusedError](err); ok {
 		status := kindStatus(refused.Reason.Kind())
 		p := fieldBody(status, refused.Reason.Field(), refused.Reason.Message())
 		p.Workspaces = mapper.SoleOwnedWorkspaces(refused.Workspaces)

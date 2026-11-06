@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 var (
 	siteSecret = rand.Text() + rand.Text()
-	attempts   = accounts.NewAttempts(nil)
+	attempts   = throttle.NewAttempts(nil)
 )
 
 func TestWithoutASecretTheStaffSignInIsOff(t *testing.T) {

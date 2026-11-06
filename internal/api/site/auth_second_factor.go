@@ -10,12 +10,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // loginMethodClaim is the challenge claim that names how the first step proved the person.
@@ -28,7 +28,7 @@ const loginChallengeTTL = 5 * time.Minute
 // the User and to secondfactor.ChallengeBinding, so it stops verifying after one
 // successful second step (or any epoch bump or password change), with no store.
 //
-// method (accounts.LoginPassword or a provider's name) rides in the signed claims, so the
+// method (users.LoginPassword or a provider's name) rides in the signed claims, so the
 // second step records the login with the method that began it. A provider login also passes
 // its time (providerLoginAt, zero for a password login), which the challenge carries to the
 // session the second step starts (ADR 0048).
@@ -103,7 +103,7 @@ func (h *Handlers) parseLoginChallenge(ctx context.Context, challenge string) (l
 		loadErr error
 	)
 	_, extra, err := h.challenges.Parse(challenge, authtoken.PurposeLoginChallenge, func(id int64) (string, error) {
-		if u, loadErr = h.accounts.User(ctx, id); loadErr != nil {
+		if u, loadErr = h.users.User(ctx, id); loadErr != nil {
 			return "", loadErr
 		}
 		binding, loadErr = h.secondFactor.ChallengeBinding(ctx, u)
@@ -123,7 +123,7 @@ func (h *Handlers) parseLoginChallenge(ctx context.Context, challenge string) (l
 		Principal:       u,
 		Address:         u.Email,
 		Binding:         binding,
-		Method:          cmp.Or(extra[loginMethodClaim], accounts.LoginPassword),
+		Method:          cmp.Or(extra[loginMethodClaim], users.LoginPassword),
 		ProviderLoginAt: providerLoginAt,
 	}, nil
 }

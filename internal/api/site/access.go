@@ -7,11 +7,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -38,7 +38,7 @@ var errUndeclared = validation.Forbidden("site: the operation declares no access
 
 // Access is the ogen middleware of /site (ADR 0061), and the site's construction point of the
 // scoped client (ADR 0017). For an operation of a Workspace it loads the caller's Membership of
-// the Workspace its workspaceId names; it then admits the signed-in User (accounts.Admit: a
+// the Workspace its workspaceId names; it then admits the signed-in User (users.Admit: a
 // required acceptance pending, then the Workspace's Two-factor requirement, each unless the
 // operation lets it through), checks the Permissions the operation declares and puts the
 // Workspace's *ent.Scoped (acting as the caller, ADR 0022) and the Membership in the context,
@@ -69,7 +69,7 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 		}
 		c = caller{scoped: s, membership: m}
 	}
-	err := h.accounts.Admit(req.Context, accounts.Admission{
+	err := h.users.Admit(req.Context, users.Admission{
 		UserID:                 session.UserID,
 		Membership:             c.membership,
 		StrongSession:          currentSession(req.Context).Method.Strong(),

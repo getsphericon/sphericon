@@ -14,10 +14,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // store is the adapter's side of the seam over the fixtures' Users.
@@ -31,7 +32,7 @@ func (s store) Lookup(ctx context.Context, address string) (login.Account[*ent.U
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: accounts.HasSecondFactor(u)}, true, nil
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: users.HasSecondFactor(u)}, true, nil
 }
 
 // resetFailing is a throttle whose success reset is broken.
@@ -101,11 +102,11 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	clk := &clock{t: time.Now()}
-	counters := accounts.NewAttempts(env.DB,
-		accounts.WithClock(clk.now),
-		accounts.WithRule(accounts.KindLogin, accounts.LoginRule(2)),
-		accounts.WithRule(accounts.KindStaffLogin, accounts.LoginRule(2)))
-	r := rig{db: env.DB, clock: clk, login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
+	counters := throttle.NewAttempts(env.DB,
+		throttle.WithClock(clk.now),
+		throttle.WithRule(throttle.KindLogin, throttle.LoginRule(2)),
+		throttle.WithRule(throttle.KindStaffLogin, throttle.LoginRule(2)))
+	r := rig{db: env.DB, clock: clk, login: counters.For(throttle.KindLogin), staff: counters.For(throttle.KindStaffLogin)}
 	cfg := login.Config[*ent.User]{
 		Throttle:  r.login,
 		Store:     store{env.DB},
@@ -230,8 +231,8 @@ func TestTheVerificationGatePrecedesTheChallengeAndCountsNothing(t *testing.T) {
 	r := newRig(t, gate)
 	// Whatever the password, a gated account gets neither a challenge nor a failure.
 	for range 3 {
-		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword), accounts.ErrEmailNotVerified)
-		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), accounts.ErrEmailNotVerified)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword), users.ErrEmailNotVerified)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), users.ErrEmailNotVerified)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 }

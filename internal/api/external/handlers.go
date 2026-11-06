@@ -8,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -35,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
@@ -101,8 +101,8 @@ type ExportStreams interface {
 // the shared singletons the composition root registers once, so /api and /site
 // cannot diverge on how a module is constructed.
 type Deps struct {
-	// Accounts admits a User's own token (the security handler, ExternalSecurity).
-	Accounts     *accounts.Accounts
+	// Users admits a User's own token (the security handler, ExternalSecurity).
+	Users        *users.Module
 	Workspaces   *workspaces.Module
 	Bus          *events.Bus
 	Webhooks     *webhooks.Module

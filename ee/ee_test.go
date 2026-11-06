@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
@@ -31,7 +31,7 @@ func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.Licens
 // staffSessions are the sessions of a Staff sign-in that is on.
 func staffSessions(t *testing.T) *staffmembers.Sessions {
 	t.Helper()
-	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: accounts.NewAttempts(nil)})
+	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: throttle.NewAttempts(nil)})
 	require.NoError(t, err)
 	return m.Sessions()
 }

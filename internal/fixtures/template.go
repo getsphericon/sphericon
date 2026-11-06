@@ -8,7 +8,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -70,7 +70,7 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		"encrypt": func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
 		// Invitation tokens are stored only as a SHA-256 hash; fixtures express the
 		// raw token and hash it at load time so tests can present the raw value.
-		"inviteHash": accounts.HashInviteToken,
+		"inviteHash": invitations.HashInviteToken,
 		// Recovery codes are stored only as a hash (ADR 0020); the fixture states the
 		// code and the generator lifts it into the catalog (fixtures.<Name>Code).
 		"recoveryCodeHash": credentials.HashRecoveryCode,

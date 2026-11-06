@@ -13,6 +13,6 @@ func TestEntrywrite(t *testing.T) {
 		"github.com/getsphericon/sphericon/internal/jobs",
 		"github.com/getsphericon/sphericon/internal/mcpserver",
 		"github.com/getsphericon/sphericon/internal/api/site",
-		"github.com/getsphericon/sphericon/internal/accounts",
+		"github.com/getsphericon/sphericon/internal/tags",
 		"github.com/getsphericon/sphericon/ee/api/staff")
 }

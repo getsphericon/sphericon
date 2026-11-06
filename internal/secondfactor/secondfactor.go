@@ -23,13 +23,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/otpcode"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // Issuer names the instance in the authenticator app.
@@ -102,7 +102,7 @@ func (m *Module) Status(ctx context.Context, userID int64) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	if !accounts.HasSecondFactor(u) {
+	if !users.HasSecondFactor(u) {
 		return Status{Pending: u.SecondFactorSecretEncrypted != ""}, nil
 	}
 	n, err := unusedRecoveryCodes(ctx, m.ent, userID)
@@ -127,7 +127,7 @@ func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment
 	if err != nil {
 		return nil, err
 	}
-	if accounts.HasSecondFactor(u) {
+	if users.HasSecondFactor(u) {
 		return nil, ErrAlreadyActive
 	}
 	key, err := otpcode.New(Issuer, u.Email)
@@ -163,7 +163,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, code strin
 		if err != nil {
 			return err
 		}
-		if accounts.HasSecondFactor(u) {
+		if users.HasSecondFactor(u) {
 			return ErrAlreadyActive
 		}
 		if u.SecondFactorSecretEncrypted == "" {
@@ -180,7 +180,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, code strin
 			return err
 		}
 		saved = u
-		return accounts.RecordUserAction(ctx, tx, pub, u, events.ActionUserSecondFactorEnroll, nil)
+		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserSecondFactorEnroll, nil)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -201,7 +201,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*en
 		if err != nil {
 			return err
 		}
-		if !accounts.HasSecondFactor(u) {
+		if !users.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		if codes, err = replaceRecoveryCodes(ctx, tx, userID); err != nil {
@@ -211,7 +211,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*en
 			return err
 		}
 		saved = u
-		return accounts.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodesRegenerate, nil)
+		return users.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodesRegenerate, nil)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -231,7 +231,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 		if err != nil {
 			return err
 		}
-		if !accounts.HasSecondFactor(u) {
+		if !users.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		if _, err := m.verify(ctx, tx, pub, u, code); err != nil {
@@ -240,7 +240,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 		if saved, err = remove(ctx, tx, userID); err != nil {
 			return err
 		}
-		return accounts.RecordUserAction(ctx, tx, pub, saved, events.ActionUserSecondFactorDisable, nil)
+		return users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserSecondFactorDisable, nil)
 	})
 	return saved, err
 }
@@ -262,7 +262,7 @@ func (m *Module) Verify(ctx context.Context, userID int64, binding, code string)
 		if err != nil {
 			return err
 		}
-		if !accounts.HasSecondFactor(u) {
+		if !users.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		current, err := challengeBinding(ctx, tx, u)
@@ -284,18 +284,18 @@ func (m *Module) Verify(ctx context.Context, userID int64, binding, code string)
 // transaction commits. The caller holds u's row locked. ErrNotActive without a Second
 // factor, ErrInvalidCode on a wrong code.
 func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
-	if !accounts.HasSecondFactor(u) {
+	if !users.HasSecondFactor(u) {
 		return "", ErrNotActive
 	}
 	return m.verify(ctx, tx, pub, u, code)
 }
 
-// DeletionCode is the accounts.DeleteConfirm of User deletion (ADR 0050): with a Second factor
+// DeletionCode is the users.DeleteConfirm of User deletion (ADR 0050): with a Second factor
 // it spends code in the deletion's transaction (ErrDeletionCodeInvalid on a wrong one), so the
 // code is spent only if the deletion commits; without one it confirms nothing.
-func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
+func (m *Module) DeletionCode(code string) users.DeleteConfirm {
 	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		if !accounts.HasSecondFactor(locked) {
+		if !users.HasSecondFactor(locked) {
 			return nil
 		}
 		_, err := m.VerifyIn(ctx, tx, pub, locked, code)
@@ -315,7 +315,7 @@ func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
 // under a lock, so two racing second steps cannot both use it. ErrNotActive
 // without a Second factor.
 func (m *Module) ChallengeBinding(ctx context.Context, u *ent.User) (string, error) {
-	if !accounts.HasSecondFactor(u) {
+	if !users.HasSecondFactor(u) {
 		return "", ErrNotActive
 	}
 	return challengeBinding(ctx, m.ent, u)
@@ -342,7 +342,7 @@ func unusedRecoveryCodes(ctx context.Context, client *ent.Client, userID int64) 
 // only. ErrNothingToReset without a Second factor or a Passkey (nothing changes).
 func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, workspaceID int64) error {
 	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
-		return accounts.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, workspaceID)
+		return users.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, workspaceID)
 	})
 }
 
@@ -352,7 +352,7 @@ func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, wo
 func (m *Module) ResetByStaff(ctx context.Context, userID int64, by string) error {
 	actor := events.Actor{Kind: events.ActorStaff, ID: by}
 	return m.reset(ctx, userID, func(pub events.Publisher, tx *ent.Client, u *ent.User) error {
-		return accounts.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
+		return users.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
 	})
 }
 
@@ -366,7 +366,7 @@ func (m *Module) reset(ctx context.Context, userID int64, record func(events.Pub
 		if err != nil {
 			return err
 		}
-		if !accounts.HasSecondFactor(u) && !held {
+		if !users.HasSecondFactor(u) && !held {
 			return ErrNothingToReset
 		}
 		if _, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx); err != nil {
@@ -400,7 +400,7 @@ func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publishe
 	if n != 1 {
 		return "", ErrInvalidCode
 	}
-	return MethodRecoveryCode, accounts.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodeUse, nil)
+	return MethodRecoveryCode, users.RecordUserAction(ctx, tx, pub, u, events.ActionUserRecoveryCodeUse, nil)
 }
 
 // useTOTP accepts code when it is the User's code for a time step within the skew

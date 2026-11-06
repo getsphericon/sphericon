@@ -90,16 +90,16 @@ func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (colle
 }
 
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
-// with internal/accounts and internal/apitokens (the bootstrap token is not used, it
+// with internal/users and internal/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
 func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	tb.Helper()
 	ctx := tb.Context()
 	id := uniq()
 
-	user, err := e.accounts.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
+	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
 	require.NoError(tb, err)
-	ws, err := e.accounts.CreateWorkspace(ctx, user.ID, "e2e "+id)
+	ws, err := e.users.CreateWorkspace(ctx, user.ID, "e2e "+id)
 	require.NoError(tb, err)
 	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)
@@ -161,7 +161,7 @@ func (w *Workspace) AddOwner() []int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	id := uniq()
-	user, err := w.env.accounts.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
+	user, err := w.env.users.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
 	require.NoError(w.t, err)
 	// An owner change takes its Workspace feed position inside a transaction.
 	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {

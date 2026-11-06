@@ -13,10 +13,10 @@ import (
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 const formPassword = "form-password-1"
@@ -212,7 +212,7 @@ func TestTheVerifyLinkStartsASessionIntoTheFirstWorkspace(t *testing.T) {
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
+	assert.Equal(t, users.FirstWorkspaceName, spaces[0].Name)
 }
 
 func TestTheVerifyLinkWorksOnce(t *testing.T) {
@@ -570,7 +570,7 @@ func landsInFirstWorkspace(t *testing.T, env *testhelper.TestEnv, session *http.
 	spaces, err := env.SiteWithToken(t, session.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
+	assert.Equal(t, users.FirstWorkspaceName, spaces[0].Name)
 }
 
 func TestSigningUpNeedsAPassword(t *testing.T) {

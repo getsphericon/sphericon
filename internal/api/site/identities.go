@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // signinSettingsPath is the account page that lists the Linked identities: where a link flow
@@ -19,7 +19,7 @@ func (h *Handlers) SiteIdentitiesList(ctx context.Context) (*siteapi.SiteLinkedI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := h.accounts.Identities(ctx, userID)
+	rows, err := h.users.Identities(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.UnlinkIdentity(ctx, userID, int64(params.ID))
+	u, err := h.users.UnlinkIdentity(ctx, userID, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func (h *Handlers) linkProvider(ctx context.Context, flow signin.Flow, session s
 	if !holds {
 		return h.signinRefused(flow, signin.ReasonInvalidState), nil
 	}
-	u, added, err := h.accounts.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, profile.Subject)
-	if errors.Is(err, accounts.ErrIdentityInUse) {
+	u, added, err := h.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, profile.Subject)
+	if errors.Is(err, users.ErrIdentityInUse) {
 		return h.signinRefused(flow, signin.ReasonIdentityInUse), nil
 	}
 	if err != nil {

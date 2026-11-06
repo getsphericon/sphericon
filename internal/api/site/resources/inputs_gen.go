@@ -10,7 +10,6 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
-	accounts "github.com/getsphericon/sphericon/internal/accounts"
 	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
@@ -22,6 +21,7 @@ import (
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	invitations "github.com/getsphericon/sphericon/internal/invitations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -441,14 +441,14 @@ func (c *InputsImpl) InvitableRole(source site.SiteInvitableRole) invitation.Rol
 	}
 	return invitationRole
 }
-func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) accounts.InviteInput {
-	var accountsInviteInput accounts.InviteInput
+func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) invitations.InviteInput {
+	var invitationsInviteInput invitations.InviteInput
 	if source != nil {
-		accountsInviteInput.Email = string((*source).Email)
-		accountsInviteInput.Role = c.InvitableRole((*source).Role)
-		// accountsInviteInput.InvitedBy: ignore
+		invitationsInviteInput.Email = string((*source).Email)
+		invitationsInviteInput.Role = c.InvitableRole((*source).Role)
+		// invitationsInviteInput.InvitedBy: ignore
 	}
-	return accountsInviteInput
+	return invitationsInviteInput
 }
 func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.Role {
 	var membershipRole membership.Role

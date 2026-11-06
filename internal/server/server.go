@@ -174,7 +174,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 // clock.
 func ExternalSecurity(client *ent.Client, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
 	return apiauth.NewExternalSecurityHandler(apiauth.ExternalSecurityDeps{
-		Ent: client, Bus: deps.Bus, Accounts: deps.Accounts, Clock: deps.Clock,
+		Ent: client, Bus: deps.Bus, Users: deps.Users, Clock: deps.Clock,
 	})
 }
 

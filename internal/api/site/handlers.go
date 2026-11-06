@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -30,7 +29,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -58,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -70,12 +72,13 @@ var mapper = &resources.ConverterImpl{}
 var inputs = &resources.InputsImpl{}
 
 type Handlers struct {
-	accounts        *accounts.Accounts
+	users           *users.Module
+	invitations     *invitations.Module
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
 	passwords       *credentials.Hasher
 	deletion        *workspacedeletion.Module
-	attempts        *accounts.Attempts
+	attempts        *throttle.Attempts
 	bus             *events.Bus
 	webhooks        *webhooks.Module
 	broadcasts      *broadcasts.Module
@@ -85,7 +88,7 @@ type Handlers struct {
 	joinDomains     *joindomains.Module
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
-	links           *accounts.Links
+	links           *users.Links
 	tracker         *tracking.Tracker
 	appURL          string
 	outbound        *outbound.Module
@@ -171,7 +174,9 @@ type Origins struct {
 // the shared singletons the composition root registers once, so /site and /api
 // cannot diverge on how a module is constructed.
 type Deps struct {
-	Accounts *accounts.Accounts
+	Users *users.Module
+	// Invitations issues, revokes and looks up the Invitations of a Workspace (ADR 0102).
+	Invitations *invitations.Module
 	// Workspaces is the Workspace with its settings; Memberships the lookup of a scope, the Roles
 	// and their changes (ADR 0102).
 	Workspaces  *workspaces.Module
@@ -184,7 +189,7 @@ type Deps struct {
 	Release *releasecheck.UseCase
 	// Attempts counts failed logins and password-reset mails per account (ADR
 	// 0025); login and forgot-password share it.
-	Attempts    *accounts.Attempts
+	Attempts    *throttle.Attempts
 	OAuth       *oauthserver.Service
 	Bus         *events.Bus
 	Webhooks    *webhooks.Module
@@ -277,10 +282,10 @@ func NewHandlers(d Deps) *Handlers {
 		now = time.Now
 	}
 	h := &Handlers{
-		accounts: d.Accounts, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
+		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
-		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
+		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
@@ -308,7 +313,7 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 		return events.Actor{}
 	}
 	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(a.UserID, 10)}
-	if u, err := h.accounts.User(ctx, a.UserID); err == nil {
+	if u, err := h.users.User(ctx, a.UserID); err == nil {
 		actor.Name = u.Name
 	}
 	return actor

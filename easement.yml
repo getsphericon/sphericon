@@ -10,7 +10,7 @@ version: 1
 # core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
 # `raw-holder-forbids` (the runner, core-raw), `core`; api-auth, ee, ee-edition and wiring take this
 # list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
-# serves User deletion, which still lives in `accounts` (core-raw): core-raw alone may call it, so
+# serves User deletion in `internal/users` (core-raw): core-raw alone may call it, so
 # it is not in `raw-holder-forbids` but in `raw-driver-forbids` (the runner, identity-base). Its definition is not a use; a call even inside its own module fails, and tests are
 # excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
@@ -152,7 +152,6 @@ components:
   core-raw:
     in:
       [
-        internal/accounts,
         internal/automations,
         internal/bindings,
         internal/capturedmessages,
@@ -160,6 +159,7 @@ components:
         internal/consentrecords,
         internal/instancestates,
         internal/instanceaudit,
+        internal/invitations,
         internal/joindomains,
         internal/machine,
         internal/oauthserver,
@@ -173,6 +173,7 @@ components:
         internal/trackingdomains,
         internal/trackinghostlog,
         internal/userfeed,
+        internal/users,
         internal/workspacedeletion,
         internal/workspacefeed,
       ]
@@ -187,10 +188,11 @@ components:
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
   # configuration (`config`, read by them). It imports only the kernel and never a domain module.
   infra: { in: [internal/infra, config] }
-  # The two infrastructure packages that hold the raw client (the closed list of docs/architecture.md,
+  # The infrastructure packages that hold the raw client (the closed list of docs/architecture.md,
   # Workspace scoping): the bus (docs/design/domain-events.md), which stores an Event and queues the
-  # jobs of the consumers the wiring registers on it, and the database package's schema guard.
-  infra-raw: { in: [internal/infra/events, internal/infra/db] }
+  # jobs of the consumers the wiring registers on it, the database package's schema guard, and the
+  # Login throttle, whose counters belong to an address, not a Workspace.
+  infra-raw: { in: [internal/infra/events, internal/infra/db, internal/infra/throttle] }
 
   # The kernel (ADR 0102): the packages that import none of ours. The vocabulary every tier shares
   # (Channels, providers, Hold reasons, the token scopes, job kinds) and the helpers that know no
@@ -345,7 +347,7 @@ rules:
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
-        because: of the infrastructure only the bus and the database package hold the raw client (`infra-raw`, the closed list of docs/architecture.md, Workspace scoping)
+        because: of the infrastructure only the bus, the database package and the Login throttle hold the raw client (`infra-raw`, the closed list of docs/architecture.md, Workspace scoping)
     forbid_external: *no-container
     because: infrastructure imports only the kernel and never a domain module (ADR 0102); a domain module, a use case, a driver or the wiring reaches it. The bus's consumers are registered by the wiring, and the ent client's hooks are installed there (internal/app/entclient)
   infra-raw:

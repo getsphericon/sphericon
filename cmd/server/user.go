@@ -7,8 +7,8 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // userOps is what the `user` staff member commands need from the app. The app
@@ -40,7 +40,7 @@ func userCommand(d deps) *cli.Command {
 					return errors.New("a name is required")
 				}
 				password, err := ops.CreateOwner(ctx, email, name)
-				return accounts.ReportOwnerCreated(out(cmd), email, password, err)
+				return users.ReportOwnerCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{

@@ -6,11 +6,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SitePasskeyLoginBegin answers the request options for a usernameless Passkey login and sets
@@ -49,7 +49,7 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 	case login.PasskeyThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
 	case login.PasskeyAuthenticated:
-		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPasskey, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
+		cookie, err := h.issueSession(ctx, res.Principal, users.LoginPasskey, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (h *Handlers) findPasskeyLogin(ctx context.Context, a login.PasskeyAssertio
 	if err != nil {
 		return login.Pending[*ent.User]{}, err
 	}
-	return login.Pending[*ent.User]{Principal: u, Address: u.Email, Method: accounts.LoginPasskey}, nil
+	return login.Pending[*ent.User]{Principal: u, Address: u.Email, Method: users.LoginPasskey}, nil
 }
 
 // verifyPasskeyLogin is the site's PasskeyVerify for the login module.

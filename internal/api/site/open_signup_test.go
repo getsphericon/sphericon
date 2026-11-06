@@ -10,8 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // selfHosted is an Instance in the selfhosted Mode, which already has its Owners (the fixtures).
@@ -32,13 +32,13 @@ func TestASecondPersonSignsUpOnASelfHostedInstanceAndGetsTheirOwnWorkspace(t *te
 	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
+	assert.Equal(t, users.FirstWorkspaceName, spaces[0].Name)
 }
 
 func TestAnOwnerMadeByCreateOwnerSignsIn(t *testing.T) {
 	env := selfHosted(t)
 
-	password, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
+	password, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	rec := postLogin(t, env, "ada@example.com", password)

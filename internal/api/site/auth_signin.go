@@ -9,9 +9,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // The pages the callback sends the browser to. The SPA owns both routes.
@@ -85,8 +86,8 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 
 	var invite *ent.Invitation
 	if flow.Invitation != "" {
-		invite, err = h.accounts.PendingInvitation(ctx, flow.Invitation)
-		if errors.Is(err, accounts.ErrInvitationLinkNotFound) {
+		invite, err = h.invitations.PendingInvitation(ctx, flow.Invitation)
+		if errors.Is(err, invitations.ErrInvitationLinkNotFound) {
 			return h.signinRefused(flow, signin.ReasonInvitationInvalid), nil
 		}
 		if err != nil {
@@ -98,7 +99,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	signedIn, err := h.accounts.SignInWithIdentity(ctx, accounts.ProviderLogin{
+	signedIn, err := h.users.SignInWithIdentity(ctx, users.ProviderLogin{
 		Provider:            params.Provider,
 		Subject:             profile.Subject,
 		Email:               profile.Email,
@@ -109,7 +110,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		SignupItemsInEffect: asked,
 		Now:                 h.now(),
 	})
-	if refused, ok := errors.AsType[*accounts.SigninRefusedError](err); ok {
+	if refused, ok := errors.AsType[*users.SigninRefusedError](err); ok {
 		return h.signinRefused(flow, refused.Reason), nil
 	}
 	if err != nil {
@@ -125,7 +126,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	if signedIn.LinkedIdentityID != 0 {
 		h.noticeIdentityLinked(ctx, signedIn.User, params.Provider, signedIn.LinkedIdentityID)
 	}
-	if accounts.HasSecondFactor(signedIn.User) {
+	if users.HasSecondFactor(signedIn.User) {
 		// A provider sign-in replaces only the password step: an enrolled Second factor still
 		// gets the challenge of ADR 0020, finished on the login page through the same second
 		// step (and the same Login throttle) as after a password.

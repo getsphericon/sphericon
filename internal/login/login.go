@@ -30,10 +30,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // Outcome is what the password step decided.
@@ -198,7 +199,7 @@ type Config[P any] struct {
 	Passwords *credentials.Hasher
 	// Gate, when set, reports that an account may not sign in yet (an Unverified User,
 	// ADR 0030). It is consulted for every known account, before the password result is
-	// acted on: the password step refuses a gated account with accounts.ErrEmailNotVerified,
+	// acted on: the password step refuses a gated account with users.ErrEmailNotVerified,
 	// counting nothing and minting no challenge.
 	Gate func(P) bool
 	// Challenge mints the second step's token for an account with a second factor.
@@ -241,9 +242,9 @@ func (m *Module[P]) throttle(ctx context.Context, address string) (delay Delay, 
 }
 
 // Password runs the first step for an address and a password as typed. A refusal is its
-// error: accounts.ErrEmailNotVerified for a gated account, ErrInvalidCredentials otherwise.
+// error: users.ErrEmailNotVerified for a gated account, ErrInvalidCredentials otherwise.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
-	address = accounts.NormalizeEmail(address)
+	address = throttle.NormalizeEmail(address)
 
 	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
@@ -260,7 +261,7 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 	ok := m.verify(acc.PasswordHash, password)
 
 	if found && m.cfg.Gate != nil && m.cfg.Gate(acc.Principal) {
-		return Result[P]{}, accounts.ErrEmailNotVerified
+		return Result[P]{}, users.ErrEmailNotVerified
 	}
 	if !found || !ok {
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
@@ -292,7 +293,7 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 	if err != nil {
 		return SecondResult[P]{}, err
 	}
-	address := accounts.NormalizeEmail(p.Address)
+	address := throttle.NormalizeEmail(p.Address)
 
 	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
@@ -336,7 +337,7 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 	if err != nil {
 		return PasskeyResult[P]{}, err
 	}
-	address := accounts.NormalizeEmail(p.Address)
+	address := throttle.NormalizeEmail(p.Address)
 
 	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {

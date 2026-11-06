@@ -261,7 +261,7 @@ func (m *Module) Holder(ctx context.Context, domain string) (*ent.JoinDomain, er
 }
 
 // HolderIn is Holder over a given client, so a transaction can read the holder it is about
-// to join people to (the domain-join step of the accounts module). It reads the stored
+// to join people to (the domain-join step of the users module). It reads the stored
 // verification only and never looks at DNS.
 func HolderIn(ctx context.Context, c *ent.Client, domain string) (*ent.JoinDomain, error) {
 	row, err := c.JoinDomain.Query().

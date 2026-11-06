@@ -2,7 +2,7 @@
 // answers once, stored on the Instance and read only by a Staff member. Whether the Instance asks it
 // (the saas Mode, which also needs the `staff` license) is decided once, by Enabled.
 // A public sign-up marks the User as owing the survey (users.signup_survey_due_at, set by
-// internal/accounts when Enabled is true); Submit stores the answers and clears the marker in
+// internal/users when Enabled is true); Submit stores the answers and clears the marker in
 // one transaction.
 //
 // The package holds the raw *ent.Client: a SignupSurveyResponse belongs to a User, not to a

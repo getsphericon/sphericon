@@ -6,17 +6,18 @@ import (
 	"strings"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
 func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvitationsListParams) ([]siteapi.SiteInvitationResource, error) {
 	s := workspaceScope(ctx)
 
-	invites, err := accounts.PendingInvitations(ctx, s)
+	invites, err := invitations.PendingInvitations(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	in.InvitedBy = a.UserID
 	// Token, hash, expiry and the upsert are the accounts operation's; the site only
 	// maps its refusals.
-	inv, token, err := h.accounts.Invite(ctx, s, h.actor(ctx), in)
+	inv, token, err := h.invitations.Invite(ctx, s, h.actor(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -61,14 +62,14 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 		return nil, err
 	}
 	inviterName := ""
-	if caller, cerr := h.accounts.User(ctx, a.UserID); cerr == nil {
+	if caller, cerr := h.users.User(ctx, a.UserID); cerr == nil {
 		inviterName = caller.Name
 	}
 	if merr := h.mail.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: inv.Email, InviteURL: inviteURL, WorkspaceName: wsEnt.Name, InviterName: inviterName}); merr != nil {
 		slog.WarnContext(ctx, "member invite email not enqueued", "error", merr, "invitation_id", inv.ID)
 	}
 
-	inviter, uerr := h.accounts.User(ctx, a.UserID)
+	inviter, uerr := h.users.User(ctx, a.UserID)
 	if uerr != nil {
 		slog.WarnContext(ctx, "inviter not loaded for the invitation", "error", uerr, "invitation_id", inv.ID)
 	}
@@ -85,13 +86,13 @@ func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 
-	return h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id)
+	return h.invitations.RevokeInvitation(ctx, s, h.actor(ctx), id)
 }
 
 // SitePublicInvitationsLookup reveals a pending invite (workspace + email) so the
 // public accept page can render. Session-less: the token is the authorization.
 func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params siteapi.SitePublicInvitationsLookupParams) (*siteapi.SiteInvitationLookupResult, error) {
-	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
+	inv, err := h.invitations.PendingInvitation(ctx, params.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ type acceptForm struct {
 // answers to the Sign-up items, ADR 0062), then joins them to the workspace. Link possession authorizes an address with no Verified
 // User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) error {
-	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
+	inv, err := h.invitations.PendingInvitation(ctx, params.Token)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,7 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return err
 	}
 
-	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
+	err = h.users.AcceptInvitation(ctx, inv, users.InvitationAcceptance{
 		Name: strings.TrimSpace(string(name)), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 	if err != nil {

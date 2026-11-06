@@ -12,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 const surveyEmail = fixtures.InvitationAcmeSurveyEmail
@@ -183,7 +183,7 @@ func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 
 func TestTheFirstOwnerMadeByTheOperatorIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
-	_, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
+	_, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
 	require.NoError(t, err)
 
 	due := surveyDue(t, env.SiteActor(t, surveyEmail))

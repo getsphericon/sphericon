@@ -26,7 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accountlink"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
@@ -49,10 +48,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/systemmail"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/ingest"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
@@ -96,6 +97,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -128,7 +130,7 @@ func Container(cfg *config.Config) *do.RootScope {
 		editionPackage,
 		jobsPackage,
 		deliveryPackage,
-		accountsPackage,
+		identityPackage,
 		audiencePackage,
 		contentPackage,
 		surfacesPackage,
@@ -351,7 +353,7 @@ var staffPackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), cfg.JWTSecrets(), staffmembers.Config{
 			Secret: cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: do.MustInvoke[Clock](i),
-			Attempts: do.MustInvoke[*accounts.Attempts](i), Passwords: do.MustInvoke[*credentials.Hasher](i),
+			Attempts: do.MustInvoke[*throttle.Attempts](i), Passwords: do.MustInvoke[*credentials.Hasher](i),
 		})
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
@@ -524,7 +526,7 @@ var jobsPackage = do.Package(
 			SystemSender:       do.MustInvoke[SystemSender](i).EmailSender,
 			Catalog:            do.MustInvoke[*messaging.Catalog](i),
 			Rules:              do.MustInvoke[*rules.Module](i),
-			Accounts:           do.MustInvoke[*accounts.Accounts](i),
+			Users:              do.MustInvoke[*users.Module](i),
 			Orders:             do.MustInvoke[*orders.Module](i),
 			Deletion:           do.MustInvoke[*workspacedeletion.Module](i),
 			DomainVerification: do.MustInvoke[*domainverification.UseCase](i),
@@ -583,7 +585,7 @@ var deliveryPackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		opts := []outbound.Option{
 			outbound.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
-			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
+			outbound.WithTestSendBudget(do.MustInvoke[*throttle.Attempts](i)),
 			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
 			outbound.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
 			outbound.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
@@ -598,9 +600,9 @@ var deliveryPackage = do.Package(
 	}),
 )
 
-// accountsPackage provides Accounts, the Workspace, Membership and Instance modules and the second
-// factor.
-var accountsPackage = do.Package(
+// identityPackage provides the Users, Invitations, Workspace, Membership and Instance state modules,
+// the Login throttle and the second factor.
+var identityPackage = do.Package(
 	// One password hasher for every password a User or a Staff member sets.
 	do.Lazy(func(do.Injector) (*credentials.Hasher, error) {
 		return credentials.NewHasher(), nil
@@ -614,12 +616,16 @@ var accountsPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
 		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// Accounts is the raw-client home of Users, Invitations and the creation of a Workspace.
-	// On an Instance that has Send caps (ADR 0067) a new Workspace starts with the Instance's
+	// The Users (ADR 0102), over the raw client, with the creation of a Workspace until it is a
+	// use case. On an Instance that has Send caps (ADR 0067) a new Workspace starts with the Instance's
 	// default; elsewhere it has none.
-	do.Lazy(func(i do.Injector) (*accounts.Accounts, error) {
-		return accounts.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i),
-			accounts.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i), instancestates.DefaultSendCapIn)), nil
+	do.Lazy(func(i do.Injector) (*users.Module, error) {
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i),
+			users.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i), instancestates.DefaultSendCapIn)), nil
+	}),
+	// The Invitations (ADR 0102): their lookup by token takes the raw client.
+	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
+		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
 	do.Lazy(func(i do.Injector) (*workspacedeletion.Module, error) {
@@ -634,11 +640,11 @@ var accountsPackage = do.Package(
 		return instancestates.New(do.MustInvoke[*ent.Client](i), env, do.MustInvoke[Clock](i),
 			instancestates.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
 	}),
-	// Attempts counts failed logins per account (ADR 0025) over the raw client.
-	do.Lazy(func(i do.Injector) (*accounts.Attempts, error) {
-		return accounts.NewAttempts(do.MustInvoke[*ent.Client](i),
-			accounts.WithClock(do.MustInvoke[Clock](i)),
-			accounts.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
+	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
+	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
+		return throttle.NewAttempts(do.MustInvoke[*ent.Client](i),
+			throttle.WithClock(do.MustInvoke[Clock](i)),
+			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*secondfactor.Module, error) {
 		return secondfactor.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
@@ -866,7 +872,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	edition := do.MustInvoke[*ee.Edition](i)
 	return apiexternal.Deps{
 		Clock:                 do.MustInvoke[Clock](i),
-		Accounts:              do.MustInvoke[*accounts.Accounts](i),
+		Users:                 do.MustInvoke[*users.Module](i),
 		Workspaces:            do.MustInvoke[*workspaces.Module](i),
 		Bus:                   do.MustInvoke[*events.Bus](i),
 		Webhooks:              do.MustInvoke[*webhooks.Module](i),
@@ -924,11 +930,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
-		Accounts:                 do.MustInvoke[*accounts.Accounts](i),
+		Users:                    do.MustInvoke[*users.Module](i),
+		Invitations:              do.MustInvoke[*invitations.Module](i),
 		Workspaces:               do.MustInvoke[*workspaces.Module](i),
 		Memberships:              do.MustInvoke[*memberships.Module](i),
 		Passwords:                do.MustInvoke[*credentials.Hasher](i),
-		Attempts:                 do.MustInvoke[*accounts.Attempts](i),
+		Attempts:                 do.MustInvoke[*throttle.Attempts](i),
 		OAuth:                    do.MustInvoke[*oauthserver.Service](i),
 		Bus:                      bus,
 		Webhooks:                 do.MustInvoke[*webhooks.Module](i),

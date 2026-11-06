@@ -6,9 +6,9 @@ import (
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -49,7 +49,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 	if err != nil {
 		return nil, err
 	}
-	err = h.accounts.Admit(ctx, accounts.Admission{
+	err = h.users.Admit(ctx, users.Admission{
 		UserID:        session.UserID,
 		Membership:    m,
 		StrongSession: currentSession(ctx).Method.Strong(),

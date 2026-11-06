@@ -6,8 +6,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 )
 
@@ -25,11 +25,11 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 		return nil
 	}
 	// Unknown addresses spend their budget exactly like known ones.
-	granted, err := h.attempts.Take(ctx, accounts.KindPasswordReset, email)
+	granted, err := h.attempts.Take(ctx, throttle.KindPasswordReset, email)
 	if err != nil {
 		return err
 	}
-	u, err := h.accounts.UserByEmail(ctx, email)
+	u, err := h.users.UserByEmail(ctx, email)
 	if err != nil && !ent.IsNotFound(err) {
 		return err
 	}
@@ -50,7 +50,7 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	return nil
 }
 
-// SiteAuthResetPassword sets a new password from a reset link (accounts.Links).
+// SiteAuthResetPassword sets a new password from a reset link (users.Links).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
 	u, completedSignUp, err := h.links.ResetPassword(ctx, req.Token, req.Password)
 	if err != nil {
@@ -64,7 +64,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	return nil
 }
 
-// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, accounts.Links): the
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, users.Links): the
 // token proves the address, so it stamps the Verified email, ends every earlier session,
 // creates the User's first Workspace and sends the welcome email, then starts the
 // session through the login issuer. The password stored at Sign-up stays only when
@@ -116,7 +116,7 @@ func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.
 	}
 	res := &siteapi.SiteAuthConfirmEmailChangeOK{}
 	if acting {
-		u, err := h.accounts.User(ctx, uid)
+		u, err := h.users.User(ctx, uid)
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (h *Handlers) holdsSession(ctx context.Context, raw string, uid int64) (boo
 	if !ok || id != uid {
 		return false, nil
 	}
-	u, err := h.accounts.User(ctx, uid)
+	u, err := h.users.User(ctx, uid)
 	if err != nil {
 		return false, err
 	}

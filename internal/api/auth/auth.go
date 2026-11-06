@@ -20,12 +20,12 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/memberships"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -81,10 +81,10 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 
 // ExternalSecurityHandler implements externalapi.SecurityHandler (Bearer token auth).
 type ExternalSecurityHandler struct {
-	ent      *ent.Client
-	bus      *events.Bus
-	accounts *accounts.Accounts
-	now      func() time.Time
+	ent   *ent.Client
+	bus   *events.Bus
+	users *users.Module
+	now   func() time.Time
 }
 
 // ExternalSecurityDeps is what the Bearer-token handler is built from.
@@ -93,8 +93,8 @@ type ExternalSecurityDeps struct {
 	Ent *ent.Client
 	// Bus opens the transactions of audited writes made under the token (ADR 0022).
 	Bus *events.Bus
-	// Accounts admits a Connection's User as it admits their own session (Admit).
-	Accounts *accounts.Accounts
+	// Users admits a Connection's User as it admits their own session (Admit).
+	Users *users.Module
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now).
 	Clock func() time.Time
@@ -106,7 +106,7 @@ func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler
 	if now == nil {
 		now = time.Now
 	}
-	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, accounts: d.Accounts, now: now}
+	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, users: d.Users, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
@@ -137,7 +137,7 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 // budget is refused before the token is looked at, a failure counts against it, and a success
 // charges the Workspace's shared /api and /mcp budget. Rejections surface as
 // *ratelimit.LimitedError. A User's own token (a Connection or a Personal token) is admitted as the
-// User's session is (accounts.Admit): refused with 403 acceptance_pending while a required
+// User's session is (users.Admit): refused with 403 acceptance_pending while a required
 // acceptance is pending (ADR 0062), and with 403 second_factor_required once the Workspace's
 // Two-factor requirement withholds its User (ADR 0020); the Workspace's API token meets neither. /mcp
 // authenticates its requests with it; each tool call it dispatches to /api then meets the
@@ -267,7 +267,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		// without the application) through its own name. Each is admitted as the User's own
 		// session is (ADR 0061), and a token carries no Second factor step. The Workspace's API
 		// token is no User's and is not admitted.
-		if err := h.accounts.Admit(ctx, accounts.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
+		if err := h.users.Admit(ctx, users.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
 			return ctx, err
 		}
 		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)

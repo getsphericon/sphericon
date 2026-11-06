@@ -15,21 +15,22 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // store is the adapter's side of the seam over accounts, the way /site supplies it.
-type store struct{ acc *accounts.Accounts }
+type store struct{ acc *users.Module }
 
 func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
 	u, err := s.acc.UserByEmail(ctx, email)
@@ -103,10 +104,10 @@ type rig struct {
 	consents *consentrecords.Module
 }
 
-type option func(*accounts.Accounts, *signup.Config)
+type option func(*users.Module, *signup.Config)
 
 // verificationOff runs the rig on an Instance that does not require email verification.
-func verificationOff(_ *accounts.Accounts, cfg *signup.Config) { cfg.RequireVerification = false }
+func verificationOff(_ *users.Module, cfg *signup.Config) { cfg.RequireVerification = false }
 
 // newRig builds the module over the fixtures, with a mail budget of budget per address.
 func newRig(t *testing.T, budget int, opts ...option) rig {
@@ -124,16 +125,16 @@ func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
 	return build(entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5,
-		func(acc *accounts.Accounts, cfg *signup.Config) { cfg.Store = &lateStore{store: store{acc}} })
+		func(acc *users.Module, cfg *signup.Config) { cfg.Store = &lateStore{store: store{acc}} })
 }
 
 func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
 	consents := testhelper.ConsentRecords(client, bus)
-	acc := accounts.New(client, bus, testhelper.Passwords(), consents)
-	attempts := accounts.NewAttempts(client, accounts.WithRule(accounts.KindSignUp, accounts.ResetRule(budget)))
+	acc := users.New(client, bus, testhelper.Passwords(), consents)
+	attempts := throttle.NewAttempts(client, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := &queue{}
 	cfg := signup.Config{
-		Store: store{acc}, Budget: attempts.For(accounts.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
+		Store: store{acc}, Budget: attempts.For(throttle.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
@@ -159,7 +160,7 @@ func (r rig) user(t *testing.T, email string) *ent.User {
 // budgetTaken reports whether a slot of the address's mail budget was taken.
 func (r rig) budgetTaken(t *testing.T, email string) bool {
 	t.Helper()
-	taken, err := r.db.AuthAttempt.Query().Where(authattempt.Email(email), authattempt.KindEQ(accounts.KindSignUp)).Exist(t.Context())
+	taken, err := r.db.AuthAttempt.Query().Where(authattempt.Email(email), authattempt.KindEQ(throttle.KindSignUp)).Exist(t.Context())
 	require.NoError(t, err)
 	return taken
 }

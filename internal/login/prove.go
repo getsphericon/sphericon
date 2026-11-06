@@ -3,7 +3,7 @@ package login
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
 
 // Proof is what proving the password of a signed-in account decided.
@@ -31,7 +31,7 @@ type ProofResult struct {
 // login failure. The caller holds the account, so it passes its address and hash. A password
 // that is not the account's is refused with ErrPasswordIncorrect.
 func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password string) (ProofResult, error) {
-	address = accounts.NormalizeEmail(address)
+	address = throttle.NormalizeEmail(address)
 
 	delay, wait, err := m.throttle(ctx, address)
 	if err != nil {
@@ -54,12 +54,12 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 // the caller counts with CountFailure: while the delay runs a code is not even checked, so
 // the code cannot be guessed past the budget. It is the same throttle Prove consults first.
 func (m *Module[P]) Throttled(ctx context.Context, address string) (delay Delay, throttled bool, err error) {
-	return m.throttle(ctx, accounts.NormalizeEmail(address))
+	return m.throttle(ctx, throttle.NormalizeEmail(address))
 }
 
 // CountFailure counts one wrong second-step code of an already proven password on the
 // address's budget, the same budget a wrong password feeds (a profile action that asks for
 // the password and then a code, such as User deletion).
 func (m *Module[P]) CountFailure(ctx context.Context, address string) error {
-	return m.cfg.Throttle.RecordFailure(ctx, accounts.NormalizeEmail(address))
+	return m.cfg.Throttle.RecordFailure(ctx, throttle.NormalizeEmail(address))
 }

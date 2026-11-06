@@ -113,7 +113,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
   field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
-  `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422
+  `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
   `workspaces.ErrNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,

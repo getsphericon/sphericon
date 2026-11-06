@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // ReminderLead is how long before a User's grace ends they are reminded to set up a
@@ -36,7 +36,7 @@ func RemindDeadlines(ctx context.Context, client *ent.Client, now time.Time, sen
 	}
 	var errs []error
 	for _, m := range members {
-		deadline, ok := accounts.SecondFactorDeadline(m)
+		deadline, ok := users.SecondFactorDeadline(m)
 		if !ok || now.Before(deadline.Add(-ReminderLead)) || !now.Before(deadline) {
 			continue
 		}
@@ -50,7 +50,7 @@ func RemindDeadlines(ctx context.Context, client *ent.Client, now time.Time, sen
 // remindOnce claims the Membership's reminder for the grace that ends at deadline, sends it,
 // and releases the claim if the send fails.
 func remindOnce(ctx context.Context, s *ent.Scoped, m *ent.Membership, deadline, now time.Time, send SendReminder) error {
-	graceStart := deadline.Add(-accounts.GracePeriod)
+	graceStart := deadline.Add(-users.GracePeriod)
 	claimed, err := s.Membership().Update().
 		Where(membership.ID(m.ID), membership.Or(
 			membership.SecondFactorRemindedAtIsNil(),

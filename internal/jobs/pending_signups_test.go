@@ -10,15 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 func prunePendingSignups(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	w := jobs.NewPrunePendingSignupsWorker(accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), func() time.Time { return now })
+	w := jobs.NewPrunePendingSignupsWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), func() time.Time { return now })
 	require.NoError(t, w.Work(t.Context(), &river.Job[jobs.PrunePendingSignupsArgs]{JobRow: &rivertype.JobRow{}}))
 }
 

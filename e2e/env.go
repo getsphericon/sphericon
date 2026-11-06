@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -29,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -39,7 +39,7 @@ type Env struct {
 	mailpit *Mailpit
 	hooks   *Hooks
 
-	accounts    *accounts.Accounts
+	users       *users.Module
 	memberships *memberships.Module
 	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
@@ -129,13 +129,13 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
-	// The arrange step goes through the product's own Accounts and Memberships modules, taken from the
+	// The arrange step goes through the product's own Users and Memberships modules, taken from the
 	// application's container (no second pool).
-	acc, err := a.Accounts()
+	acc, err := a.Users()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
-		return nil, nil, fmt.Errorf("resolve accounts: %w", err)
+		return nil, nil, fmt.Errorf("resolve users: %w", err)
 	}
 	ms, err := a.Memberships()
 	if err != nil {
@@ -165,7 +165,7 @@ func Boot() (*Env, func(), error) {
 		BaseURL:     a.Config.AppURL,
 		mailpit:     mp,
 		hooks:       hooks,
-		accounts:    acc,
+		users:       acc,
 		memberships: ms,
 		bus:         bus,
 

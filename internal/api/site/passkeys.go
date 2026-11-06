@@ -18,7 +18,7 @@ func (h *Handlers) SitePasskeysList(ctx context.Context) (*siteapi.SitePasskeyLi
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePas
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
+	u, err := h.users.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

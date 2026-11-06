@@ -15,7 +15,6 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -32,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -75,7 +75,7 @@ type Deps struct {
 	SystemSender messaging.EmailSender
 	Catalog      *messaging.Catalog
 	Rules        *rules.Module
-	Accounts     *accounts.Accounts
+	Users        *users.Module
 	Orders       *orders.Module
 	Deletion     *workspacedeletion.Module
 	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
@@ -138,9 +138,9 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages))
-	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Accounts, deps.Retention.UnverifiedUsers))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Accounts, now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion, now))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event

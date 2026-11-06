@@ -12,13 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // controlPlane is a client of the operator's control plane: a Service credential that reads the
@@ -123,7 +123,7 @@ func TestReplayingAUserFeedCursorReturnsTheSamePage(t *testing.T) {
 func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
 	_, saved := usersFrom(t, c, "")
 
 	created, err := acc.SignUpVerified(t.Context(), signup.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
@@ -134,7 +134,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	assert.Equal(t, "nora@new.test", string(got[0].Email.Value))
 
 	name := "Nora Renamed"
-	_, err = acc.ChangeProfile(t.Context(), created, accounts.ProfileChange{Name: &name}, nil)
+	_, err = acc.ChangeProfile(t.Context(), created, users.ProfileChange{Name: &name}, nil)
 	require.NoError(t, err)
 	got, saved = usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
@@ -149,7 +149,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 func TestEndingTheSessionsIsNotAnEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
 	_, saved := usersFrom(t, c, "")
 
 	require.NoError(t, acc.EndSessions(t.Context(), fixtures.OwnerJohnID))
@@ -189,7 +189,7 @@ func TestASignUpThatAcceptsTheMailingsIsOneEntryWithTheConsent(t *testing.T) {
 		consentrecord.SourceSignUpForm)
 	require.NoError(t, err)
 
-	created, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).
+	created, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).
 		SignUpVerified(t.Context(), signup.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!", Consents: consents})
 	require.NoError(t, err)
 
@@ -245,7 +245,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
+	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
 	require.NoError(t, err)
 
 	got, saved := usersFrom(t, c, saved)
@@ -266,14 +266,14 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
+	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
 	_, saved := usersFrom(t, c, "")
 	_, err := acc.DeleteUser(t.Context(), fixtures.MemberMaryID, nil)
 	require.NoError(t, err)
 	john, err := h.env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	name := "John Renamed"
-	_, err = acc.ChangeProfile(t.Context(), john, accounts.ProfileChange{Name: &name}, nil)
+	_, err = acc.ChangeProfile(t.Context(), john, users.ProfileChange{Name: &name}, nil)
 	require.NoError(t, err)
 
 	first := userPage(t, c, saved, 1)
@@ -292,7 +292,7 @@ func TestAPrunedUnverifiedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
+	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
 	require.NoError(t, err)
 
 	got, _ := usersFrom(t, c, saved)

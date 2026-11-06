@@ -19,10 +19,10 @@ import (
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -425,7 +426,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	id, err := client.User.Query().Where(user.Email(accounts.NormalizeEmail(email))).OnlyID(ctx)
+	id, err := client.User.Query().Where(user.Email(throttle.NormalizeEmail(email))).OnlyID(ctx)
 	if err != nil {
 		return false, fmt.Errorf("user %q: %w", email, err)
 	}
@@ -443,7 +444,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
 // (ADR 0042): an Owner made from a shell, with no Sign-up.
 func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	acc, err := do.Invoke[*accounts.Accounts](a.injector)
+	acc, err := do.Invoke[*users.Module](a.injector)
 	if err != nil {
 		return "", err
 	}
@@ -511,11 +512,11 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 	return edition.Staff.ServiceCredentials(ctx, name)
 }
 
-// Accounts is the product's Accounts module from the DI container, for harnesses that
+// Users is the product's Users module from the DI container, for harnesses that
 // arrange users and Workspaces through the same instance the HTTP surface runs on
 // (the end-to-end suite), so they open no second connection pool.
-func (a *App) Accounts() (*accounts.Accounts, error) {
-	return do.Invoke[*accounts.Accounts](a.injector)
+func (a *App) Users() (*users.Module, error) {
+	return do.Invoke[*users.Module](a.injector)
 }
 
 // Memberships is the product's Memberships module from the DI container, for the same harnesses:
