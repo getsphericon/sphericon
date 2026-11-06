@@ -3,25 +3,29 @@
 # the rule's `because`, so read it before reaching for a baseline entry.
 version: 1
 
-# The rule parts several components share, merged with `<<`.
+# The rule parts several components share, merged with `<<` or aliased.
 # A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
-# that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api), `x-core-forbids`
-# (each context's `domain-<context>`, the Enterprise `ee-domain-<context>` and `ee-usecase`),
+# that may reach the core: `x-core-forbids` (the API surfaces, MCP, the Problem mapping, each
+# context's `domain-<context>`, ee-api, the Enterprise `ee-domain-<context>` and `ee-usecase`),
 # `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
 # `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
-# take this list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
-# serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which alone
-# may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it, and
-# `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even inside its own module fails, and tests are
-# excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
+# take this list whole. The removal of the only Owner's Membership of a Workspace in its deletion
+# window serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which
+# alone may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it,
+# and `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even
+# inside its own module fails, and tests are excluded. Name the function as
+# `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
-# So does contacts.DeleteIn, the Contact row without the rest of its Erasure.
 # So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User) and the issue of an OAuth grant's credentials (the Connection, a refresh token),
-# the moves of a Workspace's deletion cycle, and the creation of a Workspace with its creator's
-# Membership.
+# Passkeys of a User), the issue of an OAuth grant's credentials (the Connection, a refresh token),
+# the moves of a Workspace's deletion cycle with each owner's erase of its rows, the creation of a
+# Workspace with its creator's Membership, and each owner's step of a Contact's Erasure (the Contact
+# row, contacts.DeleteIn, among them). The Erasure's purge of queued jobs is a method of the bus's
+# publisher (events.PurgingPublisher), which a name cannot forbid. The Enterprise Edition's erase
+# of its own rows is in every list but this one: the wiring and the Edition, which take this list,
+# hand it to the use case.
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/tags.DeleteIn
@@ -203,75 +207,68 @@ x-unchecked-removals: &unchecked-removals
   - &memberships-erase-memberships-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/memberships.EraseMembershipsIn
     because: *workspace-erase-because
-x-no-raw-client: &no-raw-client
-  forbid_symbol:
-    - name: github.com/getsphericon/sphericon/ent.Client
-      because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
-    - *tags-delete-in
-    - *leave-doomed-workspace-in
-    - *contacts-update-custom-field-in
-    - *integrations-delete-in
-    - *sendingdomains-delete-in
-    - *sendingdomains-record-dkim
-    - *sendingdomains-record-dmarc
-    - *contacts-delete-in
-    - *users-set-pending-second-factor
-    - *users-accept-second-factor-step-in
-    - *users-confirm-second-factor-in
-    - *users-clear-second-factor-in
-    - *recoverycodes-replace-in
-    - *recoverycodes-delete-in
-    - *passkeys-delete-all-in
-    - *apitokens-issue-connection
-    - *apitokens-rotate-connection
-    - *oauthclients-new-refresh-token-in
-    - *workspaces-discard-in
-    - *workspaces-restore-in
-    - *workspaces-tombstone-in
-    - *workspaces-create-in
-    - *memberships-add-creator-in
-    - *events-erase-events-in
-    - *orders-erase-held-order-events-in
-    - *orders-erase-order-movements-in
-    - *orders-erase-orders-in
-    - *capturedmessages-erase-captured-messages-in
-    - *outboundmessages-erase-tracked-links-in
-    - *outboundmessages-erase-outbound-messages-in
-    - *broadcasts-erase-broadcast-recipients-in
-    - *rules-erase-rule-firings-in
-    - *rules-erase-rule-version-triggers-in
-    - *rules-erase-rule-versions-in
-    - *rules-erase-rules-in
-    - *automations-erase-automation-runs-in
-    - *automations-erase-automation-versions-in
-    - *visitors-erase-visitors-in
-    - *confirmations-erase-confirmations-in
-    - *unsubscribes-erase-unsubscribes-in
-    - *suppressions-erase-suppressions-in
-    - *holds-erase-holds-in
-    - *providerlimit-erase-provider-limiters-in
-    - *providerlimit-erase-send-cap-limiters-in
-    - *webhookendpoints-erase-webhook-endpoints-in
-    - *invitations-erase-invitations-in
-    - *apitokens-erase-api-tokens-in
-    - *broadcasts-erase-broadcasts-in
-    - *automations-erase-automations-in
-    - *segments-erase-segments-in
-    - *emailtemplates-erase-email-templates-in
-    - *brandkits-erase-brand-kits-in
-    - *contacts-erase-contacts-in
-    - *tags-erase-tags-in
-    - *contacts-erase-custom-fields-in
-    - *trackingdomains-erase-tracking-domains-in
-    - *sendingdomains-erase-sending-domains-in
-    - *integrations-erase-integrations-in
-    - *joindomains-erase-join-domains-in
-    - *memberships-erase-memberships-in
-# The forbid list of a component that holds no raw client (the non-raw component of each context,
-# `domain-<context>`): the raw client and every unchecked removal.
+  - &oauthclients-delete-codes-in
+    name: github.com/getsphericon/sphericon/internal/domain/identity/oauthclients.DeleteCodesIn
+    because: the OAuth codes that name a Workspace go only in the last transaction of its erase, by the use case internal/usecase/workspacedeletion (ADR 0043, ADR 0102); call the use case
+  - &broadcasts-cancel-pending
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.CancelPending
+    because: &contact-erase-because a Contact is erased only by the use case internal/usecase/contacterasure, which runs each owner's step in its order, in the one transaction of the Erasure, with the Contact row last (ADR 0021, ADR 0102); call the use case
+  - &automations-cancel-pending
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.CancelPending
+    because: *contact-erase-because
+  - &rules-cancel-pending
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.CancelPending
+    because: *contact-erase-because
+  - &outboundmessages-erase-short-links
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseShortLinks
+    because: *contact-erase-because
+  - &bindings-erase-subject
+    name: github.com/getsphericon/sphericon/internal/domain/sending/bindings.EraseSubject
+    because: *contact-erase-because
+  - &events-erase-subject
+    name: github.com/getsphericon/sphericon/internal/infra/events.EraseSubject
+    because: *contact-erase-because
+  - &visitors-erase-subject
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseSubject
+    because: *contact-erase-because
+  - &confirmations-erase-contact
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/confirmations.EraseContact
+    because: *contact-erase-because
+  - &automations-erase-runs
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseRuns
+    because: *contact-erase-because
+  - &rules-erase-firings
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseFirings
+    because: *contact-erase-because
+  - &unsubscribes-erase-sms
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseSMS
+    because: *contact-erase-because
+  - &unsubscribes-detach-contact
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.DetachContact
+    because: *contact-erase-because
+  - &suppressions-erase-contact
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseContact
+    because: *contact-erase-because
+  - &outboundmessages-anonymize-contact
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeContact
+    because: *contact-erase-because
+  - &broadcasts-detach-recipients
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.DetachRecipients
+    because: *contact-erase-because
+  - &outboundmessages-anonymize-destinations
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.AnonymizeDestinations
+    because: *contact-erase-because
+  - &capturedmessages-erase-to
+    name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseTo
+    because: *contact-erase-because
+# The forbid list of every component that may reach the core and holds no raw client (the API
+# surfaces, MCP, the Problem mapping, the non-raw component of each context, `domain-<context>`,
+# and the Enterprise surfaces, use cases and modules that hold none): the raw client, every
+# unchecked removal, and the Enterprise Edition's own erase of a deleted Workspace, which only the
+# wiring and the Edition hand to the use case.
 x-core-forbids: &core-forbids
   - name: github.com/getsphericon/sphericon/ent.Client
-    because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module
+    because: a handler or a domain module takes a *ent.Scoped so every query is workspace-bound; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module or a handler
   - *tags-delete-in
   - *leave-doomed-workspace-in
   - *contacts-update-custom-field-in
@@ -332,6 +329,33 @@ x-core-forbids: &core-forbids
   - *integrations-erase-integrations-in
   - *joindomains-erase-join-domains-in
   - *memberships-erase-memberships-in
+  - *oauthclients-delete-codes-in
+  - *broadcasts-cancel-pending
+  - *automations-cancel-pending
+  - *rules-cancel-pending
+  - *outboundmessages-erase-short-links
+  - *bindings-erase-subject
+  - *events-erase-subject
+  - *visitors-erase-subject
+  - *confirmations-erase-contact
+  - *automations-erase-runs
+  - *rules-erase-firings
+  - *unsubscribes-erase-sms
+  - *unsubscribes-detach-contact
+  - *suppressions-erase-contact
+  - *outboundmessages-anonymize-contact
+  - *broadcasts-detach-recipients
+  - *outboundmessages-anonymize-destinations
+  - *capturedmessages-erase-to
+  - &auditentries-erase-audit-entries-in
+    name: github.com/getsphericon/sphericon/ee/domain/insights/auditentries.EraseAuditEntriesIn
+    because: *workspace-erase-because
+  - &erasures-erase-erasures-in
+    name: github.com/getsphericon/sphericon/ee/domain/insights/erasures.EraseErasuresIn
+    because: *workspace-erase-because
+  - &usages-erase-usage-in
+    name: github.com/getsphericon/sphericon/ee/domain/insights/usages.EraseUsageIn
+    because: *workspace-erase-because
 # The forbid list of a raw-client holder (the runner, `domain-<context>-raw` and the
 # bottom of identity, `domain-identity-base`): the ent client's hooks and the upgrade types, which
 # only the wiring installs and reads, and every unchecked removal.
@@ -423,6 +447,27 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *integrations-erase-integrations-in
   - *joindomains-erase-join-domains-in
   - *memberships-erase-memberships-in
+  - *oauthclients-delete-codes-in
+  - *broadcasts-cancel-pending
+  - *automations-cancel-pending
+  - *rules-cancel-pending
+  - *outboundmessages-erase-short-links
+  - *bindings-erase-subject
+  - *events-erase-subject
+  - *visitors-erase-subject
+  - *confirmations-erase-contact
+  - *automations-erase-runs
+  - *rules-erase-firings
+  - *unsubscribes-erase-sms
+  - *unsubscribes-detach-contact
+  - *suppressions-erase-contact
+  - *outboundmessages-anonymize-contact
+  - *broadcasts-detach-recipients
+  - *outboundmessages-anonymize-destinations
+  - *capturedmessages-erase-to
+  - *auditentries-erase-audit-entries-in
+  - *erasures-erase-erasures-in
+  - *usages-erase-usage-in
 # The same list less memberships.LeaveDoomedWorkspaceIn, for its one caller: User deletion, in
 # `internal/domain/identity/users` (component `domain-identity-users`).
 x-user-deletion-forbids: &user-deletion-forbids
@@ -494,6 +539,27 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *integrations-erase-integrations-in
   - *joindomains-erase-join-domains-in
   - *memberships-erase-memberships-in
+  - *oauthclients-delete-codes-in
+  - *broadcasts-cancel-pending
+  - *automations-cancel-pending
+  - *rules-cancel-pending
+  - *outboundmessages-erase-short-links
+  - *bindings-erase-subject
+  - *events-erase-subject
+  - *visitors-erase-subject
+  - *confirmations-erase-contact
+  - *automations-erase-runs
+  - *rules-erase-firings
+  - *unsubscribes-erase-sms
+  - *unsubscribes-detach-contact
+  - *suppressions-erase-contact
+  - *outboundmessages-anonymize-contact
+  - *broadcasts-detach-recipients
+  - *outboundmessages-anonymize-destinations
+  - *capturedmessages-erase-to
+  - *auditentries-erase-audit-entries-in
+  - *erasures-erase-erasures-in
+  - *usages-erase-usage-in
 # No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
 # surface's generated package: what the core shares with a contract is generated into the kernel
 # (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
@@ -526,7 +592,7 @@ components:
   # handlers, so it sits among the drivers and the core never reaches it.
   api-problem:
     in: internal/api/problem
-    allow_importers: [api-site, api-external, api-collect, api-staff, ee-api, wiring]
+    allow_importers: [api-site, api-external, api-collect, api-staff, mcp, ee-api, wiring]
     because: the Problem mapping is the surfaces' own code (it imports every surface's generated package); a core package returns its refusal and never decides the answer
 
   # The wiring: the places that may build the whole program, and so may reach the Enterprise Edition.
@@ -535,7 +601,6 @@ components:
       [
         internal/app,
         internal/server,
-        internal/mcpserver,
         internal/testhelper,
         internal/doctor,
         internal/healthcheck,
@@ -656,10 +721,14 @@ components:
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 
-  # The drivers (ADR 0102) are the API surfaces above, MCP (in the wiring) and the job runner: each
-  # receives input, calls a domain module or a use case and returns or records the result (review
-  # rule 5), and no core tier imports one. Only the wiring builds the runner; a package with jobs of
-  # its own hands them in as a jobextension.Extension.
+  # The drivers (ADR 0102) are the API surfaces above, MCP and the job runner: each receives input,
+  # calls a domain module or a use case and returns or records the result (review rule 5), and no
+  # core tier imports one. Only the wiring builds MCP and the runner; a package with jobs of its own
+  # hands them in as a jobextension.Extension.
+  mcp:
+    in: internal/mcpserver
+    allow_importers: [wiring]
+    because: MCP is a driver (ADR 0102) that only the wiring mounts; no core tier imports it
   runner:
     in: internal/jobs
     allow_importers: [wiring]
@@ -878,7 +947,7 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 
 rules:
   api-site:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-auth,
@@ -901,7 +970,7 @@ rules:
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-auth,
@@ -922,13 +991,13 @@ rules:
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-collect:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on:
       [api-auth, api-problem, domain-contacts, domain-sending-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-problem,
@@ -941,13 +1010,18 @@ rules:
       ]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
+  mcp:
+    forbid_symbol: *core-forbids
+    may_depend_on: [api-auth, api-problem, domain-identity, gen-surfaces]
+    forbid_external: *no-container
+    because: MCP projects the external API's operations as tools over the shared auth handlers and the Problem mapping, never over another surface's handlers
   api-auth:
     may_depend_on: [domain-identity, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the security handlers sit below every surface
   api-problem:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on: [domain-orchestration, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
@@ -1140,7 +1214,7 @@ rules:
     may_depend_on: []
     because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
-    <<: *no-raw-client
+    forbid_symbol: *core-forbids
     may_depend_on:
       [
         api-problem,
@@ -1252,6 +1326,7 @@ rules:
         api-staff,
         api-auth,
         api-problem,
+        mcp,
         runner,
         usecase,
         usecase-raw,

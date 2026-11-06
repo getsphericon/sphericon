@@ -25,8 +25,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
-	"github.com/getsphericon/sphericon/internal/server"
 )
 
 // apiPrefix is where the external ogen server is mounted.
@@ -163,7 +163,7 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 			}
 			// A rate limit, or a valid credential refused for a reason of its own (a Connection
 			// whose User is not admitted), answers as on /api.
-			server.ProblemErrorHandler(r.Context(), w, r, err)
+			problem.ErrorHandler(r.Context(), w, r, err)
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), mcpRequestKey{}, r.Context())))
@@ -193,12 +193,12 @@ func boundToRequest(ctx context.Context) (context.Context, context.CancelFunc) {
 func writeProblem(w http.ResponseWriter, code int, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
-	problem := map[string]any{
+	body := map[string]any{
 		"status": code,
 		"title":  http.StatusText(code),
 		"detail": detail,
 	}
-	if err := json.NewEncoder(w).Encode(problem); err != nil {
+	if err := json.NewEncoder(w).Encode(body); err != nil {
 		slog.Warn("write problem response", "error", err)
 	}
 }

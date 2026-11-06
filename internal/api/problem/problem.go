@@ -172,6 +172,28 @@ func Body(status int, detail string) *siteapi.ProblemDetails {
 	}
 }
 
+// ErrorHandler renders, as the contract's Problem, what fails in an ogen server before or around a
+// handler (a request it cannot decode), and the refusals of /mcp's own token check. A handler's
+// own error goes through its surface's NewError instead, which answers through the same Of.
+func ErrorHandler(ctx context.Context, w http.ResponseWriter, _ *http.Request, err error) {
+	status, body := Of(ctx, err)
+	Write(w, status, body)
+}
+
+// Write renders body as application/problem+json with status.
+func Write(w http.ResponseWriter, status int, body *siteapi.ProblemDetails) {
+	data, err := body.MarshalJSON()
+	if err != nil {
+		// The generated encoders do not fail on these bodies; a failure still answers the status.
+		slog.Warn("encode problem", "error", err)
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(status)
+	if _, err := w.Write(data); err != nil {
+		slog.Warn("write json response", "error", err)
+	}
+}
+
 // mapper maps what a refusal names to the problem models' members, and the site's problem to
 // the other surfaces' (the goverter converter of converter.go).
 var mapper mapping.Converter = &mapping.ConverterImpl{}

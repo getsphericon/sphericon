@@ -84,15 +84,15 @@ coding standards in `CODING_STANDARDS.md`.
 - **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
   package (`internal/api/{site,external,collect,staff}`) never imports another surface, the core (`internal/{kernel,infra,domain,usecase}`)
   imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
-  `internal/server`, `internal/mcpserver`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`,
+  `internal/server`, `internal/testhelper`, `internal/doctor`, `internal/healthcheck`,
   `cmd/server`) assemble them; only they import `ee/`. Inside `ee/`, the Enterprise surfaces (`ee/api/**`,
   component `ee-api`) call an Enterprise use case or domain module and hold neither the raw client
   nor the container, and only the Edition (`ee/ee.go`, component `ee-edition`) builds them: no
   Enterprise module imports a handler (see "Enterprise Edition layout" below). The drivers (ADR 0102) are the API surfaces, their shared security
-  handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP and the job runner
-  (`internal/jobs`, component `runner`): each receives input, calls a domain module or a use case and
-  returns or records the result (review rule 5), and no core tier imports one. Only the wiring imports the
-  runner, and a package with jobs of its own (the Edition, the Release check and the Telemetry
+  handlers and Problem mapping (`internal/api/auth`, `internal/api/problem`), MCP (`internal/mcpserver`,
+  component `mcp`, with the surfaces' rules) and the job runner (`internal/jobs`, component `runner`):
+  each receives input, calls a domain module or a use case and returns or records the result (review
+  rule 5), and no core tier imports one. Only the wiring imports MCP and the runner, and a package with jobs of its own (the Edition, the Release check and the Telemetry
   report) hands them in as a `jobextension.Extension`. A new wiring package is added to the `wiring` component, never to a
   baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
   packages that import none of ours, such as the vocabulary every tier shares (`channels`,
@@ -270,9 +270,9 @@ coding standards in `CODING_STANDARDS.md`.
   unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
-  the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core (`x-no-raw-client`,
-  `x-core-forbids` for each context's `domain-<context>` and the Enterprise `ee-domain-<context>`
-  and `ee-usecase`, `x-raw-holder-forbids` for the runner, each context's raw-client components and
+  the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core
+  (`x-core-forbids` for the API surfaces, MCP, the Problem mapping, each context's `domain-<context>`,
+  `ee-api` and the Enterprise `ee-domain-<context>` and `ee-usecase`, `x-raw-holder-forbids` for the runner, each context's raw-client components and
   the Enterprise `ee-domain-<context>-raw` and `ee-usecase-raw`, and the whole list
   in `api-auth`, `ee-edition`, `testsupport` and `wiring`), so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
@@ -283,9 +283,13 @@ coding standards in `CODING_STANDARDS.md`.
   issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
   `oauthclients.NewRefreshTokenIn`), the moves of a Workspace's deletion cycle
   (`workspaces.DiscardIn`, `RestoreIn` and `TombstoneIn`), the core removals of its erase (each
-  `Erase…In` of a Workspace-owned table, one shared reason; the Edition's three are not listed, since
-  the wiring names them to hand them in) and the creation of a Workspace with its
-  creator's Membership (`workspaces.CreateIn`, `memberships.AddCreatorIn`) are such items too. The tests of the operation live in the use case's own `_test` package
+  `Erase…In` of a Workspace-owned table, one shared reason, and `oauthclients.DeleteCodesIn`; the
+  Edition's three are in every list but `x-unchecked-removals`, since the wiring and the Edition, which
+  take that one, name them to hand them in), the creation of a Workspace with its creator's Membership
+  (`workspaces.CreateIn`, `memberships.AddCreatorIn`) and each owner's step of a Contact's Erasure
+  (`visitors.EraseSubject`, `events.EraseSubject`, `rules.EraseFirings` and the others
+  `internal/usecase/contacterasure` sequences; the purge of its queued jobs is a method of the bus's
+  publisher, which a name cannot forbid) are such items too. The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`, `internal/usecase/unsubscriberecording`, `internal/usecase/contactintake`; a retype's refusal is tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
   rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take

@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -74,7 +73,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
 		siteapi.WithPathPrefix("/site"),
 		siteapi.WithMiddleware(siteHandlers.Access),
-		siteapi.WithErrorHandler(ProblemErrorHandler),
+		siteapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -117,7 +116,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		apicollect.NewHandlers(bus, site.Bindings, identify.New(bus)),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
-		collectapi.WithErrorHandler(ProblemErrorHandler),
+		collectapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -187,7 +186,7 @@ func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHan
 		apiexternal.NewHandlers(deps),
 		security,
 		externalapi.WithPathPrefix("/api"),
-		externalapi.WithErrorHandler(ProblemErrorHandler),
+		externalapi.WithErrorHandler(problem.ErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -220,13 +219,13 @@ func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *
 	}
 	rest := http.NotFoundHandler()
 	if sections != nil {
-		h, err := sections.Server(staffeeapi.WithErrorHandler(ProblemErrorHandler))
+		h, err := sections.Server(staffeeapi.WithErrorHandler(problem.ErrorHandler))
 		if err != nil {
 			return nil, err
 		}
 		rest = h
 	}
-	srv, err := core.Server(staffapi.WithErrorHandler(ProblemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
+	srv, err := core.Server(staffapi.WithErrorHandler(problem.ErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +255,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limi
 	mux := http.NewServeMux()
 	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
 	if surface != nil {
-		srv, err := surface.Server(serviceapi.WithErrorHandler(ProblemErrorHandler))
+		srv, err := surface.Server(serviceapi.WithErrorHandler(problem.ErrorHandler))
 		if err != nil {
 			return nil, err
 		}
@@ -265,31 +264,8 @@ func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limi
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
-// ProblemErrorHandler renders, as the contract's Problem (internal/api/problem), what fails in an
-// ogen server before or around a handler (a request it cannot decode), and the refusals of /mcp's
-// own token check. A handler's own error goes through its surface's NewError instead, which
-// answers through the same problem.Of.
-func ProblemErrorHandler(ctx context.Context, w http.ResponseWriter, _ *http.Request, err error) {
-	status, body := problem.Of(ctx, err)
-	writeBody(w, status, body)
-}
-
 func writeProblem(w http.ResponseWriter, status int, detail string) {
-	writeBody(w, status, problem.Body(status, detail))
-}
-
-// writeBody renders body as application/problem+json with status.
-func writeBody(w http.ResponseWriter, status int, body *siteapi.ProblemDetails) {
-	data, err := body.MarshalJSON()
-	if err != nil {
-		// The generated encoders do not fail on these bodies; a failure still answers the status.
-		slog.Warn("encode problem", "error", err)
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(status)
-	if _, err := w.Write(data); err != nil {
-		slog.Warn("write json response", "error", err)
-	}
+	problem.Write(w, status, problem.Body(status, detail))
 }
 
 // --- cross-cutting net/http middleware ---
@@ -331,7 +307,7 @@ func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
 				pending))
 			body.Code = siteapi.NewOptProblemCode(siteapi.ProblemCodeMigrationsPending)
-			writeBody(w, http.StatusServiceUnavailable, body)
+			problem.Write(w, http.StatusServiceUnavailable, body)
 		})
 	}
 }
@@ -357,7 +333,7 @@ func recoverer(next http.Handler) http.Handler {
 				if dbg := problem.Debug(r, w, fmt.Sprint(rec), stack); dbg != nil {
 					body.Debug = siteapi.NewOptProblemDebug(*dbg)
 				}
-				writeBody(w, http.StatusInternalServerError, body)
+				problem.Write(w, http.StatusInternalServerError, body)
 			}
 		}()
 		next.ServeHTTP(w, r)
@@ -372,7 +348,7 @@ func isCollectPath(path string) bool { return strings.HasPrefix(path, collectPre
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
 // collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
-// body surfaces as *http.MaxBytesError, which ProblemErrorHandler renders as 413.
+// body surfaces as *http.MaxBytesError, which problem.ErrorHandler renders as 413.
 func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

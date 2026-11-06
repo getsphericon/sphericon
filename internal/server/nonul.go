@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/getsphericon/sphericon/internal/api/problem"
 )
 
 // noNUL refuses a request that carries a NUL character, in its path, its query or a JSON body
@@ -22,7 +24,7 @@ func noNUL(next http.Handler) http.Handler {
 		if r.ContentLength != 0 && r.Body != nil && r.Body != http.NoBody {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				ProblemErrorHandler(r.Context(), w, r, err)
+				problem.ErrorHandler(r.Context(), w, r, err)
 				return
 			}
 			if containsNUL(body) {
