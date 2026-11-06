@@ -16,9 +16,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -115,14 +115,14 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 
 // recordSMSLink records the click on a text's unsubscribe link: on SMS every opt-out is the
 // number's Channel-wide one (ADR 0077), whatever source the link names, with the same effects as a
-// STOP (optout.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
+// STOP (channelstop.StopSMS), and the Broadcast the text came from counts it. The Automation's Enrollment
 // goes on: its next text is Skipped like any other, and a step on another Channel still runs.
 func recordSMSLink(ctx context.Context, sc *ent.Scoped, target linktarget.Unsubscribe, number string) error {
 	before, err := unsubscribes.SMSOptOut(ctx, sc, number)
 	if err != nil || before != nil {
 		return err
 	}
-	if err := optout.StopSMS(ctx, sc, number, unsubscribe.ViaLink); err != nil {
+	if err := channelstop.StopSMS(ctx, sc, number, unsubscribe.ViaLink); err != nil {
 		return err
 	}
 	if target.BroadcastID != 0 && target.ContactID != 0 {

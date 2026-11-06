@@ -39,7 +39,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	linkclicks "github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -56,7 +56,7 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	needsattention "github.com/getsphericon/sphericon/internal/usecase/needsattention"
+	needsattentionreport "github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	releasecheck "github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"time"
 )
@@ -175,12 +175,12 @@ func (c *ConverterImpl) AnalyticsOverviewToResource(source *analyticsreport.Over
 	}
 	return pSiteapiSiteAnalyticsOverview
 }
-func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) site.SiteAnalyticsOwnerKind {
+func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclick.OwnerKind) site.SiteAnalyticsOwnerKind {
 	var siteapiSiteAnalyticsOwnerKind site.SiteAnalyticsOwnerKind
 	switch source {
-	case linkclicks.OwnerAutomation:
+	case linkclick.OwnerAutomation:
 		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindAutomation
-	case linkclicks.OwnerBroadcast:
+	case linkclick.OwnerBroadcast:
 		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindBroadcast
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -216,67 +216,67 @@ func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analyticsrep
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
 }
-func (c *ConverterImpl) AttentionItemsToResources(source []needsattention.Item) []site.SiteAttentionItem {
+func (c *ConverterImpl) AttentionItemsToResources(source []needsattentionreport.Item) []site.SiteAttentionItem {
 	var siteapiSiteAttentionItemList []site.SiteAttentionItem
 	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAttentionItemList[i] = c.needsattentionItemToSiteapiSiteAttentionItem(source[i])
+		siteapiSiteAttentionItemList[i] = c.needsattentionreportItemToSiteapiSiteAttentionItem(source[i])
 	}
 	return siteapiSiteAttentionItemList
 }
-func (c *ConverterImpl) AttentionKindToResource(source needsattention.Kind) site.SiteAttentionKind {
+func (c *ConverterImpl) AttentionKindToResource(source needsattentionreport.Kind) site.SiteAttentionKind {
 	var siteapiSiteAttentionKind site.SiteAttentionKind
 	switch source {
-	case needsattention.KindAutomationCannotSend:
+	case needsattentionreport.KindAutomationCannotSend:
 		siteapiSiteAttentionKind = site.SiteAttentionKindAutomationCannotSend
-	case needsattention.KindBroadcastFailed:
+	case needsattentionreport.KindBroadcastFailed:
 		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastFailed
-	case needsattention.KindBroadcastHeld:
+	case needsattentionreport.KindBroadcastHeld:
 		siteapiSiteAttentionKind = site.SiteAttentionKindBroadcastHeld
-	case needsattention.KindDeliverabilityWarning:
+	case needsattentionreport.KindDeliverabilityWarning:
 		siteapiSiteAttentionKind = site.SiteAttentionKindDeliverabilityWarning
-	case needsattention.KindEnrollmentsFailed:
+	case needsattentionreport.KindEnrollmentsFailed:
 		siteapiSiteAttentionKind = site.SiteAttentionKindEnrollmentsFailed
-	case needsattention.KindIntegrationProviderProbation:
+	case needsattentionreport.KindIntegrationProviderProbation:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderProbation
-	case needsattention.KindIntegrationProviderRefused:
+	case needsattentionreport.KindIntegrationProviderRefused:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderRefused
-	case needsattention.KindIntegrationProviderSandbox:
+	case needsattentionreport.KindIntegrationProviderSandbox:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
-	case needsattention.KindIntegrationProviderStopped:
+	case needsattentionreport.KindIntegrationProviderStopped:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
-	case needsattention.KindProviderLimitSpent:
+	case needsattentionreport.KindProviderLimitSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
-	case needsattention.KindScheduledBroadcastOverSendCap:
+	case needsattentionreport.KindScheduledBroadcastOverSendCap:
 		siteapiSiteAttentionKind = site.SiteAttentionKindScheduledBroadcastOverSendCap
-	case needsattention.KindSendCapSpent:
+	case needsattentionreport.KindSendCapSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendCapSpent
-	case needsattention.KindSendingDomainNotBulkReady:
+	case needsattentionreport.KindSendingDomainNotBulkReady:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainNotBulkReady
-	case needsattention.KindSendingDomainVerificationLost:
+	case needsattentionreport.KindSendingDomainVerificationLost:
 		siteapiSiteAttentionKind = site.SiteAttentionKindSendingDomainVerificationLost
-	case needsattention.KindWebhookDisabled:
+	case needsattentionreport.KindWebhookDisabled:
 		siteapiSiteAttentionKind = site.SiteAttentionKindWebhookDisabled
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAttentionKind
 }
-func (c *ConverterImpl) AttentionSeverityToResource(source needsattention.Severity) site.SiteAttentionSeverity {
+func (c *ConverterImpl) AttentionSeverityToResource(source needsattentionreport.Severity) site.SiteAttentionSeverity {
 	var siteapiSiteAttentionSeverity site.SiteAttentionSeverity
 	switch source {
-	case needsattention.SeverityBlocked:
+	case needsattentionreport.SeverityBlocked:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityBlocked
-	case needsattention.SeverityDegraded:
+	case needsattentionreport.SeverityDegraded:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityDegraded
-	case needsattention.SeverityNotice:
+	case needsattentionreport.SeverityNotice:
 		siteapiSiteAttentionSeverity = site.SiteAttentionSeverityNotice
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAttentionSeverity
 }
-func (c *ConverterImpl) AttentionSubjectToResource(source needsattention.Subject) site.SiteAttentionSubject {
+func (c *ConverterImpl) AttentionSubjectToResource(source needsattentionreport.Subject) site.SiteAttentionSubject {
 	var siteapiSiteAttentionSubject site.SiteAttentionSubject
 	siteapiSiteAttentionSubject.ID = site.EntityId(source.ID)
 	siteapiSiteAttentionSubject.Name = source.Name
@@ -1414,12 +1414,12 @@ func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.Si
 	siteapiSiteLegalDocument.PublishedAt = timestamp(source.PublishedAt)
 	return siteapiSiteLegalDocument
 }
-func (c *ConverterImpl) LinkClicksToResource(source []linkclicks.Clicks) []site.SiteLinkClicks {
+func (c *ConverterImpl) LinkClicksToResource(source []linkclick.Clicks) []site.SiteLinkClicks {
 	var siteapiSiteLinkClicksList []site.SiteLinkClicks
 	if source != nil {
 		siteapiSiteLinkClicksList = make([]site.SiteLinkClicks, len(source))
 		for i := 0; i < len(source); i++ {
-			siteapiSiteLinkClicksList[i] = c.linkclicksClicksToSiteapiSiteLinkClicks(source[i])
+			siteapiSiteLinkClicksList[i] = c.linkclickClicksToSiteapiSiteLinkClicks(source[i])
 		}
 	}
 	return siteapiSiteLinkClicksList
@@ -2781,13 +2781,13 @@ func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures
 	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
 	return siteapiSiteAutomationStepFigures
 }
-func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
+func (c *ConverterImpl) linkclickClicksToSiteapiSiteLinkClicks(source linkclick.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks
 	siteapiSiteLinkClicks.URL = source.URL
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
 }
-func (c *ConverterImpl) needsattentionItemToSiteapiSiteAttentionItem(source needsattention.Item) site.SiteAttentionItem {
+func (c *ConverterImpl) needsattentionreportItemToSiteapiSiteAttentionItem(source needsattentionreport.Item) site.SiteAttentionItem {
 	var siteapiSiteAttentionItem site.SiteAttentionItem
 	siteapiSiteAttentionItem.Kind = c.AttentionKindToResource(source.Kind)
 	siteapiSiteAttentionItem.Severity = c.AttentionSeverityToResource(source.Severity)

@@ -23,8 +23,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
@@ -96,7 +96,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
-	mod := outboundmessages.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
+	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local"))
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail, Catalog: registry.Default(),
 		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,

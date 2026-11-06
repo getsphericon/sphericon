@@ -29,7 +29,7 @@ COPY --from=frontend /src/dist/ internal/server/assets/spa/
 ARG VERSION=docker
 ARG COMMIT=
 ARG DATE=
-RUN cp CHANGELOG.md internal/domain/instance/changelog/CHANGELOG.md \
+RUN cp CHANGELOG.md internal/domain/instance/upgradenote/CHANGELOG.md \
     && CGO_ENABLED=0 go build -tags embed_spa,embed_changelog \
     -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Version=${VERSION} -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Commit=${COMMIT} -X github.com/getsphericon/sphericon/internal/kernel/buildinfo.Date=${DATE}" \
     -o /sphericon ./cmd/server

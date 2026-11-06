@@ -44,7 +44,7 @@ coding standards in `CODING_STANDARDS.md`.
     sessions, `Current`) and the Sign-up items module `internal/domain/identity/signupitems` (ADR 0062), whose two anonymous reads
     `/site` serves for the sign-up form and the public Legal document pages; and the Enterprise
     sections (`typespec/staffee`: Workspaces, holds, audit, Sign-up survey readout), handlers in `ee/api/staff`
-    over the Enterprise use case `ee/usecase/staffconsole`, served
+    over the Enterprise use case `ee/usecase/workspaceoversight`, served
     only with the license feature `staff` and otherwise 404. `server.NewStaffAPI` mounts the core ogen server
     with the Enterprise one as its not-found handler, so each contract routes its own paths.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
@@ -52,7 +52,7 @@ coding standards in `CODING_STANDARDS.md`.
     `workspaces:read`, `domains:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
-    Handlers and security handler in `ee/api/staff` (`service.go`) over the use case `ee/usecase/staffconsole` and, for the credential, the module `ee/domain/identity/servicecredentials`; every operation names its scopes in
+    Handlers and security handler in `ee/api/staff` (`service.go`) over the use case `ee/usecase/workspaceoversight` and, for the credential, the module `ee/domain/identity/servicecredentials`; every operation names its scopes in
     `ServiceOperationScopes`, generated from the `@requiresServiceScopes(#[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails `tsp compile`; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`
     with a fixture credential (`testhelper.ServiceCredentialValue`).
 - **Sign-in sequence**: `internal/domain/identity/login` (ADR 0020) is the one core module for the password and
@@ -111,7 +111,7 @@ coding standards in `CODING_STANDARDS.md`.
   which stays at the root). Every component may import it, and easement fails its import of
   anything of ours but the kernel and the generated ent client: the bus knows no consumer (the
   wiring registers them; the suppression consumer is a job in `internal/jobs`, and the send-outcome
-  counter of a bounce or a complaint is `ingesthook.RecordOutcome`, registered with `Bus.OnStored`), and
+  counter of a bounce or a complaint is `callbackinterpretation.RecordOutcome`, registered with `Bus.OnStored`), and
   the database package installs no ent hook (`internal/app/entclient` builds every client). No core
   tier (kernel, infrastructure, domain) imports an API surface's generated package (component
   `gen-surfaces`): what the core shares with a contract is generated into the kernel, as the scope
@@ -164,20 +164,20 @@ coding standards in `CODING_STANDARDS.md`.
   An identity module imports no module of another context: not `providerlimit`, not `contacts`.
   Contacts, above it, is one component (`domain-contacts`, the glob of
   `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
-  `unsubscribes`, `optout`, `suppressions`, `eligibility`, `visitors` and `orders`, with the Contact
-  row lock (`contactlock`) and the hook that keeps stored addresses lower-cased (`emailcase`, which
-  targets the Contacts as well as identity's Users and Invitations). None of them holds the raw
+  `unsubscribes`, `channelstop`, `suppressions`, `eligibility`, `visitors` and `orders`, with the Contact
+  row lock (`contactlock`) and the hook that keeps stored addresses lower-cased (`emailcase`, the
+  Email case, which targets the Contacts as well as identity's Users and Invitations). None of them holds the raw
   client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
   context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `bindings` or
   `emailtemplates`, and no use case.
   Content, above contacts, is one component too (`domain-content`, the glob of
   `internal/domain/content`): `emailtemplates`, `brandkits` and `versioneddefinition`, the lifecycle every Versioned
   definition shares. Sending, above content, is `outboundmessages`, `holds`, `providerlimit`,
-  `integrations`, `sendingdomains`, `bindings`, `trackingdomains`, `trackinghostchanges`, `tracking`,
-  `linkclicks`, `reputation`, `capturedmessages` and `privaterelayranges` (the spec's list), with two packages
+  `integrations`, `sendingdomains`, `bindings`, `trackingdomains`, `trackinghostchanges`, `messagetoken`,
+  `linkclick`, `reputation`, `capturedmessages` and `privaterelayranges` (the spec's list), with one package
   placed by the same rule: `preset`, the engine that reads an Integration's callbacks
-  (`integrations` uses it), and `sending`, the DKIM and DMARC primitives of a Sending domain
-  (`sendingdomains` uses them). Its raw-client holders `bindings`, `capturedmessages`,
+  (`integrations` uses it). The DKIM and DMARC primitives of a Sending domain are `sendingdomains`'
+  own. Its raw-client holders `bindings`, `capturedmessages`,
   `integrations`, `privaterelayranges`, `sendingdomains`, `trackingdomains` and `trackinghostchanges` are
   `domain-sending-raw`, the rest `domain-sending`. A content module imports no Integration,
   Outbound send or other sending module, and neither context imports `broadcasts`,
@@ -192,7 +192,7 @@ coding standards in `CODING_STANDARDS.md`.
   `abusewarning` and `exportstream` (the spec's list), with `dataexport`, the Data export of one
   Contact, which reads Outbound messages and Broadcast recipients and so sits above orchestration.
   Instance, the top context, is `instancestates` and `instanceauditentries` (`domain-instance-raw`, both
-  hold the raw client), `upgrade` and `changelog` (`domain-instance`). The Telemetry report the
+  hold the raw client), `upgrade` and `upgradenote` (`domain-instance`). The Telemetry report the
   spec puts there is the use case `internal/usecase/telemetryreport` over `instancestates`. An
   orchestration module imports no insights or instance package, and an insights package no
   instance module.
@@ -249,11 +249,11 @@ coding standards in `CODING_STANDARDS.md`.
   for the Ingest hook), lets only the drivers and the wiring import one (`allow_importers`)
   and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
   when it starts, so there is no `*ent.Scoped` to take: the Second factor of a User
-  (`internal/usecase/secondfactor`) and the exchange of an OAuth code or refresh token, a
+  (`internal/usecase/secondfactorcheck`) and the exchange of an OAuth code or refresh token, a
   secret that names its grant (`internal/usecase/oauthauthorization`). Such a use case holds the
   raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
   in the closed list of "Workspace scoping"; easement holds it as the `usecase-raw` component,
-  one pattern per use case (`internal/usecase/secondfactor*`), isolated like the others.
+  one pattern per use case (`internal/usecase/secondfactorcheck*`), isolated like the others.
   Two more are such use cases: the deletion cycle of a Workspace
   (`internal/usecase/workspacedeletion`), which lists the Workspaces that have no scope yet, erases one
   table at a time, each batch of listed ids through the removal of the table's owner (`tags.EraseTagsIn`,
@@ -305,28 +305,28 @@ coding standards in `CODING_STANDARDS.md`.
   (`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
   primary key, so no check guards it and it is not in `x-unchecked-removals`.
   A use case need not guard a removal: an operation that writes no table itself but reads or
-  changes several modules' rows is one too. Identify (`internal/usecase/identify`, built in
+  changes several modules' rows is one too. A Visitor identification (`internal/usecase/visitoridentification`, built in
   `internal/server` with the collect surface) upserts the Contact through `contacts`, binds the
   Visitor through `visitors`, announces its chats through `bindings` and stitches its Events through
   the bus, in one transaction. The Ingest hook's reading of a provider's callbacks
-  (`ingesthook`) opens the request's transaction and changes Outbound messages, Suppressions,
+  (`callbackinterpretation`) opens the request's transaction and changes Outbound messages, Suppressions,
   Unsubscribes, Confirmations and Bindings through their modules; the Transactional send
   (`transactionalsend`) hands its request to the Outbound send module; the Event log (`eventlog`)
   publishes a customer's Events on the bus and reads them back; the Analytics reports (`analyticsreport`) and what Needs
-  attention (`needsattention`) only read.
+  attention (`needsattentionreport`) only read.
   The consent of a Destination (`internal/domain/contacts/confirmations`,
-  `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/optout`, the stops read in
+  `internal/domain/contacts/unsubscribes` and `internal/domain/contacts/channelstop`, the stops read in
   the Channel) sits in the contacts context, below the Broadcasts and Automations an unsubscribe
   touches: easement fails its import of `broadcasts`, `automations` or a use case as an import
   against the order of the contexts (`domain-contacts`), so only `unsubscriberecording` calls
-  `broadcasts.RecordUnsubscribe` and ends the Enrollment. A Telegram stop (`optout.StopTelegram`, from the
+  `broadcasts.RecordUnsubscribe` and ends the Enrollment. A Telegram stop (`channelstop.StopTelegram`, from the
   Ingest hook's button press or a send that finds the bot blocked) writes no Broadcast row: the
-  recipient row is the `broadcasts` module's (ADR 0102), and neither `optout` nor `outboundmessages`, where a
+  recipient row is the `broadcasts` module's (ADR 0102), and neither `channelstop` nor `outboundmessages`, where a
   blocked send records the stop in its own transaction, may reach it. Its `telegram.unsubscribed`
   names the Broadcast, and the broadcasts consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) counts the unsubscribe with `broadcasts.RecordUnsubscribe` after the opt-out commits. Nothing
   is lost: the job is inserted in the opt-out's transaction, and the count is set once.
   `unsubscribes` is the lowest of the three: `confirmations` imports it (a START lifts the opt-out),
-  and `optout` composes both (a stop drops the Confirmation).
+  and `channelstop` composes both (a stop drops the Confirmation).
   One unchecked removal is called from a domain module until its use case exists:
   `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
   leave, serves User deletion in `internal/domain/identity/users`, which alone is allowed to call it:
@@ -440,7 +440,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      code or a refresh token names its grant: the use case loads the row through
      `internal/domain/identity/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
      `RotateConnection`, `RevokeGrant`) to the Workspace that row names;
-  7. the platform Staff member (ADR 0026): `ee/usecase/staffconsole` scopes over the one Workspace the console
+  7. the platform Staff member (ADR 0026): `ee/usecase/workspaceoversight` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`UseCase.AuditEntries`, via
      `auditentries.Log.Entries`), its deliverability rates (`UseCase.WorkspaceDeliverability`, via
@@ -452,7 +452,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
      rates (`abusedetector.Watch` of `ee/domain/insights/abusedetector`, which the console's `UseCase.WorkspaceAbuse` and the `/site`
      dashboard's warning also read through the `abusewarning.Watch` seam (`internal/domain/insights/abusewarning`, a leaf that `ee` implements and `site` consumes)); and the service usage
-     read (`UseCase.WorkspaceUsage`, `ee/usecase/staffconsole/service_usage.go`), scoped over the one
+     read (`UseCase.WorkspaceUsage`, `ee/usecase/workspaceoversight/service_usage.go`), scoped over the one
      Workspace a call names, after its row is loaded, to read its stored Usage figures; and
      `UseCase.TrackingHostFeed` (ADR 0038) reads the Instance-wide tracking host change log, which
      holds hosts and states, no Workspace data, so it scopes over nothing; and the contacts peak
@@ -471,7 +471,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
   looked up by its secret before any scope exists), `internal/domain/identity/passkeys` and `internal/domain/identity/recoverycodes`
   (a User's Passkeys and Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
-  Workspace), the use cases `internal/usecase/secondfactor` (a User's TOTP Second
+  Workspace), the use cases `internal/usecase/secondfactorcheck` (a User's TOTP Second
   factor, ADR 0020: one transaction across the User, the Recovery codes and the Passkeys, none of
   which a Workspace owns), `internal/usecase/oauthauthorization` (the token endpoint: the
   exchange of a code or a refresh token, a secret that names its grant, see list item 6),
@@ -506,14 +506,14 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/usecase/abusedetection` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id through `workspaces`), `ee/domain/insights/usages` (the periodic
-  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `staff` license, that keeps the contacts peak as Contacts change), `ee/usecase/staffconsole` (the
+  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `staff` license, that keeps the contacts peak as Contacts change), `ee/usecase/workspaceoversight` (the
   Enterprise sections of the Staff console, ADR 0026: the Workspace rows, suspension state and
   rates the console shows as tenant metadata and Staff holds; Workspace data goes
   through the scopes of list item 7), `ee/domain/identity/servicecredentials` (the Service credentials,
   which belong to no Workspace), `internal/domain/identity/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/usecase/staffconsole` serves the feed in `UseCase.WorkspaceFeed`), `internal/domain/identity/usertombstones` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/usecase/staffconsole` serves the feed in `UseCase.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/domain/sending/trackinghostchanges` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/usecase/staffconsole` serves it in `UseCase.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
+  Membership change belongs to; `ee/usecase/workspaceoversight` serves the feed in `UseCase.WorkspaceFeed`), `internal/domain/identity/usertombstones` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/usecase/workspaceoversight` serves the feed in `UseCase.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/domain/sending/trackinghostchanges` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/usecase/workspaceoversight` serves it in `UseCase.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
   (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`. easement holds the core
   domain modules of the list as the raw-client components of their contexts in `easement.yml` (the
@@ -584,7 +584,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   `ee-domain-insights`). The use cases (`ee-usecase-raw`, each an isolated instance, all holding
   the raw client): `abusedetection` (the detector's hourly pass, which warns and freezes through
   `workspaces`, `memberships` and `suspension`), `retention` (the advanced-retention prune over
-  `workspaces` and the Audit log) and `staffconsole` (the Staff console's Enterprise sections and
+  `workspaces` and the Audit log) and `workspaceoversight` (the Staff console's Enterprise sections and
   the service endpoints over suspension, holds, the Audit log, Usage, the Abuse detector and the
   service feeds). The `export` license gate is the Edition's own (`ee.ExportStreams`).
   An Enterprise domain module imports the core's modules of its context and the contexts below

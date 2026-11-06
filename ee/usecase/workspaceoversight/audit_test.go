@@ -1,0 +1,103 @@
+package workspaceoversight_test
+
+import (
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+func (h *harness) auditEntries(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) (*staffeeapi.StaffAuditEntryList, error) {
+	t.Helper()
+	params.WorkspaceId = staffeeapi.WorkspaceId(workspaceID)
+	return c.StaffWorkspaceAuditList(t.Context(), params)
+}
+
+func (h *harness) auditPage(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) *staffeeapi.StaffAuditEntryList {
+	t.Helper()
+	page, err := h.auditEntries(t, c, workspaceID, params)
+	require.NoError(t, err, "an audit page")
+	return page
+}
+
+func TestTheWorkspaceAuditLogListsThatWorkspacesEntriesNewestFirst(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.staffSession(t)
+
+	page := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{})
+
+	ids := make([]int64, 0, len(page.Items))
+	for _, e := range page.Items {
+		ids = append(ids, int64(e.ID))
+	}
+	assert.Equal(t, []int64{6, 5, 4, 3, 1}, ids, "only Globex's entries, newest first")
+	assert.False(t, page.NextCursor.IsSet() && !page.NextCursor.IsNull())
+	assert.Equal(t, staffeeapi.AuditActionTagCreate, page.Items[0].Action)
+}
+
+func TestTheWorkspaceAuditLogIsPaginatedByCursor(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.staffSession(t)
+
+	first := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Limit: staffeeapi.NewOptInt32(2)})
+	require.Len(t, first.Items, 2)
+	cursor, ok := first.NextCursor.Get()
+	require.True(t, ok)
+
+	second := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{
+		Limit: staffeeapi.NewOptInt32(2), Cursor: staffeeapi.NewOptString(cursor),
+	})
+	require.Len(t, second.Items, 2)
+	assert.Equal(t, staffeeapi.EntityId(4), second.Items[0].ID)
+	assert.Equal(t, staffeeapi.EntityId(3), second.Items[1].ID)
+}
+
+func TestAStaffMembersEntryShowsAsSphericonStaffWithoutTheStaffId(t *testing.T) {
+	h := newHarness(t)
+	c, cookie := h.staffSession(t)
+
+	page := h.auditPage(t, c, fixtures.InitechPublicID, staffeeapi.StaffWorkspaceAuditListParams{})
+
+	require.Len(t, page.Items, 2)
+	staff := page.Items[1]
+	assert.Equal(t, staffeeapi.EntityId(int64(fixtures.InitechAuditStaffSuspendID)), staff.ID)
+	assert.Equal(t, staffeeapi.StaffAuditActorKindStaff, staff.Actor.Kind)
+	assert.Equal(t, "Sphericon staff", staff.Actor.Name.Value)
+	assert.False(t, staff.Actor.ID.IsSet() && !staff.Actor.ID.IsNull(), "no StaffMember id")
+
+	rec := get(t, h.env.Server, "/staff/workspaces/"+fixtures.InitechPublicID+"/audit-entries", cookie)
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.NotContains(t, rec.Body.String(), "op-fixture")
+	assert.NotContains(t, rec.Body.String(), "Jane Staff")
+}
+
+func TestTheWorkspaceAuditLogRefusesABadCursorAndAnUnknownWorkspace(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.staffSession(t)
+
+	_, err := h.auditEntries(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Cursor: staffeeapi.NewOptString("nope")})
+	testhelper.StaffeeRefusal(t, err, http.StatusBadRequest)
+
+	_, err = h.auditEntries(t, c, "NoSuchId", staffeeapi.StaffWorkspaceAuditListParams{})
+	testhelper.StaffeeRefusal(t, err, http.StatusNotFound)
+}
+
+func TestTheWorkspaceAuditLogRequiresAnStaffSession(t *testing.T) {
+	h := newHarness(t)
+	userToken := h.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
+	path := "/staff/workspaces/" + fixtures.AcmePublicID + "/audit-entries"
+
+	assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path).Code)
+	assert.Equal(t, http.StatusUnauthorized, get(t, h.env.Server, path, testhelper.RequestCookie("JWT", userToken)).Code)
+}
+
+func TestTheWorkspaceAuditLogAnswers404WithoutTheStaffLicense(t *testing.T) {
+	h := newHarness(t, testhelper.WithoutLicense())
+
+	assert.Equal(t, http.StatusNotFound, get(t, h.env.Server, "/staff/workspaces/"+fixtures.AcmePublicID+"/audit-entries").Code)
+}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -202,7 +202,7 @@ func TestASecondEraseRunChangesNothing(t *testing.T) {
 }
 
 // feedTail reads the Workspace feed after cursor and returns its entries and the next cursor.
-func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []staffconsole.FeedEntry, next string) {
+func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []workspaceoversight.FeedEntry, next string) {
 	t.Helper()
 	page, err := env.StaffEnterprise.WorkspaceFeed(t.Context(), cursor, 200)
 	require.NoError(t, err)

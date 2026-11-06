@@ -11,9 +11,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
@@ -56,7 +56,7 @@ var pixelGIF = []byte{
 //
 // The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *messagetoken.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
@@ -197,7 +197,7 @@ func messageOnHost(r *http.Request, client *ent.Client, messageID int64) bool {
 // page speaks of emails, texts or Telegram messages, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
-func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target linktarget.Unsubscribe) string {
+func confirmRedirect(tracker *messagetoken.Tracker, appURL, tokenStr string, target linktarget.Unsubscribe) string {
 	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr) + "&channel=" + url.QueryEscape(string(target.Channel))
 	if target.Source == eligibility.SourceEverything {
 		return base

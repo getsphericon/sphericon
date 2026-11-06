@@ -25,7 +25,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -96,7 +95,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 	}
 
-	privPEM, pubTXT, err := sending.GenerateKeypair()
+	privPEM, pubTXT, err := GenerateKeypair()
 	if err != nil {
 		return nil, err
 	}
@@ -194,9 +193,9 @@ type DNSRecords struct {
 
 // Records derives the DNS records for a stored domain. The public key only.
 func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
-	dkimHost, dkimValue := sending.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
-	spfHost, spfValue := sending.SPFRecord(d.Domain)
-	dmarcHost, dmarcValue := sending.DMARCRecord(d.Domain)
+	dkimHost, dkimValue := DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
+	spfHost, spfValue := SPFRecord(d.Domain)
+	dmarcHost, dmarcValue := DMARCRecord(d.Domain)
 	rec := DNSRecords{
 		DKIM:  Record{Host: dkimHost, Value: dkimValue},
 		SPF:   Record{Host: spfHost, Value: spfValue},

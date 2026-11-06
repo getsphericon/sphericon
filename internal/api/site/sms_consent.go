@@ -4,8 +4,8 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 )
 
 // SiteSmsConsentsGet reads the SMS Confirmation and opt-out of the Contact's phone.
@@ -31,7 +31,7 @@ func (h *Handlers) SiteSmsConsentsConfirm(ctx context.Context, req *siteapi.Cons
 // SiteSmsConsentsOptOut records an SMS opt-out of the Contact's phone that reached the Workspace
 // by another route.
 func (h *Handlers) SiteSmsConsentsOptOut(ctx context.Context, params siteapi.SiteSmsConsentsOptOutParams) (*siteapi.SmsConsent, error) {
-	read, err := optout.OptOutContactSMS(ctx, h.bus, workspaceScope(ctx), int64(params.ContactId))
+	read, err := channelstop.OptOutContactSMS(ctx, h.bus, workspaceScope(ctx), int64(params.ContactId))
 	if err != nil {
 		return nil, err
 	}

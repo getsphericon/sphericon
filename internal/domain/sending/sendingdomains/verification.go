@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -144,7 +143,7 @@ func DevTXTLookup(client *ent.Client) domainname.TXTLookup {
 			return nil, err
 		}
 		if strings.HasPrefix(name, dmarcLabel) {
-			_, record := sending.DMARCRecord(row.Domain)
+			_, record := DMARCRecord(row.Domain)
 			return []string{record}, nil
 		}
 		return []string{row.DkimPublicKey}, nil

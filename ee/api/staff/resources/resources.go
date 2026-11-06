@@ -203,7 +203,7 @@ type ServiceConverter interface {
 	TombstoneToResource(source *ent.UserTombstone) serviceapi.ServiceUserResource
 
 	// The change names the Workspace by its internal id; the module reads its public id for the
-	// whole page at once (staffconsole.TrackingHostFeedEntry), and the handler attaches it.
+	// whole page at once (workspaceoversight.TrackingHostFeedEntry), and the handler attaches it.
 	// goverter:map CreatedAt ChangedAt
 	// goverter:ignore WorkspaceId
 	TrackingHostChangeToResource(source *ent.TrackingHostChange) serviceapi.ServiceTrackingHostChange

@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
@@ -32,7 +32,7 @@ const ShortTokenLength = 11
 // redirects and records nothing, and the Workspace's link of a URL serves every Test send of it.
 type shortLinks struct {
 	s         *ent.Scoped
-	tracker   *tracking.Tracker
+	tracker   *messagetoken.Tracker
 	messageID int64
 	// keep is a URL that stays as it is: the message's own unsubscribe link, whose click must not
 	// count as engagement.
@@ -106,7 +106,7 @@ func (l *shortLinks) buttons(ctx context.Context, buttons []messaging.TelegramBu
 // short is the short link of url for this message: the one it already has, else a new one. A URL
 // that is not absolute http(s) is left as it is.
 func (l *shortLinks) short(ctx context.Context, url string) (string, error) {
-	if l == nil || url == l.keep || !tracking.Trackable(url) {
+	if l == nil || url == l.keep || !messagetoken.Trackable(url) {
 		return url, nil
 	}
 	row, err := l.s.TrackedLink().Query().

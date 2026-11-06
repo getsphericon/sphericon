@@ -16,8 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -27,7 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // Opting out and back in on Telegram (ADR 0077): every way of stopping is the person's Channel-wide
@@ -215,7 +215,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := ingesthook.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
+	err := callbackinterpretation.New(env.Bus, nil).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), row, "telegram", res, time.Now())
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))
@@ -352,7 +352,7 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 }
 
 // stopFrom is Bob stopping in Telegram from a message of Acme that came from broadcastID or
-// automationID, as a button press or a blocked send records it (optout.StopTelegram).
+// automationID, as a button press or a blocked send records it (channelstop.StopTelegram).
 func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID int64) {
 	t.Helper()
 	msg := &ent.OutboundMessage{ContactID: lo.ToPtr(int64(fixtures.ContactBobID))}
@@ -363,7 +363,7 @@ func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID i
 		msg.AutomationID = &automationID
 	}
 	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID), func(ts *ent.Scoped, pub events.Publisher) error {
-		return optout.StopTelegram(t.Context(), ts, pub, optout.TelegramStop{
+		return channelstop.StopTelegram(t.Context(), ts, pub, channelstop.TelegramStop{
 			Destination: strconv.Itoa(optOutUser), Via: events.UnsubscribedByButton, Message: msg,
 			Now: time.Now(), DedupKey: "test:stop",
 		})

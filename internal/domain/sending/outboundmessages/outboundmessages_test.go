@@ -13,8 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -54,7 +54,7 @@ func (c *clock) elapse(d time.Duration) { c.at = c.at.Add(d) }
 
 func newModule(env *testhelper.TestEnv, opts ...outboundmessages.Option) *outboundmessages.Module {
 	return outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail},
-		tracking.New("test-secret", "http://local"), opts...)
+		messagetoken.New("test-secret", "http://local"), opts...)
 }
 
 func transactional(key, to string) outboundmessages.Request {
@@ -318,7 +318,7 @@ func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) 
 
 func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider}, tracking.New("s", "http://local"))
+	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local"))
 
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
@@ -507,7 +507,7 @@ func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 		second, secondErr = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	}
-	m = outboundmessages.New(env.Bus, env.Holds, senders{sender: s}, tracking.New("s", "http://local"))
+	m = outboundmessages.New(env.Bus, env.Holds, senders{sender: s}, messagetoken.New("s", "http://local"))
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress, "the slow attempt lost its claim and must not record")

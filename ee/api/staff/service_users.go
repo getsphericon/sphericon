@@ -3,7 +3,7 @@ package staff
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -20,7 +20,7 @@ func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params servic
 
 // userFeedItem is a feed entry as a resource: a tombstone, or the User with the mailings consent
 // the entry carries.
-func userFeedItem(e staffconsole.UserFeedEntry) serviceapi.ServiceUserResource {
+func userFeedItem(e workspaceoversight.UserFeedEntry) serviceapi.ServiceUserResource {
 	if e.Tombstone != nil {
 		return serviceMapper.TombstoneToResource(e.Tombstone)
 	}

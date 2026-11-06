@@ -31,7 +31,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	linkclicks "github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -160,7 +160,7 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 	if source.Links != nil {
 		externalapiAutomationReport.Links = make([]external.LinkClicks, len(source.Links))
 		for i := 0; i < len(source.Links); i++ {
-			externalapiAutomationReport.Links[i] = c.linkclicksClicksToExternalapiLinkClicks(source.Links[i])
+			externalapiAutomationReport.Links[i] = c.linkclickClicksToExternalapiLinkClicks(source.Links[i])
 		}
 	}
 	externalapiAutomationReport.Results = c.AutomationResultsToResource(source.Results)
@@ -1777,7 +1777,7 @@ func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
 	}
 	return jxRaw
 }
-func (c *ConverterImpl) linkclicksClicksToExternalapiLinkClicks(source linkclicks.Clicks) external.LinkClicks {
+func (c *ConverterImpl) linkclickClicksToExternalapiLinkClicks(source linkclick.Clicks) external.LinkClicks {
 	var externalapiLinkClicks external.LinkClicks
 	externalapiLinkClicks.URL = source.URL
 	externalapiLinkClicks.Clicks = count(source.Clicks)

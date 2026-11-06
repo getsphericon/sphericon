@@ -14,8 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -337,7 +337,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
 func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, resolver, tracking.New("test-secret", "http://local"))
+	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local"))
 }
 
 // The synchronous adapter runs the production sequence: the module plans, paces and settles

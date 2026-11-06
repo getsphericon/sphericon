@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
 // loginMethodClaim is the challenge claim that names how the first step proved the person.
@@ -25,7 +25,7 @@ const loginMethodClaim = "method"
 const loginChallengeTTL = 5 * time.Minute
 
 // mintLoginChallenge signs the challenge the password step answers with: bound to
-// the User and to secondfactor.ChallengeBinding, so it stops verifying after one
+// the User and to secondfactorcheck.ChallengeBinding, so it stops verifying after one
 // successful second step (or any epoch bump or password change), with no store.
 //
 // method (users.LoginPassword or a provider's name) rides in the signed claims, so the
@@ -83,9 +83,9 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 func (h *Handlers) verifyLoginCode(ctx context.Context, p login.Pending[*ent.User], code string) error {
 	_, err := h.secondFactor.Verify(ctx, p.Principal.ID, p.Binding, code)
 	switch {
-	case errors.Is(err, secondfactor.ErrInvalidCode):
+	case errors.Is(err, secondfactorcheck.ErrInvalidCode):
 		return login.ErrInvalidCode
-	case errors.Is(err, secondfactor.ErrNotActive), errors.Is(err, secondfactor.ErrBindingMoved):
+	case errors.Is(err, secondfactorcheck.ErrNotActive), errors.Is(err, secondfactorcheck.ErrBindingMoved):
 		// The factor is gone, or a racing second step spent the challenge first.
 		return login.ErrChallengeInvalid
 	}
@@ -109,7 +109,7 @@ func (h *Handlers) parseLoginChallenge(ctx context.Context, challenge string) (l
 		binding, loadErr = h.secondFactor.ChallengeBinding(ctx, u)
 		return binding, loadErr
 	})
-	if loadErr != nil && !ent.IsNotFound(loadErr) && !errors.Is(loadErr, secondfactor.ErrNotActive) {
+	if loadErr != nil && !ent.IsNotFound(loadErr) && !errors.Is(loadErr, secondfactorcheck.ErrNotActive) {
 		return login.Pending[*ent.User]{}, loadErr
 	}
 	if err != nil {

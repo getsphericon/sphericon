@@ -26,7 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -39,10 +39,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -56,7 +56,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
@@ -160,7 +160,7 @@ type TestEnv struct {
 	Internal http.Handler
 	// Tracker is the instance the server and the sender share: mint tracking,
 	// unsubscribe and confirmation tokens with it, never with a second one.
-	Tracker *tracking.Tracker
+	Tracker *messagetoken.Tracker
 	// Cipher is the instance the server seals with, for modules a test builds directly.
 	Cipher *secrets.Cipher
 	// Integrations is the module the server serves Integrations and their hooks with.
@@ -216,7 +216,7 @@ type TestEnv struct {
 
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
-	SecondFactor *secondfactor.UseCase
+	SecondFactor *secondfactorcheck.UseCase
 
 	// WorkspaceCreation is the use case the server creates Workspaces with, and makes Users
 	// Verified with their first one (ADR 0102).
@@ -228,7 +228,7 @@ type TestEnv struct {
 
 	// StaffEnterprise is the use case of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
-	StaffEnterprise *staffconsole.UseCase
+	StaffEnterprise *workspaceoversight.UseCase
 	// ServiceCredentials is the module of the service endpoints' Service credentials (ADR
 	// 0026); it refuses every call on an unlicensed env.
 	ServiceCredentials *servicecredentials.Module
@@ -516,7 +516,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Bus:               do.MustInvoke[*events.Bus](injector),
 		Server:            handler.Handler,
 		Internal:          internal.Handler,
-		Tracker:           do.MustInvoke[*tracking.Tracker](injector),
+		Tracker:           do.MustInvoke[*messagetoken.Tracker](injector),
 		Cipher:            do.MustInvoke[*secrets.Cipher](injector),
 		Integrations:      do.MustInvoke[*integrations.Module](injector),
 		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
@@ -536,7 +536,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
 		PrivateRelay:      relay,
 		Confirmations:     confirmations,
-		SecondFactor:      do.MustInvoke[*secondfactor.UseCase](injector),
+		SecondFactor:      do.MustInvoke[*secondfactorcheck.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,

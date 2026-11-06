@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
-	"github.com/getsphericon/sphericon/internal/usecase/identify"
+	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
@@ -23,12 +23,12 @@ import (
 type Handlers struct {
 	bus      *events.Bus
 	bindings *bindings.Module
-	identify *identify.UseCase
+	identify *visitoridentification.UseCase
 }
 
 // NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
 // enforced before decoding, in internal/server.
-func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *identify.UseCase) *Handlers {
+func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *visitoridentification.UseCase) *Handlers {
 	return &Handlers{bus: bus, bindings: telegram, identify: identification}
 }
 
@@ -93,7 +93,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 }
 
 func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (*collectapi.CollectOkResponse, error) {
-	input := identify.Input{
+	input := visitoridentification.Input{
 		VisitorID: req.VisitorId,
 	}
 	if v, ok := req.Email.Get(); ok {

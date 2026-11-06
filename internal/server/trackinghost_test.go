@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -63,7 +63,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 	host := fixtures.TrackingDomainServingHost
 
 	unsubFor := func(ws int64) string {

@@ -1,7 +1,7 @@
 // Package recoverycodes owns a User's Recovery codes (ADR 0020): a set of single-use codes
 // issued with a Second factor, stored hashed and shown once. A Recovery code belongs to the
 // User, not a Workspace, so the package works on the raw *ent.Client: its writes join the
-// transaction of the Second factor's step that makes them (internal/usecase/secondfactor),
+// transaction of the Second factor's step that makes them (internal/usecase/secondfactorcheck),
 // which checks the Second factor first.
 package recoverycodes
 

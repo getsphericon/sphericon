@@ -37,7 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
@@ -431,12 +431,12 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, fmt.Errorf("user %q: %w", email, err)
 	}
-	sf, err := do.Invoke[*secondfactor.UseCase](a.injector)
+	sf, err := do.Invoke[*secondfactorcheck.UseCase](a.injector)
 	if err != nil {
 		return false, err
 	}
 	err = sf.ResetByStaff(ctx, id, "cli")
-	if errors.Is(err, secondfactor.ErrNothingToReset) {
+	if errors.Is(err, secondfactorcheck.ErrNothingToReset) {
 		return false, nil
 	}
 	return err == nil, err

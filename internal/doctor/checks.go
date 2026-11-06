@@ -17,7 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -235,8 +235,8 @@ func checkDKIM(ctx context.Context, r *Report, in Input) {
 	}
 	for _, d := range domains {
 		name := "dkim " + d.Domain
-		host, _ := sending.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
-		ok, err := sending.VerifyDKIM(ctx, in.LookupTXT, d.DkimSelector, d.Domain, d.DkimPublicKey)
+		host, _ := sendingdomains.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
+		ok, err := sendingdomains.VerifyDKIM(ctx, in.LookupTXT, d.DkimSelector, d.Domain, d.DkimPublicKey)
 		switch {
 		case err != nil:
 			r.add(name, Fail, "cannot resolve "+host+": "+err.Error(), "Check that this machine can resolve DNS, then run again.")

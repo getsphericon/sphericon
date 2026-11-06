@@ -187,7 +187,7 @@ linters:
         - experimental
       disabled-checks:
         # %q escapes what an email body and an HTML attribute must not escape: both findings
-        # (internal/jobs/memberinvite.go, internal/domain/sending/tracking/tracking.go) are a plain-text
+        # (internal/jobs/memberinvite.go, internal/domain/sending/messagetoken/messagetoken.go) are a plain-text
         # mail body and an <img src="..."> attribute.
         - sprintfQuotedString
       settings:

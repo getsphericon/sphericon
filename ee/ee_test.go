@@ -12,7 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 )
@@ -37,17 +37,17 @@ func staffSessions(t *testing.T) *staffmembers.Sessions {
 }
 
 func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
-	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, staffconsole.Config{})
+	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, workspaceoversight.Config{})
 
 	require.Error(t, err, "the Enterprise sections take the Staff member's sessions")
 }
 
 func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
-	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, staffconsole.Config{})
+	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
-	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, staffconsole.Config{})
+	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, workspaceoversight.Config{})
 	require.NoError(t, err, "an instance without the staff license needs no Staff sign-in")
-	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staffconsole.Config{})
+	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
 
 	assert.Nil(t, plain.StaffSections())
@@ -56,7 +56,7 @@ func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, staffconsole.Config{})
+	e, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{})
 	require.NoError(t, err)
 
 	jobs := e.Jobs()

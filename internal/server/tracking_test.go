@@ -20,7 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -29,7 +29,7 @@ import (
 
 // unsubPath turns a tracker UnsubscribeURL into the local "/e/u/<token>" path the
 // in-memory test server dispatches on.
-func unsubPath(t *testing.T, tr *tracking.Tracker, target linktarget.Unsubscribe) string {
+func unsubPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Unsubscribe) string {
 	t.Helper()
 	full, err := tr.UnsubscribeURL(target)
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func unsubPath(t *testing.T, tr *tracking.Tracker, target linktarget.Unsubscribe
 
 // confirmPath turns a tracker ConfirmURL into the local "/e/confirm/<token>" path
 // the in-memory test server dispatches on.
-func confirmPath(t *testing.T, tr *tracking.Tracker, target linktarget.Confirmation) string {
+func confirmPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Confirmation) string {
 	t.Helper()
 	full, err := tr.ConfirmURL(target)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
@@ -128,7 +128,7 @@ func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	post := func(path string) {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -169,7 +169,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	// A recipient in fixture workspace Acme. Alice is not already
 	// unsubscribed from broadcasts (bob is, in the fixtures).
@@ -267,7 +267,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	target := linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
@@ -295,7 +295,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -337,7 +337,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
-	tr := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL)
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)

@@ -53,25 +53,25 @@ x-unchecked-removals: &unchecked-removals
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
   - &users-set-pending-second-factor
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.SetPendingSecondFactor
-    because: enrolling a Second factor is the use case internal/usecase/secondfactor, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
+    because: enrolling a Second factor is the use case internal/usecase/secondfactorcheck, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
   - &users-accept-second-factor-step-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.AcceptSecondFactorStepIn
-    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactor has matched against the User's secret (ADR 0020, ADR 0102); call the use case
+    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactorcheck has matched against the User's secret (ADR 0020, ADR 0102); call the use case
   - &users-confirm-second-factor-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.ConfirmSecondFactorIn
-    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactor checks first (ADR 0020, ADR 0102); call the use case
+    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactorcheck checks first (ADR 0020, ADR 0102); call the use case
   - &users-clear-second-factor-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.ClearSecondFactorIn
-    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactor checks first and records (ADR 0020, ADR 0102); call the use case
+    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactorcheck checks first and records (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-replace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.ReplaceIn
-    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactor checks first (ADR 0020, ADR 0102); call the use case
+    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorcheck checks first (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.DeleteIn
-    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactor (ADR 0020, ADR 0102); call the use case
+    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactorcheck (ADR 0020, ADR 0102); call the use case
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
-    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactor checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
+    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorcheck checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
   - &apitokens-issue-connection
     name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
     because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
@@ -614,7 +614,7 @@ components:
   # each ee component names its importers), and only the wiring assembles it.
   #
   # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
-  # endpoints), over the use case ee/usecase/staffconsole and the module ee/domain/identity/servicecredentials.
+  # endpoints), over the use case ee/usecase/workspaceoversight and the module ee/domain/identity/servicecredentials.
   # The Edition (ee/ee.go) builds them.
   ee-api:
     in: 'ee/api/**'
@@ -655,7 +655,7 @@ components:
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
   ee-usecase-raw:
-    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/staffconsole*']
+    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/workspaceoversight*']
     isolated: true
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
@@ -753,7 +753,7 @@ components:
   usecase-raw:
     in:
       [
-        'internal/usecase/secondfactor*',
+        'internal/usecase/secondfactorcheck*',
         'internal/usecase/oauthauthorization*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
@@ -818,7 +818,7 @@ components:
 
   # Contacts, above identity: the Contacts with their Custom fields and Tags, the Segments and the
   # Conditions they hold, the consent of a Destination (the Confirmations, the Unsubscribes and the
-  # stops read in the Channel, optout), the Suppressions, eligibility, the Visitors and the Orders,
+  # stops read in the Channel, channelstop), the Suppressions, eligibility, the Visitors and the Orders,
   # with the Contact row lock (contactlock) and the hook that keeps stored addresses lower-cased
   # (emailcase: it targets the Contacts as well as identity's Users and Invitations). None holds the
   # raw client, so the context is one component; a raw-client holder would get
@@ -833,8 +833,8 @@ components:
 
   # Sending, above content: the Outbound send with its Holds and send limits (providerlimit), the
   # Integrations and the Presets that read their callbacks, the Sending domains with their DKIM and
-  # DMARC primitives (sending), the Tracking domains and their host changes, the Bindings of Telegram
-  # chats, the tracking tokens, link clicks, reputation, the Private relay ranges of Machine
+  # DMARC primitives, the Tracking domains and their host changes, the Bindings of Telegram
+  # chats, the Message tokens (messagetoken), the Link clicks (linkclick), reputation, the Private relay ranges of Machine
   # engagement and the Captured messages. Its raw-client holders (docs/architecture.md, Workspace scoping) are
   # `domain-sending-raw`.
   domain-sending-raw:
@@ -878,7 +878,7 @@ components:
   # Instance, the top context: what belongs to the Instance rather than to a Workspace, its state
   # (instancestates) and its audit log (instanceauditentries), which hold the raw client
   # (`domain-instance-raw`), the in-place upgrade of a bare binary (upgrade) and the Upgrade notes
-  # of the changelog (changelog). The Telemetry report is a use case
+  # of the changelog (upgradenote). The Telemetry report is a use case
   # (internal/usecase/telemetryreport) over instancestates.
   domain-instance-raw:
     in: [internal/domain/instance/instancestates, internal/domain/instance/instanceauditentries]
@@ -1384,7 +1384,7 @@ go:
 uncovered_ok:
   - name: '**/race_on.go'
     because: the race-detector twin of race_off.go, built only under -race
-  - name: internal/domain/instance/changelog/embed_none.go
+  - name: internal/domain/instance/upgradenote/embed_none.go
     because: the twin of embed.go, built when embed_changelog is off
   - name: internal/server/spa_noembed.go
     because: the twin of spa_embed.go, built when embed_spa is off

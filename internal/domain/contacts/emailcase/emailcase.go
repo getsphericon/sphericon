@@ -1,5 +1,5 @@
-// Package emailcase keeps stored addresses lower-cased: the email of a User, an Invitation and a
-// Contact, so one address is one row whatever case it was typed in, the unique indexes on
+// Package emailcase keeps the Email case (GLOSSARY), stored addresses lower-cased: the email of a
+// User, an Invitation and a Contact, so one address is one row whatever case it was typed in, the unique indexes on
 // users.email and on a Workspace's contacts.email hold case-insensitively, an Invitation matches
 // the User it names, and a Contact's address matches the Suppressions and Unsubscribes of the same
 // Destination, which are stored lower-cased too.

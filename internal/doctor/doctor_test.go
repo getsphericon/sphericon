@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/doctor"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
+	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -49,7 +49,7 @@ func healthy(t *testing.T) doctor.Input {
 	require.NoError(t, err)
 	keys := map[string][]string{} // two Workspaces may claim one name, each with its own key
 	for _, d := range domains {
-		host, _ := sending.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
+		host, _ := sendingdomains.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
 		keys[host+"."] = append(keys[host+"."], d.DkimPublicKey)
 	}
 

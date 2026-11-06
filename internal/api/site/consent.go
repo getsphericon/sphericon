@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 )
 
@@ -17,7 +17,7 @@ import (
 // (ADR 0013): the one place a confirmation is performed.
 func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params siteapi.SitePublicConfirmationsPerformParams) error {
 	target, err := h.tracker.DecodeConfirm(params.Token)
-	if tracking.IsExpired(err) {
+	if messagetoken.IsExpired(err) {
 		// Kept by hand: no refusal kind is a 410, the answer that offers a new link.
 		return &problem.Error{Status: http.StatusGone, Detail: "confirmation link expired"}
 	}

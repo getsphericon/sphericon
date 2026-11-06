@@ -94,7 +94,7 @@ Workspace lock, `internal/usecase/integrationdeletion` the Integration's,
 `internal/usecase/domainverification` the Sending domain checks, `internal/usecase/stepexecution` the
 steps of an Enrollment, `internal/usecase/secretreencryption` the re-encryption of every stored
 secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
-`internal/usecase/contactintake` an import's rows and `internal/usecase/identify` what Identify
+`internal/usecase/contactintake` an import's rows and `internal/usecase/visitoridentification` what Identify
 binds and stitches). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over a bus on `testhelper.RealDB` when it races the Workspace lock. A use
@@ -103,7 +103,7 @@ module instead (`instancestates.New(env.DB, …)`); the server's own are `env.Re
 `env.TelemetryReport`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
-(`internal/usecase/secondfactor`), the Workspace creation's `env.WorkspaceCreation`
+(`internal/usecase/secondfactorcheck`), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
 a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
 (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`

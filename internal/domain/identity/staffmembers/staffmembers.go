@@ -2,7 +2,7 @@
 // outside the Workspace-scoped world that runs the Instance, with its own store, its own two-step
 // login (password, then a mandatory TOTP enrolled at first login, the pattern of ADR 0020), and
 // its own session cookie and JWT secret. It runs on every Instance, in both Modes and without a
-// License key; the Enterprise sections of the console (ee/usecase/staffconsole) build on it.
+// License key; the Enterprise sections of the console (ee/usecase/workspaceoversight) build on it.
 //
 // A Staff member belongs to no Workspace, so this package works on the raw *ent.Client (it is in
 // the closed list of docs/architecture.md): the Staff member table and nothing else.

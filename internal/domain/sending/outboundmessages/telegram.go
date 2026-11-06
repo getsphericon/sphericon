@@ -13,8 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -277,7 +277,7 @@ func (telegramChannel) optedOut(ctx context.Context, s *ent.Scoped, pub events.P
 	if integ != nil {
 		integrationID = integ.ID
 	}
-	return optout.StopTelegram(ctx, s, pub, optout.TelegramStop{
+	return channelstop.StopTelegram(ctx, s, pub, channelstop.TelegramStop{
 		Destination: to.dest, IntegrationID: integrationID, Via: events.UnsubscribedByBlock, Message: msg,
 		Now: now, DedupKey: fmt.Sprintf("send:%d:%s", msg.ID, to.dest),
 	})

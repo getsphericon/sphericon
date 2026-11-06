@@ -15,8 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -191,7 +191,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := outboundmessages.New(env.Bus, holds.New(func() bool { return false }, time.Now), senders{sender: env.CustomerMail},
-		tracking.New("test-secret", "http://local"))
+		messagetoken.New("test-secret", "http://local"))
 	liftHold(t, env, time.Now().Add(time.Hour))
 
 	res, err := m.Send(ctx, s, transactional("tx:core", "a@example.com"))
@@ -582,7 +582,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 	}}
-	m := outboundmessages.New(env.Bus, env.Holds, senders{sender: slow}, tracking.New("test-secret", "http://local"))
+	m := outboundmessages.New(env.Bus, env.Holds, senders{sender: slow}, messagetoken.New("test-secret", "http://local"))
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 

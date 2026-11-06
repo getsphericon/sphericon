@@ -42,9 +42,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
@@ -56,9 +56,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -90,7 +90,7 @@ type Handlers struct {
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
 	links           *users.Links
-	tracker         *tracking.Tracker
+	tracker         *messagetoken.Tracker
 	appURL          string
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
@@ -111,12 +111,12 @@ type Handlers struct {
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
 	audit                 AuditLog
-	attention             *needsattention.UseCase
+	attention             *needsattentionreport.UseCase
 	setupChecklist        *setupchecklist.Module
 	supportEmail          string
 	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
-	secondFactor          *secondfactor.UseCase
+	secondFactor          *secondfactorcheck.UseCase
 	workspaceCreation     *workspacecreation.UseCase
 	passkeys              *passkeys.Module
 	now                   func() time.Time
@@ -221,11 +221,11 @@ type Deps struct {
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	Tokens           *authtoken.Signer
-	Tracker          *tracking.Tracker
+	Tracker          *messagetoken.Tracker
 	AppURL           string
 	Audit            AuditLog
 	// Attention reads what in a Workspace needs a member's action now.
-	Attention *needsattention.UseCase
+	Attention *needsattentionreport.UseCase
 	// SetupChecklist reads the Setup checklist and stamps its first completion.
 	SetupChecklist *setupchecklist.Module
 	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
@@ -237,7 +237,7 @@ type Deps struct {
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
-	SecondFactor *secondfactor.UseCase
+	SecondFactor *secondfactorcheck.UseCase
 	// WorkspaceCreation creates a Workspace, and makes a User Verified with its first one (a use
 	// case, ADR 0102): the verification and reset links, a Sign-up without verification and the
 	// provider sign-in.

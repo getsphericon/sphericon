@@ -11,8 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/inbox"
@@ -31,7 +31,7 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts .
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
-	return outboundmessages.New(env.Bus, env.Holds, senders{sender: sender}, tracking.New("test-secret", "http://local"),
+	return outboundmessages.New(env.Bus, env.Holds, senders{sender: sender}, messagetoken.New("test-secret", "http://local"),
 		append([]outboundmessages.Option{outboundmessages.WithClock(c.now)}, opts...)...)
 }
 

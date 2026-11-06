@@ -1,7 +1,7 @@
 // Package authtoken mints and verifies the short-lived, purpose-scoped tokens
 // behind the self-service account flows: password reset, email verification, and
 // email change. Tokens are signed JWTs (HS256), reusing the app's JWT secret
-// rather than hand-rolling a MAC — the same choice as internal/domain/sending/tracking.
+// rather than hand-rolling a MAC — the same choice as internal/domain/sending/messagetoken.
 //
 // Two properties make the single secret safe to share across flows:
 //

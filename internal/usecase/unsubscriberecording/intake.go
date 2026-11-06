@@ -8,8 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -31,16 +31,16 @@ var (
 )
 
 // OptOut records that destination opted out on channel from a sending source, as an opt-out that
-// reached the Workspace by any route: on email Unsubscribe, on telegram optout.TelegramUnsubscribe,
-// on sms optout.SMSUnsubscribe. An empty source is the Channel's default: `broadcasts` on email,
+// reached the Workspace by any route: on email Unsubscribe, on telegram channelstop.TelegramUnsubscribe,
+// on sms channelstop.SMSUnsubscribe. An empty source is the Channel's default: `broadcasts` on email,
 // `everything` on telegram and sms, where a person stops all of the Workspace's messages.
 // Idempotent.
 func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination, source string) (*ent.Unsubscribe, error) {
 	switch channel {
 	case channels.Telegram:
-		return optout.TelegramUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
+		return channelstop.TelegramUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
 	case channels.SMS:
-		return optout.SMSUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
+		return channelstop.SMSUnsubscribe(ctx, u.bus, s, destination, cmp.Or(source, eligibility.SourceEverything))
 	case channels.Email:
 	}
 	return u.Unsubscribe(ctx, s, destination, cmp.Or(source, eligibility.SourceBroadcasts))

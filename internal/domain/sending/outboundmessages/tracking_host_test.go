@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
@@ -42,7 +42,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module,
 }
 
 func tracked(env *testhelper.TestEnv, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, tracking.New("test-secret", "http://local"), opts...)
+	return outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local"), opts...)
 }
 
 // trackingDomains is the option the composition root passes while the Instance offers Tracking

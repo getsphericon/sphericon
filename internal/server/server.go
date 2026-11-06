@@ -41,9 +41,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/server/spa"
-	"github.com/getsphericon/sphericon/internal/usecase/identify"
 	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
 // New builds the top-level net/http handler wiring the three ogen-generated
@@ -113,7 +113,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
-		apicollect.NewHandlers(bus, site.Bindings, identify.New(bus)),
+		apicollect.NewHandlers(bus, site.Bindings, visitoridentification.New(bus)),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
 		collectapi.WithErrorHandler(problem.ErrorHandler),

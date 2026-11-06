@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
 // userOps is what the `user` staff member commands need from the app. The app
@@ -51,7 +51,7 @@ func userCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				changed, err := ops.ResetSecondFactor(ctx, email)
-				return secondfactor.ReportReset(out(cmd), email, changed, err)
+				return secondfactorcheck.ReportReset(out(cmd), email, changed, err)
 			}),
 		},
 	)

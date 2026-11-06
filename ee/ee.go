@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ee/usecase/retention"
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
@@ -62,7 +62,7 @@ type Edition struct {
 	Export *ExportStreams
 	// Staff is the use case of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
-	Staff *staffconsole.UseCase
+	Staff *workspaceoversight.UseCase
 	// ServiceCredentials issues and checks the Service credentials of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
 	ServiceCredentials *servicecredentials.Module
@@ -104,7 +104,7 @@ func EventConsumers() []events.Consumer {
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
 // Staff member's sessions, so the `staff` feature refuses to start without them.
-func New(deps Deps, staffCfg staffconsole.Config) (*Edition, error) {
+func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	lic, staffSessions := deps.License, deps.StaffSessions
 	auditLog := auditentries.NewLog(lic, deps.Bus)
 	e := &Edition{
@@ -114,7 +114,7 @@ func New(deps Deps, staffCfg staffconsole.Config) (*Edition, error) {
 		suspend: deps.Suspender,
 		Audit:   auditLog,
 		Export:  &ExportStreams{lic: lic},
-		Staff:   staffconsole.New(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
+		Staff:   workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
 	}

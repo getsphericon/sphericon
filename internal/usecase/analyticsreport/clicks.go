@@ -6,15 +6,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 )
 
 // OwnerKind is what carried a clicked link, so the page can link to that report.
-type OwnerKind = linkclicks.OwnerKind
+type OwnerKind = linkclick.OwnerKind
 
 const (
-	OwnerBroadcast  = linkclicks.OwnerBroadcast
-	OwnerAutomation = linkclicks.OwnerAutomation
+	OwnerBroadcast  = linkclick.OwnerBroadcast
+	OwnerAutomation = linkclick.OwnerAutomation
 )
 
 // OwnerClicks is how often a link was clicked in the emails of one Broadcast or Automation.
@@ -41,7 +41,7 @@ func (m *UseCase) ClicksByLink(ctx context.Context, s *ent.Scoped, w Window) ([]
 	if err != nil {
 		return nil, err
 	}
-	rows, err := linkclicks.ByOwner(ctx, s, linkclicks.Between{Since: days.Since, Until: days.Until})
+	rows, err := linkclick.ByOwner(ctx, s, linkclick.Between{Since: days.Since, Until: days.Until})
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ type ownerKey struct {
 
 // ownerNames reads the names of the Broadcasts and Automations the clicks name, archived ones
 // too: clicks are history (ADR 0099).
-func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclicks.OwnerClicks) (map[ownerKey]string, error) {
+func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclick.OwnerClicks) (map[ownerKey]string, error) {
 	if len(rows) == 0 {
 		return nil, nil
 	}

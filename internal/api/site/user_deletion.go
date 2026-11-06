@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 )
 
 // SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050), after
@@ -46,7 +46,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	}
 
 	deleted, err := h.users.DeleteUser(ctx, u.ID, &users.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
-	if errors.Is(err, secondfactor.ErrDeletionCodeInvalid) {
+	if errors.Is(err, secondfactorcheck.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025).
 		if cerr := h.login.CountFailure(ctx, u.Email); cerr != nil {
 			return nil, cerr

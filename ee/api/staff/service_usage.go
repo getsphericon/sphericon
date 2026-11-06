@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -22,7 +22,7 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.UsageListPage(pagination.Map(page, func(e staffconsole.UsageEntry) serviceapi.WorkspaceUsageResource {
+	return serviceMapper.UsageListPage(pagination.Map(page, func(e workspaceoversight.UsageEntry) serviceapi.WorkspaceUsageResource {
 		return usageResource(e.Usage, e.WorkspaceID)
 	})), nil
 }

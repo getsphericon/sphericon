@@ -27,7 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
+	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
@@ -64,13 +64,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -92,16 +92,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/contactintake"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/eventlog"
-	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorcheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
@@ -412,7 +412,7 @@ var editionPackage = do.Package(
 			Notify:        do.MustInvoke[memberships.Notify](i),
 			Suspender:     do.MustInvoke[*suspension.Suspender](i),
 			Reputation:    do.MustInvoke[*reputation.Module](i),
-		}, staffconsole.Config{
+		}, workspaceoversight.Config{
 			Abuse:         abusedetector.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail:  cfg.SupportEmail,
 			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
@@ -449,7 +449,7 @@ var editionPackage = do.Package(
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
-		bus.OnStored(ingesthook.RecordOutcome)
+		bus.OnStored(callbackinterpretation.RecordOutcome)
 		return bus, nil
 	}),
 )
@@ -567,9 +567,9 @@ var jobsPackage = do.Package(
 var deliveryPackage = do.Package(
 	// The signed-token authority for tracking, unsubscribe and confirmation links:
 	// one instance, so every surface mints and verifies with the same secret.
-	do.Lazy(func(i do.Injector) (*tracking.Tracker, error) {
+	do.Lazy(func(i do.Injector) (*messagetoken.Tracker, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
+		return messagetoken.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
 	}),
 	// Apple's published Private Relay list, which the refresh job reads.
 	do.Lazy(func(do.Injector) (privaterelayranges.Source, error) {
@@ -607,7 +607,7 @@ var deliveryPackage = do.Package(
 		if cfg.TrackingCNAMETarget != "" {
 			opts = append(opts, outboundmessages.WithTrackingDomains(do.MustInvoke[*trackingdomains.Module](i)))
 		}
-		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*tracking.Tracker](i), opts...), nil
+		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i), opts...), nil
 	}),
 )
 
@@ -681,8 +681,8 @@ var identityPackage = do.Package(
 			throttle.WithClock(do.MustInvoke[Clock](i)),
 			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*secondfactor.UseCase, error) {
-		return secondfactor.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
+	do.Lazy(func(i do.Injector) (*secondfactorcheck.UseCase, error) {
+		return secondfactorcheck.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -792,9 +792,9 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
 		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*needsattention.UseCase, error) {
+	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return needsattention.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
+		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i)).WithClock(do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New().WithClock(do.MustInvoke[Clock](i)).WithRetention(do.MustInvoke[*config.Config](i).EventsRetention), nil
@@ -977,7 +977,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Deletion:                 do.MustInvoke[*workspacedeletion.UseCase](i),
 		AccountLink:              accountLink,
 		Holds:                    do.MustInvoke[*holds.Holds](i),
-		Attention:                do.MustInvoke[*needsattention.UseCase](i),
+		Attention:                do.MustInvoke[*needsattentionreport.UseCase](i),
 		SetupChecklist:           do.MustInvoke[*setupchecklist.Module](i),
 		SupportEmail:             cfg.SupportEmail,
 		Origins:                  apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
@@ -1015,10 +1015,10 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		CapturedMessages:         do.MustInvoke[*capturedmessages.Module](i),
 		Tokens:                   do.MustInvoke[*authtoken.Signer](i),
 		Sessions:                 do.MustInvoke[*apiauth.Sessions](i),
-		Tracker:                  do.MustInvoke[*tracking.Tracker](i),
+		Tracker:                  do.MustInvoke[*messagetoken.Tracker](i),
 		AppURL:                   cfg.AppURL,
 		Audit:                    edition.Audit,
-		SecondFactor:             do.MustInvoke[*secondfactor.UseCase](i),
+		SecondFactor:             do.MustInvoke[*secondfactorcheck.UseCase](i),
 		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
 		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
 		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),

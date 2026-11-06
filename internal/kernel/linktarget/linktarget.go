@@ -1,5 +1,5 @@
 // Package linktarget names what an unsubscribe link and a confirmation link carry: the opt-out or
-// the Confirmation they record, signed into the link's token by internal/domain/sending/tracking
+// the Confirmation they record, signed into the link's token by internal/domain/sending/messagetoken
 // and recorded by internal/usecase/unsubscriberecording and internal/domain/contacts/confirmations.
 // It sits below both, so recording one does not import the tokens.
 package linktarget

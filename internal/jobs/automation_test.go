@@ -15,8 +15,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -162,7 +162,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
-	mod := outboundmessages.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
+	mod := outboundmessages.New(env.Bus, env.Holds, resolvingTo(fs), messagetoken.New("secret", "https://app.test"))
 	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)

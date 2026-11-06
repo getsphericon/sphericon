@@ -4837,7 +4837,7 @@
   updated_at: '{{hoursAgo 159}}'
 
 # Acme: a text to ContactTexter that Twilio accepted through IntegrationAcmeSms, and no delivery report
-# yet: the delivery report tests (internal/usecase/ingesthook) report on it.
+# yet: the delivery report tests (internal/usecase/callbackinterpretation) report on it.
 - id: 7500 # fixture: OutboundTexterSms
   kind: broadcast
   idempotency_key: 'sms:delivery'

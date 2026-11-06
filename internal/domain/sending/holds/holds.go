@@ -4,7 +4,7 @@
 // expiry is after the clock, and a lapsed one is ignored at once, with no cleanup job.
 //
 // It also sets (idempotently) and clears a hold for the service endpoints (ee/api/staff, through
-// the use case ee/usecase/staffconsole), which only authorize and validate. It works through the scoped client and holds no raw client.
+// the use case ee/usecase/workspaceoversight), which only authorize and validate. It works through the scoped client and holds no raw client.
 package holds
 
 import (

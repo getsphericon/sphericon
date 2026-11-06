@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -16,7 +16,7 @@ import (
 
 // Globex has no verified Sending domain; Jane is its owner.
 func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundmessages.Result, error) {
-	m := outboundmessages.New(env.Bus, env.Holds, via, tracking.New("test-secret", "http://local"),
+	m := outboundmessages.New(env.Bus, env.Holds, via, messagetoken.New("test-secret", "http://local"),
 		outboundmessages.WithSystemSender(env.SystemMail))
 	return m.SendTest(context.Background(), env.DB.Scoped(fixtures.GlobexID), outboundmessages.TestRequest{
 		To:      to,

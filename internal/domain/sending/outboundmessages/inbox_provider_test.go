@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -31,7 +31,7 @@ func (*keepingSender) DeliversOutside() bool { return false }
 
 func moduleThrough(env *testhelper.TestEnv, sender messaging.EmailSender) *outboundmessages.Module {
 	return outboundmessages.New(env.Bus, env.Holds, senders{sender: sender},
-		tracking.New("test-secret", "http://local"))
+		messagetoken.New("test-secret", "http://local"))
 }
 
 func TestSenderThatDeliversNowhereIsSentThroughWithoutAVerifiedSendingDomain(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -171,7 +171,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 
 // trackerFor is the Tracker a message's links are built on: the Workspace's serving Tracking domain
 // when it has one (ADR 0038), else the Instance's own host.
-func (m *Module) trackerFor(ctx context.Context, s *ent.Scoped) (*tracking.Tracker, error) {
+func (m *Module) trackerFor(ctx context.Context, s *ent.Scoped) (*messagetoken.Tracker, error) {
 	tr := m.tracker
 	if m.trackingHosts != nil {
 		host, err := m.trackingHosts.ServingHost(ctx, s)

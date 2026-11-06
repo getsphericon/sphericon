@@ -15,9 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -71,7 +71,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
@@ -102,7 +102,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"), outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local"), outboundmessages.WithSendCaps(true))
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"))
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local"))
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, stepexecution.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
@@ -182,7 +182,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"), outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local"), outboundmessages.WithSendCaps(true))
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 		// The day's one token went to another send just now.
 		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
@@ -210,7 +210,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, stepexecution.OnEvent(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))

@@ -49,7 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -62,7 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
@@ -266,15 +266,15 @@ type Converter interface {
 	// What needs attention maps whole from the module's items; an absent subject, start, hold
 	// reason or rate is left out.
 	// goverter:useEmptyOnNil:slice
-	AttentionItemsToResources(source []needsattention.Item) []siteapi.SiteAttentionItem
-	AttentionSubjectToResource(source needsattention.Subject) siteapi.SiteAttentionSubject
+	AttentionItemsToResources(source []needsattentionreport.Item) []siteapi.SiteAttentionItem
+	AttentionSubjectToResource(source needsattentionreport.Subject) siteapi.SiteAttentionSubject
 
 	// The email's subject is not on the Event: the handler reads it from the Outbound message.
 	// goverter:ignore EmailSubject
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
-	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
+	LinkClicksToResource(source []linkclick.Clicks) []siteapi.SiteLinkClicks
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
 	// goverter:map Currency ReportingCurrency
@@ -673,11 +673,11 @@ type Converter interface {
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusewarning.Metric) siteapi.SiteAbuseMetric
 	// goverter:enum:transform value
-	AttentionKindToResource(source needsattention.Kind) siteapi.SiteAttentionKind
+	AttentionKindToResource(source needsattentionreport.Kind) siteapi.SiteAttentionKind
 	// goverter:enum:transform value
-	AttentionSeverityToResource(source needsattention.Severity) siteapi.SiteAttentionSeverity
+	AttentionSeverityToResource(source needsattentionreport.Severity) siteapi.SiteAttentionSeverity
 	// goverter:enum:transform value
-	AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) siteapi.SiteAnalyticsOwnerKind
+	AnalyticsOwnerKindToResource(source linkclick.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value
@@ -1263,7 +1263,7 @@ func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperato
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.
-func optAttentionSubject(c Converter, v *needsattention.Subject) siteapi.OptNilSiteAttentionSubject {
+func optAttentionSubject(c Converter, v *needsattentionreport.Subject) siteapi.OptNilSiteAttentionSubject {
 	return convert.OptVia[siteapi.OptNilSiteAttentionSubject](v, c.AttentionSubjectToResource)
 }
 

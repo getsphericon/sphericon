@@ -39,8 +39,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -234,7 +234,7 @@ type Module struct {
 	// posted; nil while the Instance has none.
 	sms     SMSSenders
 	hooks   HookURLs
-	tracker *tracking.Tracker
+	tracker *messagetoken.Tracker
 	// trackingHosts names the Workspace's serving Tracking domain; nil while the Instance offers
 	// none.
 	trackingHosts TrackingHosts
@@ -299,7 +299,7 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 }
 
 // New builds the module. tracker may be nil only if no marketing Request is sent.
-func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
+func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, opts ...Option) *Module {
 	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: time.Now}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	for _, o := range opts {

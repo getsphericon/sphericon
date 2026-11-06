@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/domain/instance/changelog"
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgradenote"
 )
 
 // upgradeNotesCommand is `sphericon upgrade-notes --since <version>`: it prints the `Upgrade:`
@@ -22,11 +22,11 @@ func upgradeNotesCommand(text string) *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 			}
-			releases, err := changelog.Since(changelog.Parse(text), cmd.String("since"))
+			releases, err := upgradenote.Since(upgradenote.Parse(text), cmd.String("since"))
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(out(cmd), changelog.Render(releases))
+			_, err = io.WriteString(out(cmd), upgradenote.Render(releases))
 			return err
 		},
 	}

@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -43,7 +43,7 @@ func globexBroadcastTestVia(env *testhelper.TestEnv, to string, via perIntegrati
 }
 
 func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string, via perIntegration, integrationID *int64) (outboundmessages.Result, error) {
-	m := outboundmessages.New(env.Bus, env.Holds, via, tracking.New("test-secret", "http://local"),
+	m := outboundmessages.New(env.Bus, env.Holds, via, messagetoken.New("test-secret", "http://local"),
 		outboundmessages.WithSystemSender(env.SystemMail))
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: channels.Email, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
 	return m.SendBroadcastTest(context.Background(), env.DB.Scoped(workspaceID), b, outboundmessages.TestAddress{Email: to},

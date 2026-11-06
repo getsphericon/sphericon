@@ -289,7 +289,7 @@ func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
 
 // BroadcastUnsubscribeEventWorker counts a Telegram opt-out on the Broadcast whose message it was
 // made from (broadcasts.RecordUnsubscribe). The opt-out is written by
-// internal/domain/contacts/optout, below the Broadcasts, and the recipient row is the broadcasts
+// internal/domain/contacts/channelstop, below the Broadcasts, and the recipient row is the broadcasts
 // module's (ADR 0102: only the owner writes a table), so the count follows the event: its job
 // commits with the opt-out, and a repeat counts nothing, the mark being set once.
 type BroadcastUnsubscribeEventWorker struct {

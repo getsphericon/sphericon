@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -28,7 +28,7 @@ type Report struct {
 	// currency (ADR 0064), nil Currency until it is chosen.
 	Revenue orders.Revenue
 	// Links counts the clicks by link, most clicked first.
-	Links []linkclicks.Clicks
+	Links []linkclick.Clicks
 	// Results is what the Enrollments did over the period and the period before it.
 	Results Results
 	// Steps is the send steps' messages by step position, in step order.
@@ -55,7 +55,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	links, err := linkclicks.ByLink(ctx, s, linkclicks.Between{}, event.AutomationID(id))
+	links, err := linkclick.ByLink(ctx, s, linkclick.Between{}, event.AutomationID(id))
 	if err != nil {
 		return Report{}, err
 	}
@@ -90,7 +90,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 		return Report{}, err
 	}
 	report := Report{
-		Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Of(id), Results: results, Steps: steps,
+		Opens: opens, Clicks: linkclick.Total(links), Links: links, Revenue: revenue.Of(id), Results: results, Steps: steps,
 	}
 	if len(delivery) > 0 {
 		report.Delivered, report.Bounced, report.Complained = delivery[0].Delivered, delivery[0].Bounced, delivery[0].Complained

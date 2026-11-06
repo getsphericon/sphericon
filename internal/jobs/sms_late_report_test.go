@@ -16,28 +16,28 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
+	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // A final delivery report can reach the hook before the send's transaction has recorded the text's
 // SID, and Twilio does not post it again (#1044): it is read again shortly instead of being lost.
 
 // lateNotices are the deferred readings of delivery notices on the queue, oldest first.
-func lateNotices(t *testing.T, env *testhelper.TestEnv) []ingesthook.LateNoticeArgs {
+func lateNotices(t *testing.T, env *testhelper.TestEnv) []callbackinterpretation.LateNoticeArgs {
 	t.Helper()
-	rows := env.JobRowsOf(t, ingesthook.LateNoticeArgs{}.Kind())
-	return lo.Map(rows, func(r *rivertype.JobRow, _ int) ingesthook.LateNoticeArgs {
-		var args ingesthook.LateNoticeArgs
+	rows := env.JobRowsOf(t, callbackinterpretation.LateNoticeArgs{}.Kind())
+	return lo.Map(rows, func(r *rivertype.JobRow, _ int) callbackinterpretation.LateNoticeArgs {
+		var args callbackinterpretation.LateNoticeArgs
 		require.NoError(t, json.Unmarshal(r.EncodedArgs, &args))
 		return args
 	})
 }
 
 // workLate reads the deferred notice again, as its job does.
-func workLate(t *testing.T, env *testhelper.TestEnv, args ingesthook.LateNoticeArgs) {
+func workLate(t *testing.T, env *testhelper.TestEnv, args callbackinterpretation.LateNoticeArgs) {
 	t.Helper()
 	w := jobs.NewLateNoticeWorker(env.DB, env.Bus, time.Now)
-	require.NoError(t, w.Work(t.Context(), &river.Job[ingesthook.LateNoticeArgs]{Args: args}))
+	require.NoError(t, w.Work(t.Context(), &river.Job[callbackinterpretation.LateNoticeArgs]{Args: args}))
 }
 
 func TestADeliveryReportThatComesBeforeItsTextIsCommittedIsReadAgainLater(t *testing.T) {
@@ -82,13 +82,13 @@ func TestADeliveryReportOfNoTextIsReadAgainABoundedNumberOfTimes(t *testing.T) {
 	atTheHook := lateNotices(t, env)
 	require.Len(t, atTheHook, 1)
 	last := atTheHook[0]
-	last.Attempt = len(ingesthook.LateNoticeDelays)
+	last.Attempt = len(callbackinterpretation.LateNoticeDelays)
 
 	workLate(t, env, atTheHook[0])
 	workLate(t, env, last)
 
 	queued := lateNotices(t, env)
-	attempts := lo.Map(queued, func(a ingesthook.LateNoticeArgs, _ int) int { return a.Attempt })
+	attempts := lo.Map(queued, func(a callbackinterpretation.LateNoticeArgs, _ int) int { return a.Attempt })
 	assert.Equal(t, []int{1, 2}, attempts, "the first reading again queues the second; the last queues none")
 	delivered := env.QueuedCount(t, events.NameSmsDelivered, nil)
 	assert.Zero(t, delivered)

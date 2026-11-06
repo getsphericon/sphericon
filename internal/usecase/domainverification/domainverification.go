@@ -14,7 +14,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/sending/sending"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -71,7 +70,7 @@ func (u *UseCase) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
 // A failed lookup or write is logged and changes nothing: the domain stays as the last answer left
 // it.
 func (u *UseCase) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) {
-	found, err := sending.LookupDMARC(ctx, u.lookup, dom.Domain)
+	found, err := sendingdomains.LookupDMARC(ctx, u.lookup, dom.Domain)
 	if err != nil {
 		slog.WarnContext(ctx, "sending domain DMARC lookup failed",
 			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain, "err", err)
@@ -102,7 +101,7 @@ func (u *UseCase) VerifyDKIM(ctx context.Context, s *ent.Scoped, id int64) (veri
 // verifyDKIM is VerifyDKIM of a kept domain already read. The write lands only while the domain
 // is still kept, so one deleted during the lookup is neither changed nor reported.
 func (u *UseCase) verifyDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) (bool, error) {
-	verified, err := sending.VerifyDKIM(ctx, u.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
+	verified, err := sendingdomains.VerifyDKIM(ctx, u.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
 	if err != nil {
 		return false, err
 	}

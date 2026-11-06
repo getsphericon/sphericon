@@ -16,8 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -81,7 +81,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
 	bus := events.New(sqlDB, entclient.NewTx)
 	bus.UseJobs(testhelper.AcceptingQueue{})
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, tracking.New("test-secret", "http://local"))
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, nil, ""))
 

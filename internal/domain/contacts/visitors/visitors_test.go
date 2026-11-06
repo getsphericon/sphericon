@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/identify"
+	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
 
 // queuedCollected decodes every CollectedEvent the test published.
@@ -32,7 +32,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	ctx := context.Background()
 	at := time.Date(2026, 5, 1, 9, 0, 0, 0, time.UTC)
 
-	require.NoError(t, identify.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), identify.Input{
+	require.NoError(t, visitoridentification.New(env.Bus).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: new("alice-1"),
 	}))
 
