@@ -35,7 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 // Inputs maps request bodies onto the modules' inputs: the input direction of the contract, so a
@@ -167,7 +167,7 @@ type Inputs interface {
 
 	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkits.Input
 
-	SignUp(source *siteapi.SiteSignUpInput) signup.Input
+	SignUp(source *siteapi.SiteSignUpInput) workspacecreation.SignUpInput
 	SignupAnswers(source []siteapi.SiteSignupItemAnswer) []consentrecords.Answer
 	ReAcceptances(source []siteapi.SiteAcceptance) []consentrecords.ReAcceptance
 

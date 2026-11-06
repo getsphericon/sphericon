@@ -6,7 +6,8 @@
 // verification is off, a provider sign-in that creates or takes over a User, and the completion
 // of a pending sign-up. Those steps are this use case too: it opens their transaction and calls
 // the users module's ...In functions for the User's part, so no identity module reads the Send
-// caps.
+// caps. The Sign-up itself (ADR 0030, ADR 0031) is here whole, with verification required too,
+// since its Verified path is one of those steps.
 //
 // It takes the raw client's transactions: a User and its first Workspace belong to no Workspace
 // when the step starts, so there is no *ent.Scoped to take.
@@ -40,6 +41,8 @@ type UseCase struct {
 	// sendCaps is whether the Instance has Send caps; only then does a new Workspace start with
 	// the Instance's default Send cap.
 	sendCaps providerlimit.SendCaps
+	// signUp is what a Sign-up needs besides the users module (WithSignUp).
+	signUp SignUpConfig
 }
 
 // Option tunes UseCase.

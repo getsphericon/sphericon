@@ -6,21 +6,16 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
-// SiteAuthSignUp is the Sign-up (ADR 0030): the signup module decides, and the answer
+// SiteAuthSignUp is the Sign-up (ADR 0030): the Workspace creation decides, and the answer
 // carries its outcome and, when a verification link follows, the Sign-up browser's cookie
 // (whatever the address, ADR 0031). No session starts and no Workspace is made here; they
 // follow the proof.
 func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (*siteapi.SiteAuthSignUpAccepted, error) {
-	res, err := h.signup.SignUp(ctx, inputs.SignUp(req))
+	res, err := h.workspaceCreation.SignUp(ctx, inputs.SignUp(req))
 	if err != nil {
 		return nil, err
 	}
@@ -29,55 +24,6 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 		accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, users.VerificationLinkTTL).String())
 	}
 	return accepted, nil
-}
-
-// signUpStore is the site's side of the Sign-up's seam: Users through the users module, and a
-// Verified User with its first Workspace through the Workspace creation.
-type signUpStore struct {
-	users    *users.Module
-	creation *workspacecreation.UseCase
-}
-
-func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
-	u, err := s.users.UserByEmail(ctx, email)
-	if ent.IsNotFound(err) {
-		return nil, false, nil
-	}
-	return u, err == nil, err
-}
-
-func (s signUpStore) CreateUnverified(ctx context.Context, n users.NewUser) (*ent.User, error) {
-	u, err := s.users.CreateUnverified(ctx, n)
-	if db.IsUniqueViolation(err) {
-		return nil, signup.ErrTaken
-	}
-	return u, err
-}
-
-func (s signUpStore) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error) {
-	return s.users.ReplaceUnverifiedPassword(ctx, id, passwordHash, consents)
-}
-
-func (s signUpStore) CreateVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
-	u, err := s.creation.SignUpVerified(ctx, n)
-	if db.IsUniqueViolation(err) {
-		return nil, signup.ErrTaken
-	}
-	return u, err
-}
-
-// newSignUp builds the Sign-up use case over the site's adapter (ADR 0030, 0031).
-func (h *Handlers) newSignUp() *signup.UseCase {
-	return signup.New(signup.Config{
-		Store:               signUpStore{users: h.users, creation: h.workspaceCreation},
-		Consents:            h.consentRecords,
-		Budget:              h.attempts.For(throttle.KindSignUp),
-		Passwords:           h.passwords,
-		Mail:                h.mail,
-		Mint:                h.links.VerificationLink,
-		RequireVerification: h.requireVerification,
-		SurveyDue:           h.signupSurvey.Enabled,
-	})
 }
 
 // SiteAuthResendVerification sends the verification link again to an Unverified User

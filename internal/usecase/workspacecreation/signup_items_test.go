@@ -1,4 +1,4 @@
-package signup_test
+package workspacecreation_test
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
 
 // withItems puts the fixture Sign-up items in effect: a required acceptance, an optional consent
@@ -45,9 +45,9 @@ var (
 	noticeShownRecord   = fixtures.DataNoticeKey + "@" + fixtures.DataNoticeCurrentLabel + ": shown from sign_up_form"
 )
 
-func (r rig) signUpAnswering(t *testing.T, email string, answers ...consentrecords.Answer) (signup.Result, error) {
+func (r rig) signUpAnswering(t *testing.T, email string, answers ...consentrecords.Answer) (workspacecreation.SignUpResult, error) {
 	t.Helper()
-	return r.module.SignUp(t.Context(), signup.Input{Name: "Grace", Email: email, Password: password, SignupItems: answers})
+	return r.module.SignUp(t.Context(), workspacecreation.SignUpInput{Name: "Grace", Email: email, Password: password, SignupItems: answers})
 }
 
 // decided is the User's current answers, each as its key, label, decision and source.
@@ -88,7 +88,7 @@ func TestTheItemsAreRefusedTogetherWithTheOtherFields(t *testing.T) {
 	r := newRig(t, 5)
 	r.withItems(t)
 
-	_, err := r.module.SignUp(t.Context(), signup.Input{Name: " ", Email: "grace@example.com", Password: password})
+	_, err := r.module.SignUp(t.Context(), workspacecreation.SignUpInput{Name: " ", Email: "grace@example.com", Password: password})
 
 	assert.Equal(t, []string{"name", "signupItems." + fixtures.ServiceTermsKey}, refusedFields(t, err))
 }

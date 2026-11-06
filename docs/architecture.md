@@ -65,19 +65,21 @@ coding standards in `CODING_STANDARDS.md`.
   `throttle.Attempts.For(kind)` (`internal/infra/throttle`), a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
-- **Sign-up sequence**: `internal/usecase/signup` (ADR 0030, 0031, a use case, ADR 0102) is the one
-  place of a Sign-up with a password, shaped like `login`: the form first, then the same
-  work for every address (a mail budget slot, the hash, the lookup, one write, a token and exactly
-  one mail job) so a Taken address is not learnable, the recovery from a race on the unique email,
-  the replaced password of an Unverified User, and the Sign-up browser's value (drawn here; its
-  hash is `users.BrowserHash` and the verification link checks it with `users.SameBrowser`). The Sign-up items' answers (ADR 0062) are checked with the form, before any work,
-  through the `Consents` seam (`consentrecords.Module.Check`): a required acceptance not ticked, an item
-  not in effect or a stale version is a field of the same refusal, and the Consent records go to the
-  `Store`, which writes them in the transaction that creates the User (or replaces an Unverified
-  User's password; a Verified User gets none). It holds no database client; the `/site` adapter (`internal/api/site/auth.go`)
-  supplies the `Store` over `users` (and, where verification is off, the Verified User with its first
-  Workspace over `internal/usecase/workspacecreation`), the budget (`throttle.Attempts.For(KindSignUp)`), the
-  mails and the token mint, and turns the `signup.Outcome` into the answer and the cookie. The
+- **Sign-up sequence**: `workspacecreation.UseCase.SignUp` (ADR 0030, 0031; the use case
+  `internal/usecase/workspacecreation`, ADR 0102, whose step that makes a User Verified with its first
+  Workspace a Sign-up without verification is) is the one place of a Sign-up with a password, shaped
+  like `login`: the form first, then the same work for every address (a mail budget slot, the hash, the
+  lookup, one write, a token and exactly one mail job) so a Taken address is not learnable, the recovery
+  from a race on the unique email, the replaced password of an Unverified User, and the Sign-up
+  browser's value (drawn here; its hash is `users.BrowserHash` and the verification link checks it
+  with `users.SameBrowser`). The Sign-up items' answers (ADR 0062) are checked with the form, before
+  any work, through the `Consents` seam (`consentrecords.Module.Check`): a required acceptance not
+  ticked, an item not in effect or a stale version is a field of the same refusal, and the Consent
+  records are written by `users` in the transaction that creates the User (or replaces an Unverified
+  User's password; a Verified User gets none). The wiring gives it the budget
+  (`throttle.Attempts.For(KindSignUp)`), the mails, the token mint and the verification gate
+  (`workspacecreation.WithSignUp`); the `/site` handler calls it and turns its result into the answer
+  and the cookie. The
   profile rules of a User (a blank name, the password rule, the proof of the current password and
   whether the session is issued again) are `users.Module.ChangeProfile`, which takes the login module's
   `Prove` as a seam.

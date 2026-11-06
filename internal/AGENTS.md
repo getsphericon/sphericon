@@ -109,8 +109,8 @@ a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspa
 (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`
 (the removals of the Enterprise Edition's tables the wiring hands in), and the OAuth token
 endpoint (`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
-The Sign-up (`internal/usecase/signup`) holds no client: its tests build it over a `Store` of
-their own on `users` and the Workspace creation.
+The Sign-up (`workspacecreation.UseCase.SignUp`) is built with `New` and `WithSignUp`; its test of a
+race on a new address gives it a `Lookup` whose first lookup misses.
 
 ## Fixture catalog
 

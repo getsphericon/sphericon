@@ -631,13 +631,29 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
 		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i)), nil
 	}),
-	// The creation of a Workspace, and the steps that make a User Verified with its first one (a
-	// use case, ADR 0102). On an Instance that has Send caps (ADR 0067) a new Workspace starts with
-	// the Instance's default; elsewhere it has none.
+	// The creation of a Workspace, and the steps that make a User Verified with its first one,
+	// the Sign-up among them (a use case, ADR 0102). On an Instance that has Send caps (ADR 0067) a
+	// new Workspace starts with the Instance's default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*workspacecreation.UseCase, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
-		return workspacecreation.New(do.MustInvoke[*events.Bus](i), usersModule, users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*credentials.Hasher](i),
-			workspacecreation.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
+		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
+		return workspacecreation.New(do.MustInvoke[*events.Bus](i), usersModule, links, do.MustInvoke[*credentials.Hasher](i),
+			workspacecreation.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
+			workspacecreation.WithSignUp(workspacecreation.SignUpConfig{
+				Consents:            do.MustInvoke[*consentrecords.Module](i),
+				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
+				Mail:                do.MustInvoke[Enqueuer](i),
+				Mint:                links.VerificationLink,
+				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
+				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
+			})), nil
+	}),
+	// The Sign-up survey is on only with an explicit switch and the `staff` license; the warning for
+	// a switch without the license is logged here, once, at start.
+	do.Lazy(func(i do.Injector) (*signupsurveyresponses.Module, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		enabled := signupsurveyresponses.Enabled(cfg.SignupSurvey, do.MustInvoke[*ee.Edition](i).StaffLicensed(), slog.Default())
+		return signupsurveyresponses.New(do.MustInvoke[*events.Bus](i), enabled), nil
 	}),
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
@@ -962,9 +978,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		return apisite.Deps{}, err
 	}
 	return apisite.Deps{
-		// The Sign-up survey is on only with an explicit switch and the `staff` license; the
-		// warning for a switch without the license is logged here, once, at start.
-		SignupSurvey:             signupsurveyresponses.New(bus, signupsurveyresponses.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
+		SignupSurvey:             do.MustInvoke[*signupsurveyresponses.Module](i),
 		SignupItems:              do.MustInvoke[*signupitems.Module](i),
 		ConsentRecords:           do.MustInvoke[*consentrecords.Module](i),
 		Release:                  do.MustInvoke[*releasecheck.UseCase](i),

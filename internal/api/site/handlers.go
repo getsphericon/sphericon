@@ -61,7 +61,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
@@ -141,8 +140,6 @@ type Handlers struct {
 	challenges *authtoken.Signer
 	// login is the password step of signing in (ADR 0020).
 	login *login.Module[*ent.User]
-	// signup is the Sign-up (ADR 0030).
-	signup *signup.UseCase
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
 	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
@@ -304,7 +301,6 @@ func NewHandlers(d *Deps) *Handlers {
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 	h.login = h.newLogin()
-	h.signup = h.newSignUp()
 	return h
 }
 

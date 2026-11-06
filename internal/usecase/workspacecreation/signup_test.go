@@ -1,4 +1,4 @@
-package signup_test
+package workspacecreation_test
 
 import (
 	"context"
@@ -19,67 +19,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 )
-
-// store is the adapter's side of the seam over users and the Workspace creation, the way /site
-// supplies it.
-type store struct {
-	acc      *users.Module
-	creation *workspacecreation.UseCase
-}
-
-func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
-	u, err := s.acc.UserByEmail(ctx, email)
-	if ent.IsNotFound(err) {
-		return nil, false, nil
-	}
-	return u, err == nil, err
-}
-
-func (s store) CreateUnverified(ctx context.Context, n users.NewUser) (*ent.User, error) {
-	u, err := s.acc.CreateUnverified(ctx, n)
-	if db.IsUniqueViolation(err) {
-		return nil, signup.ErrTaken
-	}
-	return u, err
-}
-
-func (s store) ReplaceUnverifiedPassword(ctx context.Context, id int64, hash string, consents consentrecords.Consents) (*ent.User, error) {
-	return s.acc.ReplaceUnverifiedPassword(ctx, id, hash, consents)
-}
-
-func (s store) CreateVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
-	u, err := s.creation.SignUpVerified(ctx, n)
-	if db.IsUniqueViolation(err) {
-		return nil, signup.ErrTaken
-	}
-	return u, err
-}
-
-// lateStore is a store whose first lookup misses: the Sign-up that lost a race on a new
-// address looked before the winner's User was written.
-type lateStore struct {
-	store
-
-	looked bool
-}
-
-func (s *lateStore) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
-	if !s.looked {
-		s.looked = true
-		return nil, false, nil
-	}
-	return s.store.Lookup(ctx, email)
-}
 
 // queue is the mail queue: an outside boundary, read for what was left on it.
 type queue struct{ jobs []river.JobArgs }
@@ -99,20 +46,24 @@ func tokenFor(id int64, browserHash string) string {
 }
 
 // linkOf is the token a link minted for the User id carries after the Sign-up res.
-func linkOf(id int64, res signup.Result) string { return tokenFor(id, users.BrowserHash(res.Browser)) }
+func linkOf(id int64, res workspacecreation.SignUpResult) string {
+	return tokenFor(id, users.BrowserHash(res.Browser))
+}
 
 type rig struct {
 	env      *testhelper.TestEnv
 	db       *ent.Client
 	queue    *queue
-	module   *signup.UseCase
+	module   *workspacecreation.UseCase
 	consents *consentrecords.Module
 }
 
-type option func(*users.Module, *signup.Config)
+type option func(*users.Module, *workspacecreation.SignUpConfig)
 
 // verificationOff runs the rig on an Instance that does not require email verification.
-func verificationOff(_ *users.Module, cfg *signup.Config) { cfg.RequireVerification = false }
+func verificationOff(_ *users.Module, cfg *workspacecreation.SignUpConfig) {
+	cfg.RequireVerification = false
+}
 
 // newRig builds the module over the fixtures, with a mail budget of budget per address.
 func newRig(t *testing.T, budget int, opts ...option) rig {
@@ -123,14 +74,27 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 	return r
 }
 
-// newRacingRig builds the module over a store whose first lookup misses, on a database of the
+// newRacingRig builds the module with a first lookup that misses, as the lookup of a Sign-up that
+// lost a race on a new address did before the winner's User was written, on a database of the
 // test's own: the create that meets the winner's row fails a statement, which inside the one
 // transaction of the ordinary tests would abort everything after it.
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5,
-		func(_ *users.Module, cfg *signup.Config) { cfg.Store = &lateStore{store: cfg.Store.(store)} })
+	return build(entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5, func(acc *users.Module, cfg *workspacecreation.SignUpConfig) {
+		looked := false
+		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
+			if !looked {
+				looked = true
+				return nil, false, nil
+			}
+			u, err := acc.UserByEmail(ctx, email)
+			if ent.IsNotFound(err) {
+				return nil, false, nil
+			}
+			return u, err == nil, err
+		}
+	})
 }
 
 func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
@@ -138,19 +102,20 @@ func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig 
 	acc := users.New(client, bus, testhelper.Passwords(), consents)
 	attempts := throttle.NewAttempts(client, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := &queue{}
-	cfg := signup.Config{
-		Store: store{acc, workspacecreation.New(bus, acc, nil, testhelper.Passwords())}, Budget: attempts.For(throttle.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
+	cfg := workspacecreation.SignUpConfig{
+		Budget: attempts.For(throttle.KindSignUp), Mail: q, Mint: mint, Consents: consents,
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
 		o(acc, &cfg)
 	}
-	return rig{db: client, queue: q, module: signup.New(cfg), consents: consents}
+	module := workspacecreation.New(bus, acc, nil, testhelper.Passwords(), workspacecreation.WithSignUp(cfg))
+	return rig{db: client, queue: q, module: module, consents: consents}
 }
 
-func (r rig) signUp(t *testing.T, name, email, password string) signup.Result {
+func (r rig) signUp(t *testing.T, name, email, password string) workspacecreation.SignUpResult {
 	t.Helper()
-	res, err := r.module.SignUp(t.Context(), signup.Input{Name: name, Email: email, Password: password})
+	res, err := r.module.SignUp(t.Context(), workspacecreation.SignUpInput{Name: name, Email: email, Password: password})
 	require.NoError(t, err)
 	return res
 }
@@ -254,7 +219,7 @@ func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
 func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
 	r := newRig(t, 5)
 
-	_, err := r.module.SignUp(t.Context(), signup.Input{Name: "  ", Email: "not-an-address", Password: "short"})
+	_, err := r.module.SignUp(t.Context(), workspacecreation.SignUpInput{Name: "  ", Email: "not-an-address", Password: "short"})
 
 	fields, ok := errors.AsType[*validation.FieldsError](err)
 	require.True(t, ok, "got %v", err)
@@ -282,9 +247,9 @@ func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
 	r := newRig(t, 5, verificationOff)
 	john := r.user(t, fixtures.OwnerJohnEmail)
 
-	_, err := r.module.SignUp(t.Context(), signup.Input{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
+	_, err := r.module.SignUp(t.Context(), workspacecreation.SignUpInput{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
 
-	require.ErrorIs(t, err, signup.ErrEmailTaken)
+	require.ErrorIs(t, err, workspacecreation.ErrEmailTaken)
 	assert.Empty(t, r.queue.jobs)
 	assert.Equal(t, john.PasswordHash, r.user(t, fixtures.OwnerJohnEmail).PasswordHash)
 }
