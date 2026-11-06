@@ -31,7 +31,7 @@ func deliveryBody(t *testing.T, env *testhelper.TestEnv, ev events.DomainEvent) 
 	require.Len(t, envelopes, before+1)
 
 	queued := len(env.QueuedDeliveries(t))
-	env.WorkWebhookJobOf(t, envelopes[before])
+	env.PerformEventJobOf(t, jobs.WebhookEventArgs{}, envelopes[before])
 	after := env.QueuedDeliveries(t)
 	require.Len(t, after, queued+1)
 	return after[queued].Body

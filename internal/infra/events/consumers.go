@@ -23,9 +23,10 @@ type Consumer struct {
 	// Wants reports whether the consumer handles the event. It reads only the envelope and the
 	// event decoded from it, never the database, so deciding who gets an event costs no query.
 	Wants func(env Envelope, ev DomainEvent) bool
-	// Job is the args of the consumer's job for env. River tells a job's kind by the Go type of
-	// its args, so each consumer has an args type of its own, which embeds EventJob.
-	Job func(env Envelope) river.JobArgs
+	// Job is the args of the consumer's job for the event: an args type of the consumer's own that
+	// embeds EventJob when the job reads the whole envelope, or the args of the work the event
+	// asks for when the event is all it needs (an evaluation against the Automations).
+	Job func(env Envelope, ev DomainEvent) river.JobArgs
 }
 
 // EventJob is what the args of every event consumer's job embed: the whole envelope, so the
@@ -51,7 +52,7 @@ func (p *txPublisher) queueConsumers(ctx context.Context, env Envelope, ev Domai
 	var params []river.InsertManyParams
 	for _, c := range p.consumers {
 		if c.Wants(env, ev) {
-			params = append(params, river.InsertManyParams{Args: c.Job(env)})
+			params = append(params, river.InsertManyParams{Args: c.Job(env, ev)})
 		}
 	}
 	if len(params) == 0 {

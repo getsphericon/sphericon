@@ -246,7 +246,6 @@ func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
 
 	record(t, env, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")
 	record(t, env, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")
-	env.WorkRuleJobs(t)
 	evaluateQueued(t, env, rules.New(env.Cipher, env.Bus))
 	liam := firedFor(fixtures.ContactLiamID)
 	alice := firedFor(fixtures.ContactAliceID)

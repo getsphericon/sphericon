@@ -20,7 +20,7 @@ import (
 // let an assertion that nothing was published pass on nothing.
 func TestEveryLiveEventIsHandedToTheWebhooksConsumer(t *testing.T) {
 	webhooks, ok := lo.Find(jobs.EventConsumers(), func(c events.Consumer) bool {
-		return c.Job(events.Envelope{}).Kind() == jobs.WebhookEventArgs{}.Kind()
+		return c.Job(events.Envelope{}, &events.CollectedEvent{}).Kind() == jobs.WebhookEventArgs{}.Kind()
 	})
 	require.True(t, ok, "the webhooks consumer is registered")
 
@@ -61,7 +61,7 @@ func TestAnEventIsDeliveredToTheEndpointsThatSelectIt(t *testing.T) {
 	published := env.EventJobs(t, jobs.WebhookEventArgs{}.Kind())
 	require.Len(t, published, 1)
 
-	env.WorkWebhookJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	queued := env.QueuedDeliveries(t)
 	require.Len(t, queued, 1)
@@ -86,7 +86,7 @@ func TestAProviderNotificationIsDeliveredUnderItsOwnID(t *testing.T) {
 	publishEvent(t, env, bounce)
 	publishEvent(t, env, bounce)
 
-	env.WorkWebhookJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	queued := env.QueuedDeliveries(t)
 	require.Len(t, queued, 1)
@@ -102,7 +102,7 @@ func TestTheErasedContactsDeliveryCarriesItsSubject(t *testing.T) {
 		WorkspaceID: fixtures.InitechID, SubjectID: "user-9", IdentifierKind: "contact_id", RequesterKind: "user", RequesterID: 4,
 	})
 
-	env.WorkWebhookJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	d := deliveryTo(t, env, fixtures.WebhookInitechID)
 	assert.Equal(t, events.NameContactErased, d.EventName)
@@ -122,7 +122,7 @@ func TestABackfilledEventReachesNoWebhook(t *testing.T) {
 
 	live := &events.CollectedEvent{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, SubjectID: "s-7", Action: "purchase"}
 	publishEvent(t, env, live)
-	env.WorkWebhookJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	assert.Equal(t, "purchase", deliveryTo(t, env, fixtures.WebhookInitechID).EventName)
 }
@@ -137,7 +137,7 @@ func TestAnAuditEntryReachesOnlyTheEndpointThatSelectsItWithTheStaffMasked(t *te
 		Action: events.ActionWorkspaceSuspend, TargetType: "workspace",
 	})
 
-	env.WorkWebhookJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.WebhookEventArgs{})
 
 	queued := env.QueuedDeliveries(t)
 	require.Len(t, queued, 1, "only the endpoint that selects audit.entry receives it")

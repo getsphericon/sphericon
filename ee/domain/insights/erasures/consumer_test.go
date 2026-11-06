@@ -40,8 +40,9 @@ func TestAnErasureReachesTheStreamOnceThroughItsJob(t *testing.T) {
 	queued := env.EventJobs(t, erasures.ErasureEventArgs{}.Kind())
 	require.Len(t, queued, 1)
 
-	env.WorkEditionJobs(t)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
+	env.RetryJobs(t, testhelper.EditionJobs...)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	stored := countErasures(t, env)
 	assert.Equal(t, 1, stored)
@@ -54,7 +55,7 @@ func TestAnUnlicensedInstanceStreamsNoErasure(t *testing.T) {
 	queued := env.EventJobs(t, erasures.ErasureEventArgs{}.Kind())
 	require.Len(t, queued, 1, "the job is queued whatever the license")
 
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	stored := countErasures(t, env)
 	assert.Zero(t, stored)

@@ -380,9 +380,9 @@ func TestATelegramStopOfABroadcastsMessageCountsTheUnsubscribeOnceItsConsumerRun
 
 	stopFrom(t, env, fixtures.BroadcastArchivedID, 0)
 	before := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
-	env.WorkBroadcastUnsubscribeJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 	counted := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
-	env.WorkBroadcastUnsubscribeJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 	again := env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt
 
 	assert.Nil(t, before, "the opt-out's transaction leaves the count to the consumer")
@@ -396,7 +396,7 @@ func TestATelegramStopOfAMessageWithoutABroadcastCountsNothing(t *testing.T) {
 	boundBob(t, env)
 
 	stopFrom(t, env, 0, fixtures.AutomationArchivedID)
-	env.WorkBroadcastUnsubscribeJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.BroadcastUnsubscribeEventArgs{})
 
 	assert.Empty(t, env.JobsOf(t, jobs.BroadcastUnsubscribeEventArgs{}.Kind()))
 	assert.Nil(t, env.DB.BroadcastRecipient.GetX(t.Context(), fixtures.BroadcastRecipientParkedBobID).UnsubscribedAt)

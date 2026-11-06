@@ -112,7 +112,7 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 		[]string{"dkim_private_key_encrypted"},
 		[]string{"PRIVATE KEY", row.DkimPrivateKeyEncrypted, updated.DkimPrivateKeyEncrypted})
 
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	page, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	domainEntries := lo.Filter(page.Items, func(item siteapi.SiteAuditEntryResource, _ int) bool {

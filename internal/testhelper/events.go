@@ -11,6 +11,7 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -25,9 +26,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
-// A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). Nothing
-// works the queue under txdb, so a test reads the jobs a publish inserted (EventJobs) and works
-// them through the consumer's real worker (WorkEventJobs).
+// A domain event reaches its consumers as River jobs inserted by the publish (ADR 0101). No River
+// runtime works the queue under txdb, so a test reads the jobs a publish inserted (EventJobs) and
+// works them with their real workers (PerformEnqueuedJobs).
 
 // QueuedEnvelopes are the events this test's publishes handed to a consumer, one envelope per
 // event, in the order they were published; with names, only those of these bus types. A publish
@@ -168,87 +169,39 @@ func (env *TestEnv) EventJobs(t *testing.T, kind string) []events.Envelope {
 	return out
 }
 
-// WorkEventJobs works every queued job of the kind worker works, oldest first, through river's
-// test worker with the application's river configuration (Work), so the job runs in the context
-// of handling its envelope. Each call works them all again, so calling it twice exercises a job
-// river retries.
-func WorkEventJobs[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T]) {
+// PerformEventJobOf works the queued job of args' kind that the publish of published inserted, as
+// PerformEnqueuedJobs does, and nothing when the consumer's filter left it out.
+func (env *TestEnv) PerformEventJobOf(t *testing.T, args river.JobArgs, published events.Envelope) {
 	t.Helper()
-	var kind T
-	for _, args := range env.JobsOf(t, kind.Kind()) {
-		require.NoError(t, Work(t.Context(), t, worker, decodeArgs[T](t, args)), kind.Kind())
+	env.performEnqueuedJobsWhere(t, true, func(job *rivertype.JobRow) bool {
+		var queued events.EventJob
+		require.NoError(t, json.Unmarshal(job.EncodedArgs, &queued))
+		return queued.ID == published.ID
+	}, args)
+}
+
+// RetryJobs makes the completed jobs of the kinds of only available again with river's own retry
+// (JobRetry), so the next PerformEnqueuedJobs works them again, as river redelivers a job.
+func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
+	t.Helper()
+	require.NotEmpty(t, only)
+	kinds := make([]string, len(only))
+	for i, args := range only {
+		kinds[i] = args.Kind()
+	}
+	rc := env.riverClient(t)
+	res, err := rc.JobList(t.Context(), river.NewJobListParams().Kinds(kinds...).
+		States(rivertype.JobStateCompleted).First(maxQueuedJobs))
+	require.NoError(t, err)
+	for _, job := range res.Jobs {
+		_, err := rc.JobRetry(t.Context(), job.ID)
+		require.NoError(t, err)
 	}
 }
 
-// WorkOrderJobs works every queued orders job (WorkEventJobs) with the env's Orders module, as
-// the orders consumer's worker would. Each call works them all again, so calling it twice
-// exercises a redelivered order Event.
-func (env *TestEnv) WorkOrderJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, jobs.NewOrderEventWorker(env.DB, env.Orders))
-}
-
-// WorkBroadcastUnsubscribeJobs works every queued broadcasts job (WorkEventJobs): each counts a
-// Telegram opt-out on the Broadcast whose message it was made from.
-func (env *TestEnv) WorkBroadcastUnsubscribeJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, jobs.NewBroadcastUnsubscribeEventWorker(env.DB))
-}
-
-// WorkEventJobOf works the queued job of the kind worker works that the publish of published
-// inserted, and nothing when the consumer's filter left it out.
-func WorkEventJobOf[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T], published events.Envelope) {
-	t.Helper()
-	var kind T
-	for _, args := range env.JobsOf(t, kind.Kind()) {
-		if decodeArgs[events.EventJob](t, args).ID == published.ID {
-			require.NoError(t, Work(t.Context(), t, worker, decodeArgs[T](t, args)), kind.Kind())
-		}
-	}
-}
-
-// WorkAutomationJobOf works the automations job the publish of published inserted, if any
-// (WorkEventJobOf).
-func (env *TestEnv) WorkAutomationJobOf(t *testing.T, published events.Envelope) {
-	t.Helper()
-	WorkEventJobOf(t, env, jobs.NewAutomationEventWorker(env.Inserter(t)), published)
-}
-
-// WorkRuleJobOf works the rules job the publish of published inserted, if any (WorkEventJobOf).
-func (env *TestEnv) WorkRuleJobOf(t *testing.T, published events.Envelope) {
-	t.Helper()
-	WorkEventJobOf(t, env, jobs.NewRuleEventWorker(env.Inserter(t)), published)
-}
-
-// webhookWorker is the webhooks consumer's worker as the application builds it: its dispatcher
-// queues the deliveries in the test's transaction, behind the Edition's license gate.
-func (env *TestEnv) webhookWorker(t *testing.T) *jobs.WebhookEventWorker {
-	t.Helper()
-	return jobs.NewWebhookEventWorker(env.DB, env.edition.Webhooks(jobs.NewWebhookDispatcher(env.Inserter(t))))
-}
-
-// WorkWebhookJobs works every queued webhooks job (WorkEventJobs): each queues one delivery per
-// enabled endpoint of the event's Workspace whose filter matches.
-func (env *TestEnv) WorkWebhookJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, env.webhookWorker(t))
-}
-
-// WorkWebhookJobOf works the webhooks job the publish of published inserted, if any
-// (WorkEventJobOf).
-func (env *TestEnv) WorkWebhookJobOf(t *testing.T, published events.Envelope) {
-	t.Helper()
-	WorkEventJobOf(t, env, env.webhookWorker(t), published)
-}
-
-// WorkEditionJobs works every queued job of the Enterprise Edition's consumers, the Audit log's and
-// the Erasures stream's (WorkEventJobs), under the Instance's License as the application does.
-// Each call works them all again, so calling it twice exercises a retried job.
-func (env *TestEnv) WorkEditionJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, auditentries.NewEntryEventWorker(env.DB, env.license))
-	WorkEventJobs(t, env, erasures.NewErasureEventWorker(env.DB, env.license))
-}
+// EditionJobs are the jobs of the Enterprise Edition's consumers, the Audit log's and the Erasures
+// stream's, for PerformEnqueuedJobs.
+var EditionJobs = []river.JobArgs{auditentries.EntryEventArgs{}, erasures.ErasureEventArgs{}}
 
 // QueuedDeliveries are the queued webhook deliveries, oldest first.
 func (env *TestEnv) QueuedDeliveries(t *testing.T) []jobs.DeliverWebhookArgs {
@@ -259,30 +212,6 @@ func (env *TestEnv) QueuedDeliveries(t *testing.T) []jobs.DeliverWebhookArgs {
 		out = append(out, decodeArgs[jobs.DeliverWebhookArgs](t, args))
 	}
 	return out
-}
-
-// Inserter is a river client over the test's connection with the application's configuration,
-// for a worker that queues follow-up jobs: what it queues is in the test's transaction, where
-// JobsOf reads it.
-func (env *TestEnv) Inserter(t *testing.T) *river.Client[*sql.Tx] {
-	t.Helper()
-	inserter, err := jobs.NewInserter(env.SQLDB)
-	require.NoError(t, err)
-	return inserter
-}
-
-// WorkAutomationJobs works every queued automations job (WorkEventJobs): each queues the
-// evaluation of its Event against the Automations (jobs.EvaluateTriggerArgs).
-func (env *TestEnv) WorkAutomationJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, jobs.NewAutomationEventWorker(env.Inserter(t)))
-}
-
-// WorkRuleJobs works every queued rules job (WorkEventJobs): each queues the evaluation of its
-// Event against the Rules (jobs.EvaluateRulesArgs).
-func (env *TestEnv) WorkRuleJobs(t *testing.T) {
-	t.Helper()
-	WorkEventJobs(t, env, jobs.NewRuleEventWorker(env.Inserter(t)))
 }
 
 // decodeArgs is a queued job's args, read back as JobsOf returns them, decoded into T.

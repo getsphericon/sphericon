@@ -22,9 +22,8 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	env.BindTelegram(t, bot, fixtures.ContactLiamID, 4101, 1000)
 
 	env.PostTelegramUpdate(t, bot, `{"update_id":1,"message":{"message_id":1,"date":1767225600,"chat":{"id":4101,"type":"private"},"from":{"id":4101,"is_bot":false},"text":"hi"}}`)
-	received := onlyEnvelope(t, env, events.NameTelegramReceived)
-	env.WorkAutomationJobOf(t, received)
-	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+	onlyEnvelope(t, env, events.NameTelegramReceived)
+	triggers := triggersOn(t, env, events.NameTelegramReceived)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 

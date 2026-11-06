@@ -32,7 +32,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 	assert.Equal(t, "api-tag", e.TargetName)
 
 	// The owner reads it on /site, attributed to the token.
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page := list

@@ -75,7 +75,7 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 // `membership.update` entries.
 func membershipUpdateEntries(t *testing.T, env *testhelper.TestEnv) int {
 	t.Helper()
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	return env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionMembershipUpdate)).CountX(t.Context())
 }
 
@@ -187,7 +187,7 @@ func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 	ctx := t.Context()
 
 	require.NoError(t, ms.Leave(ctx, env.DB.Scoped(fixtures.InitechID), fixtures.InitechMemberMaxID))
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	entry, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionMembershipDelete)).Only(ctx)
 	require.NoError(t, err)

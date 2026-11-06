@@ -165,9 +165,7 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	paths := smsShortPaths(t, env)
 	require.Len(t, paths, 1)
 	consume := func() []jobs.EvaluateTriggerArgs {
-		envelopes := env.QueuedEnvelopes(t, events.NameSmsClicked)
-		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])
-		return queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+		return triggersOn(t, env, events.NameSmsClicked)
 	}
 
 	follow(t, env, paths[0], whatsAppUA)

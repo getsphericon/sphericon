@@ -81,8 +81,9 @@ func TestTheSuppressionJobSuppressesTheAddressOnce(t *testing.T) {
 	publishEvent(t, env, notice(events.NameEmailBounced, events.BounceKindHard, "twice@example.com"))
 	publishEvent(t, env, notice(events.NameEmailComplained, "", "twice@example.com"))
 
-	testhelper.WorkEventJobs(t, env, jobs.NewSuppressEventWorker(env.DB))
-	testhelper.WorkEventJobs(t, env, jobs.NewSuppressEventWorker(env.DB))
+	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
+	env.RetryJobs(t, jobs.SuppressEventArgs{})
+	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
 
 	entries, err := env.DB.Suppression.Query().
 		Where(entsuppression.WorkspaceID(fixtures.AcmeID), entsuppression.Destination("twice@example.com")).All(t.Context())

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -53,9 +54,8 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 
 	_, err := contacts.New(env.Bus).ApplyTag(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
-	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	env.WorkAutomationJobOf(t, tagged)
-	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+	onlyEnvelope(t, env, events.NameContactTagged)
+	triggers := triggersOn(t, env, events.NameContactTagged)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 
@@ -77,9 +77,9 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
 
-	completed := onlyEnvelope(t, env, events.NameAutomationCompleted)
-	env.WorkRuleJobOf(t, completed)
-	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
+	onlyEnvelope(t, env, events.NameAutomationCompleted)
+	evaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
+		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == events.NameAutomationCompleted })
 	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus)
 	fired, err := m.Evaluate(ctx, acme, rules.Event{
@@ -90,31 +90,25 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	require.Len(t, fired, 1)
 	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
 	tagged := onlyEnvelope(t, env, events.NameContactTagged)
-	env.WorkRuleJobOf(t, tagged)
-	evaluationsAfter := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
+	taggedEvaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
+		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == events.NameContactTagged })
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
 
 	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, fired[0].RuleID)
 	assert.Contains(t, aliceTags, "completed-an-automation")
 	assert.NotEmpty(t, tagged.CausedBy, "the Action's Tag carries its Rule")
-	assert.Len(t, evaluationsAfter, 1, "the Action's own contact.tagged queues no evaluation")
+	assert.Empty(t, taggedEvaluations, "the Action's own contact.tagged queues no evaluation")
 }
 
-// triggerRouter plays river for the Automations: deliver works the automations job of every Event
-// published since its last call, runs the trigger evaluations that
-// queued, and returns their actions.
+// triggerRouter plays river for the Automations: deliver runs the trigger evaluations the Events
+// published since its last call queued, and returns their actions.
 type triggerRouter struct {
-	env                 *testhelper.TestEnv
-	consumed, evaluated int
+	env       *testhelper.TestEnv
+	evaluated int
 }
 
 func (r *triggerRouter) deliver(t *testing.T) []string {
 	t.Helper()
-	envelopes := r.env.QueuedEnvelopes(t)
-	for i := r.consumed; i < len(envelopes); i++ {
-		r.env.WorkAutomationJobOf(t, envelopes[i])
-	}
-	r.consumed = len(envelopes)
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, r.env, jobs.EvaluateTriggerArgs{}.Kind())
 	actions := make([]string, 0, len(triggers)-r.evaluated)
 	for _, args := range triggers[r.evaluated:] {

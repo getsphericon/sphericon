@@ -80,9 +80,8 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 
 	text := textOf(t, env, fixtures.ContactLacunaAdaPhone)
 	reportStatus(t, env, account, text, "undelivered", "30007")
-	undelivered := onlyEnvelope(t, env, events.NameSmsUndelivered)
-	env.WorkAutomationJobOf(t, undelivered)
-	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+	onlyEnvelope(t, env, events.NameSmsUndelivered)
+	triggers := triggersOn(t, env, events.NameSmsUndelivered)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 

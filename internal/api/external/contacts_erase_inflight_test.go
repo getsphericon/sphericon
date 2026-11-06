@@ -93,8 +93,10 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	assert.Equal(t, strconv.FormatInt(bystanderID, 10), fmt.Sprint(left[0].Data["contactId"]))
 
 	evaluate := env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind())
-	require.Len(t, evaluate, 1)
-	assert.EqualValues(t, bystanderID, evaluate[0]["contact_id"])
+	require.Len(t, evaluate, 2, "the bystander's: the one his email.sent queued and the one put here")
+	for _, args := range evaluate {
+		assert.EqualValues(t, bystanderID, args["contact_id"])
+	}
 	assert.Empty(t, env.JobsOf(t, stepexecution.RunStepArgs{}.Kind()))
 	recipients := env.JobsOf(t, jobs.SendRecipientArgs{}.Kind())
 	require.Len(t, recipients, 1)

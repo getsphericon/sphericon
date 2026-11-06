@@ -146,13 +146,10 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion, now))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
-	c := &Client{}
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
 	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
-	river.AddWorker(workers, NewAutomationEventWorker(clientInserter{c}))
-	river.AddWorker(workers, NewRuleEventWorker(clientInserter{c}))
-	dispatcher := NewWebhookDispatcher(clientInserter{c})
+	dispatcher := NewWebhookDispatcher()
 	if deps.Webhooks != nil {
 		dispatcher = deps.Webhooks(dispatcher)
 	}
@@ -177,16 +174,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	if err != nil {
 		return nil, err
 	}
-	c.river = rc
-	return c, nil
-}
-
-// clientInserter queues through the Client's river client, which NewClient sets after it has
-// registered the workers that take it.
-type clientInserter struct{ c *Client }
-
-func (q clientInserter) Insert(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
-	return q.c.river.Insert(ctx, args, opts)
+	return &Client{river: rc}, nil
 }
 
 // SoftStopTimeout is how long a stopping client lets its running jobs finish before it

@@ -559,8 +559,8 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.
   The Edition's consumers of the domain events (`ee.EventConsumers`: the Audit log's and the
   Erasures stream's) are registered on the bus beside core's; their workers come with
-  `Edition.Jobs()` and `ExportJobs()`. In tests nothing works the queue, so call
-  `env.WorkEditionJobs(t)` to work the jobs a publish inserted.
+  `Edition.Jobs()` and `ExportJobs()`. In tests no River runtime works the queue, so call
+  `env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)` to work the jobs a publish inserted.
   **Audit capture in the scoped client (ADR 0022):** an `*ent.Scoped` carries its actor
   (`s.As(actor, opener)`, set at the construction points: `Accounts.Scope` user,
   `HandleBearerAuth` api_token, collect/SES/consent/bootstrap `events.Ingest`; `bus.Act` for

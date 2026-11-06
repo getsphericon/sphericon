@@ -25,6 +25,8 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/workspaceoversight"
 	"github.com/getsphericon/sphericon/ent"
@@ -178,12 +180,12 @@ type TestEnv struct {
 	// Outbound module.
 	Holds *holds.Holds
 
-	// Orders is the orders consumer's module, which WorkOrderJobs drives, for a test that hands
+	// Orders is the orders consumer's module, which the orders jobs drive, for a test that hands
 	// it an order Event itself.
 	Orders *orders.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
-	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
+	// license is the Instance's License, which the Edition's consumers check (EditionJobs).
 	license *licensekey.License
 
 	performers func(testing.TB) performers // the workers of PerformEnqueuedJobs
@@ -507,6 +509,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, jobs.NewNotifySecondFactorRequiredWorker(client, systemMail, cfg.AppURL))
 		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector)))
 		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*domainverification.UseCase](injector)))
+		// The consumers of the domain events, core's and the Edition's (ADR 0101).
+		add(tb, p, txDB, jobs.NewSuppressEventWorker(client))
+		add(tb, p, txDB, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
+		add(tb, p, txDB, jobs.NewBroadcastUnsubscribeEventWorker(client))
+		add(tb, p, txDB, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
+		add(tb, p, txDB, auditentries.NewEntryEventWorker(client, lic))
+		add(tb, p, txDB, erasures.NewErasureEventWorker(client, lic))
 		return p
 	}
 

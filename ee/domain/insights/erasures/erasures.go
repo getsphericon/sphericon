@@ -25,7 +25,9 @@ import (
 func EventConsumer() events.Consumer {
 	return events.Consumer{
 		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameContactErased },
-		Job:   func(env events.Envelope) river.JobArgs { return ErasureEventArgs{events.EventJob{Envelope: env}} },
+		Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
+			return ErasureEventArgs{events.EventJob{Envelope: env}}
+		},
 	}
 }
 

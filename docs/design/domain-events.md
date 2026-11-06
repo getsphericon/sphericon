@@ -66,9 +66,10 @@ does the rest:
   (`callbackinterpretation.RecordOutcome`). The bus knows no domain module: the names it catalogs (`email.bounced`,
   `email.complained`) are its own, and `suppressions` refers to them.
 
-Every event job carries the whole envelope (`events.EventJob`, embedded by each consumer's args), so a
-consumer reads the typed event, its version, its times and its chain. Every event job runs in the
-`events` queue. There is no ordering promise between jobs: a consumer that writes shared rows takes
+A consumer that reads the whole event has args of its own that embed the envelope (`events.EventJob`),
+so it reads the typed event, its version, its times and its chain, and its job runs in the `events`
+queue. A consumer whose work the event alone decides (the automations and the rules) queues that
+work itself: the evaluation, built from the event at publish. There is no ordering promise between jobs: a consumer that writes shared rows takes
 its own lock (orders takes one per Workspace).
 
 ## The consumers
@@ -77,8 +78,8 @@ its own lock (orders takes one per Workspace).
 | ----------- | ----------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | suppression | `event_suppress`              | a hard bounce or a complaint                                                               | suppresses the address, once, keeping the first reason                       |
 | orders      | `event_order`                 | a collected order Event, loaded history included                                           | records the Order and its Movements under the Workspace's lock (ADR 0064)    |
-| automations | `event_automation`            | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry) | queues the evaluation of the Event against the Automations                   |
-| rules       | `event_rule`                  | what automations wants, except an event a Rule's Action published (`CausedBy`)             | queues the evaluation against the Rules; a Firing is unique on the source id |
+| automations | `automation_evaluate_trigger` | a live, person-made Event of a Contact (no history, no machine engagement, no Audit entry) | evaluates the Event against the Automations                                  |
+| rules       | `rule_evaluate_event`         | what automations wants, except an event a Rule's Action published (`CausedBy`)             | evaluates the Event against the Rules; a Firing is unique on the source id   |
 | webhooks    | `event_webhook`               | every live event                                                                           | queues one delivery per enabled endpoint whose filter matches (ADR 0039)     |
 | broadcasts  | `event_broadcast_unsubscribe` | `telegram.unsubscribed` that names a Broadcast and its Contact                             | counts the unsubscribe on the Broadcast's recipient, once (ADR 0102)         |
 | audit (EE)  | `event_audit`                 | an Audit entry                                                                             | stores the entry, once, under the audit license (ADR 0022)                   |
@@ -117,10 +118,10 @@ from the request to the webhook delivery.
 
 ## Testing
 
-Under go-txdb nothing works the queue, so a test asserts what a publish left: the Event rows
+Under go-txdb no River runtime works the queue, so a test asserts what a publish left: the Event rows
 (`env.StoredEvents`) and the event jobs (`env.QueuedEnvelopes` reads every event job's envelope,
 one per event; `env.EventJobs(kind)` one consumer's). Every live event goes to the webhooks
 consumer (`TestEveryLiveEventIsHandedToTheWebhooksConsumer`), so the queued jobs show everything a
-test published. A test works a consumer's jobs through River's test worker with the application's
-River configuration (`testhelper.WorkEventJobs` and its per-consumer forms), so the real middleware
-run. The end-to-end suite runs the application with a real River client.
+test published. A test works a consumer's jobs with `env.PerformEnqueuedJobs(t, kinds...)`, through
+River's test executor with the application's River configuration, so the real middleware run; a
+redelivery is `env.RetryJobs` (River's `JobRetry`) and another `PerformEnqueuedJobs`. The end-to-end suite runs the application with a real River client.

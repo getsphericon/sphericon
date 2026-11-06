@@ -64,6 +64,13 @@ func (env *TestEnv) performMail() {
 // to retry, as river leaves it, and the test goes on.
 func (env *TestEnv) performEnqueuedJobs(tb testing.TB, mustSucceed bool, only ...river.JobArgs) {
 	tb.Helper()
+	env.performEnqueuedJobsWhere(tb, mustSucceed, nil, only...)
+}
+
+// performEnqueuedJobsWhere is performEnqueuedJobs for the waiting jobs that match, or all of them
+// when match is nil.
+func (env *TestEnv) performEnqueuedJobsWhere(tb testing.TB, mustSucceed bool, match func(*rivertype.JobRow) bool, only ...river.JobArgs) {
+	tb.Helper()
 	params := river.NewJobListParams().States(rivertype.JobStateAvailable).
 		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(maxQueuedJobs)
 	if len(only) > 0 {
@@ -84,13 +91,18 @@ func (env *TestEnv) performEnqueuedJobs(tb testing.TB, mustSucceed bool, only ..
 	for range maxPerformRounds {
 		res, err := rc.JobList(tb.Context(), params)
 		require.NoError(tb, err)
-		if len(res.Jobs) == 0 {
-			return
-		}
+		worked := 0
 		for _, job := range res.Jobs {
+			if match != nil && !match(job) {
+				continue
+			}
+			worked++
 			perform, ok := workers[job.Kind]
 			require.Truef(tb, ok, "testhelper: no worker for the job kind %q in performers", job.Kind)
 			env.perform(tb.Context(), tb, perform, job, mustSucceed)
+		}
+		if worked == 0 {
+			return
 		}
 	}
 	tb.Fatalf("testhelper: the jobs still queued jobs after %d rounds", maxPerformRounds)

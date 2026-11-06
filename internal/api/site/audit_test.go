@@ -25,7 +25,7 @@ func promoteMary(t *testing.T, env *testhelper.TestEnv) {
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 	require.NoError(t, err)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 }
 
 func auditList(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.SiteAuditEntryList, error) {
@@ -107,7 +107,8 @@ func TestAuditIsTenantIsolated(t *testing.T) {
 func TestAuditRedeliveryDoesNotDuplicate(t *testing.T) {
 	env := testhelper.Setup(t)
 	promoteMary(t, env)
-	env.WorkEditionJobs(t) // the bus redelivers the same envelope
+	env.RetryJobs(t, testhelper.EditionJobs...) // river redelivers the same envelope
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	page := auditPage(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 	assert.Len(t, page.Items, 2)
@@ -126,7 +127,7 @@ func TestAuditWithoutLicenseStoresNothingAndChangesNoBehaviour(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.SiteMembershipRoleAdmin, updated.Role)
 
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	stored, err := env.DB.AuditEntry.Query().Count(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, before, stored, "nothing was stored for the change")
@@ -144,7 +145,7 @@ func TestAuditCursorPaginates(t *testing.T) {
 			siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 		require.NoError(t, err)
 	}
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	first, err := owner.SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID, Limit: siteapi.NewOptInt32(2)})
 	require.NoError(t, err)
