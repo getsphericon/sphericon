@@ -841,7 +841,10 @@ run = "lychee --config lychee.toml --no-progress '**/*.md'"
 
 ["check:security"]
 description = "Secrets and workflow linters"
-run = ["betterleaks git --no-banner --redact", "jactionlint", "zizmor --no-progress .github"]
+# The secret scan reads the whole history of HEAD, not every ref: CI fetches every branch, and
+# another branch's commit, checked against this branch's allowlist, would fail this one. Each branch
+# is scanned by its own pull request.
+run = ["betterleaks git --no-banner --redact --log-opts=HEAD", "jactionlint", "zizmor --no-progress .github"]
 
 [fix]
 description = "Auto-fix i18n keys, lint and formatting"
