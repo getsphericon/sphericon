@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -45,7 +46,7 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 	}
 	rc := river.ClientFromContext[*stdsql.Tx](ctx)
 	for _, id := range ids {
-		if _, err := rc.Insert(ctx, RefreshIntegrationQuotaArgs{IntegrationID: id}, nil); err != nil {
+		if _, err := rc.Insert(ctx, integrations.RefreshQuotaArgs{IntegrationID: id}, nil); err != nil {
 			return err
 		}
 	}
@@ -64,14 +65,8 @@ func IntegrationsDueForQuotaRefresh(ctx context.Context, client *ent.Client, lim
 		IDs(ctx)
 }
 
-type RefreshIntegrationQuotaArgs struct {
-	IntegrationID int64 `json:"integration_id"`
-}
-
-func (RefreshIntegrationQuotaArgs) Kind() string { return "integration_quota_refresh" }
-
 type RefreshIntegrationQuotaWorker struct {
-	river.WorkerDefaults[RefreshIntegrationQuotaArgs]
+	river.WorkerDefaults[integrations.RefreshQuotaArgs]
 
 	ent     *ent.Client
 	cipher  *secrets.Cipher
@@ -83,7 +78,7 @@ func NewRefreshIntegrationQuotaWorker(client *ent.Client, cipher *secrets.Cipher
 	return &RefreshIntegrationQuotaWorker{ent: client, cipher: cipher, catalog: catalog}
 }
 
-func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job[RefreshIntegrationQuotaArgs]) error {
+func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job[integrations.RefreshQuotaArgs]) error {
 	return RefreshIntegrationQuotaByID(ctx, w.ent, w.cipher, w.catalog, job.Args.IntegrationID)
 }
 

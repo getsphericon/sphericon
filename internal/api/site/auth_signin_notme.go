@@ -19,7 +19,7 @@ func (h *Handlers) noticeIdentityLinked(ctx context.Context, u *ent.User, provid
 		slog.WarnContext(ctx, "signin: could not mint the not-me link", "error", err)
 		return
 	}
-	if err := h.mail.Enqueue(ctx, mailjobs.IdentityLinkedNotice(u.Email, h.providerDisplayName(provider), token)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.IdentityLinkedNotice(u.Email, h.providerDisplayName(provider), token), nil); err != nil {
 		slog.WarnContext(ctx, "signin: could not queue the linked-identity notice", "error", err)
 	}
 }

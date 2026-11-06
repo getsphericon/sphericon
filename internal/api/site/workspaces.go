@@ -161,7 +161,7 @@ func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required b
 	}
 	// The requirement is committed; the email is best-effort, like the invite.
 	if switchedOn {
-		if merr := h.mail.Enqueue(ctx, mailjobs.SecondFactorRequired(s.WorkspaceID())); merr != nil {
+		if _, merr := h.mail.Insert(ctx, mailjobs.SecondFactorRequired(s.WorkspaceID()), nil); merr != nil {
 			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
 		}
 	}

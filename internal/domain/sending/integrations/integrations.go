@@ -11,12 +11,14 @@ package integrations
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -73,17 +75,21 @@ func conflictOf(err error) error {
 
 var errUnknownProvider = errors.New("unsupported provider")
 
-// QuotaEnqueuer schedules a read of one Integration's provider send quota (ADR 0023).
-type QuotaEnqueuer interface {
-	EnqueueIntegrationQuotaRefresh(ctx context.Context, integrationID int64) error
+// RefreshQuotaArgs is the job that reads one Integration's provider send quota (ADR 0023); the
+// job runner works it (internal/jobs).
+type RefreshQuotaArgs struct {
+	IntegrationID int64 `json:"integration_id"`
 }
+
+// Kind is the job's kind in the queue.
+func (RefreshQuotaArgs) Kind() string { return "integration_quota_refresh" }
 
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	bus     *events.Bus
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog
-	quota   QuotaEnqueuer
+	quota   *river.Client[*sql.Tx]
 	presets *preset.Registry
 	appURL  string
 	confirm func(ctx context.Context, url string) error
@@ -130,7 +136,7 @@ func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Op
 
 // New builds the module. presets is the Instance's Preset registry and appURL the public
 // origin the hook URLs are built from.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer, presets *preset.Registry, appURL string, opts ...Option) *Module {
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota *river.Client[*sql.Tx], presets *preset.Registry, appURL string, opts ...Option) *Module {
 	m := &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL, confirm: confirmByGet}
 	for _, opt := range opts {
 		opt(m)
@@ -522,7 +528,7 @@ func (m *Module) discoverQuota(ctx context.Context, row *ent.Integration) {
 	if m.quota == nil || !m.reportsQuota(row) {
 		return
 	}
-	if err := m.quota.EnqueueIntegrationQuotaRefresh(ctx, row.ID); err != nil {
+	if _, err := m.quota.Insert(ctx, RefreshQuotaArgs{IntegrationID: row.ID}, nil); err != nil {
 		slog.WarnContext(ctx, "enqueue integration quota refresh failed", "integration_id", row.ID, "err", err)
 	}
 }

@@ -77,7 +77,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	if err := h.mail.Enqueue(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyAdded, row.Name)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyAdded, row.Name), nil); err != nil {
 		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	res := mapper.PasskeyToResource(row)
@@ -199,7 +199,7 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	if err := h.mail.Enqueue(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyRemoved, row.Name)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyRemoved, row.Name), nil); err != nil {
 		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	return &siteapi.SitePasskeysRemoveNoContent{SetCookie: cookie.String()}, nil

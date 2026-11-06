@@ -9,17 +9,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// reread reads an Integration's Provider limit back: discovery runs as a job after the
-// save, so the save's own response does not carry its result (the test enqueuer runs
-// the job inline, a real queue a moment later).
-func reread(t *testing.T, c *siteapi.Client, id siteapi.EntityId) siteapi.SiteProviderLimitStatus {
+// reread reads an Integration's Provider limit back once the quota reads the saves queued have
+// run: discovery runs as a job after the save, so the save's own response does not carry its
+// result.
+func reread(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, id siteapi.EntityId) siteapi.SiteProviderLimitStatus {
 	t.Helper()
+	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
 	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	res := got
@@ -41,7 +43,7 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 		MaxPerDay: siteapi.NewOptNilMaxPerDay(1000),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	status := reread(t, c, created.ID)
+	status := reread(t, env, c, created.ID)
 
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
 	assert.Equal(t, siteapi.SiteProviderLimitSourceProvider, status.PerSecond.Source.Or(""))
@@ -65,7 +67,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res := created
-	status := reread(t, c, res.ID)
+	status := reread(t, env, c, res.ID)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
 		siteapi.SiteProviderLimitWarningUnlimited, siteapi.SiteProviderLimitWarningProviderQuotaUnavailable,
 	}, status.Warnings)
@@ -77,7 +79,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(5),
 	}, upd)
 	require.NoError(t, err)
-	status = reread(t, c, res.ID)
+	status = reread(t, env, c, res.ID)
 	assert.Equal(t, int32(5), status.PerSecond.Limit.Or(0))
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
 		status.Warnings, "one ceiling is enough to stop the unlimited warning; the quota warning stays")
@@ -89,7 +91,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	_, err = c.SiteIntegrationsUpdate(ctx, resave, upd)
 	require.NoError(t, err)
-	status = reread(t, c, res.ID)
+	status = reread(t, env, c, res.ID)
 	assert.Empty(t, status.Warnings)
 	assert.Equal(t, int32(5), status.PerSecond.Limit.Or(0), "manual 5 is below the provider's 14")
 	assert.Equal(t, int32(50000), status.PerDay.Limit.Or(0))
@@ -99,7 +101,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	env.SES.SetQuotaErr(errors.New("timeout"))
 	_, err = c.SiteIntegrationsUpdate(ctx, resave, upd)
 	require.NoError(t, err)
-	status = reread(t, c, res.ID)
+	status = reread(t, env, c, res.ID)
 	assert.Equal(t, int32(50000), status.PerDay.Limit.Or(0), "a blip must not lift a ceiling that was known")
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable}, status.Warnings)
 }
@@ -118,7 +120,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	require.NoError(t, err)
 
 	id := created.ID
-	status := reread(t, c, id)
+	status := reread(t, env, c, id)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
 		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
 	}, status.Warnings)
@@ -131,7 +133,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
-		reread(t, c, id).Warnings)
+		reread(t, env, c, id).Warnings)
 }
 
 // SMTP has no provider quota, so saving it asks nothing and never warns about one.

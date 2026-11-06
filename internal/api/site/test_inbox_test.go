@@ -17,6 +17,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -70,6 +71,7 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	defaults := env.DB.Integration.Query().
 		Where(integration.WorkspaceID(fixtures.AcmeID), integration.IsDefault(true)).CountX(t.Context())
 	assert.Equal(t, 1, defaults, "the existing default is untouched")
+	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
 	reread, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
 	limit := reread.ProviderLimit.PerDay

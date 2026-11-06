@@ -3,28 +3,19 @@ package testhelper
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertest"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 )
 
-// The jobs a request queues are worked at once, each by its real river worker through
-// rivertest, so a test asserts what the job did (the mail sent, the row written) rather than
-// that a job was queued. rivertest inserts the job, marks it running and completes it inside
-// a transaction it is given; that transaction is on a connection of its own and rolled back
-// after the job, because the test's database is one connection the worker's own queries need
-// while the job runs.
+// Work runs a copy of a job through rivertest on a connection of its own: rivertest inserts the
+// copy, marks it running and completes it inside a transaction it is given, rolled back after the
+// job. PerformEnqueuedJobs (perform.go) works the queued jobs themselves.
 
 // Work runs one job of args through worker the way river would (args are encoded and decoded,
 // the worker's timeout and the application's plugins and middleware apply, jobs.BaseConfig) and
@@ -48,41 +39,4 @@ func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Work
 	w := rivertest.NewWorker(tb, riverdatabasesql.New(pool), jobs.BaseConfig(), worker)
 	_, err = w.Work(ctx, tb, tx, args, nil)
 	return err
-}
-
-// testJobs is the enqueue side of the job queue in a test (app.Enqueuer): each job is worked
-// at once by its real worker.
-type testJobs struct {
-	tb           testing.TB
-	ent          *ent.Client
-	sender       messaging.EmailSender
-	verification *domainverification.UseCase
-	cipher       *secrets.Cipher
-	catalog      *messaging.Catalog
-	appURL       string
-}
-
-// Enqueue works the job of args now.
-func (j *testJobs) Enqueue(ctx context.Context, args river.JobArgs) error {
-	switch a := args.(type) {
-	case mailjobs.WelcomeArgs:
-		return Work(ctx, j.tb, jobs.NewWelcomeWorker(j.sender), a)
-	case mailjobs.AuthMailArgs:
-		return Work(ctx, j.tb, jobs.NewAuthMailWorker(j.sender, j.appURL), a)
-	case mailjobs.MemberInviteArgs:
-		return Work(ctx, j.tb, jobs.NewMemberInviteWorker(j.sender), a)
-	case mailjobs.SecondFactorRequiredArgs:
-		return Work(ctx, j.tb, jobs.NewNotifySecondFactorRequiredWorker(j.ent, j.sender, j.appURL), a)
-	case jobs.RefreshIntegrationQuotaArgs:
-		return Work(ctx, j.tb, jobs.NewRefreshIntegrationQuotaWorker(j.ent, j.cipher, j.catalog), a)
-	case jobs.VerifySendingDomainArgs:
-		return Work(ctx, j.tb, jobs.NewVerifySendingDomainWorker(j.ent, j.verification), a)
-	default:
-		return fmt.Errorf("testhelper: no worker for the job kind %q", args.Kind())
-	}
-}
-
-// EnqueueIntegrationQuotaRefresh reads the Integration's provider send quota now.
-func (j *testJobs) EnqueueIntegrationQuotaRefresh(ctx context.Context, integrationID int64) error {
-	return j.Enqueue(ctx, jobs.RefreshIntegrationQuotaArgs{IntegrationID: integrationID})
 }

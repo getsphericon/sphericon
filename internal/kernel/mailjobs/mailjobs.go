@@ -5,18 +5,6 @@
 // workers (internal/jobs), which import those modules.
 package mailjobs
 
-import (
-	"context"
-
-	"github.com/riverqueue/river"
-)
-
-// Enqueuer queues a job: the river client in production, a test adapter that works each job
-// through its real worker in tests.
-type Enqueuer interface {
-	Enqueue(ctx context.Context, args river.JobArgs) error
-}
-
 // WelcomeArgs is the platform welcome mail after a Sign-up.
 type WelcomeArgs struct {
 	Email string `json:"email"`

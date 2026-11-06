@@ -63,9 +63,7 @@ type riverEnv struct {
 	pool   *sql.DB
 	client *jobs.Client
 	// queue is a river client over the same pool for what the test inserts, lists and clears.
-	queue *river.Client[*sql.Tx]
-	// jobs is the enqueue side the modules queue through, over the same pool.
-	jobs   *jobs.Queue
+	queue  *river.Client[*sql.Tx]
 	cipher *secrets.Cipher
 	cfg    *config.Config
 	sender *fakeSender
@@ -103,10 +101,15 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	require.NoError(t, err)
 	queue, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	enqueue, err := jobs.NewQueue(pool)
-	require.NoError(t, err)
-	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, jobs: enqueue, cipher: cipher, cfg: cfg, sender: fs}
+	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, cipher: cipher, cfg: cfg, sender: fs}
 	return e
+}
+
+// insert queues one job of args through the test's river client.
+func (e *riverEnv) insert(t *testing.T, args river.JobArgs) {
+	t.Helper()
+	_, err := e.queue.Insert(t.Context(), args, nil)
+	require.NoError(t, err)
 }
 
 // workCtx is the context river hands a worker: it carries the client the fan-out
@@ -140,24 +143,6 @@ func job[T river.JobArgs](args T) *river.Job[T] {
 	return &river.Job[T]{JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3}, Args: args}
 }
 
-func TestQueueEnqueuesEveryJobKind(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := context.Background()
-
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.Welcome("new@example.com", "New")))
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.PasswordReset("a@example.com", "tok", true)))
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.EmailVerification("a@example.com", "tok", true)))
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.EmailChangeConfirm("a@example.com", "tok", true)))
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: "a@example.com", InviteURL: "https://x/invite", WorkspaceName: "Acme", InviterName: "Jane"}))
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.SecondFactorRequired(fixtures.UmbrellaID)))
-
-	assert.Equal(t, []string{
-		"send_welcome",
-		"send_auth_mail", "send_auth_mail", "send_auth_mail",
-		"send_member_invite", "second_factor_required_notify",
-	}, e.queued(t))
-}
-
 func TestClientStartAndStop(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := context.Background()
@@ -172,7 +157,7 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
 
-	require.NoError(t, e.jobs.Enqueue(ctx, mailjobs.Welcome("runtime@example.com", "Run")))
+	e.insert(t, mailjobs.Welcome("runtime@example.com", "Run"))
 
 	require.Eventually(t, func() bool {
 		for _, m := range e.SystemMail.Messages() {

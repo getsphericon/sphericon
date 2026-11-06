@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -53,7 +54,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	fake.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), fake.Catalog())
 	run := func() {
-		require.NoError(t, worker.Work(ctx, job(jobs.RefreshIntegrationQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
+		require.NoError(t, worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
 	effective := func() providerlimit.Effective {
 		row, err := s.Integration().Get(ctx, fixtures.IntegrationAcmeSesID)
@@ -82,7 +83,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {
 	env := testhelper.Setup(t)
 	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), (&testhelper.FakeSES{}).Catalog())
-	require.NoError(t, worker.Work(t.Context(), job(jobs.RefreshIntegrationQuotaArgs{IntegrationID: 424242})))
+	require.NoError(t, worker.Work(t.Context(), job(integrations.RefreshQuotaArgs{IntegrationID: 424242})))
 }
 
 func TestIntegrationsDueForQuotaRefreshAreTheSESOnes(t *testing.T) {
@@ -115,7 +116,7 @@ func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNot
 	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, envCipher(t), fake.Catalog())
 
-	err := worker.Work(ctx, job(jobs.RefreshIntegrationQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
+	err := worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
 
 	require.NoError(t, err)
 	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationAcmeSesID)

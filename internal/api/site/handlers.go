@@ -4,10 +4,13 @@ package site
 
 import (
 	"context"
+	"database/sql"
 	"io"
 	"log/slog"
 	"strconv"
 	"time"
+
+	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -50,7 +53,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
@@ -83,7 +85,7 @@ type Handlers struct {
 	bus             *events.Bus
 	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
-	mail            mailjobs.Enqueuer
+	mail            *river.Client[*sql.Tx]
 	sendingDomains  *sendingdomains.Module
 	trackingDomains *trackingdomains.Module
 	joinDomains     *joindomains.Module
@@ -206,9 +208,9 @@ type Deps struct {
 	Automations *automations.Module
 	Rules       *rules.Module
 	Broadcasts  *broadcasts.Module
-	// Mail queues the platform mails (welcome, account mails, invites, Second factor notices):
-	// the river client in production, a test adapter that works each job at once in tests.
-	Mail            mailjobs.Enqueuer
+	// Mail queues the platform mails (welcome, account mails, invites, Second factor notices) on
+	// the insert-only river client.
+	Mail            *river.Client[*sql.Tx]
 	SendingDomains  *sendingdomains.Module
 	TrackingDomains *trackingdomains.Module
 	JoinDomains     *joindomains.Module
