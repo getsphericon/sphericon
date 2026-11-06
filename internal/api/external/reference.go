@@ -20,9 +20,10 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (*externalapi.CustomFie
 	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
-// CustomFieldsUpdate renames a Custom field or changes its type.
+// CustomFieldsUpdate renames a Custom field or changes its type through the Custom field retyping
+// use case.
 func (h *Handlers) CustomFieldsUpdate(ctx context.Context, req *externalapi.UpdateCustomFieldInput, params externalapi.CustomFieldsUpdateParams) (*externalapi.CustomFieldResource, error) {
-	field, err := contacts.UpdateCustomField(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	field, err := h.customFieldRetyping.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
 	}

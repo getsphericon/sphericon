@@ -23,10 +23,10 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
-// SiteCustomFieldsUpdate renames a Custom field or changes its type (owners and admins: the
-// operation's Permission).
+// SiteCustomFieldsUpdate renames a Custom field or changes its type through the Custom field
+// retyping use case (owners and admins: the operation's Permission).
 func (h *Handlers) SiteCustomFieldsUpdate(ctx context.Context, req *siteapi.SiteUpdateCustomFieldInput, params siteapi.SiteCustomFieldsUpdateParams) (*siteapi.SiteCustomFieldResource, error) {
-	field, err := contacts.UpdateCustomField(ctx, workspaceScope(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
+	field, err := h.customFieldRetyping.Update(ctx, workspaceScope(ctx), int64(params.ID), inputs.CustomFieldUpdate(req))
 	if err != nil {
 		return nil, err
 	}

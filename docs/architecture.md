@@ -129,11 +129,11 @@ coding standards in `CODING_STANDARDS.md`.
   `internal/app/container.go` and handed to the drivers through their `Deps`. It takes the
   `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
   Workspace lock where ADR 0099 requires it, so a Live use check opens it with
-  `WithinWorkspaceLockTx`), reads them, and changes their rows only through their functions. easement
+  `WithinWorkspaceLockTx`; `customfieldretyping` opens none: the retype stays the single unlocked write it was), reads them, and changes their rows only through their functions. easement
   isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
   the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
-  and forbids it the raw client. A removal that a use case guards with a check is the domain module's
-  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`),
+  and forbids it the raw client. A removal (or a change) that a use case guards with a check is the domain module's
+  unchecked removal: a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
   the `forbid_symbol` list of every component but `usecase` that may reach the core (`x-no-raw-client`,
@@ -141,7 +141,7 @@ coding standards in `CODING_STANDARDS.md`.
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
   checked). The tests of the operation live in the use case's own `_test` package
-  (`internal/usecase/tagdeletion`), through its exports; the domain module keeps the tests of its own
+  (`internal/usecase/tagdeletion`; a retype's refusal is tested through the API's Custom field update), through its exports; the domain module keeps the tests of its own
   rows.
   One unchecked removal is called from a domain module until its use case exists:
   `memberships.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its deletion window
@@ -375,7 +375,8 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   with helpers like `inuse.Broadcasts` and `inuse.Enrollments`); the delete that checks Live use
   returns it, and every API surface answers it with the contract's `Problem` (409, `usedBy`). When the
   users are modules above the removed row's module, the check is a use case (`tagdeletion` asks
-  Segments, Automations, Rules and Broadcasts before `tags.DeleteIn`; see "Use cases").
+  Segments, Automations, Rules and Broadcasts before `tags.DeleteIn`, `customfieldretyping` asks
+  Segments, Rules and Broadcasts before a Custom field's type changes; see "Use cases").
   `internal/liveuse` finds the live work (today the active email Automations) for the modules that
   cannot import `internal/automations`. Both are leaves that hold no raw `*ent.Client`: `liveuse`
   takes a `*ent.Scoped`, `inuse` only maps rows to users.

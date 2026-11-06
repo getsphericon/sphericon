@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/transactional"
+	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -67,6 +68,8 @@ type Handlers struct {
 	bootstrapToken  string
 	audit           AuditLog
 	export          ExportStreams
+	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
+	customFieldRetyping *customfieldretyping.UseCase
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
@@ -121,6 +124,8 @@ type Deps struct {
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now); the security handler reads it.
 	Clock func() time.Time
+	// CustomFieldRetyping edits a Custom field (a use case, ADR 0102).
+	CustomFieldRetyping *customfieldretyping.UseCase
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -128,7 +133,7 @@ func NewHandlers(d Deps) *Handlers {
 		workspaces: d.Workspaces, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
 		eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, bindings: d.Bindings, templates: d.Templates, transactional: d.Transactional, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, bootstrapToken: d.BootstrapToken,
-		audit: d.Audit, export: d.Export,
+		audit: d.Audit, export: d.Export, customFieldRetyping: d.CustomFieldRetyping,
 	}
 }
 

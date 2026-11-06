@@ -9,17 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 // ErrReservedKey means a Custom field was given the key of a core attribute or an alias key.
@@ -34,8 +28,9 @@ var ErrReservedKey = validation.Refuse("contacts: a custom field key names a con
 // Type is inferred from the value's JSON shape on first sight (inferFieldType). A later value of a
 // conflicting type does NOT retype or reject (declared-by-use must not break ingest): the stored
 // value keeps its own JSON type, the definition's type is left as-is, and a Condition leaf of the
-// field's type is false on it. A person changes the type (UpdateCustomField). A key that names a
-// core attribute or an alias key is refused (ADR 0072).
+// field's type is false on it. A person changes the type (the use case
+// internal/usecase/customfieldretyping). A key that names a core attribute or an alias key is
+// refused (ADR 0072).
 func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
 	if len(kv) == 0 {
 		return nil, nil
@@ -81,62 +76,52 @@ type CustomFieldUpdateInput struct {
 	Type patch.Field[string]
 }
 
-// UpdateCustomField renames a Custom field or changes its type, an audited change (ADR 0022). A type
-// change rewrites no stored value: the leaves of the new type read the values as they are, and are
-// false on one of another shape. It is refused with an *inuse.Error while a Segment, a kept Rule or
-// an armed Broadcast tests the field with a leaf the new type does not take, as their Conditions
-// would stop compiling; a leaf every type takes (notNull) does not hold the type. An unknown id is
-// ErrCustomFieldNotFound.
-func UpdateCustomField(ctx context.Context, s *ent.Scoped, id int64, in CustomFieldUpdateInput) (*ent.CustomField, error) {
+// CustomField returns the Custom field with the given id, ErrCustomFieldNotFound when the Workspace
+// has none.
+func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField, error) {
 	field, err := s.CustomField().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrCustomFieldNotFound
 	}
-	if err != nil {
+	return field, err
+}
+
+// Check refuses an edit whose new name is blank (ErrCustomFieldNameRequired).
+func (in CustomFieldUpdateInput) Check() error {
+	if raw, ok := in.Name.Get(); ok && strings.TrimSpace(raw) == "" {
+		return ErrCustomFieldNameRequired
+	}
+	return nil
+}
+
+// Retype returns the type the edit changes field to, and false when the edit keeps its type.
+func (in CustomFieldUpdateInput) Retype(field *ent.CustomField) (customfield.Type, bool) {
+	raw, ok := in.Type.Get()
+	if !ok || customfield.Type(raw) == field.Type {
+		return "", false
+	}
+	return customfield.Type(raw), true
+}
+
+// UpdateCustomFieldIn renames field or changes its type, an audited change (ADR 0022). A type
+// change rewrites no stored value: the leaves of the new type read the values as they are, and are
+// false on one of another shape. It is the unchecked retype (ADR 0102): it does not ask whether a
+// Segment, a Rule or a Broadcast tests the field with a leaf the new type does not take. Editing a
+// Custom field is the use case internal/usecase/customfieldretyping, which runs that check first;
+// easement forbids every other package to call UpdateCustomFieldIn. A blank new name is
+// ErrCustomFieldNameRequired.
+func UpdateCustomFieldIn(ctx context.Context, s *ent.Scoped, field *ent.CustomField, in CustomFieldUpdateInput) (*ent.CustomField, error) {
+	if err := in.Check(); err != nil {
 		return nil, err
 	}
-	upd := s.CustomField().UpdateOneID(id)
+	upd := s.CustomField().UpdateOneID(field.ID)
 	if raw, ok := in.Name.Get(); ok {
-		name := strings.TrimSpace(raw)
-		if name == "" {
-			return nil, ErrCustomFieldNameRequired
-		}
-		upd.SetName(name)
+		upd.SetName(strings.TrimSpace(raw))
 	}
-	if raw, ok := in.Type.Get(); ok && customfield.Type(raw) != field.Type {
-		t := customfield.Type(raw)
-		users, err := unfitUsers(ctx, s, field.Key, t)
-		if err != nil {
-			return nil, err
-		}
-		if len(users) > 0 {
-			return nil, &inuse.Error{What: inuse.SubjectCustomField, Users: users}
-		}
+	if t, ok := in.Retype(field); ok {
 		upd.SetType(t)
 	}
 	return upd.Save(ctx)
-}
-
-// unfitUsers is what tests the Custom field key with a Condition leaf a field of type t does not
-// take: Segments, kept Rules and armed Broadcasts. An Automation holds no Condition.
-func unfitUsers(ctx context.Context, s *ent.Scoped, key string, t customfield.Type) ([]inuse.User, error) {
-	segs, err := segments.UnfitForCustomFieldType(ctx, s, key, t)
-	if err != nil {
-		return nil, err
-	}
-	kept, err := rules.UnfitForCustomFieldType(ctx, s, key, t)
-	if err != nil {
-		return nil, err
-	}
-	armed, err := broadcasts.UnfitForCustomFieldType(ctx, s, key, t)
-	if err != nil {
-		return nil, err
-	}
-	users := lo.Map(segs, func(seg *ent.Segment, _ int) inuse.User {
-		return inuse.User{Kind: inuse.Segment, ID: seg.ID, Name: seg.Name}
-	})
-	users = append(users, inuse.Rules(kept)...)
-	return append(users, inuse.Broadcasts(armed)...), nil
 }
 
 // CustomFields returns the Workspace's whole Custom field catalogue, ascending by key.
