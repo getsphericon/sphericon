@@ -9,13 +9,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
-	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
@@ -86,7 +86,7 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 }
 
 // RuleActionRunners are the Runners of the Actions a Rule can have. Each reuses the module that
-// already does the thing for an Automation step; internal/rules imports none of them.
+// already does the thing for an Automation step; internal/domain/orchestration/rules imports none of them.
 func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunners {
 	tagging := contacts.New(bus)
 	return rules.ActionRunners{

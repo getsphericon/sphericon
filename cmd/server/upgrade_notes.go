@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/changelog"
+	"github.com/getsphericon/sphericon/internal/domain/instance/changelog"
 )
 
 // upgradeNotesCommand is `sphericon upgrade-notes --since <version>`: it prints the `Upgrade:`

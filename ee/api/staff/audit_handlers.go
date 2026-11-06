@@ -4,7 +4,7 @@ import (
 	"context"
 
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
 )
 
 // StaffWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An

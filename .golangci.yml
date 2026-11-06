@@ -404,7 +404,7 @@ linters:
       # a rules.Result, an ignored delivery outcome, a Condition that no longer compiles. Each was read:
       # the handlers whose error was not the client's (the Automation switch, the link tokens whose
       # lookup failed) return it now. A new handler file is checked.
-      - path: ^(internal/api/external/(audit|emails)\.go|internal/api/site/(audit|auth_recovery|auth_signin|auth_signin_notme|consent)\.go|internal/mcpserver/mcpserver\.go|internal/jobs/rules_http\.go|internal/rules/rules\.go|internal/webhooks/delivery\.go)$
+      - path: ^(internal/api/external/(audit|emails)\.go|internal/api/site/(audit|auth_recovery|auth_signin|auth_signin_notme|consent)\.go|internal/mcpserver/mcpserver\.go|internal/jobs/rules_http\.go|internal/domain/orchestration/(rules/rules|webhooks/delivery)\.go)$
         linters:
           - nilerr
       # Test data is spelled out in each test: a name or an address that five tests share is the

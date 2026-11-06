@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 
 	"github.com/stretchr/testify/assert"

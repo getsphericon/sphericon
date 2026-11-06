@@ -5,8 +5,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 // webhookResource maps the endpoint; the signing secret is deliberately never part of an

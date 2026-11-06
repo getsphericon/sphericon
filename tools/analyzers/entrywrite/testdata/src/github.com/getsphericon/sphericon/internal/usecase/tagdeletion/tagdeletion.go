@@ -17,7 +17,7 @@ func remove(ctx context.Context, s *ent.Scoped, client *ent.Client) error {
 	if _, err := s.Segment().Purge().Exec(ctx); err != nil { // want `\(Purge on Segment\), a table internal/domain/contacts/segments owns`
 		return err
 	}
-	if err := s.Automation().Pointers().SetDraft(ctx, 1, 2); err != nil { // want `\(Pointers on Automation\), a table internal/automations owns`
+	if err := s.Automation().Pointers().SetDraft(ctx, 1, 2); err != nil { // want `\(Pointers on Automation\), a table internal/domain/orchestration/automations owns`
 		return err
 	}
 	return client.Ghost().Create().Save(ctx) // want `^rule 5: a write to Ghost \(Create on Ghost\), an entity the ownership map names no owner of; fix: add Ghost to owners`

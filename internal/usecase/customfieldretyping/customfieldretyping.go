@@ -15,11 +15,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
-	"github.com/getsphericon/sphericon/internal/inuse"
-	"github.com/getsphericon/sphericon/internal/rules"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 )
 
 // UseCase edits a Custom field. Every call receives the Workspace-scoped client (ADR 0017) built

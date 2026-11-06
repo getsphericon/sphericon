@@ -4,8 +4,8 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the

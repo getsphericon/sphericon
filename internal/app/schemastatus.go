@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
 // WriteSchemaBoundaries is `sphericon migrate --status --json`: what the Major walk of `upgrade`

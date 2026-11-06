@@ -68,11 +68,16 @@ under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 ## Domain contexts
 
 A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the order of the contexts
-and their easement components are "Domain contexts" in `docs/architecture.md`). Identity,
-contacts, content and sending are there (`internal/domain/identity/{workspaces,memberships,users,...}`,
+and their easement components are "Domain contexts" in `docs/architecture.md`): identity,
+contacts, content, sending, orchestration, insights and instance
+(`internal/domain/identity/{workspaces,memberships,users,...}`,
 `internal/domain/contacts/{contacts,segments,tags,...}`, `internal/domain/content/{templates,...}`,
-`internal/domain/sending/{outbound,integrations,...}`); the other modules are still flat under
-`internal/` until their context moves. A module imports only modules of its own context and
+`internal/domain/sending/{outbound,integrations,...}`,
+`internal/domain/orchestration/{broadcasts,automations,rules,...}`,
+`internal/domain/insights/{setupchecklist,auditapi,...}`,
+`internal/domain/instance/{instancestates,upgrade,...}`). Nothing of the core is left flat under
+`internal/`: what is there besides the tiers is a driver, the wiring, a tool of `cmd/` or test
+support (`fixtures`, `dnstest`, `telemetryschema`). A module imports only modules of its own context and
 of the contexts below; its tests are not checked, so a test may build what it needs from the harness
 as before. A module moves with its tests, in the same `_test` package and with the same assertions.
 Only paths change: a relative path a test reads (`signin`'s `../../../../openapi`) gets the new

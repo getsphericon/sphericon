@@ -1,6 +1,6 @@
 // Package releasecheck is the use case of the Release check (ADR 0032, ADR 0102): once a day it
 // asks where the newest published release is, stores a newer one in the Instance state
-// (internal/instancestates) and logs it, and it tells a User who holds release:read in a live
+// (internal/domain/instance/instancestates) and logs it, and it tells a User who holds release:read in a live
 // Workspace (an owner, ADR 0061) of the newer release the check found. The rule of which stored
 // release still counts is the Instance state's. It takes the Instance state module rather than an
 // *ent.Scoped: the Release check belongs to no Workspace.
@@ -15,7 +15,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )

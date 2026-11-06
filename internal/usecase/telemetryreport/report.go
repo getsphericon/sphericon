@@ -8,10 +8,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
 // schemaVersion is the version of the Telemetry report schema the builder implements

@@ -5,7 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
-	"github.com/getsphericon/sphericon/internal/contactexport"
+	"github.com/getsphericon/sphericon/internal/domain/insights/contactexport"
 )
 
 // SiteContactsExport streams the subject-access Data export of one contact (ADR

@@ -12,8 +12,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/changelog"
 	"github.com/getsphericon/sphericon/internal/doctor"
+	"github.com/getsphericon/sphericon/internal/domain/instance/changelog"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )

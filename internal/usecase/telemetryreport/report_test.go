@@ -10,8 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/integration"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"

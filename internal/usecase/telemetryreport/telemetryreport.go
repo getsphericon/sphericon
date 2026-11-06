@@ -2,7 +2,7 @@
 // the report from the Instance's figures and what the running binary says of itself, shows it to a
 // Staff member as a preview, and sends it once a day to the receiver of the Telemetry contract,
 // whose client it is (gen/telemetry). Whether a report is sent and when the last one went out are
-// the Instance state's (internal/instancestates), which it reads and records through that module.
+// the Instance state's (internal/domain/instance/instancestates), which it reads and records through that module.
 // It takes the Instance state module rather than an *ent.Scoped: the report belongs to no
 // Workspace.
 package telemetryreport
@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/instancestates"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 

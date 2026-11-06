@@ -6,14 +6,14 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // Broadcast authoring over /api (ADR 0016): drafts, Segment, test send and report.
 // Nothing here sends to the audience; scheduling and sending are separate,
-// send-class operations. The state rules live in internal/broadcasts; these
+// send-class operations. The state rules live in internal/domain/orchestration/broadcasts; these
 // handlers check the scope, call it and map its errors.
 
 func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (*externalapi.BroadcastsListOK, error) {

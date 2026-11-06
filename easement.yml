@@ -8,9 +8,9 @@ version: 1
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
 # that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api), `x-core-forbids`
-# (`core` and each context's `domain-<context>`), `x-raw-holder-forbids` (the runner, `core-raw`
-# and each context's raw-client components); api-auth, ee, ee-edition and wiring take
-# this list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
+# (each context's `domain-<context>`), `x-raw-holder-forbids` (the runner and each context's
+# raw-client components); api-auth, ee, ee-edition, testsupport and wiring take this list
+# whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which alone
 # may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it, and
 # `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even inside its own module fails, and tests are
@@ -113,25 +113,25 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/sending/outbound.EraseOutboundMessagesIn
     because: *workspace-erase-because
   - &broadcasts-erase-broadcast-recipients-in
-    name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastRecipientsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.EraseBroadcastRecipientsIn
     because: *workspace-erase-because
   - &rules-erase-rule-firings-in
-    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleFiringsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleFiringsIn
     because: *workspace-erase-because
   - &rules-erase-rule-version-triggers-in
-    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleVersionTriggersIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleVersionTriggersIn
     because: *workspace-erase-because
   - &rules-erase-rule-versions-in
-    name: github.com/getsphericon/sphericon/internal/rules.EraseRuleVersionsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRuleVersionsIn
     because: *workspace-erase-because
   - &rules-erase-rules-in
-    name: github.com/getsphericon/sphericon/internal/rules.EraseRulesIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/rules.EraseRulesIn
     because: *workspace-erase-because
   - &automations-erase-automation-runs-in
-    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationRunsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationRunsIn
     because: *workspace-erase-because
   - &automations-erase-automation-versions-in
-    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationVersionsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationVersionsIn
     because: *workspace-erase-because
   - &visitors-erase-visitors-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/visitors.EraseVisitorsIn
@@ -155,7 +155,7 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseSendCapLimitersIn
     because: *workspace-erase-because
   - &webhooks-erase-webhook-endpoints-in
-    name: github.com/getsphericon/sphericon/internal/webhooks.EraseWebhookEndpointsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks.EraseWebhookEndpointsIn
     because: *workspace-erase-because
   - &invitations-erase-invitations-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/invitations.EraseInvitationsIn
@@ -164,10 +164,10 @@ x-unchecked-removals: &unchecked-removals
     name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.EraseAPITokensIn
     because: *workspace-erase-because
   - &broadcasts-erase-broadcasts-in
-    name: github.com/getsphericon/sphericon/internal/broadcasts.EraseBroadcastsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.EraseBroadcastsIn
     because: *workspace-erase-because
   - &automations-erase-automations-in
-    name: github.com/getsphericon/sphericon/internal/automations.EraseAutomationsIn
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/automations.EraseAutomationsIn
     because: *workspace-erase-because
   - &segments-erase-segments-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/segments.EraseSegmentsIn
@@ -266,11 +266,11 @@ x-no-raw-client: &no-raw-client
     - *integrations-erase-integrations-in
     - *joindomains-erase-join-domains-in
     - *memberships-erase-memberships-in
-# The forbid list of a component that holds no raw client (the flat `core`, the non-raw component
-# of each context, `domain-<context>`): the raw client and every unchecked removal.
+# The forbid list of a component that holds no raw client (the non-raw component of each context,
+# `domain-<context>`): the raw client and every unchecked removal.
 x-core-forbids: &core-forbids
   - name: github.com/getsphericon/sphericon/ent.Client
-    because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`, or `core-raw` for a module not yet in a context) here, never a field of a module
+    because: a domain module takes a *ent.Scoped; needing raw access means a new small package in the closed list of docs/architecture.md (Workspace scoping) and in the raw-client component of its context (`domain-<context>-raw`) here, never a field of a module
   - *tags-delete-in
   - *leave-doomed-workspace-in
   - *contacts-update-custom-field-in
@@ -331,7 +331,7 @@ x-core-forbids: &core-forbids
   - *integrations-erase-integrations-in
   - *joindomains-erase-join-domains-in
   - *memberships-erase-memberships-in
-# The forbid list of a raw-client holder (`core-raw`, the runner, `domain-<context>-raw` and the
+# The forbid list of a raw-client holder (the runner, `domain-<context>-raw` and the
 # bottom of identity, `domain-identity-base`): the ent client's hooks and the upgrade types, which
 # only the wiring installs and reads, and every unchecked removal.
 x-raw-holder-forbids: &raw-holder-forbids
@@ -357,10 +357,10 @@ x-raw-holder-forbids: &raw-holder-forbids
     name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &upgrade-boundaries
-    name: github.com/getsphericon/sphericon/internal/upgrade.Boundaries
+    name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
     because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
   - &upgrade-major-floor
-    name: github.com/getsphericon/sphericon/internal/upgrade.MajorFloor
+    name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.MajorFloor
     because: the JSON schema status that `upgrade` reads is built in the wiring (app.WriteSchemaBoundaries, ADR 0102); no raw-client holder of the core and no runner knows an upgrade type
   - *tags-delete-in
   - *leave-doomed-workspace-in
@@ -535,6 +535,7 @@ components:
         internal/mcpserver,
         internal/testhelper,
         internal/doctor,
+        internal/healthcheck,
         cmd/server,
       ]
 
@@ -608,25 +609,6 @@ components:
     allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
-  # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
-  # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
-  # is the unit, so the doc's narrower grants (`capturedmessages` only `Purge`, `automations` only
-  # `FenceOn`, `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and `Secrets`,
-  # `integrations`, `webhooks`, `rules`, `automations`, `users` and `staffmembers` only their
-  # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth` and the job
-  # runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`, which do not forbid the client.
-  # A module that has moved into its context (internal/domain/<context>) holds the client in that
-  # context's `domain-<context>-raw` component instead, and leaves this list.
-  core-raw:
-    in:
-      [
-        internal/automations,
-        internal/instancestates,
-        internal/instanceaudit,
-        internal/rules,
-        internal/webhooks,
-      ]
-
   # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
   # the bottom: identity -> contacts -> content -> sending -> orchestration -> insights -> instance.
   # Each context is a few components, one per privilege, named `domain-<context>[-<part>]`:
@@ -636,8 +618,15 @@ components:
   # context's modules may import each other (a context only orders packages, it is no box with a
   # facade), so its components name each other in `may_depend_on`, with every component of the
   # contexts below and nothing above: the kernel, the infrastructure and ent are open to all
-  # (common). The modules not moved yet stay in `core` and `core-raw`, which may reach every
-  # context.
+  # (common). Every package of the core is in a tier or a context; there is no catch-all.
+  # The raw-client components follow the closed list "The raw *ent.Client is allowed only in" of
+  # docs/architecture.md (Workspace scoping), kept in step with it. A package is the unit, so the
+  # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
+  # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and `Secrets`,
+  # `integrations`, `webhooks`, `rules`, `automations`, `users` and `staffmembers` only their
+  # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
+  # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
+  # which do not forbid the client.
   #
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
@@ -710,6 +699,40 @@ components:
   # lands here.
   domain-sending: { in: 'internal/domain/sending/**' }
 
+  # Orchestration, above sending: what targets Contacts and sends through the contexts below, the
+  # Broadcasts, the Automations with their stored Steps (automationsteps), the Rules and the
+  # Webhook endpoints, with the one shape of a refused removal the Live use checks return (inuse)
+  # and the ent aggregates the Broadcast and Automation reports share (aggregates). Its raw-client
+  # holders (docs/architecture.md, Workspace scoping) are `domain-orchestration-raw`.
+  domain-orchestration-raw:
+    in:
+      [
+        internal/domain/orchestration/automations,
+        internal/domain/orchestration/rules,
+        internal/domain/orchestration/webhooks,
+      ]
+  # The rest of orchestration, which holds no raw client; a new module under
+  # internal/domain/orchestration lands here.
+  domain-orchestration: { in: 'internal/domain/orchestration/**' }
+
+  # Insights, above orchestration: the read packages that look across the contexts below without
+  # owning a table, the Setup checklist, the read side of the Audit log (auditapi) and of the Export
+  # streams (exportstream), the abuse watch the Enterprise detector fills (abusewatch) and the Data
+  # export of one Contact (contactexport). None holds the raw client, so the context is one
+  # component.
+  domain-insights: { in: 'internal/domain/insights/**' }
+
+  # Instance, the top context: what belongs to the Instance rather than to a Workspace, its state
+  # (instancestates) and its audit log (instanceaudit), which hold the raw client
+  # (`domain-instance-raw`), the in-place upgrade of a bare binary (upgrade) and the Upgrade notes
+  # of the changelog (changelog). The Telemetry report is a use case
+  # (internal/usecase/telemetryreport) over instancestates.
+  domain-instance-raw:
+    in: [internal/domain/instance/instancestates, internal/domain/instance/instanceaudit]
+  # The rest of instance, which holds no raw client; a new module under internal/domain/instance
+  # lands here.
+  domain-instance: { in: 'internal/domain/instance/**' }
+
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
   # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
   # configuration (`config`, read by them). It imports only the kernel and never a domain module.
@@ -733,8 +756,29 @@ components:
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
-  # Everything else under internal/ is the core domain.
-  core: { in: 'internal/**' }
+  # The packages behind the repository's own commands under cmd/ that are not the application: the
+  # generators (scopegen, the fixture catalog, goverter's enum transformer) and the CI checks
+  # (contractcopy, prcheck, upgradecheck). No tier, no driver and no wiring imports one.
+  tools:
+    in:
+      [
+        internal/contractcopy,
+        internal/fixtures/fixturegen,
+        internal/goverterenum,
+        internal/prcheck,
+        internal/scopegen,
+        internal/upgradecheck,
+      ]
+    allow_importers: []
+    because: a tool package serves a command of the repository under cmd/ (a generator or a CI check), never the application
+  # What tests share below the harness: the committed fixtures' loader and catalog (fixtures, which
+  # cmd/seed also loads into the development database), an in-process DNS server (dnstest) and the
+  # check of a Telemetry report against its contract (telemetryschema). Tests are not checked, so
+  # only the harness is a checked importer.
+  testsupport:
+    in: [internal/fixtures, internal/dnstest, internal/telemetryschema]
+    allow_importers: [wiring]
+    because: test support serves the tests and the harness (internal/testhelper), and the seeding command; no tier and no driver imports it
 
 # Every component may use the infrastructure (publish through the bus, among others) and the kernel,
 # and import the generated ent client.
@@ -754,8 +798,9 @@ rules:
       [
         api-auth,
         api-problem,
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
+        domain-insights,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
@@ -776,8 +821,9 @@ rules:
       [
         api-auth,
         api-problem,
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
+        domain-insights,
         domain-identity,
         domain-identity-users,
         domain-identity-base,
@@ -799,7 +845,15 @@ rules:
   api-staff:
     <<: *no-raw-client
     may_depend_on:
-      [api-problem, core, core-raw, domain-identity, domain-identity-raw, gen-surfaces, usecase]
+      [
+        api-problem,
+        domain-insights,
+        domain-instance-raw,
+        domain-identity,
+        domain-identity-raw,
+        gen-surfaces,
+        usecase,
+      ]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
@@ -809,21 +863,9 @@ rules:
     because: the security handlers sit below every surface
   api-problem:
     <<: *no-raw-client
-    may_depend_on: [core, domain-identity-users, domain-identity-base, gen-surfaces]
+    may_depend_on: [domain-orchestration, domain-identity-users, domain-identity-base, gen-surfaces]
     forbid_external: *no-container
     because: the Problem mapping sits below every surface and reads only the refusals the core returns
-  core:
-    may_depend_on: [domain-identity-raw, domain-contacts, domain-sending]
-    must_not_depend_on: [*no-surface-gen]
-    forbid_symbol: *core-forbids
-    forbid_external: *no-container
-    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
-  core-raw:
-    may_depend_on: [core, domain-identity-base, domain-contacts, domain-content, domain-sending]
-    must_not_depend_on: [*no-surface-gen]
-    forbid_external: *no-container
-    forbid_symbol: *raw-holder-forbids
-    because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   domain-contacts:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -848,12 +890,55 @@ rules:
     forbid_external: *no-container
     forbid_symbol: *core-forbids
     because: sending sits above content in the domain tier (ADR 0102), so a sending module imports the kernel, the infrastructure, ent, the other sending modules and those of identity, contacts and content, never a module of a context above (a Broadcast, an Automation, a Rule, a Webhook endpoint) nor a use case; an operation that needs one is a use case above both
+  domain-orchestration-raw:
+    may_depend_on:
+      [domain-orchestration, domain-identity-base, domain-contacts, domain-content, domain-sending]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
+  domain-orchestration:
+    may_depend_on: [domain-contacts, domain-sending]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: orchestration sits above sending in the domain tier (ADR 0102), so an orchestration module imports the kernel, the infrastructure, ent, the other orchestration modules and those of identity, contacts, content and sending, never a module of a context above (the Setup checklist, an Export stream, the Instance state) nor a use case; an operation that needs one is a use case above both
+  domain-insights:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: insights sits above orchestration in the domain tier (ADR 0102), so an insights package imports the kernel, the infrastructure, ent and the packages of its own context and of the contexts below, (an allowance added with its first import), never a module of the instance context (the Instance state, an upgrade) nor a use case; an operation that needs one is a use case above both
+  domain-instance-raw:
+    may_depend_on: [domain-identity-base, domain-sending]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+  domain-instance:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: instance is the top context of the domain tier (ADR 0102), so an instance module imports the kernel, the infrastructure, ent and the modules of every context (an allowance added with its first import), never a use case; an operation across them, such as the Telemetry report or the Release check, is a use case above it
+  tools:
+    may_depend_on: []
+    forbid_external: *no-container
+    because: a tool package reads files and contracts, never the application's modules; what it needs from the application is the kernel
+  testsupport:
+    may_depend_on: [domain-identity-raw]
+    forbid_symbol: *unchecked-removals
+    forbid_external: *no-container
+    because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
     may_depend_on:
       [
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
+        domain-insights,
+        domain-instance-raw,
+        domain-instance,
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
@@ -873,8 +958,9 @@ rules:
   usecase-raw:
     may_depend_on:
       [
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
+        domain-instance-raw,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
@@ -925,8 +1011,8 @@ rules:
   runner:
     may_depend_on:
       [
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
         domain-identity-raw,
         domain-identity-users,
         domain-identity-base,
@@ -970,18 +1056,27 @@ rules:
     because: the ent schema reads its Go types from the kernel, and the endpoint URL rule of a Webhook endpoint from internal/infra/webhook; it knows no domain module
   ee-api:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, domain-identity-raw, domain-sending, ee, gen-surfaces]
+    may_depend_on:
+      [api-problem, domain-insights, domain-identity-raw, domain-sending, ee, gen-surfaces]
     forbid_external: *no-container
     because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
   ee-edition:
     may_depend_on:
-      [core, domain-identity-raw, domain-identity-base, domain-sending, ee, ee-api, gen-surfaces]
+      [
+        domain-insights,
+        domain-identity-raw,
+        domain-identity-base,
+        domain-sending,
+        ee,
+        ee-api,
+        gen-surfaces,
+      ]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
   ee:
     may_depend_on:
-      - core
+      - domain-insights
       - domain-identity-raw
       - domain-identity-base
       - domain-sending
@@ -993,8 +1088,11 @@ rules:
   wiring:
     may_depend_on:
       [
-        core,
-        core-raw,
+        domain-orchestration-raw,
+        domain-orchestration,
+        domain-insights,
+        domain-instance-raw,
+        domain-instance,
         domain-identity,
         domain-identity-raw,
         domain-identity-users,
@@ -1015,6 +1113,7 @@ rules:
         usecase,
         usecase-raw,
         gen-surfaces,
+        testsupport,
       ]
     forbid_symbol: *unchecked-removals
     because: wiring is where the program is assembled
@@ -1069,7 +1168,7 @@ go:
 uncovered_ok:
   - name: '**/race_on.go'
     because: the race-detector twin of race_off.go, built only under -race
-  - name: internal/changelog/embed_none.go
+  - name: internal/domain/instance/changelog/embed_none.go
     because: the twin of embed.go, built when embed_changelog is off
   - name: internal/server/spa_noembed.go
     because: the twin of spa_embed.go, built when embed_spa is off
@@ -1087,6 +1186,16 @@ unowned:
   - e2e/**
   # The TypeSpec contract's decorators (ADR 0069), loaded by the TypeSpec compiler.
   - typespec/**
-  # Tool configs and the two embed files at the repository root.
-  - '*.ts'
-  - '*.go'
+  # The frontend's ambient type declarations (the i18next resources), read by tsc, imported by none.
+  - types/**
+  # Tool configs and the two embed files at the repository root. A glob without a directory
+  # matches at any depth (`'*.go'` would leave every Go file uncovered), so each file is named.
+  - commitlint.config.ts
+  - i18next.config.ts
+  - knip.ts
+  - openapi-ts.config.ts
+  - oxfmt.config.ts
+  - oxlint.config.ts
+  - vite.config.ts
+  - migrations.go
+  - spec.go

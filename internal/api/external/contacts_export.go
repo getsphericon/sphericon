@@ -6,7 +6,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
-	"github.com/getsphericon/sphericon/internal/contactexport"
+	"github.com/getsphericon/sphericon/internal/domain/insights/contactexport"
 )
 
 // ContactsExport streams the subject-access Data export of one contact (ADR 0021),

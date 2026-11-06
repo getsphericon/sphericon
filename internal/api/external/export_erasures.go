@@ -5,7 +5,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/exportstream"
+	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 )
 
 // ExportErasures serves the Erasures stream (ADR 0045): NDJSON rows, the next cursor in the

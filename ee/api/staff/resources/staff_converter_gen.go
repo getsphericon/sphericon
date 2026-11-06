@@ -10,9 +10,9 @@ import (
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
-	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
-	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	signupsurvey "github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	abusewatch "github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
+	auditapi "github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 )

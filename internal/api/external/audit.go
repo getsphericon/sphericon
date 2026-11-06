@@ -9,7 +9,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 

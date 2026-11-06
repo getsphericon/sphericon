@@ -10,9 +10,6 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
-	automations "github.com/getsphericon/sphericon/internal/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/automationsteps"
-	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -22,6 +19,11 @@ import (
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	signupsurvey "github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	automationsteps "github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	webhooks "github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	outbound "github.com/getsphericon/sphericon/internal/domain/sending/outbound"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -30,10 +32,8 @@ import (
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
-	rules "github.com/getsphericon/sphericon/internal/rules"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
-	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 type InputsImpl struct{}

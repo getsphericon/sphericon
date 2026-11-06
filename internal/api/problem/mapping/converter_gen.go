@@ -12,7 +12,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	staff "github.com/getsphericon/sphericon/gen/staff"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
-	inuse "github.com/getsphericon/sphericon/internal/inuse"
+	inuse "github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
 )
 
 type ConverterImpl struct{}

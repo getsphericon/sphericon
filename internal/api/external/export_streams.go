@@ -5,7 +5,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/exportstream"
+	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 )
 
 // exportLicensed is the gate every Export stream shares after the export:read scope the contract

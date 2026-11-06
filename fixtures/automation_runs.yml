@@ -1166,7 +1166,7 @@
   updated_at: '{{daysAgo 1}}'
 
 # Payment recovery (108): Isabella's active Enrollment, begun a day ago, which its exit and goal
-# Events end (internal/automations).
+# Events end (internal/domain/orchestration/automations).
 - id: 7500 # fixture: AutomationRunRecoveryActive
   automation_id: 108
   version_id: 108

@@ -13,7 +13,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 )
 
