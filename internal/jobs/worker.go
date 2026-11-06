@@ -6,6 +6,7 @@ package jobs
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/riverqueue/rivercontrib/otelriver"
+	"github.com/robfig/cron/v3"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
@@ -250,6 +252,17 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 	return cfg
 }
 
+// mustParseCron is the river schedule of a standard cron expression, as river's docs schedule a
+// periodic job at a time of day (robfig/cron); CRON_TZ=UTC fixes the zone. The expressions are
+// constants, so one that does not parse is a programming error.
+func mustParseCron(expr string) cron.Schedule {
+	schedule, err := cron.ParseStandard(expr)
+	if err != nil {
+		panic(fmt.Sprintf("jobs: the schedule %q: %v", expr, err))
+	}
+	return schedule
+}
+
 // periodicJobs are core's periodic jobs, then extra, the Edition's.
 func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 	return append([]*river.PeriodicJob{
@@ -310,7 +323,7 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		),
 		// Delete expired analytical Events daily at 03:00 UTC (ADR 0019).
 		river.NewPeriodicJob(
-			dailyAtUTC{hour: eventsRetentionHourUTC},
+			eventsRetentionSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PruneEventsArgs{}, nil
 			},
@@ -326,7 +339,7 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		),
 		// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
 		river.NewPeriodicJob(
-			dailyAtUTC{hour: unverifiedUsersHourUTC},
+			unverifiedUsersSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PruneUnverifiedUsersArgs{}, nil
 			},
@@ -334,7 +347,7 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		),
 		// Delete Captured messages past the Test inbox's retention window daily at 06:00 UTC (ADR 0058).
 		river.NewPeriodicJob(
-			dailyAtUTC{hour: capturedMessagesHourUTC},
+			capturedMessagesSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PruneCapturedMessagesArgs{}, nil
 			},
@@ -342,7 +355,7 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		),
 		// Delete spent Passkey challenges daily at 05:00 UTC (ADR 0051).
 		river.NewPeriodicJob(
-			dailyAtUTC{hour: passkeyChallengesHourUTC},
+			passkeyChallengesSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PrunePasskeyChallengesArgs{}, nil
 			},
@@ -350,7 +363,7 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		),
 		// Delete the lapsed and used Start tokens daily at 04:00 UTC (ADR 0076).
 		river.NewPeriodicJob(
-			dailyAtUTC{hour: startTokensHourUTC},
+			startTokensSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PruneStartTokensArgs{}, nil
 			},

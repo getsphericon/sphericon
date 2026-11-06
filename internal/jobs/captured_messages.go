@@ -15,8 +15,8 @@ import (
 // long lock.
 const capturedMessagesBatch = 500
 
-// capturedMessagesHourUTC is the off-peak hour the Captured message purge runs at.
-const capturedMessagesHourUTC = 6
+// capturedMessagesSchedule is when the Captured message purge runs: daily at an off-peak hour, 06:00 UTC.
+var capturedMessagesSchedule = mustParseCron("CRON_TZ=UTC 0 6 * * *")
 
 // PruneCapturedMessagesArgs is the daily tick that deletes Captured messages past the Test
 // inbox's retention window (ADR 0058).

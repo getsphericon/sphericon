@@ -14,8 +14,8 @@ import (
 // holds a long lock.
 const unverifiedUsersBatch = 500
 
-// unverifiedUsersHourUTC is the off-peak hour the Unverified User prune runs at.
-const unverifiedUsersHourUTC = 4
+// unverifiedUsersSchedule is when the Unverified User prune runs: daily at an off-peak hour, 04:00 UTC.
+var unverifiedUsersSchedule = mustParseCron("CRON_TZ=UTC 0 4 * * *")
 
 // PruneUnverifiedUsersArgs is the daily tick that deletes stale Unverified Users
 // (ADR 0030).
