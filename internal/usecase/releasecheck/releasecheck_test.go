@@ -1,4 +1,4 @@
-package instance_test
+package releasecheck_test
 
 import (
 	"bytes"
@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 type fixedSource struct {
@@ -21,13 +22,13 @@ type fixedSource struct {
 
 func (s fixedSource) LatestRelease(context.Context) (string, error) { return s.version, s.err }
 
-func logged(t *testing.T, running string, src instance.ReleaseSource) (*instance.Module, *bytes.Buffer) {
+func logged(t *testing.T, running string, src releasecheck.ReleaseSource) (*releasecheck.UseCase, *bytes.Buffer) {
 	t.Helper()
 	env := testhelper.Setup(t)
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	mod := instance.New(env.DB, instance.Environment{ReleaseCheck: true}, instance.Host{AppVersion: running}, nil,
-		instance.WithReleaseSource(src), instance.WithLogger(log))
+	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, nil)
+	mod := releasecheck.New(states, src, releasecheck.WithLogger(log))
 	return mod, buf
 }
 

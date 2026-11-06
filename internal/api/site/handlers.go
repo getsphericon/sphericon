@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
@@ -54,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
@@ -109,7 +109,7 @@ type Handlers struct {
 	now             func() time.Time
 	accountLink     *accountlink.Link
 	migrations      Migrations
-	instance        *instance.Module
+	release         *releasecheck.UseCase
 	holds           *holds.Holds
 	origins         Origins
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
@@ -172,8 +172,8 @@ type Deps struct {
 	Passwords *credentials.Hasher
 	// Deletion is the Workspace deletion cycle (ADR 0043).
 	Deletion *workspacedeletion.Module
-	// Instance is the Instance state no Workspace owns (ADR 0032).
-	Instance *instance.Module
+	// Release is the Release check (ADR 0032), whose newer release an owner is told of.
+	Release *releasecheck.UseCase
 	// Attempts counts failed logins and password-reset mails per account (ADR
 	// 0025); login and forgot-password share it.
 	Attempts    *accounts.Attempts
@@ -268,7 +268,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),

@@ -37,7 +37,6 @@ import (
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
-	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -58,6 +57,7 @@ import (
 	setupchecklist "github.com/getsphericon/sphericon/internal/setupchecklist"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
 	trackingdomains "github.com/getsphericon/sphericon/internal/trackingdomains"
+	releasecheck "github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"time"
 )
 
@@ -1275,7 +1275,7 @@ func (c *ConverterImpl) IdentityToResource(source *ent.UserIdentity) site.SiteLi
 	}
 	return siteapiSiteLinkedIdentity
 }
-func (c *ConverterImpl) InstanceReleaseToResource(source instance.Release) site.SiteInstanceRelease {
+func (c *ConverterImpl) InstanceReleaseToResource(source releasecheck.Release) site.SiteInstanceRelease {
 	var siteapiSiteInstanceRelease site.SiteInstanceRelease
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
 	return siteapiSiteInstanceRelease

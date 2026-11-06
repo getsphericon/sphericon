@@ -1,27 +1,30 @@
-// Package instance owns the Instance's own state (ADR 0032): the one row that no Workspace
+// Package instancestates owns the Instance's own state (ADR 0032): the one row that no Workspace
 // owns (its random Instance id, the Telemetry report setting, the acknowledged notice, the
 // Release check's result, the default Send cap of new Workspaces). A Staff member decides about it
 // in the console (ADR 0063), and a change of the default Send cap is recorded in the Instance
-// audit log (ADR 0070); the
-// banner of a newer release reads the Memberships of every Workspace, so it holds the raw ent
-// client.
-package instance
+// audit log (ADR 0070). The row belongs to no Workspace, and the Instance-wide reads behind the
+// Telemetry report and the banner of a newer release span every Workspace, so it holds the raw ent
+// client; the Telemetry report and the Release check themselves are use cases
+// (internal/usecase/telemetryreport, internal/usecase/releasecheck) over it.
+package instancestates
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
+
+	"github.com/samber/lo"
+	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/membership"
-	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/instanceaudit"
+	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/memberships"
@@ -49,12 +52,17 @@ type Environment struct {
 	Dev bool
 	// SchemaURL is the page that documents the Telemetry report's schema.
 	SchemaURL string
+	// Version is the version that runs, the one the Release check compares to.
+	Version string
+	// LicenseExpiredAt is when the license key expired; zero unless it has lapsed (ADR 0035).
+	LicenseExpiredAt time.Time
 }
 
-// EnvironmentOf reads the Instance switches from the configuration.
-func EnvironmentOf(cfg *config.Config) Environment {
+// EnvironmentOf reads the Instance switches from the configuration, with the version that runs and
+// when its license key lapsed (zero unless it has).
+func EnvironmentOf(cfg *config.Config, version string, licenseExpiredAt time.Time) Environment {
 	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck,
-		Dev: cfg.IsDev, SchemaURL: cfg.TelemetrySchemaURL}
+		Dev: cfg.IsDev, SchemaURL: cfg.TelemetrySchemaURL, Version: version, LicenseExpiredAt: licenseExpiredAt}
 }
 
 // Lock names what decides a setting the Staff member cannot change.
@@ -80,7 +88,7 @@ type Setting struct {
 // Effective applies ADR 0032 to the environment and the stored setting (on until a Staff
 // member switches it off in the console): off if the Mode says so (saas) or DO_NOT_TRACK=1; on and
 // locked if the Mode says so; otherwise the stored setting decides. DO_NOT_TRACK
-// only ever switches off. The sender of the report reuses it.
+// only ever switches off. The sender of the report (internal/usecase/telemetryreport) reuses it.
 func Effective(env Environment, stored bool) Setting {
 	switch {
 	case env.Telemetry != nil && !*env.Telemetry:
@@ -120,20 +128,11 @@ type DefaultSendCapChange struct {
 	DefaultSendCap DefaultSendCap
 }
 
-// Release is what a Workspace's owner sees of the Instance: the Release check's result.
-type Release struct {
-	// LatestRelease is the bare version of a newer stable release, nil when there is none.
-	LatestRelease *string
-}
-
 // Module is the Instance state and the rules around it.
 type Module struct {
-	ent    *ent.Client
-	env    Environment
-	host   Host
-	now    func() time.Time
-	source ReleaseSource
-	log    *slog.Logger
+	ent *ent.Client
+	env Environment
+	now func() time.Time
 	// sendCaps is whether the Instance has Send caps (ADR 0067): only then does it have a default
 	// Send cap.
 	sendCaps providerlimit.SendCaps
@@ -142,24 +141,16 @@ type Module struct {
 // Option configures the module.
 type Option func(*Module)
 
-// WithReleaseSource sets where the Release check asks for the newest release. Without one
-// the check does nothing.
-func WithReleaseSource(s ReleaseSource) Option { return func(m *Module) { m.source = s } }
-
-// WithLogger sets the logger of the Release check's lines; the default is slog's.
-func WithLogger(l *slog.Logger) Option { return func(m *Module) { m.log = l } }
-
 // WithSendCaps says whether the Instance has Send caps (ADR 0067), and so a default Send cap a
 // Staff member sets. Without them (the default) it has none.
 func WithSendCaps(c providerlimit.SendCaps) Option { return func(m *Module) { m.sendCaps = c } }
 
-// New builds the module; a nil clock means time.Now. The host is what the Telemetry report
-// says about the running binary; its AppVersion is the version the Release check compares to.
-func New(client *ent.Client, env Environment, host Host, now func() time.Time, opts ...Option) *Module {
+// New builds the module; a nil clock means time.Now.
+func New(client *ent.Client, env Environment, now func() time.Time, opts ...Option) *Module {
 	if now == nil {
 		now = time.Now
 	}
-	m := &Module{ent: client, env: env, host: host, now: now, log: slog.Default()}
+	m := &Module{ent: client, env: env, now: now}
 	for _, o := range opts {
 		o(m)
 	}
@@ -180,39 +171,16 @@ func ensureRow(ctx context.Context, client *ent.Client) (*ent.InstanceState, err
 	return client.InstanceState.Get(ctx, stateID)
 }
 
-// Report is the Telemetry report as the Instance would send it now, whether or not sending
-// is on: the same builder the daily sender uses.
-func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, error) {
-	return BuildReport(ctx, m.ent, m.host, m.now())
-}
+// Environment is what the deployment says about the Instance, as the module was built with it.
+func (m *Module) Environment() Environment { return m.env }
 
-// ReleaseFor is the banner of a newer release for the User userID: a User who holds the
-// Permission release:read (an owner, ADR 0061) in a live Workspace is told, everyone else gets
-// that Permission's refusal (403 permission_required). The Instance's settings are not a
-// Workspace's business: they are the Staff console's (ADR 0063).
-func (m *Module) ReleaseFor(ctx context.Context, userID int64) (Release, error) {
-	held, err := m.ent.Membership.Query().
+// HoldsReleaseRead is whether the User userID holds the Permission release:read (an owner, ADR
+// 0061) in a live Workspace: who is told of a newer release. It reads the Memberships of every
+// Workspace.
+func (m *Module) HoldsReleaseRead(ctx context.Context, userID int64) (bool, error) {
+	return m.ent.Membership.Query().
 		Where(membership.UserID(userID), memberships.HoldersOf(memberships.PermReleaseRead), membership.HasWorkspaceWith(workspaces.Live())).
 		Exist(ctx)
-	if err != nil {
-		return Release{}, err
-	}
-	if !held {
-		return Release{}, memberships.Refusal(memberships.PermReleaseRead)
-	}
-	latest, err := m.LatestRelease(ctx)
-	if err != nil {
-		return Release{}, err
-	}
-	return Release{LatestRelease: present(latest)}, nil
-}
-
-// present is the newer release as the resources carry it: nil when there is none.
-func present(latest string) *string {
-	if latest == "" {
-		return nil
-	}
-	return &latest
 }
 
 // Setting is the effective Telemetry report setting right now.
@@ -233,8 +201,8 @@ func (m *Module) State(ctx context.Context) (State, error) {
 	s := State{
 		Telemetry:          Effective(m.env, row.TelemetryEnabled),
 		NoticeAcknowledged: row.NoticeAcknowledgedAt != nil,
-		LatestRelease:      present(m.newer(row.LatestRelease)),
-		LicenseExpiredAt:   m.host.LicenseExpiredAt,
+		LatestRelease:      lo.EmptyableToPtr(m.newer(row.LatestRelease)),
+		LicenseExpiredAt:   m.env.LicenseExpiredAt,
 		TelemetrySchemaURL: m.env.SchemaURL,
 	}
 	if m.sendCaps {
@@ -351,9 +319,43 @@ func (m *Module) MarkReportSent(ctx context.Context, at time.Time) error {
 	return m.ent.InstanceState.UpdateOneID(stateID).SetLastReportSentAt(at).Exec(ctx)
 }
 
-// recordRelease stores the newest release the check found with the check time, and reports
-// whether it differs from the one stored before.
-func (m *Module) recordRelease(ctx context.Context, latest string) (bool, error) {
+// ChecksReleases is whether the Release check runs at all: it is switched on, this is not a
+// development or test environment and the running build is a release.
+func (m *Module) ChecksReleases() bool {
+	return m.env.ReleaseCheck && !m.env.Dev && buildinfo.IsRelease(m.env.Version)
+}
+
+// isNewer is whether latest is a stable release strictly newer than the running version.
+func (m *Module) isNewer(latest string) bool {
+	return buildinfo.IsRelease(latest) && semver.Compare(buildinfo.Semver(latest), buildinfo.Semver(m.env.Version)) > 0
+}
+
+// newer is the stored release when it is still newer than the running version (an Instance
+// upgraded since the check stops announcing it) and the check is on; empty otherwise.
+func (m *Module) newer(stored *string) string {
+	if stored == nil || !m.ChecksReleases() || !m.isNewer(*stored) {
+		return ""
+	}
+	return *stored
+}
+
+// LatestRelease is the cached result of the Release check: a stable release newer than the
+// running version, or empty. It asks nobody.
+func (m *Module) LatestRelease(ctx context.Context) (string, error) {
+	row, err := m.Ensure(ctx)
+	if err != nil {
+		return "", err
+	}
+	return m.newer(row.LatestRelease), nil
+}
+
+// RecordRelease stores the newest release the Release check found, with the check time, only
+// when the check runs and latest is a stable release strictly newer than the running version, and
+// reports whether it stored one that differs from the one stored before.
+func (m *Module) RecordRelease(ctx context.Context, latest string) (bool, error) {
+	if !m.ChecksReleases() || !m.isNewer(latest) {
+		return false, nil
+	}
 	row, err := m.Ensure(ctx)
 	if err != nil {
 		return false, err

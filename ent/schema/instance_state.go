@@ -13,7 +13,7 @@ import (
 // Instance id, the Owner's telemetry setting, whether the Telemetry report notice was
 // acknowledged, when a report was last sent, the newest release the Release check
 // found and the default Send cap of new Workspaces. It belongs to the Instance, not a Workspace (no Workspace edge, no scoped
-// wrapper). Row id 1 is created at first start by internal/instance.
+// wrapper). Row id 1 is created at first start by internal/instancestates.
 type InstanceState struct {
 	ent.Schema
 }
@@ -38,7 +38,7 @@ func (InstanceState) Fields() []ent.Field {
 			Immutable().
 			DefaultFunc(rand.Text),
 		// TelemetryEnabled is the Owner's in-app choice, on until they switch it off
-		// (ADR 0032). The environment can override it (see internal/instance).
+		// (ADR 0032). The environment can override it (see internal/instancestates).
 		field.Bool("telemetry_enabled").
 			Default(true),
 		// NoticeAcknowledgedAt is when an Owner acknowledged the one-time notice.

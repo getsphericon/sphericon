@@ -1,4 +1,4 @@
-package instance_test
+package telemetryreport_test
 
 import (
 	"testing"

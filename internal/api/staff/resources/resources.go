@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/signupitems"
@@ -38,9 +38,9 @@ import (
 type Converter interface {
 	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
 
-	InstanceStateToResource(source instance.State) staffapi.StaffInstanceState
-	DefaultSendCapToResource(source instance.DefaultSendCap) staffapi.StaffDefaultSendCap
-	DefaultSendCapChangeToResource(source instance.DefaultSendCapChange) staffapi.StaffDefaultSendCapChange
+	InstanceStateToResource(source instancestates.State) staffapi.StaffInstanceState
+	DefaultSendCapToResource(source instancestates.DefaultSendCap) staffapi.StaffDefaultSendCap
+	DefaultSendCapChangeToResource(source instancestates.DefaultSendCapChange) staffapi.StaffDefaultSendCapChange
 
 	// An entry's actor is the Staff member it was loaded with; it is never deleted (ADR 0026).
 	// goverter:map CreatedAt OccurredAt
@@ -59,7 +59,7 @@ type Converter interface {
 	// The Staff member deciding is no lock: optLock leaves it out.
 	// goverter:enum:transform value
 	// goverter:enum:map LockNone @panic
-	InstanceTelemetryLockToResource(source instance.Lock) staffapi.StaffInstanceTelemetryLock
+	InstanceTelemetryLockToResource(source instancestates.Lock) staffapi.StaffInstanceTelemetryLock
 	// goverter:enum:transform value
 	SignupItemKindToResource(source signupitem.Kind) staffapi.SignupItemKind
 }
@@ -85,15 +85,15 @@ func optLapse(t time.Time) staffapi.OptTimestamp {
 }
 
 // optLock is what decides the Telemetry report, absent while the Staff member does.
-func optLock(c Converter, l instance.Lock) staffapi.OptStaffInstanceTelemetryLock {
-	if l == instance.LockNone {
+func optLock(c Converter, l instancestates.Lock) staffapi.OptStaffInstanceTelemetryLock {
+	if l == instancestates.LockNone {
 		return staffapi.OptStaffInstanceTelemetryLock{}
 	}
 	return staffapi.NewOptStaffInstanceTelemetryLock(c.InstanceTelemetryLockToResource(l))
 }
 
 // optDefaultSendCap is the default Send cap, absent on an Instance that has no Send caps.
-func optDefaultSendCap(c Converter, d *instance.DefaultSendCap) staffapi.OptStaffDefaultSendCap {
+func optDefaultSendCap(c Converter, d *instancestates.DefaultSendCap) staffapi.OptStaffDefaultSendCap {
 	if d == nil {
 		return staffapi.OptStaffDefaultSendCap{}
 	}

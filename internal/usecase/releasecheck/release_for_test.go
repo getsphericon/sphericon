@@ -1,4 +1,4 @@
-package instance_test
+package releasecheck_test
 
 import (
 	"testing"
@@ -8,16 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
-// releaseFound is a module whose Release check found 0.2.0 while 0.1.0 runs.
-func releaseFound(t *testing.T, env *testhelper.TestEnv) *instance.Module {
+// releaseFound is a Release check that found 0.2.0 while 0.1.0 runs.
+func releaseFound(t *testing.T, env *testhelper.TestEnv) *releasecheck.UseCase {
 	t.Helper()
-	mod := instance.New(env.DB, instance.Environment{ReleaseCheck: true}, instance.Host{AppVersion: "0.1.0"}, nil,
-		instance.WithReleaseSource(fixedSource{version: "0.2.0"}))
+	states := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, nil)
+	mod := releasecheck.New(states, fixedSource{version: "0.2.0"})
 	require.NoError(t, mod.CheckRelease(t.Context()))
 	return mod
 }
@@ -41,7 +42,7 @@ func TestAnOwnerOfAnyWorkspaceIsToldOfANewerRelease(t *testing.T) {
 
 func TestAnOwnerIsToldOfNoReleaseBeforeTheCheckFindsOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	mod := instance.New(env.DB, instance.Environment{ReleaseCheck: true}, instance.Host{AppVersion: "0.1.0"}, nil)
+	mod := releasecheck.New(instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: "0.1.0"}, nil), nil)
 
 	release, err := mod.ReleaseFor(t.Context(), fixtures.OwnerJohnID)
 

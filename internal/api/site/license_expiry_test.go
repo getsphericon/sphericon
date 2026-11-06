@@ -58,7 +58,7 @@ func TestAnExpiredLicenseKeyBootsAsTheCore(t *testing.T) {
 
 	_, err := john.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired, "the Audit log is dark without its feature")
-	report, err := env.Instance.Report(t.Context())
+	report, err := env.TelemetryReport.Report(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionCore, report.Edition, "a lapsed key reports the core")

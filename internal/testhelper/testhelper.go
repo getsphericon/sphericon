@@ -40,7 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -55,6 +55,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -133,8 +135,12 @@ func initBaseline() {
 }
 
 type TestEnv struct {
-	// Instance is the module the server shares: run its Release check with CheckRelease.
-	Instance *instance.Module
+	// Instance is the Instance state module the server shares.
+	Instance *instancestates.Module
+	// ReleaseCheck is the Release check the server shares: run it with CheckRelease.
+	ReleaseCheck *releasecheck.UseCase
+	// TelemetryReport is the Telemetry report the server shares: its preview is Report.
+	TelemetryReport *telemetryreport.UseCase
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
 	// the test finishes. Like production's (entclient.New) it refuses a change the Workspace
 	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
@@ -491,7 +497,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	feedClient.Use(ee.Hooks(lic, st.now)...)
 
 	return &TestEnv{
-		Instance:        do.MustInvoke[*instance.Module](injector),
+		Instance:        do.MustInvoke[*instancestates.Module](injector),
+		ReleaseCheck:    do.MustInvoke[*releasecheck.UseCase](injector),
+		TelemetryReport: do.MustInvoke[*telemetryreport.UseCase](injector),
 		AppURL:          cfg.AppURL,
 		DB:              do.MustInvoke[*ent.Client](injector),
 		FeedDB:          feedClient,

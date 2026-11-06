@@ -142,7 +142,7 @@ components:
         internal/consent,
         internal/consentrecords,
         internal/domainverify,
-        internal/instance,
+        internal/instancestates,
         internal/instanceaudit,
         internal/joindomains,
         internal/machine,
@@ -183,7 +183,8 @@ components:
   # everyone else it stays open (common).
   ent: { in: ent }
   # The generated ogen packages of the API surfaces, which only the drivers, the wiring and the
-  # Enterprise Edition import, and the Telemetry contract's client, which the Instance uses.
+  # Enterprise Edition import, and the Telemetry contract's client, which the Telemetry report (a
+  # use case) uses.
   gen-surfaces: { in: gen }
   gen-telemetry: { in: gen/telemetry }
 
@@ -219,7 +220,7 @@ rules:
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-staff:
     <<: *no-raw-client
-    may_depend_on: [api-problem, core, core-raw, gen-surfaces]
+    may_depend_on: [api-problem, core, core-raw, gen-surfaces, usecase]
     forbid_external: *no-container
     because: the Staff surface depends on the Problem mapping and the core (its session check is the Staff member module's), never on another surface
   api-auth:
@@ -244,8 +245,7 @@ rules:
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
-    # The Instance is the client of the Telemetry contract (ADR 0102).
-    may_depend_on: [core, identity-base, gen-telemetry]
+    may_depend_on: [core, identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
     forbid_symbol: &raw-holder-forbids
@@ -280,7 +280,8 @@ rules:
       - *contacts-update-custom-field-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   usecase:
-    may_depend_on: [core, core-raw]
+    # The Telemetry report is the client of the Telemetry contract (ADR 0102).
+    may_depend_on: [core, core-raw, identity-base, gen-telemetry]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client

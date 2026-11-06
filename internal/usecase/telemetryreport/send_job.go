@@ -1,4 +1,4 @@
-package instance
+package telemetryreport
 
 import (
 	"context"
@@ -18,22 +18,22 @@ type SendReportArgs struct{}
 
 func (SendReportArgs) Kind() string { return "telemetry_report" }
 
-// sendReportWorker runs the sender. A failed send is not a job failure: the next tick tries
-// again.
+// sendReportWorker sends the report when one is due. A failed send is not a job failure: the next
+// tick tries again.
 type sendReportWorker struct {
 	river.WorkerDefaults[SendReportArgs]
 
-	s *Sender
+	u *UseCase
 }
 
 func (w *sendReportWorker) Work(ctx context.Context, _ *river.Job[SendReportArgs]) error {
-	return w.s.Run(ctx)
+	return w.u.Send(ctx)
 }
 
 // Jobs is the sender's worker and periodic job, handed to the job client as an extension.
-func (s *Sender) Jobs() jobextension.Extension {
+func (u *UseCase) Jobs() jobextension.Extension {
 	return jobextension.Extension{
-		Workers: func(w *river.Workers) { river.AddWorker(w, &sendReportWorker{s: s}) },
+		Workers: func(w *river.Workers) { river.AddWorker(w, &sendReportWorker{u: u}) },
 		PeriodicJobs: []*river.PeriodicJob{
 			river.NewPeriodicJob(river.PeriodicInterval(reportCheckInterval),
 				func() (river.JobArgs, *river.InsertOpts) { return SendReportArgs{}, &river.InsertOpts{MaxAttempts: 1} },

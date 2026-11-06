@@ -79,7 +79,7 @@ func (h *Handlers) StaffInstanceAcknowledgeNotice(ctx context.Context) (*staffap
 // StaffInstancePreviewTelemetryReport is the Telemetry report exactly as the Instance would send
 // it now, whether or not sending is on: the body of the same builder the daily sender uses.
 func (h *Handlers) StaffInstancePreviewTelemetryReport(ctx context.Context) (staffapi.JsonObject, error) {
-	report, err := h.instance.Report(ctx)
+	report, err := h.report.Report(ctx)
 	if err != nil {
 		return nil, err
 	}

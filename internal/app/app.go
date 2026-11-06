@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/sidelistener"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -241,17 +242,21 @@ const unwindTimeout = 15 * time.Second
 
 func (a *App) start(ctx context.Context) error {
 	// The first start creates the Instance state row and its random Instance id (ADR 0032).
-	inst, err := do.Invoke[*instance.Module](a.injector)
+	inst, err := do.Invoke[*instancestates.Module](a.injector)
 	if err != nil {
 		return err
 	}
 	if _, err := inst.Ensure(ctx); err != nil {
 		return err
 	}
-	if err := inst.AnnounceRelease(ctx); err != nil {
+	release, err := do.Invoke[*releasecheck.UseCase](a.injector)
+	if err != nil {
 		return err
 	}
-	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
+	if err := release.AnnounceRelease(ctx); err != nil {
+		return err
+	}
+	if err := telemetry.ObserveReleaseAvailable(release.LatestRelease); err != nil {
 		return err
 	}
 	edition, err := do.Invoke[*ee.Edition](a.injector)

@@ -1,4 +1,4 @@
-package instance_test
+package telemetryreport_test
 
 import (
 	"encoding/json"
@@ -14,9 +14,10 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 
 // receiver is a fake telemetry receiver: it keeps every body it was sent.
@@ -57,20 +58,21 @@ type clock struct{ t time.Time }
 func (c *clock) now() time.Time { return c.t }
 
 type rig struct {
-	mod    *instance.Module
-	sender *instance.Sender
+	mod    *instancestates.Module
+	sender *telemetryreport.UseCase
 	recv   *receiver
 	clock  *clock
 	db     *ent.Client
+	host   telemetryreport.Host
 }
 
-// newRig builds a Module and Sender that would send: a production-like config (not dev) over
+// newRig builds an Instance state module and a Telemetry report that would send: a production-like config (not dev) over
 // the receiver, a release version and the notice acknowledged at the clock's time. edit
 // changes the config, version is the running version.
 // noPrep is the preparation of a case that needs none.
 func noPrep(*testing.T, *rig) {}
 
-func newRig(t *testing.T, version string, edit func(*config.Config), opts ...instance.SenderOption) *rig {
+func newRig(t *testing.T, version string, edit func(*config.Config), opts ...telemetryreport.Option) *rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	recv := newReceiver(t, http.StatusNoContent)
@@ -81,12 +83,12 @@ func newRig(t *testing.T, version string, edit func(*config.Config), opts ...ins
 	clk := &clock{t: time.Date(2027, 3, 1, 12, 0, 0, 0, time.UTC)}
 	host := testHost
 	host.AppVersion = version
-	mod := instance.New(env.DB, instance.EnvironmentOf(cfg), host, clk.now)
-	sender, err := instance.NewSender(mod, cfg, opts...)
+	mod := instancestates.New(env.DB, instancestates.EnvironmentOf(cfg, version, time.Time{}), clk.now)
+	sender, err := telemetryreport.New(mod, host, cfg, clk.now, opts...)
 	require.NoError(t, err)
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
-	return &rig{mod: mod, sender: sender, recv: recv, clock: clk, db: env.DB}
+	return &rig{mod: mod, sender: sender, recv: recv, clock: clk, db: env.DB, host: host}
 }
 
 func (r *rig) lastSent(t *testing.T) *time.Time {
@@ -101,7 +103,7 @@ func (r *rig) offset(t *testing.T) time.Duration {
 	t.Helper()
 	row, err := r.mod.Ensure(t.Context())
 	require.NoError(t, err)
-	return instance.ReportOffset(row.InstanceID)
+	return telemetryreport.ReportOffset(row.InstanceID)
 }
 
 // firstSend moves the clock to the moment the first report is due.
@@ -113,12 +115,12 @@ func (r *rig) firstSend(t *testing.T) {
 func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
 	r.firstSend(t)
-	preview, err := r.mod.Report(t.Context())
+	preview, err := r.sender.Report(t.Context())
 	require.NoError(t, err)
 	want, err := json.Marshal(preview)
 	require.NoError(t, err)
 
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 
 	bodies := r.recv.got()
 	require.Len(t, bodies, 1)
@@ -131,25 +133,25 @@ func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T
 func TestSenderSendsOncePerDay(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
 	r.firstSend(t)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 
 	r.clock.t = r.clock.t.Add(3 * time.Hour)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
 	r.clock.t = r.clock.t.Add(24 * time.Hour)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
 	assert.True(t, r.lastSent(t).Equal(r.clock.t))
 }
 
 func TestSenderOffsetIsAStableTimeOfDayDerivedFromTheInstanceId(t *testing.T) {
-	first := instance.ReportOffset("abc")
-	second := instance.ReportOffset("abc")
+	first := telemetryreport.ReportOffset("abc")
+	second := telemetryreport.ReportOffset("abc")
 	assert.Equal(t, first, second)
 	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
-		assert.Less(t, instance.ReportOffset(id), 6*time.Hour)
-		assert.GreaterOrEqual(t, instance.ReportOffset(id), time.Duration(0))
+		assert.Less(t, telemetryreport.ReportOffset(id), 6*time.Hour)
+		assert.GreaterOrEqual(t, telemetryreport.ReportOffset(id), time.Duration(0))
 	}
 }
 
@@ -159,20 +161,20 @@ func TestSenderFirstReportWaitsTheOffsetAfterTheNoticeAndLaterOnesKeepTheTimeOfD
 	offset := r.offset(t)
 
 	r.clock.t = acked.Add(offset - time.Nanosecond)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Empty(t, r.recv.got())
 
 	r.clock.t = acked.Add(offset)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
 	nextSlot := r.clock.t.Truncate(24 * time.Hour).Add(24*time.Hour + offset)
 	r.clock.t = nextSlot.Add(-time.Minute)
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
 	r.clock.t = nextSlot
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
 }
 
@@ -204,7 +206,7 @@ func TestSenderStaysSilent(t *testing.T) {
 			r.firstSend(t)
 			c.prep(t, r)
 
-			require.NoError(t, r.sender.Run(t.Context()))
+			require.NoError(t, r.sender.Send(t.Context()))
 
 			assert.Empty(t, r.recv.got())
 			assert.Nil(t, r.lastSent(t))
@@ -217,7 +219,7 @@ func TestSenderSendsWhenTheEnvironmentTurnsItOnWithoutTheStaffMembersChoice(t *t
 	r := newRig(t, "1.4.2", func(c *config.Config) { c.Telemetry = &yes })
 	r.firstSend(t)
 
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 
 	assert.Len(t, r.recv.got(), 1)
 }
@@ -227,13 +229,13 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	r.firstSend(t)
 	r.recv.Close()
 
-	require.NoError(t, r.sender.Run(t.Context()))
+	require.NoError(t, r.sender.Send(t.Context()))
 	assert.Nil(t, r.lastSent(t))
 
 	failing := newReceiver(t, http.StatusInternalServerError)
-	sender, err := instance.NewSender(r.mod, &config.Config{TelemetryReceiverURL: failing.URL})
+	sender, err := telemetryreport.New(r.mod, r.host, &config.Config{TelemetryReceiverURL: failing.URL}, r.clock.now)
 	require.NoError(t, err)
 
-	require.NoError(t, sender.Run(t.Context()))
+	require.NoError(t, sender.Send(t.Context()))
 	assert.Nil(t, r.lastSent(t))
 }

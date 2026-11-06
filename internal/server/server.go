@@ -35,7 +35,7 @@ import (
 	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/machine"
@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/server/spa"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 
 // New builds the top-level net/http handler wiring the three ogen-generated
@@ -203,16 +204,16 @@ type StaffSections interface {
 }
 
 // NewStaffAPI builds the /staff handler with RFC 7807 errors: the core ogen server
-// (internal/api/staff) over the Staff member module, the Sign-up items and the Instance state,
-// whose not-found handler is the Enterprise ogen server, so each contract routes its own paths
-// and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
+// (internal/api/staff) over the Staff member module, the Sign-up items, the Instance state and the
+// Telemetry report, whose not-found handler is the Enterprise ogen server, so each contract routes
+// its own paths and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
 // no handler, which New mounts as a 404; nil sections (no `staff` license) leave every path the
 // core does not route a 404.
 //
 // jobs is the job queue's UI (River UI), served under paths.StaffJobs to a signed-in Staff member
 // only; nil leaves that path to the contract's server (a 404).
-func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instance.Module, sections StaffSections, jobs http.Handler) (http.Handler, error) {
-	core := apistaff.NewSurface(members, items, inst)
+func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instancestates.Module, report *telemetryreport.UseCase, sections StaffSections, jobs http.Handler) (http.Handler, error) {
+	core := apistaff.NewSurface(members, items, inst, report)
 	if core == nil {
 		return nil, nil
 	}

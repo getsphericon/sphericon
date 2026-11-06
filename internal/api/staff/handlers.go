@@ -15,11 +15,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/staff/resources"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
-	"github.com/getsphericon/sphericon/internal/instance"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 
 var (
@@ -34,15 +35,15 @@ type Surface struct {
 	security *SecurityHandler
 }
 
-// NewSurface builds the surface over the Staff member module, the Sign-up items and the Instance
-// state, or nil while the Staff sign-in is off (no Staff member secret), in which case nothing
+// NewSurface builds the surface over the Staff member module, the Sign-up items, the Instance
+// state and the Telemetry report, or nil while the Staff sign-in is off (no Staff member secret), in which case nothing
 // under /staff is served.
-func NewSurface(m *staffmembers.Module, items *signupitems.Module, inst *instance.Module) *Surface {
+func NewSurface(m *staffmembers.Module, items *signupitems.Module, inst *instancestates.Module, report *telemetryreport.UseCase) *Surface {
 	if m.Sessions() == nil {
 		return nil
 	}
 	return &Surface{
-		handlers: &Handlers{module: m, sessions: m.Sessions(), items: items, instance: inst},
+		handlers: &Handlers{module: m, sessions: m.Sessions(), items: items, instance: inst, report: report},
 		security: &SecurityHandler{sessions: m.Sessions()},
 	}
 }
@@ -60,7 +61,8 @@ type Handlers struct {
 	module   *staffmembers.Module
 	sessions *staffmembers.Sessions
 	items    *signupitems.Module
-	instance *instance.Module
+	instance *instancestates.Module
+	report   *telemetryreport.UseCase
 }
 
 var _ staffapi.Handler = (*Handlers)(nil)

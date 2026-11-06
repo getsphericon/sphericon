@@ -1,4 +1,4 @@
-package instance
+package telemetryreport
 
 import (
 	"context"
@@ -7,20 +7,11 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
-	"github.com/getsphericon/sphericon/internal/infra/postgres"
+	"github.com/getsphericon/sphericon/internal/instancestates"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/upgrade"
-	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // schemaVersion is the version of the Telemetry report schema the builder implements
@@ -40,8 +31,6 @@ type Host struct {
 	OS          string
 	Arch        string
 	Locale      telemetryapi.TelemetryLocale
-	// LicenseExpiredAt is when the license key expired; zero unless it has lapsed (ADR 0035).
-	LicenseExpiredAt time.Time
 }
 
 // HostOf reads the Host of this process: the version it was built as, the edition its
@@ -60,8 +49,6 @@ func HostOf(cfg *config.Config, version string, licenseExpiredAt time.Time) Host
 		OS:          runtime.GOOS,
 		Arch:        runtime.GOARCH,
 		Locale:      telemetryapi.TelemetryLocaleEn,
-
-		LicenseExpiredAt: licenseExpiredAt,
 	}
 }
 
@@ -79,45 +66,19 @@ func DeployShapeOf(container string) telemetryapi.TelemetryDeployShape {
 	return telemetryapi.TelemetryDeployShapeUnknown
 }
 
-// BuildReport assembles the Telemetry report (ADR 0032) from core tables only: never from an
-// Enterprise Usage snapshot, which a plain install does not have. It is the one builder, the
-// preview and the daily sender both call it. Counts leave it only as orders of magnitude, so
-// an exact number never does, and it reads nothing that names a Workspace or a person.
-func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Time) (telemetryapi.TelemetryReport, error) {
-	row, err := ensureRow(ctx, client)
+// Build assembles the Telemetry report (ADR 0032) from the Instance's Figures, read from core
+// tables only. It is the one builder, the preview and the daily sender both call it. Counts leave it
+// only as orders of magnitude, so an exact number never does, and it reads nothing that names a
+// Workspace or a person.
+func Build(ctx context.Context, states *instancestates.Module, host Host, now time.Time) (telemetryapi.TelemetryReport, error) {
+	f, err := states.Figures(ctx, now.Add(-reportWindow))
 	if err != nil {
 		return telemetryapi.TelemetryReport{}, err
 	}
-	since := now.Add(-reportWindow)
-	var q reportQueries
-	live := q.count(client.Workspace.Query().Where(workspaces.Live()).Count(ctx))
-	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
-	// Contact is already gone, and those of a Workspace in its deletion window are left out; anonymous tracker Contacts have no email and are left out.
-	contacts := q.count(client.Contact.Query().
-		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(workspaces.Live())).Count(ctx))
-	emails := q.count(client.OutboundMessage.Query().
-		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGTE(since)).Count(ctx))
-	broadcasts := q.exists(client.Broadcast.Query().
-		Where(broadcast.StatusEQ(broadcast.StatusSent), broadcast.SentAtGTE(since)).Exist(ctx))
-	automations := q.exists(client.Automation.Query().Where(automation.StatusEQ(automation.StatusActive)).Exist(ctx))
-	tracker := q.exists(client.Visitor.Query().Where(visitor.LastSeenAtGTE(since)).Exist(ctx))
-	externalAPI := q.exists(client.ApiToken.Query().Where(apitoken.LastUsedAtGTE(since)).Exist(ctx))
-	webhooks := q.exists(client.WebhookEndpoint.Query().Exist(ctx))
-	// The providers in use are those of kept Integrations: a deleted one is not set up (ADR 0099).
-	inUse, err := client.Integration.Query().Where(integration.DiscardedAtIsNil()).Unique(true).Select(integration.FieldProvider).Strings(ctx)
-	if err != nil {
-		return telemetryapi.TelemetryReport{}, err
-	}
-	if q.err != nil {
-		return telemetryapi.TelemetryReport{}, q.err
-	}
-	major, err := postgres.ServerMajor(ctx, client)
-	if err != nil {
-		return telemetryapi.TelemetryReport{}, err
-	}
-	kinds := make([]telemetryapi.TelemetryIntegrationKind, 0, len(inUse))
-	for _, p := range inUse {
-		switch providers.Provider(p) {
+	row := f.State
+	kinds := make([]telemetryapi.TelemetryIntegrationKind, 0, len(f.Providers))
+	for _, p := range f.Providers {
+		switch p {
 		case providers.SMTP:
 			kinds = append(kinds, telemetryapi.TelemetryIntegrationKindSMTP)
 		case providers.SES:
@@ -139,39 +100,19 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 		Os:                 host.OS,
 		Arch:               host.Arch,
 		DeployShape:        host.DeployShape,
-		PostgresMajor:      narrow.Int32(major),
+		PostgresMajor:      narrow.Int32(f.PostgresMajor),
 		Locale:             host.Locale,
 		InstanceAgeDays:    max(0, narrow.Int32(now.Sub(row.CreatedAt)/(24*time.Hour))),
-		Workspaces:         bucket(live),
-		Contacts:           bucket(contacts),
-		EmailsSent30d:      bucket(emails),
-		UsedBroadcasts30d:  broadcasts,
-		AutomationsActive:  automations,
-		UsedTracker30d:     tracker,
-		UsedExternalApi30d: externalAPI,
-		WebhooksConfigured: webhooks,
+		Workspaces:         bucket(f.Workspaces),
+		Contacts:           bucket(f.Contacts),
+		EmailsSent30d:      bucket(f.EmailsSent),
+		UsedBroadcasts30d:  f.UsedBroadcasts,
+		AutomationsActive:  f.AutomationsActive,
+		UsedTracker30d:     f.UsedTracker,
+		UsedExternalApi30d: f.UsedExternalAPI,
+		WebhooksConfigured: f.WebhooksConfigured,
 		IntegrationKinds:   kinds,
 	}, nil
-}
-
-// reportQueries keeps the first error of a run of reads, so the builder reads top to bottom.
-type reportQueries struct{ err error }
-
-func (q *reportQueries) count(n int, err error) int {
-	q.err = firstErr(q.err, err)
-	return n
-}
-
-func (q *reportQueries) exists(ok bool, err error) bool {
-	q.err = firstErr(q.err, err)
-	return ok
-}
-
-func firstErr(first, next error) error {
-	if first != nil {
-		return first
-	}
-	return next
 }
 
 // bucket rounds a count to its order of magnitude: the one place an exact number is dropped.

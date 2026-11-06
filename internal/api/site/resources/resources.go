@@ -58,7 +58,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -75,6 +74,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -606,7 +606,7 @@ type Converter interface {
 	OptionalConsentToSite(source consentrecords.OptionalConsent) siteapi.SiteOptionalConsent
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
-	InstanceReleaseToResource(source instance.Release) siteapi.SiteInstanceRelease
+	InstanceReleaseToResource(source releasecheck.Release) siteapi.SiteInstanceRelease
 
 	// Pages: a list response is the module's pagination.Page mapped whole, its items through
 	// the list methods above. Items the handler maps itself (an extra per item) arrive as a
