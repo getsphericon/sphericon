@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,18 +35,11 @@ func aliceOpened() *events.EmailEngagement {
 	}
 }
 
-// A live Event of a Contact inserts one automations job and one rules job; working them queues the
-// evaluation of the Event against the Automations, on its semantic action, and against the Rules.
+// A live Event of a Contact queues its evaluation against the Automations, on its semantic action,
+// and against the Rules.
 func TestALiveEventOfAContactQueuesItsAutomationAndRuleEvaluations(t *testing.T) {
 	env := testhelper.Setup(t)
 	publishEvent(t, env, aliceOpened())
-	automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
-	ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
-	require.Len(t, automationJobs, 1)
-	require.Len(t, ruleJobs, 1)
-
-	env.WorkAutomationJobs(t)
-	env.WorkRuleJobs(t)
 
 	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
 	require.Len(t, triggers, 1)
@@ -67,8 +61,6 @@ func TestTheAutomationEvaluationSaysWhenTheEventOccurred(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: occurred,
 	})
 
-	env.WorkAutomationJobs(t)
-
 	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
 	require.Len(t, triggers, 1)
 	assert.Equal(t, "2026-03-01T12:00:00Z", triggers[0]["occurred_at"])
@@ -82,14 +74,12 @@ func TestTheAutomationEvaluationNamesTheAutomationOfTheEmail(t *testing.T) {
 	opened.AutomationID = fixtures.AutomationOnOpenID
 	publishEvent(t, env, opened)
 
-	env.WorkAutomationJobs(t)
-
 	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
 	require.Len(t, triggers, 1)
 	assert.EqualValues(t, fixtures.AutomationOnOpenID, triggers[0]["source_automation_id"])
 }
 
-// What is recorded but never reacted to inserts neither an automations job nor a rules job: a
+// What is recorded but never reacted to queues no evaluation, against the Automations or the Rules: a
 // scanner's open or click (ADR 0053), an Event with no Contact, loaded history and an
 // administrative action. An event a Rule's Action published may still enroll, but fires no Rule:
 // Rules never chain (ADR 0054).
@@ -112,8 +102,8 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 
 			publishEvent(t, env, ev)
 
-			automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
-			ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+			automationJobs := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
+			ruleJobs := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 
 			assert.Empty(t, automationJobs)
 			assert.Empty(t, ruleJobs)
@@ -125,8 +115,8 @@ func TestAnEventThatTriggersNothingQueuesNoAutomationOrRuleJob(t *testing.T) {
 
 		publishIn(events.CausedBy(t.Context(), "rule:1"), t, env, aliceOpened())
 
-		automationJobs := env.EventJobs(t, jobs.AutomationEventArgs{}.Kind())
-		ruleJobs := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+		automationJobs := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
+		ruleJobs := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 
 		assert.Len(t, automationJobs, 1)
 		assert.Empty(t, ruleJobs)
@@ -141,10 +131,8 @@ func TestTheRuleEvaluationCarriesTheSourceIDAndTheProperties(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, SubjectID: "alice", Action: "rule_click",
 		Properties: map[string]any{"url": "https://example.com/a"},
 	})
-	published := env.EventJobs(t, jobs.RuleEventArgs{}.Kind())
+	published := env.QueuedEnvelopes(t)
 	require.Len(t, published, 1)
-
-	env.WorkRuleJobs(t)
 
 	evaluations := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
@@ -161,14 +149,12 @@ func TestTheRuleEvaluationOfAnOversizedEventHasNoProperties(t *testing.T) {
 		Properties: map[string]any{"pad": strings.Repeat("x", events.PropertiesBound)},
 	})
 
-	env.WorkRuleJobs(t)
-
 	evaluations := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
 	require.Len(t, evaluations, 1)
 	assert.NotContains(t, evaluations[0], "properties")
 }
 
-// A rules job river retries queues the evaluation again, but a Firing is unique on the Event's
+// An evaluation river retries evaluates the Event again, but a Firing is unique on the Event's
 // source id, so the Rule fires once. Fixture: RuleSecondRevisit fires on a second rule_revisit
 // within a week, and Liam did one yesterday.
 func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
@@ -178,11 +164,10 @@ func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactLiamID, SubjectID: "liam", Action: "rule_revisit",
 	})
 
-	env.WorkRuleJobs(t)
-	env.WorkRuleJobs(t)
 	evaluations := queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind)
+	require.Len(t, evaluations, 1)
 	m := rules.New(env.Cipher, env.Bus)
-	for _, args := range evaluations {
+	for _, args := range []jobs.EvaluateRulesArgs{evaluations[0], evaluations[0]} {
 		_, err := m.Evaluate(ctx, env.DB.Scoped(fixtures.AcmeID), rules.Event{
 			ContactID: args.ContactID, Action: args.Action, SourceID: args.SourceID, RecordedAt: args.RecordedAt, Properties: args.Properties,
 		})
@@ -192,6 +177,13 @@ func TestARetriedRuleJobFiresTheRuleOnce(t *testing.T) {
 	firings, err := env.DB.RuleFiring.Query().
 		Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(fixtures.ContactLiamID)).Count(ctx)
 	require.NoError(t, err)
-	assert.Len(t, evaluations, 2, "the retried job queued its evaluation again")
 	assert.Equal(t, 1, firings)
+}
+
+// triggersOn are the queued evaluations against the Automations of the Events with action, oldest
+// first: every live Event of a Contact queues one when it is published.
+func triggersOn(t *testing.T, env *testhelper.TestEnv, action string) []jobs.EvaluateTriggerArgs {
+	t.Helper()
+	return lo.Filter(queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind()),
+		func(args jobs.EvaluateTriggerArgs, _ int) bool { return args.Action == action })
 }

@@ -30,7 +30,9 @@ import (
 func EventConsumer() events.Consumer {
 	return events.Consumer{
 		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameAuditEntry },
-		Job:   func(env events.Envelope) river.JobArgs { return EntryEventArgs{events.EventJob{Envelope: env}} },
+		Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
+			return EntryEventArgs{events.EventJob{Envelope: env}}
+		},
 	}
 }
 

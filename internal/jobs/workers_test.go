@@ -171,18 +171,17 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 
 func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	e := newRiverEnv(t)
-	ctx := context.Background()
 
 	// Endpoint 100 filters to three event types; 101 is disabled.
-	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "email.opened", "d-1", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), "email.opened", "d-1", []byte(`{}`)))
 	assert.Equal(t, []string{"deliver_webhook"}, e.queued(t))
 
 	// Filtered out: no endpoint of the workspace subscribes to it.
-	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
 	assert.Len(t, e.queued(t), 1)
 
 	// An endpoint with no filter receives every event (Globex's, workspace 2).
-	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
 	assert.Len(t, e.queued(t), 2)
 }
 
@@ -203,14 +202,13 @@ func (e *riverEnv) queuedEndpoints(t *testing.T) []int64 {
 // customer-facing event, never the Audit log (ADR 0022).
 func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 	e := newRiverEnv(t)
-	ctx := context.Background()
 	initech := e.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 
 	e.clearQueue(t)
-	require.NoError(t, jobs.NewWebhookDispatcher(e.queue).Dispatch(ctx, initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
 	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 

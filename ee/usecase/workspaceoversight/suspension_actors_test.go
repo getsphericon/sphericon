@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The stored Audit row keeps the real Staff member id (the platform's own trail); only the
@@ -25,7 +26,7 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	h.unsuspend(t, c, fixtures.AcmePublicID)
-	h.env.WorkEditionJobs(t)
+	h.env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	stored := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().
 		Where(auditentry.ActionIn(events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend)).AllX(t.Context())

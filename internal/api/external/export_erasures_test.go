@@ -42,7 +42,7 @@ func rowWithEmailHash(p exportPage, address string) map[string]any {
 func TestExportErasuresAnnouncesAnErasureByContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	eraseErasable(t, env)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	page := readExportErasures(t, exportClient(t, env, fixtures.InitechID), "")
 
@@ -58,7 +58,7 @@ func TestExportErasuresAnnouncesAnErasureByContact(t *testing.T) {
 func TestExportErasuresNeverCarryTheAddressOrThePhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	eraseErasable(t, env)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	rows, err := env.DB.Erasure.Query().All(context.Background())
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 		Email:       " " + fixtures.OutboundMessageStrangerDestination + " ",
 	})
 	require.NoError(t, err)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	page := readExportErasures(t, exportClient(t, env, fixtures.InitechID), "")
 
@@ -123,8 +123,9 @@ func TestExportErasuresRedeliveryWritesOneRow(t *testing.T) {
 	before, err := env.DB.Erasure.Query().Count(context.Background())
 	require.NoError(t, err)
 
-	env.WorkEditionJobs(t)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
+	env.RetryJobs(t, testhelper.EditionJobs...)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	after, err := env.DB.Erasure.Query().Count(context.Background())
 	require.NoError(t, err)
@@ -137,7 +138,7 @@ func TestExportErasuresUnlicensedStoresNothing(t *testing.T) {
 	require.NoError(t, err)
 	eraseErasable(t, env)
 
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	after, err := env.DB.Erasure.Query().Count(context.Background())
 	require.NoError(t, err)

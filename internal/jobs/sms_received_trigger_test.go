@@ -32,9 +32,8 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 		"MessageSid": {"SM0100"}, "AccountSid": {sms.Account.SID}, "From": {"+14155550188"},
 		"To": {testhelper.TwilioNumber}, "Body": {"YES"},
 	})
-	received := onlyEnvelope(t, env, events.NameSmsReceived)
-	env.WorkAutomationJobOf(t, received)
-	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+	onlyEnvelope(t, env, events.NameSmsReceived)
+	triggers := triggersOn(t, env, events.NameSmsReceived)
 	require.Len(t, triggers, 1)
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.Bus).Work(ctx, job(triggers[0])))
 

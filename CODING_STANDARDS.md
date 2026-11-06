@@ -172,8 +172,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 
 - **Tests use the ent client or river's own API for data (rule 4)**: `env.DB`. What a publish
   left is read the same way: its Event rows through ent (`env.StoredEvents`) and its event jobs
-  through river (`env.QueuedEnvelopes`, `env.EventJobs`), and a consumer's job is worked through
-  river's test worker (`testhelper.WorkEventJobs`).
+  through river (`env.QueuedEnvelopes`, `env.EventJobs`), and the queued jobs are worked through
+  river's test executor (`env.PerformEnqueuedJobs`).
   `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in `_test.go` files.
   Inject faults with ent hooks/interceptors, never DDL or triggers.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real

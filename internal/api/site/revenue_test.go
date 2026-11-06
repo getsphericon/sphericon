@@ -15,6 +15,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -81,7 +82,7 @@ func TestACompletedOrderIsRevenueInTheMinorUnitOfTheReportingCurrency(t *testing
 	chooseCurrency(t, owner, "USD")
 
 	newShop(t, env).completed("A-1", "19.99", "USD")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("USD"), got.ReportingCurrency.Value)
@@ -98,7 +99,7 @@ func TestYenAreWholeUnitsAndTheRangeCanBeSevenDays(t *testing.T) {
 	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "JPY")
 
 	newShop(t, env).completed("A-1", "1500", "JPY")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange7d))
 	assert.EqualValues(t, 1500, got.Current.Total)
@@ -112,8 +113,9 @@ func TestARepeatOfTheSameOrderIdChangesNothing(t *testing.T) {
 
 	s.completed("A-1", "10.00", "USD")
 	s.completed("A-1", "99.00", "USD")
-	env.WorkOrderJobs(t)
-	env.WorkOrderJobs(t) // river retries a job: every orders job again
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
+	env.RetryJobs(t, jobs.OrderEventArgs{}) // river retries a job: every orders job again
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 1000, got.Current.Total)
@@ -128,7 +130,7 @@ func TestRevenueIsUnsetUntilTheFirstOrderThenCountsInItsCurrency(t *testing.T) {
 
 	s.completed("A-1", "10.00", "EUR")
 	s.completed("A-2", "500", "JPY")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	after := revenue(t, member, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.True(t, before.ReportingCurrency.Null)
@@ -147,7 +149,7 @@ func TestAnOrderInAnotherCurrencyIsStoredAndCountedInNoSum(t *testing.T) {
 
 	s.completed("A-1", "10.00", "USD")
 	s.completed("A-2", "500", "JPY")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 1000, got.Current.Total)
@@ -163,7 +165,7 @@ func TestAChosenCurrencyIsKeptWhateverTheFirstOrderIsIn(t *testing.T) {
 	chooseCurrency(t, owner, "EUR")
 
 	newShop(t, env).completed("A-1", "10.50", "USD")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), got.ReportingCurrency.Value)
@@ -190,7 +192,7 @@ func TestFirstOrderAtIsTheFirstOrderEverEvenOutsideTheRange(t *testing.T) {
 	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
 
 	newShop(t, env).completed("A-1", "10.00", "EUR")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
 	first := time.Time(got.FirstOrderAt.Value)
@@ -206,7 +208,7 @@ func TestAnOrderOfAnUnknownContactCountsAndCreatesNoContact(t *testing.T) {
 	in := orderInput("guest-checkout-1", "Order Completed", map[string]string{"order_id": `"G-1"`, "total": `7.25`, "currency": `"USD"`})
 	in.Email = externalapi.OptNilEmailAddress{}
 	newShop(t, env).send(in)
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.EqualValues(t, 725, got.Current.Total)
@@ -220,7 +222,7 @@ func TestErasingTheContactUnlinksItsOrdersAndTheAmountsStay(t *testing.T) {
 	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
 	s := newShop(t, env)
 	s.completed("A-1", "20.00", "USD")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 	linked := env.DB.Scoped(fixtures.AcmeID).Order().Query().Where(order.OrderID("A-1")).OnlyX(t.Context())
 	require.NotNil(t, linked.ContactID)
 
@@ -243,7 +245,7 @@ func backfillCompleted(t *testing.T, env *testhelper.TestEnv, old externalapi.Ti
 
 	_, err := newShop(t, env).api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 }
 
 func TestABackfilledHistoryBuildsOrdersOnTheDaysTheyHappened(t *testing.T) {
@@ -290,7 +292,7 @@ func TestAResentBackfillLoadChangesNothing(t *testing.T) {
 		in.ClientEventId = externalapi.NewOptNilString(clientEventID)
 		_, err := api.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 		require.NoError(t, err)
-		env.WorkOrderJobs(t)
+		env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 	}
 
 	load("ce-1", "H-1")
@@ -314,7 +316,7 @@ func TestALiveOrderEventOlderThanTheLiveWindowIsRefusedNamingBackfill(t *testing
 	require.Len(t, batch.Results, 1)
 	assert.Equal(t, externalapi.EventBatchStatusFailed, batch.Results[0].Status)
 	assert.Contains(t, batch.Results[0].Error.Or(""), "backfill")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.NewOptSiteAnalyticsRevenueRange(siteapi.SiteAnalyticsRevenueRange90d))
 	assert.EqualValues(t, 0, got.Current.Total)
@@ -333,10 +335,10 @@ func TestAChangeWithoutACurrencyThatArrivesFirstIsReadInTheCurrencyOfItsOrder(t 
 	env := testhelper.Setup(t)
 	s := newShop(t, env)
 	s.send(orderInput("alice", "Order Refunded", orderProps2("A-1", "5")))
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	s.completed("A-1", "20", "JPY")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	got := revenue(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.OptSiteAnalyticsRevenueRange{})
 	assert.Equal(t, siteapi.CurrencyCode("JPY"), got.ReportingCurrency.Value)
@@ -349,11 +351,11 @@ func TestAnOrderWithoutACurrencyIsReadInTheCurrencyOfTheOrderItChanges(t *testin
 	chooseCurrency(t, owner, "EUR")
 	s := newShop(t, env)
 	s.completed("A-1", "100.00", "EUR")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 	chooseCurrency(t, owner, "JPY") // the Workspace changes its mind; the Order stays in euro
 
 	s.send(orderInput("alice", "Order Refunded", orderProps2("A-1", "10")))
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	chooseCurrency(t, owner, "EUR")
 	got := revenue(t, owner, siteapi.OptSiteAnalyticsRevenueRange{})

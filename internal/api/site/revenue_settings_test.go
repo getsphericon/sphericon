@@ -13,6 +13,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -146,10 +147,11 @@ func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *tes
 	s := newShop(t, env)
 
 	s.completed("A-1", "10.00", "EUR")
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 	s.completed("A-2", "10.00", "USD")
-	env.WorkOrderJobs(t)
-	env.WorkOrderJobs(t) // river retries a job: every orders job again
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
+	env.RetryJobs(t, jobs.OrderEventArgs{}) // river retries a job: every orders job again
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Value)
 	published := env.QueuedEvents(t, events.NameAuditEntry)

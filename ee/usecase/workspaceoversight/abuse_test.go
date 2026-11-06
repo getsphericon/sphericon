@@ -40,7 +40,7 @@ func TestAnStaffExemptsAndUnexemptsAWorkspaceAndBothAreAudited(t *testing.T) {
 	exempted := h.setExempt(t, c, fixtures.AcmePublicID, true)
 	again := h.setExempt(t, c, fixtures.AcmePublicID, true)
 	lifted := h.setExempt(t, c, fixtures.AcmePublicID, false)
-	h.env.WorkEditionJobs(t)
+	h.env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 
 	assert.True(t, exempted.Changed)
 	assert.True(t, exempted.Workspace.Exempt)

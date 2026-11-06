@@ -191,9 +191,7 @@ func TestAnAutomationTriggeredByATelegramClickIgnoresAMachineClick(t *testing.T)
 	runSteps(t, env)
 	text, _ := shortPaths(t, env, "70001") // Liam's fixture chat
 	consume := func() []jobs.EvaluateTriggerArgs {
-		envelopes := env.QueuedEnvelopes(t, events.NameTelegramClicked)
-		env.WorkAutomationJobOf(t, envelopes[len(envelopes)-1])
-		return queuedArgs[jobs.EvaluateTriggerArgs](t, env, jobs.EvaluateTriggerArgs{}.Kind())
+		return triggersOn(t, env, events.NameTelegramClicked)
 	}
 
 	follow(t, env, text[0], telegramUA)

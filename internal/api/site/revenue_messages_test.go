@@ -9,6 +9,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -101,7 +102,7 @@ func TestBeforeTheFirstOrderThereIsNoFigureAndItsOrderCountsAtOnce(t *testing.T)
 	_, err := shop.EventsBatchSubmit(t.Context(), &externalapi.RecordEventsBatchInput{Backfill: externalapi.NewOptBool(true), Events: []externalapi.EventInput{in}})
 	require.NoError(t, err)
 
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	set := broadcastRevenue(t, c, fixtures.SoukPublicID, fixtures.BroadcastSoukID)
 	assert.True(t, unset.ReportingCurrency.Null)
@@ -116,7 +117,7 @@ func TestAnUnattributedOrderIsCreditedToNoBroadcastAndNoAutomation(t *testing.T)
 	chooseCurrency(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "USD")
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 	newShop(t, env).at(noonDaysAgo(3), "Order Completed", orderProps("U-1", "20.00"))
-	env.WorkOrderJobs(t)
+	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	assert.Zero(t, broadcastRevenue(t, c, fixtures.AcmePublicID, int64(fixtures.BroadcastSentUntrackedID)).Amount)
 	report, _, _ := automationRevenue(t, c, fixtures.AcmePublicID, int64(fixtures.AutomationWelcomeSeriesID))

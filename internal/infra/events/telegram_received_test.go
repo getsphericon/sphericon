@@ -110,8 +110,7 @@ func TestAReceivedEventTriggersAutomationsAndReachesWebhooks(t *testing.T) {
 	require.Len(t, envelopes, 1)
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).SetEventTypes([]string{events.NameTelegramReceived}).ExecX(t.Context())
 
-	env.WorkAutomationJobs(t)
-	env.WorkWebhookJobOf(t, envelopes[0])
+	env.PerformEventJobOf(t, jobs.WebhookEventArgs{}, envelopes[0])
 
 	triggers := lo.Filter(env.JobsOf(t, jobkind.EvaluateTrigger.Kind), func(args map[string]any, _ int) bool {
 		return args["action"] == events.NameTelegramReceived

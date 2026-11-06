@@ -28,7 +28,7 @@ import (
 // one action as the Workspace's owner sees them, newest first.
 func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.SiteAuditEntryResource {
 	t.Helper()
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	var out []siteapi.SiteAuditEntryResource
 	items := auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items
 	for i := range items {
@@ -347,7 +347,7 @@ func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	ctx := context.Background()
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
-	env.WorkEditionJobs(t)
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	list := func(p siteapi.SiteAuditListParams) int {

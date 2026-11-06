@@ -72,7 +72,7 @@ func failureBody(id, destination string, hard bool) string {
 // applySuppression works the suppression jobs everything published so far inserted.
 func applySuppression(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	testhelper.WorkEventJobs(t, env, jobs.NewSuppressEventWorker(env.DB))
+	env.PerformEnqueuedJobs(t, jobs.SuppressEventArgs{})
 }
 
 func suppressed(t *testing.T, env *testhelper.TestEnv, email string) bool {

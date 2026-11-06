@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
 	"slices"
 	"time"
 
@@ -94,14 +95,13 @@ func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) tim
 	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
 }
 
-// NewWebhookDispatcher is the dispatcher that queues the deliveries of an event on queue.
-func NewWebhookDispatcher(queue Inserter) events.WebhookDispatcher {
-	return webhookDispatcher{queue: queue}
+// NewWebhookDispatcher is the dispatcher that queues the deliveries of an event through the river
+// client of the job it runs in.
+func NewWebhookDispatcher() events.WebhookDispatcher {
+	return webhookDispatcher{}
 }
 
-type webhookDispatcher struct {
-	queue Inserter
-}
+type webhookDispatcher struct{}
 
 // Dispatch fans a domain event out to every enabled endpoint in the workspace
 // whose filter matches, enqueuing one delivery job each. The scope comes from the caller
@@ -113,11 +113,12 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 	if err != nil {
 		return err
 	}
+	queue := river.ClientFromContext[*sql.Tx](ctx)
 	for _, e := range endpoints {
 		if !matchesEvent(e.EventTypes, eventName) {
 			continue
 		}
-		if _, err := d.queue.Insert(ctx, DeliverWebhookArgs{
+		if _, err := queue.Insert(ctx, DeliverWebhookArgs{
 			EndpointID: e.ID,
 			EventName:  eventName,
 			DeliveryID: deliveryID,
