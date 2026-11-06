@@ -12,12 +12,24 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// An empty destination is eligible on every Channel, even where a Confirmation is asked for (email
+// in Lumon, sms anywhere): there is nothing to suppress or confirm against.
 func TestCheckEmptyDestinationIsEligible(t *testing.T) {
 	env := testhelper.Setup(t)
-	d, err := eligibility.Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
-		"   ", eligibility.SourceBroadcasts)
-	require.NoError(t, err)
-	assert.True(t, d.Eligible, "nothing to suppress against")
+
+	for name, tc := range map[string]struct {
+		ws      int64
+		channel string
+	}{
+		"email":                    {fixtures.AcmeID, eligibility.ChannelEmail},
+		"email under confirmation": {fixtures.LumonID, eligibility.ChannelEmail},
+		"sms":                      {fixtures.TyrellID, eligibility.ChannelSMS},
+	} {
+		d, err := eligibility.Check(context.Background(), env.DB.Scoped(tc.ws), tc.channel, "   ", eligibility.SourceBroadcasts)
+
+		require.NoError(t, err, name)
+		assert.Equal(t, eligibility.Decision{Eligible: true}, d, name)
+	}
 }
 
 func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
@@ -27,6 +39,7 @@ func TestCheckFailsClosedOnStoreErrorAndUnknownWorkspace(t *testing.T) {
 	cancel()
 	_, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
 	require.ErrorContains(t, err, "eligibility check")
+	require.ErrorIs(t, err, context.Canceled, "the store's error is wrapped, not replaced")
 
 	_, err = eligibility.Check(context.Background(), env.DB.Scoped(987654), eligibility.ChannelEmail, "a@example.com", eligibility.SourceBroadcasts)
 	assert.ErrorContains(t, err, "workspace 987654 not found")
