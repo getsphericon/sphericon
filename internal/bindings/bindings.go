@@ -220,7 +220,7 @@ type Redemption struct {
 	ChatID      string
 	// Text is the message as sent.
 	Text string
-	// DedupKey is the update's key (ingest.Tx.DedupKey): the events it records derive theirs from it.
+	// DedupKey is the update's key (ingesthook.Tx.DedupKey): the events it records derive theirs from it.
 	DedupKey string
 }
 
@@ -414,7 +414,7 @@ func announce(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent
 type Message struct {
 	Destination string
 	Text        string
-	// DedupKey is the update's key (ingest.Tx.DedupKey).
+	// DedupKey is the update's key (ingesthook.Tx.DedupKey).
 	DedupKey string
 }
 

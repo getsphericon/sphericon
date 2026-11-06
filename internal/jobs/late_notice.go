@@ -12,7 +12,7 @@ import (
 )
 
 // LateNoticeWorker reads again a Delivery notice that matched no message when it reached the
-// Ingest hook (ingest.LateNoticeArgs).
+// Ingest hook (ingesthook.LateNoticeArgs).
 type LateNoticeWorker struct {
 	river.WorkerDefaults[ingesthook.LateNoticeArgs]
 

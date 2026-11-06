@@ -115,7 +115,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 			}
 		}
 	}
-	// An SMS delivery report's source id is the provider's key of the report (ingest.Tx.DedupKey),
+	// An SMS delivery report's source id is the provider's key of the report (ingesthook.Tx.DedupKey),
 	// which names the message in Twilio's log; once the Event is anonymized it identifies no repeat.
 	for _, chunk := range lo.Chunk(reported, eraseChunk) {
 		if _, err := s.Event().Update().Where(event.IDIn(chunk...)).ClearSourceID().Save(ctx); err != nil {
