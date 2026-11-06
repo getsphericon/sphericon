@@ -6,27 +6,27 @@ package jobs_test
 import (
 	"context"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"sync"
 )
 
-// Ensure, that SendersMock does implement outbound.Senders.
+// Ensure, that SendersMock does implement outboundmessages.Senders.
 // If this is not the case, regenerate this file with moq.
-var _ outbound.Senders = &SendersMock{}
+var _ outboundmessages.Senders = &SendersMock{}
 
-// SendersMock is a mock implementation of outbound.Senders.
+// SendersMock is a mock implementation of outboundmessages.Senders.
 //
 //	func TestSomethingThatUsesSenders(t *testing.T) {
 //
-//		// make and configure a mocked outbound.Senders
+//		// make and configure a mocked outboundmessages.Senders
 //		mockedSenders := &SendersMock{
 //			EmailSenderFunc: func(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
 //				panic("mock out the EmailSender method")
 //			},
 //		}
 //
-//		// use mockedSenders in code that requires outbound.Senders
+//		// use mockedSenders in code that requires outboundmessages.Senders
 //		// and then make assertions.
 //
 //	}

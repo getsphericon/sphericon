@@ -20,9 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -121,7 +121,7 @@ func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) ev
 func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *stepexecution.UseCase {
 	t.Helper()
 	bus := e.bus(t)
-	mod := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
+	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
 	return stepexecution.New(bus, mod, e.fence)
 }
 
@@ -207,12 +207,12 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		close(started)
 		<-gate
 	}
-	steps := []automationsteps.Step{{
-		Type: automationsteps.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
+	steps := []automationstep.Step{{
+		Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), tracking.New("test-secret", "http://local"))
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), tracking.New("test-secret", "http://local"))
 	mod := automations.New(cipher, bus, testhelper.Renderer(), out)
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)

@@ -25,7 +25,7 @@ func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 }
 
 // The lifecycle the Rule shares with the Automation (edit, Publish, Revert, Archive) is tested once,
-// for both, in internal/domain/content/drafts. These are what only a Rule has: Trigger events, the
+// for both, in internal/domain/content/versioneddefinition. These are what only a Rule has: Trigger events, the
 // Condition, the Actions and the Firings.
 
 func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {

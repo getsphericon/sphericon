@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
-	"github.com/getsphericon/sphericon/ee/domain/insights/export"
-	"github.com/getsphericon/sphericon/ee/domain/insights/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/erasures"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -20,7 +20,7 @@ func (env *TestEnv) RefreshUsage(t *testing.T, now time.Time) {
 	t.Helper()
 	lic, err := testLicense()
 	require.NoError(t, err)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, now))
+	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, now))
 }
 
 // EditionTables are the removals of the Enterprise Edition's own Workspace-owned tables that the
@@ -28,6 +28,6 @@ func (env *TestEnv) RefreshUsage(t *testing.T, now time.Time) {
 // use case itself erases them too.
 func EditionTables() workspacedeletion.EditionTables {
 	return workspacedeletion.EditionTables{
-		AuditEntries: audit.EraseAuditEntriesIn, Erasures: export.EraseErasuresIn, Usage: usage.EraseUsageIn,
+		AuditEntries: auditentries.EraseAuditEntriesIn, Erasures: erasures.EraseErasuresIn, Usage: usages.EraseUsageIn,
 	}
 }

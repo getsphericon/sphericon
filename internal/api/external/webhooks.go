@@ -5,13 +5,13 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // webhookResource maps the endpoint; the signing secret is deliberately never part of an
 // /api response.
-func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
+func webhookResource(e webhookendpoints.Endpoint) externalapi.WebhookResource {
 	return mapper.WebhookToResource(e.WebhookEndpoint)
 }
 

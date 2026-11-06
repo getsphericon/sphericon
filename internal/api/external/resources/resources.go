@@ -29,10 +29,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -280,12 +280,12 @@ type Converter interface {
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
 	SendCapToResource(source providerlimit.SendCapStatus) externalapi.SendCap
-	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	// The Send cap that applies (outboundmessages.Module.SendCapStatus), null when none does.
 	SendCapStatusToResource(source *providerlimit.SendCapStatus) externalapi.OptNilSendCap
 
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
-	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
 	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
@@ -343,22 +343,22 @@ type Converter interface {
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
-	BrandKitToResource(source brandkit.Kit) externalapi.BrandKitResource
+	BrandKitToResource(source brandkits.Kit) externalapi.BrandKitResource
 
 	// goverter:map . Actor
 	// goverter:map . Target
-	AuditEntryToResource(source auditapi.View) externalapi.AuditEntryResource
+	AuditEntryToResource(source auditlog.View) externalapi.AuditEntryResource
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditapi.View) []externalapi.AuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []externalapi.AuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditapi.View) externalapi.AuditActor
+	AuditActorToResource(source auditlog.View) externalapi.AuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditapi.View) externalapi.AuditTarget
+	AuditTargetToResource(source auditlog.View) externalapi.AuditTarget
 
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
@@ -445,7 +445,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationsteps.Kind) externalapi.AutomationStepType
+	AutomationStepTypeToResource(source automationstep.Kind) externalapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
@@ -506,7 +506,7 @@ type Converter interface {
 	WebhookErrorKindToResource(source webhook.ErrorKind) externalapi.WebhookErrorKind
 }
 
-// ExportMapper adapts the Converter to contactexport.Mapper.
+// ExportMapper adapts the Converter to dataexport.Mapper.
 type ExportMapper struct{ Converter }
 
 func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return new(m.ContactToExport(r)) }
@@ -727,7 +727,7 @@ func cnameRecordType(trackingdomains.Record) externalapi.CnameRecordType {
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.
-func brandKitUpdatedAt(k brandkit.Kit) externalapi.OptNilTimestamp {
+func brandKitUpdatedAt(k brandkits.Kit) externalapi.OptNilTimestamp {
 	if !k.Saved {
 		return externalapi.OptNilTimestamp{}
 	}

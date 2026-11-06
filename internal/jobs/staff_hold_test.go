@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -26,8 +26,8 @@ func (c *holdClock) now() time.Time { return c.t }
 
 // heldMod is an Outbound module whose send gate reads Staff holds on the test clock, as the
 // running application's does.
-func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outbound.Senders) *outbound.Module {
-	return outbound.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, tracking.New("test-secret", "http://local"))
+func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outboundmessages.Senders) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, tracking.New("test-secret", "http://local"))
 }
 
 func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {

@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -56,7 +56,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 // press is answered once the facts are written, so the person's client stops waiting.
 func (t telegram) pressed(ctx context.Context, tx Tx, m preset.InboundMessage) error {
 	if m.Payload == messaging.TelegramUnsubscribePayload {
-		msg, err := outbound.FindTelegramMessage(ctx, tx.Scoped, tx.Integration.ID, m.Destination, m.MessageID)
+		msg, err := outboundmessages.FindTelegramMessage(ctx, tx.Scoped, tx.Integration.ID, m.Destination, m.MessageID)
 		if err != nil {
 			return err
 		}

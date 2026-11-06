@@ -941,6 +941,12 @@ events after the last time a suspension was cleared, never reverses a suspension
 Staff member does), and skips a Workspace a Staff member has exempted. A SaaS/platform concept.
 _Avoid_: Spam filter, auto-ban
 
+**Abuse warning**:
+The **Abuse detector**'s lower tier as a Workspace's members see it: the Sending domain and the rate
+that crossed the warning limit, shown on the dashboard. It is computed from the rates, never stored,
+and freezes nothing.
+_Avoid_: Alert, strike
+
 **Webhook endpoint** (outbound):
 A workspace-scoped HTTP destination that **sphericon calls** when domain events occur — subscribes
 to event types (empty = all) and signs each delivery (HMAC). It remembers its own failures and
@@ -1038,6 +1044,12 @@ figures, never stamps the Outbound message as opened or clicked and never starts
 the request's user-agent and source address, neither of which is stored. Detection is a partial
 signal, not proof: a proxy that hides itself is not caught.
 _Avoid_: Bot open, false open
+
+**Private relay range**:
+An address range a mail client's privacy proxy publishes for the requests it makes on its users'
+behalf (the egress ranges of Apple's iCloud Private Relay). An open or click from inside one is
+**Machine engagement**. The list is the one the proxy publishes, never edited by hand.
+_Avoid_: Proxy list, bot range
 
 **User**:
 A human who authenticates (email + password). A User reaches Workspaces through Memberships,
@@ -1165,6 +1177,12 @@ An Owner or Admin removing another User's Second factor and Passkeys so they can
 authenticator and Recovery codes. Recorded as an Audit entry.
 _Avoid_: Unlock, disable 2FA
 
+**Login**:
+The first step of signing in with an address and a password, the same on every surface: the
+password is checked under the **Login throttle**, the verification gate applies, and a User with a
+**Second factor** is asked for it next. A **Sign-in provider** replaces this step.
+_Avoid_: Sign-on, authentication (unqualified)
+
 **Login throttle**:
 The growing delay applied to an account's login after repeated failures (password, Second factor
 or Recovery code), during which even correct credentials are refused. It is never a permanent
@@ -1240,9 +1258,9 @@ _Avoid_: Alerts, notifications, issues, health
 An optional set of four one-question screens (role, company size, main goal, how the User heard of the
 product) that a User who has just signed up, by password or through a Sign-in provider, answers once
 after the first sign-in and before the dashboard. An Instance turns it on explicitly and a Staff
-member reads the answers; they stay in the Instance's database and are never part of the Telemetry
-report. A User who accepts an Invitation, the first Owner made by the CLI and Users that existed
-when the survey was turned on are not asked. It completes nothing and personalizes nothing, so it is
+member reads the answers, one **Sign-up survey response** per User; they stay in the Instance's
+database and are never part of the Telemetry report. A User who accepts an Invitation, the first
+Owner made by the CLI and Users that existed when the survey was turned on are not asked. It completes nothing and personalizes nothing, so it is
 not the Setup checklist.
 _Avoid_: Onboarding wizard, questionnaire
 
@@ -1308,6 +1326,15 @@ downtime. The service endpoints are served only by a separate internal listener,
 port. Its writes are recorded in the Audit log under its name, which customers see only as
 "sphericon staff".
 _Avoid_: API key, API token (that is a Workspace's), service account, Staff member
+
+**Service feed**:
+The rows of one kind that changed, in the order of their changes, that a service reads page by page
+through the service endpoints with a **Service credential** to keep its own copy in step: the
+Workspaces with their Owners, the Users with their consent to mailings, and the hosts of the
+Tracking domains, one **Tracking host change** per host a Tracking domain starts or stops serving. A
+deleted User stays in the Users' feed as a **User tombstone**, so the service learns of the
+removal. Not an **Export stream**, which is one Workspace's rows for its own warehouse.
+_Avoid_: Sync, Export stream
 
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the

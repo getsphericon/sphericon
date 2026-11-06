@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -63,8 +63,8 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	assert.NotZero(t, onDelivered.ID)
 }
 
-func smsVia(id *int64, text string) automationsteps.Step {
-	return automationsteps.Step{Type: automationsteps.SMS, IntegrationID: id, Text: text}
+func smsVia(id *int64, text string) automationstep.Step {
+	return automationstep.Step{Type: automationstep.SMS, IntegrationID: id, Text: text}
 }
 
 func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
@@ -79,13 +79,13 @@ func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
 	for name, integration := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-				Steps: &[]automationsteps.Step{smsVia(integration, "Hi")},
+				Steps: &[]automationstep.Step{smsVia(integration, "Hi")},
 			})
 			require.NoError(t, err, "a draft may name it")
 
 			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
 
-			require.ErrorIs(t, err, outbound.ErrRouteHeld)
+			require.ErrorIs(t, err, outboundmessages.ErrRouteHeld)
 		})
 	}
 }
@@ -96,7 +96,7 @@ func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	id := int64(env.AcmeTwilio(t).Integration.ID)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-		Steps: &[]automationsteps.Step{smsVia(&id, "Hi")},
+		Steps: &[]automationstep.Step{smsVia(&id, "Hi")},
 	})
 	require.NoError(t, err)
 
@@ -112,7 +112,7 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-				Steps: &[]automationsteps.Step{smsVia(nil, text)},
+				Steps: &[]automationstep.Step{smsVia(nil, text)},
 			})
 
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
@@ -128,11 +128,11 @@ func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 	atLimit := strings.Repeat("я", 700)
 
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-		Steps: &[]automationsteps.Step{smsVia(nil, atLimit)},
+		Steps: &[]automationstep.Step{smsVia(nil, atLimit)},
 	})
 	require.NoError(t, err)
 	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-		Steps: &[]automationsteps.Step{smsVia(nil, atLimit+"я")},
+		Steps: &[]automationstep.Step{smsVia(nil, atLimit+"я")},
 	})
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)

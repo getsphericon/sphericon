@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 )
 
 // privateRelayRefreshInterval is how often the published iCloud Private Relay egress ranges
@@ -25,11 +25,11 @@ func (RefreshPrivateRelayArgs) Kind() string { return "private_relay_refresh" }
 type RefreshPrivateRelayWorker struct {
 	river.WorkerDefaults[RefreshPrivateRelayArgs]
 
-	ranges *machine.Detector
+	ranges *privaterelayranges.Detector
 }
 
 // NewRefreshPrivateRelayWorker builds the worker that refreshes the Private Relay ranges of the detector.
-func NewRefreshPrivateRelayWorker(ranges *machine.Detector) *RefreshPrivateRelayWorker {
+func NewRefreshPrivateRelayWorker(ranges *privaterelayranges.Detector) *RefreshPrivateRelayWorker {
 	return &RefreshPrivateRelayWorker{ranges: ranges}
 }
 

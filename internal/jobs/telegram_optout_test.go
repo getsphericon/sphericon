@@ -18,7 +18,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -144,7 +144,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 	bot := boundBob(t, env)
 	automationID := telegramAutomation(t, env,
 		telegramStep(bot, "Telegram"),
-		automationsteps.Step{Type: automationsteps.Email, Subject: "Still here", Body: "<p>mail</p>"},
+		automationstep.Step{Type: automationstep.Email, Subject: "Still here", Body: "<p>mail</p>"},
 	)
 	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "/stop"))
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)

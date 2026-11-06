@@ -49,25 +49,25 @@ x-unchecked-removals: &unchecked-removals
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
   - &users-set-pending-second-factor
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.SetPendingSecondFactor
-    because: enrolling a Second factor is the use case internal/usecase/secondfactorenrolment, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
+    because: enrolling a Second factor is the use case internal/usecase/secondfactor, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
   - &users-accept-second-factor-step-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.AcceptSecondFactorStepIn
-    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactorenrolment has matched against the User's secret (ADR 0020, ADR 0102); call the use case
+    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactor has matched against the User's secret (ADR 0020, ADR 0102); call the use case
   - &users-confirm-second-factor-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.ConfirmSecondFactorIn
-    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
+    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactor checks first (ADR 0020, ADR 0102); call the use case
   - &users-clear-second-factor-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/users.ClearSecondFactorIn
-    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactorenrolment checks first and records (ADR 0020, ADR 0102); call the use case
+    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactor checks first and records (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-replace-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.ReplaceIn
-    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
+    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactor checks first (ADR 0020, ADR 0102); call the use case
   - &recoverycodes-delete-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/recoverycodes.DeleteIn
-    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactorenrolment (ADR 0020, ADR 0102); call the use case
+    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactor (ADR 0020, ADR 0102); call the use case
   - &passkeys-delete-all-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/passkeys.DeleteAllIn
-    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorenrolment checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
+    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactor checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
   - &apitokens-issue-connection
     name: github.com/getsphericon/sphericon/internal/domain/identity/apitokens.IssueConnection
     because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
@@ -107,11 +107,11 @@ x-unchecked-removals: &unchecked-removals
   - &capturedmessages-erase-captured-messages-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages.EraseCapturedMessagesIn
     because: *workspace-erase-because
-  - &outbound-erase-tracked-links-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outbound.EraseTrackedLinksIn
+  - &outboundmessages-erase-tracked-links-in
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseTrackedLinksIn
     because: *workspace-erase-because
-  - &outbound-erase-outbound-messages-in
-    name: github.com/getsphericon/sphericon/internal/domain/sending/outbound.EraseOutboundMessagesIn
+  - &outboundmessages-erase-outbound-messages-in
+    name: github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages.EraseOutboundMessagesIn
     because: *workspace-erase-because
   - &broadcasts-erase-broadcast-recipients-in
     name: github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts.EraseBroadcastRecipientsIn
@@ -143,8 +143,8 @@ x-unchecked-removals: &unchecked-removals
   - &unsubscribes-erase-unsubscribes-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes.EraseUnsubscribesIn
     because: *workspace-erase-because
-  - &suppression-erase-suppressions-in
-    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppression.EraseSuppressionsIn
+  - &suppressions-erase-suppressions-in
+    name: github.com/getsphericon/sphericon/internal/domain/contacts/suppressions.EraseSuppressionsIn
     because: *workspace-erase-because
   - &holds-erase-holds-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/holds.EraseHoldsIn
@@ -155,8 +155,8 @@ x-unchecked-removals: &unchecked-removals
   - &providerlimit-erase-send-cap-limiters-in
     name: github.com/getsphericon/sphericon/internal/domain/sending/providerlimit.EraseSendCapLimitersIn
     because: *workspace-erase-because
-  - &webhooks-erase-webhook-endpoints-in
-    name: github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks.EraseWebhookEndpointsIn
+  - &webhookendpoints-erase-webhook-endpoints-in
+    name: github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints.EraseWebhookEndpointsIn
     because: *workspace-erase-because
   - &invitations-erase-invitations-in
     name: github.com/getsphericon/sphericon/internal/domain/identity/invitations.EraseInvitationsIn
@@ -173,11 +173,11 @@ x-unchecked-removals: &unchecked-removals
   - &segments-erase-segments-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/segments.EraseSegmentsIn
     because: *workspace-erase-because
-  - &templates-erase-email-templates-in
-    name: github.com/getsphericon/sphericon/internal/domain/content/templates.EraseEmailTemplatesIn
+  - &emailtemplates-erase-email-templates-in
+    name: github.com/getsphericon/sphericon/internal/domain/content/emailtemplates.EraseEmailTemplatesIn
     because: *workspace-erase-because
-  - &brandkit-erase-brand-kits-in
-    name: github.com/getsphericon/sphericon/internal/domain/content/brandkit.EraseBrandKitsIn
+  - &brandkits-erase-brand-kits-in
+    name: github.com/getsphericon/sphericon/internal/domain/content/brandkits.EraseBrandKitsIn
     because: *workspace-erase-because
   - &contacts-erase-contacts-in
     name: github.com/getsphericon/sphericon/internal/domain/contacts/contacts.EraseContactsIn
@@ -235,8 +235,8 @@ x-no-raw-client: &no-raw-client
     - *orders-erase-order-movements-in
     - *orders-erase-orders-in
     - *capturedmessages-erase-captured-messages-in
-    - *outbound-erase-tracked-links-in
-    - *outbound-erase-outbound-messages-in
+    - *outboundmessages-erase-tracked-links-in
+    - *outboundmessages-erase-outbound-messages-in
     - *broadcasts-erase-broadcast-recipients-in
     - *rules-erase-rule-firings-in
     - *rules-erase-rule-version-triggers-in
@@ -247,18 +247,18 @@ x-no-raw-client: &no-raw-client
     - *visitors-erase-visitors-in
     - *confirmations-erase-confirmations-in
     - *unsubscribes-erase-unsubscribes-in
-    - *suppression-erase-suppressions-in
+    - *suppressions-erase-suppressions-in
     - *holds-erase-holds-in
     - *providerlimit-erase-provider-limiters-in
     - *providerlimit-erase-send-cap-limiters-in
-    - *webhooks-erase-webhook-endpoints-in
+    - *webhookendpoints-erase-webhook-endpoints-in
     - *invitations-erase-invitations-in
     - *apitokens-erase-api-tokens-in
     - *broadcasts-erase-broadcasts-in
     - *automations-erase-automations-in
     - *segments-erase-segments-in
-    - *templates-erase-email-templates-in
-    - *brandkit-erase-brand-kits-in
+    - *emailtemplates-erase-email-templates-in
+    - *brandkits-erase-brand-kits-in
     - *contacts-erase-contacts-in
     - *tags-erase-tags-in
     - *contacts-erase-custom-fields-in
@@ -300,8 +300,8 @@ x-core-forbids: &core-forbids
   - *orders-erase-order-movements-in
   - *orders-erase-orders-in
   - *capturedmessages-erase-captured-messages-in
-  - *outbound-erase-tracked-links-in
-  - *outbound-erase-outbound-messages-in
+  - *outboundmessages-erase-tracked-links-in
+  - *outboundmessages-erase-outbound-messages-in
   - *broadcasts-erase-broadcast-recipients-in
   - *rules-erase-rule-firings-in
   - *rules-erase-rule-version-triggers-in
@@ -312,18 +312,18 @@ x-core-forbids: &core-forbids
   - *visitors-erase-visitors-in
   - *confirmations-erase-confirmations-in
   - *unsubscribes-erase-unsubscribes-in
-  - *suppression-erase-suppressions-in
+  - *suppressions-erase-suppressions-in
   - *holds-erase-holds-in
   - *providerlimit-erase-provider-limiters-in
   - *providerlimit-erase-send-cap-limiters-in
-  - *webhooks-erase-webhook-endpoints-in
+  - *webhookendpoints-erase-webhook-endpoints-in
   - *invitations-erase-invitations-in
   - *apitokens-erase-api-tokens-in
   - *broadcasts-erase-broadcasts-in
   - *automations-erase-automations-in
   - *segments-erase-segments-in
-  - *templates-erase-email-templates-in
-  - *brandkit-erase-brand-kits-in
+  - *emailtemplates-erase-email-templates-in
+  - *brandkits-erase-brand-kits-in
   - *contacts-erase-contacts-in
   - *tags-erase-tags-in
   - *contacts-erase-custom-fields-in
@@ -345,17 +345,17 @@ x-raw-holder-forbids: &raw-holder-forbids
   - &workspacefeed-guard
     name: github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &userfeed-hook
-    name: github.com/getsphericon/sphericon/internal/domain/identity/userfeed.Hook
+  - &usertombstones-hook
+    name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Hook
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &userfeed-guard
-    name: github.com/getsphericon/sphericon/internal/domain/identity/userfeed.Guard
+  - &usertombstones-guard
+    name: github.com/getsphericon/sphericon/internal/domain/identity/usertombstones.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &trackinghostlog-hook
-    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog.Hook
+  - &trackinghostchanges-hook
+    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Hook
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
-  - &trackinghostlog-guard
-    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog.Guard
+  - &trackinghostchanges-guard
+    name: github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges.Guard
     because: the wiring builds every ent client with its hooks (internal/app/entclient, ADR 0102); the raw-client holders of the core and the runner install none
   - &upgrade-boundaries
     name: github.com/getsphericon/sphericon/internal/domain/instance/upgrade.Boundaries
@@ -391,8 +391,8 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *orders-erase-order-movements-in
   - *orders-erase-orders-in
   - *capturedmessages-erase-captured-messages-in
-  - *outbound-erase-tracked-links-in
-  - *outbound-erase-outbound-messages-in
+  - *outboundmessages-erase-tracked-links-in
+  - *outboundmessages-erase-outbound-messages-in
   - *broadcasts-erase-broadcast-recipients-in
   - *rules-erase-rule-firings-in
   - *rules-erase-rule-version-triggers-in
@@ -403,18 +403,18 @@ x-raw-holder-forbids: &raw-holder-forbids
   - *visitors-erase-visitors-in
   - *confirmations-erase-confirmations-in
   - *unsubscribes-erase-unsubscribes-in
-  - *suppression-erase-suppressions-in
+  - *suppressions-erase-suppressions-in
   - *holds-erase-holds-in
   - *providerlimit-erase-provider-limiters-in
   - *providerlimit-erase-send-cap-limiters-in
-  - *webhooks-erase-webhook-endpoints-in
+  - *webhookendpoints-erase-webhook-endpoints-in
   - *invitations-erase-invitations-in
   - *apitokens-erase-api-tokens-in
   - *broadcasts-erase-broadcasts-in
   - *automations-erase-automations-in
   - *segments-erase-segments-in
-  - *templates-erase-email-templates-in
-  - *brandkit-erase-brand-kits-in
+  - *emailtemplates-erase-email-templates-in
+  - *brandkits-erase-brand-kits-in
   - *contacts-erase-contacts-in
   - *tags-erase-tags-in
   - *contacts-erase-custom-fields-in
@@ -429,10 +429,10 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *emailcase-hook
   - *workspacefeed-hook
   - *workspacefeed-guard
-  - *userfeed-hook
-  - *userfeed-guard
-  - *trackinghostlog-hook
-  - *trackinghostlog-guard
+  - *usertombstones-hook
+  - *usertombstones-guard
+  - *trackinghostchanges-hook
+  - *trackinghostchanges-guard
   - *upgrade-boundaries
   - *upgrade-major-floor
   - *tags-delete-in
@@ -462,8 +462,8 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *orders-erase-order-movements-in
   - *orders-erase-orders-in
   - *capturedmessages-erase-captured-messages-in
-  - *outbound-erase-tracked-links-in
-  - *outbound-erase-outbound-messages-in
+  - *outboundmessages-erase-tracked-links-in
+  - *outboundmessages-erase-outbound-messages-in
   - *broadcasts-erase-broadcast-recipients-in
   - *rules-erase-rule-firings-in
   - *rules-erase-rule-version-triggers-in
@@ -474,18 +474,18 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *visitors-erase-visitors-in
   - *confirmations-erase-confirmations-in
   - *unsubscribes-erase-unsubscribes-in
-  - *suppression-erase-suppressions-in
+  - *suppressions-erase-suppressions-in
   - *holds-erase-holds-in
   - *providerlimit-erase-provider-limiters-in
   - *providerlimit-erase-send-cap-limiters-in
-  - *webhooks-erase-webhook-endpoints-in
+  - *webhookendpoints-erase-webhook-endpoints-in
   - *invitations-erase-invitations-in
   - *apitokens-erase-api-tokens-in
   - *broadcasts-erase-broadcasts-in
   - *automations-erase-automations-in
   - *segments-erase-segments-in
-  - *templates-erase-email-templates-in
-  - *brandkit-erase-brand-kits-in
+  - *emailtemplates-erase-email-templates-in
+  - *brandkits-erase-brand-kits-in
   - *contacts-erase-contacts-in
   - *tags-erase-tags-in
   - *contacts-erase-custom-fields-in
@@ -549,7 +549,7 @@ components:
   # each ee component names its importers), and only the wiring assembles it.
   #
   # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
-  # endpoints), over the use case ee/usecase/staff and the module ee/domain/identity/servicecredentials.
+  # endpoints), over the use case ee/usecase/staffconsole and the module ee/domain/identity/servicecredentials.
   # The Edition (ee/ee.go) builds them.
   ee-api:
     in: 'ee/api/**'
@@ -578,7 +578,7 @@ components:
       ]
     because: the core never imports the Enterprise Edition; the wiring reads the License key, and every Enterprise package asks it what the License switches on
   # The Enterprise use cases (ADR 0102): an operation across domain modules, core or Enterprise,
-  # such as the abuse detector's pass, the advanced-retention prune or the console's Enterprise
+  # such as the Abuse detector's pass, the advanced-retention prune or the console's Enterprise
   # sections. Each directory under ee/usecase is one use case; none imports another, and only an
   # Enterprise surface, the Edition or the wiring imports one. Each holds the raw client today, so
   # each is named in `ee-usecase-raw` (one pattern each, so each is an instance); a new one that
@@ -590,7 +590,7 @@ components:
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
   ee-usecase-raw:
-    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/staff*']
+    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/staffconsole*']
     isolated: true
     allow_importers: [ee-api, ee-edition, wiring]
     because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
@@ -627,11 +627,11 @@ components:
         wiring,
       ]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
-  # Insights: the Audit log (audit), the Erasures stream of the Export streams (export) and the
-  # Usage figures (usage), which own their tables and hold the raw client, and the abuse watch
-  # (abuse), the detector's limits and its reading of a Workspace's standing.
+  # Insights: the Audit entries (auditentries), the Erasures of the Export streams (erasures) and
+  # the Usage figures (usages), which own their tables and hold the raw client, and the Abuse
+  # detector (abusedetector), its limits and its reading of a Workspace's standing.
   ee-domain-insights-raw:
-    in: [ee/domain/insights/audit, ee/domain/insights/export, ee/domain/insights/usage]
+    in: [ee/domain/insights/auditentries, ee/domain/insights/erasures, ee/domain/insights/usages]
     allow_importers: [ee-domain-insights, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
     because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
   ee-domain-insights:
@@ -684,7 +684,7 @@ components:
   usecase-raw:
     in:
       [
-        'internal/usecase/secondfactorenrolment*',
+        'internal/usecase/secondfactor*',
         'internal/usecase/oauthauthorization*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/workspacecreation*',
@@ -707,15 +707,15 @@ components:
   # docs/architecture.md (Workspace scoping), kept in step with it. A package is the unit, so the
   # doc's narrower grants (`capturedmessages` only `Purge`, `automations` only `FenceOn`,
   # `bindings` only `PruneStartTokens`, `sendingdomains` only `Due`, `DevTXTLookup` and `Secrets`,
-  # `integrations`, `webhooks`, `rules`, `automations`, `users` and `staffmembers` only their
+  # `integrations`, `webhookendpoints`, `rules`, `automations`, `users` and `staffmembers` only their
   # `Secrets` for the re-encryption) are left to review. The composition roots, `internal/api/auth`
   # and the job runner are in the doc's list too; they sit in `wiring`, `api-auth` and `runner`,
   # which do not forbid the client.
   #
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
-  # in (Passkeys, Recovery codes), sign-in and sign-up (login, signin, Consent records, Sign-up
-  # items, the Sign-up survey), suspension, the Account link and the service feeds of Users and
+  # in (Passkeys, Recovery codes), sign-in and sign-up (login, signinprovider, Consent records, Sign-up
+  # items, the Sign-up survey responses), suspension, the Account link and the service feeds of Users and
   # Workspaces.
   # Its bottom: the Workspace with its settings and its deletion window, and the Memberships with the
   # Permissions, the Owners and the notices to them. Every module may read a Workspace, ask a
@@ -737,10 +737,10 @@ components:
         internal/domain/identity/passkeys,
         internal/domain/identity/recoverycodes,
         internal/domain/identity/signupitems,
-        internal/domain/identity/signupsurvey,
+        internal/domain/identity/signupsurveyresponses,
         internal/domain/identity/staffmembers,
         internal/domain/identity/suspension,
-        internal/domain/identity/userfeed,
+        internal/domain/identity/usertombstones,
         internal/domain/identity/workspacefeed,
       ]
   # The rest of identity, which holds no raw client; a new module under internal/domain/identity
@@ -759,14 +759,14 @@ components:
   domain-contacts: { in: 'internal/domain/contacts/**' }
 
   # Content, above contacts: the email Templates, the Brand kit and the lifecycle every Versioned
-  # definition shares (drafts). None holds the raw client, so the context is one component.
+  # definition shares (versioneddefinition). None holds the raw client, so the context is one component.
   domain-content: { in: 'internal/domain/content/**' }
 
   # Sending, above content: the Outbound send with its Holds and send limits (providerlimit), the
   # Integrations and the Presets that read their callbacks, the Sending domains with their DKIM and
-  # DMARC primitives (sending), the Tracking domains and their host log, the Bindings of Telegram
-  # chats, the tracking tokens, link clicks, reputation, machine engagement and the Captured
-  # messages. Its raw-client holders (docs/architecture.md, Workspace scoping) are
+  # DMARC primitives (sending), the Tracking domains and their host changes, the Bindings of Telegram
+  # chats, the tracking tokens, link clicks, reputation, the Private relay ranges of Machine
+  # engagement and the Captured messages. Its raw-client holders (docs/architecture.md, Workspace scoping) are
   # `domain-sending-raw`.
   domain-sending-raw:
     in:
@@ -774,51 +774,52 @@ components:
         internal/domain/sending/bindings,
         internal/domain/sending/capturedmessages,
         internal/domain/sending/integrations,
-        internal/domain/sending/machine,
+        internal/domain/sending/privaterelayranges,
         internal/domain/sending/sendingdomains,
         internal/domain/sending/trackingdomains,
-        internal/domain/sending/trackinghostlog,
+        internal/domain/sending/trackinghostchanges,
       ]
   # The rest of sending, which holds no raw client; a new module under internal/domain/sending
   # lands here.
   domain-sending: { in: 'internal/domain/sending/**' }
 
   # Orchestration, above sending: what targets Contacts and sends through the contexts below, the
-  # Broadcasts, the Automations with their stored Steps (automationsteps), the Rules and the
-  # Webhook endpoints, with the one shape of a refused removal the Live use checks return (inuse)
-  # and the ent aggregates the Broadcast and Automation reports share (aggregates). Its raw-client
+  # Broadcasts, the Automations with their stored Steps (automationstep), the Rules and the
+  # Webhook endpoints, with the one shape of a refused removal the Live use checks return (liveuse).
+  # Its raw-client
   # holders (docs/architecture.md, Workspace scoping) are `domain-orchestration-raw`.
   domain-orchestration-raw:
     in:
       [
         internal/domain/orchestration/automations,
         internal/domain/orchestration/rules,
-        internal/domain/orchestration/webhooks,
+        internal/domain/orchestration/webhookendpoints,
       ]
   # The rest of orchestration, which holds no raw client; a new module under
   # internal/domain/orchestration lands here.
   domain-orchestration: { in: 'internal/domain/orchestration/**' }
 
   # Insights, above orchestration: the read packages that look across the contexts below without
-  # owning a table, the Setup checklist, the read side of the Audit log (auditapi) and of the Export
-  # streams (exportstream), the abuse watch the Enterprise detector fills (abusewatch) and the Data
-  # export of one Contact (contactexport). None holds the raw client, so the context is one
+  # owning a table, the Setup checklist, the read side of the Audit log (auditlog) and of the Export
+  # streams (exportstream), the Abuse warning the Enterprise Abuse detector fills (abusewarning) and
+  # the Data export of one Contact (dataexport). None holds the raw client, so the context is one
   # component.
   domain-insights: { in: 'internal/domain/insights/**' }
 
   # Instance, the top context: what belongs to the Instance rather than to a Workspace, its state
-  # (instancestates) and its audit log (instanceaudit), which hold the raw client
+  # (instancestates) and its audit log (instanceauditentries), which hold the raw client
   # (`domain-instance-raw`), the in-place upgrade of a bare binary (upgrade) and the Upgrade notes
   # of the changelog (changelog). The Telemetry report is a use case
   # (internal/usecase/telemetryreport) over instancestates.
   domain-instance-raw:
-    in: [internal/domain/instance/instancestates, internal/domain/instance/instanceaudit]
+    in: [internal/domain/instance/instancestates, internal/domain/instance/instanceauditentries]
   # The rest of instance, which holds no raw client; a new module under internal/domain/instance
   # lands here.
   domain-instance: { in: 'internal/domain/instance/**' }
 
   # The infrastructure tier (ADR 0102): the bus, the database connection and migrations, the message
-  # providers, the outbound HTTP calls, the throttles, logging and OpenTelemetry, and the process's
+  # providers, the outbound HTTP calls, the throttles, the ent aggregate functions the reports share
+  # (aggregates), logging and OpenTelemetry, and the process's
   # configuration (`config`, read by them). It imports only the kernel and never a domain module.
   infra: { in: [internal/infra, config] }
   # The infrastructure packages that hold the raw client (the closed list of docs/architecture.md,
@@ -1059,10 +1060,10 @@ rules:
       - *emailcase-hook
       - *workspacefeed-hook
       - *workspacefeed-guard
-      - *userfeed-hook
-      - *userfeed-guard
-      - *trackinghostlog-hook
-      - *trackinghostlog-guard
+      - *usertombstones-hook
+      - *usertombstones-guard
+      - *trackinghostchanges-hook
+      - *trackinghostchanges-guard
       - *upgrade-boundaries
       - *upgrade-major-floor
       - *leave-doomed-workspace-in

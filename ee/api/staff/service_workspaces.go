@@ -3,7 +3,7 @@ package staff
 import (
 	"context"
 
-	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -15,7 +15,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.WorkspaceFeedPage(pagination.MapCursor(page, func(e eestaff.FeedEntry) serviceapi.ServiceWorkspaceResource {
+	return serviceMapper.WorkspaceFeedPage(pagination.MapCursor(page, func(e staffconsole.FeedEntry) serviceapi.ServiceWorkspaceResource {
 		item := serviceMapper.WorkspaceToResource(e.Workspace)
 		item.Owners = serviceMapper.OwnersToResources(e.Owners)
 		return item

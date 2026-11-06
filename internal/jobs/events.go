@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -226,7 +226,7 @@ func (SuppressEventArgs) Kind() string { return "event_suppress" }
 func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
 	p := ev.Project()
 	kind, _ := p.Properties["bounceKind"].(string)
-	_, ok := suppression.ForEvent(p.Action, kind)
+	_, ok := suppressions.ForEvent(p.Action, kind)
 	return ok
 }
 
@@ -256,15 +256,15 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	}
 	p := ev.Project()
 	kind, _ := p.Properties["bounceKind"].(string)
-	reason, ok := suppression.ForEvent(p.Action, kind)
+	reason, ok := suppressions.ForEvent(p.Action, kind)
 	if !ok {
 		return nil
 	}
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
 	s := w.ent.Scoped(env.WorkspaceID)
-	err = suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
-	if errors.Is(err, suppression.ErrDestinationEmpty) {
+	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	if errors.Is(err, suppressions.ErrDestinationEmpty) {
 		return nil
 	}
 	if err != nil {

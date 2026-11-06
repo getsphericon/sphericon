@@ -19,7 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -48,7 +48,7 @@ func New(bus *events.Bus) *UseCase { return &UseCase{bus: bus} }
 // of the token's Workspace, which the entry point builds from it; the writes go through it as the
 // ingest actor (never audited), since no membership or API token stands behind them.
 func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarget.Unsubscribe) error {
-	dest := suppression.NormalizeDestination(target.Destination)
+	dest := suppressions.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
 	}

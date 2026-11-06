@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -24,7 +24,7 @@ import (
 // starter Templates in its brand (ADR 0040).
 func (w *Workspace) SaveBrandKit() {
 	w.t.Helper()
-	_, err := w.env.brandKit.Save(w.t.Context(), w.scoped, brandkit.Input{
+	_, err := w.env.brandKit.Save(w.t.Context(), w.scoped, brandkits.Input{
 		AccentColor:     "#0a7d5a",
 		TextColor:       "#1d1d1f",
 		BackgroundColor: "#fafafa",

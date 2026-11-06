@@ -20,7 +20,7 @@ features stay locked until a valid **license key** is present at runtime — so 
 distribute one artifact to everyone and unlock Enterprise functionality per
 subscription (the Cal.com / GitLab model). There is no separate "enterprise build".
 
-Implemented so far: the **Audit log** (`ee/domain/insights/audit`, ADR 0022), unlocked by the `audit`
+Implemented so far: the **Audit log** (`ee/domain/insights/auditentries`, ADR 0022), unlocked by the `audit`
 feature of the license key (`ee/licensekey`, set through `SPHERICON_LICENSE_KEY`), and the
 advanced-retention control (`ee/usecase/retention`, `retention` feature): a Workspace's
 `retention_days` window, applied to the Audit log by one periodic job.

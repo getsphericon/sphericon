@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
@@ -26,7 +26,7 @@ var (
 	// ErrDestinationEmpty: the destination is blank after normalization.
 	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", i18n.ErrorsDestinationEmpty)
 	// ErrDestinationInvalid: the destination is not what the Channel's Destinations are.
-	ErrDestinationInvalid = suppression.ErrDestinationInvalid
+	ErrDestinationInvalid = suppressions.ErrDestinationInvalid
 )
 
 // SMSNumber is a destination on sms: the phone number in E.164, which must carry its country code

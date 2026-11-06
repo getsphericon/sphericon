@@ -8,7 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -33,7 +33,7 @@ func (u *UseCase) SignInWithIdentity(ctx context.Context, in users.ProviderLogin
 	// accepted is left to the decision (a Linked identity may still sign in, then is held to
 	// the address below).
 	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), in.Invitation.Email) {
-		return nil, &users.SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
+		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvitationEmailMismatch}
 	}
 	in.SurveyDue = false
 	signedIn, err := u.signIn(ctx, in)
@@ -46,7 +46,7 @@ func (u *UseCase) SignInWithIdentity(ctx context.Context, in users.ProviderLogin
 	}
 	if !strings.EqualFold(signedIn.User.Email, in.Invitation.Email) {
 		// A Linked identity of an account with another address: nothing was created.
-		return nil, &users.SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
+		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvitationEmailMismatch}
 	}
 	// The provider's proof of the address is the session proof AcceptInvitation asks of a
 	// Verified User.

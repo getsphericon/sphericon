@@ -64,7 +64,7 @@ does the rest:
   registered on the bus with `OnStored` and runs after the commit, so neither a repeat nor a
   rolled-back Event reaches it: the send-outcome counter of a provider's bounce or complaint
   (`ingesthook.RecordOutcome`). The bus knows no domain module: the names it catalogs (`email.bounced`,
-  `email.complained`) are its own, and `suppression` refers to them.
+  `email.complained`) are its own, and `suppressions` refers to them.
 
 Every event job carries the whole envelope (`events.EventJob`, embedded by each consumer's args), so a
 consumer reads the typed event, its version, its times and its chain. Every event job runs in the

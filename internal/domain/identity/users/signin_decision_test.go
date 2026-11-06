@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
@@ -27,7 +27,7 @@ func TestDecideSigninAnUntrustedEmailCreatesAndLinksNothing(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		facts := drawFacts(t)
 		facts.KnownIdentity = false
-		facts.TrustFailure = rapid.SampledFrom([]signin.Reason{signin.ReasonEmailUnverified, signin.ReasonEmailNotTrusted}).Draw(t, "failure")
+		facts.TrustFailure = rapid.SampledFrom([]signinprovider.Reason{signinprovider.ReasonEmailUnverified, signinprovider.ReasonEmailNotTrusted}).Draw(t, "failure")
 
 		got := users.DecideSignin(facts)
 
@@ -138,7 +138,7 @@ func TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect(t *testing.
 func drawFacts(t *rapid.T) users.SigninFacts {
 	facts := users.SigninFacts{
 		KnownIdentity: rapid.Bool().Draw(t, "known"),
-		TrustFailure:  rapid.SampledFrom([]signin.Reason{"", signin.ReasonEmailUnverified, signin.ReasonEmailNotTrusted}).Draw(t, "trust"),
+		TrustFailure:  rapid.SampledFrom([]signinprovider.Reason{"", signinprovider.ReasonEmailUnverified, signinprovider.ReasonEmailNotTrusted}).Draw(t, "trust"),
 
 		SignupItemsInEffect: rapid.Bool().Draw(t, "items"),
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 )
 
 // AuditSchema is the TypeSpec row schema (openapi component) an AuditRow encodes to.
@@ -43,7 +43,7 @@ func (r AuditRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID} }
 // "Sphericon staff" with no id and unchanged "Always" fields are left out, as on every
 // other read surface (ADR 0022).
 func auditRow(e *ent.AuditEntry) AuditRow {
-	v := auditapi.ViewOf(e)
+	v := auditlog.ViewOf(e)
 	diff := make(map[string]json.RawMessage, len(v.Diff))
 	for k, raw := range v.Diff {
 		diff[k] = json.RawMessage(raw)

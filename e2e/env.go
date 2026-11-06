@@ -22,8 +22,8 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -46,7 +46,7 @@ type Env struct {
 	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
 	// person: saving the Brand kit, which makes the starter Templates.
-	brandKit *brandkit.Module
+	brandKit *brandkits.Module
 	// sessions issues the cookie a signed-in User of the SPA carries.
 	sessions *apiauth.Sessions
 }
@@ -178,7 +178,7 @@ func Boot() (*Env, func(), error) {
 		memberships: ms,
 		bus:         bus,
 
-		brandKit: brandkit.New(bus, templates.New(emaildoc.New())),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

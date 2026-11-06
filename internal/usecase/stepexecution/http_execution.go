@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -45,11 +45,11 @@ func (m *UseCase) ExecuteHTTP(ctx context.Context, s *ent.Scoped, runID int64, s
 	if err != nil {
 		return HTTPExecution{}, err
 	}
-	steps, err := automationsteps.Decode(version.Steps)
+	steps, err := automationstep.Decode(version.Steps)
 	if err != nil {
 		return m.failHTTP(ctx, s, run.ID, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, HTTPExecution{Cancel: err})
 	}
-	if step < 0 || step >= len(steps) || steps[step].Type != automationsteps.HTTP {
+	if step < 0 || step >= len(steps) || steps[step].Type != automationstep.HTTP {
 		return HTTPExecution{}, nil
 	}
 	st := steps[step]

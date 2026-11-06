@@ -11,9 +11,10 @@
 // transaction and the generated scoped wrappers. A generic function instantiated with an ent write
 // builder (`stepOf[*ent.TagScopedDelete]`) writes that builder's entity where it is instantiated. The
 // moves of `ent.VersionedStore` are not read: the store is the owner's Pointers, bound by the owner
-// (counted there) and handed to the lifecycle in internal/domain/content/drafts. Generated code
-// (ent/) and test code are not read: test files, the test harness (internal/testhelper, which only
-// tests import) and the end-to-end suite (e2e/, behind its build tag).
+// (counted there) and handed to the lifecycle in internal/domain/content/versioneddefinition.
+// Generated code (ent/) and test code are not read: test files, the test harness
+// (internal/testhelper, which only tests import) and the end-to-end suite (e2e/, behind its build
+// tag).
 //
 // An entry point (a handler of any surface, an MCP tool, a job or an event subscriber) receives input
 // and calls a domain module or a use case; it owns no table, so every write there is a finding, worded
@@ -74,13 +75,13 @@ var surfaces = []string{
 // migrations keep); a hook package owns the log it keeps; the Enterprise Edition owns its own.
 var owners = map[string]string{
 	"ApiToken":             "internal/domain/identity/apitokens",
-	"AuditEntry":           "ee/domain/insights/audit",
+	"AuditEntry":           "ee/domain/insights/auditentries",
 	"AuthAttempt":          "internal/infra/throttle",
 	"Automation":           "internal/domain/orchestration/automations",
 	"AutomationRun":        "internal/domain/orchestration/automations",
 	"AutomationVersion":    "internal/domain/orchestration/automations",
 	"Binding":              "internal/domain/sending/bindings",
-	"BrandKit":             "internal/domain/content/brandkit",
+	"BrandKit":             "internal/domain/content/brandkits",
 	"Broadcast":            "internal/domain/orchestration/broadcasts",
 	"BroadcastRecipient":   "internal/domain/orchestration/broadcasts",
 	"CapturedMessage":      "internal/domain/sending/capturedmessages",
@@ -89,12 +90,12 @@ var owners = map[string]string{
 	"Contact":              "internal/domain/contacts/contacts",
 	"ContactTag":           "internal/domain/contacts/contacts",
 	"CustomField":          "internal/domain/contacts/contacts",
-	"EmailTemplate":        "internal/domain/content/templates",
-	"Erasure":              "ee/domain/insights/export",
+	"EmailTemplate":        "internal/domain/content/emailtemplates",
+	"Erasure":              "ee/domain/insights/erasures",
 	"Event":                "internal/infra/events",
 	"HeldOrderEvent":       "internal/domain/contacts/orders",
 	"Hold":                 "internal/domain/sending/holds",
-	"InstanceAuditEntry":   "internal/domain/instance/instanceaudit",
+	"InstanceAuditEntry":   "internal/domain/instance/instanceauditentries",
 	"InstanceState":        "internal/domain/instance/instancestates",
 	"Integration":          "internal/domain/sending/integrations",
 	"Invitation":           "internal/domain/identity/invitations",
@@ -107,11 +108,11 @@ var owners = map[string]string{
 	"OAuthRefreshToken":    "internal/domain/identity/oauthclients",
 	"Order":                "internal/domain/contacts/orders",
 	"OrderMovement":        "internal/domain/contacts/orders",
-	"OutboundMessage":      "internal/domain/sending/outbound",
+	"OutboundMessage":      "internal/domain/sending/outboundmessages",
 	"Passkey":              "internal/domain/identity/passkeys",
 	"PasskeyChallenge":     "internal/domain/identity/passkeys",
 	"PendingSignup":        "internal/domain/identity/users",
-	"PrivateRelayRange":    "internal/domain/sending/machine",
+	"PrivateRelayRange":    "internal/domain/sending/privaterelayranges",
 	"ProviderLimiter":      "internal/domain/sending/providerlimit",
 	"RecoveryCode":         "internal/domain/identity/recoverycodes",
 	"Rule":                 "internal/domain/orchestration/rules",
@@ -124,21 +125,21 @@ var owners = map[string]string{
 	"SendingDomain":        "internal/domain/sending/sendingdomains",
 	"ServiceCredential":    "ee/domain/identity/servicecredentials",
 	"SignupItem":           "internal/domain/identity/signupitems",
-	"SignupSurveyResponse": "internal/domain/identity/signupsurvey",
+	"SignupSurveyResponse": "internal/domain/identity/signupsurveyresponses",
 	"StaffMember":          "internal/domain/identity/staffmembers",
 	"StartToken":           "internal/domain/sending/bindings",
-	"Suppression":          "internal/domain/contacts/suppression",
+	"Suppression":          "internal/domain/contacts/suppressions",
 	"Tag":                  "internal/domain/contacts/tags",
-	"TrackedLink":          "internal/domain/sending/outbound",
+	"TrackedLink":          "internal/domain/sending/outboundmessages",
 	"TrackingDomain":       "internal/domain/sending/trackingdomains",
-	"TrackingHostChange":   "internal/domain/sending/trackinghostlog",
+	"TrackingHostChange":   "internal/domain/sending/trackinghostchanges",
 	"Unsubscribe":          "internal/domain/contacts/unsubscribes",
-	"Usage":                "ee/domain/insights/usage",
+	"Usage":                "ee/domain/insights/usages",
 	"User":                 "internal/domain/identity/users",
 	"UserIdentity":         "internal/domain/identity/users",
-	"UserTombstone":        "internal/domain/identity/userfeed",
+	"UserTombstone":        "internal/domain/identity/usertombstones",
 	"Visitor":              "internal/domain/contacts/visitors",
-	"WebhookEndpoint":      "internal/domain/orchestration/webhooks",
+	"WebhookEndpoint":      "internal/domain/orchestration/webhookendpoints",
 	"Workspace":            "internal/domain/identity/workspaces",
 }
 

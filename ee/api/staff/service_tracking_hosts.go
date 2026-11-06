@@ -3,7 +3,7 @@ package staff
 import (
 	"context"
 
-	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -15,7 +15,7 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e eestaff.TrackingHostFeedEntry) serviceapi.ServiceTrackingHostChange {
+	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e staffconsole.TrackingHostFeedEntry) serviceapi.ServiceTrackingHostChange {
 		item := serviceMapper.TrackingHostChangeToResource(e.Change)
 		item.WorkspaceId = serviceapi.WorkspaceId(e.WorkspaceID)
 		return item

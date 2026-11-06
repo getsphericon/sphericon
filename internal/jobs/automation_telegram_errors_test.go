@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
@@ -43,8 +43,8 @@ func TestATelegramUnauthorizedHoldsTheBotUntilItsTokenIsSavedAgain(t *testing.T)
 	assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the held step is asked again later")
 	route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "telegram", new(int64(bot.Integration.ID)))
 	require.NoError(t, err)
-	assert.Equal(t, outbound.HoldProviderRefused, route.Hold, "the Send route reports the Hold")
-	assert.Equal(t, "provider_refused", outbound.HoldProviderRefused)
+	assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold, "the Send route reports the Hold")
+	assert.Equal(t, "provider_refused", outboundmessages.HoldProviderRefused)
 	assert.Zero(t, env.QueuedCount(t, events.NameTelegramSent, nil))
 
 	// While held, the step does not even ask Telegram.
@@ -118,7 +118,7 @@ func TestAHeldTelegramIntegrationSavedWithATokenTelegramStillRefusesStaysHeld(t 
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Errors.Value, "config.token")
 	hold := holdOf(t, env, bot)
-	assert.Equal(t, outbound.HoldProviderRefused, hold)
+	assert.Equal(t, outboundmessages.HoldProviderRefused, hold)
 	require.True(t, env.RunNextStep(t, mod))
 	waiting := env.DB.AutomationRun.GetX(t.Context(), runID)
 	assert.Equal(t, automationrun.StatusActive, waiting.Status)
@@ -153,7 +153,7 @@ func heldTelegram(t *testing.T, env *testhelper.TestEnv) (testhelper.TelegramBot
 	env.Telegram.Fail(telegramtest.SendMessage, telegramtest.Unauthorized)
 	require.True(t, env.RunNextStep(t, mod))
 	hold := holdOf(t, env, bot)
-	require.Equal(t, outbound.HoldProviderRefused, hold)
+	require.Equal(t, outboundmessages.HoldProviderRefused, hold)
 	return bot, runID, mod
 }
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
@@ -19,16 +19,16 @@ import (
 
 // outcomeSender is the Outbound module's boundary answering a fixed Outcome, for the answers
 // the real module never gives a Transactional request.
-type outcomeSender outbound.Outcome
+type outcomeSender outboundmessages.Outcome
 
-func (o outcomeSender) Send(context.Context, *ent.Scoped, outbound.Request) (outbound.Result, error) {
-	return outbound.Result{Outcome: outbound.Outcome(o)}, nil
+func (o outcomeSender) Send(context.Context, *ent.Scoped, outboundmessages.Request) (outboundmessages.Result, error) {
+	return outboundmessages.Result{Outcome: outboundmessages.Outcome(o)}, nil
 }
 
 func TestSendRefusesARequestThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := transactionalsend.New(templates.New(testhelper.Renderer()), outcomeSender(outbound.Sent))
+	m := transactionalsend.New(emailtemplates.New(testhelper.Renderer()), outcomeSender(outboundmessages.Sent))
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.Send(ctx, acme, transactionalsend.Request{TemplateID: fixtures.TemplateWithVariablesID, Destination: "  "})
@@ -52,7 +52,7 @@ func TestSendRefusesARequestThatCannotBeSent(t *testing.T) {
 
 func TestSendTreatsADeferralAsAnInvariantViolation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := transactionalsend.New(templates.New(testhelper.Renderer()), outcomeSender(outbound.Deferral))
+	m := transactionalsend.New(emailtemplates.New(testhelper.Renderer()), outcomeSender(outboundmessages.Deferral))
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactionalsend.Request{
 		TemplateID: fixtures.TemplateWithVariablesID, Destination: "a@example.com",

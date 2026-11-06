@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-// CODE_LENGTH is the length of an authenticator app's code (internal/kernel/otpcode).
+// CODE_LENGTH is the length of an authenticator app's code (internal/kernel/totp).
 const CODE_LENGTH = 6
 
 // The link sits under the field, below its error.

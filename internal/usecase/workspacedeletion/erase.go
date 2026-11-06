@@ -11,12 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -26,11 +26,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
@@ -148,7 +148,7 @@ type rowQuery[Q any] interface {
 type RowEraser func(ctx context.Context, s *ent.Scoped, ids []int64) error
 
 // EditionTables are the removals of the Workspace-owned tables the Enterprise Edition owns: the
-// Audit entries (ee/domain/insights/audit), the Erasures rows (ee/domain/insights/export) and the Usage rows (ee/domain/insights/usage). No core
+// Audit entries (ee/domain/insights/auditentries), the Erasures rows (ee/domain/insights/erasures) and the Usage rows (ee/domain/insights/usages). No core
 // package imports the Edition, so the wiring hands them in; they run at their place in the order
 // like every other step, whatever the license.
 type EditionTables struct {
@@ -190,8 +190,8 @@ func eraseSteps(ed EditionTables) []eraseStep {
 		stepOf((*ent.Scoped).OrderMovement, orders.EraseOrderMovementsIn),
 		stepOf((*ent.Scoped).Order, orders.EraseOrdersIn),
 		stepOf((*ent.Scoped).CapturedMessage, capturedmessages.EraseCapturedMessagesIn),
-		stepOf((*ent.Scoped).TrackedLink, outbound.EraseTrackedLinksIn),
-		stepOf((*ent.Scoped).OutboundMessage, outbound.EraseOutboundMessagesIn),
+		stepOf((*ent.Scoped).TrackedLink, outboundmessages.EraseTrackedLinksIn),
+		stepOf((*ent.Scoped).OutboundMessage, outboundmessages.EraseOutboundMessagesIn),
 		stepOf((*ent.Scoped).BroadcastRecipient, broadcasts.EraseBroadcastRecipientsIn),
 		stepOf((*ent.Scoped).RuleFiring, rules.EraseRuleFiringsIn),
 		stepOf((*ent.Scoped).RuleVersionTrigger, rules.EraseRuleVersionTriggersIn),
@@ -202,19 +202,19 @@ func eraseSteps(ed EditionTables) []eraseStep {
 		stepOf((*ent.Scoped).Visitor, visitors.EraseVisitorsIn),
 		stepOf((*ent.Scoped).Confirmation, confirmations.EraseConfirmationsIn),
 		stepOf((*ent.Scoped).Unsubscribe, unsubscribes.EraseUnsubscribesIn),
-		stepOf((*ent.Scoped).Suppression, suppression.EraseSuppressionsIn),
+		stepOf((*ent.Scoped).Suppression, suppressions.EraseSuppressionsIn),
 		stepOf((*ent.Scoped).Usage, ed.Usage),
 		stepOf((*ent.Scoped).Hold, holds.EraseHoldsIn),
 		stepOf((*ent.Scoped).ProviderLimiter, providerlimit.EraseProviderLimitersIn),
 		stepOf((*ent.Scoped).SendCapLimiter, providerlimit.EraseSendCapLimitersIn),
-		stepOf((*ent.Scoped).WebhookEndpoint, webhooks.EraseWebhookEndpointsIn),
+		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoints.EraseWebhookEndpointsIn),
 		stepOf((*ent.Scoped).Invitation, invitations.EraseInvitationsIn),
 		stepOf((*ent.Scoped).ApiToken, apitokens.EraseAPITokensIn),
 		keptStepOf((*ent.Scoped).Broadcast, (*ent.BroadcastScoped).QueryWithArchived, broadcasts.EraseBroadcastsIn),
 		keptStepOf((*ent.Scoped).Automation, (*ent.AutomationScoped).QueryWithArchived, automations.EraseAutomationsIn),
 		keptStepOf((*ent.Scoped).Segment, (*ent.SegmentScoped).QueryWithArchived, segments.EraseSegmentsIn),
-		stepOf((*ent.Scoped).EmailTemplate, templates.EraseEmailTemplatesIn),
-		stepOf((*ent.Scoped).BrandKit, brandkit.EraseBrandKitsIn),
+		stepOf((*ent.Scoped).EmailTemplate, emailtemplates.EraseEmailTemplatesIn),
+		stepOf((*ent.Scoped).BrandKit, brandkits.EraseBrandKitsIn),
 		stepOf((*ent.Scoped).Contact, contacts.EraseContactsIn),
 		stepOf((*ent.Scoped).Tag, tags.EraseTagsIn),
 		stepOf((*ent.Scoped).CustomField, contacts.EraseCustomFieldsIn),

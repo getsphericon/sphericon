@@ -11,7 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
@@ -38,7 +38,7 @@ func (h *Handlers) SiteAuthSigninProviders(context.Context) (*siteapi.SiteSignin
 // the signed flow cookie with the `return_to` that survived validation, and redirects the
 // browser to the provider.
 func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAuthSigninStartParams) (*siteapi.SiteAuthSigninStartFound, error) {
-	authURL, flow, err := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
+	authURL, flow, err := h.signin.Start(params.Provider, signinprovider.SafeReturnTo(params.ReturnTo.Or("")))
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 	}
 	return &siteapi.SiteAuthSigninStartFound{
 		Location:  authURL,
-		SetCookie: h.sessions.SigninFlow(sealed, signin.FlowTTL).String(),
+		SetCookie: h.sessions.SigninFlow(sealed, signinprovider.FlowTTL).String(),
 	}, nil
 }
 
@@ -60,24 +60,24 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 // anything.
 func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	if !h.signin.Has(params.Provider) {
-		return h.signinRefused(signin.Flow{}, signin.ReasonProviderUnavailable), nil
+		return h.signinRefused(signinprovider.Flow{}, signinprovider.ReasonProviderUnavailable), nil
 	}
 	flow, err := h.signin.OpenFlow(params.SIGNIN.Or(""), params.Provider)
 	if err != nil || !flow.StateMatches(params.State.Or("")) {
-		return h.signinRefused(signin.Flow{}, signin.ReasonInvalidState), nil
+		return h.signinRefused(signinprovider.Flow{}, signinprovider.ReasonInvalidState), nil
 	}
 	if params.Error.Set {
 		return h.signinRefused(flow, providerErrorReason(params.Error.Value)), nil
 	}
 	if params.Code.Or("") == "" {
-		return h.signinRefused(flow, signin.ReasonProviderError), nil
+		return h.signinRefused(flow, signinprovider.ReasonProviderError), nil
 	}
 
 	profile, err := h.signin.Complete(ctx, flow, params.Code.Value)
 	if err != nil {
 		// The error names the provider's failure, never a token or the subject.
 		slog.WarnContext(ctx, "signin: the provider's answer was not usable", "provider", params.Provider, "error", err)
-		return h.signinRefused(flow, signin.ReasonProviderError), nil
+		return h.signinRefused(flow, signinprovider.ReasonProviderError), nil
 	}
 
 	if flow.LinkUserID != 0 {
@@ -88,7 +88,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	if flow.Invitation != "" {
 		invite, err = h.invitations.PendingInvitation(ctx, flow.Invitation)
 		if errors.Is(err, invitations.ErrInvitationLinkNotFound) {
-			return h.signinRefused(flow, signin.ReasonInvitationInvalid), nil
+			return h.signinRefused(flow, signinprovider.ReasonInvitationInvalid), nil
 		}
 		if err != nil {
 			return nil, err
@@ -153,7 +153,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 
 // signinLanded is the redirect of a flow that succeeded: to the page it began from, or to the
 // home page (the settings page for a link), with the session cookie.
-func (h *Handlers) signinLanded(flow signin.Flow, sessionCookie string) *siteapi.SiteAuthSigninCallbackFound {
+func (h *Handlers) signinLanded(flow signinprovider.Flow, sessionCookie string) *siteapi.SiteAuthSigninCallbackFound {
 	return &siteapi.SiteAuthSigninCallbackFound{
 		Location:  cmp.Or(flow.ReturnTo, flowPage(flow, signinHomePath)),
 		SetCookie: siteapi.NewOptString(sessionCookie),
@@ -162,7 +162,7 @@ func (h *Handlers) signinLanded(flow signin.Flow, sessionCookie string) *siteapi
 
 // flowPage is the page a flow lands on by default: the settings page for a link, home for
 // a sign-in.
-func flowPage(flow signin.Flow, home string) string {
+func flowPage(flow signinprovider.Flow, home string) string {
 	switch {
 	case flow.LinkUserID != 0:
 		return signinSettingsPath
@@ -177,7 +177,7 @@ func flowPage(flow signin.Flow, home string) string {
 // signinRefused is the redirect of a flow that did not succeed: the login page with the
 // Reason (the settings page for a link), and the flow cookie cleared so a finished flow
 // leaves nothing behind. A refusal before any flow was opened passes the zero Flow.
-func (h *Handlers) signinRefused(flow signin.Flow, reason signin.Reason) *siteapi.SiteAuthSigninCallbackFound {
+func (h *Handlers) signinRefused(flow signinprovider.Flow, reason signinprovider.Reason) *siteapi.SiteAuthSigninCallbackFound {
 	return &siteapi.SiteAuthSigninCallbackFound{
 		Location:  flowPage(flow, signinLoginPath) + "?" + url.Values{"error": {string(reason)}}.Encode(),
 		SetCookie: siteapi.NewOptString(h.sessions.ClearedSigninFlow().String()),
@@ -186,9 +186,9 @@ func (h *Handlers) signinRefused(flow signin.Flow, reason signin.Reason) *siteap
 
 // providerErrorReason maps the `error` a provider sent back (RFC 6749 section 4.1.2.1) to the
 // Reason shown: a person who said no is told so, anything else is the provider's failure.
-func providerErrorReason(code string) signin.Reason {
+func providerErrorReason(code string) signinprovider.Reason {
 	if code == "access_denied" {
-		return signin.ReasonDenied
+		return signinprovider.ReasonDenied
 	}
-	return signin.ReasonProviderError
+	return signinprovider.ReasonProviderError
 }

@@ -11,15 +11,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -94,8 +94,8 @@ import (
 // goverter:extend smsConsentIn
 type Inputs interface {
 	// goverter:ignore Prepared
-	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
-	TemplateUpdate(source *externalapi.UpdateTemplateInput) templates.UpdateInput
+	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
+	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -110,8 +110,8 @@ type Inputs interface {
 	// goverter:ignore Statuses
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
 
-	WebhookCreate(source *externalapi.CreateWebhookInput) webhooks.CreateInput
-	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhooks.UpdateInput
+	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
+	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
 
 	// goverter:map DkimSelector Selector
 	SendingDomainCreate(source *externalapi.CreateSendingDomainInput) sendingdomains.CreateInput
@@ -147,8 +147,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source externalapi.AutomationStep) automationsteps.Step
-	AutomationSteps(source []externalapi.AutomationStep) []automationsteps.Step
+	AutomationStep(source externalapi.AutomationStep) automationstep.Step
+	AutomationSteps(source []externalapi.AutomationStep) []automationstep.Step
 	TelegramButton(source externalapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
@@ -178,7 +178,7 @@ type Inputs interface {
 	// goverter:enum:map AutomationsReportPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source externalapi.AutomationsReportPeriod) automations.ReportPeriod
 	// goverter:enum:transform value
-	AutomationStepType(source externalapi.AutomationStepType) automationsteps.Kind
+	AutomationStepType(source externalapi.AutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
@@ -192,7 +192,7 @@ type Inputs interface {
 	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
 	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
-	TestAddress(source *externalapi.TestSendBroadcastInput) outbound.TestAddress
+	TestAddress(source *externalapi.TestSendBroadcastInput) outboundmessages.TestAddress
 }
 
 // smsConsentIn is the SMS consent a batch item carries, nil when it carries none.
@@ -295,7 +295,7 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationsteps.Step {
+func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}

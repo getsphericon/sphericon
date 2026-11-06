@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
@@ -58,7 +58,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 			props = nil
 		}
 	}
-	bindings := outbound.Bindings(c, outbound.EventVariables(f.Action, props))
+	bindings := outboundmessages.Bindings(c, outboundmessages.EventVariables(f.Action, props))
 	body, err := httpcall.RenderBody(action.Body, bindings)
 	if err != nil {
 		return record(Result{Status: Failed, Detail: "invalid_body: " + httpcall.BodyDetail(err)})

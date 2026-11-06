@@ -31,7 +31,7 @@ disables foreign-key triggers), as on the shared test database.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
-test builds itself (`templates.New(testhelper.Renderer())`), runs our own checks and fakes the
+test builds itself (`emailtemplates.New(testhelper.Renderer())`), runs our own checks and fakes the
 editor's schema check and export: the body is the document's text as paragraphs. A test of what the
 export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
 only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
@@ -57,7 +57,7 @@ The `testwrites` analyzer reads the harness as it reads tests: a helper that cre
 why no fixture can hold it, with the same `// test writes:` comment.
 
 **`env.DB` refuses a feed change outside a transaction, as production's plain client does.** It
-carries the Guards of `internal/domain/identity/workspacefeed`, `internal/domain/identity/userfeed` and `internal/domain/sending/trackinghostlog`
+carries the Guards of `internal/domain/identity/workspacefeed`, `internal/domain/identity/usertombstones` and `internal/domain/sending/trackinghostchanges`
 (`entclient.New`), and only the bus's transaction client runs their Hooks, so a module that
 writes a Workspace's deletion, an owner change, a User, a Consent record, the mailings mark or a
 Tracking host outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup
@@ -71,16 +71,16 @@ A domain module lives in `internal/domain/<context>/<module>` (ADR 0102; the ord
 and their easement components are "Domain contexts" in `docs/architecture.md`): identity,
 contacts, content, sending, orchestration, insights and instance
 (`internal/domain/identity/{workspaces,memberships,users,...}`,
-`internal/domain/contacts/{contacts,segments,tags,...}`, `internal/domain/content/{templates,...}`,
-`internal/domain/sending/{outbound,integrations,...}`,
+`internal/domain/contacts/{contacts,segments,tags,...}`, `internal/domain/content/{emailtemplates,...}`,
+`internal/domain/sending/{outboundmessages,integrations,...}`,
 `internal/domain/orchestration/{broadcasts,automations,rules,...}`,
-`internal/domain/insights/{setupchecklist,auditapi,...}`,
+`internal/domain/insights/{setupchecklist,auditlog,...}`,
 `internal/domain/instance/{instancestates,upgrade,...}`). Nothing of the core is left flat under
 `internal/`: what is there besides the tiers is a driver, the wiring, a tool of `cmd/` or test
 support (`fixtures`, `dnstest`, `telemetryschema`). A module imports only modules of its own context and
 of the contexts below; its tests are not checked, so a test may build what it needs from the harness
 as before. A module moves with its tests, in the same `_test` package and with the same assertions.
-Only paths change: a relative path a test reads (`signin`'s `../../../../openapi`) gets the new
+Only paths change: a relative path a test reads (`signinprovider`'s `../../../../openapi`) gets the new
 depth, and the list of `RecordAudit` call sites in `internal/api/site/audit_explicit_test.go` names
 the moved files. The move recipe is at the end of that section of `docs/architecture.md`.
 
@@ -103,7 +103,7 @@ module instead (`instancestates.New(env.DB, …)`); the server's own are `env.Re
 `env.TelemetryReport`. The re-encryption is built over each owner's `Secrets` on `env.DB`
 (`integrations.NewSecrets(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
-(`internal/usecase/secondfactorenrolment`), the Workspace creation's `env.WorkspaceCreation`
+(`internal/usecase/secondfactor`), the Workspace creation's `env.WorkspaceCreation`
 (`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
 a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
 (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, testhelper.EditionTables())`

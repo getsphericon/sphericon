@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -56,18 +56,18 @@ type delivery struct {
 	env *testhelper.TestEnv
 	box *mailbox
 	res *provider
-	out *outbound.Module
+	out *outboundmessages.Module
 	del *broadcasts.Delivery
 	s   *ent.Scoped
 }
 
 // newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
-func newDelivery(t *testing.T, opts ...outbound.Option) *delivery {
+func newDelivery(t *testing.T, opts ...outboundmessages.Option) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outbound.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"), opts...)
+	out := outboundmessages.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"), opts...)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),
@@ -239,12 +239,12 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	// Transactional traffic spends the Integration's capacity and is itself never slowed.
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
-		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
+		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
+			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"},
 		})
 		require.NoError(t, err)
-		require.Equal(t, outbound.Sent, res.Outcome)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
 	}
 	second := d.recipient(fixtures.ContactAliceID)
 
@@ -267,12 +267,12 @@ func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(1).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
-		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
+		res, err := d.out.Send(d.t.Context(), d.s, outboundmessages.Request{
 			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-			Content: outbound.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}, IntegrationID: &mailgun,
+			Content: outboundmessages.EmailContent{Subject: "Receipt", Body: "<p>Hi</p>"}, IntegrationID: &mailgun,
 		})
 		require.NoError(t, err)
-		require.Equal(t, outbound.Sent, res.Outcome)
+		require.Equal(t, outboundmessages.Sent, res.Outcome)
 	}
 	id := d.recipient(fixtures.ContactAliceID)
 
@@ -311,7 +311,7 @@ func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 
 	err := d.del.GiveUp(d.t.Context(), d.s, id, errors.New("smtp unavailable"))
 
-	require.ErrorIs(t, err, outbound.ErrInProgress)
+	require.ErrorIs(t, err, outboundmessages.ErrInProgress)
 	assert.True(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
@@ -336,11 +336,11 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 	b := d.broadcastRow()
 	rec := d.recipientRow(id)
 	c := d.env.DB.Contact.GetX(d.t.Context(), fixtures.ContactAliceID)
-	req, err := outbound.BroadcastRecipient(b, rec, c)
+	req, err := outboundmessages.BroadcastRecipient(b, rec, c)
 	require.NoError(d.t, err)
 	res, err := d.out.Send(d.t.Context(), d.s, req)
 	require.NoError(t, err)
-	require.Equal(t, outbound.Sent, res.Outcome)
+	require.Equal(t, outboundmessages.Sent, res.Outcome)
 
 	require.NoError(t, d.del.GiveUp(d.t.Context(), d.s, id, errors.New("late failure")))
 

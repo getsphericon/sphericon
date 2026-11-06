@@ -9,7 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 )
 
@@ -29,7 +29,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	SoleOwnedWorkspaces(source []*ent.Workspace) []siteapi.SoleOwnedWorkspace
 	// goverter:enum:transform value
-	UsedByKind(source inuse.Kind) siteapi.UsedByKind
+	UsedByKind(source liveuse.Kind) siteapi.UsedByKind
 
 	External(source *siteapi.ProblemDetails) externalapi.ProblemDetails
 	Collect(source *siteapi.ProblemDetails) collectapi.ProblemDetails

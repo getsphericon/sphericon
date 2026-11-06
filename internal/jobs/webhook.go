@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -37,7 +37,7 @@ type DeliverWebhookWorker struct {
 	client webhook.Doer
 	now    func() time.Time
 	// mod keeps the endpoint's failure state, disables it and tells the owners.
-	mod *webhooks.Module
+	mod *webhookendpoints.Module
 }
 
 // NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now;
@@ -48,7 +48,7 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 		cipher: cipher,
 		client: doer,
 		now:    now,
-		mod:    webhooks.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender)),
+		mod:    webhookendpoints.New(bus, cipher, nil, nil, memberships.OwnerNotifier(client, sender)),
 	}
 }
 

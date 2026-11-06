@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -56,7 +56,7 @@ var pixelGIF = []byte{
 //
 // The token is a signed JWT naming one Outbound message. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *machine.Detector, appURL string) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, unsubscribe *unsubscriberecording.UseCase, limiter *ratelimit.Limiter, detector *privaterelayranges.Detector, appURL string) http.Handler {
 	mux := http.NewServeMux()
 	appURL = strings.TrimRight(appURL, "/")
 
@@ -286,7 +286,7 @@ func (e engaged) engagement(action, dest string, software bool) *events.EmailEng
 
 // isMachine judges a hit from its user-agent and client address (ADR 0053). Both are read for the
 // verdict and dropped: neither reaches the Event or the log.
-func isMachine(r *http.Request, detector *machine.Detector) bool {
+func isMachine(r *http.Request, detector *privaterelayranges.Detector) bool {
 	return detector.IsMachine(r.Context(), clientip.UserAgentFromContext(r.Context()), clientip.FromContext(r.Context()))
 }
 
@@ -319,7 +319,7 @@ func recordOpen(ctx context.Context, client *ent.Client, bus *events.Bus, messag
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outbound.StampOpened(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampOpened(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}
@@ -337,7 +337,7 @@ func recordClick(ctx context.Context, client *ent.Client, bus *events.Bus, messa
 	}
 	err := bus.WithinScopedTx(ctx, e.scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		if !software {
-			if _, err := outbound.StampClicked(ctx, ts, e.msg.ID); err != nil {
+			if _, err := outboundmessages.StampClicked(ctx, ts, e.msg.ID); err != nil {
 				return err
 			}
 		}

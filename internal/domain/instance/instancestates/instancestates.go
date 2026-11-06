@@ -24,7 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/instance/instanceaudit"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instanceauditentries"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
@@ -258,7 +258,7 @@ func setDefaultSendCap(ctx context.Context, tx *ent.Client, by *ent.StaffMember,
 		return false, err
 	}
 	diff := map[string]any{instancestate.FieldDefaultSendCap: change}
-	return true, instanceaudit.Record(ctx, tx, by.ID, instanceaudit.ActionDefaultSendCapChange, diff)
+	return true, instanceauditentries.Record(ctx, tx, by.ID, instanceauditentries.ActionDefaultSendCapChange, diff)
 }
 
 // DefaultSendCapIn is the Send cap a Workspace created now starts with, read on tx, the
@@ -276,9 +276,9 @@ func DefaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
 	return row.DefaultSendCap, nil
 }
 
-// AuditEntries is a page of the Instance audit log, newest first (see instanceaudit.Entries).
+// AuditEntries is a page of the Instance audit log, newest first (see instanceauditentries.Entries).
 func (m *Module) AuditEntries(ctx context.Context, cursor int64, limit int) ([]*ent.InstanceAuditEntry, int64, error) {
-	return instanceaudit.Entries(ctx, m.ent, cursor, limit)
+	return instanceauditentries.Entries(ctx, m.ent, cursor, limit)
 }
 
 // SetTelemetry stores the Staff member's choice; ErrTelemetryLocked when the environment decides.

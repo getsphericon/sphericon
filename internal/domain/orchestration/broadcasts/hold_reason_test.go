@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -26,7 +26,7 @@ func TestTheBroadcastHoldReasonIsEveryReasonASendIsHeldFor(t *testing.T) {
 
 	assert.ElementsMatch(t, []string{
 		holds.ReasonSuspended, holds.ReasonPendingDeletion, holds.ReasonStaff,
-		outbound.HoldNoIntegration, outbound.HoldUnverifiedDomain, outbound.HoldProviderStopped, outbound.HoldProviderRefused,
+		outboundmessages.HoldNoIntegration, outboundmessages.HoldUnverifiedDomain, outboundmessages.HoldProviderStopped, outboundmessages.HoldProviderRefused,
 	}, declared)
 }
 

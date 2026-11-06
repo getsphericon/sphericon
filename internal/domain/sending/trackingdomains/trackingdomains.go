@@ -34,7 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -294,7 +294,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 // stepDown takes a current host out of use: retired when it served and is still verified, so the
 // links sent on it keep working, deleted otherwise.
 func (m *Module) stepDown(ctx context.Context, ts *ent.Scoped, row *ent.TrackingDomain) error {
-	if row.ServedAt != nil && trackinghostlog.Serves(row) {
+	if row.ServedAt != nil && trackinghostchanges.Serves(row) {
 		return roleMachine(ts, row).FireCtx(ctx, trackingdomain.RoleRetired)
 	}
 	return ts.TrackingDomain().DeleteOneID(row.ID).Exec(ctx)
@@ -354,7 +354,7 @@ func (m *Module) Recheck(ctx context.Context, id int64) error {
 // stops answering is demoted, and a retired one whose CNAME left is dropped, within one tick. A
 // pending host is checked only when its Owner asks.
 func (m *Module) Due(ctx context.Context) ([]int64, error) {
-	return m.client.TrackingDomain.Query().Where(trackinghostlog.Serving()).IDs(ctx)
+	return m.client.TrackingDomain.Query().Where(trackinghostchanges.Serving()).IDs(ctx)
 }
 
 // checkRow re-checks one host and stores the outcome. A retired host is checked by DNS alone:

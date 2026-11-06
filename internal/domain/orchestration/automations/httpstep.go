@@ -8,8 +8,8 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -51,7 +51,7 @@ type DryRunResult struct {
 // (#752), as a Rule's http Action binds the Event it fired on. Their strings are JSON-escaped in
 // the bindings themselves, so a value holding quotes cannot change the structure.
 func RenderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
-	return httpcall.RenderBody(body, outbound.Bindings(c, outbound.EnrollmentVariables(run)))
+	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run)))
 }
 
 func bodyDetail(err error) string {
@@ -77,11 +77,11 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 
 // OpenHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
 // them.
-func OpenHTTP(cipher *secrets.Cipher, s automationsteps.Step) (OpenedHTTP, error) {
+func OpenHTTP(cipher *secrets.Cipher, s automationstep.Step) (OpenedHTTP, error) {
 	return httpcall.Open(cipher, spec(s))
 }
 
-func spec(s automationsteps.Step) httpcall.Spec {
+func spec(s automationstep.Step) httpcall.Spec {
 	return httpcall.Spec{URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret, ClearSecret: s.ClearSecret}
 }
 
@@ -93,18 +93,18 @@ func invalid(format string, a ...any) error {
 // URL, header values and secret encrypted per field. What the author did not resend
 // (an empty URL, header value or secret) is copied, as stored ciphertext, from the
 // stored step with the same id.
-func (m *Module) sealSteps(steps, stored []automationsteps.Step) ([]automationsteps.Step, error) {
-	prev := map[string]automationsteps.Step{}
+func (m *Module) sealSteps(steps, stored []automationstep.Step) ([]automationstep.Step, error) {
+	prev := map[string]automationstep.Step{}
 	for i := range stored {
-		if stored[i].Type == automationsteps.HTTP {
+		if stored[i].Type == automationstep.HTTP {
 			prev[stored[i].ID] = stored[i]
 		}
 	}
-	out := make([]automationsteps.Step, len(steps))
+	out := make([]automationstep.Step, len(steps))
 	seen := map[string]bool{}
 	for i := range steps {
 		s := steps[i]
-		if s.Type != automationsteps.HTTP {
+		if s.Type != automationstep.HTTP {
 			out[i] = s
 			continue
 		}
@@ -125,10 +125,10 @@ func (m *Module) sealSteps(steps, stored []automationsteps.Step) ([]automationst
 	return out, nil
 }
 
-func (m *Module) sealHTTP(s, prev automationsteps.Step, known bool) (automationsteps.Step, error) {
-	out := automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID}
+func (m *Module) sealHTTP(s, prev automationstep.Step, known bool) (automationstep.Step, error) {
+	out := automationstep.Step{Type: automationstep.HTTP, ID: s.ID}
 	if !known {
-		prev = automationsteps.Step{}
+		prev = automationstep.Step{}
 		out.ID = ulid.Make().String()
 	}
 	sealed, err := httpcall.Seal(m.cipher, spec(s), spec(prev), "http step")

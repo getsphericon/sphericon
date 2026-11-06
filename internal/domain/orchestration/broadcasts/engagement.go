@@ -11,7 +11,7 @@ import (
 
 // The unsubscribe of a recipient is set once, by a conditional update, and reported as whether
 // this call set it, so a repeated click on the link is counted exactly once. Its opens and clicks
-// are the Outbound message's stamps (outbound.StampOpened, ADR 0053).
+// are the Outbound message's stamps (outboundmessages.StampOpened, ADR 0053).
 
 // RecordUnsubscribe marks the Contact's recipient row of the Broadcast as having unsubscribed
 // from it. A Contact that was never a recipient of it (a link to an erased row) matches nothing.

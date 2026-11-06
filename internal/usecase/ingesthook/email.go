@@ -9,7 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -57,7 +57,7 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 			ev.BounceKind = events.BounceKindHard
 		}
 	}
-	msg, err := outbound.FindByProviderMessageID(ctx, tx.Scoped, n.MessageID)
+	msg, err := outboundmessages.FindByProviderMessageID(ctx, tx.Scoped, n.MessageID)
 	if err != nil {
 		return err
 	}
@@ -81,21 +81,21 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 		return nil
 	}
 	if result, ok := resultOf(ev.Action); ok {
-		return outbound.StampDelivery(ctx, tx.Scoped, msg.ID, result, tx.Now)
+		return outboundmessages.StampDelivery(ctx, tx.Scoped, msg.ID, result, tx.Now)
 	}
 	return nil
 }
 
 // resultOf is the delivery result a notice's Event stamps on its Outbound message. Delay and
 // drop stamp nothing (ADR 0053).
-func resultOf(action string) (outbound.DeliveryResult, bool) {
+func resultOf(action string) (outboundmessages.DeliveryResult, bool) {
 	switch action {
 	case events.NameEmailDelivered:
-		return outbound.ResultDelivered, true
+		return outboundmessages.ResultDelivered, true
 	case events.NameEmailBounced:
-		return outbound.ResultBounced, true
+		return outboundmessages.ResultBounced, true
 	case events.NameEmailComplained:
-		return outbound.ResultComplained, true
+		return outboundmessages.ResultComplained, true
 	}
 	return "", false
 }

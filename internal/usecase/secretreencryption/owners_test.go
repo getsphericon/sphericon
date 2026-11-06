@@ -5,7 +5,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -18,7 +18,7 @@ import (
 func reencryption(env *testhelper.TestEnv, cipher *secrets.Cipher) *secretreencryption.UseCase {
 	return secretreencryption.New(secretreencryption.Owners{
 		Integrations:     integrations.NewSecrets(env.DB),
-		WebhookEndpoints: webhooks.NewSecrets(env.DB),
+		WebhookEndpoints: webhookendpoints.NewSecrets(env.DB),
 		SendingDomains:   sendingdomains.NewSecrets(env.DB),
 		Users:            users.NewSecrets(env.DB),
 		StaffMembers:     staffmembers.NewSecrets(env.DB),

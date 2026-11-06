@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
@@ -139,7 +139,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	// exists: a Workspace freeze, no Integration, or an unverified From domain is a
 	// reversible hold (ADR 0015): the broadcast keeps its status, records why, and the
 	// plan is retried later; it is not failed.
-	content, err := outbound.BroadcastContent(b)
+	content, err := outboundmessages.BroadcastContent(b)
 	if err != nil {
 		return nil, err
 	}
@@ -225,13 +225,13 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 
 // renderable is the Channel's own check that content renders at all, before anything is sent: on
 // email a subject and body that Liquid and the HTML parser take.
-func renderable(content outbound.Content) error {
+func renderable(content outboundmessages.Content) error {
 	switch c := content.(type) {
-	case outbound.EmailContent:
+	case outboundmessages.EmailContent:
 		return emailrender.Lint(c.Subject, c.Body, nil).Error
-	case outbound.TelegramContent:
+	case outboundmessages.TelegramContent:
 		return telegramrender.Check(c.Text)
-	case outbound.SMSContent:
+	case outboundmessages.SMSContent:
 		return smsrender.Check(c.Text)
 	default:
 		return fmt.Errorf("broadcasts: no render check for %T", content)
@@ -345,7 +345,7 @@ func spread(start time.Time, step time.Duration, calls []int) []time.Time {
 // Binding the Contact has on the routed Integration, its own and its Visitors'. A Binding that
 // turns out ineligible at send time still counts, so the estimate errs on the slow side. It is at
 // least one: a recipient with no Binding left makes none, but is still paced.
-func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, route outbound.Route, recipientIDs []int64) ([]int, error) {
+func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, route outboundmessages.Route, recipientIDs []int64) ([]int, error) {
 	calls := make([]int, len(recipientIDs))
 	for i := range calls {
 		calls[i] = 1

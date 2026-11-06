@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -26,7 +26,7 @@ type ProviderLogin struct {
 	Email string
 	Name  string
 	// TrustFailure is why the provider's proof of Email is not accepted ("" when it is).
-	TrustFailure signin.Reason
+	TrustFailure signinprovider.Reason
 	// Invitation is the pending Invitation the sign-in is to accept, nil for a plain sign-in.
 	// It needs the provider's trusted email to be the invited address.
 	Invitation *ent.Invitation
@@ -42,7 +42,7 @@ type ProviderLogin struct {
 }
 
 // SigninRefusedError is a sign-in the decision refused; Reason is what the person is told.
-type SigninRefusedError struct{ Reason signin.Reason }
+type SigninRefusedError struct{ Reason signinprovider.Reason }
 
 func (e *SigninRefusedError) Error() string {
 	return "users: provider sign-in refused: " + string(e.Reason)

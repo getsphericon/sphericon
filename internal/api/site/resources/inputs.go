@@ -14,19 +14,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -105,12 +105,12 @@ import (
 // goverter:extend sortDirectionIn
 type Inputs interface {
 	// goverter:ignore Prepared
-	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
-	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
+	TemplateCreate(source *siteapi.CreateTemplateInput) emailtemplates.CreateInput
+	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms.
-	TestAddress(source *siteapi.TestSendBroadcastInput) outbound.TestAddress
+	TestAddress(source *siteapi.TestSendBroadcastInput) outboundmessages.TestAddress
 
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -126,8 +126,8 @@ type Inputs interface {
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 
-	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
-	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhooks.UpdateInput
+	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
+	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
 
 	// goverter:map DkimSelector Selector
 	SendingDomainCreate(source *siteapi.CreateSendingDomainInput) sendingdomains.CreateInput
@@ -150,8 +150,8 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source siteapi.SiteAutomationStep) automationsteps.Step
-	AutomationSteps(source []siteapi.SiteAutomationStep) []automationsteps.Step
+	AutomationStep(source siteapi.SiteAutomationStep) automationstep.Step
+	AutomationSteps(source []siteapi.SiteAutomationStep) []automationstep.Step
 	TelegramButton(source siteapi.TelegramButton) telegramrender.Button
 	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
@@ -165,7 +165,7 @@ type Inputs interface {
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
 	PersonalTokenCreate(source *siteapi.SiteCreatePersonalTokenInput) apitokens.PersonalInput
 
-	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkit.Input
+	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkits.Input
 
 	SignUp(source *siteapi.SiteSignUpInput) signup.Input
 	SignupAnswers(source []siteapi.SiteSignupItemAnswer) []consentrecords.Answer
@@ -176,7 +176,7 @@ type Inputs interface {
 	InvitationCreate(source *siteapi.SiteCreateInvitationInput) invitations.InviteInput
 
 	// Every answer was checked against the contract's enums when the request was decoded.
-	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurvey.Answers
+	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurveyresponses.Answers
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
@@ -216,7 +216,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	SortDirection(source siteapi.SortDirection) pagination.Direction
 	// goverter:enum:transform value
-	AutomationStepType(source siteapi.SiteAutomationStepType) automationsteps.Kind
+	AutomationStepType(source siteapi.SiteAutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
@@ -320,7 +320,7 @@ func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyres
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationsteps.Step {
+func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}

@@ -9,8 +9,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
 
@@ -18,20 +18,20 @@ import (
 // each send step of the live version of an active, kept Automation, and each send step of any
 // version an unfinished Enrollment stands on, whatever its Automation's state, since the
 // Enrollment still sends through it. A draft sends nothing until it is published (ADR 0065). An
-// Automation with several send steps gives one Send per step; inuse.SendUsers dedupes them for a
+// Automation with several send steps gives one Send per step; liveuse.SendUsers dedupes them for a
 // refusal. A step carries no From of its own. A damaged stored definition is an error, so a
 // removal never takes an unreadable definition for an unused one.
-func LiveSends(ctx context.Context, s *ent.Scoped) ([]inuse.Send, error) {
+func LiveSends(ctx context.Context, s *ent.Scoped) ([]liveuse.Send, error) {
 	autos, err := sendingVersions(ctx, s)
 	if err != nil {
 		return nil, err
 	}
 	through := messaging.NewThroughs(s)
-	var sends []inuse.Send
+	var sends []liveuse.Send
 	for _, a := range autos {
-		user := inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name}
+		user := liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name}
 		for _, v := range a.Edges.Versions {
-			steps, err := automationsteps.Decode(v.Steps)
+			steps, err := automationstep.Decode(v.Steps)
 			if err != nil {
 				return nil, err
 			}
@@ -44,7 +44,7 @@ func LiveSends(ctx context.Context, s *ent.Scoped) ([]inuse.Send, error) {
 				if err != nil {
 					return nil, err
 				}
-				sends = append(sends, inuse.Send{User: user, Channel: ch, Integration: integ})
+				sends = append(sends, liveuse.Send{User: user, Channel: ch, Integration: integ})
 			}
 		}
 	}

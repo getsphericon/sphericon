@@ -26,7 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -34,14 +34,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -56,7 +56,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
@@ -185,8 +185,8 @@ type TestEnv struct {
 	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
 	license *licensekey.License
 
-	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
-	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
+	sender    *outboundmessages.Module // the Outbound module the queued Broadcast sends run through
+	jwtSecret string                   // for tokens a test needs in a state the Tracker never mints
 
 	now        func() time.Time // the clock the server checks site session expiry against
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
@@ -208,7 +208,7 @@ type TestEnv struct {
 
 	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
 	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
-	Machine      *machine.Detector
+	Machine      *privaterelayranges.Detector
 	PrivateRelay *FakeRelayRanges
 
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
@@ -216,7 +216,7 @@ type TestEnv struct {
 
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
-	SecondFactor *secondfactorenrolment.UseCase
+	SecondFactor *secondfactor.UseCase
 
 	// WorkspaceCreation is the use case the server creates Workspaces with, and makes Users
 	// Verified with their first one (ADR 0102).
@@ -228,7 +228,7 @@ type TestEnv struct {
 
 	// StaffEnterprise is the use case of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
-	StaffEnterprise *staff.Module
+	StaffEnterprise *staffconsole.UseCase
 	// ServiceCredentials is the module of the service endpoints' Service credentials (ADR
 	// 0026); it refuses every call on an unlicensed env.
 	ServiceCredentials *servicecredentials.Module
@@ -269,7 +269,7 @@ type setup struct {
 	// always-NXDOMAIN stub (WithTXTLookup).
 	txt domainname.TXTLookup
 	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
-	signinOpts []signin.Option
+	signinOpts []signinprovider.Option
 }
 
 // WithTXTLookup replaces the TXT resolver of Sending domain and Join domain verification, so a
@@ -461,7 +461,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// SES's quota lookup is answered by a fake instead of the AWS API.
 	do.OverrideValue(injector, catalogWith(fakeSES, cfg.TelegramBotAPIURL, cfg.TwilioAPIURL))
 	do.OverrideValue(injector, stubTXT)
-	do.OverrideValue[machine.Source](injector, relay)
+	do.OverrideValue[privaterelayranges.Source](injector, relay)
 	do.OverrideValue(injector, presets)
 	do.OverrideValue(injector, Renderer())
 	do.OverrideValue(injector, migrated)
@@ -472,7 +472,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.OverrideValue(injector, app.SigninOptions(st.signinOpts))
 	do.OverrideValue(injector, app.IntegrationOptions{integrations.WithSubscriptionConfirmer(confirmations.confirm)})
 	// A Workspace's mail lands in CustomerMail unless its Integration is a Test inbox.
-	do.Override(injector, func(i do.Injector) (outbound.Senders, error) {
+	do.Override(injector, func(i do.Injector) (outboundmessages.Senders, error) {
 		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
 	})
 	// Every job a request queues is worked at once by its real worker (enqueue.go), against the
@@ -524,7 +524,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,
-		sender:            do.MustInvoke[*outbound.Module](injector),
+		sender:            do.MustInvoke[*outboundmessages.Module](injector),
 		jwtSecret:         cfg.JWTSecret,
 		now:               st.now,
 		sessionTTL:        cfg.SessionTTL,
@@ -533,10 +533,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SES:               fakeSES,
 		Telegram:          botAPI,
 		Twilio:            twilioAPI,
-		Machine:           do.MustInvoke[*machine.Detector](injector),
+		Machine:           do.MustInvoke[*privaterelayranges.Detector](injector),
 		PrivateRelay:      relay,
 		Confirmations:     confirmations,
-		SecondFactor:      do.MustInvoke[*secondfactorenrolment.UseCase](injector),
+		SecondFactor:      do.MustInvoke[*secondfactor.UseCase](injector),
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,

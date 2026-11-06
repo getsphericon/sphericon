@@ -5,12 +5,12 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 )
 
 // planAudience plans a Broadcast through the module and returns its recipient ids, as the
 // send worker does before it enqueues the recipient jobs.
-func planAudience(ctx context.Context, client *ent.Client, mod *outbound.Module, broadcastID int64) ([]int64, error) {
+func planAudience(ctx context.Context, client *ent.Client, mod *outboundmessages.Module, broadcastID int64) ([]int64, error) {
 	b, err := client.Broadcast.Get(ctx, broadcastID)
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func planAudience(ctx context.Context, client *ent.Client, mod *outbound.Module,
 }
 
 // deliverRecipient sends one recipient through the module, as the recipient worker does.
-func deliverRecipient(ctx context.Context, client *ent.Client, mod *outbound.Module, recipientID int64) error {
+func deliverRecipient(ctx context.Context, client *ent.Client, mod *outboundmessages.Module, recipientID int64) error {
 	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
 	if ent.IsNotFound(err) {
 		return nil

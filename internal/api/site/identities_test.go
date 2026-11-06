@@ -11,7 +11,7 @@ import (
 
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -132,7 +132,7 @@ func TestIdentitiesLinkingASubjectOfAnotherUserIsRefused(t *testing.T) {
 
 	resp := link(t, fake, b, sams)
 
-	assert.Equal(t, signin.ReasonIdentityInUse, refusalCode(t, resp, settingsPath))
+	assert.Equal(t, signinprovider.ReasonIdentityInUse, refusalCode(t, resp, settingsPath))
 	after := listIdentities(t, b)
 	assert.Len(t, after.Items, len(before.Items))
 	owner, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(fixtures.SamGoogleIdentitySubject)).QueryUser().Only(t.Context())
@@ -147,7 +147,7 @@ func TestIdentitiesLinkingADeniedConsentReportsItOnTheSettingsPage(t *testing.T)
 
 	resp := b.Get(t, fake.Deny(t, started.Header.Get("Location")))
 
-	assert.Equal(t, signin.ReasonDenied, refusalCode(t, resp, settingsPath))
+	assert.Equal(t, signinprovider.ReasonDenied, refusalCode(t, resp, settingsPath))
 }
 
 func TestIdentitiesALinkFlowOfASessionThatEndedIsRefused(t *testing.T) {
@@ -160,7 +160,7 @@ func TestIdentitiesALinkFlowOfASessionThatEndedIsRefused(t *testing.T) {
 
 	resp := b.Get(t, callback)
 
-	assert.Equal(t, signin.ReasonInvalidState, refusalCode(t, resp, settingsPath))
+	assert.Equal(t, signinprovider.ReasonInvalidState, refusalCode(t, resp, settingsPath))
 	linked, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(maryAtWork.Subject)).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, linked)

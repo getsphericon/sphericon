@@ -1,6 +1,6 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
-// adapters over it. internal/domain/orchestration/automationsteps owns the stored Step format and its reader,
+// adapters over it. internal/domain/orchestration/automationstep owns the stored Step format and its reader,
 // shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events and
 // steps, each send step with its own Integration, ADR 0081) lives in versions (ADR 0049): an edit
 // writes the draft, Publish makes it live (ADR 0065).
@@ -20,11 +20,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/domain/content/drafts"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
@@ -81,31 +81,31 @@ var (
 
 // Encode serializes steps into the stored definition, dropping the fields that do
 // not belong to each step's type, trimming tag names and sanitizing an email step's body.
-func Encode(steps []automationsteps.Step) (string, error) {
-	stored := make([]automationsteps.Step, 0, len(steps))
+func Encode(steps []automationstep.Step) (string, error) {
+	stored := make([]automationstep.Step, 0, len(steps))
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
-		case automationsteps.Wait:
-			stored = append(stored, automationsteps.Step{Type: automationsteps.Wait, Seconds: s.Seconds})
-		case automationsteps.ApplyTag, automationsteps.RemoveTag:
-			stored = append(stored, automationsteps.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
-		case automationsteps.HTTP:
-			stored = append(stored, automationsteps.Step{Type: automationsteps.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
-		case automationsteps.Telegram:
-			stored = append(stored, automationsteps.Step{
-				Type: automationsteps.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
+		case automationstep.Wait:
+			stored = append(stored, automationstep.Step{Type: automationstep.Wait, Seconds: s.Seconds})
+		case automationstep.ApplyTag, automationstep.RemoveTag:
+			stored = append(stored, automationstep.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
+		case automationstep.HTTP:
+			stored = append(stored, automationstep.Step{Type: automationstep.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
+		case automationstep.Telegram:
+			stored = append(stored, automationstep.Step{
+				Type: automationstep.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
 				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
 				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
 			})
-		case automationsteps.SMS:
-			sms := automationsteps.Step{Type: automationsteps.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
+		case automationstep.SMS:
+			sms := automationstep.Step{Type: automationstep.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
 			if !s.TracksLinks() {
 				sms.LinkTracking = new(false) // on is the default, stored as nothing
 			}
 			stored = append(stored, sms)
 		default:
-			email := automationsteps.Step{Type: automationsteps.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
+			email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
 			if len(s.Doc) > 0 {
 				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
 			}
@@ -118,15 +118,15 @@ func Encode(steps []automationsteps.Step) (string, error) {
 
 // validate checks each step on its own. linkLength is the length of the Workspace's short tracked
 // links, what an SMS step's links count as.
-func validate(steps []automationsteps.Step, linkLength int) error {
+func validate(steps []automationstep.Step, linkLength int) error {
 	for i := range steps {
 		s := &steps[i]
 		switch s.Type {
-		case automationsteps.Email:
+		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-		case automationsteps.Telegram:
+		case automationstep.Telegram:
 			if strings.TrimSpace(s.Text) == "" {
 				return ErrInvalidStep.With("a Telegram step needs a text")
 			}
@@ -142,7 +142,7 @@ func validate(steps []automationsteps.Step, linkLength int) error {
 			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
 				return ErrInvalidStep.With(err.Error())
 			}
-		case automationsteps.SMS:
+		case automationstep.SMS:
 			if strings.TrimSpace(s.Text) == "" {
 				return ErrInvalidStep.With("an SMS step needs a text")
 			}
@@ -154,12 +154,12 @@ func validate(steps []automationsteps.Step, linkLength int) error {
 			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
 				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 			}
-		case automationsteps.HTTP:
-		case automationsteps.Wait:
+		case automationstep.HTTP:
+		case automationstep.Wait:
 			if s.Seconds < 0 {
 				return ErrInvalidStep
 			}
-		case automationsteps.ApplyTag, automationsteps.RemoveTag:
+		case automationstep.ApplyTag, automationstep.RemoveTag:
 			if strings.TrimSpace(s.Tag) == "" {
 				return ErrInvalidStep
 			}
@@ -174,7 +174,7 @@ func validate(steps []automationsteps.Step, linkLength int) error {
 type SendStep struct {
 	// Index is the step's position in the version, 0 for the first.
 	Index int
-	Step  automationsteps.Step
+	Step  automationstep.Step
 }
 
 // Channel is the Channel the step sends on.
@@ -185,18 +185,18 @@ func (s SendStep) Channel() channels.Channel {
 
 // Content is the step's Message content, its Channel's own shape (ADR 0078). A new send step kind
 // adds its case here beside Kind.Channel.
-func (s SendStep) Content() (outbound.Content, error) {
+func (s SendStep) Content() (outboundmessages.Content, error) {
 	switch s.Step.Type {
-	case automationsteps.Email:
-		return outbound.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
-	case automationsteps.Telegram:
-		return outbound.TelegramContent{
+	case automationstep.Email:
+		return outboundmessages.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
+	case automationstep.Telegram:
+		return outboundmessages.TelegramContent{
 			Text: s.Step.Text, ImageURL: s.Step.ImageURL, Buttons: s.Step.Buttons,
 			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
 			UnsubscribeButton: s.Step.UnsubscribeButton,
 		}, nil
-	case automationsteps.SMS:
-		return outbound.SMSContent{Text: s.Step.Text, NoLinkTracking: !s.Step.TracksLinks()}, nil
+	case automationstep.SMS:
+		return outboundmessages.SMSContent{Text: s.Step.Text, NoLinkTracking: !s.Step.TracksLinks()}, nil
 	default:
 		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
 	}
@@ -204,7 +204,7 @@ func (s SendStep) Content() (outbound.Content, error) {
 
 // SendSteps are the send steps of the version, in step order.
 func SendSteps(v *ent.AutomationVersion) ([]SendStep, error) {
-	steps, err := automationsteps.Decode(v.Steps)
+	steps, err := automationstep.Decode(v.Steps)
 	if err != nil {
 		return nil, err
 	}
@@ -221,20 +221,20 @@ func SendSteps(v *ent.AutomationVersion) ([]SendStep, error) {
 type Module struct {
 	cipher   *secrets.Cipher
 	renderer *emaildoc.Renderer
-	out      *outbound.Module
-	life     *drafts.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
+	out      *outboundmessages.Module
+	life     *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the clock a report's period ends by.
 	now func() time.Time
 }
 
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
-// opens the transaction of each move of the definition (internal/domain/content/drafts); the
+// opens the transaction of each move of the definition (internal/domain/content/versioneddefinition); the
 // renderer builds an email step's body from its document; out is Outbound send, whose Send route
 // Publish asks whether the Automation's email steps can send.
-func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outbound.Module) *Module {
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module) *Module {
 	m := &Module{cipher: cipher, renderer: renderer, out: out, now: time.Now}
-	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
+	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
 		NothingToPublish: ErrNothingToPublish,
@@ -255,12 +255,12 @@ func (m *Module) WithClock(now func() time.Time) *Module {
 // the Template rules): a step with a document and a body is refused, and a document that cannot
 // be rendered refuses the whole save, naming the step (1-based). A step with no document is
 // left as it is, so a body-only write stores no document.
-func (m *Module) build(ctx context.Context, steps []automationsteps.Step) ([]automationsteps.Step, error) {
-	out := make([]automationsteps.Step, len(steps))
+func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]automationstep.Step, error) {
+	out := make([]automationstep.Step, len(steps))
 	copy(out, steps)
 	for i := range out {
 		s := out[i]
-		if s.Type != automationsteps.Email || len(s.Doc) == 0 {
+		if s.Type != automationstep.Email || len(s.Doc) == 0 {
 			continue
 		}
 		var body *string
@@ -390,7 +390,7 @@ type CreateInput struct {
 	// nil is none.
 	ExitEvents []string
 	GoalEvent  *string
-	Steps      []automationsteps.Step
+	Steps      []automationstep.Step
 }
 
 // UpdateInput changes an Automation; nil fields are left alone. The name is the Automation's own;
@@ -402,13 +402,13 @@ type UpdateInput struct {
 	ExitEvents *[]string
 	// GoalEvent sets the goal event, and a clear removes it.
 	GoalEvent patch.Field[string]
-	Steps     *[]automationsteps.Step
+	Steps     *[]automationstep.Step
 }
 
 // LiveAndDraft returns the Automation's live version and its draft, each nil when it has none.
 // The Automations this module returns carry both.
 func LiveAndDraft(a *ent.Automation) (live, draft *ent.AutomationVersion) {
-	return drafts.LiveAndDraft(a)
+	return versioneddefinition.LiveAndDraft(a)
 }
 
 // withVersions loads the live version and the draft of the Automations a query returns.
@@ -447,12 +447,12 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 	if v == nil {
 		return false, nil
 	}
-	steps, err := automationsteps.Decode(v.Steps)
+	steps, err := automationstep.Decode(v.Steps)
 	if err != nil {
 		return false, err
 	}
-	return slices.ContainsFunc(steps, func(st automationsteps.Step) bool {
-		return (st.Type == automationsteps.ApplyTag || st.Type == automationsteps.RemoveTag) && strings.TrimSpace(st.Tag) == name
+	return slices.ContainsFunc(steps, func(st automationstep.Step) bool {
+		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && strings.TrimSpace(st.Tag) == name
 	}), nil
 }
 
@@ -485,7 +485,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 }
 
 // Update renames the Automation and writes its definition to the draft (ADR 0065,
-// internal/domain/content/drafts): the fields left out keep the draft's, or the live version's when
+// internal/domain/content/versioneddefinition): the fields left out keep the draft's, or the live version's when
 // there is no draft. The live version is never rewritten: the first edit above it creates the
 // draft, the next ones rewrite the draft in place. A definition equal to the draft's (or, with no
 // draft, the live version's) stores nothing. An edit of the Trigger, exit or goal events checks the
@@ -515,7 +515,7 @@ type edit struct {
 	trigger *string
 	exits   *[]string
 	goal    patch.Field[string]
-	steps   *[]automationsteps.Step
+	steps   *[]automationstep.Step
 }
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
@@ -528,7 +528,7 @@ type definition struct {
 	steps   string
 }
 
-// versioned is the Automation's part of the lifecycle (drafts.Definition).
+// versioned is the Automation's part of the lifecycle (versioneddefinition.Definition).
 type versioned struct{ m *Module }
 
 func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.AutomationVersion] {
@@ -541,10 +541,10 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
 	def := definition{exits: []string{}, steps: "[]"}
-	var stored []automationsteps.Step
+	var stored []automationstep.Step
 	if base != nil {
 		var err error
-		if stored, err = automationsteps.Decode(base.Steps); err != nil {
+		if stored, err = automationstep.Decode(base.Steps); err != nil {
 			return definition{}, err
 		}
 		if def, err = canonical(base); err != nil {
@@ -590,7 +590,7 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 // canonical is the definition a version holds, its steps in the form Encode writes them, so that
 // an unchanged edit compares equal whatever wrote the stored JSON.
 func canonical(v *ent.AutomationVersion) (definition, error) {
-	stored, err := automationsteps.Decode(v.Steps)
+	stored, err := automationstep.Decode(v.Steps)
 	if err != nil {
 		return definition{}, err
 	}
@@ -635,7 +635,7 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 
 // Publishable checks the Trigger, exit and goal events of the version going live again, and the
 // Integration of each of its send steps must still be kept. Publish arms every send step (ADR
-// 0081), so the version is refused with outbound.ErrRouteHeld while the Send route of any of them,
+// 0081), so the version is refused with outboundmessages.ErrRouteHeld while the Send route of any of them,
 // on the step's Channel through the Integration it names (or that Channel's default), cannot send:
 // an edit may name such an Integration, only Publish is refused, and a route that stops sending
 // after it holds the sends at that step instead. A Telegram step whose text, as written, is over
@@ -650,7 +650,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	}
 	for i := range sends {
 		st := &sends[i]
-		if st.Step.Type != automationsteps.Telegram {
+		if st.Step.Type != automationstep.Telegram {
 			continue
 		}
 		if err := telegramrender.CheckWritten(st.Step.Text, st.Step.ImageURL != ""); err != nil {
@@ -713,7 +713,7 @@ func Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 func (versioned) Editable(*ent.Automation) error { return nil }
 
 // Archivable refuses to archive an Automation while it is Live use (ADR 0099): an active Rule
-// enrolls Contacts in it through its live version, or it has active Enrollments. The *inuse.Error
+// enrolls Contacts in it through its live version, or it has active Enrollments. The *liveuse.Error
 // names them. A Rule that is not active does not hold it: its Publish refuses an archived
 // Automation.
 func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
@@ -722,7 +722,7 @@ func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automati
 		return err
 	}
 	if len(enrolling) > 0 {
-		return &inuse.Error{What: inuse.SubjectAutomation, Users: inuse.Rules(enrolling)}
+		return &liveuse.Error{What: liveuse.SubjectAutomation, Users: liveuse.Rules(enrolling)}
 	}
 	active, err := ts.AutomationRun().Query().
 		Where(automationrun.AutomationID(a.ID), automationrun.StatusEQ(automationrun.StatusActive)).
@@ -731,7 +731,7 @@ func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automati
 		return err
 	}
 	if active > 0 {
-		return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(a.ID, a.Name, active)}}
+		return &liveuse.Error{What: liveuse.SubjectAutomation, Users: []liveuse.User{liveuse.Enrollments(a.ID, a.Name, active)}}
 	}
 	return nil
 }
@@ -761,11 +761,11 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// Archive puts an Automation aside (ADR 0100, internal/domain/content/drafts): it leaves the lists
+// Archive puts an Automation aside (ADR 0100, internal/domain/content/versioneddefinition): it leaves the lists
 // and enrolls nobody, and its Enrollments stay. An Automation is archived, never deleted, a
 // never-published one too. Archive also makes the Automation inactive, so Unarchive never re-arms
 // it without a Publish. An Automation with active Enrollments, or one an active Rule enrolls
-// Contacts in, is refused with an *inuse.Error naming them. Archiving an archived Automation
+// Contacts in, is refused with a *liveuse.Error naming them. Archiving an archived Automation
 // changes nothing. It returns the Automation.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Archive(ctx, s, id)
@@ -777,12 +777,12 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.A
 	return m.life.Unarchive(ctx, s, id)
 }
 
-// Publish makes the draft live and the Automation active (internal/domain/content/drafts): new
+// Publish makes the draft live and the Automation active (internal/domain/content/versioneddefinition): new
 // Enrollments begin on the draft's definition, and the old live version stays as history; the
 // Enrollments already on it finish there. With no draft it makes an inactive live version active
 // again and leaves an active one as it is; with neither it is refused. The Trigger, exit and goal
 // events of the version going live are checked again, and the Integration of each send step must
-// still be kept and its Send route able to send (outbound.ErrRouteHeld). Publish is send-class (ADR
+// still be kept and its Send route able to send (outboundmessages.ErrRouteHeld). Publish is send-class (ADR
 // 0065): the surfaces gate it by the publish scope. An archived Automation is unarchived before it
 // is published: ErrArchived.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {

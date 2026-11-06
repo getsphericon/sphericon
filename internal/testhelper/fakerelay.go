@@ -8,7 +8,7 @@ import (
 )
 
 // FakeRelayRanges is the source of the iCloud Private Relay list a test scripts, so no test
-// reaches Apple (machine.Source). It publishes an empty list until a test says otherwise.
+// reaches Apple (privaterelayranges.Source). It publishes an empty list until a test says otherwise.
 type FakeRelayRanges struct {
 	mu   sync.Mutex
 	body string
@@ -29,7 +29,7 @@ func (f *FakeRelayRanges) Fail(err error) {
 	f.err = err
 }
 
-// Fetch implements machine.Source.
+// Fetch implements privaterelayranges.Source.
 func (f *FakeRelayRanges) Fetch(context.Context) (io.ReadCloser, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

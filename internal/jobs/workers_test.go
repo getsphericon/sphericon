@@ -37,7 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -726,7 +726,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints")
 	require.NoError(t, err)
 	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
-	assert.Equal(t, outbound.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
+	assert.Equal(t, outboundmessages.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
 }
 
 func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {

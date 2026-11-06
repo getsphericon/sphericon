@@ -22,8 +22,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
@@ -147,7 +147,7 @@ func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *
 // UseCase executes the steps of Enrollments.
 type UseCase struct {
 	bus   *events.Bus
-	out   *outbound.Module
+	out   *outboundmessages.Module
 	fence automations.Fencer
 	now   func() time.Time
 }
@@ -162,7 +162,7 @@ func WithClock(now func() time.Time) Option { return func(m *UseCase) { m.now = 
 // New builds the use case. The bus runs a move and the job that follows it in one transaction;
 // out sends an email step and acts as the `system` actor for a tag step; fence orders a send
 // against an exit of the Enrollment.
-func New(bus *events.Bus, out *outbound.Module, fence automations.Fencer, opts ...Option) *UseCase {
+func New(bus *events.Bus, out *outboundmessages.Module, fence automations.Fencer, opts ...Option) *UseCase {
 	m := &UseCase{bus: bus, out: out, fence: fence, now: time.Now}
 	for _, o := range opts {
 		o(m)
@@ -204,7 +204,7 @@ func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int
 	if err != nil {
 		return fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
 	}
-	steps, err := automationsteps.Decode(version.Steps)
+	steps, err := automationstep.Decode(version.Steps)
 	if err != nil {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("automation %d version %d steps: %w", a.ID, version.Version, err))
 	}
@@ -217,11 +217,11 @@ func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int
 	}
 
 	switch st := steps[step]; st.Type {
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		resume := m.now().Add(time.Duration(st.Seconds) * time.Second)
 		return m.advance(ctx, s, run.ID, step, move{resumeAt: &resume})
 
-	case automationsteps.ApplyTag, automationsteps.RemoveTag:
+	case automationstep.ApplyTag, automationstep.RemoveTag:
 		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. It
 		// writes the Contact's row, so it locks the Contact before it moves the Enrollment, in
 		// the order an exit takes them (automations.LockContact, #811). The move comes before
@@ -229,14 +229,14 @@ func (m *UseCase) Step(ctx context.Context, s *ent.Scoped, runID int64, step int
 		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
 		return m.advance(ctx, s, run.ID, step, move{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
 			sys := m.out.AsSystem(ts)
-			if st.Type == automationsteps.ApplyTag {
+			if st.Type == automationstep.ApplyTag {
 				_, err := contacts.ApplyTagIn(ctx, sys, pub, run.ContactID, st.Tag)
 				return err
 			}
 			return contacts.RemoveTagIn(ctx, sys, pub, run.ContactID, st.Tag)
 		}})
 
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
 		// the Enrollment on through ExecuteHTTP.
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
@@ -268,10 +268,10 @@ func (m *UseCase) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	}
 	// The send is fenced against an exit (Fencer): it starts only on an Enrollment that is
 	// still active and an exit waits for it, so nothing is sent after an exit.
-	var res outbound.Result
+	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, st.Index, st.Step.IntegrationID, c, content))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, st.Index, st.Step.IntegrationID, c, content))
 		return sendErr
 	})
 	if automations.Stale(err) {
@@ -286,11 +286,11 @@ func (m *UseCase) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 		return m.requeue(ctx, s, run.ID, st.Index, m.now().Add(retry.After))
 	}
 	switch res.Outcome {
-	case outbound.Sent:
+	case outboundmessages.Sent:
 		// A crash between the send and this move replays the recorded Sent on retry, so the
 		// step never sends twice.
 		return m.advance(ctx, s, run.ID, st.Index, move{})
-	case outbound.Skipped:
+	case outboundmessages.Skipped:
 		if res.Reason == eligibility.ReasonUnsubscribedSource {
 			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
 			// whichever Channel it came (ADR 0081).
@@ -301,7 +301,7 @@ func (m *UseCase) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the
 		// sequence goes on with its next step, so one Channel's absence never ends it.
 		return m.advance(ctx, s, run.ID, st.Index, move{})
-	default: // outbound.Failed
+	default: // outboundmessages.Failed
 		if res.MessageOnly() {
 			// The provider refused this one message (an invalid number, an answer that concerns no
 			// one else): it is recorded Failed, and the sequence goes on (ADR 0079).

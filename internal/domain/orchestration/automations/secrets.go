@@ -7,7 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -44,12 +44,12 @@ func (s *Secrets) Reencrypt(ctx context.Context, cipher *secrets.Cipher) ([]secr
 // rewrapSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
 func rewrapSteps(cipher *secrets.Cipher, stored string) (sealed string, changed bool, err error) {
-	steps, err := automationsteps.Decode(stored)
+	steps, err := automationstep.Decode(stored)
 	if err != nil {
 		return "", false, err
 	}
 	for i := range steps {
-		if steps[i].Type != automationsteps.HTTP {
+		if steps[i].Type != automationstep.HTTP {
 			continue
 		}
 		did, err := httpcall.Rewrap(cipher, &steps[i].URL, &steps[i].Secret, steps[i].Headers)

@@ -9,7 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -32,7 +32,7 @@ func refusal(err error) (int, *siteapi.ProblemDetails, bool) {
 		// An unknown Workspace and one the caller is not a member of read the same.
 		return http.StatusNotFound, Body(http.StatusNotFound, "workspace not found"), true
 	}
-	if used, ok := errors.AsType[*inuse.Error](err); ok {
+	if used, ok := errors.AsType[*liveuse.Error](err); ok {
 		return http.StatusConflict, inUseBody(used), true
 	}
 	// A refused User deletion: its answer always lists the Workspaces the User solely owns.
@@ -120,9 +120,9 @@ func fieldBody(status int, field, detail string) *siteapi.ProblemDetails {
 
 // inUseBody is the problem of a removal refused because live work uses the row (ADR 0049):
 // `usedBy` names the users, with a count only for an entry that stands for several rows.
-func inUseBody(e *inuse.Error) *siteapi.ProblemDetails {
+func inUseBody(e *liveuse.Error) *siteapi.ProblemDetails {
 	p := Body(http.StatusConflict, e.Error())
-	p.UsedBy = lo.Map(e.Users, func(u inuse.User, _ int) siteapi.UsedBy {
+	p.UsedBy = lo.Map(e.Users, func(u liveuse.User, _ int) siteapi.UsedBy {
 		by := siteapi.UsedBy{Kind: mapper.UsedByKind(u.Kind), ID: siteapi.EntityId(u.ID), Name: u.Name}
 		if u.Count > 0 {
 			by.Count = siteapi.NewOptInt32(narrow.Int32(u.Count))

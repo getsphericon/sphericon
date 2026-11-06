@@ -543,7 +543,7 @@ run = [
 ["generate:mocks"]
 description = "Go interfaces -> test mocks (moq, *_gen_test.go next to the tests that use them)"
 run = [
-  "go tool moq -out internal/jobs/mocks_gen_test.go -pkg jobs_test ./internal/domain/sending/outbound Senders",
+  "go tool moq -out internal/jobs/mocks_gen_test.go -pkg jobs_test ./internal/domain/sending/outboundmessages Senders",
   "go tool moq -out internal/infra/messaging/mocks_gen_test.go -pkg messaging_test ./internal/infra/messaging EmailSender",
 ]
 

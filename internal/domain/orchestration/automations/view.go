@@ -3,7 +3,7 @@ package automations
 import (
 	"encoding/json"
 
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -11,7 +11,7 @@ import (
 // another kind carries is absent rather than empty. An HTTP step is masked: its URL, header values
 // and signing secret never leave the server, only the header names and whether a secret is set.
 type StepView struct {
-	Type          automationsteps.Kind
+	Type          automationstep.Kind
 	Subject, Body *string
 	// Text is a Telegram or an SMS step's message; ImageURL, Buttons, LinkPreview and
 	// UnsubscribeButton the rest of a Telegram step's content (LinkPreview is set, true by default,
@@ -46,7 +46,7 @@ type HeaderName struct {
 // Views decodes a stored definition into the views of its steps. A definition that does not
 // decode shows no steps rather than an error.
 func Views(definition string) []StepView {
-	stored, err := automationsteps.Decode(definition)
+	stored, err := automationstep.Decode(definition)
 	if err != nil {
 		return nil
 	}
@@ -57,14 +57,14 @@ func Views(definition string) []StepView {
 	return views
 }
 
-func viewOf(s *automationsteps.Step) StepView {
+func viewOf(s *automationstep.Step) StepView {
 	v := StepView{Type: s.Type}
 	switch s.Type {
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		v.Seconds = &s.Seconds
-	case automationsteps.ApplyTag, automationsteps.RemoveTag:
+	case automationstep.ApplyTag, automationstep.RemoveTag:
 		v.Tag = &s.Tag
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		v.ID = &s.ID
 		v.Body = &s.Body
 		v.HasSecret = new(s.Secret != "")
@@ -72,7 +72,7 @@ func viewOf(s *automationsteps.Step) StepView {
 		for i, h := range s.Headers {
 			v.Headers[i] = HeaderName{Name: h.Name}
 		}
-	case automationsteps.Telegram:
+	case automationstep.Telegram:
 		v.IntegrationID = s.IntegrationID
 		v.Text = &s.Text
 		if s.ImageURL != "" {
@@ -83,11 +83,11 @@ func viewOf(s *automationsteps.Step) StepView {
 		if s.UnsubscribeButton != "" {
 			v.UnsubscribeButton = &s.UnsubscribeButton
 		}
-	case automationsteps.SMS:
+	case automationstep.SMS:
 		v.IntegrationID = s.IntegrationID
 		v.Text = &s.Text
 		v.LinkTracking = new(s.TracksLinks())
-	case automationsteps.Email:
+	case automationstep.Email:
 		v.IntegrationID = s.IntegrationID
 		v.Subject = &s.Subject
 		v.Body = &s.Body

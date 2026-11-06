@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
@@ -32,7 +32,7 @@ func TestQueueingWorkNeedsNoJobClient(t *testing.T) {
 	require.NoError(t, err)
 	_, err = do.Invoke[*bindings.Module](injector)
 	require.NoError(t, err)
-	_, err = do.Invoke[*outbound.Module](injector)
+	_, err = do.Invoke[*outboundmessages.Module](injector)
 	require.NoError(t, err)
 
 	for _, s := range injector.ListInvokedServices() {

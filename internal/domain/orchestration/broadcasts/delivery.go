@@ -9,19 +9,19 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
-// HeldError reports that Outbound send put the source on hold (see outbound.Hold*).
+// HeldError reports that Outbound send put the source on hold (see outboundmessages.Hold*).
 // Nothing was consumed: the caller defers the same work.
 type HeldError struct{ Reason string }
 
 func (e *HeldError) Error() string { return "send held: " + e.Reason }
 
-// DeferredError reports that Outbound send found a send limit spent (outbound.Deferral): the
+// DeferredError reports that Outbound send found a send limit spent (outboundmessages.Deferral): the
 // Integration's Provider limit, the Workspace's Send cap or the provider's own. Nothing was
 // consumed: the caller retries the same work after Delay.
 type DeferredError struct {
@@ -39,11 +39,11 @@ func (e *DeferredError) Error() string { return "send deferred: " + string(e.Cau
 // delivery state of its own: how its send ended is its Outbound message's (ADR 0015), and it is
 // pending until then. It holds no client: every call receives the Workspace-scoped client.
 type Delivery struct {
-	out *outbound.Module
+	out *outboundmessages.Module
 }
 
 // NewDelivery builds the delivery over the Outbound send module.
-func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
+func NewDelivery(out *outboundmessages.Module) *Delivery { return &Delivery{out: out} }
 
 // SendRecipient hands one recipient's email to Outbound send, then settles the Broadcast if
 // that was its last pending recipient. It is idempotent: a recipient already decided is left
@@ -51,7 +51,7 @@ func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
 // committed send replay the recorded result.
 //
 // A returned error is for the adapter to retry: *HeldError (the source is on hold),
-// *DeferredError (a send limit is spent), outbound.ErrInProgress (a live claim) or a
+// *DeferredError (a send limit is spent), outboundmessages.ErrInProgress (a live claim) or a
 // fault; none consumed the recipient.
 func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID int64) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
@@ -93,7 +93,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 		return d.fail(ctx, s, rec, errNoEmail)
 	}
 
-	req, err := outbound.BroadcastRecipient(b, rec, c)
+	req, err := outboundmessages.BroadcastRecipient(b, rec, c)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 var errNoEmail = errors.New("contact has no email")
 
 // fail ends a recipient's send as Failed with cause: Outbound send records the one message (a
-// send that already went out stays sent). outbound.ErrInProgress is a live claim: the caller
+// send that already went out stays sent). outboundmessages.ErrInProgress is a live claim: the caller
 // waits and asks again.
 func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) error {
 	res, err := d.out.FailRecipient(ctx, s, rec, cause)
@@ -123,8 +123,8 @@ func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRe
 
 // settle takes what a decided Outbound outcome means for the Broadcast. The message already
 // holds the recipient's outcome; a send that went through lifts the Broadcast's hold, if any.
-func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outbound.Result) error {
-	if res.Outcome != outbound.Sent {
+func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outboundmessages.Result) error {
+	if res.Outcome != outboundmessages.Sent {
 		return nil
 	}
 	return clearHold(ctx, s, rec.BroadcastID)
@@ -132,8 +132,8 @@ func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.Broadcast
 
 // retryLater is the recipient's turn when Outbound send wants a retry (a Hold or a
 // Deferral): nothing was consumed, so the recipient stays pending.
-func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rec *ent.BroadcastRecipient, res outbound.Result) error {
-	if res.Outcome == outbound.Held {
+func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rec *ent.BroadcastRecipient, res outboundmessages.Result) error {
+	if res.Outcome == outboundmessages.Held {
 		// Best effort: the hold is enforced by the send path and the caller retries on the
 		// HeldError either way, so a failed write only leaves the reason unrecorded.
 		if herr := setHold(ctx, s, b.ID, holdreason.Reason(res.Reason)); herr != nil {
@@ -173,7 +173,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 // reached the provider stays sent), and the Broadcast settles if none is left pending. A
 // recipient already decided keeps its outcome.
 //
-// outbound.ErrInProgress means another attempt still holds a live claim and may yet reach the
+// outboundmessages.ErrInProgress means another attempt still holds a live claim and may yet reach the
 // provider: nothing is failed, and the adapter waits out the lease and gives up again.
 func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
@@ -190,7 +190,7 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 }
 
 // setHold records why a Broadcast is held: the reason Outbound send held it for, a
-// Workspace-level one (holds.Reason*) or one of its source's own (outbound.Hold*). The update
+// Workspace-level one (holds.Reason*) or one of its source's own (outboundmessages.Hold*). The update
 // refuses a reason the column does not declare. With clearHold it is the only writer of the hold
 // reason.
 func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason holdreason.Reason) error {
@@ -207,5 +207,5 @@ func clearHold(ctx context.Context, s *ent.Scoped, broadcastID int64) error {
 func IsRetryLater(err error) bool {
 	var held *HeldError
 	var deferred *DeferredError
-	return errors.As(err, &held) || errors.As(err, &deferred) || errors.Is(err, outbound.ErrInProgress)
+	return errors.As(err, &held) || errors.As(err, &deferred) || errors.Is(err, outboundmessages.ErrInProgress)
 }

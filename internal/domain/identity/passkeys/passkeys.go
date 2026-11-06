@@ -3,7 +3,7 @@
 // renaming and removing one. A Passkey belongs to the User, not a Workspace, so the package works
 // on the raw *ent.Client. The User's own rows (the session epoch a removal bumps) are written
 // through internal/domain/identity/users; clearing every Passkey of a User is part of a Second factor reset, the
-// use case internal/usecase/secondfactorenrolment.
+// use case internal/usecase/secondfactor.
 package passkeys
 
 import (
@@ -363,7 +363,7 @@ func HeldIn(ctx context.Context, tx *ent.Client, userID int64) (bool, error) {
 }
 
 // DeleteAllIn deletes every Passkey of the User on the transaction tx. Only a Second factor
-// reset calls it (internal/usecase/secondfactorenrolment), which checks who resets first and
+// reset calls it (internal/usecase/secondfactor), which checks who resets first and
 // ends the User's sessions in the same transaction.
 func DeleteAllIn(ctx context.Context, tx *ent.Client, userID int64) error {
 	_, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx)

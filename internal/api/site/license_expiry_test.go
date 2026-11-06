@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
@@ -84,7 +84,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	// Renewal: the same database read under the renewed key, as after a restart.
 	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)
 	require.NoError(t, err)
-	log := audit.NewLog(renewed, env.Bus)
+	log := auditentries.NewLog(renewed, env.Bus)
 	require.True(t, log.Licensed())
 	entries, _, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
 	require.NoError(t, err)

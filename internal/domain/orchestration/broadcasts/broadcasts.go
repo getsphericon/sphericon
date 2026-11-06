@@ -26,7 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -76,13 +76,13 @@ func (SendArgs) Kind() string { return "send_broadcast" }
 type Module struct {
 	bus      *events.Bus
 	renderer *emaildoc.Renderer
-	out      *outbound.Module
+	out      *outboundmessages.Module
 }
 
 // New builds the module. The bus runs a claim and its send job in one transaction; the renderer
 // builds a body from its document; out is Outbound send, whose Send route Schedule asks whether the
 // Broadcast can send and the progress estimate paces by.
-func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outbound.Module) *Module {
+func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module) *Module {
 	return &Module{bus: bus, renderer: renderer, out: out}
 }
 
@@ -95,7 +95,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadc
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
 // job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
-// outbound.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
+// outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
 func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, when time.Time) (*ent.Broadcast, error) {
 	return m.claim(ctx, s, id, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }

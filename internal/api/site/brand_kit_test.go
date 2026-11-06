@@ -81,7 +81,7 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	for _, tpl := range starters {
 		names = append(names, tpl.Name)
 		// The brand is written into the document; what the export makes of it is
-		// internal/domain/content/brandkit's.
+		// internal/domain/content/brandkits's.
 		assert.NotEmpty(t, tpl.Doc, "%s is written as a document", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "#f0f4f8", "%s carries the background", tpl.Name)
 		assert.Contains(t, string(tpl.Doc), "Verdana, sans-serif", "%s carries the body font", tpl.Name)

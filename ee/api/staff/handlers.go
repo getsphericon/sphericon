@@ -1,7 +1,7 @@
 // Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
 // console's Enterprise sections under /staff, with the core Staff member's session check
 // (internal/domain/identity/staffmembers), and the service endpoints under /service, with the Service credential's.
-// A handler receives the request, calls the use case ee/usecase/staff and maps what it returns; the
+// A handler receives the request, calls the use case ee/usecase/staffconsole and maps what it returns; the
 // Edition (ee) builds the surfaces and the composition root mounts them.
 //
 // Governed by ee/LICENSE, not the AGPL.
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
-	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
+	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -32,7 +32,7 @@ type Surface struct {
 }
 
 // NewSurface builds the surface.
-func NewSurface(m *eestaff.Module, s *staffmembers.Sessions) *Surface {
+func NewSurface(m *staffconsole.UseCase, s *staffmembers.Sessions) *Surface {
 	return &Surface{handlers: &Handlers{module: m}, security: &SecurityHandler{sessions: s}}
 }
 
@@ -45,7 +45,7 @@ func (s *Surface) Server(opts ...staffeeapi.ServerOption) (http.Handler, error) 
 
 // Handlers implements staffeeapi.Handler.
 type Handlers struct {
-	module *eestaff.Module
+	module *staffconsole.UseCase
 }
 
 var _ staffeeapi.Handler = (*Handlers)(nil)
@@ -78,10 +78,10 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 }
 
 // review is the review state the list is filtered by; none narrows it to no state.
-func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
+func review(p staffeeapi.OptStaffWorkspaceReview) abusedetector.Review {
 	v, ok := p.Get()
 	if !ok {
-		return abuse.ReviewNone
+		return abusedetector.ReviewNone
 	}
 	return staffMapper.ReviewIn(v)
 }
@@ -107,7 +107,7 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 	res := staffMapper.WorkspaceDetailToResource(w)
 	res.Holds = staffMapper.HoldsToResources(active)
 	res.Abuse = staffMapper.AbuseToResource(w)
-	if breach.Tier != abuse.TierNone {
+	if breach.Tier != abusedetector.TierNone {
 		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d)

@@ -13,10 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -46,7 +46,7 @@ func TestADeleteOfAnIntegrationQueuedFirstRefusesTheScheduleThroughIt(t *testing
 	errs := testhelper.QueuedBehind(t, r.sqlDB, testhelper.HoldWorkspaceLock(t, r.bus, r.s), r.remove, r.schedule)
 
 	require.NoError(t, errs["delete"])
-	require.ErrorIs(t, errs["schedule"], outbound.ErrRouteHeld)
+	require.ErrorIs(t, errs["schedule"], outboundmessages.ErrRouteHeld)
 	assert.Equal(t, broadcast.StatusDraft, r.broadcast(t).Status)
 }
 
@@ -57,9 +57,9 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheIntegrationItSendsThrough(t *t
 
 	require.NoError(t, errs["schedule"])
 	b := r.broadcast(t)
-	var used *inuse.Error
+	var used *liveuse.Error
 	require.ErrorAs(t, errs["delete"], &used)
-	assert.Equal(t, []inuse.User{{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}}, used.Users)
+	assert.Equal(t, []liveuse.User{{Kind: liveuse.Broadcast, ID: b.ID, Name: b.Name}}, used.Users)
 	assert.Equal(t, broadcast.StatusScheduled, b.Status)
 }
 
@@ -81,7 +81,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 	s := entclient.New(sqlDB).Scoped(fixtures.AcmeID)
 	bus := events.New(sqlDB, entclient.NewTx)
 	bus.UseJobs(testhelper.AcceptingQueue{})
-	out := outbound.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, tracking.New("test-secret", "http://local"))
+	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, tracking.New("test-secret", "http://local"))
 	sends := broadcasts.New(bus, testhelper.Renderer(), out)
 	deletion := integrationdeletion.New(bus, integrations.New(bus, nil, nil, nil, nil, ""))
 

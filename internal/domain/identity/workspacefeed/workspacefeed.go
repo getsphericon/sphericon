@@ -1,8 +1,8 @@
-// Package workspacefeed keeps the change position behind the service feed of
-// Workspaces (ADR 0009). A Workspace takes the next position whenever it is created,
+// Package workspacefeed keeps the change position behind the Service feed of Workspaces
+// (GLOSSARY "Service feed", ADR 0009). A Workspace takes the next position whenever it is created,
 // an owner is added, removed or transferred, an owner's email or verification
 // changes, or it is deleted, restored or erased (ADR 0043). The service endpoint reads Workspaces in the order of that position
-// (ee/usecase/staff), so what a caller saved as its cursor always names a place in the
+// (ee/usecase/staffconsole), so what a caller saved as its cursor always names a place in the
 // order of changes.
 //
 // Two ent hooks keep it so no write path can forget it. Hook runs on every transaction
@@ -32,7 +32,7 @@ import (
 // LockKey is the advisory lock that makes positions commit in the order they are taken:
 // it is held to the end of the transaction, so a later position never commits first
 // and a reader that passed a position cannot miss a Workspace committed below it. The
-// Users feed (internal/domain/identity/userfeed) takes the same lock: one change moves both feeds, and
+// Users feed (internal/domain/identity/usertombstones) takes the same lock: one change moves both feeds, and
 // two locks taken in either order would deadlock.
 const LockKey = 7_204_001
 

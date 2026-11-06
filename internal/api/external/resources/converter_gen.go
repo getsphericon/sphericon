@@ -23,10 +23,10 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	brandkit "github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	auditapi "github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -78,14 +78,14 @@ func (c *ConverterImpl) ApiTokensToInfos(source []*ent.ApiToken) []external.ApiT
 	}
 	return externalapiApiTokenInfoList
 }
-func (c *ConverterImpl) AuditActorToResource(source auditapi.View) external.AuditActor {
+func (c *ConverterImpl) AuditActorToResource(source auditlog.View) external.AuditActor {
 	var externalapiAuditActor external.AuditActor
 	externalapiAuditActor.Kind = external.AuditActorKind(source.ActorKind)
 	externalapiAuditActor.ID = optNilString(source.ActorID)
 	externalapiAuditActor.Name = optNilString(source.ActorName)
 	return externalapiAuditActor
 }
-func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []external.AuditEntryResource {
+func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []external.AuditEntryResource {
 	var externalapiAuditEntryResourceList []external.AuditEntryResource
 	externalapiAuditEntryResourceList = make([]external.AuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
@@ -93,7 +93,7 @@ func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []extern
 	}
 	return externalapiAuditEntryResourceList
 }
-func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.AuditEntryResource {
+func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) external.AuditEntryResource {
 	var externalapiAuditEntryResource external.AuditEntryResource
 	externalapiAuditEntryResource.ID = external.EntityId(source.ID)
 	externalapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
@@ -106,7 +106,7 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.Audi
 	externalapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return externalapiAuditEntryResource
 }
-func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) external.AuditTarget {
+func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) external.AuditTarget {
 	var externalapiAuditTarget external.AuditTarget
 	externalapiAuditTarget.Type = source.TargetType
 	externalapiAuditTarget.ID = optNilString(source.TargetID)
@@ -242,22 +242,22 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) ex
 	externalapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return externalapiAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) external.AutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) external.AutomationStepType {
 	var externalapiAutomationStepType external.AutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automationstep.ApplyTag:
 		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automationstep.Email:
 		externalapiAutomationStepType = external.AutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		externalapiAutomationStepType = external.AutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automationstep.RemoveTag:
 		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
-	case automationsteps.SMS:
+	case automationstep.SMS:
 		externalapiAutomationStepType = external.AutomationStepTypeSMS
-	case automationsteps.Telegram:
+	case automationstep.Telegram:
 		externalapiAutomationStepType = external.AutomationStepTypeTelegram
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		externalapiAutomationStepType = external.AutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -321,7 +321,7 @@ func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) []exter
 	}
 	return externalapiAutomationResourceList
 }
-func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKitResource {
+func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource
 	externalapiBrandKitResource.Saved = source.Saved
 	externalapiBrandKitResource.AccentColor = source.AccentColor

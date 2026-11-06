@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -107,7 +107,7 @@ func TestSigninAnInvitationForAnotherAddressIsRefusedAndCreatesNothing(t *testin
 	u, err := url.Parse(resp.Header.Get("Location"))
 	require.NoError(t, err)
 	assert.Equal(t, "/invitations/"+token, u.Path, "the person lands back on the Invitation")
-	assert.Equal(t, string(signin.ReasonInvitationEmailMismatch), u.Query().Get("error"))
+	assert.Equal(t, string(signinprovider.ReasonInvitationEmailMismatch), u.Query().Get("error"))
 	assert.NotEqual(t, http.StatusOK, meStatus(t, b), "no session")
 	assert.Zero(t, usersWithEmail(t, env, newcomer.Email), "no User is created")
 	assert.Zero(t, usersWithEmail(t, env, fixtures.InvitationAcmeElsewhereEmail))
@@ -123,7 +123,7 @@ func TestSigninAnInvitationIsRefusedForALinkedIdentityOfAnotherAccount(t *testin
 	resp := signInToAccept(t, fake, b, mary, token)
 
 	require.Equal(t, http.StatusFound, resp.StatusCode)
-	assert.Contains(t, resp.Header.Get("Location"), "error="+string(signin.ReasonInvitationEmailMismatch))
+	assert.Contains(t, resp.Header.Get("Location"), "error="+string(signinprovider.ReasonInvitationEmailMismatch))
 	assert.NotEqual(t, http.StatusOK, meStatus(t, b), "Mary's account is not Oscar's")
 	joined, err := env.DB.Membership.Query().Where(membership.UserID(fixtures.OutsiderOscarID), membership.WorkspaceID(fixtures.AcmeID)).Exist(t.Context())
 	require.NoError(t, err)

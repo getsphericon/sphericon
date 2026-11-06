@@ -17,7 +17,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -33,7 +33,7 @@ import (
 
 // telegramAutomation creates and publishes an Automation triggered on telegram.bound that runs
 // steps, and returns its id.
-func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationsteps.Step) int64 {
+func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationstep.Step) int64 {
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -48,9 +48,9 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 }
 
 // telegramStep is a Telegram step through the bot.
-func telegramStep(bot testhelper.TelegramBot, text string) automationsteps.Step {
+func telegramStep(bot testhelper.TelegramBot, text string) automationstep.Step {
 	id := int64(bot.Integration.ID)
-	return automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: &id, Text: text}
+	return automationstep.Step{Type: automationstep.Telegram, IntegrationID: &id, Text: text}
 }
 
 // runSteps drives the queued steps through the harness's own Outbound module.

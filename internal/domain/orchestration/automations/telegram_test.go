@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -18,8 +18,8 @@ import (
 // The Telegram step's checks (ADR 0081): what Publish refuses and which `telegram.` Events may
 // start, end or complete an Automation.
 
-func telegramVia(id *int64, text string) automationsteps.Step {
-	return automationsteps.Step{Type: automationsteps.Telegram, IntegrationID: id, Text: text}
+func telegramVia(id *int64, text string) automationstep.Step {
+	return automationstep.Step{Type: automationstep.Telegram, IntegrationID: id, Text: text}
 }
 
 func TestPublishIsRefusedForATelegramStepThatCannotSend(t *testing.T) {
@@ -34,13 +34,13 @@ func TestPublishIsRefusedForATelegramStepThatCannotSend(t *testing.T) {
 	for name, integration := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-				Steps: &[]automationsteps.Step{telegramVia(integration, "Hi")},
+				Steps: &[]automationstep.Step{telegramVia(integration, "Hi")},
 			})
 			require.NoError(t, err, "a draft may name it")
 
 			_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
 
-			require.ErrorIs(t, err, outbound.ErrRouteHeld)
+			require.ErrorIs(t, err, outboundmessages.ErrRouteHeld)
 		})
 	}
 }
@@ -50,7 +50,7 @@ func TestPublishIsRefusedForATextOverTheLimitAsWritten(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-		Steps: &[]automationsteps.Step{telegramVia(nil, strings.Repeat("a", 4097))},
+		Steps: &[]automationstep.Step{telegramVia(nil, strings.Repeat("a", 4097))},
 	})
 	require.NoError(t, err, "saving warns, it does not refuse")
 
@@ -67,7 +67,7 @@ func TestATelegramStepNeedsATextThatRenders(t *testing.T) {
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{
-				Steps: &[]automationsteps.Step{telegramVia(nil, text)},
+				Steps: &[]automationstep.Step{telegramVia(nil, text)},
 			})
 
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
@@ -102,7 +102,7 @@ func TestPublishIsRefusedForACaptionOverTheLimitAsWritten(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	step := telegramVia(nil, strings.Repeat("a", 1025))
 	step.ImageURL = "https://cdn.example.com/a.png"
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{step}})
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{step}})
 	require.NoError(t, err, "saving warns, it does not refuse")
 
 	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID)
@@ -115,19 +115,19 @@ func TestATelegramStepRefusesABadImageAndBadButtons(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
-	cases := map[string]func(*automationsteps.Step){
-		"an http image": func(st *automationsteps.Step) { st.ImageURL = "http://cdn.example.com/a.png" },
-		"a blank label": func(st *automationsteps.Step) {
+	cases := map[string]func(*automationstep.Step){
+		"an http image": func(st *automationstep.Step) { st.ImageURL = "http://cdn.example.com/a.png" },
+		"a blank label": func(st *automationstep.Step) {
 			st.Buttons = []telegramrender.Button{{Label: "", URL: "https://x.test"}}
 		},
-		"nine buttons":    func(st *automationsteps.Step) { st.Buttons = make([]telegramrender.Button, 9) },
-		"a relative link": func(st *automationsteps.Step) { st.Buttons = []telegramrender.Button{{Label: "a", URL: "/x"}} },
+		"nine buttons":    func(st *automationstep.Step) { st.Buttons = make([]telegramrender.Button, 9) },
+		"a relative link": func(st *automationstep.Step) { st.Buttons = []telegramrender.Button{{Label: "a", URL: "/x"}} },
 	}
 	for name, edit := range cases {
 		t.Run(name, func(t *testing.T) {
 			step := telegramVia(nil, "Hi")
 			edit(&step)
-			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{step}})
+			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{step}})
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
 		})
 	}

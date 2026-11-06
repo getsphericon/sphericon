@@ -13,8 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -45,28 +45,28 @@ type sms struct{ Ignore }
 // number like a hard bounce, as the same answer at send time does. A report of a text whose Contact
 // was erased records nothing: Erasure dropped the provider's id the report names the text by.
 func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
-	result, action := outbound.ResultDelivered, events.NameSmsDelivered
+	result, action := outboundmessages.ResultDelivered, events.NameSmsDelivered
 	switch n.Kind {
 	case preset.Delivery:
 	case preset.Undelivered:
-		result, action = outbound.ResultUndelivered, events.NameSmsUndelivered
+		result, action = outboundmessages.ResultUndelivered, events.NameSmsUndelivered
 	case preset.Bounce, preset.Complaint, preset.Delay, preset.Drop:
 		return nil // email's kinds: a Preset that names one on sms reports no final state
 	}
-	msg, err := outbound.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
+	msg, err := outboundmessages.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
 	if err != nil {
 		return err
 	}
 	if msg == nil {
 		return tx.deferNotice(ctx, n)
 	}
-	code := lo.Ternary(result == outbound.ResultUndelivered, n.ErrorCode, "")
-	moved, err := outbound.StampFinal(ctx, tx.Scoped, msg.ID, result, code, tx.Now)
+	code := lo.Ternary(result == outboundmessages.ResultUndelivered, n.ErrorCode, "")
+	moved, err := outboundmessages.StampFinal(ctx, tx.Scoped, msg.ID, result, code, tx.Now)
 	if err != nil || !moved || msg.ContactID == nil {
 		return err
 	}
-	if result == outbound.ResultUndelivered && deadNumber(tx.Integration.Provider, code) {
-		err := suppression.Add(ctx, tx.Scoped, suppression.Entry{
+	if result == outboundmessages.ResultUndelivered && deadNumber(tx.Integration.Provider, code) {
+		err := suppressions.Add(ctx, tx.Scoped, suppressions.Entry{
 			Channel: channels.SMS, Destination: msg.Destination, Reason: entsuppression.ReasonBounce,
 			ContactID: *msg.ContactID,
 		})

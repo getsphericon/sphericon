@@ -19,7 +19,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
@@ -220,7 +220,7 @@ func TestATelegramBroadcastCaptionOverTheCaptionLimitFailsThatMessage(t *testing
 	assert.Empty(t, requestsTo(env.Telegram.RequestsOf(telegramtest.SendPhoto), benChat))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLacunaBenID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Equal(t, outbound.ReasonContentTooLong, *msg.Reason)
+	assert.Equal(t, outboundmessages.ReasonContentTooLong, *msg.Reason)
 }
 
 // {{ unsubscribe_url }} in a Broadcast's text opts the chat out of the "broadcasts" source on
@@ -263,9 +263,9 @@ func TestATelegramBroadcastIsHeldWhileItsBotIsRefusedAndResumesWhenTheTokenIsSav
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldProviderRefused, held.Reason)
+	assert.Equal(t, outboundmessages.HoldProviderRefused, held.Reason)
 	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[0]), broadcasts.Pending()).ExistX(ctx))
-	assert.Equal(t, outbound.HoldProviderRefused, string(*env.DB.Broadcast.GetX(ctx, id).HoldReason))
+	assert.Equal(t, outboundmessages.HoldProviderRefused, string(*env.DB.Broadcast.GetX(ctx, id).HoldReason))
 	c := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail)
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.LacunaPublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)

@@ -12,7 +12,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	staff "github.com/getsphericon/sphericon/gen/staff"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
-	inuse "github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	liveuse "github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 )
 
 type ConverterImpl struct{}
@@ -358,18 +358,18 @@ func (c *ConverterImpl) StaffeeUsedByKind(source site.UsedByKind) staffee.UsedBy
 	}
 	return staffeeapiUsedByKind
 }
-func (c *ConverterImpl) UsedByKind(source inuse.Kind) site.UsedByKind {
+func (c *ConverterImpl) UsedByKind(source liveuse.Kind) site.UsedByKind {
 	var siteapiUsedByKind site.UsedByKind
 	switch source {
-	case inuse.Automation:
+	case liveuse.Automation:
 		siteapiUsedByKind = site.UsedByKindAutomation
-	case inuse.Broadcast:
+	case liveuse.Broadcast:
 		siteapiUsedByKind = site.UsedByKindBroadcast
-	case inuse.Enrollment:
+	case liveuse.Enrollment:
 		siteapiUsedByKind = site.UsedByKindEnrollment
-	case inuse.Rule:
+	case liveuse.Rule:
 		siteapiUsedByKind = site.UsedByKindRule
-	case inuse.Segment:
+	case liveuse.Segment:
 		siteapiUsedByKind = site.UsedByKindSegment
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

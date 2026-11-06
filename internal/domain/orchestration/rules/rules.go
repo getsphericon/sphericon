@@ -31,7 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
-	"github.com/getsphericon/sphericon/internal/domain/content/drafts"
+	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -163,15 +163,15 @@ type ActionRunners map[ActionType]Runner
 type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
-	life   *drafts.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
+	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
 }
 
 // New builds the Rules module. The cipher seals an http Action's secrets; the bus runs a Firing
 // and the job that executes it in one transaction, and each move of a Rule's definition
-// (internal/domain/content/drafts).
+// (internal/domain/content/versioneddefinition).
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module {
 	m := &Module{cipher: cipher, bus: bus}
-	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
+	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
 		Archived:         ErrNotFound,
@@ -242,7 +242,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 }
 
 // Update changes a Rule's name, and writes its Trigger events, Condition and Actions to the draft
-// (ADR 0065, internal/domain/content/drafts), validated as Create validates: the live version is
+// (ADR 0065, internal/domain/content/versioneddefinition), validated as Create validates: the live version is
 // never rewritten, so an edit changes what the Rule does only once it is published. The draft is
 // rewritten in place; a Rule with none gets one, the version above the newest. A definition equal
 // to the one it starts from stores nothing. The status is untouched.
@@ -256,7 +256,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return m.life.Edit(ctx, s, id, rename, in)
 }
 
-// versioned is the Rule's part of the lifecycle (drafts.Definition).
+// versioned is the Rule's part of the lifecycle (versioneddefinition.Definition).
 type versioned struct{ m *Module }
 
 func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Rule, ent.RuleVersion] {
@@ -396,7 +396,7 @@ func withTriggers(q *ent.RuleVersionQuery) { q.WithTriggers(byAction) }
 // LiveAndDraft returns the Rule's live version (what it does; nil until first published) and its
 // draft (the unpublished changes above live; nil when there are none), as Get and List load them.
 func LiveAndDraft(r *ent.Rule) (live, draft *ent.RuleVersion) {
-	return drafts.LiveAndDraft(r)
+	return versioneddefinition.LiveAndDraft(r)
 }
 
 // versions are the Rule's live and draft versions that exist.
@@ -406,7 +406,7 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 }
 
 // Delete discards a Rule, whether or not it has fired (ADR 0098, ADR 0100), through
-// internal/domain/content/drafts' Discard: it is deactivated under the lock Publish takes, so it
+// internal/domain/content/versioneddefinition' Discard: it is deactivated under the lock Publish takes, so it
 // never fires again, and it leaves the lists for good with its versions and Firings kept; Get still
 // reads it. Deleting a deleted Rule changes nothing.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {

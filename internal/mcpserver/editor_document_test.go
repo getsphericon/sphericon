@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -73,7 +73,7 @@ func TestMCPEmailSchemaDescribesTheDocumentAnAgentMayWrite(t *testing.T) {
 func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	starters, err := brandkit.New(env.Bus, templates.New(testhelper.Renderer())).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
+	starters, err := brandkits.New(env.Bus, emailtemplates.New(testhelper.Renderer())).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
 	require.NoError(t, err)
 	starter := starters[0]
 	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, "templates:read", "templates:write"))

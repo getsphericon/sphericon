@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -29,7 +29,7 @@ func TestScheduleIsRefusedWhileTheBroadcastsIntegrationCannotSend(t *testing.T) 
 
 	_, err = m.Schedule(ctx, s, fixtures.BroadcastDraftID, time.Now().Add(time.Hour))
 
-	require.ErrorIs(t, err, outbound.ErrRouteHeld)
+	require.ErrorIs(t, err, outboundmessages.ErrRouteHeld)
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, got.Status)
 	assert.Nil(t, got.ScheduledAt)
@@ -46,10 +46,10 @@ func TestPlanHoldsABroadcastWhoseNamedIntegrationCannotSend(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldNoIntegration, held.Reason)
+	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	require.NotNil(t, b.HoldReason)
-	assert.EqualValues(t, outbound.HoldNoIntegration, *b.HoldReason)
+	assert.EqualValues(t, outboundmessages.HoldNoIntegration, *b.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
 	assert.Empty(t, d.box.sent)
 }
@@ -70,7 +70,7 @@ func TestPaceHoldsABroadcastWhoseRouteCannotSend(t *testing.T) {
 	assert.Equal(t, route.Hold, held.Reason, "the pace holds for the reason the route gives")
 	hold := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).HoldReason
 	require.NotNil(t, hold)
-	assert.EqualValues(t, outbound.HoldNoIntegration, *hold)
+	assert.EqualValues(t, outboundmessages.HoldNoIntegration, *hold)
 }
 
 // A sending Broadcast whose route cannot send has no estimate: it is blocked, not busy.

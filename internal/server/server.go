@@ -36,7 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
-	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
@@ -54,7 +54,7 @@ import (
 // the site, external and collect handlers get none (ADR 0017). schema answers the development
 // schema guard (SchemaGuard). limiter is the process's request budgets, shared with the
 // internal listener.
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *machine.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site *apisite.Deps, detector *privaterelayranges.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 

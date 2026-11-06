@@ -9,7 +9,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -21,7 +21,7 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 		return nil, &problem.Error{Status: http.StatusPaymentRequired, Detail: "the audit log needs an Enterprise license"}
 	}
 
-	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	cursor, err := auditlog.Page(params.Cursor.Or(""))
 	limit := int(params.Limit.Value)
 	if err != nil {
 		return nil, err
@@ -42,9 +42,9 @@ func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.Audi
 	if err != nil {
 		return nil, err
 	}
-	out := &externalapi.AuditEntryList{Items: mapper.AuditEntriesToResources(auditapi.ViewsOf(rows))}
+	out := &externalapi.AuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(rows))}
 	if next > 0 {
-		out.NextCursor = externalapi.NewOptNilString(auditapi.NextCursor(next))
+		out.NextCursor = externalapi.NewOptNilString(auditlog.NextCursor(next))
 	}
 	return out, nil
 }

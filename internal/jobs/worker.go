@@ -20,8 +20,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/sending/machine"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
@@ -68,7 +68,7 @@ type Deps struct {
 	// Workspace, and of the instance-wide prunes.
 	Ent      *ent.Client
 	Bus      *events.Bus
-	Outbound *outbound.Module
+	Outbound *outboundmessages.Module
 	Cipher   *secrets.Cipher
 	// SystemSender is the platform's own sender of the account mails.
 	SystemSender messaging.EmailSender
@@ -84,7 +84,7 @@ type Deps struct {
 	StepExecution   *stepexecution.UseCase
 	JoinDomains     *joindomains.Module
 	TrackingDomains *trackingdomains.Module
-	Machine         *machine.Detector
+	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock; nil is time.Now.
 	Clock func() time.Time
 	// AppURL is the public origin of the links in account emails (reset, verify, change).

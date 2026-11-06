@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/optout"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -52,7 +52,7 @@ func (u *UseCase) OptOut(ctx context.Context, s *ent.Scoped, channel channels.Ch
 // atomically and idempotently. When the destination is a Contact of the Workspace
 // the event is attributed to it. The source is validated first.
 func (u *UseCase) Unsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
-	dest := suppression.NormalizeDestination(destination)
+	dest := suppressions.NormalizeDestination(destination)
 	if dest == "" {
 		return nil, unsubscribes.ErrDestinationEmpty
 	}

@@ -11,7 +11,7 @@ import (
 // The User's TOTP Second factor (ADR 0020) is three columns of the User row: the sealed secret,
 // the moment it was confirmed and the last time step accepted. These are their owner's writes.
 // The checks around them (a code, an active or a pending factor) live in the use case
-// internal/usecase/secondfactorenrolment, the only caller of the writes below; the session epoch
+// internal/usecase/secondfactor, the only caller of the writes below; the session epoch
 // they bump ends every session of the User.
 
 // Issuer names the Instance to a User's authenticators: the TOTP app that holds the Second

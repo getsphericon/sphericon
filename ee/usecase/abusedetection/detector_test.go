@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	"github.com/getsphericon/sphericon/ent/auditentry"
@@ -58,7 +58,7 @@ const (
 	unjudgedDay   = 2  // Monarch, suspended, and Bluth, in its deletion window: both over the freeze limit
 )
 
-var limits = abuse.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBounceBP: 1000, FreezeComplaintBP: 1000, FreezeBounceBP: 2000}
+var limits = abusedetector.Limits{VolumeFloor: 20, WarnComplaintBP: 500, WarnBounceBP: 1000, FreezeComplaintBP: 1000, FreezeBounceBP: 2000}
 
 func at(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
 
@@ -163,7 +163,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 	summary, err := d.Run(t.Context(), at(noDeliveryDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abuse.TierNone, breach.Tier)
+	assert.Equal(t, abusedetector.TierNone, breach.Tier)
 	assert.Equal(t, abusedetection.Summary{}, summary)
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
@@ -338,8 +338,8 @@ func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	breach, err := d.Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abuse.TierWarn, breach.Tier)
-	assert.Equal(t, abuse.Complaint, breach.Metric)
+	assert.Equal(t, abusedetector.TierWarn, breach.Tier)
+	assert.Equal(t, abusedetector.Complaint, breach.Metric)
 	assert.Equal(t, "mail.vandelay.test", breach.Domain)
 }
 

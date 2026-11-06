@@ -1,6 +1,6 @@
 package users
 
-import "github.com/getsphericon/sphericon/internal/domain/identity/signin"
+import "github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 
 // SigninFacts is everything the sign-in decision of a provider callback rests on, read
 // before it is made (ADR 0048). The decision is a pure function of them, so every branch is
@@ -10,7 +10,7 @@ type SigninFacts struct {
 	// KnownIdentity: a Linked identity with the provider's subject exists.
 	KnownIdentity bool
 	// TrustFailure is why the provider's proof of the email is not accepted ("" when it is).
-	TrustFailure signin.Reason
+	TrustFailure signinprovider.Reason
 	// EmailHolder is the User that already holds the provider's email, nil when none does.
 	EmailHolder *EmailHolder
 	// SignupItemsInEffect: the Instance asks Sign-up items at sign-up (ADR 0062).
@@ -49,7 +49,7 @@ const (
 // SigninDecision is an outcome with the Reason of a refusal.
 type SigninDecision struct {
 	Outcome SigninOutcome
-	Reason  signin.Reason
+	Reason  signinprovider.Reason
 }
 
 // DecideSignin is the one sign-in decision of the provider callback. A Linked identity

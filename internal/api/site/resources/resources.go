@@ -29,17 +29,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -58,7 +58,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -207,13 +207,13 @@ type Converter interface {
 	// goverter:ignore McpUrl
 	// goverter:ignore TrackerUrl
 	// goverter:ignore TrackingTarget
-	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// The Send cap shown is the one the send path enforces (outboundmessages.Module.SendCapStatus), which
 	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
 	// goverter:ignore SendCap
 	// The length of a short tracked link depends on the Workspace's serving Tracking domain
-	// (outbound.Module.ShortLinkLength): the handler attaches it.
+	// (outboundmessages.Module.ShortLinkLength): the handler attaches it.
 	// goverter:ignore ShortLinkLength
-	// The SMS provider's length limit is the send path's (outbound.Module.SMSLengthLimit): the
+	// The SMS provider's length limit is the send path's (outboundmessages.Module.SMSLengthLimit): the
 	// handler attaches it through SmsLengthLimitToResource.
 	// goverter:ignore SmsMaxLength
 	// The numeric key stays internal: the contract's id is the Workspace id.
@@ -261,7 +261,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
 	AnalyticsNewPeopleToResource(source *analyticsreport.NewPeople) *siteapi.SiteNewPeopleReport
-	AbuseWarningToResource(source abusewatch.Warning) siteapi.SiteAbuseWarning
+	AbuseWarningToResource(source abusewarning.Warning) siteapi.SiteAbuseWarning
 
 	// What needs attention maps whole from the module's items; an absent subject, start, hold
 	// reason or rate is left out.
@@ -404,7 +404,7 @@ type Converter interface {
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
 	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SiteSendCap
-	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	// The Send cap that applies (outboundmessages.Module.SendCapStatus), null when none does.
 	SendCapStatusToResource(source *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
@@ -426,7 +426,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source confirmations.ContactSMS) siteapi.SmsConsent
-	TestSendResultToResource(source outbound.Result) siteapi.SiteTestSendBroadcastResult
+	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
 	// goverter:enum:transform value
@@ -553,26 +553,26 @@ type Converter interface {
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
-	BrandKitToResource(source brandkit.Kit) siteapi.SiteBrandKitResource
+	BrandKitToResource(source brandkits.Kit) siteapi.SiteBrandKitResource
 
 	// goverter:map . Actor
 	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
-	AuditEntryToResource(source auditapi.View) siteapi.SiteAuditEntryResource
+	AuditEntryToResource(source auditlog.View) siteapi.SiteAuditEntryResource
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditapi.View) []siteapi.SiteAuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []siteapi.SiteAuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditapi.View) siteapi.SiteAuditActor
+	AuditActorToResource(source auditlog.View) siteapi.SiteAuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditapi.View) siteapi.SiteAuditTarget
+	AuditTargetToResource(source auditlog.View) siteapi.SiteAuditTarget
 	// goverter:useEmptyOnNil:slice
-	AuditFacetsToResource(source auditapi.Facets) siteapi.SiteAuditFacets
-	AuditFacetActorToResource(source auditapi.Actor) siteapi.SiteAuditActor
+	AuditFacetsToResource(source auditlog.Facets) siteapi.SiteAuditFacets
+	AuditFacetActorToResource(source auditlog.Actor) siteapi.SiteAuditActor
 
 	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
 	// the handler attaches it. The failure state is derived from the failure columns, and an
@@ -671,7 +671,7 @@ type Converter interface {
 	// goverter:enum:map ReportPeriod90Days SiteAutomationReportPeriod90d
 	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
+	AbuseMetricToResource(source abusewarning.Metric) siteapi.SiteAbuseMetric
 	// goverter:enum:transform value
 	AttentionKindToResource(source needsattention.Kind) siteapi.SiteAttentionKind
 	// goverter:enum:transform value
@@ -681,7 +681,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationsteps.Kind) siteapi.SiteAutomationStepType
+	AutomationStepTypeToResource(source automationstep.Kind) siteapi.SiteAutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
 	// goverter:enum:transform value
@@ -751,7 +751,7 @@ type Converter interface {
 	WebhookErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
 }
 
-// ExportMapper adapts the Converter to contactexport.Mapper.
+// ExportMapper adapts the Converter to dataexport.Mapper.
 type ExportMapper struct{ Converter }
 
 func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return new(m.ContactToExport(r)) }
@@ -775,7 +775,7 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 }
 
 // providerDisplayName is what a sign-in provider is called to a person.
-func providerDisplayName(provider string) string { return signin.DisplayName(provider) }
+func providerDisplayName(provider string) string { return signinprovider.DisplayName(provider) }
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
@@ -1119,7 +1119,7 @@ func cnameRecordType(trackingdomains.Record) siteapi.SiteCnameRecordType {
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.
-func brandKitUpdatedAt(k brandkit.Kit) siteapi.OptNilTimestamp {
+func brandKitUpdatedAt(k brandkits.Kit) siteapi.OptNilTimestamp {
 	if !k.Saved {
 		return siteapi.OptNilTimestamp{}
 	}
@@ -1268,7 +1268,7 @@ func optAttentionSubject(c Converter, v *needsattention.Subject) siteapi.OptNilS
 }
 
 // optAbuseWarning is the rate behind a deliverability warning, absent on every other item.
-func optAbuseWarning(c Converter, v *abusewatch.Warning) siteapi.OptNilSiteAbuseWarning {
+func optAbuseWarning(c Converter, v *abusewarning.Warning) siteapi.OptNilSiteAbuseWarning {
 	return convert.OptVia[siteapi.OptNilSiteAbuseWarning](v, c.AbuseWarningToResource)
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 )
@@ -20,7 +20,7 @@ const signinPendingPath = "/signin-pending"
 // signinHeld is the redirect of a provider sign-up held for the Sign-up items (ADR 0062): to the
 // screen that asks them, with the signed reference of the pending sign-up and the page the flow
 // began from. No session starts, and the spent flow cookie is cleared.
-func (h *Handlers) signinHeld(flow signin.Flow, token string) *siteapi.SiteAuthSigninCallbackFound {
+func (h *Handlers) signinHeld(flow signinprovider.Flow, token string) *siteapi.SiteAuthSigninCallbackFound {
 	next := url.Values{"token": {token}}
 	if flow.ReturnTo != "" {
 		next.Set("redirect", flow.ReturnTo)

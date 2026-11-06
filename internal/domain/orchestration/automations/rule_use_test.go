@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -22,10 +22,10 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotArchived(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
-	named := []inuse.User{{Kind: inuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}
+	named := []liveuse.User{{Kind: liveuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}
 
 	_, err := m.Archive(ctx, s, fixtures.AutomationJobsWaitFirstID)
-	refused, ok := inuse.As(err)
+	refused, ok := liveuse.As(err)
 	require.True(t, ok)
 	assert.Equal(t, named, refused.Users)
 	kept, err := m.Get(ctx, s, fixtures.AutomationJobsWaitFirstID)

@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -28,7 +28,7 @@ type Count = secrets.Count
 // wiring.
 type Owners struct {
 	Integrations     *integrations.Secrets
-	WebhookEndpoints *webhooks.Secrets
+	WebhookEndpoints *webhookendpoints.Secrets
 	SendingDomains   *sendingdomains.Secrets
 	Users            *users.Secrets
 	StaffMembers     *staffmembers.Secrets

@@ -115,7 +115,7 @@ type Module struct {
 
 // New builds the module over the raw client and the bus, whose transaction carries a change of
 // several rows (a new order) and the mailings consent mark (it changes what the service feed of
-// Users reports, internal/domain/identity/userfeed); now is the clock of publishing and deleting, nil is
+// Users reports, internal/domain/identity/usertombstones); now is the clock of publishing and deleting, nil is
 // time.Now.
 func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 	if now == nil {

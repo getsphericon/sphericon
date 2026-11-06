@@ -11,16 +11,16 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/emailcase"
-	"github.com/getsphericon/sphericon/internal/domain/identity/userfeed"
+	"github.com/getsphericon/sphericon/internal/domain/identity/usertombstones"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
-	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostlog"
+	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
 )
 
 // New is the plain client: it refuses a change to the Workspace and User feeds, which
 // is made only inside a transaction (events.Bus.WithinTx).
 func New(sqlDB *sql.DB) *ent.Client {
 	c := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
-	c.Use(emailcase.Hook, workspacefeed.Guard, userfeed.Guard, trackinghostlog.Guard)
+	c.Use(emailcase.Hook, workspacefeed.Guard, usertombstones.Guard, trackinghostchanges.Guard)
 	return c
 }
 
@@ -37,6 +37,6 @@ func NewOnTx(sqlDB *sql.DB) *ent.Client {
 // same hooks.
 func NewTx(drv dialect.Driver) *ent.Client {
 	c := ent.NewClient(ent.Driver(drv))
-	c.Use(emailcase.Hook, workspacefeed.Hook, userfeed.Hook, trackinghostlog.Hook)
+	c.Use(emailcase.Hook, workspacefeed.Hook, usertombstones.Hook, trackinghostchanges.Hook)
 	return c
 }

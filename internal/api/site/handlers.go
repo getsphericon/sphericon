@@ -17,8 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
@@ -27,22 +27,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
@@ -59,7 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactor"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -83,7 +83,7 @@ type Handlers struct {
 	deletion        *workspacedeletion.UseCase
 	attempts        *throttle.Attempts
 	bus             *events.Bus
-	webhooks        *webhooks.Module
+	webhooks        *webhookendpoints.Module
 	broadcasts      *broadcasts.Module
 	mail            mailjobs.Enqueuer
 	sendingDomains  *sendingdomains.Module
@@ -94,7 +94,7 @@ type Handlers struct {
 	links           *users.Links
 	tracker         *tracking.Tracker
 	appURL          string
-	outbound        *outbound.Module
+	outbound        *outboundmessages.Module
 	segments        *segments.Module
 	eventlog        *eventlog.UseCase
 	contacts        *contacts.Module
@@ -107,8 +107,8 @@ type Handlers struct {
 	sendingDomainDeletion *sendingdomaindeletion.UseCase
 	domainVerification    *domainverification.UseCase
 	bindings              *bindings.Module
-	templates             *templates.Module
-	brandKit              *brandkit.Module
+	templates             *emailtemplates.Module
+	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
@@ -118,7 +118,7 @@ type Handlers struct {
 	supportEmail          string
 	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
-	secondFactor          *secondfactorenrolment.UseCase
+	secondFactor          *secondfactor.UseCase
 	workspaceCreation     *workspacecreation.UseCase
 	passkeys              *passkeys.Module
 	now                   func() time.Time
@@ -132,7 +132,7 @@ type Handlers struct {
 	requireVerification bool
 	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
 	// and the submit.
-	signupSurvey *signupsurvey.Module
+	signupSurvey *signupsurveyresponses.Module
 	// signupItems is the Instance's Sign-up items and their Legal documents (ADR 0062).
 	signupItems *signupitems.Module
 	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
@@ -144,7 +144,7 @@ type Handlers struct {
 	// signup is the Sign-up (ADR 0030).
 	signup *signup.UseCase
 	// signin is the Sign-in providers of the Instance (ADR 0048).
-	signin *signin.Providers
+	signin *signinprovider.Providers
 	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
 	customFieldRetyping *customfieldretyping.UseCase
 	// unsubscribe records an opt-out (a use case, ADR 0102).
@@ -152,7 +152,7 @@ type Handlers struct {
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/domain/insights/audit. Core knows only this interface: without a license Licensed is false and
+// ee/domain/insights/auditentries. Core knows only this interface: without a license Licensed is false and
 // the page answers 402.
 type AuditLog interface {
 	Licensed() bool
@@ -163,7 +163,7 @@ type AuditLog interface {
 	// function that writes the entries matching the filter, newest first, as CSV.
 	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error)
 	// Facets returns the actors, actions and target types that occur in the log, sorted.
-	Facets(ctx context.Context, s *ent.Scoped) (auditapi.Facets, error)
+	Facets(ctx context.Context, s *ent.Scoped) (auditlog.Facets, error)
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
 	RetentionLicensed() bool
 }
@@ -198,8 +198,8 @@ type Deps struct {
 	Attempts    *throttle.Attempts
 	OAuth       *oauthclients.Module
 	Bus         *events.Bus
-	Webhooks    *webhooks.Module
-	Outbound    *outbound.Module
+	Webhooks    *webhookendpoints.Module
+	Outbound    *outboundmessages.Module
 	Segments    *segments.Module
 	EventLog    *eventlog.UseCase
 	Contacts    *contacts.Module
@@ -207,8 +207,8 @@ type Deps struct {
 	Tags        *tags.Module
 	TagDeletion *tagdeletion.UseCase
 	Bindings    *bindings.Module
-	Templates   *templates.Module
-	BrandKit    *brandkit.Module
+	Templates   *emailtemplates.Module
+	BrandKit    *brandkits.Module
 	Automations *automations.Module
 	Rules       *rules.Module
 	Broadcasts  *broadcasts.Module
@@ -243,7 +243,7 @@ type Deps struct {
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
-	SecondFactor *secondfactorenrolment.UseCase
+	SecondFactor *secondfactor.UseCase
 	// WorkspaceCreation creates a Workspace, and makes a User Verified with its first one (a use
 	// case, ADR 0102): the verification and reset links, a Sign-up without verification and the
 	// provider sign-in.
@@ -264,15 +264,15 @@ type Deps struct {
 	// a Sign-up takes a password and yields a Verified User at once, and login
 	// checks no verification.
 	RequireEmailVerification bool
-	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
-	SignupSurvey *signupsurvey.Module
+	// SignupSurvey is the Sign-up survey module (built with signupsurveyresponses.Enabled).
+	SignupSurvey *signupsurveyresponses.Module
 	// SignupItems is the Instance's Sign-up items and their Legal documents.
 	SignupItems *signupitems.Module
 	// ConsentRecords is the Users' decisions on the Sign-up items.
 	ConsentRecords *consentrecords.Module
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
 	// no provider is configured.
-	Signin *signin.Providers
+	Signin *signinprovider.Providers
 	// Migrations runs the pending migrations from the error page of a development server
 	// (ADR 0033); nil on any other, which leaves the operation answering 404.
 	Migrations Migrations

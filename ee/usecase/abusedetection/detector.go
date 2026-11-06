@@ -1,5 +1,5 @@
 // Package abusedetection is the Enterprise abuse detector's pass (ADR 0026, ADR 0102): every
-// hour it reads each Workspace's standing through the abuse watch (ee/domain/insights/abuse) and
+// hour it reads each Workspace's standing through the abuse watch (ee/domain/insights/abusedetector) and
 // acts on two tiers. The lower one only warns the owners by email and marks the episode on the
 // Workspace; the higher one freezes the Workspace through the core suspension (actor `system`)
 // and tells them. It never lifts a suspension: only a Staff member does, and unsuspending stamps
@@ -17,7 +17,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -32,7 +32,7 @@ const Interval = time.Hour
 
 // Config is what a Detector is built from.
 type Config struct {
-	Limits abuse.Limits
+	Limits abusedetector.Limits
 	// SupportEmail is the contact the notices give an owner to appeal to; empty gives none.
 	SupportEmail string
 }
@@ -40,7 +40,7 @@ type Config struct {
 // Detector performs the detector's pass (ADR 0026). It is the raw-client entry of the
 // control: like a job entry point it lists Workspaces, then scopes to each one.
 type Detector struct {
-	*abuse.Watch
+	*abusedetector.Watch
 
 	client  *ent.Client
 	notify  memberships.Notify
@@ -52,7 +52,7 @@ type Detector struct {
 // for none: the notices never go through a Workspace's own Integration, which a freeze holds. A
 // freeze suspends through suspender, which tells the owners the same way.
 func New(client *ent.Client, lic *licensekey.License, notify memberships.Notify, suspender *suspension.Suspender, cfg Config) *Detector {
-	return &Detector{Watch: abuse.NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender, support: cfg.SupportEmail}
+	return &Detector{Watch: abusedetector.NewWatch(lic, cfg.Limits), client: client, notify: notify, suspend: suspender, support: cfg.SupportEmail}
 }
 
 // Summary is who a pass warned and who it froze.
@@ -92,7 +92,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 			continue
 		}
 		switch breach.Tier {
-		case abuse.TierFreeze:
+		case abusedetector.TierFreeze:
 			frozen, err := d.freeze(ctx, ws, breach)
 			if frozen {
 				sum.Frozen = append(sum.Frozen, ws.ID)
@@ -100,7 +100,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 			if err != nil {
 				errs = append(errs, err)
 			}
-		case abuse.TierWarn:
+		case abusedetector.TierWarn:
 			warned, err := d.warn(ctx, ws, breach, now)
 			if warned {
 				sum.Warned = append(sum.Warned, ws.ID)
@@ -123,7 +123,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 // the escalation of a warning, so no warning mail goes out and the episode ends. A failed
 // notice is logged, not returned: the freeze stands and nothing retries a suspended
 // Workspace.
-func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b abuse.Breach) (bool, error) {
+func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach) (bool, error) {
 	changed, err := d.suspend.Suspend(ctx, ws.ID, suspension.System, b.Describe()+" (freeze)")
 	if errors.Is(err, suspension.ErrNoticeNotSent) {
 		slog.ErrorContext(ctx, "workspace frozen by the abuse detector, but the owner notice could not be sent", "workspace_id", ws.ID, "error", err)
@@ -137,18 +137,18 @@ func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b abuse.Breach
 }
 
 // metricNames words a breached rate in the warning to the owners.
-var metricNames = map[abuse.Metric]i18n.ID{abuse.Complaint: i18n.MetricComplaint, abuse.Bounce: i18n.MetricBounce}
+var metricNames = map[abusedetector.Metric]i18n.ID{abusedetector.Complaint: i18n.MetricComplaint, abusedetector.Bounce: i18n.MetricBounce}
 
 // warn mails the owners once per episode: the marker is set only after the mail went, so
 // a failed send is retried, and is cleared when the Workspace leaves the tier.
-func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b abuse.Breach, now time.Time) (bool, error) {
+func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b abusedetector.Breach, now time.Time) (bool, error) {
 	if ws.AbuseWarningNotifiedAt != nil || d.notify == nil {
 		return false, nil
 	}
 	data := map[string]any{
 		"Workspace": ws.Name, "Domain": b.Domain, "Metric": i18n.T(metricNames[b.Metric], nil),
-		"Rate": abuse.Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
-		"Limit": abuse.Percent(float64(b.LimitBP) / 10000), "Support": d.support,
+		"Rate": abusedetector.Percent(b.Rate()), "Count": b.Numerator, "Total": b.Denominator,
+		"Limit": abusedetector.Percent(float64(b.LimitBP) / 10000), "Support": d.support,
 	}
 	if err := d.notify.Tell(ctx, ws.ID, memberships.Notice{Subject: i18n.EmailAbuseWarningSubject, Body: i18n.EmailAbuseWarningBody}, data); err != nil {
 		return false, fmt.Errorf("warn workspace %d: %w", ws.ID, err)

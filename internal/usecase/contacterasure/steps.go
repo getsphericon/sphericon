@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -60,7 +60,7 @@ func visitorOf(contactID int64) predicate.Visitor { return visitor.ContactID(con
 // eraseShortLinks has the Outbound message module delete the short links of the Contact's
 // messages, before anonymizeDelivery clears the contact_id they are found by.
 func eraseShortLinks(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	return outbound.EraseShortLinks(ctx, s, t.ContactID)
+	return outboundmessages.EraseShortLinks(ctx, s, t.ContactID)
 }
 
 // eraseTelegram has the Binding module delete the Bindings and Start tokens of the Contact and of
@@ -101,7 +101,7 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 	if err := unsubscribes.DetachContact(ctx, s, t.ContactID); err != nil {
 		return err
 	}
-	return suppression.EraseContact(ctx, s, t.ContactID, t.Phone)
+	return suppressions.EraseContact(ctx, s, t.ContactID, t.Phone)
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep
@@ -109,13 +109,13 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // Contact's Outbound messages and Broadcast recipients go first, then the messages to its
 // addresses and number, which a transactional send may have made without a Contact.
 func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := outbound.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
+	if err := outboundmessages.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
 	if err := broadcasts.DetachRecipients(ctx, s, t.ContactID); err != nil {
 		return err
 	}
-	return outbound.AnonymizeDestinations(ctx, s, t.destinations())
+	return outboundmessages.AnonymizeDestinations(ctx, s, t.destinations())
 }
 
 // eraseCapturedMessages deletes the Captured messages (Test inbox, ADR 0058) addressed to the

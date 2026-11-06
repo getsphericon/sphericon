@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
-	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staffconsole"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -27,7 +27,7 @@ type ServiceSurface struct {
 
 // NewServiceSurface builds the surface over the use case that serves and audits its operations
 // and the module that checks credentials.
-func NewServiceSurface(m *eestaff.Module, creds *servicecredentials.Module) *ServiceSurface {
+func NewServiceSurface(m *staffconsole.UseCase, creds *servicecredentials.Module) *ServiceSurface {
 	return &ServiceSurface{
 		handlers: &ServiceHandlers{module: m},
 		security: NewServiceSecurity(creds, ServiceOperationScopes),
@@ -111,7 +111,7 @@ func covers(have []string, need []serviceapi.ServiceScope) bool {
 
 // ServiceHandlers implements serviceapi.Handler.
 type ServiceHandlers struct {
-	module *eestaff.Module
+	module *staffconsole.UseCase
 }
 
 var _ serviceapi.Handler = (*ServiceHandlers)(nil)

@@ -26,21 +26,21 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	brandkit "github.com/getsphericon/sphericon/internal/domain/content/brandkit"
+	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	memberships "github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	signupitems "github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
-	abusewatch "github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
-	auditapi "github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	abusewarning "github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	setupchecklist "github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationsteps "github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
-	outbound "github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	providerlimit "github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -63,19 +63,19 @@ import (
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) AbuseMetricToResource(source abusewatch.Metric) site.SiteAbuseMetric {
+func (c *ConverterImpl) AbuseMetricToResource(source abusewarning.Metric) site.SiteAbuseMetric {
 	var siteapiSiteAbuseMetric site.SiteAbuseMetric
 	switch source {
-	case abusewatch.MetricBounce:
+	case abusewarning.MetricBounce:
 		siteapiSiteAbuseMetric = site.SiteAbuseMetricBounce
-	case abusewatch.MetricComplaint:
+	case abusewarning.MetricComplaint:
 		siteapiSiteAbuseMetric = site.SiteAbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteAbuseMetric
 }
-func (c *ConverterImpl) AbuseWarningToResource(source abusewatch.Warning) site.SiteAbuseWarning {
+func (c *ConverterImpl) AbuseWarningToResource(source abusewarning.Warning) site.SiteAbuseWarning {
 	var siteapiSiteAbuseWarning site.SiteAbuseWarning
 	siteapiSiteAbuseWarning.Domain = source.Domain
 	siteapiSiteAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
@@ -282,14 +282,14 @@ func (c *ConverterImpl) AttentionSubjectToResource(source needsattention.Subject
 	siteapiSiteAttentionSubject.Name = source.Name
 	return siteapiSiteAttentionSubject
 }
-func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
+func (c *ConverterImpl) AuditActorToResource(source auditlog.View) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
 	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.ActorKind)
 	siteapiSiteAuditActor.ID = optNilString(source.ActorID)
 	siteapiSiteAuditActor.Name = optNilString(source.ActorName)
 	return siteapiSiteAuditActor
 }
-func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []site.SiteAuditEntryResource {
+func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResourceList []site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResourceList = make([]site.SiteAuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
@@ -297,7 +297,7 @@ func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []site.S
 	}
 	return siteapiSiteAuditEntryResourceList
 }
-func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAuditEntryResource {
+func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
 	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
@@ -310,14 +310,14 @@ func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return siteapiSiteAuditEntryResource
 }
-func (c *ConverterImpl) AuditFacetActorToResource(source auditapi.Actor) site.SiteAuditActor {
+func (c *ConverterImpl) AuditFacetActorToResource(source auditlog.Actor) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
 	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.Kind)
 	siteapiSiteAuditActor.ID = optNilString(source.ID)
 	siteapiSiteAuditActor.Name = optNilString(source.Name)
 	return siteapiSiteAuditActor
 }
-func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteAuditFacets {
+func (c *ConverterImpl) AuditFacetsToResource(source auditlog.Facets) site.SiteAuditFacets {
 	var siteapiSiteAuditFacets site.SiteAuditFacets
 	siteapiSiteAuditFacets.Actors = make([]site.SiteAuditActor, len(source.Actors))
 	for i := 0; i < len(source.Actors); i++ {
@@ -333,7 +333,7 @@ func (c *ConverterImpl) AuditFacetsToResource(source auditapi.Facets) site.SiteA
 	}
 	return siteapiSiteAuditFacets
 }
-func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) site.SiteAuditTarget {
+func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) site.SiteAuditTarget {
 	var siteapiSiteAuditTarget site.SiteAuditTarget
 	siteapiSiteAuditTarget.Type = source.TargetType
 	siteapiSiteAuditTarget.ID = optNilString(source.TargetID)
@@ -464,22 +464,22 @@ func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) si
 	siteapiSiteAutomationStep.LinkTracking = optBool(source.LinkTracking)
 	return siteapiSiteAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationsteps.Kind) site.SiteAutomationStepType {
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.SiteAutomationStepType {
 	var siteapiSiteAutomationStepType site.SiteAutomationStepType
 	switch source {
-	case automationsteps.ApplyTag:
+	case automationstep.ApplyTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
-	case automationsteps.Email:
+	case automationstep.Email:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
-	case automationsteps.HTTP:
+	case automationstep.HTTP:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
-	case automationsteps.RemoveTag:
+	case automationstep.RemoveTag:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
-	case automationsteps.SMS:
+	case automationstep.SMS:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeSMS
-	case automationsteps.Telegram:
+	case automationstep.Telegram:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
-	case automationsteps.Wait:
+	case automationstep.Wait:
 		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -612,7 +612,7 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 	}
 	return siteapiSiteBindingResourceList
 }
-func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
+func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
 	siteapiSiteBrandKitResource.Saved = source.Saved
 	siteapiSiteBrandKitResource.AccentColor = source.AccentColor
@@ -2432,7 +2432,7 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	siteapiSiteTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteTemplatesListOK
 }
-func (c *ConverterImpl) TestSendResultToResource(source outbound.Result) site.SiteTestSendBroadcastResult {
+func (c *ConverterImpl) TestSendResultToResource(source outboundmessages.Result) site.SiteTestSendBroadcastResult {
 	var siteapiSiteTestSendBroadcastResult site.SiteTestSendBroadcastResult
 	siteapiSiteTestSendBroadcastResult.From = optEmail(source.From)
 	siteapiSiteTestSendBroadcastResult.Captured = source.Captured

@@ -43,7 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 )
 
 // Reasons a destination is ineligible.
@@ -77,7 +77,7 @@ type Decision struct {
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
 func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (Decision, error) {
-	d := suppression.NormalizeDestination(dest)
+	d := suppressions.NormalizeDestination(dest)
 	if d == "" {
 		return Decision{Eligible: true}, nil
 	}
@@ -273,9 +273,9 @@ type store struct {
 }
 
 var (
-	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel, []string{entsuppression.FieldLiftedAt}}
-	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel, nil}
-	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel, nil}
+	suppressionStore = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel, []string{entsuppression.FieldLiftedAt}}
+	unsubscribes     = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel, nil}
+	confirmations    = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel, nil}
 )
 
 // layers is the single definition of the eligibility rule, in precedence order
@@ -284,7 +284,7 @@ var (
 func layers(r ref, channel, source string) []layer {
 	suppressed := layer{
 		reason: ReasonSuppressed,
-		blocks: sql.Exists(match(r, suppressions, channel)),
+		blocks: sql.Exists(match(r, suppressionStore, channel)),
 	}
 	if source == "" {
 		return []layer{suppressed}

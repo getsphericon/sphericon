@@ -7,7 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/tag"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -35,12 +35,12 @@ func passingClock() func() time.Time {
 }
 
 // stepperOf is the Step execution use case over the sender resolver, its clock passing every wait.
-func stepperOf(env *testhelper.TestEnv, resolver outbound.Senders) *stepexecution.UseCase {
+func stepperOf(env *testhelper.TestEnv, resolver outboundmessages.Senders) *stepexecution.UseCase {
 	return stepperWith(env, newMod(env, resolver), stepexecution.WithClock(passingClock()))
 }
 
 // stepperWith is the Step execution use case over mod, as configured.
-func stepperWith(env *testhelper.TestEnv, mod *outbound.Module, opts ...stepexecution.Option) *stepexecution.UseCase {
+func stepperWith(env *testhelper.TestEnv, mod *outboundmessages.Module, opts ...stepexecution.Option) *stepexecution.UseCase {
 	return stepexecution.New(env.Bus, mod, noFence, opts...)
 }
 
@@ -162,7 +162,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
-	mod := outbound.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
+	mod := outboundmessages.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
 	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)
@@ -395,10 +395,10 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 
 	// The owner edits the steps: a wait is inserted ahead and the email is reworded. Were the
 	// Enrollment to read the live steps, its index 1 would now be the new wait.
-	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automationsteps.Step{
-		{Type: automationsteps.Wait, Seconds: 1},
-		{Type: automationsteps.Wait, Seconds: 2},
-		{Type: automationsteps.Email, Subject: "New steps", Body: "<p>new</p>"},
+	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Steps: &[]automationstep.Step{
+		{Type: automationstep.Wait, Seconds: 1},
+		{Type: automationstep.Wait, Seconds: 2},
+		{Type: automationstep.Email, Subject: "New steps", Body: "<p>new</p>"},
 	}})
 	require.NoError(t, err)
 	_, err = mod.Publish(ctx, acme, fixtures.AutomationJobsEditableID)

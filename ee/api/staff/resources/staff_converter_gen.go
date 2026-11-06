@@ -5,26 +5,26 @@ package resources
 
 import (
 	"fmt"
-	abuse "github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	abusedetector "github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	ent "github.com/getsphericon/sphericon/ent"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
-	signupsurvey "github.com/getsphericon/sphericon/internal/domain/identity/signupsurvey"
-	abusewatch "github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
-	auditapi "github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	abusewarning "github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
+	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	reputation "github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 type StaffConverterImpl struct{}
 
-func (c *StaffConverterImpl) AbuseMetricToResource(source abusewatch.Metric) staffee.StaffAbuseMetric {
+func (c *StaffConverterImpl) AbuseMetricToResource(source abusewarning.Metric) staffee.StaffAbuseMetric {
 	var staffeeapiStaffAbuseMetric staffee.StaffAbuseMetric
 	switch source {
-	case abusewatch.MetricBounce:
+	case abusewarning.MetricBounce:
 		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricBounce
-	case abusewatch.MetricComplaint:
+	case abusewarning.MetricComplaint:
 		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -42,14 +42,14 @@ func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.Staf
 	}
 	return staffeeapiStaffAbuse
 }
-func (c *StaffConverterImpl) AuditActorToResource(source auditapi.View) staffee.StaffAuditActor {
+func (c *StaffConverterImpl) AuditActorToResource(source auditlog.View) staffee.StaffAuditActor {
 	var staffeeapiStaffAuditActor staffee.StaffAuditActor
 	staffeeapiStaffAuditActor.Kind = staffee.StaffAuditActorKind(source.ActorKind)
 	staffeeapiStaffAuditActor.ID = nilableString(source.ActorID)
 	staffeeapiStaffAuditActor.Name = nilableString(source.ActorName)
 	return staffeeapiStaffAuditActor
 }
-func (c *StaffConverterImpl) AuditEntriesToResources(source []auditapi.View) []staffee.StaffAuditEntryResource {
+func (c *StaffConverterImpl) AuditEntriesToResources(source []auditlog.View) []staffee.StaffAuditEntryResource {
 	var staffeeapiStaffAuditEntryResourceList []staffee.StaffAuditEntryResource
 	staffeeapiStaffAuditEntryResourceList = make([]staffee.StaffAuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
@@ -57,7 +57,7 @@ func (c *StaffConverterImpl) AuditEntriesToResources(source []auditapi.View) []s
 	}
 	return staffeeapiStaffAuditEntryResourceList
 }
-func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.StaffAuditEntryResource {
+func (c *StaffConverterImpl) AuditEntryToResource(source auditlog.View) staffee.StaffAuditEntryResource {
 	var staffeeapiStaffAuditEntryResource staffee.StaffAuditEntryResource
 	staffeeapiStaffAuditEntryResource.ID = staffee.EntityId(source.ID)
 	staffeeapiStaffAuditEntryResource.OccurredAt = staffTimestamp(source.OccurredAt)
@@ -70,21 +70,21 @@ func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.
 	staffeeapiStaffAuditEntryResource.UserAgent = nilableString(source.UserAgent)
 	return staffeeapiStaffAuditEntryResource
 }
-func (c *StaffConverterImpl) AuditTargetToResource(source auditapi.View) staffee.StaffAuditTarget {
+func (c *StaffConverterImpl) AuditTargetToResource(source auditlog.View) staffee.StaffAuditTarget {
 	var staffeeapiStaffAuditTarget staffee.StaffAuditTarget
 	staffeeapiStaffAuditTarget.Type = source.TargetType
 	staffeeapiStaffAuditTarget.ID = nilableString(source.TargetID)
 	staffeeapiStaffAuditTarget.Name = nilableString(source.TargetName)
 	return staffeeapiStaffAuditTarget
 }
-func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staffee.StaffAbuseWarning {
+func (c *StaffConverterImpl) BreachToWarning(source abusedetector.Breach) staffee.StaffAbuseWarning {
 	var staffeeapiStaffAbuseWarning staffee.StaffAbuseWarning
 	staffeeapiStaffAbuseWarning.Domain = source.Domain
 	staffeeapiStaffAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
 	staffeeapiStaffAbuseWarning.Rate = breachRate(source)
 	return staffeeapiStaffAbuseWarning
 }
-func (c *StaffConverterImpl) DeliverabilityToResource(source abuse.Deliverability) staffee.StaffDeliverability {
+func (c *StaffConverterImpl) DeliverabilityToResource(source abusedetector.Deliverability) staffee.StaffDeliverability {
 	var staffeeapiStaffDeliverability staffee.StaffDeliverability
 	staffeeapiStaffDeliverability.WindowHours = windowHours(source.Window)
 	staffeeapiStaffDeliverability.VolumeFloor = count(source.VolumeFloor)
@@ -97,7 +97,7 @@ func (c *StaffConverterImpl) DeliverabilityToResource(source abuse.Deliverabilit
 	}
 	return staffeeapiStaffDeliverability
 }
-func (c *StaffConverterImpl) DomainRatesToResource(source abuse.DomainRates) staffee.StaffDomainRates {
+func (c *StaffConverterImpl) DomainRatesToResource(source abusedetector.DomainRates) staffee.StaffDomainRates {
 	var staffeeapiStaffDomainRates staffee.StaffDomainRates
 	staffeeapiStaffDomainRates.SendingDomainId = staffee.EntityId(source.SendingDomainID)
 	staffeeapiStaffDomainRates.Domain = source.Domain
@@ -133,19 +133,19 @@ func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.Staf
 	staffeeapiStaffRate.Rate = nilFloat64(source.Rate)
 	return staffeeapiStaffRate
 }
-func (c *StaffConverterImpl) ReviewIn(source staffee.StaffWorkspaceReview) abuse.Review {
-	var abuseReview abuse.Review
+func (c *StaffConverterImpl) ReviewIn(source staffee.StaffWorkspaceReview) abusedetector.Review {
+	var abusedetectorReview abusedetector.Review
 	switch source {
 	case staffee.StaffWorkspaceReviewDeleted:
-		abuseReview = abuse.ReviewDeleted
+		abusedetectorReview = abusedetector.ReviewDeleted
 	case staffee.StaffWorkspaceReviewSystemFrozen:
-		abuseReview = abuse.ReviewSystemFrozen
+		abusedetectorReview = abusedetector.ReviewSystemFrozen
 	case staffee.StaffWorkspaceReviewWarned:
-		abuseReview = abuse.ReviewWarned
+		abusedetectorReview = abusedetector.ReviewWarned
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return abuseReview
+	return abusedetectorReview
 }
 func (c *StaffConverterImpl) SendCapToResource(source *ent.Workspace) staffee.StaffSendCap {
 	var staffeeapiStaffSendCap staffee.StaffSendCap
@@ -231,40 +231,40 @@ func (c *StaffConverterImpl) SignupSourceToResource(source signupsurveyresponse.
 	}
 	return staffeeapiStaffSignupSource
 }
-func (c *StaffConverterImpl) SignupSurveyCountsToResource(source signupsurvey.Counts) staffee.StaffSignupSurveyCounts {
+func (c *StaffConverterImpl) SignupSurveyCountsToResource(source signupsurveyresponses.Counts) staffee.StaffSignupSurveyCounts {
 	var staffeeapiStaffSignupSurveyCounts staffee.StaffSignupSurveyCounts
 	staffeeapiStaffSignupSurveyCounts.Responses = count(source.Responses)
 	staffeeapiStaffSignupSurveyCounts.Role = make([]staffee.StaffSignupRoleCount, len(source.Role.Choices))
 	for i := 0; i < len(source.Role.Choices); i++ {
-		staffeeapiStaffSignupSurveyCounts.Role[i] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupRoleCount(source.Role.Choices[i])
+		staffeeapiStaffSignupSurveyCounts.Role[i] = c.signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupRoleCount(source.Role.Choices[i])
 	}
 	staffeeapiStaffSignupSurveyCounts.RoleOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.Role.Others))
 	for j := 0; j < len(source.Role.Others); j++ {
-		staffeeapiStaffSignupSurveyCounts.RoleOtherTexts[j] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.Role.Others[j])
+		staffeeapiStaffSignupSurveyCounts.RoleOtherTexts[j] = c.signupsurveyresponsesOtherCountToStaffeeapiStaffSignupOtherTextCount(source.Role.Others[j])
 	}
 	staffeeapiStaffSignupSurveyCounts.CompanySize = make([]staffee.StaffSignupCompanySizeCount, len(source.CompanySize.Choices))
 	for k := 0; k < len(source.CompanySize.Choices); k++ {
-		staffeeapiStaffSignupSurveyCounts.CompanySize[k] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source.CompanySize.Choices[k])
+		staffeeapiStaffSignupSurveyCounts.CompanySize[k] = c.signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source.CompanySize.Choices[k])
 	}
 	staffeeapiStaffSignupSurveyCounts.CompanySizeOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.CompanySize.Others))
 	for l := 0; l < len(source.CompanySize.Others); l++ {
-		staffeeapiStaffSignupSurveyCounts.CompanySizeOtherTexts[l] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.CompanySize.Others[l])
+		staffeeapiStaffSignupSurveyCounts.CompanySizeOtherTexts[l] = c.signupsurveyresponsesOtherCountToStaffeeapiStaffSignupOtherTextCount(source.CompanySize.Others[l])
 	}
 	staffeeapiStaffSignupSurveyCounts.MainGoal = make([]staffee.StaffSignupGoalCount, len(source.MainGoal.Choices))
 	for m := 0; m < len(source.MainGoal.Choices); m++ {
-		staffeeapiStaffSignupSurveyCounts.MainGoal[m] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupGoalCount(source.MainGoal.Choices[m])
+		staffeeapiStaffSignupSurveyCounts.MainGoal[m] = c.signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupGoalCount(source.MainGoal.Choices[m])
 	}
 	staffeeapiStaffSignupSurveyCounts.MainGoalOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.MainGoal.Others))
 	for n := 0; n < len(source.MainGoal.Others); n++ {
-		staffeeapiStaffSignupSurveyCounts.MainGoalOtherTexts[n] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.MainGoal.Others[n])
+		staffeeapiStaffSignupSurveyCounts.MainGoalOtherTexts[n] = c.signupsurveyresponsesOtherCountToStaffeeapiStaffSignupOtherTextCount(source.MainGoal.Others[n])
 	}
 	staffeeapiStaffSignupSurveyCounts.HeardFrom = make([]staffee.StaffSignupSourceCount, len(source.HeardFrom.Choices))
 	for o := 0; o < len(source.HeardFrom.Choices); o++ {
-		staffeeapiStaffSignupSurveyCounts.HeardFrom[o] = c.signupsurveyChoiceCountToStaffeeapiStaffSignupSourceCount(source.HeardFrom.Choices[o])
+		staffeeapiStaffSignupSurveyCounts.HeardFrom[o] = c.signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupSourceCount(source.HeardFrom.Choices[o])
 	}
 	staffeeapiStaffSignupSurveyCounts.HeardFromOtherTexts = make([]staffee.StaffSignupOtherTextCount, len(source.HeardFrom.Others))
 	for p := 0; p < len(source.HeardFrom.Others); p++ {
-		staffeeapiStaffSignupSurveyCounts.HeardFromOtherTexts[p] = c.signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source.HeardFrom.Others[p])
+		staffeeapiStaffSignupSurveyCounts.HeardFromOtherTexts[p] = c.signupsurveyresponsesOtherCountToStaffeeapiStaffSignupOtherTextCount(source.HeardFrom.Others[p])
 	}
 	return staffeeapiStaffSignupSurveyCounts
 }
@@ -342,31 +342,31 @@ func (c *StaffConverterImpl) WorkspacesListPage(source pagination.Page[*ent.Work
 	staffeeapiStaffWorkspacesListOK.TotalPages = count(source.TotalPages)
 	return &staffeeapiStaffWorkspacesListOK
 }
-func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source signupsurvey.ChoiceCount) staffee.StaffSignupCompanySizeCount {
+func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupCompanySizeCount {
 	var staffeeapiStaffSignupCompanySizeCount staffee.StaffSignupCompanySizeCount
 	staffeeapiStaffSignupCompanySizeCount.Choice = staffee.StaffSignupCompanySize(source.Choice)
 	staffeeapiStaffSignupCompanySizeCount.Count = count(source.Count)
 	return staffeeapiStaffSignupCompanySizeCount
 }
-func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupGoalCount(source signupsurvey.ChoiceCount) staffee.StaffSignupGoalCount {
+func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupGoalCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupGoalCount {
 	var staffeeapiStaffSignupGoalCount staffee.StaffSignupGoalCount
 	staffeeapiStaffSignupGoalCount.Choice = staffee.StaffSignupGoal(source.Choice)
 	staffeeapiStaffSignupGoalCount.Count = count(source.Count)
 	return staffeeapiStaffSignupGoalCount
 }
-func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupRoleCount(source signupsurvey.ChoiceCount) staffee.StaffSignupRoleCount {
+func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupRoleCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupRoleCount {
 	var staffeeapiStaffSignupRoleCount staffee.StaffSignupRoleCount
 	staffeeapiStaffSignupRoleCount.Choice = staffee.StaffSignupRole(source.Choice)
 	staffeeapiStaffSignupRoleCount.Count = count(source.Count)
 	return staffeeapiStaffSignupRoleCount
 }
-func (c *StaffConverterImpl) signupsurveyChoiceCountToStaffeeapiStaffSignupSourceCount(source signupsurvey.ChoiceCount) staffee.StaffSignupSourceCount {
+func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupSourceCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupSourceCount {
 	var staffeeapiStaffSignupSourceCount staffee.StaffSignupSourceCount
 	staffeeapiStaffSignupSourceCount.Choice = staffee.StaffSignupSource(source.Choice)
 	staffeeapiStaffSignupSourceCount.Count = count(source.Count)
 	return staffeeapiStaffSignupSourceCount
 }
-func (c *StaffConverterImpl) signupsurveyOtherCountToStaffeeapiStaffSignupOtherTextCount(source signupsurvey.OtherCount) staffee.StaffSignupOtherTextCount {
+func (c *StaffConverterImpl) signupsurveyresponsesOtherCountToStaffeeapiStaffSignupOtherTextCount(source signupsurveyresponses.OtherCount) staffee.StaffSignupOtherTextCount {
 	var staffeeapiStaffSignupOtherTextCount staffee.StaffSignupOtherTextCount
 	staffeeapiStaffSignupOtherTextCount.Text = source.Text
 	staffeeapiStaffSignupOtherTextCount.Count = count(source.Count)

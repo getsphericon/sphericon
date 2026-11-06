@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -134,7 +134,7 @@ func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, de
 	if dest == "" {
 		return nil, unsubscribes.ErrDestinationEmpty
 	}
-	if !suppression.ValidDestination("telegram", dest) {
+	if !suppressions.ValidDestination("telegram", dest) {
 		return nil, unsubscribes.ErrDestinationInvalid
 	}
 	if source != eligibility.SourceEverything {

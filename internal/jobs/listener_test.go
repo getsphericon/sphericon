@@ -11,7 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/tracking"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -43,7 +43,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	bus := events.New(pool, entclient.NewTx)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
-		Ent: entClient, Bus: bus, Outbound: outbound.New(bus, nil, nil, tracking.New("test-secret", "http://local")),
+		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, tracking.New("test-secret", "http://local")),
 		Cipher: cipher, SystemSender: mail, Catalog: registry.Default(), AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
 	})
 	require.NoError(t, err)

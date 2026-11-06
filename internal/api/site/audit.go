@@ -8,7 +8,7 @@ import (
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/insights/auditapi"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 )
@@ -32,7 +32,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 		IP:         params.IP.Or(""),
 		RequestID:  params.RequestId.Or(""),
 	}
-	cursor, err := auditapi.Page(params.Cursor.Or(""))
+	cursor, err := auditlog.Page(params.Cursor.Or(""))
 	limit := int(params.Limit.Value)
 	if err != nil {
 		return nil, err
@@ -42,9 +42,9 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	if err != nil {
 		return nil, err
 	}
-	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditapi.ViewsOf(rows))}
+	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(auditlog.ViewsOf(rows))}
 	if next > 0 {
-		out.NextCursor = siteapi.NewOptNilString(auditapi.NextCursor(next))
+		out.NextCursor = siteapi.NewOptNilString(auditlog.NextCursor(next))
 	}
 	return out, nil
 }

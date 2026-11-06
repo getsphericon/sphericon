@@ -4,13 +4,13 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the
 // UI displays for signature verification.
-func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
+func webhookResource(e webhookendpoints.Endpoint) siteapi.SiteWebhookEndpointResource {
 	res := mapper.WebhookEndpointToResource(e.WebhookEndpoint)
 	res.Secret = e.Secret
 	return res

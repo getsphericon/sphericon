@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -35,7 +35,9 @@ var fixedNow = time.Date(2030, time.March, 4, 10, 0, 0, 0, time.UTC)
 
 // atFixedNow is Outbound send's clock standing still at fixedNow, so the Provider limit's
 // buckets refill nothing between the sends of a test.
-func atFixedNow() outbound.Option { return outbound.WithClock(func() time.Time { return fixedNow }) }
+func atFixedNow() outboundmessages.Option {
+	return outboundmessages.WithClock(func() time.Time { return fixedNow })
+}
 
 // recordingScheduler is the scheduling seam recording what it is asked, so a test asserts
 // the pacing times without waiting for them.
@@ -122,12 +124,12 @@ func TestPlanHoldsOnUnverifiedFromDomain(t *testing.T) {
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldUnverifiedDomain, held.Reason)
+	assert.Equal(t, outboundmessages.HoldUnverifiedDomain, held.Reason)
 
 	got := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, got.Status, "a hold is not a failure: the status is unchanged")
 	require.NotNil(t, got.HoldReason)
-	assert.EqualValues(t, outbound.HoldUnverifiedDomain, *got.HoldReason)
+	assert.EqualValues(t, outboundmessages.HoldUnverifiedDomain, *got.HoldReason)
 	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID), "no recipient rows while held")
 
 	// Reversible: once the From is on a verified domain the same plan goes through and the
@@ -149,7 +151,7 @@ func TestPlanFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
 	_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 
 	require.Error(t, err)
-	require.NotErrorIs(t, err, outbound.ErrInProgress)
+	require.NotErrorIs(t, err, outboundmessages.ErrInProgress)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusFailed, b.Status)
 	assert.NotNil(t, b.FailedAt, "the move to failed stamps when it failed")
@@ -451,7 +453,7 @@ func TestPlanHoldsWithNoIntegration(t *testing.T) {
 
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
-	assert.Equal(t, outbound.HoldNoIntegration, held.Reason)
+	assert.Equal(t, outboundmessages.HoldNoIntegration, held.Reason)
 	b := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	require.NotNil(t, b.HoldReason)

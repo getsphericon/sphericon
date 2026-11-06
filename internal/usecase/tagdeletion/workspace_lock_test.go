@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/inuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -48,9 +48,9 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	errs := testhelper.QueuedBehind(t, sqlDB, testhelper.HoldWorkspaceLock(t, bus, s), save, remove)
 
 	require.NoError(t, errs["save"])
-	var used *inuse.Error
+	var used *liveuse.Error
 	require.ErrorAs(t, errs["delete"], &used)
-	assert.Equal(t, []inuse.User{{Kind: inuse.Segment, ID: saved, Name: "Unused tag holders"}}, used.Users)
+	assert.Equal(t, []liveuse.User{{Kind: liveuse.Segment, ID: saved, Name: "Unused tag holders"}}, used.Users)
 	kept, err := catalogue.List(ctx, s)
 	require.NoError(t, err)
 	assert.Contains(t, names(kept), fixtures.TagUnusedName, "the Tag the Segment names is kept")

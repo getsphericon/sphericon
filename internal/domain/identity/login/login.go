@@ -1,5 +1,5 @@
-// Package login is the first step of signing in (ADR 0020), shared by every surface
-// that signs a person in with an address and a password: it normalizes the address
+// Package login is the Login, the first step of signing in (GLOSSARY "Login", ADR 0020), shared
+// by every surface that signs a person in with an address and a password: it normalizes the address
 // once, consults the throttle (ADR 0025), looks the account up and checks the password
 // against a decoy hash when there is none, applies the verification gate (ADR 0030),
 // counts a failure and mints the second-factor challenge. It returns one Result, or the

@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -172,12 +172,12 @@ func TestSTARTAfterSTOPLiftsTheOptOutWithAKeywordConfirmationAndTheNextTextGoesO
 
 	contact := env.DB.Contact.GetX(t.Context(), int64(fixtures.ContactTexterID))
 	id := int64(sms.Integration.ID)
-	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outbound.Request{
+	res, err := env.OutboundModule().Send(t.Context(), env.DB.Scoped(fixtures.AcmeID), outboundmessages.Request{
 		Kind: outboundmessage.KindBroadcast, Key: "sms:after-start", Destination: knownNumber, Contact: contact,
-		Source: eligibility.SourceBroadcasts, Content: outbound.SMSContent{Text: "Welcome back"}, IntegrationID: &id,
+		Source: eligibility.SourceBroadcasts, Content: outboundmessages.SMSContent{Text: "Welcome back"}, IntegrationID: &id,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, outbound.Sent, res.Outcome)
+	assert.Equal(t, outboundmessages.Sent, res.Outcome)
 }
 
 func TestNeitherSTOPNorSTARTIsAnswered(t *testing.T) {

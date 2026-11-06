@@ -6,7 +6,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 )
 
 // Consent narrows through /api (ADR 0016): these operations add a Suppression or record an
@@ -17,7 +17,7 @@ import (
 func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (*externalapi.SuppressionResource, error) {
 	s := auth.TokenScoped(ctx)
 
-	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
+	created, err := suppressions.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}

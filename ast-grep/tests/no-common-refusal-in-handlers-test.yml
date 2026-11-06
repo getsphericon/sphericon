@@ -21,7 +21,7 @@ invalid:
     }
   - |
     func refused(err error) (siteapi.InUseProblemDetails, bool) {
-    	if used, ok := inuse.As(err); ok {
+    	if used, ok := liveuse.As(err); ok {
     		return inUseProblem(used), true
     	}
     	return siteapi.InUseProblemDetails{}, false

@@ -100,7 +100,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   or a Versioned definition's `Pointers` and their moves, on a type of the `ent` package (the raw client, a
   transaction, the scoped client and its wrappers); a generic function instantiated with an ent write
   builder writes that builder's entity where it is instantiated. The moves of `ent.VersionedStore` are not
-  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/drafts`. Not
+  read: the store is the owner's `Pointers`, which counts in the owner, handed to `internal/domain/content/versioneddefinition`. Not
   read: `ent/`, test files, `internal/testhelper` and `e2e/` (test code). The fix of a finding is a
   function of the owner that makes the write, which the writer calls. An entry point does not write through
   ent at all: there every write is a finding worded for the entry point. The handlers
@@ -113,7 +113,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.Error`, `validation.RefusalError`,
-  `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
+  `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
   the module's error, and `internal/api/problem` (the surface's `NewError`) answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
@@ -123,7 +123,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
   field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
-  `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
+  `detail`, an `*liveuse.Error` with 409 and `usedBy`, an `*users.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
   `workspaces.ErrNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
@@ -166,7 +166,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
   counter, a derived row) lives in Go: an ent hook (like `internal/domain/identity/workspacefeed` or
-  `internal/domain/sending/trackinghostlog`) or the domain module, inside the same transaction.
+  `internal/domain/sending/trackinghostchanges`) or the domain module, inside the same transaction.
 
 ## Go tests
 

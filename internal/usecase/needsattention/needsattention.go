@@ -25,10 +25,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/insights/abusewatch"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -117,7 +117,7 @@ type Item struct {
 	// of an Automation that cannot send would be held for now.
 	HoldReason *holdreason.Reason
 	// Abuse is the rate behind a deliverability warning.
-	Abuse *abusewatch.Warning
+	Abuse *abusewarning.Warning
 	// EstimatedCompletionAt is when the Send cap is expected to have let a Broadcast over it out.
 	EstimatedCompletionAt *time.Time
 }
@@ -125,15 +125,15 @@ type Item struct {
 // UseCase reads the items. Its clock is time.Now.
 type UseCase struct {
 	now      func() time.Time
-	watch    abusewatch.Watch
+	watch    abusewarning.Watch
 	sendCaps providerlimit.SendCaps
-	out      *outbound.Module
+	out      *outboundmessages.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
 // run, sendCaps says whether the Instance has Send caps (ADR 0067), and out is the send path, whose
 // Preflight says whether an Automation's email step could send now.
-func New(watch abusewatch.Watch, sendCaps providerlimit.SendCaps, out *outbound.Module) *UseCase {
+func New(watch abusewarning.Watch, sendCaps providerlimit.SendCaps, out *outboundmessages.Module) *UseCase {
 	return &UseCase{now: time.Now, watch: watch, sendCaps: sendCaps, out: out}
 }
 

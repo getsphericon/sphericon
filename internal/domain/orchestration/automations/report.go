@@ -8,8 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/aggregates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclicks"
+	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 

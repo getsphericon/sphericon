@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -195,7 +195,7 @@ func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	version, err := s.AutomationVersion().Get(t.Context(), fixtures.AutomationHTTPExecutionVersionID)
 	require.NoError(t, err)
-	steps, err := automationsteps.Decode(version.Steps)
+	steps, err := automationstep.Decode(version.Steps)
 	require.NoError(t, err)
 	steps[0].Body = `{"n": {{ first_name | default: 1 }}}`
 	stored, err := json.Marshal(steps)
@@ -225,7 +225,7 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	a := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule())
-	steps := []automationsteps.Step{{Type: automationsteps.ApplyTag, Tag: "replaced-http"}}
+	steps := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "replaced-http"}}
 	_, err := a.Update(t.Context(), s, fixtures.AutomationHTTPExecutionID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	_, err = a.Publish(t.Context(), s, fixtures.AutomationHTTPExecutionID)

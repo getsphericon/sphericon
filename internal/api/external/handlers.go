@@ -13,18 +13,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
-	"github.com/getsphericon/sphericon/internal/domain/content/brandkit"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
+	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhooks"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
@@ -51,9 +51,9 @@ type Handlers struct {
 	workspaces      *workspaces.Module
 	bus             *events.Bus
 	eventlog        *eventlog.UseCase
-	outbound        *outbound.Module
+	outbound        *outboundmessages.Module
 	segments        *segments.Module
-	webhooks        *webhooks.Module
+	webhooks        *webhookendpoints.Module
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
 	sendingDomains  *sendingdomains.Module
@@ -70,9 +70,9 @@ type Handlers struct {
 	sendingDomainDeletion *sendingdomaindeletion.UseCase
 	domainVerification    *domainverification.UseCase
 	bindings              *bindings.Module
-	templates             *templates.Module
+	templates             *emailtemplates.Module
 	transactional         *transactionalsend.UseCase
-	brandKit              *brandkit.Module
+	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
 	bootstrapToken        string
@@ -87,7 +87,7 @@ type Handlers struct {
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/domain/insights/audit. Core knows only this interface: without a license Licensed is false and
+// ee/domain/insights/auditentries. Core knows only this interface: without a license Licensed is false and
 // the read answers 402.
 type AuditLog interface {
 	Licensed() bool
@@ -97,7 +97,7 @@ type AuditLog interface {
 }
 
 // ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
-// implemented by ee/domain/insights/export. Core serves the streams itself (internal/domain/insights/exportstream) and
+// implemented by ee/domain/insights/erasures. Core serves the streams itself (internal/domain/insights/exportstream) and
 // asks only whether the `export` feature is licensed: without it every stream answers 404.
 type ExportStreams interface {
 	Licensed() bool
@@ -111,13 +111,13 @@ type Deps struct {
 	Users        *users.Module
 	Workspaces   *workspaces.Module
 	Bus          *events.Bus
-	Webhooks     *webhooks.Module
+	Webhooks     *webhookendpoints.Module
 	Integrations *integrations.Module
 	// CapturedMessages is the store of what the Workspace's Test inbox kept.
 	CapturedMessages *capturedmessages.Module
 	SendingDomains   *sendingdomains.Module
 	TrackingDomains  *trackingdomains.Module
-	Outbound         *outbound.Module
+	Outbound         *outboundmessages.Module
 	Segments         *segments.Module
 	EventLog         *eventlog.UseCase
 	Contacts         *contacts.Module
@@ -130,9 +130,9 @@ type Deps struct {
 	SendingDomainDeletion *sendingdomaindeletion.UseCase
 	DomainVerification    *domainverification.UseCase
 	Bindings              *bindings.Module
-	Templates             *templates.Module
+	Templates             *emailtemplates.Module
 	Transactional         *transactionalsend.UseCase
-	BrandKit              *brandkit.Module
+	BrandKit              *brandkits.Module
 	Automations           *automations.Module
 	Rules                 *rules.Module
 	Broadcasts            *broadcasts.Module

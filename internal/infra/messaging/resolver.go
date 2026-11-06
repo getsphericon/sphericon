@@ -135,7 +135,7 @@ func HasIntegrationOn(ctx context.Context, s *ent.Scoped, channel channels.Chann
 // Integration is the enabled Integration of channel that a send on that Channel goes through
 // (Through): the one named by id, or the Channel's default when id is nil. A disabled one is
 // ErrNoProvider, never the default in its place. A send asks the Send route of outbound
-// (outbound.Module.Route), which reads it, never this directly.
+// (outboundmessages.Module.Route), which reads it, never this directly.
 func Integration(ctx context.Context, s *ent.Scoped, channel channels.Channel, id *int64) (*ent.Integration, error) {
 	row, err := Through(ctx, s, channel, id)
 	if err != nil {

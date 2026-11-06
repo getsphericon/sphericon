@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationsteps"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -30,22 +30,22 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 }
 
 // stepsOf decodes the steps of a version the test expects to exist.
-func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationsteps.Step {
+func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationstep.Step {
 	t.Helper()
 	require.NotNil(t, v)
-	steps, err := automationsteps.Decode(v.Steps)
+	steps, err := automationstep.Decode(v.Steps)
 	require.NoError(t, err)
 	return steps
 }
 
 // liveSteps and draftSteps are the steps of an Automation's live version and of its draft.
-func liveSteps(t *testing.T, a *ent.Automation) []automationsteps.Step {
+func liveSteps(t *testing.T, a *ent.Automation) []automationstep.Step {
 	t.Helper()
 	live, _ := automations.LiveAndDraft(a)
 	return stepsOf(t, live)
 }
 
-func draftSteps(t *testing.T, a *ent.Automation) []automationsteps.Step {
+func draftSteps(t *testing.T, a *ent.Automation) []automationstep.Step {
 	t.Helper()
 	_, draft := automations.LiveAndDraft(a)
 	return stepsOf(t, draft)
@@ -63,7 +63,7 @@ func versionOfRun(t *testing.T, env *testhelper.TestEnv, runID int64) int {
 }
 
 // The lifecycle the Automation shares with the Rule (edit, Publish, Revert, Archive) is tested once,
-// for both, in internal/domain/content/drafts. These are what only an Automation has: Enrollments
+// for both, in internal/domain/content/versioneddefinition. These are what only an Automation has: Enrollments
 // on a version, steps, and the Integration.
 
 // Editing a live Automation writes a draft above the live version and never rewrites the live
@@ -78,9 +78,9 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{{Type: automationsteps.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
 	require.NoError(t, err)
-	edited := []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 120}}
+	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 120}}
 	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
 	require.NoError(t, err)
 
@@ -123,7 +123,7 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	first, _, err := automations.Enroll(ctx, acme, env.Publisher(), fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
-	edited := []automationsteps.Step{{Type: automationsteps.Wait, Seconds: 99}}
+	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 99}}
 	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &edited})
 	require.NoError(t, err)
 
@@ -155,7 +155,7 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationsteps.Step{emailVia(&mailgun)}})
+	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Steps: &[]automationstep.Step{emailVia(&mailgun)}})
 	require.NoError(t, err)
 	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
 

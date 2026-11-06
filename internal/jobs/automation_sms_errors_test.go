@@ -14,7 +14,7 @@ import (
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
@@ -58,7 +58,7 @@ func TestATwilioAccountRefusalHoldsTheIntegrationUntilItIsSavedAgain(t *testing.
 			assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queued, "the held step is asked again later")
 			route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "sms", new(int64(account.Integration.ID)))
 			require.NoError(t, err)
-			assert.Equal(t, outbound.HoldProviderRefused, route.Hold)
+			assert.Equal(t, outboundmessages.HoldProviderRefused, route.Hold)
 			attention := attentionOf(t, env)
 			_, named := itemAbout(attention, siteapi.SiteAttentionKindIntegrationProviderRefused, int64(account.Integration.ID))
 			assert.True(t, named, "the attention list names the Integration")
@@ -158,7 +158,7 @@ func TestATwilioRateSignalDefersTheStepAndItSendsLater(t *testing.T) {
 			assert.Zero(t, recorded, "nothing is recorded")
 			jobs := env.JobRowsOf(t, stepexecution.RunStepArgs{}.Kind())
 			require.Len(t, jobs, 1)
-			assert.GreaterOrEqual(t, jobs[0].ScheduledAt.Sub(before), outbound.DeferralBackoff)
+			assert.GreaterOrEqual(t, jobs[0].ScheduledAt.Sub(before), outboundmessages.DeferralBackoff)
 
 			env.RunQueuedSteps(t, mod)
 

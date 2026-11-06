@@ -4,14 +4,14 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.SiteSuppressionsListParams) (*siteapi.SiteSuppressionsListOK, error) {
 	s := workspaceScope(ctx)
 
-	page, err := suppression.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Lifted.Or(false))
+	page, err := suppressions.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Lifted.Or(false))
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, _ siteapi.SiteSuppressionsCreateParams) (*siteapi.SiteSuppressionResource, error) {
 	s := workspaceScope(ctx)
 
-	created, err := suppression.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(siteapi.SiteSuppressionChannelEmail)), req.Destination)
+	created, err := suppressions.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(siteapi.SiteSuppressionChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}
@@ -34,5 +34,5 @@ func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.Si
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	return suppression.Remove(ctx, s, id)
+	return suppressions.Remove(ctx, s, id)
 }

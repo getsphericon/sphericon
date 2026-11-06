@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
-	"github.com/getsphericon/sphericon/internal/kernel/otpcode"
+	"github.com/getsphericon/sphericon/internal/kernel/totp"
 )
 
 // loginKind is the Kind under which a Staff member's failed logins are counted: its own,
@@ -73,7 +73,7 @@ func Enrolled(op *ent.StaffMember) bool {
 // for one that has. It is minted once and shown unchanged by every password step until
 // confirmed, so a repeated password login can neither swap it nor invalidate the one
 // being enrolled.
-func (m *Module) Enrolment(ctx context.Context, op *ent.StaffMember) (*otpcode.Key, error) {
+func (m *Module) Enrolment(ctx context.Context, op *ent.StaffMember) (*totp.Key, error) {
 	if Enrolled(op) {
 		return nil, nil
 	}
@@ -97,9 +97,9 @@ func (m *Module) mintChallenge(ctx context.Context, op *ent.StaffMember) (string
 // pendingEnrolment is the Staff member's unconfirmed TOTP key, minted on first use. The
 // write is conditional on no secret being stored, so two password steps racing on a
 // fresh Staff member agree on the winner's secret; the Staff member is returned as stored.
-func (m *Module) pendingEnrolment(ctx context.Context, op *ent.StaffMember) (*otpcode.Key, *ent.StaffMember, error) {
+func (m *Module) pendingEnrolment(ctx context.Context, op *ent.StaffMember) (*totp.Key, *ent.StaffMember, error) {
 	if op.TotpSecretEncrypted == "" {
-		key, err := otpcode.New(Issuer, op.Email)
+		key, err := totp.New(Issuer, op.Email)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,7 +126,7 @@ func (m *Module) pendingEnrolment(ctx context.Context, op *ent.StaffMember) (*ot
 	if err != nil {
 		return nil, nil, err
 	}
-	key, err := otpcode.FromSecret(Issuer, op.Email, string(raw))
+	key, err := totp.FromSecret(Issuer, op.Email, string(raw))
 	return key, op, err
 }
 
@@ -190,7 +190,7 @@ func (m *Module) verify(ctx context.Context, tx *ent.Tx, id int64, held, code st
 	if err != nil {
 		return err
 	}
-	step, ok, err := otpcode.Match(string(raw), code, m.now(), op.TotpLastStep)
+	step, ok, err := totp.Match(string(raw), code, m.now(), op.TotpLastStep)
 	if err != nil {
 		return err
 	}

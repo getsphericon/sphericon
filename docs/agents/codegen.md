@@ -16,7 +16,7 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
-ent + inuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
+ent + liveuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/kernel/patch fields)
 gen/service request bodies  ──goverter──▶ ee/api/staff/resources/service_inputs_gen.go  (`ServiceInputs`; no gen/staffee body is a module input)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/kernel/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)

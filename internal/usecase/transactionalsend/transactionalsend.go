@@ -18,16 +18,16 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppression"
-	"github.com/getsphericon/sphericon/internal/domain/content/templates"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outbound"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
+	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Domain errors of a request that cannot be sent as asked. A send Outbound holds is
-// outbound.ErrHeld, and a Template that cannot render with these variables is
+// outboundmessages.ErrHeld, and a Template that cannot render with these variables is
 // emailrender.ErrInvalidContent, each with its reason.
 var (
 	// ErrEmptyDestination: the address is empty once normalized.
@@ -78,30 +78,30 @@ type Request struct {
 
 // Sender is the Outbound send module.
 type Sender interface {
-	Send(ctx context.Context, s *ent.Scoped, req outbound.Request) (outbound.Result, error)
+	Send(ctx context.Context, s *ent.Scoped, req outboundmessages.Request) (outboundmessages.Result, error)
 }
 
 // UseCase is the Transactional send operation.
 type UseCase struct {
-	templates *templates.Module
+	templates *emailtemplates.Module
 	sender    Sender
 }
 
 // New builds the use case over the Templates module and the Outbound send module.
-func New(t *templates.Module, sender Sender) *UseCase {
+func New(t *emailtemplates.Module, sender Sender) *UseCase {
 	return &UseCase{templates: t, sender: sender}
 }
 
 // Send runs the Transactional send in the Workspace of s.
 func (m *UseCase) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, error) {
-	dest := suppression.NormalizeDestination(req.Destination)
+	dest := suppressions.NormalizeDestination(req.Destination)
 	if dest == "" {
 		return Result{}, ErrEmptyDestination
 	}
 
 	// Workspace-scoped: another Workspace's Template id is not found, never sent.
 	tmpl, err := m.templates.Get(ctx, s, req.TemplateID)
-	if errors.Is(err, templates.ErrNotFound) {
+	if errors.Is(err, emailtemplates.ErrNotFound) {
 		return Result{}, ErrTemplateNotFound
 	}
 	if err != nil {
@@ -121,16 +121,16 @@ func (m *UseCase) Send(ctx context.Context, s *ent.Scoped, req Request) (Result,
 	}
 
 	// A client key makes the send idempotent; without one every call is its own send.
-	res, err := m.sender.Send(ctx, s, outbound.Transactional(outbound.TransactionalMessage{
+	res, err := m.sender.Send(ctx, s, outboundmessages.Transactional(outboundmessages.TransactionalMessage{
 		ClientKey:   req.IdempotencyKey,
 		Destination: dest,
 		ContactID:   contactID,
 		TemplateID:  req.TemplateID,
-		Content:     outbound.EmailContent{Subject: tmpl.Subject, Body: tmpl.Body},
+		Content:     outboundmessages.EmailContent{Subject: tmpl.Subject, Body: tmpl.Body},
 		Variables:   vars,
 		Track:       req.Track,
 	}))
-	if errors.Is(err, outbound.ErrInProgress) {
+	if errors.Is(err, outboundmessages.ErrInProgress) {
 		return Result{}, ErrInProgress
 	}
 	if err != nil {
@@ -139,19 +139,19 @@ func (m *UseCase) Send(ctx context.Context, s *ent.Scoped, req Request) (Result,
 
 	out := Result{MessageID: res.MessageID, Destination: dest}
 	switch res.Outcome {
-	case outbound.Sent:
+	case outboundmessages.Sent:
 		out.Status = Sent
-	case outbound.Skipped:
+	case outboundmessages.Skipped:
 		// Transactional skips only on Suppression (the global hard floor).
 		out.Status = Suppressed
-	case outbound.Failed:
+	case outboundmessages.Failed:
 		if res.Replayed {
 			// A failed key is spent: the caller should retry under a fresh key.
 			return Result{}, ErrReplayedFailed
 		}
 		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
-	case outbound.Held:
-		return Result{}, outbound.ErrHeld.With(outbound.Detail(res.Reason))
+	case outboundmessages.Held:
+		return Result{}, outboundmessages.ErrHeld.With(outboundmessages.Detail(res.Reason))
 	default:
 		// Deferral, and Refused (a Test send's outcome): a Transactional request is neither
 		// reserved against the Provider limit nor a Test send.

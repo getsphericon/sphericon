@@ -19,6 +19,6 @@ func TestEntrywrite(t *testing.T) {
 		"github.com/getsphericon/sphericon/internal/testhelper",
 		"github.com/getsphericon/sphericon/e2e",
 		"github.com/getsphericon/sphericon/internal/domain/orchestration/automations",
-		"github.com/getsphericon/sphericon/internal/domain/content/drafts",
+		"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition",
 		"github.com/getsphericon/sphericon/ee/api/staff")
 }

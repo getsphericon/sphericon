@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signin"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 )
 
 // SigninIdentity is who the fake provider says the person is: the subject, the email and
@@ -101,13 +101,13 @@ func (f *FakeSignin) Credentials() config.SigninCredentials {
 
 // GitHubEndpoints points the registry's GitHub entry at the fake: plain OAuth2, with the
 // account and its emails read from the API.
-func (f *FakeSignin) GitHubEndpoints() signin.Endpoints {
-	return signin.Endpoints{AuthURL: f.Server.URL + "/authorize", TokenURL: f.Server.URL + "/token", APIURL: f.Server.URL}
+func (f *FakeSignin) GitHubEndpoints() signinprovider.Endpoints {
+	return signinprovider.Endpoints{AuthURL: f.Server.URL + "/authorize", TokenURL: f.Server.URL + "/token", APIURL: f.Server.URL}
 }
 
 // Endpoints points the registry's Google entry at the fake.
-func (f *FakeSignin) Endpoints() signin.Endpoints {
-	return signin.Endpoints{AuthURL: f.Server.URL + "/authorize", TokenURL: f.Server.URL + "/token", Issuer: f.Server.URL, JWKSURL: f.Server.URL + "/keys"}
+func (f *FakeSignin) Endpoints() signinprovider.Endpoints {
+	return signinprovider.Endpoints{AuthURL: f.Server.URL + "/authorize", TokenURL: f.Server.URL + "/token", Issuer: f.Server.URL, JWKSURL: f.Server.URL + "/keys"}
 }
 
 // Authorize is the person consenting at the provider: it takes the authorization URL `start`
@@ -256,7 +256,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func WithSignin(f *FakeSignin) Option {
 	return func(s *setup) {
 		enableSignin(s, "google", f.Credentials())
-		s.signinOpts = append(s.signinOpts, signin.WithEndpoints("google", f.Endpoints()))
+		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("google", f.Endpoints()))
 	}
 }
 
@@ -264,7 +264,7 @@ func WithSignin(f *FakeSignin) Option {
 func WithSigninGitHub(f *FakeSignin) Option {
 	return func(s *setup) {
 		enableSignin(s, "github", f.Credentials())
-		s.signinOpts = append(s.signinOpts, signin.WithEndpoints("github", f.GitHubEndpoints()))
+		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("github", f.GitHubEndpoints()))
 	}
 }
 
