@@ -7,7 +7,8 @@ import (
 	"reflect"
 	"slices"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/api/problem"
@@ -24,12 +25,12 @@ type ServiceSurface struct {
 	security *ServiceSecurityHandler
 }
 
-// NewServiceSurface builds the surface over the module that issues and checks credentials
-// and audits its writes.
-func NewServiceSurface(m *eestaff.Module) *ServiceSurface {
+// NewServiceSurface builds the surface over the use case that serves and audits its operations
+// and the module that checks credentials.
+func NewServiceSurface(m *eestaff.Module, creds *servicecredentials.Module) *ServiceSurface {
 	return &ServiceSurface{
 		handlers: &ServiceHandlers{module: m},
-		security: NewServiceSecurity(m, ServiceOperationScopes),
+		security: NewServiceSecurity(creds, ServiceOperationScopes),
 	}
 }
 
@@ -63,14 +64,14 @@ func CurrentService(ctx context.Context) *ent.ServiceCredential {
 // ServiceSecurityHandler implements serviceapi.SecurityHandler: the bearer credential,
 // its scopes and its rate limit.
 type ServiceSecurityHandler struct {
-	module   *eestaff.Module
+	module   *servicecredentials.Module
 	requires map[serviceapi.OperationName][]serviceapi.ServiceScope
 }
 
 var _ serviceapi.SecurityHandler = (*ServiceSecurityHandler)(nil)
 
 // NewServiceSecurity builds the handler over a map of the scopes each operation needs.
-func NewServiceSecurity(m *eestaff.Module, requires map[serviceapi.OperationName][]serviceapi.ServiceScope) *ServiceSecurityHandler {
+func NewServiceSecurity(m *servicecredentials.Module, requires map[serviceapi.OperationName][]serviceapi.ServiceScope) *ServiceSecurityHandler {
 	return &ServiceSecurityHandler{module: m, requires: requires}
 }
 
@@ -85,7 +86,7 @@ func (h *ServiceSecurityHandler) HandleBearerAuth(ctx context.Context, op servic
 		return ctx, err
 	}
 	cred, err := h.module.AuthenticateService(ctx, t.Token)
-	if errors.Is(err, eestaff.ErrUnauthorized) {
+	if errors.Is(err, servicecredentials.ErrUnauthorized) {
 		if limited := limits.AuthFailed(ctx); limited != nil {
 			return ctx, limited
 		}
@@ -96,7 +97,7 @@ func (h *ServiceSecurityHandler) HandleBearerAuth(ctx context.Context, op servic
 	}
 	required, known := h.requires[op]
 	if !known || !covers(cred.Scopes, required) {
-		return ctx, eestaff.ErrForbidden
+		return ctx, servicecredentials.ErrForbidden
 	}
 	if err := limits.ChargeService(cred.ID); err != nil {
 		return ctx, err

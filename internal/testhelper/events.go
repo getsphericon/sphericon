@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/audit"
-	"github.com/getsphericon/sphericon/ee/export"
+	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/export"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/app/entclient"

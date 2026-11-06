@@ -27,6 +27,7 @@ openapi/site (`x-required-permissions`, `x-allowed-while-withheld`, `x-allowed-w
 openapi/site (`x-grant-permissions` on each grantable scope enum, from `@grantable` and `@grantedWith`) ──cmd/scopegen──▶ internal/domain/identity/memberships/grant_permissions_gen.go (`GrantPermissions`)
 openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/domain/identity/memberships/permissions_gen.go (`Permission` and its `Perm…` constants)
 openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/domain/identity/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary)
+openapi/service (`ServiceScope` enum) ──cmd/scopegen──▶ ee/domain/identity/servicecredentials/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary, so the Service credentials module never imports gen/service)
 openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums) ──cmd/scopegen──▶ internal/kernel/tokenscope/user_scopes_gen.go (each type, its constants and its list, so a core package never imports gen/site for them); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)

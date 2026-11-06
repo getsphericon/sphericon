@@ -11,7 +11,7 @@ import (
 
 // The Workspace's sending standing lives on its row: the suspension, the abuse exemption, the
 // Send cap (internal/domain/identity/suspension says what they mean and audits each change) and the markers of the
-// notices the abuse detector sends (ee/abuse, internal/domain/identity/suspension.NotifyOwners). These functions
+// notices the abuse detector sends (ee/usecase/abusedetection, internal/domain/identity/suspension.NotifyOwners). These functions
 // are their writes; each runs on the client or transaction it is given.
 
 // SuspendIn suspends the Workspace id inside tx while it is not suspended: it sets suspended_at to

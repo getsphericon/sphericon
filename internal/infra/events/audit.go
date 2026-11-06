@@ -13,7 +13,7 @@ import (
 
 // NameAuditEntry is the bus type of an Audit entry (ADR 0022). Core only carries the
 // type and the publish seam; the table, the subscriber and the read surfaces live in
-// ee/audit, gated by the license key. Without a license the event is published and
+// ee/domain/insights/audit, gated by the license key. Without a license the event is published and
 // nobody consumes it.
 const NameAuditEntry = "audit.entry"
 

@@ -5,7 +5,7 @@ package resources
 
 import (
 	"fmt"
-	abuse "github.com/getsphericon/sphericon/ee/abuse"
+	abuse "github.com/getsphericon/sphericon/ee/domain/insights/abuse"
 	ent "github.com/getsphericon/sphericon/ent"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	workspace "github.com/getsphericon/sphericon/ent/workspace"

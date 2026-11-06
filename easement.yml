@@ -8,9 +8,10 @@ version: 1
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
 # here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
 # that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api), `x-core-forbids`
-# (each context's `domain-<context>`), `x-raw-holder-forbids` (the runner and each context's
-# raw-client components); api-auth, ee, ee-edition, testsupport and wiring take this list
-# whole. The removal of the only Owner's Membership of a Workspace in its deletion window
+# (each context's `domain-<context>`, the Enterprise `ee-domain-<context>` and `ee-usecase`),
+# `x-raw-holder-forbids` (the runner, each context's raw-client components and the Enterprise
+# `ee-domain-<context>-raw` and `ee-usecase-raw`); api-auth, ee-edition, testsupport and wiring
+# take this list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion in `internal/domain/identity/users` (`domain-identity-users`), which alone
 # may call it: its forbid list is `x-user-deletion-forbids`, the raw-holder list without it, and
 # `usecase` and `usecase-raw` forbid it by name. Its definition is not a use; a call even inside its own module fails, and tests are
@@ -493,11 +494,13 @@ x-user-deletion-forbids: &user-deletion-forbids
   - *integrations-erase-integrations-in
   - *joindomains-erase-join-domains-in
   - *memberships-erase-memberships-in
-# No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
-# shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
+# No core tier (kernel, infrastructure, domain) and no Enterprise module or use case imports a
+# surface's generated package: what the core shares with a contract is generated into the kernel
+# (the scope vocabulary, internal/kernel/tokenscope), and an Enterprise vocabulary into the module
+# that owns it (the Service credential scopes, ee/domain/identity/servicecredentials).
 x-no-surface-gen: &no-surface-gen
   name: gen-surfaces
-  because: no core tier imports an API surface's generated package (ADR 0102); a vocabulary the core shares with a contract is generated into the kernel, as the scope vocabulary is into internal/kernel/tokenscope
+  because: no core tier and no Enterprise module or use case imports an API surface's generated package (ADR 0102); a vocabulary shared with a contract is generated into the kernel, as the user scope vocabulary is into internal/kernel/tokenscope, or into the module that owns it, as the Service credential scopes are into ee/domain/identity/servicecredentials
 x-no-container: &no-container
   - name: github.com/samber/do
     because: no domain module or handler sees the DI container; a new dependency is a provider in internal/app/container.go (docs/architecture.md, Backend architecture)
@@ -539,8 +542,15 @@ components:
         cmd/server,
       ]
 
+  # The Enterprise Edition (ADR 0014, ADR 0102) has the core's shape: its domain modules in
+  # ee/domain/<context>/<module>, its use cases in ee/usecase/<name>, its surfaces in ee/api and
+  # the Edition ee/ee.go, with the License key's gate (ee/licensekey) beside them. Its boundary with
+  # the core is unchanged: the core never imports it (no core component lists an ee component, and
+  # each ee component names its importers), and only the wiring assembles it.
+  #
   # The handlers of the Enterprise surfaces (the Staff console's Enterprise sections and the service
-  # endpoints), over their domain module in ee/staff. The Edition (ee/ee.go) builds them.
+  # endpoints), over the use case ee/usecase/staff and the module ee/domain/identity/servicecredentials.
+  # The Edition (ee/ee.go) builds them.
   ee-api:
     in: 'ee/api/**'
     allow_importers: [ee-edition]
@@ -550,11 +560,85 @@ components:
     in: 'ee/*.go'
     allow_importers: [wiring]
     because: only the wiring assembles the Enterprise Edition
-  # Enterprise Edition, one binary gated by the license key.
-  ee:
-    in: 'ee/**'
-    allow_importers: [wiring, ee-api, ee-edition]
-    because: the core never imports the Enterprise Edition; only the wiring assembles it, and an Enterprise surface calls its module
+  # The runtime License key's gate (ee/licensekey): it imports nothing of ours, and every Enterprise
+  # package asks it what the License switches on.
+  ee-licensekey:
+    in: ee/licensekey
+    allow_importers:
+      [
+        wiring,
+        ee-edition,
+        ee-api,
+        ee-usecase,
+        ee-usecase-raw,
+        ee-domain-identity,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+        ee-domain-insights-raw,
+      ]
+    because: the core never imports the Enterprise Edition; the wiring reads the License key, and every Enterprise package asks it what the License switches on
+  # The Enterprise use cases (ADR 0102): an operation across domain modules, core or Enterprise,
+  # such as the abuse detector's pass, the advanced-retention prune or the console's Enterprise
+  # sections. Each directory under ee/usecase is one use case; none imports another, and only an
+  # Enterprise surface, the Edition or the wiring imports one. Each holds the raw client today, so
+  # each is named in `ee-usecase-raw` (one pattern each, so each is an instance); a new one that
+  # holds no raw client lands in `ee-usecase`.
+  ee-usecase:
+    in: ee/usecase/*
+    isolated: true
+    optional: true
+    allow_importers: [ee-api, ee-edition, wiring]
+    because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
+  ee-usecase-raw:
+    in: ['ee/usecase/abusedetection*', 'ee/usecase/retention*', 'ee/usecase/staff*']
+    isolated: true
+    allow_importers: [ee-api, ee-edition, wiring]
+    because: an Enterprise use case is called by an Enterprise surface or a job the Edition registers, and built by the Edition; no domain module imports one, and no use case imports another (ADR 0102)
+  # The Enterprise domain modules (ADR 0102), in the core's contexts: an Enterprise module of a
+  # context imports the core's modules of its context and of the contexts below, and the Enterprise
+  # modules of those contexts, never one above. Identity: the Service credentials (the machine
+  # identity of the service endpoints), which hold the raw client.
+  ee-domain-identity-raw:
+    in: ee/domain/identity/servicecredentials
+    allow_importers:
+      [
+        ee-domain-identity,
+        ee-domain-insights-raw,
+        ee-domain-insights,
+        ee-usecase,
+        ee-usecase-raw,
+        ee-api,
+        ee-edition,
+        wiring,
+      ]
+    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
+  ee-domain-identity:
+    in: 'ee/domain/identity/**'
+    optional: true
+    allow_importers:
+      [
+        ee-domain-identity-raw,
+        ee-domain-insights-raw,
+        ee-domain-insights,
+        ee-usecase,
+        ee-usecase-raw,
+        ee-api,
+        ee-edition,
+        wiring,
+      ]
+    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context and above, the Edition and the wiring; the core never imports the Enterprise Edition
+  # Insights: the Audit log (audit), the Erasures stream of the Export streams (export) and the
+  # Usage figures (usage), which own their tables and hold the raw client, and the abuse watch
+  # (abuse), the detector's limits and its reading of a Workspace's standing.
+  ee-domain-insights-raw:
+    in: [ee/domain/insights/audit, ee/domain/insights/export, ee/domain/insights/usage]
+    allow_importers: [ee-domain-insights, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
+    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
+  ee-domain-insights:
+    in: 'ee/domain/insights/**'
+    allow_importers:
+      [ee-domain-insights-raw, ee-usecase, ee-usecase-raw, ee-api, ee-edition, wiring]
+    because: an Enterprise domain module is reached by the Enterprise use cases, surfaces and modules of its context, the Edition and the wiring; the core never imports the Enterprise Edition
 
   # Frontend (src/AGENTS.md). Generated clients are leaves; a route file binds a page lazily and
   # never imports it, so a page may import its route's `Route` without a cycle.
@@ -1057,34 +1141,88 @@ rules:
   ee-api:
     <<: *no-raw-client
     may_depend_on:
-      [api-problem, domain-insights, domain-identity-raw, domain-sending, ee, gen-surfaces]
+      [
+        api-problem,
+        domain-identity-raw,
+        domain-sending,
+        domain-insights,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+        ee-domain-insights-raw,
+        ee-usecase-raw,
+        gen-surfaces,
+      ]
     forbid_external: *no-container
-    because: an Enterprise surface receives input, calls its domain module in ee/ and returns the result (review rule 5); it never holds the raw client
+    because: an Enterprise surface receives input, calls an Enterprise use case or domain module and returns the result (review rule 5); it never holds the raw client
   ee-edition:
     may_depend_on:
       [
-        domain-insights,
         domain-identity-raw,
         domain-identity-base,
         domain-sending,
-        ee,
+        domain-insights,
+        ee-licensekey,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+        ee-domain-insights-raw,
+        ee-usecase-raw,
         ee-api,
         gen-surfaces,
       ]
     forbid_symbol: *unchecked-removals
     forbid_external: *no-container
     because: the Edition builds the Enterprise modules and their surfaces on the core, never on the open surfaces' handlers
-  ee:
-    may_depend_on:
-      - domain-insights
-      - domain-identity-raw
-      - domain-identity-base
-      - domain-sending
-      - name: gen-surfaces
-        because: the ban on a surface's generated package binds the core tiers; the Enterprise Edition's boundary with the core is unchanged (spec #1120), and ee/staff reads its service surface's ServiceScope until the Edition takes the same tiers
-    forbid_symbol: *unchecked-removals
+  ee-licensekey:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
     forbid_external: *no-container
-    because: the Enterprise Edition builds on the core and never on a surface's handlers; the Edition (ee-edition) builds its own surfaces
+    because: the License key's gate imports nothing of ours, so every Enterprise package can ask it what the License switches on
+  ee-usecase:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); unlike a core use case it calls no unchecked removal of the core, which only the core's own use case may call
+  ee-usecase-raw:
+    may_depend_on:
+      [
+        domain-identity-raw,
+        domain-identity-base,
+        domain-sending,
+        ee-licensekey,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+        ee-domain-insights-raw,
+      ]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: an Enterprise use case composes the domain modules of the core and of the Enterprise Edition (ADR 0102); these hold the raw client because they work across Workspaces, and unlike a core use case they call no unchecked removal of the core and install no ent hook of the core
+  ee-domain-identity-raw:
+    may_depend_on: [ee-licensekey]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
+  ee-domain-identity:
+    may_depend_on: []
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: an Enterprise identity module sits in the bottom context (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the identity modules of the core and of the Edition, never a module of a context above nor a use case; it reads a contract's vocabulary from what is generated into it, never from a surface's generated package
+  ee-domain-insights-raw:
+    may_depend_on: [domain-identity-base, domain-insights, ee-licensekey]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *raw-holder-forbids
+    because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
+  ee-domain-insights:
+    may_depend_on:
+      [domain-identity-raw, domain-identity-base, domain-sending, domain-insights, ee-licensekey]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_external: *no-container
+    forbid_symbol: *core-forbids
+    because: an Enterprise insights module sits above orchestration (ADR 0102), so it imports the kernel, the infrastructure, ent, the License key and the modules of the core and of the Edition of its context and the contexts below, never an instance module nor a use case; an operation that needs one is a use case
   wiring:
     may_depend_on:
       [
@@ -1101,7 +1239,11 @@ rules:
         domain-content,
         domain-sending-raw,
         domain-sending,
-        ee,
+        ee-licensekey,
+        ee-domain-identity-raw,
+        ee-domain-insights,
+        ee-domain-insights-raw,
+        ee-usecase-raw,
         ee-edition,
         api-site,
         api-external,

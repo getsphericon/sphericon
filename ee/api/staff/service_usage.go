@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usage"
+	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )

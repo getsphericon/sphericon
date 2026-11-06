@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"

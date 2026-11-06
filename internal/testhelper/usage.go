@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/audit"
-	"github.com/getsphericon/sphericon/ee/export"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/export"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usage"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 

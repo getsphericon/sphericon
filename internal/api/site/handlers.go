@@ -152,7 +152,7 @@ type Handlers struct {
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/audit. Core knows only this interface: without a license Licensed is false and
+// ee/domain/insights/audit. Core knows only this interface: without a license Licensed is false and
 // the page answers 402.
 type AuditLog interface {
 	Licensed() bool

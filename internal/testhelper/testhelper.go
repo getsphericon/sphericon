@@ -24,8 +24,9 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staff"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -225,9 +226,12 @@ type TestEnv struct {
 	// ADR 0063), on every env.
 	StaffMembers *staffmembers.Module
 
-	// StaffEnterprise is the module of the Staff console's Enterprise sections and of the
+	// StaffEnterprise is the use case of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
 	StaffEnterprise *staff.Module
+	// ServiceCredentials is the module of the service endpoints' Service credentials (ADR
+	// 0026); it refuses every call on an unlicensed env.
+	ServiceCredentials *servicecredentials.Module
 }
 
 // TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
@@ -536,6 +540,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
 		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise:   edition.Staff,
+
+		ServiceCredentials: edition.ServiceCredentials,
 	}
 }
 

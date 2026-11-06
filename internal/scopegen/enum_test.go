@@ -31,6 +31,18 @@ func TestGenerateTokenScopesListsTheVocabularyInTheContractsOrder(t *testing.T) 
 	require.Regexp(t, `var Scopes = \[\]Scope\{\s+ScopeMcpSend,\s+ScopeCustomFieldsRead,\s+\}`, out)
 }
 
+func TestGenerateCredentialScopesWritesTheServiceVocabularyIntoItsModule(t *testing.T) {
+	src, err := scopegen.CredentialScopes.Generate([]byte(`{"components":{"schemas":{
+	 "ServiceScope":{"type":"string","enum":["usage:read","holds:write"]}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package servicecredentials")
+	require.NotContains(t, out, "import")
+	require.Regexp(t, `ScopeHoldsWrite\s+Scope = "holds:write"`, out)
+	require.Regexp(t, `var Scopes = \[\]Scope\{\s+ScopeUsageRead,\s+ScopeHoldsWrite,\s+\}`, out)
+}
+
 func TestGenerateAnEnumFileRefusesADocumentWithoutTheEnum(t *testing.T) {
 	_, err := scopegen.TokenScopes.Generate([]byte(`{"components":{"schemas":{}}}`))
 

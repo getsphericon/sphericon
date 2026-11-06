@@ -15,14 +15,16 @@ import (
 	entgo "entgo.io/ent"
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
 	staffhandlers "github.com/getsphericon/sphericon/ee/api/staff"
-	"github.com/getsphericon/sphericon/ee/audit"
-	"github.com/getsphericon/sphericon/ee/export"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	"github.com/getsphericon/sphericon/ee/domain/insights/audit"
+	"github.com/getsphericon/sphericon/ee/domain/insights/export"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usage"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/retention"
-	"github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
+	"github.com/getsphericon/sphericon/ee/usecase/retention"
+	"github.com/getsphericon/sphericon/ee/usecase/staff"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
@@ -46,14 +48,17 @@ type Edition struct {
 	Audit *audit.Log
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *export.Streams
-	// Staff is the domain of the console's Enterprise sections and of the service endpoints
+	// Staff is the use case of the console's Enterprise sections and of the service endpoints
 	// (ADR 0026); every call refuses without the `staff` license.
 	Staff *staff.Module
+	// ServiceCredentials issues and checks the Service credentials of the service endpoints
+	// (ADR 0026); every call refuses without the `staff` license.
+	ServiceCredentials *servicecredentials.Module
 
 	staffSessions *staffmembers.Sessions
 	notify        memberships.Notify
 	suspend       *suspension.Suspender
-	abuseCfg      abuse.Config
+	abuseCfg      abusedetection.Config
 	now           func() time.Time
 }
 
@@ -98,8 +103,10 @@ func New(deps Deps, staffCfg staff.Config) (*Edition, error) {
 		Audit:   auditLog,
 		Export:  export.New(lic),
 		Staff:   staff.NewModule(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
+
+		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
 	}
-	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
+	e.abuseCfg = abusedetection.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
 	if e.now == nil {
 		e.now = time.Now
@@ -148,7 +155,7 @@ func (e *Edition) Service() interface {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staffhandlers.NewServiceSurface(e.Staff)
+	return staffhandlers.NewServiceSurface(e.Staff, e.ServiceCredentials)
 }
 
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
@@ -171,8 +178,8 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
-func (e *Edition) Abuse() *abuse.Detector {
-	return abuse.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
+func (e *Edition) Abuse() *abusedetection.Detector {
+	return abusedetection.New(e.client, e.lic, e.notify, e.suspend, e.abuseCfg)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
@@ -202,11 +209,11 @@ func (e *Edition) Jobs() jobextension.Extension {
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
 			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
-			river.AddWorker(w, abuse.NewWorker(detector))
+			river.AddWorker(w, abusedetection.NewWorker(detector))
 			// The Audit log's consumer (EventConsumers), which stores nothing without the audit license.
 			river.AddWorker(w, audit.NewEntryEventWorker(e.client, e.lic))
 		},
-		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
+		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abusedetection.Periodic()},
 	}
 }
 

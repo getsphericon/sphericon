@@ -4292,7 +4292,7 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 
-# Meter (workspace 5800): the Workspace the usage tests (ee/usage) read. Its Outbound messages sit in
+# Meter (workspace 5800): the Workspace the usage tests (ee/domain/insights/usage) read. Its Outbound messages sit in
 # calendar months counted back from now (monthAgo), one scenario per month so no test sees
 # another's: emails 17 and 16 months ago, an in-flight send 14, a send that lands late 12, a closed
 # month with a straggler 10, a send a minute either side of a month boundary 20/19, a catch-up over 7 to 5, a send in flight at a month's close 3. The

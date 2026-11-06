@@ -87,7 +87,7 @@ type Handlers struct {
 }
 
 // AuditLog is the read seam of the Enterprise Audit log (ADR 0022), implemented by
-// ee/audit. Core knows only this interface: without a license Licensed is false and
+// ee/domain/insights/audit. Core knows only this interface: without a license Licensed is false and
 // the read answers 402.
 type AuditLog interface {
 	Licensed() bool
@@ -97,7 +97,7 @@ type AuditLog interface {
 }
 
 // ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
-// implemented by ee/export. Core serves the streams itself (internal/domain/insights/exportstream) and
+// implemented by ee/domain/insights/export. Core serves the streams itself (internal/domain/insights/exportstream) and
 // asks only whether the `export` feature is licensed: without it every stream answers 404.
 type ExportStreams interface {
 	Licensed() bool

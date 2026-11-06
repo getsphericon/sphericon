@@ -16,7 +16,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
@@ -475,22 +475,22 @@ func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
 // value, shown once. Only the Staff member's command line makes one: no endpoint can.
-func (a *App) IssueServiceCredential(ctx context.Context, in staff.IssueInput) (*staff.Issued, error) {
+func (a *App) IssueServiceCredential(ctx context.Context, in servicecredentials.IssueInput) (*servicecredentials.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.IssueServiceCredential(ctx, in)
+	return edition.ServiceCredentials.IssueServiceCredential(ctx, in)
 }
 
 // RotateServiceCredential issues a new credential with the name and scopes of an active
 // one, leaving the old one active until it is revoked.
-func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error) {
+func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*servicecredentials.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.RotateServiceCredential(ctx, id, expiresAt)
+	return edition.ServiceCredentials.RotateServiceCredential(ctx, id, expiresAt)
 }
 
 // RevokeServiceCredential ends a Service credential.
@@ -499,7 +499,7 @@ func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return edition.Staff.RevokeServiceCredential(ctx, id)
+	return edition.ServiceCredentials.RevokeServiceCredential(ctx, id)
 }
 
 // ServiceCredentials lists the Service credentials with their state, narrowed to one
@@ -509,7 +509,7 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 	if err != nil {
 		return nil, err
 	}
-	return edition.Staff.ServiceCredentials(ctx, name)
+	return edition.ServiceCredentials.ServiceCredentials(ctx, name)
 }
 
 // Users is the product's Users module from the DI container, for harnesses that

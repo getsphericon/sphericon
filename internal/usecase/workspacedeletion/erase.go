@@ -148,7 +148,7 @@ type rowQuery[Q any] interface {
 type RowEraser func(ctx context.Context, s *ent.Scoped, ids []int64) error
 
 // EditionTables are the removals of the Workspace-owned tables the Enterprise Edition owns: the
-// Audit entries (ee/audit), the Erasures rows (ee/export) and the Usage rows (ee/usage). No core
+// Audit entries (ee/domain/insights/audit), the Erasures rows (ee/domain/insights/export) and the Usage rows (ee/domain/insights/usage). No core
 // package imports the Edition, so the wiring hands them in; they run at their place in the order
 // like every other step, whatever the license.
 type EditionTables struct {

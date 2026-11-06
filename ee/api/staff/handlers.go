@@ -1,7 +1,7 @@
 // Package staff is the handlers of the Enterprise Staff surfaces (ADR 0026, ADR 0063): the Staff
 // console's Enterprise sections under /staff, with the core Staff member's session check
 // (internal/domain/identity/staffmembers), and the service endpoints under /service, with the Service credential's.
-// A handler receives the request, calls the domain module ee/staff and maps what it returns; the
+// A handler receives the request, calls the use case ee/usecase/staff and maps what it returns; the
 // Edition (ee) builds the surfaces and the composition root mounts them.
 //
 // Governed by ee/LICENSE, not the AGPL.
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
-	eestaff "github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	eestaff "github.com/getsphericon/sphericon/ee/usecase/staff"
 	"github.com/getsphericon/sphericon/ent"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/api/problem"

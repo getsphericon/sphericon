@@ -20,7 +20,14 @@ features stay locked until a valid **license key** is present at runtime — so 
 distribute one artifact to everyone and unlock Enterprise functionality per
 subscription (the Cal.com / GitLab model). There is no separate "enterprise build".
 
-Implemented so far: the **Audit log** (`ee/audit`, ADR 0022), unlocked by the `audit`
+Implemented so far: the **Audit log** (`ee/domain/insights/audit`, ADR 0022), unlocked by the `audit`
 feature of the license key (`ee/licensekey`, set through `SPHERICON_LICENSE_KEY`), and the
-advanced-retention control (`ee/retention`, `retention` feature): a Workspace's
+advanced-retention control (`ee/usecase/retention`, `retention` feature): a Workspace's
 `retention_days` window, applied to the Audit log by one periodic job.
+
+## Layout
+
+The same tiers as the core (ADR 0102, `docs/architecture.md`, "Enterprise Edition layout"): domain
+modules in `ee/domain/<context>/<module>`, in the core's contexts, use cases in `ee/usecase/<name>`,
+the Enterprise surfaces in `ee/api`, the Edition that assembles them in `ee/ee.go`, and the License
+key's gate in `ee/licensekey`. `easement.yml` checks the boundaries: the core never imports `ee/`.

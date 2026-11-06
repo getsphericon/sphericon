@@ -85,6 +85,26 @@ var TokenScopes = Table{
 	}.Decls,
 }
 
+// CredentialScopes is the Service credential scope vocabulary in the Enterprise module
+// servicecredentials (ADR 0026): what a credential may be issued with, from the service
+// contract's ServiceScope enum, so the module never imports the service surface's generated code.
+var CredentialScopes = Table{
+	Spec:    "openapi/service.openapi.json",
+	Out:     "ee/domain/identity/servicecredentials/scopes_gen.go",
+	Package: "servicecredentials",
+	Decls: Enum{
+		Schema: "ServiceScope",
+		Doc: []string{
+			"Scope is what a Service credential may do on the service endpoints: a value of the",
+			"contract's ServiceScope enum, written `resource:verb`.",
+		},
+		Type:    "Scope",
+		Prefix:  "Scope",
+		List:    "Scopes",
+		ListDoc: []string{"Scopes is the whole vocabulary: a credential is issued with scopes from it only."},
+	}.Decls,
+}
+
 // UserScopes is the vocabulary of the scopes a User may give a credential of their own (ADR 0061),
 // in the kernel package tokenscope: what an OAuth client is granted by default (GrantableScope),
 // what needs the User's explicit opt-in (SendScope, SetupScope), and their union a Personal token

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/ee/usecase/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"

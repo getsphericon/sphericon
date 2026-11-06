@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-faster/jx"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
-	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abuse"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usage"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"

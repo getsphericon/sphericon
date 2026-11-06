@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/abuse"
+	"github.com/getsphericon/sphericon/ee/usecase/abusedetection"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 )
@@ -76,6 +76,6 @@ var JobsUIStub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 // Abuse is the abuse detector as the composition root builds it (ADR 0026), over the
 // env's bus and platform sender; a pass is Run(ctx, now).
-func (env *TestEnv) Abuse() *abuse.Detector {
+func (env *TestEnv) Abuse() *abusedetection.Detector {
 	return env.edition.Abuse()
 }

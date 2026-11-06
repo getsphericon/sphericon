@@ -5,7 +5,7 @@ package resources
 
 import (
 	"fmt"
-	usage "github.com/getsphericon/sphericon/ee/usage"
+	usage "github.com/getsphericon/sphericon/ee/domain/insights/usage"
 	ent "github.com/getsphericon/sphericon/ent"
 	trackinghostchange "github.com/getsphericon/sphericon/ent/trackinghostchange"
 	service "github.com/getsphericon/sphericon/gen/service"
