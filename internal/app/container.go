@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/samber/do/v2"
 	"go.opentelemetry.io/otel/metric"
@@ -87,7 +88,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
-	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
@@ -122,7 +122,7 @@ import (
 //
 // The seams below are the services a test harness replaces with do.Override or
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
-// already built): Clock, Version, Database, SystemSender, Enqueuer, SigninOptions,
+// already built): Clock, Version, Database, SystemSender, SigninOptions,
 // IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
 // *credentials.Hasher, *messaging.Catalog, outboundmessages.Senders, domainname.TXTLookup, privaterelayranges.Source,
 // *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
@@ -176,15 +176,6 @@ type SystemSender struct {
 	messaging.EmailSender
 }
 
-// Enqueuer is the enqueue side of the job queue the domain modules and the /site handlers
-// queue work through: an insert-only jobs.Queue in production, which needs none of what the
-// workers drive, and a test adapter that works each job at once through its real worker in
-// tests.
-type Enqueuer interface {
-	mailjobs.Enqueuer
-	integrations.QuotaEnqueuer
-}
-
 // SigninOptions configure the Sign-in providers (ADR 0048); none in production.
 type SigninOptions []signinprovider.Option
 
@@ -223,7 +214,7 @@ func (p *riverPool) Shutdown() {
 	cleanup.Close(p, "the job queue pool")
 }
 
-// jobsClient is the river client that works the jobs; work is queued through the Enqueuer.
+// jobsClient is the river client that works the jobs; work is queued through the insert-only client.
 type jobsClient struct {
 	*jobs.Client
 }
@@ -441,11 +432,7 @@ var editionPackage = do.Package(
 		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
 		// is built after the bus, which its Audit log records through.
 		bus.Use(ee.Hooks(do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i))...)
-		inserter, err := jobs.NewInserter(database.DB)
-		if err != nil {
-			return nil, err
-		}
-		bus.UseJobs(inserter)
+		bus.UseJobs(do.MustInvoke[*river.Client[*sql.Tx]](i))
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), ee.EventConsumers()...)...)
 		// A provider's bounce or complaint counts on the send-outcome counter once it is stored.
@@ -555,11 +542,11 @@ var jobsPackage = do.Package(
 		}
 		return &jobsClient{Client: jc}, nil
 	}),
-	// The enqueue side implements every enqueue seam: the platform mails and the Integration quota
-	// refresh. It inserts over the main pool, like the bus, and works nothing, so what queues work
+	// The insert-only river client the bus, the platform mails and the Integration quota refresh
+	// queue work through. It inserts over the main pool and works nothing, so what queues work
 	// never depends on the job client or on what its workers drive.
-	do.Lazy(func(i do.Injector) (Enqueuer, error) {
-		return jobs.NewQueue(do.MustInvoke[Database](i).DB)
+	do.Lazy(func(i do.Injector) (*river.Client[*sql.Tx], error) {
+		return jobs.NewInserter(do.MustInvoke[Database](i).DB)
 	}),
 )
 
@@ -642,7 +629,7 @@ var identityPackage = do.Package(
 			workspacecreation.WithSignUp(workspacecreation.SignUpConfig{
 				Consents:            do.MustInvoke[*consentrecords.Module](i),
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
-				Mail:                do.MustInvoke[Enqueuer](i),
+				Mail:                do.MustInvoke[*river.Client[*sql.Tx]](i),
 				Mint:                links.VerificationLink,
 				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
 				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
@@ -705,7 +692,7 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[Enqueuer](i),
+		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), do.MustInvoke[*river.Client[*sql.Tx]](i),
 			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[IntegrationOptions](i)...), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
@@ -964,7 +951,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	cfg := do.MustInvoke[*config.Config](i)
 	edition := do.MustInvoke[*ee.Edition](i)
 	bus := do.MustInvoke[*events.Bus](i)
-	enqueue := do.MustInvoke[Enqueuer](i)
+	enqueue := do.MustInvoke[*river.Client[*sql.Tx]](i)
 	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
 		return apisite.Deps{}, err

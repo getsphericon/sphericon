@@ -44,7 +44,7 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 		return err
 	}
 	// Best-effort enqueue (mirrors the welcome email): never fail the request.
-	if err := h.mail.Enqueue(ctx, mailjobs.PasswordReset(to, token, u != nil && granted)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.PasswordReset(to, token, u != nil && granted), nil); err != nil {
 		mailNotQueued(ctx, "PasswordReset", err)
 	}
 	return nil
@@ -58,7 +58,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 		return err
 	}
 	if completedSignUp {
-		if err := h.mail.Enqueue(ctx, mailjobs.Welcome(u.Email, u.Name)); err != nil {
+		if _, err := h.mail.Insert(ctx, mailjobs.Welcome(u.Email, u.Name), nil); err != nil {
 			mailNotQueued(ctx, "Welcome", err)
 		}
 	}
@@ -78,7 +78,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	}
 	// Welcome email is a platform (transactional) send via the system sender, to an
 	// address that is now proven. Best-effort: never fail the verification.
-	if err := h.mail.Enqueue(ctx, mailjobs.Welcome(verified.Email, verified.Name)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.Welcome(verified.Email, verified.Name), nil); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	// The session starts after the epoch bump VerifyEmailLink made, so it is the only one.

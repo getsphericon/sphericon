@@ -3,11 +3,14 @@ package workspacecreation
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
 	"strings"
+
+	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
@@ -58,9 +61,9 @@ type Consents interface {
 type SignUpConfig struct {
 	Consents Consents
 	Budget   Budget
-	// Mail queues the mails a Sign-up sends: the verification link, the Taken-address notice
-	// and the welcome.
-	Mail mailjobs.Enqueuer
+	// Mail is the insert-only river client that queues the mails a Sign-up sends: the
+	// verification link, the Taken-address notice and the welcome.
+	Mail *river.Client[*sql.Tx]
 	// Mint mints the verification token of a User, bound to its stored password hash and
 	// carrying the hash of the Sign-up browser it trusts (users.Links.VerificationLink).
 	Mint func(u *ent.User, browserHash string) (string, error)
@@ -158,10 +161,10 @@ func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, err
 	}
 	// Best-effort: a lost mail is asked for again.
 	if usr.EmailVerifiedAt != nil {
-		if err := cfg.Mail.Enqueue(ctx, mailjobs.AddressTakenNotice(usr.Email, granted)); err != nil {
+		if _, err := cfg.Mail.Insert(ctx, mailjobs.AddressTakenNotice(usr.Email, granted), nil); err != nil {
 			mailNotQueued(ctx, "AddressTakenNotice", err)
 		}
-	} else if err := cfg.Mail.Enqueue(ctx, mailjobs.EmailVerification(usr.Email, token, granted)); err != nil {
+	} else if _, err := cfg.Mail.Insert(ctx, mailjobs.EmailVerification(usr.Email, token, granted), nil); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
 	return SignUpResult{Browser: browser}, nil
@@ -219,7 +222,7 @@ func (u *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password 
 	case err != nil:
 		return SignUpResult{}, err
 	}
-	if err := u.signUp.Mail.Enqueue(ctx, mailjobs.Welcome(usr.Email, usr.Name)); err != nil {
+	if _, err := u.signUp.Mail.Insert(ctx, mailjobs.Welcome(usr.Email, usr.Name), nil); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	return SignUpResult{}, nil

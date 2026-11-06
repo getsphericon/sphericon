@@ -9,10 +9,16 @@ full isolation, DB stays at fixture state). Tests drive the real server in-memor
 below) — no sockets. See `internal/api/site/contacts_test.go`.
 
 `Setup` builds the Instance from the production container (`app.Container`), replacing only the
-seams it names (clock, database, License, senders, DNS, jobs worked at once, …) with `do.Override`. A module
+seams it names (clock, database, License, senders, DNS, …) with `do.Override`. A module
 or a surface gets no wiring of its own in the harness: add its provider to `internal/app/container.go`
 and read it from the container in `Setup`. A difference a test needs (no System sender, a volume
 floor) is configuration, set on the test's config.
+
+Code under test queues jobs through the real river client, and they wait in the test's transaction.
+`env.PerformEnqueuedJobs(t, only...)` works them with their real workers through river's test
+executor, ActiveJob's `perform_enqueued_jobs`; a worker it does not know is added to the list in
+`Setup`. `env.SystemMail.Messages()` works the queued platform mails first, so a test reads them as
+sent. A test that runs a real river runtime on its database passes that runtime a sender of its own.
 
 **Ride the transaction unless the test cannot.** A transaction costs the same however much the
 test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,

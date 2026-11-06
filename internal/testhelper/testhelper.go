@@ -50,6 +50,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -184,6 +185,9 @@ type TestEnv struct {
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 	// license is the Instance's License, which the Edition's consumers check (WorkEditionJobs).
 	license *licensekey.License
+
+	performers func(testing.TB) performers // the workers of PerformEnqueuedJobs
+	tb         testing.TB                  // the test, for the mail jobs SystemMail works before a read
 
 	sender    *outboundmessages.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string                   // for tokens a test needs in a state the Tracker never mints
@@ -475,20 +479,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.Override(injector, func(i do.Injector) (outboundmessages.Senders, error) {
 		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
 	})
-	// Every job a request queues is worked at once by its real worker (enqueue.go), against the
-	// capturing senders, so tests assert the real effect.
-	do.Override(injector, func(i do.Injector) (app.Enqueuer, error) {
-		client := do.MustInvoke[*ent.Client](i)
-		return &testJobs{
-			tb:           t,
-			ent:          client,
-			sender:       systemMail,
-			verification: do.MustInvoke[*domainverification.UseCase](i),
-			cipher:       do.MustInvoke[*secrets.Cipher](i),
-			catalog:      do.MustInvoke[*messaging.Catalog](i),
-			appURL:       cfg.AppURL,
-		}, nil
-	})
 
 	// The job queue's UI is River UI's own; a test reaches a stand-in through the Staff session
 	// guard (JobsUIStub).
@@ -505,7 +495,22 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	feedClient := entclient.NewOnTx(txDB)
 	feedClient.Use(ee.Hooks(lic, st.now)...)
 
-	return &TestEnv{
+	// The workers PerformEnqueuedJobs works the queued jobs with, against the capturing senders,
+	// so a test asserts the real effect.
+	workers := func(tb testing.TB) performers {
+		tb.Helper()
+		client := do.MustInvoke[*ent.Client](injector)
+		p := performers{}
+		add(tb, p, txDB, jobs.NewWelcomeWorker(systemMail))
+		add(tb, p, txDB, jobs.NewAuthMailWorker(systemMail, cfg.AppURL))
+		add(tb, p, txDB, jobs.NewMemberInviteWorker(systemMail))
+		add(tb, p, txDB, jobs.NewNotifySecondFactorRequiredWorker(client, systemMail, cfg.AppURL))
+		add(tb, p, txDB, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*secrets.Cipher](injector), do.MustInvoke[*messaging.Catalog](injector)))
+		add(tb, p, txDB, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*domainverification.UseCase](injector)))
+		return p
+	}
+
+	env := &TestEnv{
 		Instance:          do.MustInvoke[*instancestates.Module](injector),
 		ReleaseCheck:      do.MustInvoke[*releasecheck.UseCase](injector),
 		TelemetryReport:   do.MustInvoke[*telemetryreport.UseCase](injector),
@@ -524,6 +529,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Orders:            do.MustInvoke[*orders.Module](injector),
 		edition:           edition,
 		license:           lic,
+		performers:        workers,
 		sender:            do.MustInvoke[*outboundmessages.Module](injector),
 		jwtSecret:         cfg.JWTSecret,
 		now:               st.now,
@@ -543,6 +549,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 		ServiceCredentials: edition.ServiceCredentials,
 	}
+	// The platform mails a request queued are sent by the time a test reads them, as they were
+	// when the jobs ran in the request.
+	env.tb = t
+	systemMail.pending = env.performMail
+	return env
 }
 
 // CoreHolds is the holds module of an instance that ignores Staff holds (no `staff` license),
@@ -559,6 +570,10 @@ type CapturingSender struct {
 	mu   sync.Mutex
 	sent []messaging.EmailMessage
 	Err  error
+
+	// pending works the mail jobs waiting in the queue before a read, so a test reads the mail
+	// its request queued as sent (SystemMail); nil for a sender no job sends through.
+	pending func()
 }
 
 // SetErr makes subsequent Send calls fail with err (nil clears it).
@@ -585,8 +600,11 @@ func (s *CapturingSender) Send(_ context.Context, msg messaging.EmailMessage) (m
 	return messaging.Receipt{MessageID: fmt.Sprintf("<test-%d@sphericon.test>", len(s.sent))}, nil
 }
 
-// Messages returns a copy of the captured sends.
+// Messages returns a copy of the captured sends, once the mail jobs waiting in the queue have run.
 func (s *CapturingSender) Messages() []messaging.EmailMessage {
+	if s.pending != nil {
+		s.pending()
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]messaging.EmailMessage(nil), s.sent...)

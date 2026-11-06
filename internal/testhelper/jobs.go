@@ -21,8 +21,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
 )
 
-// Tests work the jobs a request queues at once (enqueue.go), so a test that needs a job to be
-// waiting in the queue puts one there and reads it back through these helpers. They use
+// The jobs a test queues wait in its transaction until PerformEnqueuedJobs (perform.go) works
+// them; a test that needs a job waiting in the queue puts one there and reads it back through
+// these helpers. They use
 // river's own insert-only client over the test's connection (the same txdb connection the
 // ent client rides), so nothing here touches the river table directly.
 
@@ -30,10 +31,10 @@ import (
 // contract-copy: a test helper read bound; not in the contract
 const maxQueuedJobs = 1000
 
-func (env *TestEnv) riverClient(t *testing.T) *river.Client[*sql.Tx] {
-	t.Helper()
+func (env *TestEnv) riverClient(tb testing.TB) *river.Client[*sql.Tx] {
+	tb.Helper()
 	rc, err := river.NewClient(riverdatabasesql.New(env.SQLDB), &river.Config{})
-	require.NoError(t, err)
+	require.NoError(tb, err)
 	return rc
 }
 

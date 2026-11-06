@@ -57,7 +57,7 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 	}
 
 	// The deletion is committed and cannot be undone: a mail that fails to queue does not undo it.
-	if err := h.mail.Enqueue(ctx, mailjobs.UserDeletedNotice(deleted.Email)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.UserDeletedNotice(deleted.Email), nil); err != nil {
 		mailNotQueued(ctx, "UserDeletedNotice", err)
 	}
 	return &siteapi.SiteUserDeleteUserNoContent{SetCookie: h.sessions.Cleared().String()}, nil
@@ -84,7 +84,7 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return err
 	}
-	if err := h.mail.Enqueue(ctx, mailjobs.UserDeletionLink(u.Email, token, granted)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.UserDeletionLink(u.Email, token, granted), nil); err != nil {
 		mailNotQueued(ctx, "UserDeletionLink", err)
 	}
 	return nil

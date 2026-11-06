@@ -56,7 +56,7 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if err != nil {
 		return err
 	}
-	if err := h.mail.Enqueue(ctx, mailjobs.EmailVerification(to, token, u != nil && u.EmailVerifiedAt == nil)); err != nil {
+	if _, err := h.mail.Insert(ctx, mailjobs.EmailVerification(to, token, u != nil && u.EmailVerifiedAt == nil), nil); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
 	return nil

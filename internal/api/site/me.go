@@ -140,11 +140,11 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return err
 	}
 	if taken {
-		if err := h.mail.Enqueue(ctx, mailjobs.AddressTakenNotice(newEmail, granted)); err != nil {
+		if _, err := h.mail.Insert(ctx, mailjobs.AddressTakenNotice(newEmail, granted), nil); err != nil {
 			mailNotQueued(ctx, "AddressTakenNotice", err)
 		}
 	} else {
-		if err := h.mail.Enqueue(ctx, mailjobs.EmailChangeConfirm(newEmail, token, granted)); err != nil {
+		if _, err := h.mail.Insert(ctx, mailjobs.EmailChangeConfirm(newEmail, token, granted), nil); err != nil {
 			mailNotQueued(ctx, "EmailChangeConfirm", err)
 		}
 	}

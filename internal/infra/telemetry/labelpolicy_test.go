@@ -97,8 +97,11 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outboundmessages.New(env.Bus, env.Holds, nil, messagetoken.New("test-secret", "http://local"))
+	// The runtime's own mail: env.SystemMail works the test's queued mail jobs before a read, and
+	// this queue is the process's committed one.
+	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
-		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail, Catalog: registry.Default(),
+		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: mail, Catalog: registry.Default(),
 		AppURL: cfg.AppURL, OutboundAllow: cfg.OutboundAllow,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
@@ -114,11 +117,12 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
 
-	queue, err := jobs.NewQueue(pool)
+	inserter, err := jobs.NewInserter(pool)
 	require.NoError(t, err)
-	require.NoError(t, queue.Enqueue(ctx, mailjobs.Welcome(contactEmail, "Policy")))
+	_, err = inserter.Insert(ctx, mailjobs.Welcome(contactEmail, "Policy"), nil)
+	require.NoError(t, err)
 	require.Eventually(t, func() bool {
-		msgs := env.SystemMail.Messages()
+		msgs := mail.Messages()
 		for i := range msgs {
 			if msgs[i].To == contactEmail {
 				return true

@@ -65,7 +65,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	if caller, cerr := h.users.User(ctx, a.UserID); cerr == nil {
 		inviterName = caller.Name
 	}
-	if merr := h.mail.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: inv.Email, InviteURL: inviteURL, WorkspaceName: wsEnt.Name, InviterName: inviterName}); merr != nil {
+	if _, merr := h.mail.Insert(ctx, mailjobs.MemberInviteArgs{Email: inv.Email, InviteURL: inviteURL, WorkspaceName: wsEnt.Name, InviterName: inviterName}, nil); merr != nil {
 		slog.WarnContext(ctx, "member invite email not enqueued", "error", merr, "invitation_id", inv.ID)
 	}
 
