@@ -5,10 +5,10 @@
 // carry a scope its minter lacks. Handlers stay thin adapters: authorization of
 // the caller (scope, role), call, map errors.
 //
-// OAuth issuing (internal/oauthserver) keeps its own flow: its scopes are fixed by
-// the consent screen, and it only shares the credential generators in
-// internal/kernel/credentials. What it issues is a Connection, an API token tied to the
-// approving User's Membership and naming the client approved (ADR 0061). A Personal token
+// OAuth issuing keeps its own rules: its scopes are fixed by the consent screen, and the
+// exchange of a code (internal/usecase/oauthauthorization) issues, rotates and revokes through
+// IssueConnection, RotateConnection and RevokeGrant. What it issues is a Connection, an API token
+// tied to the approving User's Membership and naming the client approved (ADR 0061). A Personal token
 // is a User's own token that names no client, minted by hand (MintPersonal). The
 // Workspace's API tokens below are the rows without a Membership; a Connection is listed
 // and revoked through Connections and RevokeConnection, a Personal token through

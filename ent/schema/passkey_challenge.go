@@ -11,7 +11,7 @@ import (
 // A challenge travels in a signed cookie and `begin` writes nothing; the row is inserted
 // when a ceremony finishes, and its unique challenge makes a replay fail. It has no User:
 // a usernameless login has none yet. The daily cleanup prunes rows older than a challenge
-// can live. Only internal/secondfactor reads and writes it.
+// can live. Only internal/passkeys reads and writes it.
 type PasskeyChallenge struct {
 	ent.Schema
 }

@@ -34,10 +34,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/memberships"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/passkeys"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
@@ -57,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/users"
@@ -108,15 +109,15 @@ type Handlers struct {
 	brandKit              *brandkit.Module
 	automations           *automations.Module
 	rules                 *rules.Module
-	oauth                 *oauthserver.Service
+	oauth                 *oauthclients.Module
 	audit                 AuditLog
 	attention             *needsattention.UseCase
 	setupChecklist        *setupchecklist.Module
 	supportEmail          string
 	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
-	secondFactor          *secondfactor.Module
-	passkeys              *secondfactor.Passkeys
+	secondFactor          *secondfactorenrolment.UseCase
+	passkeys              *passkeys.Module
 	now                   func() time.Time
 	accountLink           *accountlink.Link
 	migrations            Migrations
@@ -190,7 +191,7 @@ type Deps struct {
 	// Attempts counts failed logins and password-reset mails per account (ADR
 	// 0025); login and forgot-password share it.
 	Attempts    *throttle.Attempts
-	OAuth       *oauthserver.Service
+	OAuth       *oauthclients.Module
 	Bus         *events.Bus
 	Webhooks    *webhooks.Module
 	Outbound    *outbound.Module
@@ -237,9 +238,9 @@ type Deps struct {
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
-	SecondFactor *secondfactor.Module
+	SecondFactor *secondfactorenrolment.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
-	Passkeys *secondfactor.Passkeys
+	Passkeys *passkeys.Module
 	// Clock is the time the site session's expiry and a Two-factor requirement's
 	// grace are checked against (ADR 0020); nil means time.Now. Tests inject one to
 	// move past a session's lifetime or a grace period.

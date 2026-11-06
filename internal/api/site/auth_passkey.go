@@ -9,7 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/infra/ratelimit"
 	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/passkeys"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
@@ -65,7 +65,7 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 // credential id belongs to.
 func (h *Handlers) findPasskeyLogin(ctx context.Context, a login.PasskeyAssertion) (login.Pending[*ent.User], error) {
 	u, err := h.passkeys.FindLogin(ctx, a.Response)
-	if errors.Is(err, secondfactor.ErrPasskeyUnknown) || errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
+	if errors.Is(err, passkeys.ErrPasskeyUnknown) || errors.Is(err, passkeys.ErrPasskeysUnavailable) {
 		return login.Pending[*ent.User]{}, login.ErrPasskeyUnknown
 	}
 	if err != nil {
@@ -77,7 +77,7 @@ func (h *Handlers) findPasskeyLogin(ctx context.Context, a login.PasskeyAssertio
 // verifyPasskeyLogin is the site's PasskeyVerify for the login module.
 func (h *Handlers) verifyPasskeyLogin(ctx context.Context, p login.Pending[*ent.User], a login.PasskeyAssertion) error {
 	err := h.passkeys.FinishLogin(ctx, p.Principal, a.Ceremony, a.Response)
-	if secondfactor.CeremonyFailed(err) || errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
+	if passkeys.CeremonyFailed(err) || errors.Is(err, passkeys.ErrPasskeysUnavailable) {
 		return login.ErrPasskeyInvalid
 	}
 	return err

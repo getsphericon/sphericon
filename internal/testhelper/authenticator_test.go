@@ -12,14 +12,14 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/passkeys"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // fixtureUser is the fixture User as the WebAuthn library sees them, holding the stored Passkey.
 type fixtureUser struct{ credentials []webauthn.Credential }
 
-func (fixtureUser) WebAuthnID() []byte                           { return secondfactor.UserHandle(fixtures.PasskeyPatID) }
+func (fixtureUser) WebAuthnID() []byte                           { return passkeys.UserHandle(fixtures.PasskeyPatID) }
 func (fixtureUser) WebAuthnName() string                         { return fixtures.PasskeyPatEmail }
 func (fixtureUser) WebAuthnDisplayName() string                  { return fixtures.PasskeyPatName }
 func (u fixtureUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
@@ -49,7 +49,7 @@ func TestTheFixturePasskeyAssertsAgainstItsStoredPublicKey(t *testing.T) {
 	require.NoError(t, err)
 
 	found, credential, err := rp.ValidatePasskeyLogin(func(_, userHandle []byte) (webauthn.User, error) {
-		assert.Equal(t, secondfactor.UserHandle(fixtures.PasskeyPatID), userHandle)
+		assert.Equal(t, passkeys.UserHandle(fixtures.PasskeyPatID), userHandle)
 		return user, nil
 	}, *session, parsed)
 

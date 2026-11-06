@@ -80,7 +80,10 @@ container like a module, so the API tests reach it through the actors; a direct 
 case of the whole Instance (the Release check, the Telemetry report) is built over the Instance state
 module instead (`instancestates.New(env.DB, …)`); the server's own are `env.ReleaseCheck` and
 `env.TelemetryReport`. The re-encryption is built over each owner's `Secrets` on `env.DB`
-(`integrations.NewSecrets(env.DB)`, …) with the cipher under test.
+(`integrations.NewSecrets(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
+owns holds the raw client: the Second factor's is `env.SecondFactor`
+(`internal/usecase/secondfactorenrolment`), and the OAuth token endpoint
+(`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
 
 ## Fixture catalog
 

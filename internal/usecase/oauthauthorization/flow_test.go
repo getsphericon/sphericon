@@ -1,4 +1,4 @@
-package oauthserver_test
+package oauthauthorization_test
 
 import (
 	"context"
@@ -21,8 +21,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 )
 
 // consent plays the signed-in owner of workspace acme answering the consent screen.
@@ -277,13 +277,13 @@ func TestTokenEndpointChecksPKCEAndTheOriginalRequest(t *testing.T) {
 
 func TestResourceIndicatorMustBeTheMCPResource(t *testing.T) {
 	env := testhelper.Setup(t)
-	assertResourceIndicator(t, env, oauthserver.ResourceURL(appURL(t)), "https://elsewhere.example/mcp")
+	assertResourceIndicator(t, env, oauthauthorization.ResourceURL(appURL(t)), "https://elsewhere.example/mcp")
 }
 
 func TestSplitHostResourceIndicatorIsTheMCPHostResource(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.MCPURL = splitMCPURL }))
 	// the issuer-host resource is no longer the protected resource
-	assertResourceIndicator(t, env, oauthserver.ResourceURL(splitMCPURL), oauthserver.ResourceURL(appURL(t)))
+	assertResourceIndicator(t, env, oauthauthorization.ResourceURL(splitMCPURL), oauthauthorization.ResourceURL(appURL(t)))
 }
 
 func assertResourceIndicator(t *testing.T, env *testhelper.TestEnv, mcpResource, wrong string) {

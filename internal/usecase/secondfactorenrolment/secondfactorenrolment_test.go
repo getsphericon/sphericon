@@ -1,4 +1,4 @@
-package secondfactor_test
+package secondfactorenrolment_test
 
 import (
 	"errors"
@@ -15,8 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 )
 
 type clock struct{ t time.Time }
@@ -37,7 +37,7 @@ func samCode(t *testing.T, c *clock) string {
 }
 
 // verify is a second step under the User's current challenge binding.
-func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactor.Method, error) {
+func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactorenrolment.Method, error) {
 	t.Helper()
 	return env.SecondFactor.Verify(t.Context(), userID, binding(t, env, userID), code)
 }
@@ -48,7 +48,7 @@ func binding(t *testing.T, env *testhelper.TestEnv, userID int64) string {
 	u, err := env.DB.User.Get(t.Context(), userID)
 	require.NoError(t, err)
 	b, err := env.SecondFactor.ChallengeBinding(t.Context(), u)
-	if errors.Is(err, secondfactor.ErrNotActive) {
+	if errors.Is(err, secondfactorenrolment.ErrNotActive) {
 		return ""
 	}
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestTheFixtureUserHasAnActiveSecondFactor(t *testing.T) {
 	env, _ := setup(t)
 	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
-	assert.Equal(t, secondfactor.Status{Enabled: true, RecoveryCodesRemaining: 1}, st)
+	assert.Equal(t, secondfactorenrolment.Status{Enabled: true, RecoveryCodesRemaining: 1}, st)
 }
 
 func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
@@ -67,10 +67,10 @@ func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
 
 	m, err := verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err)
-	assert.Equal(t, secondfactor.MethodTOTP, m)
+	assert.Equal(t, secondfactorenrolment.MethodTOTP, m)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
-	require.ErrorIs(t, err, secondfactor.ErrInvalidCode, "a replay")
+	require.ErrorIs(t, err, secondfactorenrolment.ErrInvalidCode, "a replay")
 
 	c.t = c.t.Add(30 * time.Second)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
@@ -80,7 +80,7 @@ func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
 	old, err := totp.GenerateCode(fixtures.SecondFactorSamTotpSecret, c.t.Add(-5*time.Minute))
 	require.NoError(t, err)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, old)
-	require.ErrorIs(t, err, secondfactor.ErrInvalidCode, "a stale code")
+	require.ErrorIs(t, err, secondfactorenrolment.ErrInvalidCode, "a stale code")
 }
 
 func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
@@ -88,14 +88,14 @@ func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
 	ctx := t.Context()
 
 	_, err := verify(t, env, fixtures.SecondFactorSamID, fixtures.SecondFactorSamSpentRecoveryCode)
-	require.ErrorIs(t, err, secondfactor.ErrInvalidCode, "an already spent code")
+	require.ErrorIs(t, err, secondfactorenrolment.ErrInvalidCode, "an already spent code")
 
 	m, err := verify(t, env, fixtures.SecondFactorSamID, " SAM01-UNUSD ")
 	require.NoError(t, err, "case and spacing do not matter")
-	assert.Equal(t, secondfactor.MethodRecoveryCode, m)
+	assert.Equal(t, secondfactorenrolment.MethodRecoveryCode, m)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, fixtures.SecondFactorSamRecoveryCode)
-	require.ErrorIs(t, err, secondfactor.ErrInvalidCode, "a code works once")
+	require.ErrorIs(t, err, secondfactorenrolment.ErrInvalidCode, "a code works once")
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 	_, err := env.SecondFactor.Verify(ctx, fixtures.SecondFactorSamID, challenged, fixtures.SecondFactorSamRecoveryCode)
 	require.NoError(t, err)
 	_, err = env.SecondFactor.Verify(ctx, fixtures.SecondFactorSamID, challenged, samCode(t, c))
-	require.ErrorIs(t, err, secondfactor.ErrBindingMoved)
+	require.ErrorIs(t, err, secondfactorenrolment.ErrBindingMoved)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err, "the refused step spent nothing: the code still works")
@@ -132,7 +132,7 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 func TestVerifyWithoutASecondFactor(t *testing.T) {
 	env, _ := setup(t)
 	_, err := verify(t, env, fixtures.OwnerJohnID, "123456")
-	require.ErrorIs(t, err, secondfactor.ErrNotActive)
+	require.ErrorIs(t, err, secondfactorenrolment.ErrNotActive)
 }
 
 func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
@@ -145,9 +145,9 @@ func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
-	assert.Equal(t, secondfactor.Status{}, st)
+	assert.Equal(t, secondfactorenrolment.Status{}, st)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
-	require.ErrorIs(t, err, secondfactor.ErrNotActive)
+	require.ErrorIs(t, err, secondfactorenrolment.ErrNotActive)
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/site/workspaces", nil)
@@ -180,7 +180,7 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	require.NoError(t, err)
 
 	err = env.SecondFactor.Reset(ctx, fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"}, fixtures.AcmeID)
-	require.ErrorIs(t, err, secondfactor.ErrNothingToReset)
+	require.ErrorIs(t, err, secondfactorenrolment.ErrNothingToReset)
 
 	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)

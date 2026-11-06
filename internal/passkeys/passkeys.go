@@ -1,4 +1,10 @@
-package secondfactor
+// Package passkeys owns a User's Passkeys (ADR 0052) and the spent challenges of their
+// ceremonies: registering one, the usernameless login, the fresh check of a signed-in User,
+// renaming and removing one. A Passkey belongs to the User, not a Workspace, so the package works
+// on the raw *ent.Client. The User's own rows (the session epoch a removal bumps) are written
+// through internal/users; clearing every Passkey of a User is part of a Second factor reset, the
+// use case internal/usecase/secondfactorenrolment.
+package passkeys
 
 import (
 	"context"
@@ -25,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // CeremonyTTL is how long a Passkey ceremony cookie lives: the time to touch the authenticator.
@@ -38,27 +45,27 @@ const SpentChallengeRetention = 24 * time.Hour
 var (
 	// ErrCeremony: the ceremony cookie is missing, forged, expired, another ceremony's or
 	// another User's, or the User's sessions ended since it was minted.
-	ErrCeremony = errors.New("secondfactor: passkey ceremony cookie unusable")
+	ErrCeremony = errors.New("passkeys: passkey ceremony cookie unusable")
 	// ErrChallengeSpent: the ceremony already finished once.
-	ErrChallengeSpent = errors.New("secondfactor: passkey challenge already spent")
+	ErrChallengeSpent = errors.New("passkeys: passkey challenge already spent")
 	// ErrPasskeysUnavailable: the Instance's public URL has no host name a Passkey can be bound
 	// to (an IP address), so no Passkey can be registered or used on it.
-	ErrPasskeysUnavailable = validation.NotFound("secondfactor: passkeys need a host name, not an IP address", i18n.ErrorsPasskeysUnavailable)
+	ErrPasskeysUnavailable = validation.NotFound("passkeys: passkeys need a host name, not an IP address", i18n.ErrorsPasskeysUnavailable)
 	// ErrPasskeyRefused: the authenticator's response is not acceptable: malformed, not
 	// signed for this challenge or origin, made without user verification, or for a
 	// credential that is already registered.
-	ErrPasskeyRefused = errors.New("secondfactor: passkey response refused")
+	ErrPasskeyRefused = errors.New("passkeys: passkey response refused")
 	// ErrPasskeyNotFound: no Passkey of that id belongs to the User (another User's counts as
 	// none).
-	ErrPasskeyNotFound = validation.NotFound("secondfactor: passkey not found", i18n.ErrorsPasskeyNotFound)
+	ErrPasskeyNotFound = validation.NotFound("passkeys: passkey not found", i18n.ErrorsPasskeyNotFound)
 	// ErrPasskeyNameEmpty: the name given to a Passkey is empty once trimmed.
-	ErrPasskeyNameEmpty = validation.RefuseField("name", "secondfactor: passkey name is empty", i18n.ErrorsPasskeyNameInvalid)
+	ErrPasskeyNameEmpty = validation.RefuseField("name", "passkeys: passkey name is empty", i18n.ErrorsPasskeyNameInvalid)
 	// ErrRegistrationFailed: a registration ceremony that cannot finish (CeremonyFailed); the
 	// User starts it again.
-	ErrRegistrationFailed = validation.Refuse("secondfactor: passkey registration failed", i18n.ErrorsPasskeyRegistrationFailed)
+	ErrRegistrationFailed = validation.Refuse("passkeys: passkey registration failed", i18n.ErrorsPasskeyRegistrationFailed)
 	// ErrLastSignIn: the Passkey is the last way the User can sign in: no password, no Linked
 	// identity and no other Passkey.
-	ErrLastSignIn = validation.Conflict("secondfactor: the passkey is the last way to sign in", i18n.ErrorsPasskeyLastSignIn)
+	ErrLastSignIn = validation.Conflict("passkeys: the passkey is the last way to sign in", i18n.ErrorsPasskeyLastSignIn)
 )
 
 type ceremonyPurpose string
@@ -73,11 +80,11 @@ const (
 	PurposeCheck ceremonyPurpose = "check"
 )
 
-// Passkeys registers and checks a User's Passkeys (ADR 0052). The credentials are
+// Module registers and checks a User's Passkeys (ADR 0052). The credentials are
 // discoverable and user verification is required; attestation is not requested. The
 // relying party id is the host of the Instance's public URL. A Passkey belongs to the
 // User, so it works on the raw *ent.Client.
-type Passkeys struct {
+type Module struct {
 	ent *ent.Client
 	bus *events.Bus
 	wa  *webauthn.WebAuthn
@@ -85,13 +92,13 @@ type Passkeys struct {
 	now func() time.Time
 }
 
-// NewPasskeys builds the module for the Instance at appURL (SPHERICON_APP_URL): its host
+// New builds the module for the Instance at appURL (SPHERICON_APP_URL): its host
 // is the relying party id and its origin the only one a ceremony may come from. An Instance
 // served on an IP address gets a module that is not Available (a relying party id must be a
 // domain), so booting never fails over it. secret is
 // the Instance's JWT secret, from which the ceremony cookie's key is derived. now is the
 // clock the cookie's expiry is checked against (nil means time.Now).
-func NewPasskeys(client *ent.Client, bus *events.Bus, appURL, secret string, now func() time.Time) (*Passkeys, error) {
+func New(client *ent.Client, bus *events.Bus, appURL, secret string, now func() time.Time) (*Module, error) {
 	u, err := url.Parse(appURL)
 	if err != nil || u.Hostname() == "" {
 		return nil, fmt.Errorf("passkeys: the app URL %q has no host", appURL)
@@ -100,12 +107,12 @@ func NewPasskeys(client *ent.Client, bus *events.Bus, appURL, secret string, now
 		now = time.Now
 	}
 	if net.ParseIP(u.Hostname()) != nil {
-		return &Passkeys{ent: client, bus: bus, now: now}, nil
+		return &Module{ent: client, bus: bus, now: now}, nil
 	}
 	required := true
 	wa, err := webauthn.New(&webauthn.Config{
 		RPID:                  u.Hostname(),
-		RPDisplayName:         Issuer,
+		RPDisplayName:         users.Issuer,
 		RPOrigins:             []string{u.Scheme + "://" + u.Host},
 		AttestationPreference: protocol.PreferNoAttestation,
 		AuthenticatorSelection: protocol.AuthenticatorSelection{
@@ -125,11 +132,11 @@ func NewPasskeys(client *ent.Client, bus *events.Bus, appURL, secret string, now
 	}
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte("passkey_ceremony"))
-	return &Passkeys{ent: client, bus: bus, wa: wa, key: mac.Sum(nil), now: now}, nil
+	return &Module{ent: client, bus: bus, wa: wa, key: mac.Sum(nil), now: now}, nil
 }
 
 // Available reports whether Passkeys work on this Instance: its public URL has a host name.
-func (p *Passkeys) Available() bool { return p.wa != nil }
+func (p *Module) Available() bool { return p.wa != nil }
 
 // UserHandle is the WebAuthn user handle of a User: the same for all their Passkeys, as the
 // specification asks, and derived from the id so no column holds it. It carries no personal
@@ -167,13 +174,13 @@ func PasskeyName(name string) (string, error) {
 }
 
 // List returns the User's Passkeys, oldest first.
-func (p *Passkeys) List(ctx context.Context, userID int64) ([]*ent.Passkey, error) {
+func (p *Module) List(ctx context.Context, userID int64) ([]*ent.Passkey, error) {
 	return p.ent.Passkey.Query().Where(passkey.UserID(userID)).Order(passkey.ByID()).All(ctx)
 }
 
 // Rename gives the User's Passkey id a new name, trimmed (PasskeyName); ErrPasskeyNotFound when
 // it is not theirs.
-func (p *Passkeys) Rename(ctx context.Context, userID, id int64, name string) (*ent.Passkey, error) {
+func (p *Module) Rename(ctx context.Context, userID, id int64, name string) (*ent.Passkey, error) {
 	name, err := PasskeyName(name)
 	if err != nil {
 		return nil, err
@@ -192,7 +199,7 @@ func (p *Passkeys) Rename(ctx context.Context, userID, id int64, name string) (*
 // User, in one transaction. It returns the saved User, for reissuing the acting session, and the
 // removed Passkey. The caller has proven the User's identity. ErrPasskeyNotFound when the
 // Passkey is not theirs; ErrLastSignIn when it is the last way the User can sign in.
-func (p *Passkeys) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.Passkey, error) {
+func (p *Module) Remove(ctx context.Context, userID, id int64) (*ent.User, *ent.Passkey, error) {
 	var (
 		saved *ent.User
 		row   *ent.Passkey
@@ -224,7 +231,7 @@ func (p *Passkeys) Remove(ctx context.Context, userID, id int64) (*ent.User, *en
 		if err := tx.Passkey.DeleteOneID(id).Exec(ctx); err != nil {
 			return err
 		}
-		saved, err = tx.User.UpdateOneID(userID).AddSessionEpoch(1).Save(ctx)
+		saved, err = users.BumpSessionEpochIn(ctx, tx, userID)
 		return err
 	})
 	if err != nil {
@@ -236,7 +243,7 @@ func (p *Passkeys) Remove(ctx context.Context, userID, id int64) (*ent.User, *en
 // BeginRegistration starts adding a Passkey to u: the creation options for the browser (JSON)
 // and the sealed ceremony cookie value. It writes nothing. The options exclude the User's
 // existing Passkeys, so one authenticator is not registered twice.
-func (p *Passkeys) BeginRegistration(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
+func (p *Module) BeginRegistration(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
 	if !p.Available() {
 		return nil, "", ErrPasskeysUnavailable
 	}
@@ -270,7 +277,7 @@ func (p *Passkeys) BeginRegistration(ctx context.Context, u *ent.User) (options 
 // A ceremony that cannot finish is ErrRegistrationFailed, wrapping its cause: ErrCeremony for an
 // unusable cookie, ErrChallengeSpent when the ceremony already finished, ErrPasskeyRefused when
 // the response is not acceptable (including an authenticator that did not verify the user).
-func (p *Passkeys) FinishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
+func (p *Module) FinishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
 	saved, row, err := p.finishRegistration(ctx, userID, ceremony, response, name)
 	if CeremonyFailed(err) {
 		return nil, nil, fmt.Errorf("%w: %w", ErrRegistrationFailed, err)
@@ -278,7 +285,7 @@ func (p *Passkeys) FinishRegistration(ctx context.Context, userID int64, ceremon
 	return saved, row, err
 }
 
-func (p *Passkeys) finishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
+func (p *Module) finishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
 	if !p.Available() {
 		return nil, nil, ErrPasskeysUnavailable
 	}
@@ -342,11 +349,24 @@ func (p *Passkeys) finishRegistration(ctx context.Context, userID int64, ceremon
 }
 
 // spend records a challenge as used; ErrChallengeSpent when it already was.
-func (p *Passkeys) spend(ctx context.Context, tx *ent.Client, challenge string) error {
+func (p *Module) spend(ctx context.Context, tx *ent.Client, challenge string) error {
 	err := tx.PasskeyChallenge.Create().SetChallenge(challenge).Exec(ctx)
 	if ent.IsConstraintError(err) {
 		return ErrChallengeSpent
 	}
+	return err
+}
+
+// HeldIn reports whether the User holds a Passkey, read on the transaction tx.
+func HeldIn(ctx context.Context, tx *ent.Client, userID int64) (bool, error) {
+	return tx.Passkey.Query().Where(passkey.UserID(userID)).Exist(ctx)
+}
+
+// DeleteAllIn deletes every Passkey of the User on the transaction tx. Only a Second factor
+// reset calls it (internal/usecase/secondfactorenrolment), which checks who resets first and
+// ends the User's sessions in the same transaction.
+func DeleteAllIn(ctx context.Context, tx *ent.Client, userID int64) error {
+	_, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx)
 	return err
 }
 
@@ -368,7 +388,7 @@ type ceremonyClaims struct {
 }
 
 // seal signs the ceremony for the cookie. u is nil for a usernameless login.
-func (p *Passkeys) seal(purpose ceremonyPurpose, u *ent.User, session *webauthn.SessionData) (string, error) {
+func (p *Module) seal(purpose ceremonyPurpose, u *ent.User, session *webauthn.SessionData) (string, error) {
 	raw, err := json.Marshal(session)
 	if err != nil {
 		return "", err
@@ -385,7 +405,7 @@ func (p *Passkeys) seal(purpose ceremonyPurpose, u *ent.User, session *webauthn.
 }
 
 // open verifies the cookie for purpose and returns its claims and session data.
-func (p *Passkeys) open(raw string, purpose ceremonyPurpose) (*ceremonyClaims, *webauthn.SessionData, error) {
+func (p *Module) open(raw string, purpose ceremonyPurpose) (*ceremonyClaims, *webauthn.SessionData, error) {
 	var c ceremonyClaims
 	_, err := jwt.ParseWithClaims(raw, &c, func(*jwt.Token) (any, error) { return p.key, nil },
 		jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired(), jwt.WithTimeFunc(p.now))

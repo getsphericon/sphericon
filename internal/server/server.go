@@ -39,10 +39,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/server/spa"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
+	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 )
 
@@ -109,7 +109,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauthserver.New(site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
+	oauthauthorization.New(client, site.OAuth, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(

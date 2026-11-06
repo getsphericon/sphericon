@@ -1,4 +1,4 @@
-package secondfactor
+package passkeys
 
 import (
 	"bytes"
@@ -21,20 +21,20 @@ import (
 var (
 	// ErrPasskeyUnknown means the response names no credential: it is malformed, or its
 	// credential id was never registered (or was removed).
-	ErrPasskeyUnknown = errors.New("secondfactor: passkey credential unknown")
+	ErrPasskeyUnknown = errors.New("passkeys: passkey credential unknown")
 	// ErrNoPasskeys: a Passkey check of a User who holds no Passkey, so there is nothing to
 	// check with.
-	ErrNoPasskeys = validation.NotFound("secondfactor: the user holds no passkey", i18n.ErrorsPasskeysUnavailable)
+	ErrNoPasskeys = validation.NotFound("passkeys: the user holds no passkey", i18n.ErrorsPasskeysUnavailable)
 	// ErrCheckFailed is every refusal of a Passkey check, indistinguishably: a response that
 	// names no credential or another User's, or a ceremony that cannot finish (CeremonyFailed).
-	ErrCheckFailed = validation.Denied("secondfactor: passkey check failed", i18n.ErrorsPasskeyCheckFailed)
+	ErrCheckFailed = validation.Denied("passkeys: passkey check failed", i18n.ErrorsPasskeyCheckFailed)
 )
 
 // BeginLogin starts a usernameless Passkey login: the request options for the browser (JSON)
 // and the sealed ceremony cookie value. The User is not known yet, so the options allow no
 // credential in particular and the browser offers the Passkeys it holds for this host. It
 // writes nothing: the challenge's single use comes from the row FinishLogin inserts.
-func (p *Passkeys) BeginLogin() (options []byte, ceremony string, err error) {
+func (p *Module) BeginLogin() (options []byte, ceremony string, err error) {
 	if !p.Available() {
 		return nil, "", ErrPasskeysUnavailable
 	}
@@ -54,7 +54,7 @@ func (p *Passkeys) BeginLogin() (options []byte, ceremony string, err error) {
 // FindLogin returns the User a login response belongs to, by the credential id it carries.
 // It verifies nothing: the caller consults the User's Login throttle and the verification
 // gate first, then calls FinishLogin. ErrPasskeyUnknown when no credential matches.
-func (p *Passkeys) FindLogin(ctx context.Context, response []byte) (*ent.User, error) {
+func (p *Module) FindLogin(ctx context.Context, response []byte) (*ent.User, error) {
 	if !p.Available() {
 		return nil, ErrPasskeysUnavailable
 	}
@@ -81,7 +81,7 @@ func (p *Passkeys) FindLogin(ctx context.Context, response []byte) (*ent.User, e
 // ErrCeremony for an unusable cookie, ErrChallengeSpent when the ceremony already finished,
 // ErrPasskeyRefused for any response that does not verify (including one made without user
 // verification, and one whose signature counter went backwards: a cloned authenticator).
-func (p *Passkeys) FinishLogin(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
+func (p *Module) FinishLogin(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
 	return p.finishAssertion(ctx, u, PurposeLogin, ceremony, response)
 }
 
@@ -89,7 +89,7 @@ func (p *Passkeys) FinishLogin(ctx context.Context, u *ent.User, ceremony string
 // options for the browser (JSON), which allow only u's own Passkeys, and the sealed ceremony
 // cookie value, bound to u and their session epoch. It writes nothing. ErrNoPasskeys when u
 // holds no Passkey.
-func (p *Passkeys) BeginCheck(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
+func (p *Module) BeginCheck(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
 	if !p.Available() {
 		return nil, "", ErrPasskeysUnavailable
 	}
@@ -122,7 +122,7 @@ func (p *Passkeys) BeginCheck(ctx context.Context, u *ent.User) (options []byte,
 // u's and of u's current session epoch. It takes no part in the Login throttle: the caller is
 // already signed in, and a guess cannot succeed without the private key. Every refusal is
 // ErrCheckFailed, wrapping the cause of a ceremony that cannot finish.
-func (p *Passkeys) Check(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
+func (p *Module) Check(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
 	owner, err := p.FindLogin(ctx, response)
 	if errors.Is(err, ErrPasskeyUnknown) || (err == nil && owner.ID != u.ID) {
 		return ErrCheckFailed
@@ -137,7 +137,7 @@ func (p *Passkeys) Check(ctx context.Context, u *ent.User, ceremony string, resp
 	return err
 }
 
-func (p *Passkeys) finishAssertion(ctx context.Context, u *ent.User, purpose ceremonyPurpose, ceremony string, response []byte) error {
+func (p *Module) finishAssertion(ctx context.Context, u *ent.User, purpose ceremonyPurpose, ceremony string, response []byte) error {
 	if !p.Available() {
 		return ErrPasskeysUnavailable
 	}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
@@ -51,7 +51,7 @@ func userCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				changed, err := ops.ResetSecondFactor(ctx, email)
-				return secondfactor.ReportReset(out(cmd), email, changed, err)
+				return secondfactorenrolment.ReportReset(out(cmd), email, changed, err)
 			}),
 		},
 	)

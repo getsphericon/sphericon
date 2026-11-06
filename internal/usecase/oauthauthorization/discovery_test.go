@@ -1,4 +1,4 @@
-package oauthserver_test
+package oauthauthorization_test
 
 import (
 	"encoding/json"
@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // serve drives the real in-memory server (no sockets).

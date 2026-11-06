@@ -30,11 +30,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
@@ -429,12 +429,12 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, fmt.Errorf("user %q: %w", email, err)
 	}
-	sf, err := do.Invoke[*secondfactor.Module](a.injector)
+	sf, err := do.Invoke[*secondfactorenrolment.UseCase](a.injector)
 	if err != nil {
 		return false, err
 	}
 	err = sf.ResetByStaff(ctx, id, "cli")
-	if errors.Is(err, secondfactor.ErrNothingToReset) {
+	if errors.Is(err, secondfactorenrolment.ErrNothingToReset) {
 		return false, nil
 	}
 	return err == nil, err

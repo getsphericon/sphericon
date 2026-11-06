@@ -1,4 +1,4 @@
-package secondfactor
+package secondfactorenrolment
 
 import (
 	"fmt"

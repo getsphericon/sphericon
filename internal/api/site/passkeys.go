@@ -9,7 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/passkeys"
 )
 
 // SitePasskeysList lists the session User's Passkeys, oldest first (ADR 0052).
@@ -61,7 +61,7 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 // password, or a fresh provider login) and the authenticator's response checks out, and mails
 // the owner. Every session of the User goes on.
 func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *siteapi.SitePasskeyRegistrationInput, params siteapi.SitePasskeysFinishRegistrationParams) (*siteapi.SitePasskey, error) {
-	name, err := secondfactor.PasskeyName(string(req.Name))
+	name, err := passkeys.PasskeyName(string(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func decodeOptions[T any](raw []byte) (T, error) {
 
 // ceremonyCookie is the Set-Cookie value that carries a begun ceremony to its finish step.
 func (h *Handlers) ceremonyCookie(path, ceremony string) string {
-	return h.sessions.PasskeyCeremony(path, ceremony, secondfactor.CeremonyTTL).String()
+	return h.sessions.PasskeyCeremony(path, ceremony, passkeys.CeremonyTTL).String()
 }
 
 // SitePasskeysRename renames a Passkey of the session User.

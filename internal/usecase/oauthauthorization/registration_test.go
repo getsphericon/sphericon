@@ -1,4 +1,4 @@
-package oauthserver_test
+package oauthauthorization_test
 
 import (
 	"encoding/json"
@@ -9,12 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getsphericon/sphericon/ent/oauthclient"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
+
+	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 )
 
 // The fixture client (fixtures/oauth_clients.yml) and a fixed PKCE verifier.
@@ -99,7 +100,7 @@ func TestAuthorizeHandsOffToTheConsentScreen(t *testing.T) {
 	require.Equal(t, http.StatusFound, rec.Code)
 	loc, err := url.Parse(rec.Header().Get("Location"))
 	require.NoError(t, err)
-	assert.Equal(t, appURL(t)+oauthserver.ConsentPath, loc.Scheme+"://"+loc.Host+loc.Path)
+	assert.Equal(t, appURL(t)+oauthauthorization.ConsentPath, loc.Scheme+"://"+loc.Host+loc.Path)
 	assert.Equal(t, q, loc.Query(), "the SPA gets the original authorization request")
 }
 

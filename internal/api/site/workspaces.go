@@ -61,7 +61,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	r.Permissions = mapper.PermissionsToResources(held)
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, memberships.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
-	// no grace to count down: this is the decision secondfactor.Withheld makes.
+	// no grace to count down: this is the decision users.Module.Admit makes.
 	if end, ok := users.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}

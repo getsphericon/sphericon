@@ -6,8 +6,8 @@ version: 1
 # The rule parts several components share, merged with `<<`.
 # A domain module's unchecked removal, or the store of a check's outcome (a Sending domain's DKIM
 # and DMARC moments), is reachable only from its use case (ADR 0102): each is one anchored item
-# here, aliased into the forbid_symbol list of every component but `usecase` that may reach the
-# core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
+# here, aliased into the forbid_symbol list of every component but `usecase` and `usecase-raw`
+# that may reach the core: `x-no-raw-client` (the API surfaces, the Problem mapping, ee-api),
 # `raw-holder-forbids` (the runner, core-raw), `core`; api-auth, ee, ee-edition and wiring take this
 # list whole. The removal of the only Owner's Membership of a Workspace in its deletion window
 # serves User deletion in `internal/users` (core-raw): core-raw alone may call it, so
@@ -15,6 +15,8 @@ version: 1
 # excluded. Name the function as `<import path>.<Name>`: a bare import path matches nothing.
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So does contacts.DeleteIn, the Contact row without the rest of its Erasure.
+# So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
+# Passkeys of a User) and the issue of an OAuth grant's credentials (the Connection, a refresh token).
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
@@ -40,6 +42,36 @@ x-unchecked-removals: &unchecked-removals
   - &contacts-delete-in
     name: github.com/getsphericon/sphericon/internal/contacts.DeleteIn
     because: deleting a Contact is Erasure, the use case internal/usecase/contacterasure, which erases the person's Events, Visitors, delivery records and queued work through their owners before the row, in one transaction (ADR 0021, ADR 0102); call the use case
+  - &users-set-pending-second-factor
+    name: github.com/getsphericon/sphericon/internal/users.SetPendingSecondFactor
+    because: enrolling a Second factor is the use case internal/usecase/secondfactorenrolment, which refuses a User whose factor is already active (ADR 0020, ADR 0102); call the use case
+  - &users-accept-second-factor-step-in
+    name: github.com/getsphericon/sphericon/internal/users.AcceptSecondFactorStepIn
+    because: a TOTP time step is accepted only for a code the use case internal/usecase/secondfactorenrolment has matched against the User's secret (ADR 0020, ADR 0102); call the use case
+  - &users-confirm-second-factor-in
+    name: github.com/getsphericon/sphericon/internal/users.ConfirmSecondFactorIn
+    because: a Second factor is confirmed only by a current code, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
+  - &users-clear-second-factor-in
+    name: github.com/getsphericon/sphericon/internal/users.ClearSecondFactorIn
+    because: a Second factor is cleared only by its User with a code or by a reset, which the use case internal/usecase/secondfactorenrolment checks first and records (ADR 0020, ADR 0102); call the use case
+  - &recoverycodes-replace-in
+    name: github.com/getsphericon/sphericon/internal/recoverycodes.ReplaceIn
+    because: Recovery codes are issued only with an active or a just confirmed Second factor, which the use case internal/usecase/secondfactorenrolment checks first (ADR 0020, ADR 0102); call the use case
+  - &recoverycodes-delete-in
+    name: github.com/getsphericon/sphericon/internal/recoverycodes.DeleteIn
+    because: Recovery codes go only with their Second factor, through the use case internal/usecase/secondfactorenrolment (ADR 0020, ADR 0102); call the use case
+  - &passkeys-delete-all-in
+    name: github.com/getsphericon/sphericon/internal/passkeys.DeleteAllIn
+    because: every Passkey of a User goes only in a Second factor reset, which the use case internal/usecase/secondfactorenrolment checks and records (ADR 0020, ADR 0052, ADR 0102); call the use case, or passkeys.Module.Remove for one Passkey
+  - &apitokens-issue-connection
+    name: github.com/getsphericon/sphericon/internal/apitokens.IssueConnection
+    because: a Connection is issued only for an authorization code whose PKCE verifier the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0061, ADR 0102); call the use case
+  - &apitokens-rotate-connection
+    name: github.com/getsphericon/sphericon/internal/apitokens.RotateConnection
+    because: a Connection rotates only for a refresh token the use case internal/usecase/oauthauthorization has checked and claimed (ADR 0016, ADR 0102); call the use case
+  - &oauthclients-new-refresh-token-in
+    name: github.com/getsphericon/sphericon/internal/oauthclients.NewRefreshTokenIn
+    because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/oauthauthorization (ADR 0016, ADR 0102); call the use case
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
@@ -52,6 +84,16 @@ x-no-raw-client: &no-raw-client
     - *sendingdomains-record-dkim
     - *sendingdomains-record-dmarc
     - *contacts-delete-in
+    - *users-set-pending-second-factor
+    - *users-accept-second-factor-step-in
+    - *users-confirm-second-factor-in
+    - *users-clear-second-factor-in
+    - *recoverycodes-replace-in
+    - *recoverycodes-delete-in
+    - *passkeys-delete-all-in
+    - *apitokens-issue-connection
+    - *apitokens-rotate-connection
+    - *oauthclients-new-refresh-token-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -148,6 +190,16 @@ components:
     isolated: true
     allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
+  # The use cases whose rows belong to no Workspace when the operation starts, so there is no
+  # *ent.Scoped to take: the Second factor of a User, and the exchange of an OAuth code or refresh
+  # token, a secret that names its grant. They hold the raw client (the closed list of
+  # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
+  # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
+  usecase-raw:
+    in: ['internal/usecase/secondfactorenrolment*', 'internal/usecase/oauthauthorization*']
+    isolated: true
+    allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
+    because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
   # The core packages that may hold the raw *ent.Client: the closed list "The raw *ent.Client is
   # allowed only in" of docs/architecture.md (Workspace scoping), kept in step with it. A package
@@ -170,9 +222,10 @@ components:
         internal/invitations,
         internal/joindomains,
         internal/machine,
-        internal/oauthserver,
+        internal/oauthclients,
+        internal/passkeys,
+        internal/recoverycodes,
         internal/rules,
-        internal/secondfactor,
         internal/sendingdomains,
         internal/signupitems,
         internal/signupsurvey,
@@ -233,7 +286,8 @@ target_only: ['src/generated/**', '**/*.gen.ts', '**/*_gen.go']
 rules:
   api-site:
     <<: *no-raw-client
-    may_depend_on: [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase]
+    may_depend_on:
+      [api-auth, api-problem, core, core-raw, identity-base, gen-surfaces, usecase, usecase-raw]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
@@ -275,6 +329,16 @@ rules:
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
       - *contacts-delete-in
+      - *users-set-pending-second-factor
+      - *users-accept-second-factor-step-in
+      - *users-confirm-second-factor-in
+      - *users-clear-second-factor-in
+      - *recoverycodes-replace-in
+      - *recoverycodes-delete-in
+      - *passkeys-delete-all-in
+      - *apitokens-issue-connection
+      - *apitokens-rotate-connection
+      - *oauthclients-new-refresh-token-in
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
@@ -316,6 +380,16 @@ rules:
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
       - *contacts-delete-in
+      - *users-set-pending-second-factor
+      - *users-accept-second-factor-step-in
+      - *users-confirm-second-factor-in
+      - *users-clear-second-factor-in
+      - *recoverycodes-replace-in
+      - *recoverycodes-delete-in
+      - *passkeys-delete-all-in
+      - *apitokens-issue-connection
+      - *apitokens-rotate-connection
+      - *oauthclients-new-refresh-token-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   usecase:
     # The Telemetry report is the client of the Telemetry contract (ADR 0102).
@@ -326,6 +400,22 @@ rules:
         because: a use case takes the *ent.Scoped its driver built and hands it to the domain modules it calls; it holds no raw client
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
+  usecase-raw:
+    may_depend_on: [core, core-raw]
+    must_not_depend_on: [*no-surface-gen]
+    forbid_symbol:
+      - *emailcase-hook
+      - *workspacefeed-hook
+      - *workspacefeed-guard
+      - *userfeed-hook
+      - *userfeed-guard
+      - *trackinghostlog-hook
+      - *trackinghostlog-guard
+      - *upgrade-boundaries
+      - *upgrade-major-floor
+      - *leave-doomed-workspace-in
+    forbid_external: *no-container
+    because: a use case composes the domain modules (ADR 0102); these two hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
   identity-base:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -348,6 +438,16 @@ rules:
       - *sendingdomains-record-dkim
       - *sendingdomains-record-dmarc
       - *contacts-delete-in
+      - *users-set-pending-second-factor
+      - *users-accept-second-factor-step-in
+      - *users-confirm-second-factor-in
+      - *users-clear-second-factor-in
+      - *recoverycodes-replace-in
+      - *recoverycodes-delete-in
+      - *passkeys-delete-all-in
+      - *apitokens-issue-connection
+      - *apitokens-rotate-connection
+      - *oauthclients-new-refresh-token-in
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   runner:
     may_depend_on: [core, core-raw, identity-base, usecase]
@@ -419,6 +519,7 @@ rules:
         api-problem,
         runner,
         usecase,
+        usecase-raw,
         gen-surfaces,
       ]
     forbid_symbol: *unchecked-removals

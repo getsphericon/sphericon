@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/passkeys"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // Authenticator is a virtual WebAuthn authenticator and the browser in front of it (ADR 0051):
@@ -53,7 +54,7 @@ func (env *TestEnv) NewAuthenticator(t *testing.T, opts ...AuthenticatorOption) 
 	}
 	return &Authenticator{
 		t:    t,
-		rp:   virtualwebauthn.RelyingParty{ID: u.Hostname(), Name: secondfactor.Issuer, Origin: u.Scheme + "://" + u.Host},
+		rp:   virtualwebauthn.RelyingParty{ID: u.Hostname(), Name: users.Issuer, Origin: u.Scheme + "://" + u.Host},
 		auth: virtualwebauthn.NewAuthenticatorWithOptions(options),
 	}
 }
@@ -88,7 +89,7 @@ func (env *TestEnv) fixtureAuthenticator(t *testing.T, privateKey, credentialID 
 	require.NoError(t, err)
 	cred := virtualwebauthn.NewCredentialWithImportedKey(virtualwebauthn.KeyTypeEC2, key)
 	cred.ID = id
-	a.held = append(a.held, heldCredential{cred: cred, handle: secondfactor.UserHandle(userID)})
+	a.held = append(a.held, heldCredential{cred: cred, handle: passkeys.UserHandle(userID)})
 	return a
 }
 

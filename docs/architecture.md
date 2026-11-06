@@ -122,7 +122,7 @@ coding standards in `CODING_STANDARDS.md`.
   other under `internal/` by the `core` component, one under `ee/api/` by `ee-api` and any other under `ee/` by `ee`, and a new top-level
   tree must be assigned a component or listed as `unowned` in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
   its ogen package, whose own imports are not checked. The same file also holds the raw
-  `*ent.Client` list (`core-raw` and `infra-raw`, see "Workspace scoping") and the `samber/do` ban.
+  `*ent.Client` list (`core-raw`, `infra-raw` and `usecase-raw`, see "Workspace scoping") and the `samber/do` ban.
 - **Use cases (ADR 0102, component `usecase`).** An operation that spans several domain modules is a
   use case, `internal/usecase/<subject><action>` in glossary words (`tagdeletion`), never a call from
   one domain module into the modules above it: a base module knows no module that uses it. The use
@@ -138,15 +138,26 @@ coding standards in `CODING_STANDARDS.md`.
   the row's Workspace and build the scope the use case takes. easement
   isolates the use cases (`isolated`: none imports another; a piece two of them need moves down into
   the domain module that owns it), lets only the drivers and the wiring import one (`allow_importers`)
-  and forbids it the raw client. A removal (or a change) that a use case guards with a check is the domain module's
+  and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
+  when it starts, so there is no `*ent.Scoped` to take: the Second factor of a User
+  (`internal/usecase/secondfactorenrolment`) and the exchange of an OAuth code or refresh token, a
+  secret that names its grant (`internal/usecase/oauthauthorization`). Such a use case holds the
+  raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
+  in the closed list of "Workspace scoping"; easement holds it as the `usecase-raw` component,
+  one pattern per use case (`internal/usecase/secondfactorenrolment*`), isolated like the others,
+  and a new one (a Workspace's deletion or a sign-up that needs a raw transaction) joins it there. A removal (or a change) that a use case guards with a check is the domain module's
   unchecked removal (and so is the store of a check's outcome, `sendingdomains.RecordDKIM`): a package-level function taking the transaction's scoped client (`tags.DeleteIn`, the retype `contacts.UpdateCustomFieldIn`, the Contact row `contacts.DeleteIn`, which only Erasure removes),
   never a method of the module, since easement matches a method only as a use of its type. Its
   `<import path>.<Name>` is an anchored item of `x-unchecked-removals` in `easement.yml`, aliased into
-  the `forbid_symbol` list of every component but `usecase` that may reach the core (`x-no-raw-client`,
+  the `forbid_symbol` list of every component but `usecase` and `usecase-raw` that may reach the core (`x-no-raw-client`,
   `raw-holder-forbids`, `core`, and the whole list in `api-auth`, `ee`, `ee-edition` and `wiring`), so
   only its use case calls it: no handler, job, MCP tool or other domain module bypasses the check, nor
   the owning module itself (easement counts a call there too; the definition and tests are not
-  checked). The tests of the operation live in the use case's own `_test` package
+  checked). The Second factor's writes that skip its checks (the User's
+  `users.SetPendingSecondFactor`, `AcceptSecondFactorStepIn`, `ConfirmSecondFactorIn` and
+  `ClearSecondFactorIn`, `recoverycodes.ReplaceIn` and `DeleteIn`, `passkeys.DeleteAllIn`) and the
+  issue of a grant's credentials (`apitokens.IssueConnection` and `RotateConnection`,
+  `oauthclients.NewRefreshTokenIn`) are such items too. The tests of the operation live in the use case's own `_test` package
   (`internal/usecase/tagdeletion`; a retype's refusal is tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
   rows. An operation that belongs to no Workspace has no `*ent.Scoped` to take: the Release check and
   the Telemetry report (`internal/usecase/releasecheck`, `internal/usecase/telemetryreport`) take
@@ -245,9 +256,9 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
      client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
      `orders.Module.Record`), and
-     `secondfactor.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
-     Workspace with the raw client and scopes each claim to the Workspace of the Membership it
-     loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
+     `users.RemindSecondFactorDeadlines` (the deadline reminder job: it lists the Memberships of every
+     Workspace with the raw client and scopes each claim, `memberships.ClaimSecondFactorReminder`,
+     to the Workspace of the Membership it loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
   5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
      `WithinWorkspaceLockTx` / `WithinWorkspaceLockEnqueueTx`, which first take the Workspace's
@@ -271,7 +282,11 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
      with the raw client and scoped to its Workspace, and the short link `GET /c/{token}` there,
      whose token names a `tracked_links` row that is read with the raw client for the message and
      the Workspace it belongs to; signed unsubscribe/confirm tokens
-     (`internal/consent`), and `workspaces.Module.BootstrapScope` (the bootstrap token);
+     (`internal/consent`), `workspaces.Module.BootstrapScope` (the bootstrap token), and the token
+     endpoint of the OAuth server (`internal/usecase/oauthauthorization`), where an authorization
+     code or a refresh token names its grant: the use case loads the row through
+     `internal/oauthclients` and scopes the Connection's writes (`apitokens.IssueConnection`,
+     `RotateConnection`, `RevokeGrant`) to the Workspace that row names;
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -301,8 +316,14 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   several Workspaces, and the notice to the Owners of a Workspace it is given by id), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
-  `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/integrations`, `internal/webhooks` and `internal/rules` (only `Secrets`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has `Secrets` of `users`, `staffmembers`, `sendingdomains` and `automations`; every other function of these three takes a `*ent.Scoped`), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
+  `internal/oauthclients` (the OAuth clients with their authorization codes and refresh tokens,
+  ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
+  looked up by its secret before any scope exists), `internal/passkeys` and `internal/recoverycodes`
+  (a User's Passkeys and Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
+  Workspace), the two use cases `internal/usecase/secondfactorenrolment` (a User's TOTP Second
+  factor, ADR 0020: one transaction across the User, the Recovery codes and the Passkeys, none of
+  which a Workspace owns) and `internal/usecase/oauthauthorization` (the token endpoint: the
+  exchange of a code or a refresh token, a secret that names its grant, see list item 6), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/integrations`, `internal/webhooks` and `internal/rules` (only `Secrets`, the stored secrets of the Integrations, the Webhook endpoints and the Rule versions of every Workspace, which `sphericon encryption-key reencrypt`, the use case `internal/usecase/secretreencryption`, has each owner rewrite under the primary key by id and compare-and-swap, as it has `Secrets` of `users`, `staffmembers`, `sendingdomains` and `automations`; every other function of these three takes a `*ent.Scoped`), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instancestates` (the Instance state row
   that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; `HoldsReleaseRead` reads the Memberships of every live Workspace for the Release check to tell an owner of any of them of a newer release, and `Figures` reads the Instance-wide counts the Telemetry report rounds; `DefaultSendCapIn` reads the default Send cap on the transaction of `users` that creates a Workspace, ADR 0067), `internal/instanceaudit` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
@@ -342,7 +363,7 @@ only caller of their writes (`forbidigo`). An entity with `ArchiveMixin` gets `A
   packages of the list as the `core-raw` component of `easement.yml` (the job runner as its own
   `runner` component, which does not forbid the client either, the bottom of identity,
   `internal/workspaces` and `internal/memberships`, as the `identity-base` component, which imports no
-  domain module, and the bus, the database package and the Login throttle,
+  domain module, the two use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
   `internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component) and fails a use of
   `ent.Client` anywhere else in `internal/` (and in a surface package), so a new package goes into
   both lists.

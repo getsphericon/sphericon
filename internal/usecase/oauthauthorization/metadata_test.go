@@ -1,4 +1,4 @@
-package oauthserver_test
+package oauthauthorization_test
 
 import (
 	"encoding/json"

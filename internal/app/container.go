@@ -62,14 +62,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/memberships"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/passkeys"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
@@ -92,7 +92,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/ingesthook"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattention"
+	"github.com/getsphericon/sphericon/internal/usecase/oauthauthorization"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
@@ -649,12 +651,12 @@ var identityPackage = do.Package(
 			throttle.WithClock(do.MustInvoke[Clock](i)),
 			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*secondfactor.Module, error) {
-		return secondfactor.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
+	do.Lazy(func(i do.Injector) (*secondfactorenrolment.UseCase, error) {
+		return secondfactorenrolment.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*secondfactor.Passkeys, error) {
+	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return secondfactor.NewPasskeys(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
+		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
 	}),
 )
 
@@ -790,11 +792,11 @@ var surfacesPackage = do.Package(
 		return apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, cfg.SecureCookies(), do.MustInvoke[Clock](i), cfg.JWTVerifySecrets()...), nil
 	}),
 	do.Lazy(func(i do.Injector) (OAuthFetcher, error) {
-		return OAuthFetcher{oauthserver.NewFetcher(do.MustInvoke[*config.Config](i).OutboundAllow)}, nil
+		return OAuthFetcher{oauthclients.NewFetcher(do.MustInvoke[*config.Config](i).OutboundAllow)}, nil
 	}),
 	// OAuth 2.1 for MCP connectors (ADR 0016).
-	do.Lazy(func(i do.Injector) (*oauthserver.Service, error) {
-		return oauthserver.NewService(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer), nil
+	do.Lazy(func(i do.Injector) (*oauthclients.Module, error) {
+		return oauthclients.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[OAuthFetcher](i).Doer), nil
 	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signin.Providers, error) {
@@ -826,7 +828,7 @@ var surfacesPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*mcpHandler, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		h, err := mcpserver.New(sphericon.ExternalOpenAPI, do.MustInvoke[*externalAPI](i).Handler, do.MustInvoke[*apiauth.ExternalSecurityHandler](i),
-			mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
+			mcpserver.WithResourceMetadataURL(oauthauthorization.ResourceMetadataURL(cfg.MCPOrigin())))
 		if err != nil {
 			return nil, err
 		}
@@ -957,7 +959,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Memberships:              do.MustInvoke[*memberships.Module](i),
 		Passwords:                do.MustInvoke[*credentials.Hasher](i),
 		Attempts:                 do.MustInvoke[*throttle.Attempts](i),
-		OAuth:                    do.MustInvoke[*oauthserver.Service](i),
+		OAuth:                    do.MustInvoke[*oauthclients.Module](i),
 		Bus:                      bus,
 		Webhooks:                 do.MustInvoke[*webhooks.Module](i),
 		Outbound:                 do.MustInvoke[*outbound.Module](i),
@@ -988,8 +990,8 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Tracker:                  do.MustInvoke[*tracking.Tracker](i),
 		AppURL:                   cfg.AppURL,
 		Audit:                    edition.Audit,
-		SecondFactor:             do.MustInvoke[*secondfactor.Module](i),
-		Passkeys:                 do.MustInvoke[*secondfactor.Passkeys](i),
+		SecondFactor:             do.MustInvoke[*secondfactorenrolment.UseCase](i),
+		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
 		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),
 		Clock:                    do.MustInvoke[Clock](i),
 		RequireEmailVerification: cfg.RequireEmailVerification,

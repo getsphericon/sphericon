@@ -46,16 +46,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 
 	// The pgx driver behind database/sql.
@@ -214,7 +214,7 @@ type TestEnv struct {
 
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
-	SecondFactor *secondfactor.Module
+	SecondFactor *secondfactorenrolment.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
@@ -432,7 +432,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "load presets")
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {
-		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
+		oauthFetcher = oauthclients.NewFetcher(cfg.OutboundAllow)
 	}
 	fakeSES := &FakeSES{}
 	botAPI := telegramtest.New(t)
@@ -527,7 +527,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Machine:         do.MustInvoke[*machine.Detector](injector),
 		PrivateRelay:    relay,
 		Confirmations:   confirmations,
-		SecondFactor:    do.MustInvoke[*secondfactor.Module](injector),
+		SecondFactor:    do.MustInvoke[*secondfactorenrolment.UseCase](injector),
 		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise: edition.Staff,
 	}

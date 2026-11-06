@@ -1,11 +1,9 @@
-package oauthserver
+package oauthauthorization
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/url"
 	"slices"
@@ -13,6 +11,9 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
 )
 
 // Paths served by the Go binary. The consent screen is the SPA route ConsentPath.
@@ -27,11 +28,6 @@ const (
 	ConsentPath = "/oauth/consent"
 
 	mcpPath = "/mcp"
-
-	maxRedirectURIs = 10
-	// contract-copy: the OAuth dynamic client registration protocol is not in the contract
-	maxClientName = 100
-	defaultClient = "MCP client"
 )
 
 // ResourceURL is the canonical URI of the protected MCP resource, served from
@@ -44,26 +40,27 @@ func ResourceMetadataURL(mcpOrigin string) string {
 	return strings.TrimSuffix(mcpOrigin, "/") + protectedResourcePath + mcpPath
 }
 
-// Server mounts the OAuth protocol endpoints.
-type Server struct {
-	*Service
-
+// UseCase serves the OAuth protocol endpoints and issues the Connection of a grant.
+type UseCase struct {
+	ent      *ent.Client
+	clients  *oauthclients.Module
 	issuer   string
 	resource string
 }
 
-// New builds the server over the service; appURL is the public origin and the OAuth issuer,
-// and mcpURL the origin of the MCP resource (the same as appURL on a single host).
-func New(svc *Service, appURL, mcpURL string) *Server {
-	return &Server{Service: svc, issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
+// New builds the use case over the ent client, which opens the transaction of a token exchange,
+// and the OAuth clients module; appURL is the public origin and the OAuth issuer, and mcpURL the
+// origin of the MCP resource (the same as appURL on a single host).
+func New(client *ent.Client, clients *oauthclients.Module, appURL, mcpURL string) *UseCase {
+	return &UseCase{ent: client, clients: clients, issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
 }
 
 // Mount registers discovery, registration, authorize and token endpoints.
-func (s *Server) Mount(mux *http.ServeMux) {
+func (s *UseCase) Mount(mux *http.ServeMux) {
 	prm := auth.ProtectedResourceMetadataHandler(&oauthex.ProtectedResourceMetadata{
 		Resource:               s.resource,
 		AuthorizationServers:   []string{s.issuer},
-		ScopesSupported:        SupportedScopes(),
+		ScopesSupported:        oauthclients.SupportedScopes(),
 		BearerMethodsSupported: []string{"header"},
 		ResourceName:           "sphericon",
 	})
@@ -77,7 +74,7 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+tokenPath, s.token)
 }
 
-func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
+func (s *UseCase) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 	meta := struct {
 		oauthex.AuthServerMeta
 
@@ -88,7 +85,7 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 		AuthorizationEndpoint:             s.issuer + authorizePath,
 		TokenEndpoint:                     s.issuer + tokenPath,
 		RegistrationEndpoint:              s.issuer + registerPath,
-		ScopesSupported:                   SupportedScopes(),
+		ScopesSupported:                   oauthclients.SupportedScopes(),
 		ResponseTypesSupported:            []string{"code"},
 		GrantTypesSupported:               []string{grantAuthorizationCode, grantRefreshToken},
 		TokenEndpointAuthMethodsSupported: []string{"none"},
@@ -100,18 +97,18 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 }
 
 // register implements RFC 7591 dynamic client registration for public clients.
-func (s *Server) register(w http.ResponseWriter, r *http.Request) {
+func (s *UseCase) register(w http.ResponseWriter, r *http.Request) {
 	var meta oauthex.ClientRegistrationMetadata
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&meta); err != nil {
 		registrationError(w, "invalid_client_metadata", "body must be a JSON object")
 		return
 	}
-	if len(meta.RedirectURIs) == 0 || len(meta.RedirectURIs) > maxRedirectURIs {
+	if len(meta.RedirectURIs) == 0 || len(meta.RedirectURIs) > oauthclients.MaxRedirectURIs {
 		registrationError(w, "invalid_redirect_uri", "provide between 1 and 10 redirect_uris")
 		return
 	}
 	for _, u := range meta.RedirectURIs {
-		if !validRedirectURI(u) {
+		if !oauthclients.ValidRedirectURI(u) {
 			registrationError(w, "invalid_redirect_uri", "redirect_uris must be https URLs (or http on a loopback host) without a fragment")
 			return
 		}
@@ -125,17 +122,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := strings.TrimSpace(meta.ClientName)
-	if name == "" {
-		name = defaultClient
-	}
-	name = truncate(name, maxClientName)
-	clientID := rand.Text()
-	row, err := s.ent.OAuthClient.Create().
-		SetClientID(clientID).
-		SetName(name).
-		SetRedirectUris(meta.RedirectURIs).
-		Save(r.Context())
+	row, err := s.clients.Register(r.Context(), meta.ClientName, meta.RedirectURIs)
 	if err != nil {
 		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
 		return
@@ -156,13 +143,13 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 
 // authorize validates the request and hands the browser to the SPA consent
 // screen, which asks the signed-in user and posts the decision to the site API.
-func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
+func (s *UseCase) authorize(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	redirectURI := q.Get("redirect_uri")
 
 	// Until the client and redirect URI check out, errors must not redirect.
-	if _, err := s.client(r.Context(), q.Get("client_id"), redirectURI); err != nil {
-		if errors.Is(err, ErrUnknownClient) || errors.Is(err, ErrInvalidRequest) {
+	if _, err := s.clients.Client(r.Context(), q.Get("client_id"), redirectURI); err != nil {
+		if errors.Is(err, oauthclients.ErrUnknownClient) || errors.Is(err, oauthclients.ErrInvalidRequest) {
 			writeOAuthError(w, http.StatusBadRequest, "invalid_request", err.Error())
 			return
 		}
@@ -170,7 +157,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if kind, msg := checkAuthorizeParams(q, s.resource); msg != "" {
-		target, err := redirectWith(redirectURI, url.Values{"error": {kind}, "error_description": {msg}}, q.Get("state"))
+		target, err := oauthclients.RedirectWith(redirectURI, url.Values{"error": {kind}, "error_description": {msg}}, q.Get("state"))
 		if err != nil {
 			writeOAuthError(w, http.StatusBadRequest, kind, msg)
 			return
@@ -188,47 +175,12 @@ func checkAuthorizeParams(q url.Values, resource string) (kind, msg string) {
 	switch {
 	case q.Get("response_type") != "code":
 		return "invalid_request", "response_type must be code"
-	case q.Get("code_challenge_method") != "S256" || !validPKCE(q.Get("code_challenge")):
+	case q.Get("code_challenge_method") != "S256" || !oauthclients.ValidPKCE(q.Get("code_challenge")):
 		return "invalid_request", "PKCE with code_challenge_method S256 is required"
 	case q.Get("resource") != "" && q.Get("resource") != resource:
 		return "invalid_target", "unknown resource"
 	}
 	return "", ""
-}
-
-// validRedirectURI accepts https URLs and http on a loopback host, with no
-// fragment (RFC 6749 3.1.2, OAuth 2.1).
-func validRedirectURI(raw string) bool {
-	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" || u.Fragment != "" || u.User != nil {
-		return false
-	}
-	switch u.Scheme {
-	case "https":
-		return true
-	case "http":
-		return isLoopback(raw)
-	}
-	return false
-}
-
-// isLoopback reports whether a redirect URI points at this machine.
-func isLoopback(raw string) bool {
-	u, err := url.Parse(raw)
-	if err != nil {
-		return false
-	}
-	host := u.Hostname()
-	ip := net.ParseIP(host)
-	return host == "localhost" || ip != nil && ip.IsLoopback()
-}
-
-func truncate(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n])
 }
 
 func writeJSON(w http.ResponseWriter, code int, body any) {

@@ -1,4 +1,4 @@
-package oauthserver
+package oauthclients
 
 import (
 	"slices"

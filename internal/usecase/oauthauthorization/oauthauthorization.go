@@ -1,8 +1,21 @@
-package oauthserver
+// Package oauthauthorization is the use case of the OAuth 2.1 authorization server for MCP
+// connectors (ADR 0016, phase 2, ADR 0102): it serves the protocol's endpoints, the discovery
+// documents (RFC 9728, RFC 8414), dynamic client registration (RFC 7591), the authorize step
+// that hands the browser to the SPA consent screen and the token endpoint, and issues the token
+// of a grant. The token endpoint is the operation across modules: it claims an authorization
+// code or a refresh token of internal/oauthclients and issues, rotates or revokes the Connection
+// (ADR 0061) through internal/apitokens, an API token tied to the approving User's Membership,
+// which /mcp and /api authenticate like a hand-made token and then bound by that User's current
+// Role.
+//
+// A code or a refresh token is a secret that names its grant before any scope exists, so the use
+// case holds the raw *ent.Client (one of the closed list of docs/architecture.md, Workspace
+// scoping): it opens the exchange's transaction and scopes the Connection's writes to the
+// Workspace the claimed grant names.
+package oauthauthorization
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/subtle"
 	"errors"
 	"net/http"
@@ -13,10 +26,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
-	"github.com/getsphericon/sphericon/internal/kernel/credentials"
+	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
 )
 
 const (
@@ -25,8 +36,6 @@ const (
 
 	// accessTokenTTL is how long an issued access token authenticates (MCP: short-lived).
 	accessTokenTTL = time.Hour
-	// refreshTokenTTL is how long a refresh token can be exchanged; every rotation starts it anew.
-	refreshTokenTTL = 30 * 24 * time.Hour
 )
 
 // errRefreshReuse means a refresh token was presented that is already used (or was claimed by a
@@ -58,7 +67,7 @@ type issued struct {
 
 // token serves the token endpoint: the authorization_code grant mints the Connection, the
 // refresh_token grant rotates it.
-func (s *Server) token(w http.ResponseWriter, r *http.Request) {
+func (s *UseCase) token(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "body must be form encoded")
 		return
@@ -101,11 +110,8 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 
 // exchangeCode trades an authorization code (with its PKCE verifier) for a Connection, an API
 // token of the approving User's Membership that expires, plus the first refresh token of the grant.
-func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, verifier string) (*issued, error) {
-	grant, err := s.ent.OAuthCode.Query().
-		Where(oauthcode.CodeHash(hashSecret(code))).
-		WithClient().
-		Only(ctx)
+func (s *UseCase) exchangeCode(ctx context.Context, code, clientID, redirectURI, verifier string) (*issued, error) {
+	grant, err := s.clients.Code(ctx, code)
 	if ent.IsNotFound(err) {
 		return nil, invalidGrant("unknown or expired code")
 	}
@@ -116,69 +122,49 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 	switch {
 	case grant.Edges.Client.ClientID != clientID, grant.RedirectURI != redirectURI:
 		return nil, invalidGrant("client or redirect_uri does not match the authorization request")
-	case !validPKCE(verifier),
+	case !oauthclients.ValidPKCE(verifier),
 		subtle.ConstantTimeCompare([]byte(oauth2.S256ChallengeFromVerifier(verifier)), []byte(grant.CodeChallenge)) != 1:
 		return nil, invalidGrant("code_verifier does not match")
 	}
 
-	prefix, err := credentials.GenerateTokenPrefix()
-	if err != nil {
-		return nil, err
-	}
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		return nil, err
-	}
-	hash := credentials.HashSecret(secret)
-
+	var minted apitokens.Minted
 	var refresh string
-	err = s.inTx(ctx, func(tx *ent.Tx) error {
+	err = s.inTx(ctx, func(tx *ent.Client) error {
 		// Single use: only the request that flips used_at wins.
 		now := time.Now()
-		claimed, err := tx.OAuthCode.Update().
-			Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
-			SetUsedAt(now).
-			Save(ctx)
+		claimed, err := oauthclients.ClaimCodeIn(ctx, tx, grant.ID, now)
 		if err != nil {
 			return err
 		}
-		if claimed == 0 {
+		if !claimed {
 			return invalidGrant("unknown or expired code")
 		}
 
-		// The Connection: the approving User's Membership is its own, so it ends with it, and it
-		// names the client it was approved for, which tells it apart from a Personal token.
-		token, err := tx.ApiToken.Create().
-			SetName(grant.Edges.Client.Name).
-			SetPrefix(prefix).
-			SetSecretHash(hash).
-			SetScopes(grant.Scopes).
-			SetWorkspaceID(grant.WorkspaceID).
-			SetMembershipID(grant.MembershipID).
-			SetOauthClientID(grant.ClientID).
-			SetExpiresAt(now.Add(accessTokenTTL)).
-			Save(ctx)
+		// The Connection of the Workspace the code names: the code is the secret that names it.
+		minted, err = apitokens.IssueConnection(ctx, tx.Scoped(grant.WorkspaceID), apitokens.Grant{
+			ClientName:    grant.Edges.Client.Name,
+			Scopes:        grant.Scopes,
+			MembershipID:  grant.MembershipID,
+			OAuthClientID: grant.ClientID,
+			ExpiresAt:     now.Add(accessTokenTTL),
+		})
 		if err != nil {
 			return err
 		}
-		refresh, err = newRefreshToken(ctx, tx, grant.ClientID, token.ID, now)
+		refresh, err = oauthclients.NewRefreshTokenIn(ctx, tx, grant.ClientID, minted.Token.ID, now)
 		return err
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &issued{accessToken: credentials.TokenValue(prefix, secret), refreshToken: refresh, scopes: grant.Scopes}, nil
+	return &issued{accessToken: minted.Value, refreshToken: refresh, scopes: grant.Scopes}, nil
 }
 
 // refresh trades a refresh token for a new access token and the next refresh token. The
 // Connection keeps its row (and prefix); only its secret and expiry rotate.
 // A refresh token is single use: presenting a used one revokes the grant.
-func (s *Server) refresh(ctx context.Context, presented, clientID, scope string) (*issued, error) {
-	row, err := s.ent.OAuthRefreshToken.Query().
-		Where(oauthrefreshtoken.TokenHash(hashSecret(presented))).
-		WithClient().
-		WithAPIToken().
-		Only(ctx)
+func (s *UseCase) refresh(ctx context.Context, presented, clientID, scope string) (*issued, error) {
+	row, err := s.clients.RefreshToken(ctx, presented)
 	if ent.IsNotFound(err) {
 		return nil, errUnknownRefreshToken
 	}
@@ -191,7 +177,7 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 	case row.Edges.Client.ClientID != clientID:
 		return nil, invalidGrant("refresh token was issued to another client")
 	case row.UsedAt != nil:
-		return nil, s.revokeGrant(ctx, token.ID)
+		return nil, s.revokeGrant(ctx, token)
 	case token.RevokedAt != nil, !row.ExpiresAt.After(time.Now()):
 		return nil, errUnknownRefreshToken
 	}
@@ -204,86 +190,56 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 		scopes = want
 	}
 
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		return nil, err
-	}
-	hash := credentials.HashSecret(secret)
-
-	var next string
-	err = s.inTx(ctx, func(tx *ent.Tx) error {
+	var access, next string
+	err = s.inTx(ctx, func(tx *ent.Client) error {
 		now := time.Now()
-		claimed, err := tx.OAuthRefreshToken.Update().
-			Where(oauthrefreshtoken.ID(row.ID), oauthrefreshtoken.UsedAtIsNil(), oauthrefreshtoken.ExpiresAtGT(now)).
-			SetUsedAt(now).
-			Save(ctx)
+		claimed, err := oauthclients.ClaimRefreshTokenIn(ctx, tx, row.ID, now)
 		if err != nil {
 			return err
 		}
-		if claimed == 0 {
+		if !claimed {
 			return errRefreshReuse
 		}
-		rotated, err := tx.ApiToken.Update().
-			Where(apitoken.ID(token.ID), apitoken.RevokedAtIsNil()).
-			SetSecretHash(hash).
-			SetScopes(scopes).
-			SetExpiresAt(now.Add(accessTokenTTL)).
-			Save(ctx)
+		// The Connection's Workspace: the refresh token is the secret that names its grant.
+		value, rotated, err := apitokens.RotateConnection(ctx, tx.Scoped(token.WorkspaceID), token, scopes, now.Add(accessTokenTTL))
 		if err != nil {
 			return err
 		}
-		if rotated == 0 {
+		if !rotated {
 			return errUnknownRefreshToken
 		}
-		if _, err := tx.OAuthRefreshToken.Delete().
-			Where(oauthrefreshtoken.APITokenID(token.ID), oauthrefreshtoken.ExpiresAtLT(now)).
-			Exec(ctx); err != nil {
+		access = value
+		if err := oauthclients.PruneRefreshTokensIn(ctx, tx, token.ID, now); err != nil {
 			return err
 		}
-		next, err = newRefreshToken(ctx, tx, row.ClientID, token.ID, now)
+		next, err = oauthclients.NewRefreshTokenIn(ctx, tx, row.ClientID, token.ID, now)
 		return err
 	})
 	if errors.Is(err, errRefreshReuse) {
-		return nil, s.revokeGrant(ctx, token.ID)
+		return nil, s.revokeGrant(ctx, token)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &issued{accessToken: credentials.TokenValue(token.Prefix, secret), refreshToken: next, scopes: scopes}, nil
+	return &issued{accessToken: access, refreshToken: next, scopes: scopes}, nil
 }
 
 // revokeGrant revokes the grant's API token (a rotated refresh token was replayed, so the
 // connector's credentials may be stolen) and answers invalid_grant.
-func (s *Server) revokeGrant(ctx context.Context, apiTokenID int64) error {
-	_, err := s.ent.ApiToken.Update().
-		Where(apitoken.ID(apiTokenID), apitoken.RevokedAtIsNil()).
-		SetRevokedAt(time.Now()).
-		Save(ctx)
-	if err != nil {
+func (s *UseCase) revokeGrant(ctx context.Context, token *ent.ApiToken) error {
+	if err := apitokens.RevokeGrant(ctx, s.ent.Scoped(token.WorkspaceID), token.ID); err != nil {
 		return err
 	}
 	return invalidGrant("refresh token was already used; the grant is revoked")
 }
 
-// newRefreshToken stores a fresh refresh token for the grant and returns its plaintext.
-func newRefreshToken(ctx context.Context, tx *ent.Tx, clientRowID, apiTokenID int64, now time.Time) (string, error) {
-	plain := rand.Text()
-	_, err := tx.OAuthRefreshToken.Create().
-		SetTokenHash(hashSecret(plain)).
-		SetClientID(clientRowID).
-		SetAPITokenID(apiTokenID).
-		SetExpiresAt(now.Add(refreshTokenTTL)).
-		Save(ctx)
-	return plain, err
-}
-
 // inTx runs fn in a transaction, committing when it returns nil.
-func (s *Server) inTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
+func (s *UseCase) inTx(ctx context.Context, fn func(tx *ent.Client) error) error {
 	tx, err := s.ent.Tx(ctx)
 	if err != nil {
 		return err
 	}
-	if err := fn(tx); err != nil {
+	if err := fn(tx.Client()); err != nil {
 		return errors.Join(err, tx.Rollback())
 	}
 	return tx.Commit()

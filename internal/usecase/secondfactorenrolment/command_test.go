@@ -1,4 +1,4 @@
-package secondfactor_test
+package secondfactorenrolment_test
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 )
 
 const resetEmail = "sam@globex.test"
@@ -15,7 +15,7 @@ const resetEmail = "sam@globex.test"
 func TestReportResetSaysTheFactorIsClearedAndSessionsEnded(t *testing.T) {
 	var out bytes.Buffer
 
-	err := secondfactor.ReportReset(&out, resetEmail, true, nil)
+	err := secondfactorenrolment.ReportReset(&out, resetEmail, true, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "the factor and recovery codes are cleared and every session has ended")
@@ -24,7 +24,7 @@ func TestReportResetSaysTheFactorIsClearedAndSessionsEnded(t *testing.T) {
 func TestReportResetOfAUserWithoutASecondFactorSaysNothingChanged(t *testing.T) {
 	var out bytes.Buffer
 
-	err := secondfactor.ReportReset(&out, resetEmail, false, nil)
+	err := secondfactorenrolment.ReportReset(&out, resetEmail, false, nil)
 
 	require.NoError(t, err)
 	assert.Contains(t, out.String(), "has no second factor; nothing changed")

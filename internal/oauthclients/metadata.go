@@ -1,4 +1,4 @@
-package oauthserver
+package oauthclients
 
 import (
 	"context"
@@ -64,7 +64,7 @@ func ClientHost(clientID string) string {
 
 // metadataClient returns the client a URL client_id names: the cached row while fresh,
 // otherwise the document fetched again and stored.
-func (s *Service) metadataClient(ctx context.Context, clientID string) (*ent.OAuthClient, error) {
+func (s *Module) metadataClient(ctx context.Context, clientID string) (*ent.OAuthClient, error) {
 	if err := validMetadataURL(clientID); err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func validMetadataURL(raw string) error {
 
 // fetchMetadata downloads and validates the document at clientID through the SSRF-hardened
 // client, and returns it with how long it may be cached.
-func (s *Service) fetchMetadata(ctx context.Context, clientID string) (*metadataDocument, time.Duration, error) {
+func (s *Module) fetchMetadata(ctx context.Context, clientID string) (*metadataDocument, time.Duration, error) {
 	ctx, cancel := context.WithTimeout(ctx, metadataFetchTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, clientID, http.NoBody)
@@ -151,13 +151,13 @@ func (d *metadataDocument) validate(clientID string) error {
 	switch {
 	case d.ClientID != clientID:
 		return ErrInvalidRequest.With("client_id in the metadata document does not match its URL")
-	case len(d.RedirectURIs) == 0 || len(d.RedirectURIs) > maxRedirectURIs:
-		return ErrInvalidRequest.With(fmt.Sprintf("the metadata document needs between 1 and %d redirect_uris", maxRedirectURIs))
+	case len(d.RedirectURIs) == 0 || len(d.RedirectURIs) > MaxRedirectURIs:
+		return ErrInvalidRequest.With(fmt.Sprintf("the metadata document needs between 1 and %d redirect_uris", MaxRedirectURIs))
 	case d.TokenEndpointAuthMethod != "" && d.TokenEndpointAuthMethod != "none":
 		return ErrInvalidRequest.With("only token_endpoint_auth_method none is supported")
 	}
 	for _, u := range d.RedirectURIs {
-		if !validRedirectURI(u) {
+		if !ValidRedirectURI(u) {
 			return ErrInvalidRequest.With("redirect_uris must be https URLs (or http on a loopback host) without a fragment")
 		}
 	}

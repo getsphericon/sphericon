@@ -374,7 +374,7 @@ linters:
       # G704: the health check calls 127.0.0.1 and only the port comes from PORT; the OAuth client
       # metadata fetch runs through an SSRF-hardened client (webhook.NewClientAllowing: private
       # and loopback addresses refused at dial time, no redirects) after validMetadataURL.
-      - path: ^(internal/healthcheck/healthcheck|internal/oauthserver/metadata)\.go$
+      - path: ^(internal/healthcheck/healthcheck|internal/oauthclients/metadata)\.go$
         linters:
           - gosec
         text: G704
@@ -385,8 +385,8 @@ linters:
         text: G705
       # G710: a click redirects to the destination of a signed token (tracker.DecodeClick) and
       # the OAuth authorize endpoint redirects to a redirect_uri registered by the client (checked
-      # by Service.client) or to the Instance's own consent page.
-      - path: ^(internal/server/tracking|internal/oauthserver/http)\.go$
+      # by oauthclients.Module.Client) or to the Instance's own consent page.
+      - path: ^(internal/server/tracking|internal/usecase/oauthauthorization/http)\.go$
         linters:
           - gosec
         text: G710
