@@ -99,7 +99,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	signedIn, err := h.users.SignInWithIdentity(ctx, users.ProviderLogin{
+	signedIn, err := h.workspaceCreation.SignInWithIdentity(ctx, users.ProviderLogin{
 		Provider:            params.Provider,
 		Subject:             profile.Subject,
 		Email:               profile.Email,

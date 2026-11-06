@@ -29,10 +29,10 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	signup "github.com/getsphericon/sphericon/internal/signup"
 	signupsurvey "github.com/getsphericon/sphericon/internal/signupsurvey"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
+	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
 

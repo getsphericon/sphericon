@@ -24,13 +24,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
-// store is the adapter's side of the seam over accounts, the way /site supplies it.
-type store struct{ acc *users.Module }
+// store is the adapter's side of the seam over users and the Workspace creation, the way /site
+// supplies it.
+type store struct {
+	acc      *users.Module
+	creation *workspacecreation.UseCase
+}
 
 func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
 	u, err := s.acc.UserByEmail(ctx, email)
@@ -40,7 +45,7 @@ func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error
 	return u, err == nil, err
 }
 
-func (s store) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+func (s store) CreateUnverified(ctx context.Context, n users.NewUser) (*ent.User, error) {
 	u, err := s.acc.CreateUnverified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
@@ -52,8 +57,8 @@ func (s store) ReplaceUnverifiedPassword(ctx context.Context, id int64, hash str
 	return s.acc.ReplaceUnverifiedPassword(ctx, id, hash, consents)
 }
 
-func (s store) CreateVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
-	u, err := s.acc.SignUpVerified(ctx, n)
+func (s store) CreateVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
+	u, err := s.creation.SignUpVerified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
@@ -94,13 +99,13 @@ func tokenFor(id int64, browserHash string) string {
 }
 
 // linkOf is the token a link minted for the User id carries after the Sign-up res.
-func linkOf(id int64, res signup.Result) string { return tokenFor(id, signup.BrowserHash(res.Browser)) }
+func linkOf(id int64, res signup.Result) string { return tokenFor(id, users.BrowserHash(res.Browser)) }
 
 type rig struct {
 	env      *testhelper.TestEnv
 	db       *ent.Client
 	queue    *queue
-	module   *signup.Module
+	module   *signup.UseCase
 	consents *consentrecords.Module
 }
 
@@ -125,7 +130,7 @@ func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
 	return build(entclient.New(sqlDB), events.New(sqlDB, entclient.NewTx), 5,
-		func(acc *users.Module, cfg *signup.Config) { cfg.Store = &lateStore{store: store{acc}} })
+		func(_ *users.Module, cfg *signup.Config) { cfg.Store = &lateStore{store: cfg.Store.(store)} })
 }
 
 func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
@@ -134,7 +139,7 @@ func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig 
 	attempts := throttle.NewAttempts(client, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := &queue{}
 	cfg := signup.Config{
-		Store: store{acc}, Budget: attempts.For(throttle.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
+		Store: store{acc, workspacecreation.New(bus, acc, nil, testhelper.Passwords())}, Budget: attempts.For(throttle.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
@@ -289,10 +294,10 @@ func TestTheSignUpBrowserIsTheOneWhoseHashTheLinkCarries(t *testing.T) {
 	res := r.signUp(t, "Grace", "grace@example.com", password)
 	other := r.signUp(t, "Alan", "alan@example.com", password)
 
-	hash := signup.BrowserHash(res.Browser)
+	hash := users.BrowserHash(res.Browser)
 
-	assert.True(t, signup.SameBrowser(hash, res.Browser))
-	assert.False(t, signup.SameBrowser(hash, other.Browser))
-	assert.False(t, signup.SameBrowser("", res.Browser), "a link minted without a browser trusts none")
-	assert.False(t, signup.SameBrowser(hash, ""))
+	assert.True(t, users.SameBrowser(hash, res.Browser))
+	assert.False(t, users.SameBrowser(hash, other.Browser))
+	assert.False(t, users.SameBrowser("", res.Browser), "a link minted without a browser trusts none")
+	assert.False(t, users.SameBrowser(hash, ""))
 }

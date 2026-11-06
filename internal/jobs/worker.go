@@ -30,8 +30,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/usecase/domainverification"
 	"github.com/getsphericon/sphericon/internal/usecase/stepexecution"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/users"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // webhookDeliveryTimeout bounds a single outbound webhook request.
@@ -76,7 +76,7 @@ type Deps struct {
 	Rules        *rules.Module
 	Users        *users.Module
 	Orders       *orders.Module
-	Deletion     *workspacedeletion.Module
+	Deletion     *workspacedeletion.UseCase
 	// DomainVerification, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	DomainVerification *domainverification.UseCase

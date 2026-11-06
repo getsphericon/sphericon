@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
-// applyDomainJoin is the one place a Membership is created because an address was proven
+// ApplyDomainJoinIn is the one place a Membership is created because an address was proven
 // (ADR 0051). It runs on the transaction of the step that stamps email_proven_at from empty,
 // so the Membership and the proof are atomic; it is called explicitly by each such step and
 // is not an ent hook, because a hook would hide a Membership insert inside a User update.
@@ -23,7 +23,7 @@ import (
 // creates a `member` Membership with source `domain` and records `membership.domain_join`
 // with the system as the actor and the joiner as target. It returns the joined Workspace,
 // nil when nothing was joined. Nothing is mailed.
-func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
+func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil

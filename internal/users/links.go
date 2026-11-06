@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/signup"
 )
 
 // How long each mailed link works.
@@ -141,22 +140,23 @@ func (l *Links) PasswordResetLink(u *ent.User) (string, error) {
 	return l.tokens.Mint(authtoken.PurposePasswordReset, uid, binding, resetLinkTTL, nil)
 }
 
-// ResetPassword sets password from a reset link: the password rule first (a refused one costs
-// no hash), then the link (ErrResetLinkInvalid), then Module.ResetPassword, whose results it
-// returns.
-func (l *Links) ResetPassword(ctx context.Context, token, password string) (*ent.User, bool, error) {
+// PasswordReset reads a reset link and the new password it sets: the password rule first (a
+// refused one costs no hash), then the link (ErrResetLinkInvalid). It returns the User the link
+// names and the new password's hash, for the reset (internal/usecase/workspacecreation, which
+// completes the Sign-up of an Unverified User).
+func (l *Links) PasswordReset(ctx context.Context, token, password string) (userID int64, passwordHash string, err error) {
 	if err := validation.Form(passwordForm{Password: password}); err != nil {
-		return nil, false, err
+		return 0, "", err
 	}
 	uid, _, err := l.parse(token, authtoken.PurposePasswordReset, l.passwordHashOf(ctx), ErrResetLinkInvalid)
 	if err != nil {
-		return nil, false, err
+		return 0, "", err
 	}
 	hash, err := l.users.passwords.Hash(password)
 	if err != nil {
-		return nil, false, err
+		return 0, "", err
 	}
-	return l.users.ResetPassword(ctx, uid, hash)
+	return uid, hash, nil
 }
 
 // VerificationLink mints the token of the email verification link mailed to u (ADR 0030),
@@ -173,47 +173,43 @@ func (l *Links) VerificationLink(u *ent.User, browserHash string) (string, error
 		map[string]string{claimEmail: email, claimBrowser: browserHash})
 }
 
-// VerifyEmail completes a Sign-up from its verification link (Module.VerifyEmail) and
-// returns the Verified User and the Workspace to land in. browser is the Sign-up browser
-// cookie the request carries, "" for none: the Sign-up browser keeps the password stored at
-// Sign-up, and any other browser must send password, which replaces it. The link is single use
-// and scoped to the address it was sent to. Refusals: ErrVerifyLinkInvalid, ErrVerifyLinkUsed,
-// ErrVerifyLinkStale, ErrVerifyPasswordNeeded, and a *validation.FieldsError for a password
-// the rule refuses (the link stays valid for a better one).
-func (l *Links) VerifyEmail(ctx context.Context, token, browser, password string) (*ent.User, *ent.Workspace, error) {
+// Verification reads a verification link (ADR 0030) for the completion of its Sign-up
+// (internal/usecase/workspacecreation): the User it names and the password hash to set, nil to
+// keep the one stored at Sign-up. browser is the Sign-up browser cookie the request carries, ""
+// for none: the Sign-up browser keeps the password stored at Sign-up, and any other browser must
+// send password, which replaces it. The link is single use and scoped to the address it was sent
+// to. Refusals: ErrVerifyLinkInvalid, ErrVerifyLinkUsed, ErrVerifyLinkStale,
+// ErrVerifyPasswordNeeded, and a *validation.FieldsError for a password the rule refuses (the
+// link stays valid for a better one).
+func (l *Links) Verification(ctx context.Context, token, browser, password string) (userID int64, passwordHash *string, err error) {
 	uid, extra, err := l.parse(token, authtoken.PurposeEmailVerify, l.passwordHashOf(ctx), ErrVerifyLinkInvalid)
 	if err != nil {
-		return nil, nil, err
+		return 0, nil, err
 	}
 	u, err := l.users.User(ctx, uid)
 	if ent.IsNotFound(err) {
-		return nil, nil, ErrVerifyLinkUsed
+		return 0, nil, ErrVerifyLinkUsed
 	}
 	if err != nil {
-		return nil, nil, err
+		return 0, nil, err
 	}
 	if u.EmailVerifiedAt != nil {
-		return nil, nil, ErrVerifyLinkUsed
+		return 0, nil, ErrVerifyLinkUsed
 	}
 	if extra[claimEmail] != u.Email {
-		return nil, nil, ErrVerifyLinkStale
+		return 0, nil, ErrVerifyLinkStale
 	}
-	var hash *string
-	if !signup.SameBrowser(extra[claimBrowser], browser) {
-		if password == "" {
-			return nil, nil, ErrVerifyPasswordNeeded
-		}
-		replacement, err := l.hashPassword(password)
-		if err != nil {
-			return nil, nil, err
-		}
-		hash = &replacement
+	if SameBrowser(extra[claimBrowser], browser) {
+		return uid, nil, nil
 	}
-	verified, landing, err := l.users.VerifyEmail(ctx, uid, hash)
-	if errors.Is(err, ErrAlreadyVerified) {
-		return nil, nil, ErrVerifyLinkUsed
+	if password == "" {
+		return 0, nil, ErrVerifyPasswordNeeded
 	}
-	return verified, landing, err
+	replacement, err := l.hashPassword(password)
+	if err != nil {
+		return 0, nil, err
+	}
+	return uid, &replacement, nil
 }
 
 // EmailChange is what an email change link asks: the User and the address to change to.

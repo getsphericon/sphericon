@@ -7,16 +7,15 @@
 //
 // The module takes the raw client: a User belongs to no Workspace, and the actors it serves (a
 // sign-up, a link, a provider callback, an Invitation's token) have no Workspace known up front
-// (ADR 0017). The creation of a Workspace with its Owner Membership lives here until it becomes
-// the use case workspacecreation (workspace_creation.go).
+// (ADR 0017). The steps that make a User Verified create its first Workspace on the same
+// transaction, so they are the use case internal/usecase/workspacecreation, which calls the
+// ...In functions here for the User's part (ADR 0102).
 package users
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
-	"net/mail"
 	"strconv"
 	"strings"
 	"time"
@@ -28,28 +27,19 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
-	"github.com/getsphericon/sphericon/internal/providerlimit"
-	"github.com/getsphericon/sphericon/internal/signup"
 )
 
-// Module reads and writes Users over the raw client, and creates Workspaces.
+// Module reads and writes Users over the raw client.
 type Module struct {
-	ent         *ent.Client
-	bus         *events.Bus
-	passwords   *credentials.Hasher
-	consents    Consents
-	newPublicID func() string
-	// sendCaps is whether the Instance has Send caps; only then does a new Workspace start with
-	// the default defaultSendCap reads.
-	sendCaps       providerlimit.SendCaps
-	defaultSendCap DefaultSendCap
+	ent       *ent.Client
+	bus       *events.Bus
+	passwords *credentials.Hasher
+	consents  Consents
 }
 
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
@@ -67,7 +57,7 @@ type Option func(*Module)
 // span several writes, passwords hashes the passwords a User sets, and consents answers the
 // Sign-up items an account set up from an Invitation is asked (ADR 0062).
 func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, opts ...Option) *Module {
-	a := &Module{ent: client, bus: bus, passwords: passwords, consents: consents, newPublicID: workspaceid.New}
+	a := &Module{ent: client, bus: bus, passwords: passwords, consents: consents}
 	for _, opt := range opts {
 		opt(a)
 	}
@@ -141,7 +131,7 @@ func CheckName(name string) error {
 // address is verified from the Sign-up browser, or replaced on the link. The unique index on the
 // email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks the User as owing the
 // Sign-up survey (the Instance asks it).
-func (a *Module) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, error) {
 	if err := CheckName(n.Name); err != nil {
 		return nil, err
 	}
@@ -196,12 +186,12 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 	return u, err
 }
 
-// markVerified completes an Unverified User's row: it stamps the Verified email, bumps the
+// MarkVerifiedIn completes an Unverified User's row: it stamps the Verified email, bumps the
 // session epoch (ending every earlier session), sets the password hash when passwordHash is
 // not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
 // nothing.
-func markVerified(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string) (*ent.User, error) {
+func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string) (*ent.User, error) {
 	upd := tx.User.Update().
 		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
 		SetEmailVerifiedAt(time.Now()).
@@ -230,114 +220,24 @@ var ErrAlreadyVerified = errors.New("users: the email is already verified")
 // FirstWorkspaceName is the fixed name of the Workspace made for a User at verification.
 const FirstWorkspaceName = "Personal"
 
-// VerifyEmail completes a Sign-up from its link (ADR 0030), in one transaction:
-// it stamps the Verified email, sets the password hash to *passwordHash (nil keeps the one
-// stored at Sign-up), bumps the session epoch (ending every session issued before, as
-// a password change does) and creates the User's first Workspace, named FirstWorkspaceName,
-// with the User as owner. It records `user.email_verify` in that Workspace's Audit log and
-// returns the User. The address was just proven, so it is a domain-join step (ADR 0051): a
-// verified Join domain equal to its domain, with the switch on, makes the User a `member`
-// of that Workspace before the first Workspace is created. landing is where the User goes
-// next: the joined Workspace, else the first one.
-// ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Module) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (u *ent.User, landing *ent.Workspace, err error) {
-	return a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return markVerified(ctx, tx, id, "", passwordHash)
-	})
-}
-
-// SignUpVerified is a Sign-up on an install that does not require email
-// verification (ADR 0030): in one transaction it creates a User that is Verified at once with
-// its password and the Consent records of its answers (ADR 0062), and the first Workspace
-// (FirstWorkspaceName), exactly as VerifyEmail does. The
-// unique index on the email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks
-// the User as owing the Sign-up survey.
-func (a *Module) SignUpVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
-	if err := CheckName(n.Name); err != nil {
+// CreateVerifiedIn writes, in tx, the User of a Sign-up on an install that does not require
+// email verification (ADR 0030): Verified at once with its password, and the Consent records of
+// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The caller has
+// checked the name (CheckName) and creates the first Workspace on the same transaction
+// (internal/usecase/workspacecreation). The unique index on the email refuses a taken address
+// (see db.IsUniqueViolation).
+func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser) (*ent.User, error) {
+	u, err := tx.User.Create().
+		SetName(n.Name).
+		SetEmail(n.Email).
+		SetPasswordHash(n.PasswordHash).
+		SetEmailVerifiedAt(time.Now()).
+		SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).
+		Save(ctx)
+	if err != nil {
 		return nil, err
 	}
-	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		u, err := tx.User.Create().
-			SetName(n.Name).
-			SetEmail(n.Email).
-			SetPasswordHash(n.PasswordHash).
-			SetEmailVerifiedAt(time.Now()).
-			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).
-			Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return u, consentrecords.Write(ctx, tx, u.ID, n.Consents)
-	})
-	return u, err
-}
-
-// CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
-// Verified User with a generated password and its first
-// Workspace, named FirstWorkspaceName, exactly as SignUpVerified makes them. The password
-// is returned once; an address that does not parse is refused, and the unique index on the
-// email refuses a taken one (see db.IsUniqueViolation).
-func (a *Module) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
-	if _, err := mail.ParseAddress(email); err != nil {
-		return "", fmt.Errorf("%q is not an email address", email)
-	}
-	password = rand.Text()
-	hash, err := a.passwords.Hash(password)
-	if err != nil {
-		return "", err
-	}
-	if _, err := a.SignUpVerified(ctx, signup.NewUser{Name: name, Email: email, PasswordHash: hash}); err != nil {
-		return "", err
-	}
-	return password, nil
-}
-
-// provenNow and noJoin say whether a step that makes a User Verified also proved the address
-// (stamped email_proven_at from empty), which makes it a domain-join step (ADR 0051). An
-// Instance with verification off stamps only verified_at, which proves nothing.
-const (
-	provenNow = true
-	noJoin    = false
-)
-
-// verified is what makes a User Verified, shared by VerifyEmail, SignUpVerified and the
-// provider sign-in: write stores the User's verified state (and whatever else its step writes,
-// on the same publisher); then, when proven (the step stamped email_proven_at from empty), the
-// domain-join step runs; then the User's first Workspace is created and `user.email_verify`
-// recorded in its Audit log, all in one transaction. landing is the Workspace the User goes to
-// next: the one joined by domain, else the first.
-func (a *Module) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
-	for {
-		var verified *ent.User
-		var landing *ent.Workspace
-		written := false
-		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-			u, err := write(tx, pub)
-			if err != nil {
-				return err
-			}
-			written = true
-			var joined *ent.Workspace
-			if proven {
-				if joined, err = applyDomainJoin(ctx, tx, pub, u); err != nil {
-					return err
-				}
-			}
-			first, err := a.createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID())
-			if err != nil {
-				return err
-			}
-			verified, landing = u, first
-			if joined != nil {
-				landing = joined
-			}
-			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
-		})
-		if written && db.IsUniqueViolation(err) {
-			continue // drew a taken id; the next attempt retries
-		}
-		return verified, landing, err
-	}
+	return u, consentrecords.Write(ctx, tx, u.ID, n.Consents)
 }
 
 // profileWrite is what updateProfile writes: a nil Name, PasswordHash, Timezone or RegionalFormat
@@ -387,7 +287,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 		}
 		saved = u
 		if stamped {
-			if _, err := applyDomainJoin(ctx, tx, pub, u); err != nil {
+			if _, err := ApplyDomainJoinIn(ctx, tx, pub, u); err != nil {
 				return err
 			}
 		}
@@ -399,30 +299,12 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 	return saved, err
 }
 
-// ResetPassword sets the User's password from a reset link (ADR 0030). The link was
-// mailed to the login address, so following it proves the address as much as the
-// verification link does: for an Unverified User it completes the Sign-up
-// exactly as VerifyEmail (Verified email, first Workspace, `user.email_verify`) and
-// reports completedSignUp = true with the User, so the caller sends the welcome
-// email. For a Verified User it is only a password change, recorded like ChangeProfile.
-// Either way every earlier session ends.
-func (a *Module) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, completedSignUp bool, err error) {
-	u, err = a.User(ctx, id)
-	if err != nil {
-		return nil, false, err
-	}
-	if u.EmailVerifiedAt == nil {
-		u, _, err = a.VerifyEmail(ctx, id, &passwordHash)
-		if err == nil {
-			return u, true, nil
-		}
-		if !errors.Is(err, ErrAlreadyVerified) {
-			return nil, false, err
-		}
-		// A concurrent link verified the User first: this is now a plain password change.
-	}
-	u, err = a.updateProfile(ctx, id, profileWrite{PasswordHash: &passwordHash}, true)
-	return u, false, err
+// ResetVerifiedPassword sets a Verified User's password from a reset link (ADR 0030): a password
+// change recorded like ChangeProfile, which ends every earlier session. The link was mailed to the
+// login address, so following it proves the address. An Unverified User's reset completes the
+// Sign-up instead (internal/usecase/workspacecreation).
+func (a *Module) ResetVerifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
+	return a.updateProfile(ctx, id, profileWrite{PasswordHash: &passwordHash}, true)
 }
 
 // EndSessions bumps the User's session epoch, ending every session issued before
@@ -509,7 +391,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) err
 		if err != nil {
 			return err
 		}
-		_, err = applyDomainJoin(ctx, tx, pub, u)
+		_, err = ApplyDomainJoinIn(ctx, tx, pub, u)
 		return err
 	})
 }

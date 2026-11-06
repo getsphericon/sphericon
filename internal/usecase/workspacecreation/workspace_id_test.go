@@ -1,4 +1,4 @@
-package users_test
+package workspacecreation_test
 
 import (
 	"sync/atomic"
@@ -10,13 +10,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
 func TestCreateWorkspaceGivesItAnId(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	ws, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
+	ws, err := env.WorkspaceCreation.CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 
 	assert.Regexp(t, workspaceid.Pattern, ws.PublicID)
@@ -32,7 +33,8 @@ func TestCreateWorkspaceDrawsAnotherIdWhenOneIsTaken(t *testing.T) {
 		return "FreshId1"
 	}
 
-	ws, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, users.WithWorkspaceIDs(generate)).
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	ws, err := workspacecreation.New(env.Bus, acc, nil, testhelper.Passwords(), workspacecreation.WithWorkspaceIDs(generate)).
 		CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 

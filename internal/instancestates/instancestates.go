@@ -264,7 +264,7 @@ func setDefaultSendCap(ctx context.Context, tx *ent.Client, by *ent.StaffMember,
 // DefaultSendCapIn is the Send cap a Workspace created now starts with, read on tx, the
 // transaction that creates it: the stored default, nil when none is set or the Instance state row
 // does not exist yet. It does not ask whether the Instance has Send caps: only an Instance that
-// has them calls it (users.WithSendCaps).
+// has them calls it (internal/usecase/workspacecreation, WithSendCaps).
 func DefaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
 	row, err := tx.InstanceState.Query().Where(instancestate.ID(stateID)).Only(ctx)
 	if ent.IsNotFound(err) {

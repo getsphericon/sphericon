@@ -25,9 +25,6 @@ package signup
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -41,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/users"
 )
 
 // ErrEmailTaken refuses a Sign-up of an address that belongs to a User, on an Instance that does
@@ -59,17 +57,6 @@ type Input struct {
 	SignupItems []consentrecords.Answer
 }
 
-// NewUser is a User a Sign-up creates, with the Consent records its answers make, which the Store
-// writes in the transaction that creates the User.
-type NewUser struct {
-	Name         string
-	Email        string
-	PasswordHash string
-	// SurveyDue marks the User as owing the Sign-up survey.
-	SurveyDue bool
-	Consents  consentrecords.Consents
-}
-
 // Result is the answer of a Sign-up that went through. With verification required, Browser is
 // the Sign-up browser's value, whatever the address; without, the User is Verified with its first
 // Workspace and the welcome mail is queued.
@@ -85,14 +72,14 @@ type Store interface {
 	Lookup(ctx context.Context, email string) (u *ent.User, ok bool, err error)
 	// CreateUnverified creates an Unverified User with the password hash and its Consent records
 	// and nothing else, or returns ErrTaken when the unique email refuses the address.
-	CreateUnverified(ctx context.Context, u NewUser) (*ent.User, error)
+	CreateUnverified(ctx context.Context, u users.NewUser) (*ent.User, error)
 	// ReplaceUnverifiedPassword stores the hash and adds the Consent records on the User while it
 	// is Unverified, which ends every link minted over the earlier hash; a Verified User is left
 	// as it is, records included. It returns the User as it stands afterwards.
 	ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error)
 	// CreateVerified creates a Verified User with its first Workspace and its Consent records, or
 	// returns ErrTaken when the address is taken.
-	CreateVerified(ctx context.Context, u NewUser) (*ent.User, error)
+	CreateVerified(ctx context.Context, u users.NewUser) (*ent.User, error)
 }
 
 // Budget is the mail budget of an address (ADR 0031): Take grants one slot and reports
@@ -127,11 +114,11 @@ type Config struct {
 	SurveyDue func() bool
 }
 
-// Module is the Sign-up.
-type Module struct{ cfg Config }
+// UseCase is the Sign-up.
+type UseCase struct{ cfg Config }
 
-// New builds the module over its adapter.
-func New(cfg Config) *Module { return &Module{cfg: cfg} }
+// New builds the use case over its adapter.
+func New(cfg Config) *UseCase { return &UseCase{cfg: cfg} }
 
 // form is what a Sign-up checks beyond the contract, the name and email already trimmed.
 type form struct {
@@ -142,7 +129,7 @@ type form struct {
 
 // SignUp runs a Sign-up. A refused form is a *validation.FieldsError naming every field, the
 // Sign-up items' answers included (ADR 0062).
-func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
+func (m *UseCase) SignUp(ctx context.Context, in Input) (Result, error) {
 	name := strings.TrimSpace(in.Name)
 	email := strings.TrimSpace(in.Email)
 	// The password is kept as sent: sign-in compares it as typed.
@@ -159,7 +146,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 		return Result{}, merged(fields, refused)
 	}
 	if !m.cfg.RequireVerification {
-		return m.signUpVerified(ctx, NewUser{Name: name, Email: email, SurveyDue: m.cfg.SurveyDue(), Consents: consents}, in.Password)
+		return m.signUpVerified(ctx, users.NewUser{Name: name, Email: email, SurveyDue: m.cfg.SurveyDue(), Consents: consents}, in.Password)
 	}
 
 	granted, err := m.cfg.Budget.Take(ctx, email)
@@ -172,7 +159,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	u, err := m.user(ctx, NewUser{Name: name, Email: email, PasswordHash: hash, SurveyDue: m.cfg.SurveyDue(), Consents: consents})
+	u, err := m.user(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash, SurveyDue: m.cfg.SurveyDue(), Consents: consents})
 	if err != nil {
 		return Result{}, err
 	}
@@ -199,7 +186,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 // user is the User a Sign-up with verification required ends on: a new Unverified User, or the
 // one that holds the address with the password replaced while it is Unverified. Every path
 // writes once, so the work does not say which one it took.
-func (m *Module) user(ctx context.Context, n NewUser) (*ent.User, error) {
+func (m *UseCase) user(ctx context.Context, n users.NewUser) (*ent.User, error) {
 	email := n.Email
 	u, found, err := m.cfg.Store.Lookup(ctx, email)
 	if err != nil {
@@ -226,7 +213,7 @@ func (m *Module) user(ctx context.Context, n NewUser) (*ent.User, error) {
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the
 // User is Verified with its first Workspace at once, and the welcome mail follows as it does
 // after a verification link. No session starts; the User signs in next.
-func (m *Module) signUpVerified(ctx context.Context, n NewUser, password string) (Result, error) {
+func (m *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password string) (Result, error) {
 	hash, err := m.cfg.Passwords.Hash(password)
 	if err != nil {
 		return Result{}, err
@@ -263,24 +250,5 @@ func mailNotQueued(ctx context.Context, mail string, err error) {
 // hash that goes into the verification token.
 func newBrowser() (value, hash string) {
 	value = rand.Text()
-	return value, BrowserHash(value)
-}
-
-// BrowserHash is the hash of a Sign-up browser cookie's value, empty for no cookie.
-func BrowserHash(value string) string {
-	if value == "" {
-		return ""
-	}
-	sum := sha256.Sum256([]byte(value))
-	return hex.EncodeToString(sum[:])
-}
-
-// SameBrowser reports whether a request's Sign-up browser cookie value is the one whose hash a
-// verification token carries. A token minted without a hash (a link asked for from a browser
-// that holds no cookie) matches no browser.
-func SameBrowser(tokenHash, cookieValue string) bool {
-	if tokenHash == "" || cookieValue == "" {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(tokenHash), []byte(BrowserHash(cookieValue))) == 1
+	return value, users.BrowserHash(value)
 }

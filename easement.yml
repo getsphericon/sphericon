@@ -16,7 +16,9 @@ version: 1
 # An unchecked change counts as one too: contacts.UpdateCustomFieldIn, the retype without its check.
 # So does contacts.DeleteIn, the Contact row without the rest of its Erasure.
 # So do the Second factor's writes that skip its checks (the User's factor, the Recovery codes, all
-# Passkeys of a User) and the issue of an OAuth grant's credentials (the Connection, a refresh token).
+# Passkeys of a User) and the issue of an OAuth grant's credentials (the Connection, a refresh token),
+# the moves of a Workspace's deletion cycle, and the creation of a Workspace with its creator's
+# Membership.
 x-unchecked-removals: &unchecked-removals
   - &tags-delete-in
     name: github.com/getsphericon/sphericon/internal/tags.DeleteIn
@@ -72,6 +74,21 @@ x-unchecked-removals: &unchecked-removals
   - &oauthclients-new-refresh-token-in
     name: github.com/getsphericon/sphericon/internal/oauthclients.NewRefreshTokenIn
     because: a refresh token is issued only with the Connection of a checked and claimed grant, by the use case internal/usecase/oauthauthorization (ADR 0016, ADR 0102); call the use case
+  - &workspaces-discard-in
+    name: github.com/getsphericon/sphericon/internal/workspaces.DiscardIn
+    because: a Workspace is deleted only by the use case internal/usecase/workspacedeletion, which checks the typed name first and records the deletion (ADR 0043, ADR 0102); call the use case
+  - &workspaces-restore-in
+    name: github.com/getsphericon/sphericon/internal/workspaces.RestoreIn
+    because: a deleted Workspace is restored only by the use case internal/usecase/workspacedeletion, for a User whose Role holds workspace:delete there (ADR 0043, ADR 0061, ADR 0102); call the use case
+  - &workspaces-tombstone-in
+    name: github.com/getsphericon/sphericon/internal/workspaces.TombstoneIn
+    because: a Workspace is erased only by the use case internal/usecase/workspacedeletion, after it has removed every row the Workspace owned and the OAuth codes that name it (ADR 0043, ADR 0102); call the use case
+  - &workspaces-create-in
+    name: github.com/getsphericon/sphericon/internal/workspaces.CreateIn
+    because: a Workspace is created only by the use case internal/usecase/workspacecreation, which refuses an Unverified User (ADR 0030), writes its Owner Membership on the same transaction and gives it the Send cap it starts with (ADR 0043, ADR 0067, ADR 0102); call the use case
+  - &memberships-add-creator-in
+    name: github.com/getsphericon/sphericon/internal/memberships.AddCreatorIn
+    because: the creator's Owner Membership is written only with its Workspace, by the use case internal/usecase/workspacecreation (ADR 0043, ADR 0102); call the use case
 x-no-raw-client: &no-raw-client
   forbid_symbol:
     - name: github.com/getsphericon/sphericon/ent.Client
@@ -94,6 +111,11 @@ x-no-raw-client: &no-raw-client
     - *apitokens-issue-connection
     - *apitokens-rotate-connection
     - *oauthclients-new-refresh-token-in
+    - *workspaces-discard-in
+    - *workspaces-restore-in
+    - *workspaces-tombstone-in
+    - *workspaces-create-in
+    - *memberships-add-creator-in
 # No core tier (kernel, infrastructure, domain) imports a surface's generated package: what the core
 # shares with a contract is generated into the kernel (the scope vocabulary, internal/kernel/tokenscope).
 x-no-surface-gen: &no-surface-gen
@@ -191,12 +213,20 @@ components:
     allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor of a User, and the exchange of an OAuth code or refresh
-  # token, a secret that names its grant. They hold the raw client (the closed list of
+  # *ent.Scoped to take: the Second factor of a User, the exchange of an OAuth code or refresh
+  # token, a secret that names its grant, the deletion cycle of a Workspace, which lists the
+  # Workspaces that have no scope yet, and the creation of a Workspace, with the steps that make a
+  # User Verified with its first one. They hold the raw client (the closed list of
   # docs/architecture.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
   usecase-raw:
-    in: ['internal/usecase/secondfactorenrolment*', 'internal/usecase/oauthauthorization*']
+    in:
+      [
+        'internal/usecase/secondfactorenrolment*',
+        'internal/usecase/oauthauthorization*',
+        'internal/usecase/workspacedeletion*',
+        'internal/usecase/workspacecreation*',
+      ]
     isolated: true
     allow_importers: [api-site, api-external, api-collect, api-staff, runner, wiring]
     because: a use case is called by a driver (an API surface, MCP, a job) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
@@ -235,7 +265,6 @@ components:
         internal/userfeed,
         internal/users,
         internal/webhooks,
-        internal/workspacedeletion,
         internal/workspacefeed,
       ]
 
@@ -292,7 +321,17 @@ rules:
   api-site:
     <<: *no-raw-client
     may_depend_on:
-      [api-auth, api-problem, core, core-raw, identity-base, consent, gen-surfaces, usecase, usecase-raw]
+      [
+        api-auth,
+        api-problem,
+        core,
+        core-raw,
+        identity-base,
+        consent,
+        gen-surfaces,
+        usecase,
+        usecase-raw,
+      ]
     forbid_external: *no-container
     because: a surface depends on the shared auth handlers, the Problem mapping and the core, never on another surface
   api-external:
@@ -345,6 +384,11 @@ rules:
       - *apitokens-issue-connection
       - *apitokens-rotate-connection
       - *oauthclients-new-refresh-token-in
+      - *workspaces-discard-in
+      - *workspaces-restore-in
+      - *workspaces-tombstone-in
+      - *workspaces-create-in
+      - *memberships-add-creator-in
     forbid_external: *no-container
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   core-raw:
@@ -396,6 +440,11 @@ rules:
       - *apitokens-issue-connection
       - *apitokens-rotate-connection
       - *oauthclients-new-refresh-token-in
+      - *workspaces-discard-in
+      - *workspaces-restore-in
+      - *workspaces-tombstone-in
+      - *workspaces-create-in
+      - *memberships-add-creator-in
     because: core depends on neither a surface nor the Enterprise Edition; it reaches them through interfaces (site.AuditLog, events.Consumer) wired in internal/app
   consent:
     may_depend_on: [core]
@@ -423,6 +472,11 @@ rules:
       - *apitokens-issue-connection
       - *apitokens-rotate-connection
       - *oauthclients-new-refresh-token-in
+      - *workspaces-discard-in
+      - *workspaces-restore-in
+      - *workspaces-tombstone-in
+      - *workspaces-create-in
+      - *memberships-add-creator-in
     forbid_external: *no-container
     because: the consent of a Destination sits in the contacts context (ADR 0102), below the Automations it may not import; an operation that also counts on a Broadcast or ends an Enrollment is a use case above it
   usecase:
@@ -435,7 +489,7 @@ rules:
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)
   usecase-raw:
-    may_depend_on: [core, core-raw]
+    may_depend_on: [core, core-raw, identity-base]
     must_not_depend_on: [*no-surface-gen]
     forbid_symbol:
       - *emailcase-hook
@@ -449,7 +503,7 @@ rules:
       - *upgrade-major-floor
       - *leave-doomed-workspace-in
     forbid_external: *no-container
-    because: a use case composes the domain modules (ADR 0102); these two hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
+    because: a use case composes the domain modules (ADR 0102); these hold the raw client because their rows belong to no Workspace when they start, and like the raw-client holders of the core they install no ent hook
   identity-base:
     may_depend_on: []
     must_not_depend_on: [*no-surface-gen]
@@ -482,9 +536,14 @@ rules:
       - *apitokens-issue-connection
       - *apitokens-rotate-connection
       - *oauthclients-new-refresh-token-in
+      - *workspaces-discard-in
+      - *workspaces-restore-in
+      - *workspaces-tombstone-in
+      - *workspaces-create-in
+      - *memberships-add-creator-in
     because: the Workspace and its Memberships sit at the bottom of identity (ADR 0102); every module may read them, so they import only the kernel and the infrastructure, never a domain module
   runner:
-    may_depend_on: [core, core-raw, identity-base, usecase]
+    may_depend_on: [core, core-raw, identity-base, usecase, usecase-raw]
     forbid_external: *no-container
     forbid_symbol: *raw-driver-forbids
     because: the job runner calls the core and the use cases, never a surface or the Enterprise Edition; the Edition hands its jobs in through the wiring

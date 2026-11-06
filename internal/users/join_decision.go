@@ -2,7 +2,7 @@ package users
 
 // JoinFacts is everything the domain-join decision rests on, read before it is made (ADR
 // 0051). The decision is a pure function of them, so every branch is tested on its inputs
-// alone, and what the join writes is applyDomainJoin's.
+// alone, and what the join writes is ApplyDomainJoinIn's.
 type JoinFacts struct {
 	// ProvenNow: the address became a Proven email in this very step, stamped from empty. An
 	// address proven before, or one that was merely recorded as verified, never joins.

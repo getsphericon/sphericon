@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/memberships"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
@@ -40,6 +41,7 @@ type Env struct {
 	hooks   *Hooks
 
 	users       *users.Module
+	creation    *workspacecreation.UseCase
 	memberships *memberships.Module
 	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
@@ -129,13 +131,19 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("start application: %w", err)
 	}
-	// The arrange step goes through the product's own Users and Memberships modules, taken from the
-	// application's container (no second pool).
+	// The arrange step goes through the product's own Users and Memberships modules and its
+	// Workspace creation, taken from the application's container (no second pool).
 	acc, err := a.Users()
 	if err != nil {
 		cleanup.Report("close the application", a.Close(ctx))
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve users: %w", err)
+	}
+	creation, err := a.WorkspaceCreation()
+	if err != nil {
+		cleanup.Report("close the application", a.Close(ctx))
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve workspace creation: %w", err)
 	}
 	ms, err := a.Memberships()
 	if err != nil {
@@ -166,6 +174,7 @@ func Boot() (*Env, func(), error) {
 		mailpit:     mp,
 		hooks:       hooks,
 		users:       acc,
+		creation:    creation,
 		memberships: ms,
 		bus:         bus,
 

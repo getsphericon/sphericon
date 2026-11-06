@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -26,10 +25,10 @@ const PendingSignupTTL = 10 * time.Minute
 // declined, or overtaken (its address or provider account taken, its Invitation no longer pending).
 var ErrPendingSignupGone = validation.UnknownReference("users: the pending sign-up is gone", i18n.ErrorsSigninPendingGone)
 
-// holdPending keeps what the provider proved as a pending sign-up instead of creating the User
+// HoldPending keeps what the provider proved as a pending sign-up instead of creating the User
 // (ADR 0062), open until PendingSignupTTL after now. A pending sign-up of the same provider account
 // is replaced, so only the latest flow's reference works.
-func (a *Module) holdPending(ctx context.Context, in ProviderLogin) (*ent.PendingSignup, error) {
+func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.PendingSignup, error) {
 	var held *ent.PendingSignup
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		if _, err := tx.PendingSignup.Delete().
@@ -69,71 +68,60 @@ func (a *Module) PendingSignup(ctx context.Context, id int64, now time.Time) (*e
 	return p, err
 }
 
-// CompletePendingSignup is the person's answers to the Sign-up items completing the pending
-// sign-up with id (ADR 0062): in one transaction it takes the pending sign-up (open at now), creates
-// the Verified User with the provider's address and name, or takes over the Unverified User that
-// holds the address, as a provider sign-in without items does, its Linked identity, the Consent records
-// of the answers, the Membership of the Invitation the flow began from, and the first Workspace, as
-// a provider sign-up without items does. surveyDue marks the User as owing the Sign-up survey,
-// unless the sign-up accepts an Invitation. It returns the User and the pending sign-up it came
-// from. ErrPendingSignupGone when the pending sign-up is no longer open, its Invitation no longer
-// pending, or its address or provider account was taken meanwhile; nothing is written then.
-func (a *Module) CompletePendingSignup(ctx context.Context, id int64, consents consentrecords.Consents, surveyDue bool, now time.Time) (*ent.User, *ent.PendingSignup, error) {
-	var taken *ent.PendingSignup
-	u, _, err := a.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		p, err := tx.PendingSignup.Query().
-			Where(pendingsignup.ID(id), openAt(now)).
-			ForUpdate().
-			Only(ctx)
-		if ent.IsNotFound(err) {
-			return nil, ErrPendingSignupGone
-		}
-		if err != nil {
-			return nil, err
-		}
-		taken = p
-		if err := tx.PendingSignup.DeleteOneID(p.ID).Exec(ctx); err != nil {
-			return nil, err
-		}
-		var inv *ent.Invitation
-		if p.InvitationID != nil {
-			inv, err = tx.Invitation.Query().
-				Where(invitation.ID(*p.InvitationID), invitations.PendingAt(now)).
-				Only(ctx)
-			if ent.IsNotFound(err) {
-				return nil, ErrPendingSignupGone
-			}
-			if err != nil {
-				return nil, err
-			}
-		}
-		u, err := completeProviderSignup(ctx, tx, ProviderLogin{
-			Provider: p.Provider, Subject: p.Subject, Email: p.Email, Name: p.Name,
-			SurveyDue: surveyDue && inv == nil,
-		})
-		if err != nil {
-			return nil, err
-		}
-		if err := consentrecords.Write(ctx, tx, u.ID, consents); err != nil {
-			return nil, err
-		}
-		if inv != nil {
-			// The provider's proof of the address is the session proof the acceptance asks of a
-			// Verified User, as on a provider sign-up without items.
-			if err := a.acceptInvitationIn(ctx, tx, pub, inv, newAccount{}, u.Email); err != nil {
-				return nil, err
-			}
-		}
-		return u, nil
-	})
-	if db.IsUniqueViolation(err) {
-		// Another sign-up took the address or the provider account first.
+// CompletePendingSignupIn writes, in tx, the person's answers to the Sign-up items completing
+// the pending sign-up with id (ADR 0062): it takes the pending sign-up (open at now), creates the
+// Verified User with the provider's address and name, or takes over the Unverified User that
+// holds the address, as a provider sign-in without items does, its Linked identity, the Consent
+// records of the answers and the Membership of the Invitation the flow began from. The caller
+// creates the first Workspace on the same transaction (internal/usecase/workspacecreation).
+// surveyDue marks the User as owing the Sign-up survey, unless the sign-up accepts an Invitation.
+// It returns the User and the pending sign-up it came from. ErrPendingSignupGone when the pending
+// sign-up is no longer open, its Invitation no longer pending, or its address or provider
+// account was taken meanwhile.
+func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, consents consentrecords.Consents, surveyDue bool, now time.Time) (*ent.User, *ent.PendingSignup, error) {
+	p, err := tx.PendingSignup.Query().
+		Where(pendingsignup.ID(id), openAt(now)).
+		ForUpdate().
+		Only(ctx)
+	if ent.IsNotFound(err) {
 		return nil, nil, ErrPendingSignupGone
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	return u, taken, nil
+	if err := tx.PendingSignup.DeleteOneID(p.ID).Exec(ctx); err != nil {
+		return nil, nil, err
+	}
+	var inv *ent.Invitation
+	if p.InvitationID != nil {
+		inv, err = tx.Invitation.Query().
+			Where(invitation.ID(*p.InvitationID), invitations.PendingAt(now)).
+			Only(ctx)
+		if ent.IsNotFound(err) {
+			return nil, nil, ErrPendingSignupGone
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	u, err := completeProviderSignup(ctx, tx, ProviderLogin{
+		Provider: p.Provider, Subject: p.Subject, Email: p.Email, Name: p.Name,
+		SurveyDue: surveyDue && inv == nil,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := consentrecords.Write(ctx, tx, u.ID, consents); err != nil {
+		return nil, nil, err
+	}
+	if inv != nil {
+		// The provider's proof of the address is the session proof the acceptance asks of a
+		// Verified User, as on a provider sign-up without items.
+		if err := a.acceptInvitationIn(ctx, tx, pub, inv, newAccount{}, u.Email); err != nil {
+			return nil, nil, err
+		}
+	}
+	return u, p, nil
 }
 
 // completeProviderSignup is the sign-in decision of a pending sign-up, taken again in tx on what
@@ -148,9 +136,9 @@ func completeProviderSignup(ctx context.Context, tx *ent.Client, in ProviderLogi
 	}
 	switch DecideSignin(factsOf(known, holder, in)).Outcome {
 	case SigninCreate:
-		return createProviderUser(ctx, tx, in)
+		return CreateProviderUserIn(ctx, tx, in)
 	case SigninTakeOver:
-		u, err := takeOverIn(ctx, tx, holder.ID, in)
+		u, err := TakeOverIn(ctx, tx, holder.ID, in)
 		if errors.Is(err, ErrAlreadyVerified) {
 			return nil, ErrPendingSignupGone
 		}

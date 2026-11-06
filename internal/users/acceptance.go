@@ -115,7 +115,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		// The address was proven now, so the domain-join step runs after the explicit
 		// Invitation's Membership (which then wins: a Workspace the Invitation names is
 		// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
-		if _, err := applyDomainJoin(ctx, tx, pub, u); err != nil {
+		if _, err := ApplyDomainJoinIn(ctx, tx, pub, u); err != nil {
 			return err
 		}
 	}
@@ -192,7 +192,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 			SetEmailProvenAt(time.Now()).
 			Save(ctx)
 	} else {
-		u, err = markVerified(ctx, tx, u.ID, name, &hash)
+		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash)
 		if err == nil {
 			// The person who signed up is an invitee now, not a public Sign-up.
 			err = clearSurveyDue(ctx, tx, u.ID)

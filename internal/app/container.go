@@ -103,9 +103,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
 	"github.com/getsphericon/sphericon/internal/usecase/transactionalsend"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 
 	// The pgx driver behind database/sql.
@@ -534,7 +535,7 @@ var jobsPackage = do.Package(
 			Rules:              do.MustInvoke[*rules.Module](i),
 			Users:              do.MustInvoke[*users.Module](i),
 			Orders:             do.MustInvoke[*orders.Module](i),
-			Deletion:           do.MustInvoke[*workspacedeletion.Module](i),
+			Deletion:           do.MustInvoke[*workspacedeletion.UseCase](i),
 			DomainVerification: do.MustInvoke[*domainverification.UseCase](i),
 			StepExecution:      do.MustInvoke[*stepexecution.UseCase](i),
 			JoinDomains:        do.MustInvoke[*joindomains.Module](i),
@@ -608,7 +609,7 @@ var deliveryPackage = do.Package(
 )
 
 // identityPackage provides the Users, Invitations, Workspace, Membership and Instance state modules,
-// the Login throttle and the second factor.
+// the Login throttle, the second factor, and the creation and deletion of a Workspace.
 var identityPackage = do.Package(
 	// One password hasher for every password a User or a Staff member sets.
 	do.Lazy(func(do.Injector) (*credentials.Hasher, error) {
@@ -623,19 +624,24 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
 		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// The Users (ADR 0102), over the raw client, with the creation of a Workspace until it is a
-	// use case. On an Instance that has Send caps (ADR 0067) a new Workspace starts with the Instance's
-	// default; elsewhere it has none.
+	// The Users (ADR 0102), over the raw client.
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
-		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i),
-			users.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i), instancestates.DefaultSendCapIn)), nil
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i)), nil
+	}),
+	// The creation of a Workspace, and the steps that make a User Verified with its first one (a
+	// use case, ADR 0102). On an Instance that has Send caps (ADR 0067) a new Workspace starts with
+	// the Instance's default; elsewhere it has none.
+	do.Lazy(func(i do.Injector) (*workspacecreation.UseCase, error) {
+		usersModule := do.MustInvoke[*users.Module](i)
+		return workspacecreation.New(do.MustInvoke[*events.Bus](i), usersModule, users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*credentials.Hasher](i),
+			workspacecreation.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
 	}),
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
-	// The Workspace deletion cycle (ADR 0043), over the raw client.
-	do.Lazy(func(i do.Injector) (*workspacedeletion.Module, error) {
+	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client.
+	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
 		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
@@ -956,7 +962,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		SignupItems:              do.MustInvoke[*signupitems.Module](i),
 		ConsentRecords:           do.MustInvoke[*consentrecords.Module](i),
 		Release:                  do.MustInvoke[*releasecheck.UseCase](i),
-		Deletion:                 do.MustInvoke[*workspacedeletion.Module](i),
+		Deletion:                 do.MustInvoke[*workspacedeletion.UseCase](i),
 		AccountLink:              accountLink,
 		Holds:                    do.MustInvoke[*holds.Holds](i),
 		Attention:                do.MustInvoke[*needsattention.UseCase](i),
@@ -1002,6 +1008,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		AppURL:                   cfg.AppURL,
 		Audit:                    edition.Audit,
 		SecondFactor:             do.MustInvoke[*secondfactorenrolment.UseCase](i),
+		WorkspaceCreation:        do.MustInvoke[*workspacecreation.UseCase](i),
 		Passkeys:                 do.MustInvoke[*passkeys.Module](i),
 		Analytics:                do.MustInvoke[*analyticsreport.UseCase](i),
 		Clock:                    do.MustInvoke[Clock](i),

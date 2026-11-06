@@ -10,7 +10,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/mailjobs"
-	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/users"
 )
 
@@ -30,8 +31,12 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 	return accepted, nil
 }
 
-// signUpStore is the site's side of the signup module's seam: Users through the users module.
-type signUpStore struct{ users *users.Module }
+// signUpStore is the site's side of the Sign-up's seam: Users through the users module, and a
+// Verified User with its first Workspace through the Workspace creation.
+type signUpStore struct {
+	users    *users.Module
+	creation *workspacecreation.UseCase
+}
 
 func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
 	u, err := s.users.UserByEmail(ctx, email)
@@ -41,7 +46,7 @@ func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool,
 	return u, err == nil, err
 }
 
-func (s signUpStore) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+func (s signUpStore) CreateUnverified(ctx context.Context, n users.NewUser) (*ent.User, error) {
 	u, err := s.users.CreateUnverified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
@@ -53,18 +58,18 @@ func (s signUpStore) ReplaceUnverifiedPassword(ctx context.Context, id int64, pa
 	return s.users.ReplaceUnverifiedPassword(ctx, id, passwordHash, consents)
 }
 
-func (s signUpStore) CreateVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
-	u, err := s.users.SignUpVerified(ctx, n)
+func (s signUpStore) CreateVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
+	u, err := s.creation.SignUpVerified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
 	return u, err
 }
 
-// newSignUp builds the signup module over the site's adapter (ADR 0030, 0031).
-func (h *Handlers) newSignUp() *signup.Module {
+// newSignUp builds the Sign-up use case over the site's adapter (ADR 0030, 0031).
+func (h *Handlers) newSignUp() *signup.UseCase {
 	return signup.New(signup.Config{
-		Store:               signUpStore{h.users},
+		Store:               signUpStore{users: h.users, creation: h.workspaceCreation},
 		Consents:            h.consentRecords,
 		Budget:              h.attempts.For(throttle.KindSignUp),
 		Passwords:           h.passwords,
@@ -101,7 +106,7 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if u != nil {
 		to = u.Email
 	}
-	token, err := h.links.VerificationLink(u, signup.BrowserHash(params.SIGNUPBROWSER.Or("")))
+	token, err := h.links.VerificationLink(u, users.BrowserHash(params.SIGNUPBROWSER.Or("")))
 	if err != nil {
 		return err
 	}

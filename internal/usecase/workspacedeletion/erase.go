@@ -28,7 +28,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -50,6 +49,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/oauthclients"
+	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
 // eraseBatch bounds the rows one transaction removes, so a large Workspace never holds a
@@ -65,10 +66,11 @@ const maxErasePasses = 10
 // many it finished. Each Workspace's rows go in batches, each batch in a transaction of its
 // own through the event bus, so the ent hooks run (the tracking host change log records the
 // released hosts, the workspace feed advances) and a crash resumes on the rows that are
-// left. The last transaction writes the tombstone (tombstone). A Workspace that fails does not
-// stop the others; the errors are joined. The scope of each step is built here, after the
+// left. The last transaction removes the OAuth codes that name the Workspace and writes the
+// tombstone (workspaces.TombstoneIn). A Workspace that fails does not stop the others; the
+// errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
-func (m *Module) EraseDue(ctx context.Context, now time.Time) (int, error) {
+func (m *UseCase) EraseDue(ctx context.Context, now time.Time) (int, error) {
 	ids, err := m.Due(ctx, now)
 	if err != nil {
 		return 0, err
@@ -93,7 +95,7 @@ func (m *Module) EraseDue(ctx context.Context, now time.Time) (int, error) {
 // compare-and-swap cannot lose after the steps in practice: Due selects only rows past the
 // window and Restore is refused once the window has passed, so nothing moves a listed row
 // back to active. If it did, the stale move is finished as ErrInvalidTransition (EraseDue).
-func (m *Module) eraseWorkspace(ctx context.Context, id int64, now time.Time) error {
+func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) error {
 	// Rerun every step until a whole pass finds nothing to remove: a row written while
 	// another kind was being deleted is then removed too, before the tombstone is made.
 	settled := false
@@ -108,15 +110,15 @@ func (m *Module) eraseWorkspace(ctx context.Context, id int64, now time.Time) er
 		return fmt.Errorf("rows are still being written after %d passes", maxErasePasses)
 	}
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		if _, err := tx.OAuthCode.Delete().Where(oauthcode.WorkspaceID(id)).Exec(ctx); err != nil {
+		if err := oauthclients.DeleteCodesIn(ctx, tx, id); err != nil {
 			return err
 		}
-		return tombstone(ctx, tx, id, now)
+		return workspaces.TombstoneIn(ctx, tx, id, now)
 	})
 }
 
 // erasePass runs every step once, each in batches, and returns how many rows it removed.
-func (m *Module) erasePass(ctx context.Context, id int64) (int, error) {
+func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
 	total := 0
 	for _, step := range eraseSteps {
 		for {

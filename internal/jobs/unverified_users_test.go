@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/users"
 )
@@ -90,6 +89,6 @@ func TestAddressCanSignUpOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 
 	pruneUnverified(t, env, unverifiedRetention)
 
-	_, err = acc.CreateUnverified(t.Context(), signup.NewUser{Name: "Real Owner", Email: fixtures.StaleUnverifiedUserEmail, PasswordHash: "signed-up-hash"})
+	_, err = acc.CreateUnverified(t.Context(), users.NewUser{Name: "Real Owner", Email: fixtures.StaleUnverifiedUserEmail, PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 }

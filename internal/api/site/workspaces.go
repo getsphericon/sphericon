@@ -91,7 +91,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	ws, err := h.users.CreateWorkspace(ctx, a.UserID, req.Name)
+	ws, err := h.workspaceCreation.CreateWorkspace(ctx, a.UserID, req.Name)
 	if err != nil {
 		return nil, err
 	}

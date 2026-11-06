@@ -82,7 +82,7 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 	if err != nil {
 		return nil, err
 	}
-	u, held, err := h.users.CompletePendingSignup(ctx, pending.ID, consents, h.signupSurvey.Enabled(), h.now())
+	u, held, err := h.workspaceCreation.CompletePendingSignup(ctx, pending.ID, consents, h.signupSurvey.Enabled(), h.now())
 	if err != nil {
 		return nil, err
 	}

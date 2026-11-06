@@ -90,7 +90,7 @@ func (k collectKey) ApiKeyAuth(context.Context, collectapi.OperationName) (colle
 }
 
 // NewWorkspace is the arrange step: a User, a Workspace and its first API token, made
-// with internal/users and internal/apitokens (the bootstrap token is not used, it
+// with internal/users, internal/usecase/workspacecreation and internal/apitokens (the bootstrap token is not used, it
 // only addresses the oldest Workspace). Its Inbox deletes the test's own mail on cleanup.
 func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	tb.Helper()
@@ -99,7 +99,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 
 	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
 	require.NoError(tb, err)
-	ws, err := e.users.CreateWorkspace(ctx, user.ID, "e2e "+id)
+	ws, err := e.creation.CreateWorkspace(ctx, user.ID, "e2e "+id)
 	require.NoError(tb, err)
 	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)

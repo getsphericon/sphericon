@@ -50,9 +50,10 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	return nil
 }
 
-// SiteAuthResetPassword sets a new password from a reset link (users.Links).
+// SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
+// workspacecreation, which completes the Sign-up of an Unverified User).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
-	u, completedSignUp, err := h.links.ResetPassword(ctx, req.Token, req.Password)
+	u, completedSignUp, err := h.workspaceCreation.ResetPasswordLink(ctx, req.Token, req.Password)
 	if err != nil {
 		return err
 	}
@@ -64,14 +65,14 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	return nil
 }
 
-// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, users.Links): the
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, workspacecreation): the
 // token proves the address, so it stamps the Verified email, ends every earlier session,
 // creates the User's first Workspace and sends the welcome email, then starts the
 // session through the login issuer. The password stored at Sign-up stays only when
 // the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (*siteapi.SiteVerifyEmailResultHeaders, error) {
-	verified, landing, err := h.links.VerifyEmail(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
+	verified, landing, err := h.workspaceCreation.VerifyEmailLink(ctx, req.Token, params.SIGNUPBROWSER.Or(""), req.Password.Or(""))
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err := h.mail.Enqueue(ctx, mailjobs.Welcome(verified.Email, verified.Name)); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
-	// The session starts after the epoch bump VerifyEmail made, so it is the only one.
+	// The session starts after the epoch bump VerifyEmailLink made, so it is the only one.
 	cookie, err := h.sessions.Issue(verified, auth.Session{Method: auth.MethodEmail})
 	if err != nil {
 		return nil, err

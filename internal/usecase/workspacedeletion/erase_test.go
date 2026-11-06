@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 

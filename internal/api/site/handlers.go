@@ -42,7 +42,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -59,11 +58,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -79,7 +80,7 @@ type Handlers struct {
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
 	passwords       *credentials.Hasher
-	deletion        *workspacedeletion.Module
+	deletion        *workspacedeletion.UseCase
 	attempts        *throttle.Attempts
 	bus             *events.Bus
 	webhooks        *webhooks.Module
@@ -118,6 +119,7 @@ type Handlers struct {
 	analytics             *analyticsreport.UseCase
 	sessions              *auth.Sessions
 	secondFactor          *secondfactorenrolment.UseCase
+	workspaceCreation     *workspacecreation.UseCase
 	passkeys              *passkeys.Module
 	now                   func() time.Time
 	accountLink           *accountlink.Link
@@ -140,7 +142,7 @@ type Handlers struct {
 	// login is the password step of signing in (ADR 0020).
 	login *login.Module[*ent.User]
 	// signup is the Sign-up (ADR 0030).
-	signup *signup.Module
+	signup *signup.UseCase
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signin.Providers
 	// customFieldRetyping edits a Custom field (a use case, ADR 0102).
@@ -188,7 +190,7 @@ type Deps struct {
 	// Passwords hashes the password a User sets (sign-up, reset, a verified link's new one).
 	Passwords *credentials.Hasher
 	// Deletion is the Workspace deletion cycle (ADR 0043).
-	Deletion *workspacedeletion.Module
+	Deletion *workspacedeletion.UseCase
 	// Release is the Release check (ADR 0032), whose newer release an owner is told of.
 	Release *releasecheck.UseCase
 	// Attempts counts failed logins and password-reset mails per account (ADR
@@ -242,6 +244,10 @@ type Deps struct {
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactorenrolment.UseCase
+	// WorkspaceCreation creates a Workspace, and makes a User Verified with its first one (a use
+	// case, ADR 0102): the verification and reset links, a Sign-up without verification and the
+	// provider sign-in.
+	WorkspaceCreation *workspacecreation.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).
 	Passkeys *passkeys.Module
 	// Clock is the time the site session's expiry and a Two-factor requirement's
@@ -292,7 +298,7 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, mail: d.Mail,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, domainVerification: d.DomainVerification, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, workspaceCreation: d.WorkspaceCreation, passkeys: d.Passkeys, now: now, release: d.Release, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),

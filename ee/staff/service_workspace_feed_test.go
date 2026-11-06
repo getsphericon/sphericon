@@ -14,8 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/users"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // feedPage reads one page of the Workspace feed from cursor.
@@ -123,7 +123,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	ws, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
+	ws, err := h.env.WorkspaceCreation.CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)

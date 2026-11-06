@@ -57,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/telemetryreport"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -215,6 +216,10 @@ type TestEnv struct {
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactorenrolment.UseCase
+
+	// WorkspaceCreation is the use case the server creates Workspaces with, and makes Users
+	// Verified with their first one (ADR 0102).
+	WorkspaceCreation *workspacecreation.UseCase
 
 	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
 	// ADR 0063), on every env.
@@ -497,39 +502,40 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	feedClient.Use(ee.Hooks(lic, st.now)...)
 
 	return &TestEnv{
-		Instance:        do.MustInvoke[*instancestates.Module](injector),
-		ReleaseCheck:    do.MustInvoke[*releasecheck.UseCase](injector),
-		TelemetryReport: do.MustInvoke[*telemetryreport.UseCase](injector),
-		AppURL:          cfg.AppURL,
-		DB:              do.MustInvoke[*ent.Client](injector),
-		FeedDB:          feedClient,
-		SQLDB:           txDB,
-		Bus:             do.MustInvoke[*events.Bus](injector),
-		Server:          handler.Handler,
-		Internal:        internal.Handler,
-		Tracker:         do.MustInvoke[*tracking.Tracker](injector),
-		Cipher:          do.MustInvoke[*secrets.Cipher](injector),
-		Integrations:    do.MustInvoke[*integrations.Module](injector),
-		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
-		Holds:           do.MustInvoke[*holds.Holds](injector),
-		Orders:          do.MustInvoke[*orders.Module](injector),
-		edition:         edition,
-		license:         lic,
-		sender:          do.MustInvoke[*outbound.Module](injector),
-		jwtSecret:       cfg.JWTSecret,
-		now:             st.now,
-		sessionTTL:      cfg.SessionTTL,
-		SystemMail:      systemMail,
-		CustomerMail:    customerMail,
-		SES:             fakeSES,
-		Telegram:        botAPI,
-		Twilio:          twilioAPI,
-		Machine:         do.MustInvoke[*machine.Detector](injector),
-		PrivateRelay:    relay,
-		Confirmations:   confirmations,
-		SecondFactor:    do.MustInvoke[*secondfactorenrolment.UseCase](injector),
-		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
-		StaffEnterprise: edition.Staff,
+		Instance:          do.MustInvoke[*instancestates.Module](injector),
+		ReleaseCheck:      do.MustInvoke[*releasecheck.UseCase](injector),
+		TelemetryReport:   do.MustInvoke[*telemetryreport.UseCase](injector),
+		AppURL:            cfg.AppURL,
+		DB:                do.MustInvoke[*ent.Client](injector),
+		FeedDB:            feedClient,
+		SQLDB:             txDB,
+		Bus:               do.MustInvoke[*events.Bus](injector),
+		Server:            handler.Handler,
+		Internal:          internal.Handler,
+		Tracker:           do.MustInvoke[*tracking.Tracker](injector),
+		Cipher:            do.MustInvoke[*secrets.Cipher](injector),
+		Integrations:      do.MustInvoke[*integrations.Module](injector),
+		ConsentRecords:    do.MustInvoke[*consentrecords.Module](injector),
+		Holds:             do.MustInvoke[*holds.Holds](injector),
+		Orders:            do.MustInvoke[*orders.Module](injector),
+		edition:           edition,
+		license:           lic,
+		sender:            do.MustInvoke[*outbound.Module](injector),
+		jwtSecret:         cfg.JWTSecret,
+		now:               st.now,
+		sessionTTL:        cfg.SessionTTL,
+		SystemMail:        systemMail,
+		CustomerMail:      customerMail,
+		SES:               fakeSES,
+		Telegram:          botAPI,
+		Twilio:            twilioAPI,
+		Machine:           do.MustInvoke[*machine.Detector](injector),
+		PrivateRelay:      relay,
+		Confirmations:     confirmations,
+		SecondFactor:      do.MustInvoke[*secondfactorenrolment.UseCase](injector),
+		WorkspaceCreation: do.MustInvoke[*workspacecreation.UseCase](injector),
+		StaffMembers:      do.MustInvoke[*staffmembers.Module](injector),
+		StaffEnterprise:   edition.Staff,
 	}
 }
 

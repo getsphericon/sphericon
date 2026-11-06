@@ -83,8 +83,13 @@ module instead (`instancestates.New(env.DB, …)`); the server's own are `env.Re
 `env.TelemetryReport`. The re-encryption is built over each owner's `Secrets` on `env.DB`
 (`integrations.NewSecrets(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Second factor's is `env.SecondFactor`
-(`internal/usecase/secondfactorenrolment`), and the OAuth token endpoint
-(`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
+(`internal/usecase/secondfactorenrolment`), the Workspace creation's `env.WorkspaceCreation`
+(`internal/usecase/workspacecreation`, which also makes a User Verified with its first Workspace;
+a test of its id retry builds it with `New` and `WithWorkspaceIDs`), the Workspace deletion cycle
+(`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus)`, and the OAuth token
+endpoint (`internal/usecase/oauthauthorization`) is driven through the server's `/oauth` routes.
+The Sign-up (`internal/usecase/signup`) holds no client: its tests build it over a `Store` of
+their own on `users` and the Workspace creation.
 
 ## Fixture catalog
 

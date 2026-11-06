@@ -65,103 +65,16 @@ type ProviderSignin struct {
 	LinkedIdentityID int64
 }
 
-// SignInWithIdentity answers a provider callback: it reads the facts, takes the one
-// decision (DecideSignin) and applies it. Only the User of the identity, or a new User, comes
-// back; a refusal is a *SigninRefusedError. It does not start the session or write the login
-// Audit entry: the caller does, once the Second factor is accounted for.
-//
-// An unknown subject whose trusted email a Verified User holds is linked to that User;
-// when that User's address was never proven (an install with verification off) the link
-// also clears the password and ends its sessions, so whoever proves the address is the
-// one who controls it. An Unverified User's address is taken over: the provider's proof
-// wins, the User becomes Verified, the pending password goes, a pending Invitation stays.
-func (a *Module) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*ProviderSignin, error) {
-	if in.Invitation == nil {
-		return a.signIn(ctx, in)
-	}
-	// An Invitation is for one address: a provider that vouches for another one creates and
-	// links nothing, before the decision can. A provider whose proof of the email is not
-	// accepted is left to the decision (a Linked identity may still sign in, then is held to
-	// the address below).
-	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), in.Invitation.Email) {
-		return nil, &SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
-	}
-	in.SurveyDue = false
-	signedIn, err := a.signIn(ctx, in)
+// DecideSigninFor reads the facts of the provider's answer in and takes the one decision
+// (DecideSignin): the User of the Linked identity (known) and the User that holds the
+// provider's trusted email (holder), with the decision on them. The provider sign-in
+// (internal/usecase/workspacecreation) applies it.
+func (a *Module) DecideSigninFor(ctx context.Context, in ProviderLogin) (decision SigninDecision, known, holder *ent.User, err error) {
+	known, holder, err = signinFacts(ctx, a.ent, in)
 	if err != nil {
-		return nil, err
+		return SigninDecision{}, nil, nil, err
 	}
-	if signedIn.Pending != nil {
-		// The pending sign-up keeps the Invitation, which its completion accepts.
-		return signedIn, nil
-	}
-	if !strings.EqualFold(signedIn.User.Email, in.Invitation.Email) {
-		// A Linked identity of an account with another address: nothing was created.
-		return nil, &SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
-	}
-	// The provider's proof of the address is the session proof AcceptInvitation asks of a
-	// Verified User.
-	if err := a.AcceptInvitation(ctx, in.Invitation, InvitationAcceptance{SessionEmail: signedIn.User.Email}); err != nil {
-		return nil, err
-	}
-	return signedIn, nil
-}
-
-// signIn is SignInWithIdentity without an Invitation.
-func (a *Module) signIn(ctx context.Context, in ProviderLogin) (*ProviderSignin, error) {
-	for attempt := 0; ; attempt++ {
-		known, holder, err := signinFacts(ctx, a.ent, in)
-		if err != nil {
-			return nil, err
-		}
-		decision := DecideSignin(factsOf(known, holder, in))
-		switch decision.Outcome {
-		case SigninKnown:
-			return &ProviderSignin{User: known}, nil
-		case SigninCreate:
-			created, err := a.createFromProvider(ctx, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
-				// Two sign-ins of one person raced: read the facts again, where the winner's
-				// User and identity are now visible.
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &ProviderSignin{User: created, Created: true}, nil
-		case SigninPending:
-			held, err := a.holdPending(ctx, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
-				continue // the same sign-in raced itself: read the facts again
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &ProviderSignin{Pending: held}, nil
-		case SigninLink:
-			linked, identityID, err := a.linkToHolder(ctx, holder.ID, in)
-			if db.IsUniqueViolation(err) && attempt == 0 {
-				continue // the same sign-in raced itself: read the facts again
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &ProviderSignin{User: linked, LinkedIdentityID: identityID}, nil
-		case SigninTakeOver:
-			taken, err := a.takeOver(ctx, holder.ID, in)
-			if (errors.Is(err, ErrAlreadyVerified) || db.IsUniqueViolation(err)) && attempt == 0 {
-				// The person who signed up verified the address first (it is a Verified User now), or
-				// the sign-in raced itself: read the facts again.
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			return &ProviderSignin{User: taken}, nil
-		default:
-			return nil, &SigninRefusedError{Reason: decision.Reason}
-		}
-	}
+	return DecideSignin(factsOf(known, holder, in)), known, holder, nil
 }
 
 // signinFacts loads, through c, the User whose Linked identity is the provider's subject, and the
@@ -208,20 +121,11 @@ func providerName(in ProviderLogin) string {
 	return name
 }
 
-// createFromProvider creates a Verified User for a trusted provider email, with the Linked
-// identity, its first Workspace and `user.email_verify`, in one transaction, as a
-// Sign-up does when its link is followed (ADR 0030). The User has no password: the
-// provider proved the address, so no mail is sent. Its email is proven now.
-func (a *Module) createFromProvider(ctx context.Context, in ProviderLogin) (*ent.User, error) {
-	u, _, err := a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return createProviderUser(ctx, tx, in)
-	})
-	return u, err
-}
-
-// createProviderUser writes the Verified User of a trusted provider email and its Linked identity
-// in tx: the provider's name, or the address's local part when it gave none, and no password.
-func createProviderUser(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
+// CreateProviderUserIn writes the Verified User of a trusted provider email and its Linked
+// identity in tx: the provider's name, or the address's local part when it gave none, and no
+// password. Its email is proven now; the caller creates its first Workspace and records
+// `user.email_verify` on the same transaction (internal/usecase/workspacecreation).
+func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
 	name := providerName(in)
 	if name == "" {
@@ -332,12 +236,12 @@ func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (
 	return saved, err
 }
 
-// linkToHolder attaches the identity to the Verified User holding the provider's email. The
+// LinkToHolder attaches the identity to the Verified User holding the provider's email. The
 // provider's proof makes the address proven; every link ends the User's other sessions, and
 // a User whose address was not proven before also loses its password, in the same
 // transaction. It returns the User as it
 // stands afterwards and the new identity's id.
-func (a *Module) linkToHolder(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, int64, error) {
+func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, int64, error) {
 	var linked *ent.User
 	var identityID int64
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -354,7 +258,7 @@ func (a *Module) linkToHolder(ctx context.Context, holderID int64, in ProviderLo
 			return err
 		}
 		if stamped > 0 {
-			if _, err := applyDomainJoin(ctx, tx, pub, linked); err != nil {
+			if _, err := ApplyDomainJoinIn(ctx, tx, pub, linked); err != nil {
 				return err
 			}
 		}
@@ -368,22 +272,12 @@ func (a *Module) linkToHolder(ctx context.Context, holderID int64, in ProviderLo
 	return linked, identityID, err
 }
 
-// takeOver is the provider's proof winning over a Sign-up nobody proved: the Unverified
-// User becomes Verified with the provider's name, its pending password is cleared, earlier
-// sessions end, and it gets the identity and its first Workspace, as a verify link would
-// give it. A pending Invitation to the address is not touched. ErrAlreadyVerified when the
-// User is no longer Unverified.
-func (a *Module) takeOver(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, error) {
-	u, _, err := a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return takeOverIn(ctx, tx, holderID, in)
-	})
-	return u, err
-}
-
-// takeOverIn writes the take-over of the Unverified User holderID in tx: Verified with the
-// provider's name, no password, earlier sessions ended, and the Linked identity. ErrAlreadyVerified
-// when the User is no longer Unverified.
-func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (*ent.User, error) {
+// TakeOverIn writes the take-over of the Unverified User holderID in tx, the provider's proof
+// winning over a Sign-up nobody proved: Verified with the provider's name, no password, earlier
+// sessions ended, and the Linked identity; a pending Invitation to the address is not touched.
+// The caller gives it its first Workspace on the same transaction, as a verify link would
+// (internal/usecase/workspacecreation). ErrAlreadyVerified when the User is no longer Unverified.
+func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (*ent.User, error) {
 	now := time.Now()
 	upd := tx.User.Update().
 		Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).

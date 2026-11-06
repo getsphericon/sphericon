@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/users"
@@ -126,7 +125,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords)
 	_, saved := usersFrom(t, c, "")
 
-	created, err := acc.SignUpVerified(t.Context(), signup.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
+	created, err := h.env.WorkspaceCreation.SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
 	require.NoError(t, err)
 	got, saved := usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
@@ -189,8 +188,8 @@ func TestASignUpThatAcceptsTheMailingsIsOneEntryWithTheConsent(t *testing.T) {
 		consentrecord.SourceSignUpForm)
 	require.NoError(t, err)
 
-	created, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).
-		SignUpVerified(t.Context(), signup.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!", Consents: consents})
+	created, err := h.env.WorkspaceCreation.
+		SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!", Consents: consents})
 	require.NoError(t, err)
 
 	got, _ := usersFrom(t, c, saved)

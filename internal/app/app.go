@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/releasecheck"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorenrolment"
 	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacecreation"
 	"github.com/getsphericon/sphericon/internal/users"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
@@ -443,11 +444,11 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
 // (ADR 0042): an Owner made from a shell, with no Sign-up.
 func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
-	acc, err := do.Invoke[*users.Module](a.injector)
+	creation, err := do.Invoke[*workspacecreation.UseCase](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return acc.CreateOwner(ctx, email, name)
+	return creation.CreateOwner(ctx, email, name)
 }
 
 // CreateStaffMember makes a platform Staff member (ADR 0026, ADR 0063) and returns its one-time
@@ -516,6 +517,12 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 // (the end-to-end suite), so they open no second connection pool.
 func (a *App) Users() (*users.Module, error) {
 	return do.Invoke[*users.Module](a.injector)
+}
+
+// WorkspaceCreation is the product's Workspace creation use case from the DI container, for the
+// same harnesses: they create a Workspace for a User they made.
+func (a *App) WorkspaceCreation() (*workspacecreation.UseCase, error) {
+	return do.Invoke[*workspacecreation.UseCase](a.injector)
 }
 
 // Memberships is the product's Memberships module from the DI container, for the same harnesses:

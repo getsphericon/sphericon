@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 	"github.com/getsphericon/sphericon/internal/workspaces"
 )
 
@@ -23,7 +23,7 @@ var now = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 
 var actor = events.Actor{Kind: events.ActorUser}
 
-func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.Module) {
+func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.UseCase) {
 	t.Helper()
 	env := testhelper.Setup(t)
 	return env, workspacedeletion.New(env.DB, env.Bus)
@@ -40,7 +40,7 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 	return env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
 }
 
-func restore(t *testing.T, m *workspacedeletion.Module) error {
+func restore(t *testing.T, m *workspacedeletion.UseCase) error {
 	t.Helper()
 	_, err := m.Restore(t.Context(), fixtures.InitechOwnerOlgaID, fixtures.InitechPublicID, actor, now)
 	return err

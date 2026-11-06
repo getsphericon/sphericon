@@ -7,7 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
 // workspaceErasureInterval is how often the erasure job looks for Workspaces whose
@@ -24,13 +24,13 @@ func (EraseWorkspacesArgs) Kind() string { return "workspace_erasure" }
 type EraseWorkspacesWorker struct {
 	river.WorkerDefaults[EraseWorkspacesArgs]
 
-	deletion *workspacedeletion.Module
+	deletion *workspacedeletion.UseCase
 	now      func() time.Time
 }
 
 // NewEraseWorkspacesWorker builds the worker that erases the Workspaces whose deletion window has
 // passed by the clock now.
-func NewEraseWorkspacesWorker(deletion *workspacedeletion.Module, now func() time.Time) *EraseWorkspacesWorker {
+func NewEraseWorkspacesWorker(deletion *workspacedeletion.UseCase, now func() time.Time) *EraseWorkspacesWorker {
 	return &EraseWorkspacesWorker{deletion: deletion, now: now}
 }
 

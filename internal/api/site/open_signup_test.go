@@ -38,7 +38,7 @@ func TestASecondPersonSignsUpOnASelfHostedInstanceAndGetsTheirOwnWorkspace(t *te
 func TestAnOwnerMadeByCreateOwnerSignsIn(t *testing.T) {
 	env := selfHosted(t)
 
-	password, err := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
+	password, err := env.WorkspaceCreation.CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	rec := postLogin(t, env, "ada@example.com", password)
