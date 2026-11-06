@@ -4,3 +4,7 @@
 22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/api/external/integrations_preset_test.go:generic-api-key:20
 22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/server/hooks_test.go:generic-api-key:29
 22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/server/hooks_test.go:generic-api-key:30
+# Not secrets: the audit entry `"password": "changed"` and the login method constant
+# `LoginPassword = "password"` of users.go in b30ca1d7. History cannot be rewritten after the merge.
+b30ca1d79392a40b9d05da95305039c4d9995c0a:internal/domain/identity/users/users.go:generic-password:297
+b30ca1d79392a40b9d05da95305039c4d9995c0a:internal/domain/identity/users/users.go:generic-password:324
